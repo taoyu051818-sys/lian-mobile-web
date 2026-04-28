@@ -3,3 +3,13 @@
 node_modules/
 npm-debug.log*
 .DS_Store
+
+# Runtime caches and generated scraping/posting artifacts.
+data/nodebb-snapshot.json
+public/snapshot-assets/
+outputs/club-posts/images/
+outputs/club-posts/*results.json
+outputs/club-posts/publish-club-posts.cjs
+outputs/club-posts/update-club-posts.cjs
+outputs/club-posts/upload-club-images.cjs
+outputs/club-posts/build-html-club-posts.cjs
