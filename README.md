@@ -2,6 +2,8 @@
 
 一个直接连接 NodeBB 原生 API 的移动端信息流。服务端负责保存 API token、整理推荐流、读取帖子详情、上传图片到 Cloudinary，并向前端提供 `/api/*`。
 
+内容编辑、图文帖子和推荐流维护原则见 [`EDITORIAL_PRINCIPLES.md`](./EDITORIAL_PRINCIPLES.md)。所有面向学生的信息整理、NodeBB 图文帖和每日推荐批次都按这份原则执行。
+
 ## 首次部署引导
 
 如果项目目录没有 `.env`，并且启动环境里没有 `NODEBB_API_TOKEN`，第一次访问端口会进入部署引导页。
