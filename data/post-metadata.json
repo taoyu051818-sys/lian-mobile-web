@@ -1,0 +1,678 @@
+{
+  "version": 1,
+  "generatedAt": "2026-04-27T14:08:50.132Z",
+  "items": {
+    "9": {
+      "timeLabel": "4月27日至5月4日",
+      "startsAt": "2026-04-27T00:00:00+08:00",
+      "endsAt": "2026-05-04T23:59:59+08:00",
+      "expiresAt": "2026-05-04T23:59:59+08:00",
+      "priority": 22,
+      "sourceTimeText": "时间：4月27日至5月4日。"
+    },
+    "10": {
+      "timeLabel": "2026年4月26日15:30",
+      "startsAt": "2026-04-26T00:00:00+08:00",
+      "endsAt": "2026-04-26T23:59:59+08:00",
+      "expiresAt": "2026-04-26T23:59:59+08:00",
+      "priority": 0,
+      "sourceTimeText": "时间：2026年4月26日15:30；面向试验区入驻高校师生、教，职工，欢迎各位读者前往图书馆一层C区参加活动~。"
+    },
+    "11": {
+      "timeLabel": "4月23日是第31个世界读书日。为响应粤港澳桂琼五地全民阅读联动号召，试验区图书馆以“品味书香·享阅读之...",
+      "startsAt": "2026-04-23T00:00:00+08:00",
+      "endsAt": "2026-04-23T23:59:59+08:00",
+      "expiresAt": "2026-04-23T23:59:59+08:00",
+      "priority": 0,
+      "sourceTimeText": "4月23日是第31个世界读书日。为响应粤港澳桂琼五地全民阅读联动号召，试验区图书馆以“品味书香·享阅读之乐”为主题，开展2026年粤港澳桂琼“共读半小时”活动。"
+    },
+    "12": {
+      "timeLabel": "2026年4月21日 - 2026年5月9日",
+      "startsAt": "2026-04-21T00:00:00+08:00",
+      "endsAt": "2026-05-09T23:59:59+08:00",
+      "expiresAt": "2026-05-09T23:59:59+08:00",
+      "priority": 22,
+      "sourceTimeText": "时间：2026年4月21日 - 2026年5月9日；参与方式是1.读者在新语听书登录后，通过活动弹窗进入活动平台，2.点击底部“加入活动”，输入姓名及电话号码（请务必准确填写个人信息，以便进行奖品发放），3.浏览关卡内相关知识点并完成音频内容收听，即可...。"
+    },
+    "13": {
+      "timeLabel": "为优化馆内座位资源配置，提升阅览体验，规范座位使用秩序，我馆将于2026年4月20日正式启用座位预约系统...",
+      "startsAt": "2026-04-20T00:00:00+08:00",
+      "endsAt": "2026-04-20T23:59:59+08:00",
+      "expiresAt": "2026-04-20T23:59:59+08:00",
+      "priority": -4,
+      "sourceTimeText": "为优化馆内座位资源配置，提升阅览体验，规范座位使用秩序，我馆将于2026年4月20日正式启用座位预约系统。现将系统使用相关事宜通知如下，请各位读者知悉。"
+    },
+    "14": {
+      "timeLabel": "4月24日19:00",
+      "startsAt": "2026-04-24T00:00:00+08:00",
+      "endsAt": "2026-04-24T23:59:59+08:00",
+      "expiresAt": "2026-04-24T23:59:59+08:00",
+      "priority": -4,
+      "sourceTimeText": "时间：4月24日19:00；地点：图书馆D区一楼。"
+    },
+    "15": {
+      "timeLabel": "4月27日-5月5日",
+      "startsAt": "2026-04-27T00:00:00+08:00",
+      "endsAt": "2026-05-05T23:59:59+08:00",
+      "expiresAt": "2026-05-05T23:59:59+08:00",
+      "priority": 18,
+      "sourceTimeText": "2025-2026 学年春季读书周时间为 4 月 27 日（星期一）- 4 月 30 日（星期四），五一假期时间为 5 月 1 日（星期五）-5 月 5 日（星期二）。请同学们合理安排离校、返校行程。"
+    },
+    "16": {
+      "timeLabel": "持续关注",
+      "startsAt": null,
+      "endsAt": null,
+      "expiresAt": null,
+      "priority": 10,
+      "sourceTimeText": ""
+    },
+    "17": {
+      "timeLabel": "申请截止：2026年4月30日",
+      "startsAt": "2026-04-30T00:00:00+08:00",
+      "endsAt": "2026-04-30T23:59:59+08:00",
+      "expiresAt": "2026-04-30T23:59:59+08:00",
+      "priority": 24,
+      "sourceTimeText": "时间：申请截止：2026年4月30日。"
+    },
+    "18": {
+      "timeLabel": "2026年4月20日",
+      "startsAt": "2026-04-20T00:00:00+08:00",
+      "endsAt": "2026-04-20T23:59:59+08:00",
+      "expiresAt": "2026-04-20T23:59:59+08:00",
+      "priority": 2,
+      "sourceTimeText": "时间：2026年4月20日。"
+    },
+    "19": {
+      "timeLabel": "2026年5月29日，1.我校全日制在读本科生或研究生",
+      "startsAt": "2026-05-29T00:00:00+08:00",
+      "endsAt": "2026-05-29T23:59:59+08:00",
+      "expiresAt": "2026-05-29T23:59:59+08:00",
+      "priority": 10,
+      "sourceTimeText": "时间：2026年5月29日，1.我校全日制在读本科生或研究生。"
+    },
+    "20": {
+      "timeLabel": "2026年4月21日（周二）19:30-20：20",
+      "startsAt": "2026-04-21T00:00:00+08:00",
+      "endsAt": "2026-04-21T23:59:59+08:00",
+      "expiresAt": "2026-04-21T23:59:59+08:00",
+      "priority": 0,
+      "sourceTimeText": "时间：2026年4月21日（周二）19:30-20：20；地点：试验区图书馆一层A区智慧教室。"
+    },
+    "21": {
+      "timeLabel": "4月12日下午，在试验区图书馆1楼C区举办的非遗黎陶体验活动已圆满落幕。本次活动以“溯源、观摩、手作”为...",
+      "startsAt": "2026-04-12T00:00:00+08:00",
+      "endsAt": "2026-04-12T23:59:59+08:00",
+      "expiresAt": "2026-04-12T23:59:59+08:00",
+      "priority": 0,
+      "sourceTimeText": "4月12日下午，在试验区图书馆1楼C区举办的非遗黎陶体验活动已圆满落幕。本次活动以“溯源、观摩、手作”为核心，邀请非遗黎族原始制陶技艺传承人曾繁荣老师现场授课，带领参与者走进黎陶的千年文脉，亲手体验泥条盘筑的古老技艺，让非遗文化在指尖鲜活传承。"
+    },
+    "22": {
+      "timeLabel": "4月17日19:00",
+      "startsAt": "2026-04-17T00:00:00+08:00",
+      "endsAt": "2026-04-17T23:59:59+08:00",
+      "expiresAt": "2026-04-17T23:59:59+08:00",
+      "priority": -4,
+      "sourceTimeText": "时间：4月17日19:00；地点：图书馆，一楼D区报告厅。"
+    },
+    "23": {
+      "timeLabel": "已发布",
+      "startsAt": null,
+      "endsAt": null,
+      "expiresAt": null,
+      "priority": 8,
+      "sourceTimeText": ""
+    },
+    "24": {
+      "timeLabel": "3月29日，“乘风季·白杨杯”校园电子竞技比赛王者荣耀赛道进行了四强赛的激烈角逐。来自北京邮电大学的SD...",
+      "startsAt": "2026-03-29T00:00:00+08:00",
+      "endsAt": "2026-03-29T23:59:59+08:00",
+      "expiresAt": "2026-03-29T23:59:59+08:00",
+      "priority": 0,
+      "sourceTimeText": "3月29日，“乘风季·白杨杯”校园电子竞技比赛王者荣耀赛道进行了四强赛的激烈角逐。来自北京邮电大学的SDX战队与来自电子科技大学的WYL战队以默契的团队配合与出色的打法操作突出重围，成功会师决赛。"
+    },
+    "25": {
+      "timeLabel": "已发布",
+      "startsAt": null,
+      "endsAt": null,
+      "expiresAt": null,
+      "priority": 8,
+      "sourceTimeText": ""
+    },
+    "26": {
+      "timeLabel": "4月14日（周二）19：00-21：30",
+      "startsAt": "2026-04-14T00:00:00+08:00",
+      "endsAt": "2026-04-14T23:59:59+08:00",
+      "expiresAt": "2026-04-14T23:59:59+08:00",
+      "priority": 0,
+      "sourceTimeText": "时间：4月14日（周二）19：00-21：30。"
+    },
+    "27": {
+      "timeLabel": "已发布",
+      "startsAt": null,
+      "endsAt": null,
+      "expiresAt": null,
+      "priority": 8,
+      "sourceTimeText": ""
+    },
+    "28": {
+      "timeLabel": "为搭建全国名优高校与海南2026届高考学子的高效沟通桥梁，助力高校精准挖掘海南优质生源，南海网、新海南客...",
+      "startsAt": "2026-04-11T00:00:00+08:00",
+      "endsAt": "2026-04-11T23:59:59+08:00",
+      "expiresAt": "2026-04-11T23:59:59+08:00",
+      "priority": 2,
+      "sourceTimeText": "为搭建全国名优高校与海南2026届高考学子的高效沟通桥梁，助力高校精准挖掘海南优质生源，南海网、新海南客户端、南国都市报主办的2026年海南“高招面对面”首场线下现场咨询活动（海口站）于4月11日在海南省农垦中学顺利举办。受主办方邀请，试验区管理局与各入驻高校组成“招生联盟”组…。"
+    },
+    "29": {
+      "timeLabel": "已发布",
+      "startsAt": null,
+      "endsAt": null,
+      "expiresAt": null,
+      "priority": 8,
+      "sourceTimeText": ""
+    },
+    "30": {
+      "timeLabel": "4月1日-5月31日",
+      "startsAt": "2026-04-01T00:00:00+08:00",
+      "endsAt": "2026-05-31T23:59:59+08:00",
+      "expiresAt": "2026-05-31T23:59:59+08:00",
+      "priority": 8,
+      "sourceTimeText": "时间：4月1日-5月31日；面向广东、广西、海南、湖南、福建高校师生。"
+    },
+    "31": {
+      "timeLabel": "4月03日19:00",
+      "startsAt": "2026-04-03T00:00:00+08:00",
+      "endsAt": "2026-04-03T23:59:59+08:00",
+      "expiresAt": "2026-04-03T23:59:59+08:00",
+      "priority": -4,
+      "sourceTimeText": "时间：4月03日19:00；地点：图书馆D区一楼。"
+    },
+    "32": {
+      "timeLabel": "持续关注",
+      "startsAt": null,
+      "endsAt": null,
+      "expiresAt": null,
+      "priority": 10,
+      "sourceTimeText": ""
+    },
+    "33": {
+      "timeLabel": "将于4月17日-18日来到陵水",
+      "startsAt": "2026-04-17T00:00:00+08:00",
+      "endsAt": "2026-04-18T23:59:59+08:00",
+      "expiresAt": "2026-04-18T23:59:59+08:00",
+      "priority": -2,
+      "sourceTimeText": "将于4月17日-18日来到陵水。"
+    },
+    "34": {
+      "timeLabel": "长期参考",
+      "startsAt": null,
+      "endsAt": null,
+      "expiresAt": null,
+      "priority": 6,
+      "sourceTimeText": ""
+    },
+    "35": {
+      "timeLabel": "持续关注",
+      "startsAt": null,
+      "endsAt": null,
+      "expiresAt": null,
+      "priority": 10,
+      "sourceTimeText": ""
+    },
+    "36": {
+      "timeLabel": "4月8日，中国地质大学（北京）",
+      "startsAt": "2026-04-08T00:00:00+08:00",
+      "endsAt": "2026-04-08T23:59:59+08:00",
+      "expiresAt": "2026-04-08T23:59:59+08:00",
+      "priority": 0,
+      "sourceTimeText": "4月8日，中国地质大学（北京）。"
+    },
+    "37": {
+      "timeLabel": "持续关注",
+      "startsAt": null,
+      "endsAt": null,
+      "expiresAt": null,
+      "priority": 10,
+      "sourceTimeText": ""
+    },
+    "38": {
+      "timeLabel": "持续关注",
+      "startsAt": null,
+      "endsAt": null,
+      "expiresAt": null,
+      "priority": 10,
+      "sourceTimeText": ""
+    },
+    "39": {
+      "timeLabel": "2026年3月27日（周五）",
+      "startsAt": "2026-03-27T00:00:00+08:00",
+      "endsAt": "2026-03-27T23:59:59+08:00",
+      "expiresAt": "2026-03-27T23:59:59+08:00",
+      "priority": 2,
+      "sourceTimeText": "时间：2026年3月27日（周五）。"
+    },
+    "40": {
+      "timeLabel": "8月2日-8月11日",
+      "startsAt": "2026-08-02T00:00:00+08:00",
+      "endsAt": "2026-08-11T23:59:59+08:00",
+      "expiresAt": "2026-08-11T23:59:59+08:00",
+      "priority": 10,
+      "sourceTimeText": "时间：项目 | 2026年08月02日– 08月11日。"
+    },
+    "41": {
+      "timeLabel": "假期前查看",
+      "startsAt": null,
+      "endsAt": null,
+      "expiresAt": null,
+      "priority": 5,
+      "sourceTimeText": ""
+    },
+    "42": {
+      "timeLabel": "持续关注",
+      "startsAt": null,
+      "endsAt": null,
+      "expiresAt": null,
+      "priority": 10,
+      "sourceTimeText": ""
+    },
+    "43": {
+      "timeLabel": "假期前查看",
+      "startsAt": null,
+      "endsAt": null,
+      "expiresAt": null,
+      "priority": 5,
+      "sourceTimeText": ""
+    },
+    "44": {
+      "timeLabel": "4月4日-4月6日",
+      "startsAt": "2026-04-04T00:00:00+08:00",
+      "endsAt": "2026-04-06T23:59:59+08:00",
+      "expiresAt": "2026-04-06T23:59:59+08:00",
+      "priority": -3,
+      "sourceTimeText": "时间：4月4日（周六）至6日（周一）放假。"
+    },
+    "45": {
+      "timeLabel": "讲座：3月30日（周一）13：00",
+      "startsAt": "2026-03-30T00:00:00+08:00",
+      "endsAt": "2026-03-30T23:59:59+08:00",
+      "expiresAt": "2026-03-30T23:59:59+08:00",
+      "priority": 2,
+      "sourceTimeText": "时间：讲座：3月30日（周一）13：00；地点：讲座：线上讲座，腾讯会议号：906-986-525。"
+    },
+    "46": {
+      "timeLabel": "长期参考",
+      "startsAt": null,
+      "endsAt": null,
+      "expiresAt": null,
+      "priority": 6,
+      "sourceTimeText": ""
+    },
+    "47": {
+      "timeLabel": "2026年3月29日(周日)16:00",
+      "startsAt": "2026-03-29T00:00:00+08:00",
+      "endsAt": "2026-03-29T23:59:59+08:00",
+      "expiresAt": "2026-03-29T23:59:59+08:00",
+      "priority": 0,
+      "sourceTimeText": "时间：2026年3月29日(周日)16:00；面向试验区入驻高校师生、教职工。"
+    },
+    "48": {
+      "timeLabel": "已发布",
+      "startsAt": null,
+      "endsAt": null,
+      "expiresAt": null,
+      "priority": 8,
+      "sourceTimeText": ""
+    },
+    "49": {
+      "timeLabel": "3月27日19:00-21:00",
+      "startsAt": "2026-03-27T00:00:00+08:00",
+      "endsAt": "2026-03-27T23:59:59+08:00",
+      "expiresAt": "2026-03-27T23:59:59+08:00",
+      "priority": -4,
+      "sourceTimeText": "时间：3月27日19:00-21:00；地点：D区一楼放映厅。"
+    },
+    "50": {
+      "timeLabel": "长期参考",
+      "startsAt": null,
+      "endsAt": null,
+      "expiresAt": null,
+      "priority": 6,
+      "sourceTimeText": ""
+    },
+    "51": {
+      "timeLabel": "长期参考",
+      "startsAt": null,
+      "endsAt": null,
+      "expiresAt": null,
+      "priority": 6,
+      "sourceTimeText": ""
+    },
+    "52": {
+      "timeLabel": "持续关注",
+      "startsAt": null,
+      "endsAt": null,
+      "expiresAt": null,
+      "priority": 10,
+      "sourceTimeText": ""
+    },
+    "53": {
+      "timeLabel": "3月20日19:00-21:00",
+      "startsAt": "2026-03-20T00:00:00+08:00",
+      "endsAt": "2026-03-20T23:59:59+08:00",
+      "expiresAt": "2026-03-20T23:59:59+08:00",
+      "priority": -4,
+      "sourceTimeText": "时间：3月20日19:00-21:00；地点：D区一楼放映厅。"
+    },
+    "54": {
+      "timeLabel": "资格确认时间节点要提前处理：2026年3月20日17:00",
+      "startsAt": "2026-03-20T00:00:00+08:00",
+      "endsAt": "2026-03-20T23:59:59+08:00",
+      "expiresAt": "2026-03-20T23:59:59+08:00",
+      "priority": 2,
+      "sourceTimeText": "资格确认时间节点要提前处理：2026年3月20日17:00。"
+    },
+    "55": {
+      "timeLabel": "资格确认时间节点要提前处理：2026年3月20日17:00",
+      "startsAt": "2026-03-20T00:00:00+08:00",
+      "endsAt": "2026-03-20T23:59:59+08:00",
+      "expiresAt": "2026-03-20T23:59:59+08:00",
+      "priority": 2,
+      "sourceTimeText": "资格确认时间节点要提前处理：2026年3月20日17:00。"
+    },
+    "56": {
+      "timeLabel": "3月06日19:00-21:00",
+      "startsAt": "2026-03-06T00:00:00+08:00",
+      "endsAt": "2026-03-06T23:59:59+08:00",
+      "expiresAt": "2026-03-06T23:59:59+08:00",
+      "priority": -4,
+      "sourceTimeText": "时间：3月06日19:00-21:00；地点：D区一楼放映厅。"
+    },
+    "57": {
+      "timeLabel": "3月06日19:00",
+      "startsAt": "2026-03-06T00:00:00+08:00",
+      "endsAt": "2026-03-06T23:59:59+08:00",
+      "expiresAt": "2026-03-06T23:59:59+08:00",
+      "priority": -4,
+      "sourceTimeText": "时间：3月06日19:00；地点：图书馆D区一楼。"
+    },
+    "58": {
+      "timeLabel": "3月10日18:30-19:30",
+      "startsAt": "2026-03-10T00:00:00+08:00",
+      "endsAt": "2026-03-10T23:59:59+08:00",
+      "expiresAt": "2026-03-10T23:59:59+08:00",
+      "priority": 2,
+      "sourceTimeText": "时间：3月10日18:30-19:30；地点：试验区内（详细将根据报名情况，通过报名群进一步通知，请务必加入报名群获取最新信息）；参与方式是扫描下方二维码进行报名并加入报名群（入群后请备注“学校+姓名”，具体讲座地点将在群内通知），报名截止为，3月7日20:00，主讲人介绍。"
+    },
+    "59": {
+      "timeLabel": "持续关注",
+      "startsAt": null,
+      "endsAt": null,
+      "expiresAt": null,
+      "priority": 10,
+      "sourceTimeText": ""
+    },
+    "60": {
+      "timeLabel": "2月26日19:00-21:00",
+      "startsAt": "2026-02-26T00:00:00+08:00",
+      "endsAt": "2026-02-26T23:59:59+08:00",
+      "expiresAt": "2026-02-26T23:59:59+08:00",
+      "priority": -4,
+      "sourceTimeText": "时间：2月26日19:00-21:00；地点：馆A区，一楼视听室。"
+    },
+    "61": {
+      "timeLabel": "假期前查看",
+      "startsAt": null,
+      "endsAt": null,
+      "expiresAt": null,
+      "priority": 5,
+      "sourceTimeText": ""
+    },
+    "62": {
+      "timeLabel": "长期参考",
+      "startsAt": null,
+      "endsAt": null,
+      "expiresAt": null,
+      "priority": 6,
+      "sourceTimeText": ""
+    },
+    "63": {
+      "timeLabel": "2026年2月22日-3月3日，（19:00-21:00）",
+      "startsAt": "2026-02-22T00:00:00+08:00",
+      "endsAt": "2026-03-03T23:59:59+08:00",
+      "expiresAt": "2026-03-03T23:59:59+08:00",
+      "priority": -2,
+      "sourceTimeText": "时间：2026年2月22日-3月3日，（19:00-21:00）；地点：陵水县雅居乐体育馆旁，🎉 核心玩法：十大非遗体验轮番登场。"
+    },
+    "64": {
+      "timeLabel": "长期参考",
+      "startsAt": null,
+      "endsAt": null,
+      "expiresAt": null,
+      "priority": 6,
+      "sourceTimeText": ""
+    },
+    "65": {
+      "timeLabel": "假期前查看",
+      "startsAt": null,
+      "endsAt": null,
+      "expiresAt": null,
+      "priority": 5,
+      "sourceTimeText": ""
+    },
+    "66": {
+      "timeLabel": "长期参考",
+      "startsAt": null,
+      "endsAt": null,
+      "expiresAt": null,
+      "priority": 6,
+      "sourceTimeText": ""
+    },
+    "67": {
+      "timeLabel": "水口大桥已于2月10日正式通车！",
+      "startsAt": "2026-02-10T00:00:00+08:00",
+      "endsAt": "2026-02-10T23:59:59+08:00",
+      "expiresAt": "2026-02-10T23:59:59+08:00",
+      "priority": -2,
+      "sourceTimeText": "水口大桥已于2月10日正式通车！。"
+    },
+    "68": {
+      "timeLabel": "2月05日19:00",
+      "startsAt": "2026-02-05T00:00:00+08:00",
+      "endsAt": "2026-02-05T23:59:59+08:00",
+      "expiresAt": "2026-02-05T23:59:59+08:00",
+      "priority": -4,
+      "sourceTimeText": "时间：2月05日19:00；地点：图书馆A区一楼视听室。"
+    },
+    "69": {
+      "timeLabel": "2月12日19:00-21:00",
+      "startsAt": "2026-02-12T00:00:00+08:00",
+      "endsAt": "2026-02-12T23:59:59+08:00",
+      "expiresAt": "2026-02-12T23:59:59+08:00",
+      "priority": -4,
+      "sourceTimeText": "时间：2月12日19:00-21:00；地点：馆A区，一楼视听室。"
+    },
+    "70": {
+      "timeLabel": "2026年2月6日（周五）上午9:30",
+      "startsAt": "2026-02-06T00:00:00+08:00",
+      "endsAt": "2026-02-06T23:59:59+08:00",
+      "expiresAt": "2026-02-06T23:59:59+08:00",
+      "priority": 0,
+      "sourceTimeText": "时间：2026年2月6日（周五）上午9:30；地点：试验区图书馆大墩村村委会分馆；面向大墩村、试验区，少年儿童，活字印刷术是一种古代印刷方法，是中国古代劳动人民经过长期实践和研究才发明的。"
+    },
+    "71": {
+      "timeLabel": "2月05日19:00-21:00",
+      "startsAt": "2026-02-05T00:00:00+08:00",
+      "endsAt": "2026-02-05T23:59:59+08:00",
+      "expiresAt": "2026-02-05T23:59:59+08:00",
+      "priority": -4,
+      "sourceTimeText": "时间：2月05日19:00-21:00；地点：馆A区，一楼视听室。"
+    },
+    "72": {
+      "timeLabel": "1月29日19:00-21:00",
+      "startsAt": "2026-01-29T00:00:00+08:00",
+      "endsAt": "2026-01-29T23:59:59+08:00",
+      "expiresAt": "2026-01-29T23:59:59+08:00",
+      "priority": -4,
+      "sourceTimeText": "时间：1月29日19:00-21:00；地点：馆A区，一楼视听室。"
+    },
+    "73": {
+      "timeLabel": "图书馆这场可以当作放松安排：图书馆“光影书香”寒假(1月22日)影讯：《穿普拉达的女王》",
+      "startsAt": "2026-01-22T00:00:00+08:00",
+      "endsAt": "2026-01-22T23:59:59+08:00",
+      "expiresAt": "2026-01-22T23:59:59+08:00",
+      "priority": -4,
+      "sourceTimeText": "图书馆这场可以当作放松安排：图书馆“光影书香”寒假(1月22日)影讯：《穿普拉达的女王》。"
+    },
+    "74": {
+      "timeLabel": "1月16日19:00-21:00",
+      "startsAt": "2026-01-16T00:00:00+08:00",
+      "endsAt": "2026-01-16T23:59:59+08:00",
+      "expiresAt": "2026-01-16T23:59:59+08:00",
+      "priority": -4,
+      "sourceTimeText": "时间：1月16日19:00-21:00；地点：D区一楼放映厅。"
+    },
+    "75": {
+      "timeLabel": "⏰ ：1月9日—11日，🌍 地址：陵水海航体育场",
+      "startsAt": "2026-01-09T00:00:00+08:00",
+      "endsAt": "2026-01-11T23:59:59+08:00",
+      "expiresAt": "2026-01-11T23:59:59+08:00",
+      "priority": -2,
+      "sourceTimeText": "时间：⏰ ：1月9日—11日，🌍 地址：陵水海航体育场。"
+    },
+    "76": {
+      "timeLabel": "1月02日19:00",
+      "startsAt": "2026-01-02T00:00:00+08:00",
+      "endsAt": "2026-01-02T23:59:59+08:00",
+      "expiresAt": "2026-01-02T23:59:59+08:00",
+      "priority": -4,
+      "sourceTimeText": "时间：1月02日19:00；地点：图书馆D区一楼。"
+    },
+    "77": {
+      "timeLabel": "1月09日19:00-21:00",
+      "startsAt": "2026-01-09T00:00:00+08:00",
+      "endsAt": "2026-01-09T23:59:59+08:00",
+      "expiresAt": "2026-01-09T23:59:59+08:00",
+      "priority": -4,
+      "sourceTimeText": "时间：1月09日19:00-21:00；地点：馆D，区一楼报告厅。"
+    },
+    "78": {
+      "timeLabel": "12月19日19:00-21:00",
+      "startsAt": "2026-12-19T00:00:00+08:00",
+      "endsAt": "2026-12-19T23:59:59+08:00",
+      "expiresAt": "2026-12-19T23:59:59+08:00",
+      "priority": 4,
+      "sourceTimeText": "时间：12月19日19:00-21:00；地点：馆D，区一楼报告厅。"
+    },
+    "79": {
+      "timeLabel": "已发布",
+      "startsAt": null,
+      "endsAt": null,
+      "expiresAt": null,
+      "priority": 8,
+      "sourceTimeText": ""
+    },
+    "80": {
+      "timeLabel": "2025年12月13日(周六)15:30",
+      "startsAt": "2025-12-13T00:00:00+08:00",
+      "endsAt": "2025-12-13T23:59:59+08:00",
+      "expiresAt": "2025-12-13T23:59:59+08:00",
+      "priority": 0,
+      "sourceTimeText": "时间：2025年12月13日(周六)15:30；面向试验区入驻高校师生、教职工（限报40人）。"
+    },
+    "81": {
+      "timeLabel": "12月12日19:00-21:00",
+      "startsAt": "2026-12-12T00:00:00+08:00",
+      "endsAt": "2026-12-12T23:59:59+08:00",
+      "expiresAt": "2026-12-12T23:59:59+08:00",
+      "priority": 4,
+      "sourceTimeText": "时间：12月12日19:00-21:00；地点：馆D，区一楼报告厅。"
+    },
+    "82": {
+      "timeLabel": "已发布",
+      "startsAt": null,
+      "endsAt": null,
+      "expiresAt": null,
+      "priority": 8,
+      "sourceTimeText": ""
+    },
+    "83": {
+      "timeLabel": "已发布",
+      "startsAt": null,
+      "endsAt": null,
+      "expiresAt": null,
+      "priority": 8,
+      "sourceTimeText": ""
+    },
+    "84": {
+      "timeLabel": "已发布",
+      "startsAt": null,
+      "endsAt": null,
+      "expiresAt": null,
+      "priority": 8,
+      "sourceTimeText": ""
+    },
+    "85": {
+      "timeLabel": "长期参考",
+      "startsAt": null,
+      "endsAt": null,
+      "expiresAt": null,
+      "priority": 6,
+      "sourceTimeText": ""
+    },
+    "86": {
+      "timeLabel": "4月28日16:00-18:00",
+      "startsAt": "2026-04-28T00:00:00+08:00",
+      "endsAt": "2026-04-28T23:59:59+08:00",
+      "expiresAt": "2026-04-28T23:59:59+08:00",
+      "priority": 32,
+      "sourceTimeText": "宣讲时间是 4 月 28 日 16:00-18:00，线下在北邮西土城路校区教三楼 335，也可以通过腾讯会议 821-124-466 参加。内容会讲课程结构、入学要求、学费、学位安排、就业方向，以及技术创业、具身智能、多模态大模型等课程方向"
+    },
+    "87": {
+      "timeLabel": "领券至9月30日23:00",
+      "startsAt": null,
+      "endsAt": "2026-09-30T23:59:59+08:00",
+      "expiresAt": null,
+      "priority": 14,
+      "sourceTimeText": "五一准备在陵水玩，先把海南文旅消费券领了再订行程。活动到 9 月 30 日 23:00，机票可减 200 元，酒店减 100 元，景区门票减 30 元，陵水多家景区和酒店都在参与"
+    },
+    "88": {
+      "timeLabel": "5月1日 14:30-16:00",
+      "startsAt": "2026-05-01T00:00:00+08:00",
+      "endsAt": "2026-05-01T23:59:59+08:00",
+      "expiresAt": "2026-05-01T23:59:59+08:00",
+      "priority": 28,
+      "sourceTimeText": "想找一个不太赶、偏文化体验的五一安排，可以看海南疍家博物馆。5 月 1 日 14:30-16:00 有“五谷传情”手工活动，在博物馆多功能活动室，现场报名，只有 20 个名额，12 岁以下需要家长陪同"
+    },
+    "89": {
+      "timeLabel": "5月1日-5月5日",
+      "startsAt": "2026-05-01T00:00:00+08:00",
+      "endsAt": "2026-05-05T23:59:59+08:00",
+      "expiresAt": "2026-05-05T23:59:59+08:00",
+      "priority": 28,
+      "sourceTimeText": "这篇适合直接收藏，基本是五一陵水玩乐总表。想玩水可以看分界洲岛潜水季，4 月 25 日到 6 月 30 日，门船票加古村落潜水 399 元，珊瑚探索潜水 580 元，发小红书或抖音打卡还有免费上岛福利"
+    },
+    "90": {
+      "timeLabel": "4月25日-9月30日 每天10:00-23:00",
+      "startsAt": "2026-04-25T00:00:00+08:00",
+      "endsAt": "2026-09-30T23:59:59+08:00",
+      "expiresAt": null,
+      "priority": 14,
+      "sourceTimeText": "这条讲得比较细，适合要买进出海南机票的同学。4 月 25 日起到 9 月 30 日，每天 10:00-23:00 可以在“酷游海南”小程序或云闪付 APP 活动专区领取机票消费券，单用户每周可领 1 次，活动期最多领 5 次且只能核销 1 次，机票券 3 天有效"
+    },
+    "91": {
+      "timeLabel": "每周四 17:00-18:30",
+      "startsAt": null,
+      "endsAt": null,
+      "expiresAt": null,
+      "priority": 16,
+      "sourceTimeText": "常规活动时间是每周四 17:00-18:30，地点在综合体育馆二楼热身篮球场。球拍需要自备，学生有优惠价，后续还会有内部友谊赛、季度赛、高校交流赛和系统培训课。咨询或进群可以加 17889700356"
+    },
+    "92": {
+      "timeLabel": "每周三，初级班 15:00-16:00 / 中高级班 17:00-18:00",
+      "startsAt": null,
+      "endsAt": null,
+      "expiresAt": null,
+      "priority": 12,
+      "sourceTimeText": "俱乐部每周三定期开展，地点在专享楼 A 座 101 图书馆会议室区域，面向海南国际学院全体学生，不限专业、年级和英语水平。首次活动分初级班 15:00-16:00、中高级班 17:00-18:00，后续按周三持续"
+    }
+  }
+}

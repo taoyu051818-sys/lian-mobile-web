@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <title>黎安信息流</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <link rel="stylesheet" href="/styles.css">
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="view view-feed is-active" data-view="feed">
+        <div class="pull-indicator" id="pullIndicator">松开刷新</div>
+        <nav class="chips" id="feedTabs" aria-label="信息分类"></nav>
+        <section class="masonry" id="feedList" aria-live="polite"></section>
+        <div class="feed-sentinel" id="feedSentinel" aria-hidden="true"></div>
+      </section>
+
+      <section class="view" data-view="map">
+        <header class="topbar compact">
+          <div>
+            <h1>探索</h1>
+            <p>把信息放回真实位置</p>
+          </div>
+        </header>
+        <div id="map"></div>
+        <section class="place-list" id="placeList"></section>
+      </section>
+
+      <section class="view" data-view="messages">
+        <header class="topbar compact">
+          <div>
+            <h1>消息</h1>
+            <p>来自论坛的提醒</p>
+          </div>
+        </header>
+        <section class="message-list" id="messageList"></section>
+      </section>
+
+      <section class="view" data-view="profile">
+        <header class="topbar compact">
+          <div>
+            <h1>我的</h1>
+            <p>账号和发布记录</p>
+          </div>
+        </header>
+        <section class="profile-panel" id="profilePanel"></section>
+      </section>
+
+      <section class="view detail-view" data-view="detail">
+        <header class="detail-nav">
+          <button class="back-button" type="button" data-back-feed aria-label="返回">‹</button>
+        </header>
+        <article id="detailBody"></article>
+      </section>
+
+      <nav class="tabbar" aria-label="主导航">
+        <button class="tab is-active" type="button" data-tab="feed">首页</button>
+        <button class="tab" type="button" data-tab="map">探索</button>
+        <button class="publish-fab" type="button" data-open-publish aria-label="发布">＋</button>
+        <button class="tab" type="button" data-tab="messages">消息</button>
+        <button class="tab" type="button" data-tab="profile">我的</button>
+      </nav>
+    </main>
+
+    <dialog class="publish-sheet" id="publishSheet">
+      <form method="dialog" id="publishForm">
+        <header>
+          <h2>发布信息</h2>
+          <button class="sheet-close" type="button" data-close-publish aria-label="关闭">×</button>
+        </header>
+        <label>
+          标题
+          <input name="title" required maxlength="80" autocomplete="off">
+        </label>
+        <label>
+          图片
+          <input name="image" type="file" accept="image/*">
+        </label>
+        <label>
+          正文
+          <textarea name="content" required rows="7"></textarea>
+        </label>
+        <button class="primary" type="submit">发布到 NodeBB</button>
+      </form>
+    </dialog>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="/app.js"></script>
+  </body>
+</html>
