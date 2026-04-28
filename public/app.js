@@ -9,7 +9,8 @@ const state = {
   pullStartY: null,
   pullActive: false,
   previousView: "feed",
-  feedScrollY: 0
+  feedScrollY: 0,
+  masonryHeights: [0, 0]
 };
 
 const $ = (selector, root = document) => root.querySelector(selector);
@@ -69,16 +70,46 @@ function ensureMasonryColumns(reset = false) {
       <div class="masonry-column" data-column="left"></div>
       <div class="masonry-column" data-column="right"></div>
     `;
+    state.masonryHeights = [0, 0];
   }
   return $$(".masonry-column", list);
+}
+
+function estimateCardHeight(item) {
+  const listWidth = $("#feedList")?.clientWidth || 340;
+  const columnWidth = Math.max(140, (listWidth - 10) / 2);
+  const titleLines = Math.min(3, Math.max(1, Math.ceil(String(item.title || "").length / 10)));
+  const summaryLines = item.summary ? Math.min(3, Math.max(1, Math.ceil(String(item.summary).length / 18))) : 0;
+  const imageHeight = item.cover ? columnWidth * 1.12 : 112;
+  const bodyHeight = 19 + titleLines * 20 + (summaryLines ? 8 + summaryLines * 18 : 0) + 24;
+  return imageHeight + bodyHeight + 12;
+}
+
+function measureCardLater(card, columnIndex, estimatedHeight) {
+  const applyActualHeight = () => {
+    const actualHeight = card.offsetHeight + 11;
+    if (actualHeight > 20) {
+      state.masonryHeights[columnIndex] += actualHeight - estimatedHeight;
+    }
+  };
+  const img = card.querySelector("img");
+  if (img && !img.complete) {
+    img.addEventListener("load", applyActualHeight, { once: true });
+    img.addEventListener("error", applyActualHeight, { once: true });
+  } else {
+    requestAnimationFrame(applyActualHeight);
+  }
 }
 
 function appendFeedItems(items) {
   const columns = ensureMasonryColumns(false);
   for (const item of items) {
-    const [left, right] = columns;
-    const target = left.offsetHeight <= right.offsetHeight ? left : right;
+    const columnIndex = state.masonryHeights[0] <= state.masonryHeights[1] ? 0 : 1;
+    const target = columns[columnIndex];
+    const estimatedHeight = estimateCardHeight(item);
     target.insertAdjacentHTML("beforeend", cardTemplate(item));
+    state.masonryHeights[columnIndex] += estimatedHeight;
+    measureCardLater(target.lastElementChild, columnIndex, estimatedHeight);
   }
 }
 
