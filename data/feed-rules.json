@@ -9,5 +9,16 @@
     "图书馆学习": 68
   },
   "recencyHalfLifeHours": 96,
-  "coverBonus": 9
+  "coverBonus": 9,
+  "feedEditions": {
+    "pageSize": 10,
+    "generatedAt": "2026-04-28T09:00:00+08:00",
+    "strategy": "daily-curated-batches",
+    "notes": [
+      "第一版：先放最近最值得学生立刻看的活动、机会和可收藏信息。"
+    ],
+    "pages": [
+      [92, 91, 90, 89, 88, 87, 86, 85, 84, 83]
+    ]
+  }
 }

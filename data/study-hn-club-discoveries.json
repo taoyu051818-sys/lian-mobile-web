@@ -1,0 +1,109 @@
+{
+  "version": 1,
+  "source": "study-hn.cn rendered pages",
+  "method": "browser-rendered-search-page-and-visible-detail-pages-only",
+  "searchUrl": "https://www.study-hn.cn/search/%E7%A4%BE%E5%9B%A2?nav=%5B%22%E6%90%9C%E7%B4%A2%E9%A1%B5%22%5D",
+  "updatedAt": "2026-04-28T00:00:00+08:00",
+  "searchResultCountText": "36条",
+  "items": [
+    {
+      "dateLabel": "2026.01.29",
+      "title": "海南陵水黎安国际教育创新试验区2025-2026学年跨校性学生社团名单公示",
+      "summary": "",
+      "type": "club-roster",
+      "studentValue": "社团基础名单，适合进入社团频道作为总索引。"
+    },
+    {
+      "dateLabel": "2025.11.30",
+      "title": "高校动态 | 北京体育大学海南国际学院帆船队首战海帆赛创佳绩",
+      "detailUrl": "https://www.study-hn.cn/NewsDetail/8b548310bcdb43adaf128265b72ca43a/MjAyNS0xMi0wMg==/1?nav=%5B%5D",
+      "summary": "北体大海南国际学院·前景远航帆船队首次参加第十四届环海南岛国际大帆船赛 J80 组别，经过三天九轮比赛获得季军。文章提到队伍由高校与俱乐部联合组建，采用“以赛代练、实战育人”的方式，也提到后续会加强校内帆船社团建设、推广航海文化。",
+      "type": "club-story",
+      "studentValue": "虽然时效性不是今天型，但很适合作为“黎安也可以玩海洋运动/帆船社团”的资料型卡片。"
+    },
+    {
+      "dateLabel": "2025.11.18",
+      "title": "高校动态 | 体育砺行：解锁排球魅力，海格最年轻的新社团首秀获赞！",
+      "summary": "海格 Coco 排球社于 11 月 15 日下午在试验区综合体育馆开展首次活动，吸引 20 余名新成员参与，并邀请学院体育教师提供指导。",
+      "type": "club-activity",
+      "studentValue": "适合做排球社团卡片，突出地点、首秀、参与氛围。"
+    },
+    {
+      "dateLabel": "2025.11.08",
+      "title": "高校动态 | 腰旗逐梦，“橄”闯巅峰——北体海南国际学院腰旗橄榄球比赛成功举办暨腰旗橄榄球社团正式成立",
+      "summary": "北体海南国际学院休闲体育专业 25 级学生举办腰旗橄榄球比赛，103 名学生组成 8 队参赛，比赛在学院篮球馆与试验区综合体育场举行，同时腰旗橄榄球社团正式成立。",
+      "type": "club-activity",
+      "studentValue": "适合运动社团合集，能说明新运动项目和参与规模。"
+    },
+    {
+      "dateLabel": "2025.08.07",
+      "title": "这个跨校性社团已经next level了",
+      "summary": "文章从 2023 年两位北邮玛丽女王海南学院学生发起科创小组讲起，适合挖掘试验区跨校性科创社团的发展故事。",
+      "type": "club-story",
+      "studentValue": "适合做“科创工作室/跨校社团怎么长起来”的深度资料卡。"
+    },
+    {
+      "dateLabel": "2025.06.16",
+      "title": "高校动态 | 模联大会回顾：以青年之思，破贸易保护壁垒",
+      "summary": "搜索页显示本次大会由学院模拟联合国社团主办。",
+      "type": "club-activity",
+      "studentValue": "适合放入模联/学术实践社团条目。"
+    },
+    {
+      "dateLabel": "2024.11.23",
+      "title": "高校动态 | 社团招新 ！ 向左向右向前看，学生社团招新啦！",
+      "summary": "",
+      "type": "club-recruitment",
+      "studentValue": "历史招新资料，可用于还原 2024 年社团生态。"
+    },
+    {
+      "dateLabel": "2024.10.21",
+      "title": "星光联耀，社彩青春 | 首届跨校性社团文化节招新盛宴圆满收官",
+      "summary": "首届跨校性社团文化节招新收官，重点是丰富试验区入驻高校学生文化生活。",
+      "type": "club-recruitment",
+      "studentValue": "适合做社团文化节历史资料，不适合作为当前招新。"
+    },
+    {
+      "dateLabel": "2024.10.17",
+      "title": "【社团招新第一弹】梦想启航，艺术与科技的盛宴 —— 思辨、心灵与奉献的璀璨交响",
+      "summary": "社团招新第一弹，方向偏思辨、心灵、奉献、艺术与科技。",
+      "type": "club-recruitment",
+      "studentValue": "适合拆成多个社团介绍条目。"
+    },
+    {
+      "dateLabel": "2024.10.17",
+      "title": "【社团招新第二弹】活力四射，运动与音乐的激情交响——篮球、足球与舞蹈的热血篇章",
+      "summary": "社团招新第二弹，方向偏运动、音乐、篮球、足球、舞蹈。",
+      "type": "club-recruitment",
+      "studentValue": "适合补充运动/音乐/舞蹈类社团线索。"
+    },
+    {
+      "dateLabel": "2024.10.16",
+      "title": "试验区团工委召开“青春建功自贸港”专题学习会暨跨校性社团发起人全体大会",
+      "summary": "试验区团工委召开跨校性社团发起人全体大会。",
+      "type": "club-governance",
+      "studentValue": "更偏组织管理信息，适合背景资料，不适合推荐流高位。"
+    },
+    {
+      "dateLabel": "2024.09.18",
+      "title": "试验区第一批跨校性社团成立结果公示",
+      "summary": "根据跨校性社团管理办法，试验区团工委对第一批申请成立的跨校性社团进行公示。",
+      "type": "club-roster",
+      "studentValue": "可和你提供的表格互相印证，做历史社团名录。"
+    },
+    {
+      "dateLabel": "2024.05.21",
+      "title": "琼国教创发〔2024〕79号 关于《海南陵水黎安国际教育创新试验区跨校性社团管理办法（试行）》的通知",
+      "summary": "",
+      "type": "club-policy",
+      "studentValue": "社团制度源文件，适合管理背景，不适合学生首页推荐。"
+    },
+    {
+      "dateLabel": "2023.12.24",
+      "title": "高校动态丨“音”你而来，Beach Camel 音乐社举办冬日歌会",
+      "summary": "Beach Camel 音乐社举办冬日歌会。",
+      "type": "club-activity",
+      "studentValue": "适合补充音乐社历史活动。"
+    }
+  ]
+}

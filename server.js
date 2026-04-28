@@ -49,6 +49,7 @@ const config = {
   nodebbUid: Number(process.env.NODEBB_UID || 2),
   nodebbCid: Number(process.env.NODEBB_CID || 2),
   cloudinaryUrl: process.env.CLOUDINARY_URL || "",
+  adminToken: process.env.ADMIN_TOKEN || "",
   dataMode: (process.env.DATA_MODE || "live").toLowerCase(),
   snapshotRetryAttempts: Number(process.env.SNAPSHOT_RETRY_ATTEMPTS || 3)
 };
@@ -70,7 +71,8 @@ async function saveSetupConfig(payload = {}) {
     NODEBB_CID: String(Number(payload.nodebbCid || config.nodebbCid || 2)),
     DATA_MODE: String(payload.dataMode || config.dataMode || "snapshot").toLowerCase(),
     SNAPSHOT_RETRY_ATTEMPTS: String(Number(payload.snapshotRetryAttempts || config.snapshotRetryAttempts || 3)),
-    CLOUDINARY_URL: String(payload.cloudinaryUrl || config.cloudinaryUrl || "").trim()
+    CLOUDINARY_URL: String(payload.cloudinaryUrl || config.cloudinaryUrl || "").trim(),
+    ADMIN_TOKEN: String(payload.adminToken || config.adminToken || crypto.randomBytes(24).toString("hex")).trim()
   };
 
   if (!next.NODEBB_BASE_URL) throw new Error("NODEBB_BASE_URL is required");
@@ -87,7 +89,8 @@ async function saveSetupConfig(payload = {}) {
     `NODEBB_CID=${next.NODEBB_CID}`,
     `DATA_MODE=${next.DATA_MODE}`,
     `SNAPSHOT_RETRY_ATTEMPTS=${next.SNAPSHOT_RETRY_ATTEMPTS}`,
-    `CLOUDINARY_URL=${quoteEnvValue(next.CLOUDINARY_URL)}`
+    `CLOUDINARY_URL=${quoteEnvValue(next.CLOUDINARY_URL)}`,
+    `ADMIN_TOKEN=${quoteEnvValue(next.ADMIN_TOKEN)}`
   ];
   await fs.writeFile(envPath, `${lines.join("\n")}\n`, "utf8");
 
@@ -99,6 +102,7 @@ async function saveSetupConfig(payload = {}) {
   config.dataMode = next.DATA_MODE;
   config.snapshotRetryAttempts = Number(next.SNAPSHOT_RETRY_ATTEMPTS);
   config.cloudinaryUrl = next.CLOUDINARY_URL;
+  config.adminToken = next.ADMIN_TOKEN;
   memory.feedPages.clear();
   memory.topicDetails.clear();
 }
@@ -214,6 +218,10 @@ function setupPageHtml() {
         <label>Cloudinary URL
           <input name="cloudinaryUrl" autocomplete="off" placeholder="cloudinary://api_key:api_secret@cloud_name">
           <span class="hint">需要在网页里上传图片发帖时填写；只浏览可以先留空。</span>
+        </label>
+        <label>管理接口 Token
+          <input name="adminToken" autocomplete="off" placeholder="留空会自动生成">
+          <span class="hint">用于远程更新推荐规则和帖子时效信息，请不要公开。</span>
         </label>
         <button type="submit">保存配置并进入</button>
         <div class="status" id="status"></div>
@@ -340,6 +348,13 @@ async function writeSnapshot(data) {
   await fs.rename(tmpPath, snapshotPath);
   memory.snapshot = data;
   memory.snapshotLoadedAt = Date.now();
+}
+
+async function writeJsonFile(filePath, data) {
+  await fs.mkdir(path.dirname(filePath), { recursive: true });
+  const tmpPath = `${filePath}.tmp`;
+  await fs.writeFile(tmpPath, `${JSON.stringify(data, null, 2)}\n`, "utf8");
+  await fs.rename(tmpPath, filePath);
 }
 
 async function downloadSnapshotAsset(url) {
@@ -629,6 +644,33 @@ function scoreItem(item, rules) {
   return pinned + tagWeight + recency + cover + item.priority;
 }
 
+function getCuratedPages(rules) {
+  const pages = rules?.feedEditions?.pages;
+  if (!Array.isArray(pages)) return [];
+  return pages
+    .map((page) => (Array.isArray(page) ? page : page?.tids))
+    .filter(Array.isArray)
+    .map((page) => page.map(Number).filter(Number.isFinite))
+    .filter((page) => page.length);
+}
+
+function chunkItems(items, size) {
+  const chunks = [];
+  for (let index = 0; index < items.length; index += size) {
+    chunks.push(items.slice(index, index + size));
+  }
+  return chunks;
+}
+
+function personalizeBatch(items, readTids) {
+  return [...items].sort((a, b) => {
+    const aRead = readTids.has(Number(a.tid)) ? 1 : 0;
+    const bRead = readTids.has(Number(b.tid)) ? 1 : 0;
+    if (aRead !== bRead) return aRead - bRead;
+    return 0;
+  });
+}
+
 function parseReadTids(value = "") {
   return new Set(
     String(value)
@@ -643,28 +685,46 @@ async function handleFeed(reqUrl, res) {
   const metadata = await loadMetadata();
   const tab = reqUrl.searchParams.get("tab") || "推荐";
   const page = Math.max(1, Number(reqUrl.searchParams.get("page") || 1));
-  const limit = Math.min(24, Math.max(4, Number(reqUrl.searchParams.get("limit") || 12)));
+  const editionPageSize = Number(rules?.feedEditions?.pageSize || 10);
+  const limit = Math.min(24, Math.max(4, Number(reqUrl.searchParams.get("limit") || editionPageSize || 10)));
   const readTids = parseReadTids(reqUrl.searchParams.get("read") || "");
   const snapshot = config.dataMode === "snapshot" ? await getSnapshotData() : null;
   const topics = snapshot ? snapshot.topics || [] : await getAllRecentTopics();
   const basicItems = topics.map((topic) => normalizeTopic(topic, null, metadata));
+  const itemByTid = new Map(basicItems.map((item) => [Number(item.tid), item]));
 
   let items = basicItems;
+  let selected;
+  let hasMore;
+  const curatedPages = tab === "推荐" ? getCuratedPages(rules) : [];
   if (tab !== "推荐") {
     items = items.filter((item) => item.tags.includes(tab) || item.tag === tab);
+    const start = (page - 1) * limit;
+    selected = items.slice(start, start + limit);
+    hasMore = start + selected.length < items.length;
+  } else if (curatedPages.length) {
+    const used = new Set();
+    const pages = curatedPages.map((tids) => {
+      const pageItems = tids
+        .map((tid) => itemByTid.get(Number(tid)))
+        .filter(Boolean);
+      pageItems.forEach((item) => used.add(Number(item.tid)));
+      return pageItems;
+    });
+    const rankedRest = basicItems
+      .filter((item) => !used.has(Number(item.tid)))
+      .sort((a, b) => scoreItem(b, rules) - scoreItem(a, rules));
+    const restPages = chunkItems(rankedRest, Math.max(4, editionPageSize || limit));
+    const allPages = [...pages, ...restPages].filter((batch) => batch.length);
+    selected = personalizeBatch(allPages[page - 1] || [], readTids);
+    hasMore = page < allPages.length;
   } else {
     items = items.sort((a, b) => scoreItem(b, rules) - scoreItem(a, rules));
+    const start = (page - 1) * limit;
+    selected = personalizeBatch(items.slice(start, start + limit), readTids);
+    hasMore = start + selected.length < items.length;
   }
 
-  items = items.sort((a, b) => {
-    const aRead = readTids.has(Number(a.tid)) ? 1 : 0;
-    const bRead = readTids.has(Number(b.tid)) ? 1 : 0;
-    if (aRead !== bRead) return aRead - bRead;
-    return 0;
-  });
-
-  const start = (page - 1) * limit;
-  const selected = items.slice(start, start + limit);
   const sliced = await Promise.all(
     selected.map(async (item) => {
       const topic = topics.find((candidate) => candidate.tid === item.tid) || item;
@@ -679,9 +739,15 @@ async function handleFeed(reqUrl, res) {
   sendJson(res, 200, {
     items: sliced,
     page,
-    nextPage: start + sliced.length < items.length ? page + 1 : null,
-    hasMore: start + sliced.length < items.length,
+    nextPage: hasMore ? page + 1 : null,
+    hasMore,
     tabs: rules.tabs || ["推荐"],
+    feedEdition: curatedPages.length ? {
+      mode: "curated",
+      pageSize: editionPageSize,
+      generatedAt: rules.feedEditions?.generatedAt || null,
+      pageNote: rules.feedEditions?.notes?.[page - 1] || ""
+    } : { mode: "scored" },
     dataMode: config.dataMode,
     dataSource: snapshot?.source || "api",
     apiError: snapshot?.apiError || null,
@@ -719,6 +785,25 @@ async function readJsonBody(req) {
   for await (const chunk of req) body += chunk;
   if (!body.trim()) return {};
   return JSON.parse(body);
+}
+
+function getAuthToken(req) {
+  const header = req.headers.authorization || "";
+  const bearer = header.match(/^Bearer\s+(.+)$/i)?.[1];
+  return bearer || req.headers["x-admin-token"] || "";
+}
+
+function requireAdmin(req) {
+  if (!config.adminToken) {
+    const error = new Error("ADMIN_TOKEN is missing");
+    error.status = 503;
+    throw error;
+  }
+  if (getAuthToken(req) !== config.adminToken) {
+    const error = new Error("admin authorization failed");
+    error.status = 401;
+    throw error;
+  }
 }
 
 async function readBodyBuffer(req) {
@@ -910,6 +995,117 @@ async function handleMe(res) {
   }
 }
 
+async function handleAdmin(req, reqUrl, res) {
+  requireAdmin(req);
+
+  if (req.method === "GET" && reqUrl.pathname === "/api/admin/feed-rules") {
+    const raw = await fs.readFile(rulesPath, "utf8");
+    return sendJson(res, 200, JSON.parse(raw));
+  }
+
+  if (req.method === "PUT" && reqUrl.pathname === "/api/admin/feed-rules") {
+    const payload = await readJsonBody(req);
+    if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
+      return sendJson(res, 400, { error: "feed rules must be a JSON object" });
+    }
+    if (payload.tabs && !Array.isArray(payload.tabs)) {
+      return sendJson(res, 400, { error: "tabs must be an array" });
+    }
+    if (payload.pinnedTids && !Array.isArray(payload.pinnedTids)) {
+      return sendJson(res, 400, { error: "pinnedTids must be an array" });
+    }
+    await writeJsonFile(rulesPath, payload);
+    memory.rules = payload;
+    memory.rulesLoadedAt = Date.now();
+    memory.feedPages.clear();
+    return sendJson(res, 200, { ok: true, rules: payload });
+  }
+
+  if (req.method === "PUT" && reqUrl.pathname === "/api/admin/feed-edition") {
+    const payload = await readJsonBody(req);
+    const pages = payload?.pages;
+    if (!Array.isArray(pages)) {
+      return sendJson(res, 400, { error: "pages must be an array" });
+    }
+    const normalizedPages = pages.map((page) => {
+      const tids = Array.isArray(page) ? page : page?.tids;
+      return (Array.isArray(tids) ? tids : []).map(Number).filter(Number.isFinite);
+    }).filter((page) => page.length);
+    if (!normalizedPages.length) {
+      return sendJson(res, 400, { error: "pages must contain at least one tid" });
+    }
+
+    const raw = await fs.readFile(rulesPath, "utf8");
+    const rules = JSON.parse(raw);
+    rules.feedEditions = {
+      pageSize: Number(payload.pageSize || rules.feedEditions?.pageSize || 10),
+      generatedAt: payload.generatedAt || new Date().toISOString(),
+      strategy: payload.strategy || "daily-curated-batches",
+      notes: Array.isArray(payload.notes) ? payload.notes : [],
+      pages: normalizedPages
+    };
+    await writeJsonFile(rulesPath, rules);
+    memory.rules = rules;
+    memory.rulesLoadedAt = Date.now();
+    memory.feedPages.clear();
+    return sendJson(res, 200, { ok: true, feedEditions: rules.feedEditions });
+  }
+
+  if (req.method === "GET" && reqUrl.pathname === "/api/admin/post-metadata") {
+    const raw = await fs.readFile(metadataPath, "utf8");
+    return sendJson(res, 200, JSON.parse(raw));
+  }
+
+  if (req.method === "PUT" && reqUrl.pathname === "/api/admin/post-metadata") {
+    const payload = await readJsonBody(req);
+    if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
+      return sendJson(res, 400, { error: "post metadata must be a JSON object" });
+    }
+    const data = payload.items ? payload : { items: payload };
+    if (!data.items || typeof data.items !== "object" || Array.isArray(data.items)) {
+      return sendJson(res, 400, { error: "items must be an object" });
+    }
+    await writeJsonFile(metadataPath, data);
+    memory.metadata = data.items;
+    memory.metadataLoadedAt = Date.now();
+    memory.feedPages.clear();
+    return sendJson(res, 200, { ok: true, metadata: data });
+  }
+
+  const metadataMatch = reqUrl.pathname.match(/^\/api\/admin\/post-metadata\/(\d+)$/);
+  if ((req.method === "PATCH" || req.method === "DELETE") && metadataMatch) {
+    const tid = metadataMatch[1];
+    const raw = await fs.readFile(metadataPath, "utf8").catch(() => "{\"items\":{}}");
+    const data = JSON.parse(raw);
+    data.items ||= {};
+    if (req.method === "DELETE") {
+      delete data.items[tid];
+    } else {
+      const payload = await readJsonBody(req);
+      if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
+        return sendJson(res, 400, { error: "metadata patch must be a JSON object" });
+      }
+      data.items[tid] = { ...(data.items[tid] || {}), ...payload };
+    }
+    await writeJsonFile(metadataPath, data);
+    memory.metadata = data.items;
+    memory.metadataLoadedAt = Date.now();
+    memory.feedPages.clear();
+    return sendJson(res, 200, { ok: true, tid: Number(tid), item: data.items[tid] || null });
+  }
+
+  if (req.method === "POST" && reqUrl.pathname === "/api/admin/reload") {
+    memory.feedPages.clear();
+    memory.topicDetails.clear();
+    memory.rules = null;
+    memory.metadata = null;
+    memory.snapshot = null;
+    return sendJson(res, 200, { ok: true });
+  }
+
+  return sendJson(res, 404, { error: "admin route not found" });
+}
+
 async function handleApi(req, reqUrl, res) {
   try {
     if (req.method === "GET" && reqUrl.pathname === "/api/setup/status") {
@@ -928,6 +1124,7 @@ async function handleApi(req, reqUrl, res) {
       await saveSetupConfig(payload);
       return sendJson(res, 200, { ok: true, configured: true });
     }
+    if (reqUrl.pathname.startsWith("/api/admin/")) return await handleAdmin(req, reqUrl, res);
     if (isSetupRequired()) {
       return sendJson(res, 428, { error: "setup required" });
     }

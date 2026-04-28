@@ -89,3 +89,77 @@ GET /api/snapshot/status
 - `endsAt`：活动或报名结束时间
 - `expiresAt`：信息失效时间
 - `priority`：人工推荐加权
+
+首页推荐流优先使用 `feedEditions.pages`。每一个 page 是一版已经设计好的帖子队列，例如每版 10 条。用户加载时按版请求，服务端只在这一版内部做轻微个性化调整：已读内容放到本版后面，未读内容靠前。这样每次懒加载出现的仍然是一版人工/AI 排过的内容。
+
+示例：
+
+```json
+{
+  "feedEditions": {
+    "pageSize": 10,
+    "generatedAt": "2026-04-28T09:00:00+08:00",
+    "strategy": "daily-curated-batches",
+    "notes": ["第一版：今天最该看的信息", "第二版：活动和可收藏信息"],
+    "pages": [
+      [92, 91, 90, 89, 88, 87, 86, 85, 84, 83],
+      [82, 81, 80, 79, 78, 77, 76, 75, 74, 73]
+    ]
+  }
+}
+```
+
+## 隐藏管理接口
+
+管理接口需要 `ADMIN_TOKEN`，可以在首次部署引导里填写；留空时会自动生成并写入 `.env`。
+
+读取推荐规则：
+
+```bash
+curl -H "Authorization: Bearer $ADMIN_TOKEN" \
+  http://127.0.0.1:4100/api/admin/feed-rules
+```
+
+覆盖推荐规则：
+
+```bash
+curl -X PUT \
+  -H "Authorization: Bearer $ADMIN_TOKEN" \
+  -H "Content-Type: application/json" \
+  --data @data/feed-rules.json \
+  http://127.0.0.1:4100/api/admin/feed-rules
+```
+
+只更新每日推荐版面：
+
+```bash
+curl -X PUT \
+  -H "Authorization: Bearer $ADMIN_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"pageSize":10,"notes":["第一版：今天最该看的信息"],"pages":[[92,91,90,89,88,87,86,85,84,83]]}' \
+  http://127.0.0.1:4100/api/admin/feed-edition
+```
+
+读取帖子时效信息：
+
+```bash
+curl -H "Authorization: Bearer $ADMIN_TOKEN" \
+  http://127.0.0.1:4100/api/admin/post-metadata
+```
+
+更新单条帖子的时效信息：
+
+```bash
+curl -X PATCH \
+  -H "Authorization: Bearer $ADMIN_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"timeLabel":"今天 19:30","startsAt":"2026-04-28T19:30:00+08:00","expiresAt":"2026-04-29T00:00:00+08:00","priority":20}' \
+  http://127.0.0.1:4100/api/admin/post-metadata/123
+```
+
+清缓存：
+
+```bash
+curl -X POST -H "Authorization: Bearer $ADMIN_TOKEN" \
+  http://127.0.0.1:4100/api/admin/reload
+```
