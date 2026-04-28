@@ -534,21 +534,45 @@ function extractCover(html = "") {
 }
 
 function extractSourceUrl(html = "") {
-  const linked = html.match(/href=["'](https?:\/\/mp\.weixin\.qq\.com\/[^"']+)["']/i);
+  const linked = html.match(/href=["'](https?:\/\/[^"']+)["']/i);
   if (linked?.[1]) return linked[1].replace(/&amp;/g, "&");
   const text = stripHtml(html);
   const original = text.match(/原文[:：]\s*(https?:\/\/\S+)/);
   if (original?.[1]) return original[1];
-  const anyWechat = text.match(/https?:\/\/mp\.weixin\.qq\.com\/\S+/);
-  return anyWechat?.[0] || "";
+  const anyUrl = text.match(/https?:\/\/\S+/);
+  return anyUrl?.[0] || "";
 }
 
 function removeOriginalLinkBlocks(html = "") {
   return html
-    .replace(/<p>\s*\?{2,}\s*<a[^>]+href=["']https?:\/\/mp\.weixin\.qq\.com\/[^"']+["'][\s\S]*?<\/a>\s*<\/p>/gi, "")
-    .replace(/<p>\s*原文[:：]\s*<a[^>]+href=["']https?:\/\/mp\.weixin\.qq\.com\/[^"']+["'][\s\S]*?<\/a>\s*<\/p>/gi, "")
-    .replace(/<p>\s*原文[:：]\s*https?:\/\/mp\.weixin\.qq\.com\/[^<\s]+?\s*<\/p>/gi, "")
+    .replace(/<p>\s*\?{2,}\s*<a[^>]+href=["']https?:\/\/[^"']+["'][\s\S]*?<\/a>\s*<\/p>/gi, "")
+    .replace(/<p>\s*原文[:：]\s*<a[^>]+href=["']https?:\/\/[^"']+["'][\s\S]*?<\/a>\s*<\/p>/gi, "")
+    .replace(/<p>\s*原文[:：]\s*https?:\/\/[^<\s]+?\s*<\/p>/gi, "")
     .trim();
+}
+
+function renderInlineMarkdown(value = "") {
+  return escapeHtml(value).replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+}
+
+function renderPostContent(content = "") {
+  const cleaned = removeOriginalLinkBlocks(content);
+  if (/<(p|img|h[1-6]|ul|ol|blockquote|div)\b/i.test(cleaned)) return cleaned;
+  return cleaned
+    .split(/\n{2,}/)
+    .map((block) => block.trim())
+    .filter(Boolean)
+    .filter((block) => !/^#[^\s#]/.test(block))
+    .map((block) => {
+      const image = block.match(/^!\[([^\]]*)]\((https?:\/\/[^)\s]+)\)$/i);
+      if (image) {
+        return `<p><img src="${escapeHtml(image[2])}" alt="${escapeHtml(image[1] || "image")}" loading="lazy" /></p>`;
+      }
+      const heading = block.match(/^\*\*([^*]+)\*\*$/);
+      if (heading) return `<h3>${escapeHtml(heading[1])}</h3>`;
+      return `<p>${renderInlineMarkdown(block).replace(/\n/g, "<br>")}</p>`;
+    })
+    .join("\n");
 }
 
 function extractSummary(html = "", title = "") {
@@ -557,6 +581,7 @@ function extractSummary(html = "", title = "") {
     .map((line) => line.trim())
     .filter(Boolean)
     .filter((line) => !line.startsWith("#"))
+    .filter((line) => !/^!\[[^\]]*]\(https?:\/\//.test(line))
     .filter((line) => !/^原文[:：]/.test(line))
     .filter((line) => !/^信息来自/.test(line))
     .filter((line) => line !== title);
@@ -594,7 +619,7 @@ function normalizeTopic(topic, detail = null, metadata = {}) {
     author: firstPost?.user?.username || topic?.user?.username || "猴岛情报站",
     replyCount: detail?.postcount ? Math.max(0, detail.postcount - 1) : topic?.postcount || 0,
     nodebbUrl: `${config.nodebbBaseUrl}/topic/${tid}`,
-    sourceUrl: extractSourceUrl(contentHtml)
+    sourceUrl: meta.sourceUrl || extractSourceUrl(contentHtml)
   };
 }
 
@@ -764,11 +789,12 @@ async function handlePostDetail(tid, res) {
     return;
   }
   const firstPost = detail?.posts?.[0] || {};
-  const sourceUrl = extractSourceUrl(firstPost.content || "");
+  const meta = metadata[String(tid)] || {};
+  const sourceUrl = meta.sourceUrl || extractSourceUrl(firstPost.content || "");
   sendJson(res, 200, {
     ...normalizeTopic({ tid }, detail, metadata),
     sourceUrl,
-    contentHtml: removeOriginalLinkBlocks(firstPost.content || ""),
+    contentHtml: renderPostContent(firstPost.content || ""),
     dataMode: config.dataMode,
     dataSource: snapshot?.source || "api",
     raw: {

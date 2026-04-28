@@ -137,7 +137,7 @@ function originalLinkTemplate(post) {
   if (!url) return "";
   return `
     <a class="source-link" href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">
-      公众号原文
+      跳转到原文
     </a>
   `;
 }

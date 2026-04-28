@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-04-27T14:08:50.132Z",
+  "generatedAt": "2026-04-28T05:51:20.556Z",
   "items": {
     "9": {
       "timeLabel": "4月27日至5月4日",
@@ -673,6 +673,46 @@
       "expiresAt": null,
       "priority": 12,
       "sourceTimeText": "俱乐部每周三定期开展，地点在专享楼 A 座 101 图书馆会议室区域，面向海南国际学院全体学生，不限专业、年级和英语水平。首次活动分初级班 15:00-16:00、中高级班 17:00-18:00，后续按周三持续"
+    },
+    "93": {
+      "timeLabel": "长期参考",
+      "startsAt": null,
+      "endsAt": null,
+      "expiresAt": null,
+      "priority": 6,
+      "sourceUrl": "https://www.study-hn.cn/NewsDetail/a9442f5345bd42ef8a3f1de7e88626ad/MjAyNi0wMi0wMg==/1?nav=%5B%5D"
+    },
+    "94": {
+      "timeLabel": "长期参考",
+      "startsAt": null,
+      "endsAt": null,
+      "expiresAt": null,
+      "priority": 6,
+      "sourceUrl": "https://www.study-hn.cn/NewsDetail/a9442f5345bd42ef8a3f1de7e88626ad/MjAyNi0wMi0wMg==/1?nav=%5B%5D"
+    },
+    "95": {
+      "timeLabel": "长期参考",
+      "startsAt": null,
+      "endsAt": null,
+      "expiresAt": null,
+      "priority": 6,
+      "sourceUrl": "https://www.study-hn.cn/NewsDetail/a9442f5345bd42ef8a3f1de7e88626ad/MjAyNi0wMi0wMg==/1?nav=%5B%5D"
+    },
+    "96": {
+      "timeLabel": "长期参考",
+      "startsAt": null,
+      "endsAt": null,
+      "expiresAt": null,
+      "priority": 6,
+      "sourceUrl": "https://www.study-hn.cn/NewsDetail/a9442f5345bd42ef8a3f1de7e88626ad/MjAyNi0wMi0wMg==/1?nav=%5B%5D"
+    },
+    "97": {
+      "timeLabel": "长期参考",
+      "startsAt": null,
+      "endsAt": null,
+      "expiresAt": null,
+      "priority": 6,
+      "sourceUrl": "https://www.study-hn.cn/NewsDetail/8b548310bcdb43adaf128265b72ca43a/MjAyNS0xMi0wMg==/1?nav=%5B%5D"
     }
   }
 }
