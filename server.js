@@ -328,6 +328,12 @@ function addUid(url) {
   return url;
 }
 
+function withNodebbUid(apiPath, uid) {
+  const url = new URL(apiPath, config.nodebbBaseUrl);
+  url.searchParams.set("_uid", String(uid || config.nodebbUid));
+  return `${url.pathname}${url.search}`;
+}
+
 async function nodebbFetch(apiPath, options = {}) {
   const url = addUid(new URL(apiPath, config.nodebbBaseUrl));
   const headers = {
@@ -626,6 +632,8 @@ function publicAuthUser(user = null) {
     id: user.id,
     email: user.email,
     username: user.username,
+    avatarUrl: user.avatarUrl || "",
+    nodebbUid: user.nodebbUid || null,
     institution: user.institution || "",
     tags: user.tags || [],
     identityTags: allowedIdentityTags(user),
@@ -649,6 +657,73 @@ function normalizeLogin(value = "") {
 function findUserByLogin(store, login = "") {
   const value = normalizeLogin(login);
   return store.users.find((user) => normalizeLogin(user.email) === value || normalizeLogin(user.username) === value) || null;
+}
+
+function normalizeNodebbUsers(data) {
+  if (Array.isArray(data?.users)) return data.users;
+  if (Array.isArray(data)) return data;
+  if (data?.uid) return [data];
+  return [];
+}
+
+async function findNodebbUserByUsername(username = "") {
+  const target = normalizeLogin(username);
+  if (!target) return null;
+  const endpoints = [
+    `/api/users?query=${encodeURIComponent(username)}`,
+    `/api/search/users?query=${encodeURIComponent(username)}`
+  ];
+  for (const endpoint of endpoints) {
+    try {
+      const data = await nodebbFetch(endpoint);
+      const users = normalizeNodebbUsers(data);
+      const found = users.find((item) => normalizeLogin(item.username) === target || normalizeLogin(item.userslug) === target);
+      if (found?.uid) return found;
+    } catch {
+      // Try the next public lookup shape supported by this NodeBB instance.
+    }
+  }
+  return null;
+}
+
+async function createNodebbUserForLian(user = {}) {
+  const email = user.email || `${String(user.id || crypto.randomUUID()).replace(/[^a-z0-9-]/gi, "")}@lian.local`;
+  const password = crypto.randomBytes(18).toString("base64url");
+  const body = {
+    username: user.username,
+    email,
+    password
+  };
+  const data = await nodebbFetch("/api/v3/users", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json; charset=utf-8",
+      authorization: `Bearer ${config.nodebbToken}`
+    },
+    body: JSON.stringify(body)
+  });
+  const created = data?.response || data?.user || data;
+  const uid = Number(created?.uid || data?.uid);
+  if (!uid) throw new Error("NodeBB user was created but uid was not returned");
+  return { uid, username: created?.username || user.username };
+}
+
+async function ensureNodebbUid(auth) {
+  if (!auth?.user) throw new Error("login required");
+  if (!config.nodebbToken) throw new Error("NODEBB_API_TOKEN is missing");
+  const cached = Number(auth.user.nodebbUid || 0);
+  if (cached) return cached;
+
+  const existing = await findNodebbUserByUsername(auth.user.username);
+  const nodebbUser = existing?.uid ? existing : await createNodebbUserForLian(auth.user);
+  const uid = Number(nodebbUser.uid);
+  if (!uid) throw new Error("cannot resolve NodeBB uid for this LIAN user");
+
+  auth.user.nodebbUid = uid;
+  auth.user.nodebbUsername = nodebbUser.username || auth.user.username;
+  auth.user.nodebbLinkedAt = new Date().toISOString();
+  await saveAuthStore(auth.store);
+  return uid;
 }
 
 function createEmailCode() {
@@ -946,6 +1021,7 @@ function extractSummary(html = "", title = "") {
 function normalizeTopic(topic, detail = null, metadata = {}) {
   const firstPost = detail?.posts?.[0] || {};
   const contentHtml = firstPost.content || topic?.teaser?.content || "";
+  const userMeta = parseLianUserMeta(contentHtml);
   const tags = Array.isArray(detail?.tags) && detail.tags.length ? detail.tags : topic?.tags || [];
   const tag = tags[0]?.value || tags[0]?.name || "";
   const timestampISO = detail?.timestampISO || topic?.timestampISO || firstPost.timestampISO || "";
@@ -968,7 +1044,11 @@ function normalizeTopic(topic, detail = null, metadata = {}) {
     expiresAt: meta.expiresAt || null,
     priority: Number(meta.priority || 0),
     isExpired: Boolean(meta.expiresAt && Date.now() > Date.parse(meta.expiresAt)),
-    author: firstPost?.user?.username || topic?.user?.username || "猴岛情报站",
+    author: userMeta.username || firstPost?.user?.username || topic?.user?.username || "猴岛情报站",
+    authorUserId: userMeta.userId || "",
+    authorIdentityTag: userMeta.identityTag || "",
+    authorAvatarText: userMeta.avatarText || String(userMeta.username || "").slice(0, 1),
+    authorAvatarUrl: userMeta.avatarUrl || "",
     replyCount: detail?.postcount ? Math.max(0, detail.postcount - 1) : topic?.postcount || 0,
     nodebbUrl: `${config.nodebbBaseUrl}/topic/${tid}`,
     sourceUrl: meta.sourceUrl || extractSourceUrl(contentHtml)
@@ -995,6 +1075,8 @@ function normalizeChannelEvent(topic = {}, post = {}, reads = {}) {
     .trim();
   const title = post.index > 0 ? `回复了：${topic.titleRaw || topic.title || ""}` : topic.titleRaw || topic.title || "校园动态";
   const readerSet = Array.isArray(reads.items?.[id]?.readers) ? reads.items[id].readers : [];
+  const postUser = post.user || topic.user || {};
+  const fallbackUsername = postUser.username && postUser.username !== "猴岛情报站" ? postUser.username : "";
   return {
     id,
     type: isChannelTopic(topic) ? "channel_message" : (post.index > 0 ? "post_reply" : "topic"),
@@ -1005,9 +1087,10 @@ function normalizeChannelEvent(topic = {}, post = {}, reads = {}) {
     excerpt: text.length > 120 ? `${text.slice(0, 120)}...` : text,
     cover: extractCover(content),
     userId: meta.userId || "",
-    username: meta.username || "",
+    username: meta.username || fallbackUsername,
     identityTag: meta.identityTag || "",
-    avatarText: meta.avatarText || String(meta.username || "同").slice(0, 1),
+    avatarText: meta.avatarText || String(meta.username || fallbackUsername || "同").slice(0, 1),
+    avatarUrl: meta.avatarUrl || postUser.picture || postUser.userslugpicture || "",
     timestampISO: post.timestampISO || topic.timestampISO || "",
     timeLabel: post.timestampISO || topic.timestampISO || "",
     readCount: readerSet.length,
@@ -1183,12 +1266,18 @@ async function handlePostDetail(tid, res) {
   const firstPost = detail?.posts?.[0] || {};
   const meta = metadata[String(tid)] || {};
   const sourceUrl = meta.sourceUrl || extractSourceUrl(firstPost.content || "");
-  const replies = (detail?.posts || []).slice(1).map((post) => ({
-    pid: post.pid,
-    username: post.user?.username || "",
-    timestampISO: post.timestampISO || "",
-    contentHtml: renderPostContent(post.content || "")
-  }));
+  const replies = (detail?.posts || []).slice(1).map((post) => {
+    const userMeta = parseLianUserMeta(post.content || "");
+    return {
+      pid: post.pid,
+      username: userMeta.username || post.user?.username || "",
+      identityTag: userMeta.identityTag || "",
+      avatarText: userMeta.avatarText || String(userMeta.username || post.user?.username || "同").slice(0, 1),
+      avatarUrl: userMeta.avatarUrl || post.user?.picture || "",
+      timestampISO: post.timestampISO || "",
+      contentHtml: renderPostContent(post.content || "")
+    };
+  });
   sendJson(res, 200, {
     ...normalizeTopic({ tid }, detail, metadata),
     sourceUrl,
@@ -1346,6 +1435,29 @@ function userSignature(user) {
   return `\n\n<p style="color:#69706b;font-size:13px">来自 ${escapeHtml(user.username || "同学")}${escapeHtml(tags)}</p>`;
 }
 
+function buildLianUserMeta(user = {}, identityTag = "") {
+  if (!user?.id) return "";
+  const meta = {
+    userId: user.id,
+    username: user.username || "",
+    identityTag: identityTag || selectIdentityTag(user),
+    avatarText: String(user.username || "同").slice(0, 1),
+    avatarUrl: user.avatarUrl || "",
+    sentAt: new Date().toISOString()
+  };
+  return `<!-- lian-user-meta ${escapeHtml(JSON.stringify(meta))} -->`;
+}
+
+function parseLianUserMeta(content = "") {
+  const raw = String(content).match(/<!--\s*lian-user-meta\s+([\s\S]*?)\s*-->/)?.[1];
+  if (!raw) return {};
+  try {
+    return JSON.parse(raw.replace(/&quot;/g, '"').replace(/&amp;/g, "&"));
+  } catch {
+    return {};
+  }
+}
+
 function parseLianChannelMeta(content = "") {
   const raw = String(content).match(/<!--\s*lian-channel-meta\s+([\s\S]*?)\s*-->/)?.[1];
   if (!raw) return {};
@@ -1373,6 +1485,7 @@ function buildChannelMessageHtml(content, user, identityTag) {
     username: user.username,
     identityTag: selectIdentityTag(user, identityTag),
     avatarText: String(user.username || "同").slice(0, 1),
+    avatarUrl: user.avatarUrl || "",
     sentAt: new Date().toISOString()
   };
   return `<!-- lian-channel-meta ${escapeHtml(JSON.stringify(meta))} -->\n${buildTextPostHtml(content)}`;
@@ -1380,6 +1493,7 @@ function buildChannelMessageHtml(content, user, identityTag) {
 
 function buildTopicHtml(payload) {
   const blocks = [];
+  if (payload.currentUser) blocks.push(buildLianUserMeta(payload.currentUser));
   if (payload.imageUrl) {
     blocks.push(`<img src="${escapeHtml(payload.imageUrl)}" alt="${escapeHtml(payload.title || "cover")}" style="max-width:100%;height:auto" />`);
   }
@@ -1413,6 +1527,7 @@ async function handleCreatePost(req, res) {
     sendJson(res, 400, { error: "title is required" });
     return;
   }
+  const nodebbUid = await ensureNodebbUid(auth);
   const content = buildTopicHtml({ ...payload, currentUser: auth.user });
   const body = {
     cid: Number(payload.cid || config.nodebbCid),
@@ -1420,7 +1535,7 @@ async function handleCreatePost(req, res) {
     content,
     tags: payload.tag ? [payload.tag] : undefined
   };
-  const data = await nodebbFetch("/api/v3/topics", {
+  const data = await nodebbFetch(withNodebbUid("/api/v3/topics", nodebbUid), {
     method: "POST",
     headers: {
       "content-type": "application/json; charset=utf-8",
@@ -1441,10 +1556,10 @@ function buildTextPostHtml(content = "") {
     .join("\n\n");
 }
 
-async function replyToNodebbTopic(tid, content, user = null) {
+async function replyToNodebbTopic(tid, content, user = null, nodebbUid = null) {
   const html = String(content || "").trim().startsWith("<!-- lian-channel-meta")
     ? String(content || "").trim()
-    : `${buildTextPostHtml(content)}${userSignature(user)}`.trim();
+    : `${buildLianUserMeta(user)}\n${buildTextPostHtml(content)}${userSignature(user)}`.trim();
   const body = { content: html };
   const options = {
     method: "POST",
@@ -1455,8 +1570,8 @@ async function replyToNodebbTopic(tid, content, user = null) {
     body: JSON.stringify(body)
   };
   const attempts = [
-    `/api/v3/topics/${tid}`,
-    `/api/v3/topics/${tid}/posts`
+    withNodebbUid(`/api/v3/topics/${tid}`, nodebbUid || config.nodebbUid),
+    withNodebbUid(`/api/v3/topics/${tid}/posts`, nodebbUid || config.nodebbUid)
   ];
   let lastError;
   for (const endpoint of attempts) {
@@ -1548,12 +1663,13 @@ async function handleChannelMessage(req, res) {
   const identityTag = selectIdentityTag(auth.user, String(payload.identityTag || ""));
   if (!content) return sendJson(res, 400, { error: "content is required" });
   if (content.length > 800) return sendJson(res, 400, { error: "content is too long" });
+  const nodebbUid = await ensureNodebbUid(auth);
 
   let data;
   if (config.nodebbChannelTopicTid) {
-    data = await replyToNodebbTopic(config.nodebbChannelTopicTid, buildChannelMessageHtml(content, auth.user, identityTag), null);
+    data = await replyToNodebbTopic(config.nodebbChannelTopicTid, buildChannelMessageHtml(content, auth.user, identityTag), auth.user, nodebbUid);
   } else {
-    data = await nodebbFetch("/api/v3/topics", {
+    data = await nodebbFetch(withNodebbUid("/api/v3/topics", nodebbUid), {
       method: "POST",
       headers: {
         "content-type": "application/json; charset=utf-8",
@@ -1580,7 +1696,8 @@ async function handleCreateReply(tid, req, res) {
   const content = String(payload.content || "").trim();
   if (!content) return sendJson(res, 400, { error: "content is required" });
   if (content.length > 2000) return sendJson(res, 400, { error: "content is too long" });
-  const data = await replyToNodebbTopic(tid, content, auth.user);
+  const nodebbUid = await ensureNodebbUid(auth);
+  const data = await replyToNodebbTopic(tid, content, auth.user, nodebbUid);
   memory.feedPages.clear();
   memory.topicDetails.delete(Number(tid));
   sendJson(res, 200, data);
@@ -1613,6 +1730,18 @@ async function handleAuthRules(res) {
 
 async function handleAuthMe(req, res) {
   const auth = await getCurrentUser(req);
+  sendJson(res, 200, { user: publicAuthUser(auth.user) });
+}
+
+async function handleAuthAvatar(req, res) {
+  const auth = await requireUser(req);
+  const payload = await readJsonBody(req);
+  const avatarUrl = String(payload.avatarUrl || "").trim();
+  if (avatarUrl && !/^https:\/\/res\.cloudinary\.com\/[^/]+\/image\/upload\//.test(avatarUrl)) {
+    return sendJson(res, 400, { error: "avatarUrl is not allowed" });
+  }
+  auth.user.avatarUrl = avatarUrl;
+  await saveAuthStore(auth.store);
   sendJson(res, 200, { user: publicAuthUser(auth.user) });
 }
 
@@ -1942,6 +2071,7 @@ async function handleApi(req, reqUrl, res) {
     }
     if (req.method === "GET" && reqUrl.pathname === "/api/auth/rules") return await handleAuthRules(res);
     if (req.method === "GET" && reqUrl.pathname === "/api/auth/me") return await handleAuthMe(req, res);
+    if (req.method === "POST" && reqUrl.pathname === "/api/auth/avatar") return await handleAuthAvatar(req, res);
     if (req.method === "POST" && reqUrl.pathname === "/api/auth/email-code") return await handleSendEmailCode(req, res);
     if (req.method === "POST" && reqUrl.pathname === "/api/auth/register") return await handleAuthRegister(req, res);
     if (req.method === "POST" && reqUrl.pathname === "/api/auth/login") return await handleAuthLogin(req, res);

@@ -58,6 +58,10 @@ button {
   padding-top: 0;
 }
 
+.view-feed .masonry {
+  padding-top: 56px;
+}
+
 .detail-view {
   padding: 0 0 24px;
 }
@@ -134,14 +138,17 @@ button {
 }
 
 .chips {
-  position: sticky;
+  position: fixed;
   top: 0;
+  left: 50%;
   z-index: 20;
   display: flex;
   gap: 8px;
   overflow-x: auto;
-  margin: 0 -12px;
+  width: min(100%, 540px);
+  margin: 0;
   padding: calc(8px + env(safe-area-inset-top)) 12px 12px;
+  transform: translateX(-50%);
   background: rgba(255, 255, 255, 0.96);
   backdrop-filter: blur(14px);
   border-bottom: 1px solid rgba(231, 227, 218, 0.8);
@@ -531,6 +538,15 @@ button {
   font-weight: 900;
 }
 
+.message-avatar img,
+.composer-avatar img,
+.profile-avatar img {
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  object-fit: cover;
+}
+
 .message-bubble {
   max-width: 84%;
   padding: 9px 10px 8px;
@@ -668,13 +684,45 @@ dialog::backdrop {
 }
 
 .auth-tab,
-.profile-actions button {
+.profile-actions button,
+.profile-actions-button {
+  display: inline-grid;
+  place-items: center;
   min-height: 38px;
   padding: 0 12px;
   border-radius: 8px;
   background: #f2f0eb;
   color: #26312b;
   font-weight: 800;
+}
+
+.profile-card {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr);
+  gap: 12px;
+  align-items: center;
+}
+
+.profile-avatar {
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: #cfeadd;
+  color: var(--green);
+  font-size: 22px;
+  font-weight: 900;
+}
+
+.profile-avatar-actions {
+  display: flex;
+  gap: 8px;
+  margin: 12px 0;
+}
+
+.profile-avatar-actions input {
+  display: none;
 }
 
 .auth-tab.is-active {

@@ -111,7 +111,7 @@ const campusMapPosts = [
     placeName: "大墩村",
     x: 1206,
     y: 337,
-    imageUrl: "/snapshot-assets/ccd6274001d9d91c12a71d8043af304c721870af.png"
+    imageUrl: "https://res.cloudinary.com/dhvyvfu4n/image/upload/f_auto,q_auto,c_limit,w_900/v1777366344/nodebb-frontend/menu-covers/ejqsdbg25kcruwotkeba.png"
   },
   {
     tid: 100,
@@ -121,7 +121,7 @@ const campusMapPosts = [
     placeName: "中国传媒大学专享楼",
     x: 573,
     y: 548,
-    imageUrl: "/snapshot-assets/50a243a75711a352b4bbaa3c1e035fc0f8fc7f54.jpg"
+    imageUrl: "https://res.cloudinary.com/dhvyvfu4n/image/upload/f_auto,q_auto,c_fill,w_360,h_260/v1777446554/nodebb-frontend/mobile-web-upload/lp1l2knbyazsod3ikykj.jpg"
   }
 ];
 
@@ -156,6 +156,13 @@ function escapeHtml(value = "") {
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;");
+}
+
+function avatarHtml({ url = "", text = "同" } = {}) {
+  const label = String(text || "同").slice(0, 2);
+  return url
+    ? `<img src="${escapeHtml(url)}" alt="${escapeHtml(label)}">`
+    : escapeHtml(label);
 }
 
 function fixFmtDate(value) {
@@ -208,7 +215,10 @@ function renderChannelIdentityOptions() {
     : `<option value="">同学</option>`;
   select.disabled = !tags.length;
   const avatar = $("#channelComposerAvatar");
-  if (avatar) avatar.textContent = String(state.currentUser?.username || "同").slice(0, 1);
+  if (avatar) avatar.innerHTML = avatarHtml({
+    url: state.currentUser?.avatarUrl || "",
+    text: state.currentUser?.username || "同"
+  });
 }
 
 function openAuth(mode = "login") {
@@ -782,7 +792,10 @@ function channelItemTemplate(item) {
   const own = state.currentUser?.id && item.userId === state.currentUser.id;
   const name = item.username || "同学";
   const tag = item.identityTag || "";
-  const avatar = escapeHtml(item.avatarText || name.slice(0, 1) || "同").slice(0, 2);
+  const avatar = avatarHtml({
+    url: item.avatarUrl || "",
+    text: item.avatarText || name.slice(0, 1) || "同"
+  });
   const identity = tag ? `${name} · ${tag}` : name;
   return `
     <article class="message-item ${own ? "is-own" : "is-other"} ${item.type === "channel_message" ? "is-chat" : ""}" data-message-id="${escapeHtml(item.id || "")}">
@@ -1010,9 +1023,20 @@ async function loadProfile() {
     const user = await loadAuthMe();
     if (user) {
       panel.innerHTML = `
-        <h2>${escapeHtml(user.username)}</h2>
-        <p>${escapeHtml(user.email)}</p>
-        <p>${escapeHtml(user.institution || "邀请码用户")}</p>
+        <div class="profile-card">
+          <div class="profile-avatar">${avatarHtml({ url: user.avatarUrl || "", text: user.username || "同" })}</div>
+          <div>
+            <h2>${escapeHtml(user.username)}</h2>
+            <p>${escapeHtml(user.email || "邀请码用户")}</p>
+            <p>${escapeHtml(user.institution || "邀请码用户")}</p>
+          </div>
+        </div>
+        <div class="profile-avatar-actions">
+          <label class="profile-actions-button">
+            更换头像
+            <input id="avatarInput" type="file" accept="image/*">
+          </label>
+        </div>
         <p>${escapeHtml((user.tags || []).join(" · "))}</p>
         <p>状态：${escapeHtml(user.status)} · 邀请权限：${user.invitePermission ? "可用" : "不可用"}</p>
         <div class="profile-actions">
@@ -1034,6 +1058,22 @@ async function loadProfile() {
     `;
   } catch (error) {
     panel.innerHTML = `<div class="empty-state">${escapeHtml(error.message)}</div>`;
+  }
+}
+
+async function changeAvatar(file) {
+  if (!file) return;
+  const panel = $("#profilePanel");
+  try {
+    const avatarUrl = await uploadImage(file);
+    await api("/api/auth/avatar", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ avatarUrl })
+    });
+    await loadProfile();
+  } catch (error) {
+    panel.insertAdjacentHTML("beforeend", `<p class="empty-state">${escapeHtml(error.message)}</p>`);
   }
 }
 
@@ -1194,6 +1234,9 @@ $("#publishForm").addEventListener("submit", submitPost);
 $("#channelForm")?.addEventListener("submit", submitChannelMessage);
 $("#authForm")?.addEventListener("submit", submitAuth);
 document.addEventListener("submit", submitReply);
+document.addEventListener("change", (event) => {
+  if (event.target?.id === "avatarInput") changeAvatar(event.target.files?.[0]);
+});
 
 window.addEventListener("scroll", maybePreloadFeed, { passive: true });
 window.addEventListener("scroll", maybeLoadOlderMessages, { passive: true });
