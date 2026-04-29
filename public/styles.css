@@ -451,6 +451,10 @@ button {
   filter: drop-shadow(0 3px 5px rgba(0, 0, 0, 0.28));
 }
 
+.view[data-view="messages"] {
+  padding-bottom: calc(140px + env(safe-area-inset-bottom));
+}
+
 .message-list,
 .profile-panel {
   display: grid;
@@ -466,8 +470,9 @@ button {
 }
 
 .message-item h3 {
-  margin: 0;
+  margin: 6px 0 0;
   font-size: 15px;
+  line-height: 1.35;
 }
 
 .message-item p,
@@ -476,6 +481,67 @@ button {
   color: var(--muted);
   font-size: 12px;
   line-height: 1.45;
+}
+
+.message-meta,
+.reply-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.message-item footer {
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.message-item.is-chat {
+  background: #fbfaf7;
+}
+
+.channel-composer {
+  position: fixed;
+  left: 50%;
+  bottom: calc(64px + env(safe-area-inset-bottom));
+  z-index: 8;
+  display: grid;
+  grid-template-columns: 1fr 68px;
+  gap: 8px;
+  width: min(calc(100% - 24px), 516px);
+  margin: 0;
+  padding: 8px;
+  transform: translateX(-50%);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(14px);
+}
+
+.channel-composer input,
+.reply-form textarea {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fbfaf7;
+  color: var(--ink);
+  outline: none;
+}
+
+.channel-composer input {
+  min-height: 38px;
+  padding: 0 10px;
+}
+
+.channel-composer button,
+.reply-form button {
+  min-height: 38px;
+  border-radius: 8px;
+  background: var(--ink);
+  color: #fff;
+  font-weight: 800;
 }
 
 dialog {
@@ -495,6 +561,60 @@ dialog::backdrop {
   max-height: calc(100vh - 36px);
   overflow: auto;
   background: #fff;
+}
+
+.auth-sheet form {
+  padding: 14px;
+  background: #fff;
+}
+
+.auth-tabs,
+.profile-actions {
+  display: flex;
+  gap: 8px;
+  margin: 0 0 12px;
+}
+
+.auth-tab,
+.profile-actions button {
+  min-height: 38px;
+  padding: 0 12px;
+  border-radius: 8px;
+  background: #f2f0eb;
+  color: #26312b;
+  font-weight: 800;
+}
+
+.auth-tab.is-active {
+  background: var(--ink);
+  color: #fff;
+}
+
+.auth-register-only.is-hidden,
+.auth-login-only.is-hidden {
+  display: none;
+}
+
+.auth-code-row {
+  display: grid;
+  grid-template-columns: 1fr 68px;
+  gap: 8px;
+}
+
+.auth-code-row button {
+  min-height: 40px;
+  border-radius: 8px;
+  background: #f2f0eb;
+  color: #26312b;
+  font-weight: 800;
+}
+
+.auth-note,
+.invite-result {
+  margin: 0 0 12px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
 }
 
 .sheet-close {
@@ -549,6 +669,47 @@ dialog::backdrop {
 .nodebb-html a {
   color: var(--blue);
   overflow-wrap: anywhere;
+}
+
+.reply-panel {
+  margin-top: 22px;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+
+.reply-panel h3 {
+  margin: 0 0 10px;
+  font-size: 17px;
+}
+
+.reply-list {
+  display: grid;
+  gap: 10px;
+}
+
+.reply-item {
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fbfaf7;
+}
+
+.reply-empty {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.reply-form {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.reply-form textarea {
+  min-height: 88px;
+  padding: 10px;
+  resize: vertical;
 }
 
 .source-link {

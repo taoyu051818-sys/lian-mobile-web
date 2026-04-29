@@ -33,6 +33,10 @@
           </div>
         </header>
         <section class="message-list" id="messageList"></section>
+        <form class="channel-composer" id="channelForm">
+          <input name="content" maxlength="800" autocomplete="off" placeholder="说点什么">
+          <button type="submit">发送</button>
+        </form>
       </section>
 
       <section class="view" data-view="profile">
@@ -98,6 +102,48 @@
         <input name="mapX" type="hidden">
         <input name="mapY" type="hidden">
         <button class="primary" type="submit">发布到 NodeBB</button>
+      </form>
+    </dialog>
+
+    <dialog class="auth-sheet" id="authSheet">
+      <form method="dialog" id="authForm">
+        <header>
+          <h2>登录 / 注册</h2>
+          <button class="sheet-close" type="button" data-close-auth aria-label="关闭">×</button>
+        </header>
+        <div class="auth-tabs">
+          <button class="auth-tab is-active" type="button" data-auth-mode="login">登录</button>
+          <button class="auth-tab" type="button" data-auth-mode="register">注册</button>
+        </div>
+        <label class="auth-login-only">
+          邮箱或昵称
+          <input name="login" autocomplete="username">
+        </label>
+        <label class="auth-register-only">
+          昵称
+          <input name="username" maxlength="30" autocomplete="nickname">
+        </label>
+        <label class="auth-register-only">
+          高校邮箱
+          <input name="email" type="email" autocomplete="email" placeholder="邀请码注册可不填">
+        </label>
+        <label class="auth-register-only">
+          邮箱验证码
+          <div class="auth-code-row">
+            <input name="emailCode" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="高校邮箱注册填写">
+            <button type="button" data-send-email-code>发送</button>
+          </div>
+        </label>
+        <label>
+          密码
+          <input name="password" type="password" required minlength="8" autocomplete="current-password">
+        </label>
+        <label class="auth-register-only">
+          邀请码
+          <input name="inviteCode" autocomplete="off" placeholder="非高校邮箱时填写">
+        </label>
+        <p class="auth-note" id="authNote">高校邮箱注册需要验证码；邀请码注册可以不填邮箱。</p>
+        <button class="primary" type="submit">登录</button>
       </form>
     </dialog>
 

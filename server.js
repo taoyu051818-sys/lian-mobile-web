@@ -8,6 +8,8 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const publicDir = path.join(__dirname, "public");
 const rulesPath = path.join(__dirname, "data", "feed-rules.json");
 const metadataPath = path.join(__dirname, "data", "post-metadata.json");
+const channelReadsPath = path.join(__dirname, "data", "channel-reads.json");
+const authUsersPath = path.join(__dirname, "data", "auth-users.json");
 const snapshotPath = path.join(__dirname, "data", "nodebb-snapshot.json");
 const snapshotAssetDir = path.join(publicDir, "snapshot-assets");
 const envPath = path.join(__dirname, ".env");
@@ -48,8 +50,18 @@ const config = {
   nodebbToken: process.env.NODEBB_API_TOKEN || "",
   nodebbUid: Number(process.env.NODEBB_UID || 2),
   nodebbCid: Number(process.env.NODEBB_CID || 2),
+  nodebbChannelCid: Number(process.env.NODEBB_CHANNEL_CID || process.env.NODEBB_CID || 2),
+  nodebbChannelCidConfigured: Boolean(process.env.NODEBB_CHANNEL_CID),
+  nodebbChannelTopicTid: Number(process.env.NODEBB_CHANNEL_TOPIC_TID || 0),
   cloudinaryUrl: process.env.CLOUDINARY_URL || "",
   adminToken: process.env.ADMIN_TOKEN || "",
+  mailFrom: process.env.MAIL_FROM || "",
+  resendApiKey: process.env.RESEND_API_KEY || "",
+  smtpHost: process.env.SMTP_HOST || "",
+  smtpPort: Number(process.env.SMTP_PORT || 587),
+  smtpUser: process.env.SMTP_USER || "",
+  smtpPass: process.env.SMTP_PASS || "",
+  smtpSecure: String(process.env.SMTP_SECURE || "").toLowerCase() === "true",
   dataMode: (process.env.DATA_MODE || "live").toLowerCase(),
   snapshotRetryAttempts: Number(process.env.SNAPSHOT_RETRY_ATTEMPTS || 3)
 };
@@ -72,7 +84,14 @@ async function saveSetupConfig(payload = {}) {
     DATA_MODE: String(payload.dataMode || config.dataMode || "snapshot").toLowerCase(),
     SNAPSHOT_RETRY_ATTEMPTS: String(Number(payload.snapshotRetryAttempts || config.snapshotRetryAttempts || 3)),
     CLOUDINARY_URL: String(payload.cloudinaryUrl || config.cloudinaryUrl || "").trim(),
-    ADMIN_TOKEN: String(payload.adminToken || config.adminToken || crypto.randomBytes(24).toString("hex")).trim()
+    ADMIN_TOKEN: String(payload.adminToken || config.adminToken || crypto.randomBytes(24).toString("hex")).trim(),
+    MAIL_FROM: String(payload.mailFrom || config.mailFrom || "").trim(),
+    RESEND_API_KEY: String(payload.resendApiKey || config.resendApiKey || "").trim(),
+    SMTP_HOST: String(payload.smtpHost || config.smtpHost || "").trim(),
+    SMTP_PORT: String(Number(payload.smtpPort || config.smtpPort || 587)),
+    SMTP_USER: String(payload.smtpUser || config.smtpUser || "").trim(),
+    SMTP_PASS: String(payload.smtpPass || config.smtpPass || "").trim(),
+    SMTP_SECURE: String(payload.smtpSecure ?? config.smtpSecure ?? false)
   };
 
   if (!next.NODEBB_BASE_URL) throw new Error("NODEBB_BASE_URL is required");
@@ -90,7 +109,14 @@ async function saveSetupConfig(payload = {}) {
     `DATA_MODE=${next.DATA_MODE}`,
     `SNAPSHOT_RETRY_ATTEMPTS=${next.SNAPSHOT_RETRY_ATTEMPTS}`,
     `CLOUDINARY_URL=${quoteEnvValue(next.CLOUDINARY_URL)}`,
-    `ADMIN_TOKEN=${quoteEnvValue(next.ADMIN_TOKEN)}`
+    `ADMIN_TOKEN=${quoteEnvValue(next.ADMIN_TOKEN)}`,
+    `MAIL_FROM=${quoteEnvValue(next.MAIL_FROM)}`,
+    `RESEND_API_KEY=${quoteEnvValue(next.RESEND_API_KEY)}`,
+    `SMTP_HOST=${quoteEnvValue(next.SMTP_HOST)}`,
+    `SMTP_PORT=${next.SMTP_PORT}`,
+    `SMTP_USER=${quoteEnvValue(next.SMTP_USER)}`,
+    `SMTP_PASS=${quoteEnvValue(next.SMTP_PASS)}`,
+    `SMTP_SECURE=${next.SMTP_SECURE}`
   ];
   await fs.writeFile(envPath, `${lines.join("\n")}\n`, "utf8");
 
@@ -103,6 +129,13 @@ async function saveSetupConfig(payload = {}) {
   config.snapshotRetryAttempts = Number(next.SNAPSHOT_RETRY_ATTEMPTS);
   config.cloudinaryUrl = next.CLOUDINARY_URL;
   config.adminToken = next.ADMIN_TOKEN;
+  config.mailFrom = next.MAIL_FROM;
+  config.resendApiKey = next.RESEND_API_KEY;
+  config.smtpHost = next.SMTP_HOST;
+  config.smtpPort = Number(next.SMTP_PORT);
+  config.smtpUser = next.SMTP_USER;
+  config.smtpPass = next.SMTP_PASS;
+  config.smtpSecure = String(next.SMTP_SECURE).toLowerCase() === "true";
   memory.feedPages.clear();
   memory.topicDetails.clear();
 }
@@ -114,6 +147,8 @@ const memory = {
   rulesLoadedAt: 0,
   metadata: null,
   metadataLoadedAt: 0,
+  channelReads: null,
+  channelReadsLoadedAt: 0,
   snapshot: null,
   snapshotLoadedAt: 0,
   snapshotSyncPromise: null
@@ -130,6 +165,39 @@ const MIME = {
   ".jpeg": "image/jpeg",
   ".webp": "image/webp"
 };
+
+const authInstitutions = [
+  {
+    name: "中国传媒大学海南国际学院",
+    tags: ["中国传媒大学", "高校认证"],
+    domains: ["coventry.ac.uk", "cuc.cn", "cuc.edu.cn"]
+  },
+  {
+    name: "中央民族大学海南国际学院",
+    tags: ["中央民族大学", "高校认证"],
+    domains: ["live.mdx.ac.uk", "mdx.ac.uk", "muc.cn", "muc.edu.cn"]
+  },
+  {
+    name: "北京体育大学阿尔伯塔国际休闲体育与旅游学院",
+    tags: ["北京体育大学", "高校认证"],
+    domains: ["bsu.cn", "bsu.edu.cn", "ualberta.ca"]
+  },
+  {
+    name: "北京语言大学",
+    tags: ["北京语言大学", "高校认证"],
+    domains: ["blcu.cn", "blcu.edu.cn"]
+  },
+  {
+    name: "北京邮电大学玛丽女王海南学院",
+    tags: ["北京邮电大学", "高校认证"],
+    domains: ["bupt.cn", "bupt.edu.cn", "qmul.ac.uk"]
+  },
+  {
+    name: "电子科技大学格拉斯哥海南学院",
+    tags: ["电子科技大学", "高校认证"],
+    domains: ["gla.ac.uk", "glasgow.ac.uk", "uestc.cn", "uestc.edu.cn"]
+  }
+];
 
 const mapItems = [
   { id: "teaching", title: "公共教学楼", type: "place", lat: 18.400032, lng: 110.016989 },
@@ -509,6 +577,275 @@ async function loadMetadata() {
   return memory.metadata;
 }
 
+async function loadChannelReads() {
+  const now = Date.now();
+  if (memory.channelReads && now - memory.channelReadsLoadedAt < 5_000) return memory.channelReads;
+  try {
+    const raw = await fs.readFile(channelReadsPath, "utf8");
+    const data = JSON.parse(raw);
+    memory.channelReads = data && typeof data === "object" ? data : { version: 1, items: {} };
+  } catch {
+    memory.channelReads = { version: 1, items: {} };
+  }
+  if (!memory.channelReads.items || typeof memory.channelReads.items !== "object") memory.channelReads.items = {};
+  memory.channelReadsLoadedAt = now;
+  return memory.channelReads;
+}
+
+async function saveChannelReads(data) {
+  await fs.mkdir(path.dirname(channelReadsPath), { recursive: true });
+  await fs.writeFile(channelReadsPath, `${JSON.stringify(data, null, 2)}\n`, "utf8");
+  memory.channelReads = data;
+  memory.channelReadsLoadedAt = Date.now();
+}
+
+async function loadAuthStore() {
+  try {
+    const raw = await fs.readFile(authUsersPath, "utf8");
+    const data = JSON.parse(raw);
+    return {
+      version: 1,
+      users: Array.isArray(data.users) ? data.users : [],
+      sessions: data.sessions && typeof data.sessions === "object" ? data.sessions : {},
+      invites: data.invites && typeof data.invites === "object" ? data.invites : {},
+      verifications: data.verifications && typeof data.verifications === "object" ? data.verifications : {}
+    };
+  } catch {
+    return { version: 1, users: [], sessions: {}, invites: {}, verifications: {} };
+  }
+}
+
+async function saveAuthStore(data) {
+  await fs.mkdir(path.dirname(authUsersPath), { recursive: true });
+  await fs.writeFile(authUsersPath, `${JSON.stringify(data, null, 2)}\n`, "utf8");
+}
+
+function publicAuthUser(user = null) {
+  if (!user) return null;
+  return {
+    id: user.id,
+    email: user.email,
+    username: user.username,
+    institution: user.institution || "",
+    tags: user.tags || [],
+    status: user.status || "active",
+    registerMethod: user.registerMethod || "",
+    invitePermission: Boolean(user.invitePermission),
+    invitedBy: user.invitedBy || null,
+    createdAt: user.createdAt || ""
+  };
+}
+
+function findInstitutionByEmail(email = "") {
+  const domain = String(email).toLowerCase().split("@").pop() || "";
+  return authInstitutions.find((item) => item.domains.some((allowed) => domain === allowed || domain.endsWith(`.${allowed}`))) || null;
+}
+
+function normalizeLogin(value = "") {
+  return String(value || "").trim().toLowerCase();
+}
+
+function findUserByLogin(store, login = "") {
+  const value = normalizeLogin(login);
+  return store.users.find((user) => normalizeLogin(user.email) === value || normalizeLogin(user.username) === value) || null;
+}
+
+function createEmailCode() {
+  return String(crypto.randomInt(100000, 1000000));
+}
+
+function hashEmailCode(email, code) {
+  return crypto.createHash("sha256").update(`${normalizeLogin(email)}:${String(code)}`).digest("hex");
+}
+
+async function sendMail({ to, subject, text, html }) {
+  if (config.resendApiKey) {
+    if (!config.mailFrom) throw new Error("MAIL_FROM is required");
+    const response = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        authorization: `Bearer ${config.resendApiKey}`,
+        "content-type": "application/json"
+      },
+      body: JSON.stringify({ from: config.mailFrom, to, subject, text, html })
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data?.message || data?.error || "email send failed");
+    return data;
+  }
+
+  if (config.smtpHost) {
+    if (!config.mailFrom) throw new Error("MAIL_FROM is required");
+    return await sendSmtpMail({ to, subject, text, html });
+  }
+
+  throw new Error("邮件服务未配置");
+}
+
+async function sendSmtpMail({ to, subject, text, html }) {
+  const tls = await import("node:tls");
+  const net = await import("node:net");
+  const socket = config.smtpSecure
+    ? tls.connect({ host: config.smtpHost, port: config.smtpPort, servername: config.smtpHost })
+    : net.createConnection({ host: config.smtpHost, port: config.smtpPort });
+  socket.setEncoding("utf8");
+  socket.setTimeout(20_000);
+
+  let buffer = "";
+  const read = () => new Promise((resolve, reject) => {
+    const cleanup = () => {
+      socket.off("data", onData);
+      socket.off("error", onError);
+      socket.off("timeout", onTimeout);
+    };
+    const onError = (error) => { cleanup(); reject(error); };
+    const onTimeout = () => { cleanup(); reject(new Error("SMTP timeout")); };
+    const onData = (chunk) => {
+      buffer += chunk;
+      const lines = buffer.split(/\r?\n/).filter(Boolean);
+      const last = lines.at(-1) || "";
+      if (/^\d{3}\s/.test(last)) {
+        const response = buffer;
+        buffer = "";
+        cleanup();
+        resolve(response);
+      }
+    };
+    socket.on("data", onData);
+    socket.on("error", onError);
+    socket.on("timeout", onTimeout);
+  });
+  const write = async (command, expected = /^[23]/) => {
+    socket.write(`${command}\r\n`);
+    const response = await read();
+    if (!expected.test(response)) throw new Error(`SMTP rejected ${command.split(" ")[0]}: ${response.trim()}`);
+    return response;
+  };
+  const encodeHeader = (value) => `=?UTF-8?B?${Buffer.from(value, "utf8").toString("base64")}?=`;
+  const boundary = `lian-${crypto.randomBytes(8).toString("hex")}`;
+  const body = [
+    `From: ${config.mailFrom}`,
+    `To: ${to}`,
+    `Subject: ${encodeHeader(subject)}`,
+    "MIME-Version: 1.0",
+    `Content-Type: multipart/alternative; boundary="${boundary}"`,
+    "",
+    `--${boundary}`,
+    "Content-Type: text/plain; charset=UTF-8",
+    "Content-Transfer-Encoding: 8bit",
+    "",
+    text,
+    "",
+    `--${boundary}`,
+    "Content-Type: text/html; charset=UTF-8",
+    "Content-Transfer-Encoding: 8bit",
+    "",
+    html || `<p>${escapeHtml(text)}</p>`,
+    "",
+    `--${boundary}--`
+  ].join("\r\n");
+
+  try {
+    await read();
+    await write(`EHLO ${config.smtpHost}`);
+    if (!config.smtpSecure) await write("STARTTLS", /^220/);
+    if (config.smtpUser) {
+      await write("AUTH LOGIN", /^334/);
+      await write(Buffer.from(config.smtpUser).toString("base64"), /^334/);
+      await write(Buffer.from(config.smtpPass).toString("base64"), /^235/);
+    }
+    await write(`MAIL FROM:<${config.mailFrom}>`);
+    await write(`RCPT TO:<${to}>`);
+    await write("DATA", /^354/);
+    socket.write(`${body}\r\n.\r\n`);
+    const dataResponse = await read();
+    if (!/^250/.test(dataResponse)) throw new Error(`SMTP DATA rejected: ${dataResponse.trim()}`);
+    await write("QUIT", /^[23]/).catch(() => null);
+    return { ok: true };
+  } finally {
+    socket.end();
+  }
+}
+
+function verifyEmailCode(store, email, code) {
+  const key = normalizeLogin(email);
+  const record = store.verifications?.[key];
+  if (!record) return false;
+  if (Date.now() > Date.parse(record.expiresAt || 0)) return false;
+  if (record.usedAt) return false;
+  return record.hash === hashEmailCode(email, code);
+}
+
+function hashPassword(password, salt = crypto.randomBytes(16).toString("hex")) {
+  const hash = crypto.scryptSync(String(password), salt, 64).toString("hex");
+  return { salt, hash };
+}
+
+function verifyPassword(password, user) {
+  if (!user?.password?.salt || !user?.password?.hash) return false;
+  const next = hashPassword(password, user.password.salt).hash;
+  return crypto.timingSafeEqual(Buffer.from(next, "hex"), Buffer.from(user.password.hash, "hex"));
+}
+
+function parseCookies(req) {
+  return Object.fromEntries(String(req.headers.cookie || "")
+    .split(";")
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .map((part) => {
+      const index = part.indexOf("=");
+      return index >= 0 ? [part.slice(0, index), decodeURIComponent(part.slice(index + 1))] : [part, ""];
+    }));
+}
+
+function sessionCookie(token, maxAge = 60 * 60 * 24 * 30) {
+  return `lian_session=${encodeURIComponent(token)}; Path=/; Max-Age=${maxAge}; HttpOnly; SameSite=Lax`;
+}
+
+async function getCurrentUser(req, store = null) {
+  const data = store || await loadAuthStore();
+  const token = parseCookies(req).lian_session || req.headers["x-session-token"] || "";
+  const session = token ? data.sessions[token] : null;
+  if (!session || Date.now() > Date.parse(session.expiresAt || 0)) return { store: data, token: "", user: null };
+  const user = data.users.find((item) => item.id === session.userId) || null;
+  return { store: data, token, user };
+}
+
+async function requireUser(req) {
+  const auth = await getCurrentUser(req);
+  if (!auth.user) {
+    const error = new Error("login required");
+    error.status = 401;
+    throw error;
+  }
+  if (auth.user.status === "banned") {
+    const error = new Error("account banned");
+    error.status = 403;
+    throw error;
+  }
+  return auth;
+}
+
+function createInviteCode() {
+  return crypto.randomBytes(5).toString("base64url").toUpperCase();
+}
+
+function applyInviteViolation(store, bannedUserId) {
+  const banned = store.users.find((item) => item.id === bannedUserId);
+  if (!banned?.invitedBy) return;
+  const inviter = store.users.find((item) => item.id === banned.invitedBy);
+  if (!inviter) return;
+  inviter.invitePermission = false;
+  inviter.inviteDisabledAt = new Date().toISOString();
+  for (const user of store.users) {
+    if (user.invitedBy === inviter.id && user.status !== "banned") {
+      user.status = "limited";
+      user.limitedReason = "invited-account-violation";
+      user.limitedAt = new Date().toISOString();
+    }
+  }
+}
+
 function stripHtml(html = "") {
   return html
     .replace(/<script[\s\S]*?<\/script>/gi, "")
@@ -636,6 +973,39 @@ function normalizeTopic(topic, detail = null, metadata = {}) {
   };
 }
 
+function isChannelTopic(topic = {}) {
+  const tid = Number(topic.tid);
+  const cid = Number(topic.cid);
+  if (config.nodebbChannelTopicTid && tid === config.nodebbChannelTopicTid) return true;
+  if (config.nodebbChannelCidConfigured && config.nodebbChannelCid !== config.nodebbCid && cid === config.nodebbChannelCid) return true;
+  return false;
+}
+
+function normalizeChannelEvent(topic = {}, post = {}, reads = {}) {
+  const tid = Number(topic.tid || post.tid);
+  const pid = Number(post.pid || post.index || tid);
+  const id = `post:${pid || tid}`;
+  const content = post.content || post.raw || "";
+  const text = stripHtml(content).replace(/\s+/g, " ").trim();
+  const title = post.index > 0 ? `回复了：${topic.titleRaw || topic.title || ""}` : topic.titleRaw || topic.title || "校园动态";
+  const readerSet = Array.isArray(reads.items?.[id]?.readers) ? reads.items[id].readers : [];
+  return {
+    id,
+    type: isChannelTopic(topic) ? "channel_message" : (post.index > 0 ? "post_reply" : "topic"),
+    tid,
+    pid,
+    title,
+    text,
+    excerpt: text.length > 120 ? `${text.slice(0, 120)}...` : text,
+    cover: extractCover(content),
+    username: post.user?.username || topic.user?.username || "",
+    timestampISO: post.timestampISO || topic.timestampISO || "",
+    timeLabel: post.timestampISO || topic.timestampISO || "",
+    readCount: readerSet.length,
+    nodebbUrl: `${config.nodebbBaseUrl}/topic/${tid}`
+  };
+}
+
 async function getTopicDetail(tid) {
   const cached = memory.topicDetails.get(tid);
   if (cached && Date.now() - cached.at < 180_000) return cached.data;
@@ -727,7 +1097,7 @@ async function handleFeed(reqUrl, res) {
   const limit = Math.min(24, Math.max(4, Number(reqUrl.searchParams.get("limit") || editionPageSize || 10)));
   const readTids = parseReadTids(reqUrl.searchParams.get("read") || "");
   const snapshot = config.dataMode === "snapshot" ? await getSnapshotData() : null;
-  const topics = snapshot ? snapshot.topics || [] : await getAllRecentTopics();
+  const topics = (snapshot ? snapshot.topics || [] : await getAllRecentTopics()).filter((topic) => !isChannelTopic(topic));
   const basicItems = topics.map((topic) => normalizeTopic(topic, null, metadata));
   const itemByTid = new Map(basicItems.map((item) => [Number(item.tid), item]));
 
@@ -804,10 +1174,17 @@ async function handlePostDetail(tid, res) {
   const firstPost = detail?.posts?.[0] || {};
   const meta = metadata[String(tid)] || {};
   const sourceUrl = meta.sourceUrl || extractSourceUrl(firstPost.content || "");
+  const replies = (detail?.posts || []).slice(1).map((post) => ({
+    pid: post.pid,
+    username: post.user?.username || "",
+    timestampISO: post.timestampISO || "",
+    contentHtml: renderPostContent(post.content || "")
+  }));
   sendJson(res, 200, {
     ...normalizeTopic({ tid }, detail, metadata),
     sourceUrl,
     contentHtml: renderPostContent(firstPost.content || ""),
+    replies,
     dataMode: config.dataMode,
     dataSource: snapshot?.source || "api",
     raw: {
@@ -954,6 +1331,12 @@ function escapeHtml(value = "") {
     .replace(/"/g, "&quot;");
 }
 
+function userSignature(user) {
+  if (!user) return "";
+  const tags = Array.isArray(user.tags) && user.tags.length ? `｜${user.tags.join(" ")}` : "";
+  return `\n\n<p style="color:#69706b;font-size:13px">来自 ${escapeHtml(user.username || "同学")}${escapeHtml(tags)}</p>`;
+}
+
 function buildTopicHtml(payload) {
   const blocks = [];
   if (payload.imageUrl) {
@@ -973,21 +1356,23 @@ function buildTopicHtml(payload) {
   if (payload.mapLocation && typeof payload.mapLocation === "object") {
     blocks.push(`<!-- lian-map-location ${escapeHtml(JSON.stringify(payload.mapLocation))} -->`);
   }
-  return blocks.join("\n\n").trim();
+  return `${blocks.join("\n\n").trim()}${userSignature(payload.currentUser)}`.trim();
 }
 
 async function handleCreatePost(req, res) {
+  const auth = await requireUser(req);
   if (!config.nodebbToken) {
     sendJson(res, 500, { error: "NODEBB_API_TOKEN is missing" });
     return;
   }
+  if (auth.user.status === "limited") return sendJson(res, 403, { error: "account is limited" });
   const payload = await readJsonBody(req);
   const title = String(payload.title || "").trim();
   if (!title) {
     sendJson(res, 400, { error: "title is required" });
     return;
   }
-  const content = buildTopicHtml(payload);
+  const content = buildTopicHtml({ ...payload, currentUser: auth.user });
   const body = {
     cid: Number(payload.cid || config.nodebbCid),
     title,
@@ -1006,6 +1391,156 @@ async function handleCreatePost(req, res) {
   sendJson(res, 200, data);
 }
 
+function buildTextPostHtml(content = "") {
+  return String(content || "")
+    .split(/\n{2,}/)
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .map((part) => `<p>${escapeHtml(part).replace(/\n/g, "<br>")}</p>`)
+    .join("\n\n");
+}
+
+async function replyToNodebbTopic(tid, content, user = null) {
+  const body = { content: `${buildTextPostHtml(content)}${userSignature(user)}`.trim() };
+  const options = {
+    method: "POST",
+    headers: {
+      "content-type": "application/json; charset=utf-8",
+      authorization: `Bearer ${config.nodebbToken}`
+    },
+    body: JSON.stringify(body)
+  };
+  const attempts = [
+    `/api/v3/topics/${tid}`,
+    `/api/v3/topics/${tid}/posts`
+  ];
+  let lastError;
+  for (const endpoint of attempts) {
+    try {
+      return await nodebbFetch(endpoint, options);
+    } catch (error) {
+      lastError = error;
+      if (![404, 405].includes(Number(error.status))) break;
+    }
+  }
+  throw lastError;
+}
+
+async function markNodebbTopicRead(tid) {
+  if (!tid) return;
+  for (const method of ["POST", "PUT"]) {
+    const options = { method, headers: { authorization: `Bearer ${config.nodebbToken}` } };
+    for (const endpoint of [`/api/v3/topics/${tid}/read`, `/api/topic/${tid}/read`]) {
+      try {
+        await nodebbFetch(endpoint, options);
+        return;
+      } catch {
+        // Read count in this app is still recorded locally if NodeBB rejects this endpoint.
+      }
+    }
+  }
+}
+
+function clientReaderId(req, payload = {}) {
+  const raw = payload.readerId || req.headers["x-client-id"] || req.headers["user-agent"] || "anonymous";
+  return crypto.createHash("sha1").update(String(raw)).digest("hex").slice(0, 24);
+}
+
+async function handleChannel(reqUrl, res) {
+  const limit = Math.min(80, Math.max(10, Number(reqUrl.searchParams.get("limit") || 40)));
+  const offset = Math.max(0, Number(reqUrl.searchParams.get("offset") || 0));
+  const reads = await loadChannelReads();
+  const topics = await getAllRecentTopics(3);
+  const selectedTopics = topics.slice(offset, offset + limit);
+  const events = [];
+  for (const topic of selectedTopics) {
+    try {
+      const detail = await getTopicDetail(topic.tid);
+      for (const post of detail?.posts || []) {
+        if (!post || post.deleted) continue;
+        events.push(normalizeChannelEvent({ ...topic, ...detail }, post, reads));
+      }
+    } catch {
+      // Keep the channel readable even if one topic detail is temporarily unavailable.
+    }
+  }
+  events.sort((a, b) => Date.parse(b.timestampISO || 0) - Date.parse(a.timestampISO || 0));
+  const selected = events.slice(0, limit);
+  sendJson(res, 200, {
+    items: selected,
+    offset,
+    nextOffset: offset + selectedTopics.length < topics.length ? offset + selectedTopics.length : null,
+    hasMore: offset + selectedTopics.length < topics.length,
+    channelTid: config.nodebbChannelTopicTid || null
+  });
+}
+
+async function handleChannelRead(req, res) {
+  const payload = await readJsonBody(req);
+  const eventIds = Array.isArray(payload.eventIds) ? payload.eventIds.map(String).filter(Boolean) : [];
+  const readerId = clientReaderId(req, payload);
+  const reads = await loadChannelReads();
+  const counts = {};
+  for (const id of eventIds) {
+    if (!reads.items[id]) reads.items[id] = { readers: [] };
+    const readers = new Set(Array.isArray(reads.items[id].readers) ? reads.items[id].readers : []);
+    readers.add(readerId);
+    reads.items[id].readers = Array.from(readers);
+    counts[id] = reads.items[id].readers.length;
+  }
+  await saveChannelReads(reads);
+  for (const tid of new Set((payload.tids || []).map(Number).filter(Number.isFinite))) {
+    await markNodebbTopicRead(tid);
+  }
+  sendJson(res, 200, { ok: true, readCounts: counts });
+}
+
+async function handleChannelMessage(req, res) {
+  const auth = await requireUser(req);
+  if (!config.nodebbToken) return sendJson(res, 500, { error: "NODEBB_API_TOKEN is missing" });
+  if (auth.user.status === "limited") return sendJson(res, 403, { error: "account is limited" });
+  const payload = await readJsonBody(req);
+  const content = String(payload.content || "").trim();
+  if (!content) return sendJson(res, 400, { error: "content is required" });
+  if (content.length > 800) return sendJson(res, 400, { error: "content is too long" });
+
+  let data;
+  if (config.nodebbChannelTopicTid) {
+    data = await replyToNodebbTopic(config.nodebbChannelTopicTid, content, auth.user);
+  } else {
+    data = await nodebbFetch("/api/v3/topics", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json; charset=utf-8",
+        authorization: `Bearer ${config.nodebbToken}`
+      },
+      body: JSON.stringify({
+        cid: config.nodebbChannelCid,
+        title: "校园频道",
+        content: `${buildTextPostHtml(content)}${userSignature(auth.user)}`.trim(),
+        tags: ["频道消息"]
+      })
+    });
+  }
+  memory.feedPages.clear();
+  memory.topicDetails.clear();
+  sendJson(res, 200, data);
+}
+
+async function handleCreateReply(tid, req, res) {
+  const auth = await requireUser(req);
+  if (!config.nodebbToken) return sendJson(res, 500, { error: "NODEBB_API_TOKEN is missing" });
+  if (auth.user.status === "limited") return sendJson(res, 403, { error: "account is limited" });
+  const payload = await readJsonBody(req);
+  const content = String(payload.content || "").trim();
+  if (!content) return sendJson(res, 400, { error: "content is required" });
+  if (content.length > 2000) return sendJson(res, 400, { error: "content is too long" });
+  const data = await replyToNodebbTopic(tid, content, auth.user);
+  memory.feedPages.clear();
+  memory.topicDetails.delete(Number(tid));
+  sendJson(res, 200, data);
+}
+
 async function handleMessages(res) {
   try {
     const data = await nodebbFetch("/api/notifications");
@@ -1021,7 +1556,192 @@ async function handleMessages(res) {
   }
 }
 
-async function handleMe(res) {
+async function handleAuthRules(res) {
+  sendJson(res, 200, {
+    institutions: authInstitutions.map((item) => ({
+      name: item.name,
+      tags: item.tags,
+      domains: item.domains
+    }))
+  });
+}
+
+async function handleAuthMe(req, res) {
+  const auth = await getCurrentUser(req);
+  sendJson(res, 200, { user: publicAuthUser(auth.user) });
+}
+
+async function handleSendEmailCode(req, res) {
+  const payload = await readJsonBody(req);
+  const email = String(payload.email || "").trim().toLowerCase();
+  if (!email || !email.includes("@")) return sendJson(res, 400, { error: "valid email is required" });
+  const institution = findInstitutionByEmail(email);
+  if (!institution) return sendJson(res, 400, { error: "该邮箱后缀不在高校认证名单内；邀请码注册可以不填邮箱" });
+
+  const store = await loadAuthStore();
+  if (store.users.some((user) => user.email === email)) return sendJson(res, 409, { error: "email already registered" });
+  store.verifications ||= {};
+  const key = normalizeLogin(email);
+  const existing = store.verifications[key];
+  if (existing && Date.now() - Date.parse(existing.sentAt || 0) < 60_000) {
+    return sendJson(res, 429, { error: "请稍后再发送验证码" });
+  }
+
+  const code = createEmailCode();
+  store.verifications[key] = {
+    email,
+    hash: hashEmailCode(email, code),
+    sentAt: new Date().toISOString(),
+    expiresAt: new Date(Date.now() + 10 * 60_000).toISOString(),
+    usedAt: null
+  };
+  await sendMail({
+    to: email,
+    subject: "黎安账号邮箱验证码",
+    text: `你的验证码是 ${code}，10 分钟内有效。`,
+    html: `<p>你的验证码是 <strong style="font-size:20px">${code}</strong>，10 分钟内有效。</p>`
+  });
+  await saveAuthStore(store);
+  sendJson(res, 200, { ok: true, expiresInSeconds: 600, institution: institution.name });
+}
+
+async function handleAuthRegister(req, res) {
+  const payload = await readJsonBody(req);
+  const email = String(payload.email || "").trim().toLowerCase();
+  const username = String(payload.username || "").trim().slice(0, 30);
+  const password = String(payload.password || "");
+  const inviteCode = String(payload.inviteCode || "").trim().toUpperCase();
+  const emailCode = String(payload.emailCode || "").trim();
+  if (!username) return sendJson(res, 400, { error: "username is required" });
+  if (password.length < 8) return sendJson(res, 400, { error: "password must be at least 8 characters" });
+
+  const store = await loadAuthStore();
+  if (store.users.some((user) => normalizeLogin(user.username) === normalizeLogin(username))) return sendJson(res, 409, { error: "username already registered" });
+  if (email && store.users.some((user) => user.email === email)) return sendJson(res, 409, { error: "email already registered" });
+
+  const institution = email ? findInstitutionByEmail(email) : null;
+  let invitedBy = null;
+  let registerMethod = "email";
+  let tags = institution?.tags || ["高校认证"];
+  let invitePermission = Boolean(institution);
+
+  if (institution) {
+    if (!verifyEmailCode(store, email, emailCode)) return sendJson(res, 400, { error: "email verification code is invalid or expired" });
+    store.verifications[normalizeLogin(email)].usedAt = new Date().toISOString();
+  } else {
+    const invite = inviteCode ? store.invites[inviteCode] : null;
+    if (!invite || invite.usedBy || invite.revokedAt) return sendJson(res, 400, { error: "valid invite code is required" });
+    const inviter = store.users.find((user) => user.id === invite.createdBy);
+    if (!inviter || !inviter.invitePermission || inviter.status !== "active") return sendJson(res, 403, { error: "inviter cannot invite new users" });
+    invitedBy = inviter.id;
+    registerMethod = "invite";
+    tags = ["邀请注册"];
+    invitePermission = false;
+    invite.usedBy = email || username;
+    invite.usedAt = new Date().toISOString();
+  }
+
+  const user = {
+    id: crypto.randomUUID(),
+    email: email || "",
+    username,
+    password: hashPassword(password),
+    institution: institution?.name || "",
+    tags,
+    status: "active",
+    registerMethod,
+    invitePermission,
+    invitedBy,
+    createdAt: new Date().toISOString()
+  };
+  store.users.push(user);
+  const token = crypto.randomBytes(32).toString("base64url");
+  store.sessions[token] = {
+    userId: user.id,
+    createdAt: new Date().toISOString(),
+    expiresAt: new Date(Date.now() + 30 * 24 * 3600_000).toISOString()
+  };
+  await saveAuthStore(store);
+  res.setHeader("set-cookie", sessionCookie(token));
+  sendJson(res, 200, { user: publicAuthUser(user) });
+}
+
+async function handleAuthLogin(req, res) {
+  const payload = await readJsonBody(req);
+  const login = String(payload.login || payload.email || "").trim();
+  const password = String(payload.password || "");
+  const store = await loadAuthStore();
+  const user = findUserByLogin(store, login);
+  if (!user || !verifyPassword(password, user)) return sendJson(res, 401, { error: "email or password is incorrect" });
+  if (user.status === "banned") return sendJson(res, 403, { error: "account banned" });
+  const token = crypto.randomBytes(32).toString("base64url");
+  store.sessions[token] = {
+    userId: user.id,
+    createdAt: new Date().toISOString(),
+    expiresAt: new Date(Date.now() + 30 * 24 * 3600_000).toISOString()
+  };
+  await saveAuthStore(store);
+  res.setHeader("set-cookie", sessionCookie(token));
+  sendJson(res, 200, { user: publicAuthUser(user) });
+}
+
+async function handleAuthLogout(req, res) {
+  const store = await loadAuthStore();
+  const token = parseCookies(req).lian_session || "";
+  if (token) delete store.sessions[token];
+  await saveAuthStore(store);
+  res.setHeader("set-cookie", sessionCookie("", 0));
+  sendJson(res, 200, { ok: true });
+}
+
+async function handleCreateInvite(req, res) {
+  const auth = await requireUser(req);
+  if (!auth.user.invitePermission || auth.user.status !== "active") return sendJson(res, 403, { error: "invite permission disabled" });
+  const store = auth.store;
+  let code = createInviteCode();
+  while (store.invites[code]) code = createInviteCode();
+  store.invites[code] = {
+    code,
+    createdBy: auth.user.id,
+    createdAt: new Date().toISOString(),
+    usedBy: null,
+    usedAt: null
+  };
+  await saveAuthStore(store);
+  sendJson(res, 200, { code });
+}
+
+async function handleAdminUserStatus(req, reqUrl, res) {
+  requireAdmin(req);
+  const match = reqUrl.pathname.match(/^\/api\/admin\/auth\/users\/([^/]+)\/status$/);
+  if (!match) return false;
+  const payload = await readJsonBody(req);
+  const status = String(payload.status || "");
+  if (!["active", "limited", "banned"].includes(status)) return sendJson(res, 400, { error: "invalid status" });
+  const store = await loadAuthStore();
+  const user = store.users.find((item) => item.id === match[1] || item.email === match[1]);
+  if (!user) return sendJson(res, 404, { error: "user not found" });
+  user.status = status;
+  user.statusReason = String(payload.reason || "");
+  user.statusChangedAt = new Date().toISOString();
+  if (status === "banned") applyInviteViolation(store, user.id);
+  await saveAuthStore(store);
+  sendJson(res, 200, { user: publicAuthUser(user) });
+  return true;
+}
+
+async function handleMe(req, res) {
+  const auth = await getCurrentUser(req);
+  if (auth.user) {
+    return sendJson(res, 200, {
+      ...publicAuthUser(auth.user),
+      uid: auth.user.nodebbUid || config.nodebbUid,
+      reputation: 0,
+      postcount: 0,
+      topiccount: 0,
+      localAuth: true
+    });
+  }
   try {
     const data = await nodebbFetch(`/api/user/uid/${config.nodebbUid}`);
     sendJson(res, 200, {
@@ -1039,6 +1759,10 @@ async function handleMe(res) {
 
 async function handleAdmin(req, reqUrl, res) {
   requireAdmin(req);
+
+  if (req.method === "PATCH" && /^\/api\/admin\/auth\/users\/[^/]+\/status$/.test(reqUrl.pathname)) {
+    return await handleAdminUserStatus(req, reqUrl, res);
+  }
 
   if (req.method === "GET" && reqUrl.pathname === "/api/admin/feed-rules") {
     const raw = await fs.readFile(rulesPath, "utf8");
@@ -1157,8 +1881,9 @@ async function handleApi(req, reqUrl, res) {
         nodebbBaseUrl: config.nodebbBaseUrl,
         nodebbUid: config.nodebbUid,
         nodebbCid: config.nodebbCid,
-        dataMode: config.dataMode,
-        cloudinaryConfigured: Boolean(config.cloudinaryUrl)
+      dataMode: config.dataMode,
+      cloudinaryConfigured: Boolean(config.cloudinaryUrl),
+      mailConfigured: Boolean(config.resendApiKey || config.smtpHost)
       });
     }
     if (req.method === "POST" && reqUrl.pathname === "/api/setup") {
@@ -1170,6 +1895,13 @@ async function handleApi(req, reqUrl, res) {
     if (isSetupRequired()) {
       return sendJson(res, 428, { error: "setup required" });
     }
+    if (req.method === "GET" && reqUrl.pathname === "/api/auth/rules") return await handleAuthRules(res);
+    if (req.method === "GET" && reqUrl.pathname === "/api/auth/me") return await handleAuthMe(req, res);
+    if (req.method === "POST" && reqUrl.pathname === "/api/auth/email-code") return await handleSendEmailCode(req, res);
+    if (req.method === "POST" && reqUrl.pathname === "/api/auth/register") return await handleAuthRegister(req, res);
+    if (req.method === "POST" && reqUrl.pathname === "/api/auth/login") return await handleAuthLogin(req, res);
+    if (req.method === "POST" && reqUrl.pathname === "/api/auth/logout") return await handleAuthLogout(req, res);
+    if (req.method === "POST" && reqUrl.pathname === "/api/auth/invites") return await handleCreateInvite(req, res);
     if (req.method === "GET" && reqUrl.pathname === "/api/feed") return await handleFeed(reqUrl, res);
     if (req.method === "GET" && reqUrl.pathname === "/api/snapshot/status") {
       try {
@@ -1194,11 +1926,18 @@ async function handleApi(req, reqUrl, res) {
         items: mapItems
       });
     }
+    if (req.method === "GET" && reqUrl.pathname === "/api/channel") return await handleChannel(reqUrl, res);
+    if (req.method === "POST" && reqUrl.pathname === "/api/channel/read") return await handleChannelRead(req, res);
+    if (req.method === "POST" && reqUrl.pathname === "/api/channel/messages") return await handleChannelMessage(req, res);
     if (req.method === "GET" && reqUrl.pathname === "/api/messages") return await handleMessages(res);
-    if (req.method === "GET" && reqUrl.pathname === "/api/me") return await handleMe(res);
+    if (req.method === "GET" && reqUrl.pathname === "/api/me") return await handleMe(req, res);
     if (req.method === "GET" && /^\/api\/posts\/\d+$/.test(reqUrl.pathname)) {
       const tid = Number(reqUrl.pathname.split("/").pop());
       return await handlePostDetail(tid, res);
+    }
+    if (req.method === "POST" && /^\/api\/posts\/\d+\/replies$/.test(reqUrl.pathname)) {
+      const tid = Number(reqUrl.pathname.split("/").at(-2));
+      return await handleCreateReply(tid, req, res);
     }
     if (req.method === "POST" && reqUrl.pathname === "/api/upload/image") return await handleUploadImage(req, res);
     if (req.method === "POST" && reqUrl.pathname === "/api/posts") return await handleCreatePost(req, res);

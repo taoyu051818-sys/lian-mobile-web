@@ -17,6 +17,12 @@ const state = {
   pullActive: false,
   previousView: "feed",
   feedScrollY: 0,
+  channelLoading: false,
+  channelOffset: 0,
+  channelHasMore: true,
+  channelLoadedIds: new Set(),
+  authMode: "login",
+  currentUser: null,
   masonryHeights: [0, 0]
 };
 
@@ -118,6 +124,16 @@ const geoImagePairs = [
 const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
 
+function ensureClientId() {
+  const key = "lian.clientId";
+  let id = localStorage.getItem(key);
+  if (!id) {
+    id = crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    localStorage.setItem(key, id);
+  }
+  return id;
+}
+
 function escapeHtml(value = "") {
   return String(value)
     .replace(/&/g, "&amp;")
@@ -150,6 +166,30 @@ async function uploadImage(file) {
   const data = await response.json().catch(() => ({}));
   if (!response.ok) throw new Error(data.error || "图片上传失败");
   return data.url;
+}
+
+async function loadAuthMe() {
+  const data = await api("/api/auth/me");
+  state.currentUser = data.user || null;
+  return state.currentUser;
+}
+
+function openAuth(mode = "login") {
+  state.authMode = mode;
+  $$(".auth-tab").forEach((button) => button.classList.toggle("is-active", button.dataset.authMode === mode));
+  $$(".auth-register-only").forEach((item) => item.classList.toggle("is-hidden", mode !== "register"));
+  $$(".auth-login-only").forEach((item) => item.classList.toggle("is-hidden", mode !== "login"));
+  const button = $("#authForm .primary");
+  if (button) button.textContent = mode === "register" ? "注册" : "登录";
+  const note = $("#authNote");
+  if (note) note.textContent = mode === "register" ? "高校邮箱注册需要验证码；邀请码注册可以不填邮箱。" : "使用邮箱或昵称登录。";
+  $("#authSheet").showModal();
+}
+
+function requireLoginUi() {
+  if (state.currentUser) return true;
+  openAuth("login");
+  return false;
 }
 
 function renderTabs(tabs) {
@@ -244,6 +284,30 @@ function originalLinkTemplate(post) {
   `;
 }
 
+function repliesTemplate(post) {
+  const replies = Array.isArray(post.replies) ? post.replies : [];
+  return `
+    <section class="reply-panel">
+      <h3>回复</h3>
+      <div class="reply-list">
+        ${replies.length ? replies.map((reply) => `
+          <article class="reply-item">
+            <div class="reply-meta">
+              <span>${escapeHtml(reply.username || "同学")}</span>
+              <span>${escapeHtml(fixFmtDate(reply.timestampISO))}</span>
+            </div>
+            <div class="nodebb-html">${reply.contentHtml || ""}</div>
+          </article>
+        `).join("") : `<p class="reply-empty">还没有回复</p>`}
+      </div>
+      <form class="reply-form" data-reply-form data-tid="${escapeHtml(post.tid)}">
+        <textarea name="content" rows="3" maxlength="2000" placeholder="写一条回复" required></textarea>
+        <button type="submit">发送回复</button>
+      </form>
+    </section>
+  `;
+}
+
 async function loadFeed(reset = false) {
   if (state.loading || (!reset && !state.hasMore)) return;
   state.loading = true;
@@ -279,6 +343,12 @@ function maybePreloadFeed() {
   if (remaining < 1100) loadFeed(false);
 }
 
+function maybeLoadOlderMessages() {
+  const messageView = $('[data-view="messages"]');
+  if (!messageView?.classList.contains("is-active")) return;
+  if (window.scrollY < 120) loadMessages({ older: true });
+}
+
 async function openDetail(tid) {
   state.readTids.add(Number(tid));
   saveReadTids();
@@ -295,6 +365,7 @@ async function openDetail(tid) {
         <h2>${escapeHtml(post.title)}</h2>
         <div class="nodebb-html">${post.contentHtml || ""}</div>
         ${originalLinkTemplate(post)}
+        ${repliesTemplate(post)}
       </section>
     `;
   } catch (error) {
@@ -620,35 +691,217 @@ function initMap() {
   state.routeFrame = requestAnimationFrame(animateCampusMap);
 }
 
-async function loadMessages() {
+function channelItemTemplate(item) {
+  return `
+    <article class="message-item ${item.type === "channel_message" ? "is-chat" : ""}" ${item.tid ? `data-tid="${escapeHtml(item.tid)}"` : ""}>
+      <div class="message-meta">
+        <span>${escapeHtml(item.username || "校园频道")}</span>
+        <span>${escapeHtml(fixFmtDate(item.timestampISO))}</span>
+      </div>
+      <h3>${escapeHtml(item.title)}</h3>
+      <p>${escapeHtml(item.excerpt || item.text || "")}</p>
+      <footer>${Number(item.readCount || 0)} 人已读</footer>
+    </article>
+  `;
+}
+
+async function markChannelRead(items) {
+  if (!items.length) return;
+  await api("/api/channel/read", {
+    method: "POST",
+    headers: { "content-type": "application/json", "x-client-id": ensureClientId() },
+    body: JSON.stringify({
+      readerId: ensureClientId(),
+      eventIds: items.map((item) => item.id),
+      tids: items.map((item) => item.tid).filter(Boolean)
+    })
+  });
+}
+
+async function loadMessages({ older = false } = {}) {
+  if (state.channelLoading || (older && !state.channelHasMore)) return;
+  state.channelLoading = true;
   const list = $("#messageList");
-  list.innerHTML = `<div class="empty-state">加载中</div>`;
+  if (!older) {
+    state.channelOffset = 0;
+    state.channelHasMore = true;
+    state.channelLoadedIds = new Set();
+    list.innerHTML = `<div class="empty-state">加载中</div>`;
+  }
   try {
-    const data = await api("/api/messages");
+    const beforeHeight = document.documentElement.scrollHeight;
+    const data = await api(`/api/channel?limit=30&offset=${older ? state.channelOffset : 0}`);
     if (!data.items?.length) {
-      list.innerHTML = `<div class="empty-state">暂无新消息</div>`;
+      if (!older) list.innerHTML = `<div class="empty-state">还没有消息</div>`;
       return;
     }
-    list.innerHTML = data.items.map((item) => `
-      <article class="message-item">
-        <h3>${escapeHtml(item.title)}</h3>
-        <p>${escapeHtml(fixFmtDate(item.time))}</p>
-      </article>
-    `).join("");
+    const totalReads = data.items.reduce((sum, item) => sum + Number(item.readCount || 0), 0);
+    const summary = $("#channelSummary");
+    if (summary && !older) summary.textContent = `${data.items.length} 条动态，累计 ${totalReads} 次已读`;
+    const uniqueItems = data.items.filter((item) => !state.channelLoadedIds.has(item.id));
+    uniqueItems.forEach((item) => state.channelLoadedIds.add(item.id));
+    const chronological = [...uniqueItems].reverse();
+    if (older) {
+      list.insertAdjacentHTML("afterbegin", chronological.map(channelItemTemplate).join(""));
+      const afterHeight = document.documentElement.scrollHeight;
+      window.scrollBy({ top: afterHeight - beforeHeight });
+    } else {
+      list.innerHTML = chronological.map(channelItemTemplate).join("");
+      requestAnimationFrame(() => window.scrollTo({ top: document.documentElement.scrollHeight }));
+    }
+    state.channelOffset = data.nextOffset || state.channelOffset + data.items.length;
+    state.channelHasMore = Boolean(data.hasMore);
+    await markChannelRead(uniqueItems);
   } catch (error) {
     list.innerHTML = `<div class="empty-state">${escapeHtml(error.message)}</div>`;
+  } finally {
+    state.channelLoading = false;
   }
+}
+
+async function submitChannelMessage(event) {
+  event.preventDefault();
+  if (!requireLoginUi()) return;
+  const form = event.currentTarget;
+  const input = form.elements.content;
+  const content = String(input.value || "").trim();
+  if (!content) return;
+  const button = form.querySelector("button");
+  button.disabled = true;
+  try {
+    await api("/api/channel/messages", {
+      method: "POST",
+      headers: { "content-type": "application/json", "x-client-id": ensureClientId() },
+      body: JSON.stringify({ readerId: ensureClientId(), content })
+    });
+    input.value = "";
+    await loadMessages();
+  } catch (error) {
+    alert(error.message);
+  } finally {
+    button.disabled = false;
+  }
+}
+
+async function submitReply(event) {
+  const form = event.target.closest("[data-reply-form]");
+  if (!form) return;
+  event.preventDefault();
+  if (!requireLoginUi()) return;
+  const tid = form.dataset.tid;
+  const content = String(form.elements.content.value || "").trim();
+  if (!tid || !content) return;
+  const button = form.querySelector("button");
+  button.disabled = true;
+  try {
+    await api(`/api/posts/${tid}/replies`, {
+      method: "POST",
+      headers: { "content-type": "application/json", "x-client-id": ensureClientId() },
+      body: JSON.stringify({ content })
+    });
+    form.reset();
+    await openDetail(tid);
+  } catch (error) {
+    alert(error.message);
+  } finally {
+    button.disabled = false;
+  }
+}
+
+async function submitAuth(event) {
+  event.preventDefault();
+  const form = event.currentTarget;
+  const button = form.querySelector(".primary");
+  const fields = Object.fromEntries(new FormData(form).entries());
+  button.disabled = true;
+  try {
+    const endpoint = state.authMode === "register" ? "/api/auth/register" : "/api/auth/login";
+    const data = await api(endpoint, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(fields)
+    });
+    state.currentUser = data.user;
+    $("#authSheet").close();
+    form.reset();
+    await loadProfile();
+  } catch (error) {
+    $("#authNote").textContent = error.message;
+  } finally {
+    button.disabled = false;
+  }
+}
+
+async function sendEmailCode() {
+  const form = $("#authForm");
+  const email = String(form.elements.email?.value || "").trim();
+  const note = $("#authNote");
+  const button = form.querySelector("[data-send-email-code]");
+  if (!email) {
+    note.textContent = "先填写高校邮箱；邀请码注册可以不填邮箱。";
+    return;
+  }
+  button.disabled = true;
+  try {
+    const data = await api("/api/auth/email-code", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ email })
+    });
+    note.textContent = `验证码已发送到 ${email}，10 分钟内有效。${data.institution ? `已识别：${data.institution}` : ""}`;
+  } catch (error) {
+    note.textContent = error.message;
+  } finally {
+    setTimeout(() => {
+      button.disabled = false;
+    }, 8000);
+  }
+}
+
+async function createInviteCode() {
+  try {
+    const data = await api("/api/auth/invites", { method: "POST" });
+    const result = $("#inviteResult");
+    if (result) result.textContent = `邀请码：${data.code}`;
+  } catch (error) {
+    alert(error.message);
+  }
+}
+
+async function logoutAuth() {
+  await api("/api/auth/logout", { method: "POST" });
+  state.currentUser = null;
+  await loadProfile();
 }
 
 async function loadProfile() {
   const panel = $("#profilePanel");
   panel.innerHTML = `<div class="empty-state">加载中</div>`;
   try {
+    const user = await loadAuthMe();
+    if (user) {
+      panel.innerHTML = `
+        <h2>${escapeHtml(user.username)}</h2>
+        <p>${escapeHtml(user.email)}</p>
+        <p>${escapeHtml(user.institution || "邀请码用户")}</p>
+        <p>${escapeHtml((user.tags || []).join(" · "))}</p>
+        <p>状态：${escapeHtml(user.status)} · 邀请权限：${user.invitePermission ? "可用" : "不可用"}</p>
+        <div class="profile-actions">
+          ${user.invitePermission ? `<button type="button" data-create-invite>生成邀请码</button>` : ""}
+          <button type="button" data-auth-logout>退出登录</button>
+        </div>
+        <p class="invite-result" id="inviteResult"></p>
+      `;
+      return;
+    }
     const me = await api("/api/me");
     panel.innerHTML = `
-      <h2>${escapeHtml(me.username)}</h2>
-      <p>UID ${escapeHtml(me.uid)}</p>
-      <p>${Number(me.topiccount || 0)} 个主题 · ${Number(me.postcount || 0)} 条发言</p>
+      <h2>还没有登录</h2>
+      <p>登录后可以发布、回复、发送频道消息。</p>
+      <div class="profile-actions">
+        <button type="button" data-open-auth="login">登录</button>
+        <button type="button" data-open-auth="register">注册</button>
+      </div>
     `;
   } catch (error) {
     panel.innerHTML = `<div class="empty-state">${escapeHtml(error.message)}</div>`;
@@ -657,6 +910,7 @@ async function loadProfile() {
 
 async function submitPost(event) {
   event.preventDefault();
+  if (!requireLoginUi()) return;
   const form = event.currentTarget;
   const button = $(".primary", form);
   button.disabled = true;
@@ -734,7 +988,37 @@ document.addEventListener("click", (event) => {
     return;
   }
 
-  if (event.target.closest("[data-open-publish]")) $("#publishSheet").showModal();
+  const authOpen = event.target.closest("[data-open-auth]");
+  if (authOpen) {
+    openAuth(authOpen.dataset.openAuth || "login");
+    return;
+  }
+
+  const authMode = event.target.closest("[data-auth-mode]");
+  if (authMode) {
+    openAuth(authMode.dataset.authMode);
+    return;
+  }
+
+  if (event.target.closest("[data-create-invite]")) {
+    createInviteCode();
+    return;
+  }
+
+  if (event.target.closest("[data-send-email-code]")) {
+    sendEmailCode();
+    return;
+  }
+
+  if (event.target.closest("[data-auth-logout]")) {
+    logoutAuth();
+    return;
+  }
+
+  if (event.target.closest("[data-open-publish]")) {
+    if (!requireLoginUi()) return;
+    $("#publishSheet").showModal();
+  }
   if (event.target.closest("[data-use-current-time]")) {
     fillCurrentTime();
     return;
@@ -748,6 +1032,7 @@ document.addEventListener("click", (event) => {
     return;
   }
   if (event.target.closest("[data-close-publish]")) $("#publishSheet").close();
+  if (event.target.closest("[data-close-auth]")) $("#authSheet").close();
 });
 
 window.addEventListener("popstate", () => {
@@ -756,8 +1041,12 @@ window.addEventListener("popstate", () => {
 });
 
 $("#publishForm").addEventListener("submit", submitPost);
+$("#channelForm")?.addEventListener("submit", submitChannelMessage);
+$("#authForm")?.addEventListener("submit", submitAuth);
+document.addEventListener("submit", submitReply);
 
 window.addEventListener("scroll", maybePreloadFeed, { passive: true });
+window.addEventListener("scroll", maybeLoadOlderMessages, { passive: true });
 
 const feedObserver = new IntersectionObserver((entries) => {
   if (entries.some((entry) => entry.isIntersecting)) maybePreloadFeed();
@@ -788,4 +1077,4 @@ window.addEventListener("touchend", () => {
   if (!state.loading) $("#pullIndicator").classList.remove("is-visible");
 }, { passive: true });
 
-loadFeed(true);
+loadAuthMe().catch(() => null).finally(() => loadFeed(true));
