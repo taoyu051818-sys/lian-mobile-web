@@ -187,10 +187,11 @@ async function api(path, options) {
   return data;
 }
 
-async function uploadImage(file) {
+async function uploadImage(file, purpose = "") {
   const form = new FormData();
   form.append("image", file);
-  const response = await fetch("/api/upload/image", {
+  const query = purpose ? `?purpose=${encodeURIComponent(purpose)}` : "";
+  const response = await fetch(`/api/upload/image${query}`, {
     method: "POST",
     body: form
   });
@@ -789,7 +790,11 @@ function initMap() {
 }
 
 function channelItemTemplate(item) {
-  const own = state.currentUser?.id && item.userId === state.currentUser.id;
+  const own = Boolean(
+    (state.currentUser?.id && item.userId === state.currentUser.id) ||
+    (state.currentUser?.nodebbUid && Number(item.nodebbUid) === Number(state.currentUser.nodebbUid)) ||
+    (state.currentUser?.username && item.username && item.username === state.currentUser.username)
+  );
   const name = item.username || "同学";
   const tag = item.identityTag || "";
   const avatar = avatarHtml({
@@ -1065,7 +1070,7 @@ async function changeAvatar(file) {
   if (!file) return;
   const panel = $("#profilePanel");
   try {
-    const avatarUrl = await uploadImage(file);
+    const avatarUrl = await uploadImage(file, "avatar");
     await api("/api/auth/avatar", {
       method: "POST",
       headers: { "content-type": "application/json" },

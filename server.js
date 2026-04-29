@@ -1087,6 +1087,7 @@ function normalizeChannelEvent(topic = {}, post = {}, reads = {}) {
     excerpt: text.length > 120 ? `${text.slice(0, 120)}...` : text,
     cover: extractCover(content),
     userId: meta.userId || "",
+    nodebbUid: Number(meta.nodebbUid || postUser.uid || topic.user?.uid || 0) || null,
     username: meta.username || fallbackUsername,
     identityTag: meta.identityTag || "",
     avatarText: meta.avatarText || String(meta.username || fallbackUsername || "同").slice(0, 1),
@@ -1439,6 +1440,7 @@ function buildLianUserMeta(user = {}, identityTag = "") {
   if (!user?.id) return "";
   const meta = {
     userId: user.id,
+    nodebbUid: user.nodebbUid || null,
     username: user.username || "",
     identityTag: identityTag || selectIdentityTag(user),
     avatarText: String(user.username || "同").slice(0, 1),
@@ -1482,6 +1484,7 @@ function selectIdentityTag(user = {}, requested = "") {
 function buildChannelMessageHtml(content, user, identityTag) {
   const meta = {
     userId: user.id,
+    nodebbUid: user.nodebbUid || null,
     username: user.username,
     identityTag: selectIdentityTag(user, identityTag),
     avatarText: String(user.username || "同").slice(0, 1),

@@ -676,6 +676,90 @@ dialog::backdrop {
   background: #fff;
 }
 
+.avatar-crop-sheet form {
+  padding: 14px;
+  background: #fff;
+}
+
+.avatar-crop-sheet header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.avatar-crop-sheet h2 {
+  margin: 0;
+  font-size: 19px;
+}
+
+.avatar-crop-frame {
+  position: relative;
+  width: min(72vw, 320px);
+  aspect-ratio: 1 / 1;
+  margin: 4px auto 14px;
+  overflow: hidden;
+  border-radius: 50%;
+  background: #111;
+  touch-action: none;
+  cursor: grab;
+}
+
+.avatar-crop-frame::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border: 2px solid rgba(255, 255, 255, 0.92);
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 999px rgba(0, 0, 0, 0.08);
+  pointer-events: none;
+}
+
+.avatar-crop-frame:active {
+  cursor: grabbing;
+}
+
+.avatar-crop-frame img {
+  position: absolute;
+  left: 0;
+  top: 0;
+  max-width: none;
+  transform-origin: 0 0;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.avatar-zoom {
+  display: grid;
+  gap: 8px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.avatar-zoom input {
+  width: 100%;
+}
+
+.avatar-crop-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.avatar-crop-actions button {
+  min-height: 40px;
+  border-radius: 8px;
+  background: #f2f0eb;
+  color: #26312b;
+  font-weight: 800;
+}
+
+.avatar-crop-actions .primary {
+  background: var(--ink);
+  color: #fff;
+}
+
 .auth-tabs,
 .profile-actions {
   display: flex;
