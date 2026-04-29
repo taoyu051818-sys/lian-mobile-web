@@ -4,7 +4,6 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <title>黎安信息流</title>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
     <link rel="stylesheet" href="/styles.css">
   </head>
   <body>
@@ -16,15 +15,14 @@
         <div class="feed-sentinel" id="feedSentinel" aria-hidden="true"></div>
       </section>
 
-      <section class="view" data-view="map">
-        <header class="topbar compact">
-          <div>
-            <h1>探索</h1>
-            <p>把信息放回真实位置</p>
-          </div>
-        </header>
-        <div id="map"></div>
-        <section class="place-list" id="placeList"></section>
+      <section class="view view-map" data-view="map">
+        <div class="campus-map-stage" id="campusMapStage">
+          <img class="campus-map-image" id="campusMapImage" src="/assets/lian-illustrated-map.webp" alt="">
+          <svg class="campus-route-layer" id="campusRouteLayer" aria-hidden="true"></svg>
+          <div class="campus-label-layer" id="campusLabelLayer" aria-label="校园地点"></div>
+          <div class="campus-post-layer" id="campusPostLayer" aria-label="地图信息"></div>
+          <nav class="map-filterbar" id="mapFilterbar" aria-label="地图图层"></nav>
+        </div>
       </section>
 
       <section class="view" data-view="messages">
@@ -81,11 +79,28 @@
           正文
           <textarea name="content" required rows="7"></textarea>
         </label>
+        <div class="publish-tools">
+          <button type="button" data-use-current-time>当前时间</button>
+          <button type="button" data-use-current-location>当前位置</button>
+        </div>
+        <div class="publish-grid">
+          <label>
+            时间
+            <input name="occurredAt" autocomplete="off" placeholder="2026年4月15日 19:14">
+          </label>
+          <label>
+            地点
+            <input name="placeName" autocomplete="off" placeholder="选择或获取位置">
+          </label>
+        </div>
+        <input name="lat" type="hidden">
+        <input name="lng" type="hidden">
+        <input name="mapX" type="hidden">
+        <input name="mapY" type="hidden">
         <button class="primary" type="submit">发布到 NodeBB</button>
       </form>
     </dialog>
 
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="/app.js"></script>
   </body>
 </html>

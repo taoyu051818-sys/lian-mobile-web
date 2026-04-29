@@ -528,9 +528,22 @@ function stripHtml(html = "") {
 
 function extractCover(html = "") {
   const img = html.match(/<img[^>]+src=["']([^"']+)["']/i);
-  if (img?.[1]) return img[1].replace(/&amp;/g, "&");
+  if (img?.[1]) return optimizeCloudinaryUrl(img[1].replace(/&amp;/g, "&"), 600);
   const md = html.match(/!\[[^\]]*]\((https?:\/\/[^)\s]+)\)/i);
-  return md?.[1] || "";
+  return md?.[1] ? optimizeCloudinaryUrl(md[1], 600) : "";
+}
+
+function optimizeCloudinaryUrl(url = "", width = 900) {
+  if (!/^https:\/\/res\.cloudinary\.com\/[^/]+\/image\/upload\//.test(url)) return url;
+  if (url.includes("/image/upload/f_auto,") || url.includes("/image/upload/q_auto,")) return url;
+  const transform = `f_auto,q_auto,c_limit,w_${width}`;
+  return url.replace("/image/upload/", `/image/upload/${transform}/`);
+}
+
+function optimizePostImages(html = "", width = 900) {
+  return html.replace(/(<img\b[^>]*\bsrc=["'])(https:\/\/res\.cloudinary\.com\/[^"']+)(["'][^>]*>)/gi, (_match, before, src, after) => {
+    return `${before}${optimizeCloudinaryUrl(src.replace(/&amp;/g, "&"), width)}${after}`;
+  });
 }
 
 function extractSourceUrl(html = "") {
@@ -557,7 +570,7 @@ function renderInlineMarkdown(value = "") {
 
 function renderPostContent(content = "") {
   const cleaned = removeOriginalLinkBlocks(content);
-  if (/<(p|img|h[1-6]|ul|ol|blockquote|div)\b/i.test(cleaned)) return cleaned;
+  if (/<(p|img|h[1-6]|ul|ol|blockquote|div)\b/i.test(cleaned)) return optimizePostImages(cleaned, 900);
   return cleaned
     .split(/\n{2,}/)
     .map((block) => block.trim())
@@ -566,7 +579,7 @@ function renderPostContent(content = "") {
     .map((block) => {
       const image = block.match(/^!\[([^\]]*)]\((https?:\/\/[^)\s]+)\)$/i);
       if (image) {
-        return `<p><img src="${escapeHtml(image[2])}" alt="${escapeHtml(image[1] || "image")}" loading="lazy" /></p>`;
+        return `<p><img src="${escapeHtml(optimizeCloudinaryUrl(image[2], 900))}" alt="${escapeHtml(image[1] || "image")}" loading="lazy" /></p>`;
       }
       const heading = block.match(/^\*\*([^*]+)\*\*$/);
       if (heading) return `<h3>${escapeHtml(heading[1])}</h3>`;
@@ -955,7 +968,10 @@ function buildTopicHtml(payload) {
   blocks.push(...content);
   if (payload.placeName || (payload.lat && payload.lng)) {
     const place = [payload.placeName, payload.lat && payload.lng ? `${payload.lat}, ${payload.lng}` : ""].filter(Boolean).join(" ");
-    blocks.push(`<p>地点：${escapeHtml(place)}</p>`);
+    blocks.push(`<p>&#22320;&#28857;&#65306;${escapeHtml(place)}</p>`);
+  }
+  if (payload.mapLocation && typeof payload.mapLocation === "object") {
+    blocks.push(`<!-- lian-map-location ${escapeHtml(JSON.stringify(payload.mapLocation))} -->`);
   }
   return blocks.join("\n\n").trim();
 }
