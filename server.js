@@ -628,6 +628,7 @@ function publicAuthUser(user = null) {
     username: user.username,
     institution: user.institution || "",
     tags: user.tags || [],
+    identityTags: allowedIdentityTags(user),
     status: user.status || "active",
     registerMethod: user.registerMethod || "",
     invitePermission: Boolean(user.invitePermission),
@@ -848,6 +849,7 @@ function applyInviteViolation(store, bannedUserId) {
 
 function stripHtml(html = "") {
   return html
+    .replace(/<!--[\s\S]*?-->/g, "")
     .replace(/<script[\s\S]*?<\/script>/gi, "")
     .replace(/<style[\s\S]*?<\/style>/gi, "")
     .replace(/<br\s*\/?>/gi, "\n")
@@ -986,7 +988,11 @@ function normalizeChannelEvent(topic = {}, post = {}, reads = {}) {
   const pid = Number(post.pid || post.index || tid);
   const id = `post:${pid || tid}`;
   const content = post.content || post.raw || "";
-  const text = stripHtml(content).replace(/\s+/g, " ").trim();
+  const meta = parseLianChannelMeta(content);
+  const text = stripHtml(content)
+    .replace(/\s+/g, " ")
+    .replace(/\s*来自\s+[^｜\s]+(?:｜[^<]+)?$/u, "")
+    .trim();
   const title = post.index > 0 ? `回复了：${topic.titleRaw || topic.title || ""}` : topic.titleRaw || topic.title || "校园动态";
   const readerSet = Array.isArray(reads.items?.[id]?.readers) ? reads.items[id].readers : [];
   return {
@@ -998,7 +1004,10 @@ function normalizeChannelEvent(topic = {}, post = {}, reads = {}) {
     text,
     excerpt: text.length > 120 ? `${text.slice(0, 120)}...` : text,
     cover: extractCover(content),
-    username: post.user?.username || topic.user?.username || "",
+    userId: meta.userId || "",
+    username: meta.username || "",
+    identityTag: meta.identityTag || "",
+    avatarText: meta.avatarText || String(meta.username || "同").slice(0, 1),
     timestampISO: post.timestampISO || topic.timestampISO || "",
     timeLabel: post.timestampISO || topic.timestampISO || "",
     readCount: readerSet.length,
@@ -1337,6 +1346,38 @@ function userSignature(user) {
   return `\n\n<p style="color:#69706b;font-size:13px">来自 ${escapeHtml(user.username || "同学")}${escapeHtml(tags)}</p>`;
 }
 
+function parseLianChannelMeta(content = "") {
+  const raw = String(content).match(/<!--\s*lian-channel-meta\s+([\s\S]*?)\s*-->/)?.[1];
+  if (!raw) return {};
+  try {
+    return JSON.parse(raw.replace(/&quot;/g, '"').replace(/&amp;/g, "&"));
+  } catch {
+    return {};
+  }
+}
+
+function allowedIdentityTags(user = {}) {
+  const tags = Array.isArray(user.tags) ? user.tags : [];
+  return tags.filter((tag) => tag && (tag === "高校认证" || tag !== "邀请注册"));
+}
+
+function selectIdentityTag(user = {}, requested = "") {
+  const allowed = allowedIdentityTags(user);
+  if (requested && allowed.includes(requested)) return requested;
+  return allowed[0] || "同学";
+}
+
+function buildChannelMessageHtml(content, user, identityTag) {
+  const meta = {
+    userId: user.id,
+    username: user.username,
+    identityTag: selectIdentityTag(user, identityTag),
+    avatarText: String(user.username || "同").slice(0, 1),
+    sentAt: new Date().toISOString()
+  };
+  return `<!-- lian-channel-meta ${escapeHtml(JSON.stringify(meta))} -->\n${buildTextPostHtml(content)}`;
+}
+
 function buildTopicHtml(payload) {
   const blocks = [];
   if (payload.imageUrl) {
@@ -1401,7 +1442,10 @@ function buildTextPostHtml(content = "") {
 }
 
 async function replyToNodebbTopic(tid, content, user = null) {
-  const body = { content: `${buildTextPostHtml(content)}${userSignature(user)}`.trim() };
+  const html = String(content || "").trim().startsWith("<!-- lian-channel-meta")
+    ? String(content || "").trim()
+    : `${buildTextPostHtml(content)}${userSignature(user)}`.trim();
+  const body = { content: html };
   const options = {
     method: "POST",
     headers: {
@@ -1501,12 +1545,13 @@ async function handleChannelMessage(req, res) {
   if (auth.user.status === "limited") return sendJson(res, 403, { error: "account is limited" });
   const payload = await readJsonBody(req);
   const content = String(payload.content || "").trim();
+  const identityTag = selectIdentityTag(auth.user, String(payload.identityTag || ""));
   if (!content) return sendJson(res, 400, { error: "content is required" });
   if (content.length > 800) return sendJson(res, 400, { error: "content is too long" });
 
   let data;
   if (config.nodebbChannelTopicTid) {
-    data = await replyToNodebbTopic(config.nodebbChannelTopicTid, content, auth.user);
+    data = await replyToNodebbTopic(config.nodebbChannelTopicTid, buildChannelMessageHtml(content, auth.user, identityTag), null);
   } else {
     data = await nodebbFetch("/api/v3/topics", {
       method: "POST",
@@ -1517,7 +1562,7 @@ async function handleChannelMessage(req, res) {
       body: JSON.stringify({
         cid: config.nodebbChannelCid,
         title: "校园频道",
-        content: `${buildTextPostHtml(content)}${userSignature(auth.user)}`.trim(),
+        content: buildChannelMessageHtml(content, auth.user, identityTag),
         tags: ["频道消息"]
       })
     });

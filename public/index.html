@@ -29,11 +29,13 @@
         <header class="topbar compact">
           <div>
             <h1>消息</h1>
-            <p>来自论坛的提醒</p>
+            <p>校园频道</p>
           </div>
         </header>
         <section class="message-list" id="messageList"></section>
         <form class="channel-composer" id="channelForm">
+          <span class="composer-avatar" id="channelComposerAvatar">同</span>
+          <select name="identityTag" aria-label="身份标签"></select>
           <input name="content" maxlength="800" autocomplete="off" placeholder="说点什么">
           <button type="submit">发送</button>
         </form>
@@ -84,13 +86,14 @@
           <textarea name="content" required rows="7"></textarea>
         </label>
         <div class="publish-tools">
-          <button type="button" data-use-current-time>当前时间</button>
+          <button type="button" data-pick-time>选择时间</button>
           <button type="button" data-use-current-location>当前位置</button>
+          <button type="button" data-pick-map-location>地图标记</button>
         </div>
         <div class="publish-grid">
           <label>
             时间
-            <input name="occurredAt" autocomplete="off" placeholder="2026年4月15日 19:14">
+            <input name="occurredAt" autocomplete="off" placeholder="当前时间或选择时间" readonly>
           </label>
           <label>
             地点
@@ -101,7 +104,8 @@
         <input name="lng" type="hidden">
         <input name="mapX" type="hidden">
         <input name="mapY" type="hidden">
-        <button class="primary" type="submit">发布到 NodeBB</button>
+        <p class="publish-location-note" id="publishLocationNote"></p>
+        <button class="primary" type="submit">发布到 LIAN</button>
       </form>
     </dialog>
 

@@ -9,9 +9,14 @@ const state = {
   routeStartedAt: 0,
   mapTransform: null,
   mapDrag: null,
+  lastMapDragAt: 0,
   mapRouteFilter: "all",
+  mapRoutesVisible: true,
   mapShowPlaces: true,
-  mapShowPosts: true,
+  mapShowMemories: true,
+  mapShowFoodMenus: true,
+  mapPickingLocation: false,
+  mapPickedPoint: null,
   readTids: new Set(JSON.parse(localStorage.getItem("lian.readTids") || "[]")),
   pullStartY: null,
   pullActive: false,
@@ -33,7 +38,7 @@ const campusMap = {
   routes: [
     {
       id: "bf652947-de73-4181-89b6-f6fbcd98b2ef",
-      title: "摆渡车线路",
+      title: "二号线",
       color: "#2f80ed",
       points: [
         { x: 148, y: 766 }, { x: 301, y: 677 }, { x: 487, y: 552 },
@@ -46,7 +51,7 @@ const campusMap = {
     },
     {
       id: "f4806fbc-a6fb-49e1-bf46-74969baa67d9",
-      title: "摆渡车线路1 v2",
+      title: "一号线",
       color: "#dc3b38",
       points: [
         { x: 577, y: 807 }, { x: 668, y: 737 }, { x: 727, y: 802 },
@@ -61,7 +66,7 @@ const campusMap = {
     },
     {
       id: "1402831c-b64f-4f15-8109-23f2c62c8572",
-      title: "摆渡车教师专路",
+      title: "教师专线",
       color: "#59ed31",
       points: [
         { x: 869, y: 718 }, { x: 852, y: 725 }, { x: 645, y: 552 },
@@ -99,13 +104,24 @@ const campusPlaces = [
 
 const campusMapPosts = [
   {
+    tid: 99,
+    kind: "food",
+    title: "贝可Bakell轻食店菜单",
+    body: "大墩村民主大道四横巷11号",
+    placeName: "大墩村",
+    x: 1206,
+    y: 337,
+    imageUrl: "/snapshot-assets/ccd6274001d9d91c12a71d8043af304c721870af.png"
+  },
+  {
     tid: 100,
+    kind: "memory",
     title: "中传楼上看到的晚霞",
     body: "2026年4月15日 19:14",
     placeName: "中国传媒大学专享楼",
     x: 573,
     y: 548,
-    imageUrl: "https://res.cloudinary.com/dhvyvfu4n/image/upload/f_auto,q_auto,c_fill,w_240,h_180/v1777446554/nodebb-frontend/mobile-web-upload/lp1l2knbyazsod3ikykj.jpg"
+    imageUrl: "/snapshot-assets/50a243a75711a352b4bbaa3c1e035fc0f8fc7f54.jpg"
   }
 ];
 
@@ -149,6 +165,14 @@ function fixFmtDate(value) {
   return `${date.getMonth() + 1}月${date.getDate()}日`;
 }
 
+function fmtMinute(value) {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  const pad = (item) => String(item).padStart(2, "0");
+  return `${date.getMonth() + 1}月${date.getDate()}日 ${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
 async function api(path, options) {
   const response = await fetch(path, options);
   const data = await response.json().catch(() => ({}));
@@ -171,7 +195,20 @@ async function uploadImage(file) {
 async function loadAuthMe() {
   const data = await api("/api/auth/me");
   state.currentUser = data.user || null;
+  renderChannelIdentityOptions();
   return state.currentUser;
+}
+
+function renderChannelIdentityOptions() {
+  const select = $("#channelForm [name='identityTag']");
+  if (!select) return;
+  const tags = state.currentUser?.identityTags?.length ? state.currentUser.identityTags : [];
+  select.innerHTML = tags.length
+    ? tags.map((tag) => `<option value="${escapeHtml(tag)}">${escapeHtml(tag)}</option>`).join("")
+    : `<option value="">同学</option>`;
+  select.disabled = !tags.length;
+  const avatar = $("#channelComposerAvatar");
+  if (avatar) avatar.textContent = String(state.currentUser?.username || "同").slice(0, 1);
 }
 
 function openAuth(mode = "login") {
@@ -296,7 +333,7 @@ function repliesTemplate(post) {
               <span>${escapeHtml(reply.username || "同学")}</span>
               <span>${escapeHtml(fixFmtDate(reply.timestampISO))}</span>
             </div>
-            <div class="nodebb-html">${reply.contentHtml || ""}</div>
+            <div class="lian-html">${reply.contentHtml || ""}</div>
           </article>
         `).join("") : `<p class="reply-empty">还没有回复</p>`}
       </div>
@@ -321,7 +358,7 @@ async function loadFeed(reset = false) {
     const data = await api(`/api/feed?tab=${encodeURIComponent(state.tab)}&page=${state.page}&limit=12&read=${encodeURIComponent(readQuery())}`);
     renderTabs(data.tabs || ["推荐"]);
     if (!data.items.length && reset) {
-      $("#feedList").innerHTML = `<div class="empty-state">NodeBB 没有返回帖子</div>`;
+      $("#feedList").innerHTML = `<div class="empty-state">LIAN 没有返回帖子</div>`;
       return;
     }
     appendFeedItems(data.items);
@@ -363,7 +400,7 @@ async function openDetail(tid) {
       <section class="detail-content">
         <div class="tagline">${escapeHtml([post.tag || "信息", post.timeLabel].filter(Boolean).join(" · "))}</div>
         <h2>${escapeHtml(post.title)}</h2>
-        <div class="nodebb-html">${post.contentHtml || ""}</div>
+        <div class="lian-html">${post.contentHtml || ""}</div>
         ${originalLinkTemplate(post)}
         ${repliesTemplate(post)}
       </section>
@@ -465,6 +502,16 @@ function screenPoint(point, fit) {
   };
 }
 
+function imagePointFromClient(clientX, clientY) {
+  const stage = $("#campusMapStage");
+  const rect = stage.getBoundingClientRect();
+  const fit = mapFit();
+  return {
+    x: Math.max(0, Math.min(campusMap.width, (clientX - rect.left - fit.x) / fit.scale)),
+    y: Math.max(0, Math.min(campusMap.height, (clientY - rect.top - fit.y) / fit.scale))
+  };
+}
+
 function pointOnRoute(route, distance) {
   const metrics = route.metrics;
   if (!metrics.total) return { ...metrics.points[0], angle: 0 };
@@ -481,7 +528,7 @@ function pointOnRoute(route, distance) {
 }
 
 function routeVisible(route) {
-  return state.mapRouteFilter === "all" || state.mapRouteFilter === route.id;
+  return state.mapRoutesVisible && (state.mapRouteFilter === "all" || state.mapRouteFilter === route.id);
 }
 
 function routeVehiclePhases(route) {
@@ -492,19 +539,21 @@ function renderMapControls() {
   const controls = $("#mapFilterbar");
   if (!controls) return;
   const routeButtons = [
-    { id: "all", title: "全部" },
+    { id: "all", title: "摆渡车线路" },
     ...campusMap.routes.map((route) => ({ id: route.id, title: route.title }))
   ].map((item) => (
-    `<button class="map-chip ${state.mapRouteFilter === item.id ? "is-active" : ""}" type="button" data-map-route="${escapeHtml(item.id)}">${escapeHtml(item.title)}</button>`
+    `<button class="map-chip ${state.mapRoutesVisible && state.mapRouteFilter === item.id ? "is-active" : ""}" type="button" data-map-route="${escapeHtml(item.id)}">${escapeHtml(item.title)}</button>`
   )).join("");
   controls.innerHTML = `
-    <div class="map-filter-scroll">${routeButtons}</div>
-    <div class="map-filter-switches">
-      <button class="map-chip ${state.mapShowPlaces ? "is-active" : ""}" type="button" data-map-toggle="places">地点</button>
-      <button class="map-chip ${state.mapShowPosts ? "is-active" : ""}" type="button" data-map-toggle="posts">照片</button>
-    </div>
-  `;
-}
+    ${state.mapPickingLocation ? `<div class="map-pick-hint">点一下地图，作为这条信息的位置</div>` : ""}
+      <div class="map-filter-scroll">${routeButtons}</div>
+      <div class="map-filter-switches">
+        <button class="map-chip ${state.mapShowPlaces ? "is-active" : ""}" type="button" data-map-toggle="places">地标名称</button>
+        <button class="map-chip ${state.mapShowMemories ? "is-active" : ""}" type="button" data-map-toggle="memories">黎安记忆</button>
+        <button class="map-chip ${state.mapShowFoodMenus ? "is-active" : ""}" type="button" data-map-toggle="foodMenus">美食菜单</button>
+      </div>
+    `;
+  }
 
 function renderCampusMap() {
   const image = $("#campusMapImage");
@@ -539,8 +588,12 @@ function renderCampusMap() {
     const screen = screenPoint(place, fit);
     return `<span class="campus-place-label" style="left:${screen.x.toFixed(1)}px;top:${screen.y.toFixed(1)}px">${escapeHtml(place.label)}</span>`;
   }).join("") : "";
-  postLayer.hidden = !state.mapShowPosts;
-  postLayer.innerHTML = state.mapShowPosts ? campusMapPosts.map((post) => {
+  const visiblePosts = campusMapPosts.filter((post) => (
+    (post.kind === "food" && state.mapShowFoodMenus) ||
+    (post.kind !== "food" && state.mapShowMemories)
+  ));
+  postLayer.hidden = !visiblePosts.length && !state.mapPickingLocation;
+  postLayer.innerHTML = visiblePosts.length ? visiblePosts.map((post) => {
     const screen = screenPoint(post, fit);
     return `
       <button class="campus-post-pin" type="button" data-tid="${post.tid}" style="left:${screen.x.toFixed(1)}px;top:${screen.y.toFixed(1)}px">
@@ -548,7 +601,15 @@ function renderCampusMap() {
         <span>${escapeHtml(post.title)}</span>
       </button>
     `;
-  }).join("") : "";
+    }).join("") : "";
+  if (state.mapPickingLocation && state.mapPickedPoint) {
+    const point = screenPoint(state.mapPickedPoint, fit);
+    postLayer.insertAdjacentHTML("beforeend", `
+      <div class="campus-picked-pin" style="left:${point.x.toFixed(1)}px;top:${point.y.toFixed(1)}px">
+        选定位置
+      </div>
+    `);
+  }
   renderMapControls();
 }
 
@@ -591,6 +652,9 @@ function bindCampusMapDrag() {
   stage.addEventListener("pointermove", (event) => {
     if (!state.mapDrag || state.mapDrag.pointerId !== event.pointerId) return;
     event.preventDefault();
+    if (Math.hypot(event.clientX - state.mapDrag.startX, event.clientY - state.mapDrag.startY) > 4) {
+      state.mapDrag.moved = true;
+    }
     state.mapTransform = clampMapTransform({
       scale: state.mapTransform.scale,
       x: state.mapDrag.x + event.clientX - state.mapDrag.startX,
@@ -600,7 +664,10 @@ function bindCampusMapDrag() {
   });
 
   const endDrag = (event) => {
-    if (state.mapDrag?.pointerId === event.pointerId) state.mapDrag = null;
+    if (state.mapDrag?.pointerId === event.pointerId) {
+      if (state.mapDrag.moved) state.lastMapDragAt = Date.now();
+      state.mapDrag = null;
+    }
   };
   stage.addEventListener("pointerup", endDrag);
   stage.addEventListener("pointercancel", endDrag);
@@ -643,11 +710,30 @@ function geoToImagePoint(lat, lng) {
   };
 }
 
-function fillCurrentTime() {
+function formatOccurredAt(value = "") {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  const pad = (item) => String(item).padStart(2, "0");
+  return `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日 ${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
+function pickTime() {
   const input = $("#publishForm [name='occurredAt']");
+  const picker = document.createElement("input");
+  picker.type = "datetime-local";
+  picker.className = "native-time-picker";
   const now = new Date();
-  const pad = (value) => String(value).padStart(2, "0");
-  input.value = `${now.getFullYear()}年${now.getMonth() + 1}月${now.getDate()}日 ${pad(now.getHours())}:${pad(now.getMinutes())}`;
+  now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+  picker.value = now.toISOString().slice(0, 16);
+  picker.addEventListener("change", () => {
+    input.value = formatOccurredAt(picker.value);
+    picker.remove();
+  }, { once: true });
+  document.body.appendChild(picker);
+  if (typeof picker.showPicker === "function") picker.showPicker();
+  else picker.click();
+  setTimeout(() => picker.remove(), 60_000);
 }
 
 function fillCurrentLocation() {
@@ -666,6 +752,7 @@ function fillCurrentLocation() {
     form.elements.mapX.value = Math.round(imagePoint.x);
     form.elements.mapY.value = Math.round(imagePoint.y);
     if (!form.elements.placeName.value) form.elements.placeName.value = place?.label || "";
+    updatePublishLocationNote();
   }, (error) => {
     alert(error.message || "无法获取当前位置");
   }, {
@@ -692,15 +779,22 @@ function initMap() {
 }
 
 function channelItemTemplate(item) {
+  const own = state.currentUser?.id && item.userId === state.currentUser.id;
+  const name = item.username || "同学";
+  const tag = item.identityTag || "";
+  const avatar = escapeHtml(item.avatarText || name.slice(0, 1) || "同").slice(0, 2);
+  const identity = tag ? `${name} · ${tag}` : name;
   return `
-    <article class="message-item ${item.type === "channel_message" ? "is-chat" : ""}" ${item.tid ? `data-tid="${escapeHtml(item.tid)}"` : ""}>
-      <div class="message-meta">
-        <span>${escapeHtml(item.username || "校园频道")}</span>
-        <span>${escapeHtml(fixFmtDate(item.timestampISO))}</span>
+    <article class="message-item ${own ? "is-own" : "is-other"} ${item.type === "channel_message" ? "is-chat" : ""}" data-message-id="${escapeHtml(item.id || "")}">
+      <div class="message-avatar">${avatar}</div>
+      <div class="message-bubble">
+        <div class="message-meta">
+          <span>${escapeHtml(identity)}</span>
+          <span>${escapeHtml(fmtMinute(item.timestampISO))}</span>
+        </div>
+        <p>${escapeHtml(item.excerpt || item.text || "")}</p>
+        <footer>${Number(item.readCount || 0)} 人已读</footer>
       </div>
-      <h3>${escapeHtml(item.title)}</h3>
-      <p>${escapeHtml(item.excerpt || item.text || "")}</p>
-      <footer>${Number(item.readCount || 0)} 人已读</footer>
     </article>
   `;
 }
@@ -716,6 +810,40 @@ async function markChannelRead(items) {
       tids: items.map((item) => item.tid).filter(Boolean)
     })
   });
+}
+
+function startMapLocationPick() {
+  state.mapPickingLocation = true;
+  $("#publishSheet").close();
+  switchView("map");
+  initMap();
+  renderCampusMap();
+}
+
+function pickPublishMapLocation(event) {
+  const point = imagePointFromClient(event.clientX, event.clientY);
+  const place = nearestCampusPlace(point);
+  const form = $("#publishForm");
+  state.mapPickedPoint = point;
+  form.elements.mapX.value = Math.round(point.x);
+  form.elements.mapY.value = Math.round(point.y);
+  form.elements.placeName.value = place?.label || "地图标记";
+  form.elements.lat.value = "";
+  form.elements.lng.value = "";
+  state.mapPickingLocation = false;
+  updatePublishLocationNote();
+  renderCampusMap();
+  $("#publishSheet").showModal();
+}
+
+function updatePublishLocationNote() {
+  const form = $("#publishForm");
+  const note = $("#publishLocationNote");
+  if (!note) return;
+  const mapX = form.elements.mapX.value;
+  const mapY = form.elements.mapY.value;
+  const placeName = form.elements.placeName.value;
+  note.textContent = mapX && mapY ? `已标记：${placeName || "地图位置"} (${mapX}, ${mapY})` : "";
 }
 
 async function loadMessages({ older = false } = {}) {
@@ -765,6 +893,7 @@ async function submitChannelMessage(event) {
   const form = event.currentTarget;
   const input = form.elements.content;
   const content = String(input.value || "").trim();
+  const identityTag = String(form.elements.identityTag?.value || "").trim();
   if (!content) return;
   const button = form.querySelector("button");
   button.disabled = true;
@@ -772,7 +901,7 @@ async function submitChannelMessage(event) {
     await api("/api/channel/messages", {
       method: "POST",
       headers: { "content-type": "application/json", "x-client-id": ensureClientId() },
-      body: JSON.stringify({ readerId: ensureClientId(), content })
+      body: JSON.stringify({ readerId: ensureClientId(), content, identityTag })
     });
     input.value = "";
     await loadMessages();
@@ -921,7 +1050,7 @@ async function submitPost(event) {
     fields.delete("image");
     const payload = Object.fromEntries(fields.entries());
     if (payload.occurredAt) {
-      payload.content = `${payload.content || ""}\n\n时间：${payload.occurredAt}`.trim();
+      payload.content = `${payload.content || ""}\n\n时间：${formatOccurredAt(payload.occurredAt)}`.trim();
     }
     if (payload.mapX && payload.mapY) {
       payload.mapLocation = {
@@ -944,19 +1073,27 @@ async function submitPost(event) {
     });
     $("#publishSheet").close();
     form.reset();
+    state.mapPickedPoint = null;
+    updatePublishLocationNote();
     await loadFeed(true);
   } catch (error) {
     alert(error.message);
   } finally {
     button.disabled = false;
-    button.textContent = "发布到 NodeBB";
+    button.textContent = "发布到 LIAN";
   }
 }
 
 document.addEventListener("click", (event) => {
   const routeControl = event.target.closest("[data-map-route]");
   if (routeControl) {
-    state.mapRouteFilter = routeControl.dataset.mapRoute;
+    if (routeControl.dataset.mapRoute === "all") {
+      state.mapRoutesVisible = !(state.mapRoutesVisible && state.mapRouteFilter === "all");
+      state.mapRouteFilter = "all";
+    } else {
+      state.mapRoutesVisible = true;
+      state.mapRouteFilter = routeControl.dataset.mapRoute;
+    }
     renderCampusMap();
     return;
   }
@@ -964,8 +1101,16 @@ document.addEventListener("click", (event) => {
   const mapToggle = event.target.closest("[data-map-toggle]");
   if (mapToggle) {
     if (mapToggle.dataset.mapToggle === "places") state.mapShowPlaces = !state.mapShowPlaces;
-    if (mapToggle.dataset.mapToggle === "posts") state.mapShowPosts = !state.mapShowPosts;
+    if (mapToggle.dataset.mapToggle === "memories") state.mapShowMemories = !state.mapShowMemories;
+    if (mapToggle.dataset.mapToggle === "foodMenus") state.mapShowFoodMenus = !state.mapShowFoodMenus;
     renderCampusMap();
+    return;
+  }
+
+  const mapStage = event.target.closest("#campusMapStage");
+  if (mapStage && state.mapPickingLocation && !event.target.closest("[data-tid], .map-filterbar")) {
+    if (Date.now() - state.lastMapDragAt < 220) return;
+    pickPublishMapLocation(event);
     return;
   }
 
@@ -978,6 +1123,7 @@ document.addEventListener("click", (event) => {
 
   const card = event.target.closest("[data-tid]");
   if (card) {
+    if (card.closest("#messageList")) return;
     openDetail(card.dataset.tid);
     return;
   }
@@ -1019,12 +1165,16 @@ document.addEventListener("click", (event) => {
     if (!requireLoginUi()) return;
     $("#publishSheet").showModal();
   }
-  if (event.target.closest("[data-use-current-time]")) {
-    fillCurrentTime();
+  if (event.target.closest("[data-pick-time]")) {
+    pickTime();
     return;
   }
   if (event.target.closest("[data-use-current-location]")) {
     fillCurrentLocation();
+    return;
+  }
+  if (event.target.closest("[data-pick-map-location]")) {
+    startMapLocationPick();
     return;
   }
   if (event.target.closest("[data-back-feed]")) {
