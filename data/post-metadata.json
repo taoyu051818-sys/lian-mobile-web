@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "generatedAt": "2026-04-28T05:51:20.556Z",
+  "generatedAt": "2026-04-30T09:57:56.741Z",
   "items": {
     "9": {
       "timeLabel": "4月27日至5月4日",
@@ -713,6 +713,1389 @@
       "expiresAt": null,
       "priority": 6,
       "sourceUrl": "https://www.study-hn.cn/NewsDetail/8b548310bcdb43adaf128265b72ca43a/MjAyNS0xMi0wMg==/1?nav=%5B%5D"
+    },
+    "99": {
+      "timeLabel": "",
+      "startsAt": null,
+      "endsAt": null,
+      "expiresAt": null,
+      "priority": 18,
+      "sourceUrl": "http://149.104.21.74:4100/menu-prototype-v2.html"
+    },
+    "107": {
+      "contentType": "campus_moment",
+      "vibeTags": [
+        "真实",
+        "有网感",
+        "抽象",
+        "在地"
+      ],
+      "sceneTags": [
+        "夜间",
+        "小动物",
+        "路过"
+      ],
+      "locationId": "",
+      "locationArea": "生活区",
+      "qualityScore": 0.75,
+      "imageImpactScore": 0.85,
+      "riskScore": 0,
+      "officialScore": 0,
+      "visibility": "public",
+      "distribution": [
+        "home",
+        "map",
+        "search",
+        "detail"
+      ],
+      "keepAfterExpired": false,
+      "seedKey": "photo-batch1-lizard-wheel",
+      "seedTitle": "[推荐测试] 车轮旁边发现一位“临时住户”",
+      "seedSource": "photo-post-candidates",
+      "seededAt": "2026-04-30T09:57:56.313Z",
+      "imageUrls": [
+        "https://res.cloudinary.com/dhvyvfu4n/image/upload/v1777540506/nodebb-frontend/feed-test-seed/photo-batch1-lizard-wheel-6c638941.jpg"
+      ],
+      "sourceImageFiles": [
+        "微信图片_20260430163737_526_2.jpg"
+      ],
+      "missingImages": [],
+      "tags": [
+        "推荐测试",
+        "校园随手拍",
+        "真实动态",
+        "小动物",
+        "有网感"
+      ]
+    },
+    "108": {
+      "contentType": "campus_moment",
+      "vibeTags": [
+        "真实",
+        "有网感",
+        "抽象"
+      ],
+      "sceneTags": [
+        "白天",
+        "小动物",
+        "路面"
+      ],
+      "locationId": "",
+      "locationArea": "校园公共区域",
+      "qualityScore": 0.72,
+      "imageImpactScore": 0.75,
+      "riskScore": 0,
+      "officialScore": 0,
+      "visibility": "public",
+      "distribution": [
+        "home",
+        "map",
+        "search",
+        "detail"
+      ],
+      "keepAfterExpired": false,
+      "seedKey": "photo-batch1-lizard-tile",
+      "seedTitle": "[推荐测试] 路上遇到一只校园小恐龙",
+      "seedSource": "photo-post-candidates",
+      "seededAt": "2026-04-30T09:57:56.313Z",
+      "imageUrls": [
+        "https://res.cloudinary.com/dhvyvfu4n/image/upload/v1777541253/nodebb-frontend/feed-test-seed/photo-batch1-lizard-tile-dc39c320.jpg"
+      ],
+      "sourceImageFiles": [
+        "微信图片_20260430163801_537_2.jpg"
+      ],
+      "missingImages": [],
+      "tags": [
+        "推荐测试",
+        "校园随手拍",
+        "黎安记忆",
+        "小动物",
+        "抽象校园"
+      ]
+    },
+    "109": {
+      "contentType": "food",
+      "vibeTags": [
+        "在地",
+        "实用"
+      ],
+      "sceneTags": [
+        "甜品",
+        "课后",
+        "探店"
+      ],
+      "locationId": "",
+      "locationArea": "大墩村",
+      "qualityScore": 0.78,
+      "imageImpactScore": 0.7,
+      "riskScore": 0,
+      "officialScore": 0,
+      "visibility": "public",
+      "distribution": [
+        "home",
+        "map",
+        "search",
+        "detail"
+      ],
+      "keepAfterExpired": false,
+      "seedKey": "photo-batch1-xixi-baker",
+      "seedTitle": "[推荐测试] XIXI BAKER 这家店适合顺手买点甜的",
+      "seedSource": "photo-post-candidates",
+      "seededAt": "2026-04-30T09:57:56.313Z",
+      "imageUrls": [
+        "https://res.cloudinary.com/dhvyvfu4n/image/upload/v1777540507/nodebb-frontend/feed-test-seed/photo-batch1-xixi-baker-ee60cbf8.jpg"
+      ],
+      "sourceImageFiles": [
+        "微信图片_20260430163744_530_2.jpg"
+      ],
+      "missingImages": [],
+      "tags": [
+        "推荐测试",
+        "美食菜单",
+        "大墩村",
+        "商家",
+        "甜品"
+      ]
+    },
+    "110": {
+      "contentType": "food",
+      "vibeTags": [
+        "真实",
+        "在地",
+        "实用"
+      ],
+      "sceneTags": [
+        "夜宵",
+        "饭点",
+        "晚课后"
+      ],
+      "locationId": "",
+      "locationArea": "大墩村",
+      "qualityScore": 0.76,
+      "imageImpactScore": 0.65,
+      "riskScore": 0.1,
+      "officialScore": 0,
+      "visibility": "public",
+      "distribution": [
+        "home",
+        "map",
+        "search",
+        "detail"
+      ],
+      "keepAfterExpired": false,
+      "seedKey": "photo-batch1-night-congee",
+      "seedTitle": "[推荐测试] 晚上想吃点热的，这个粥摊可以记一下",
+      "seedSource": "photo-post-candidates",
+      "seededAt": "2026-04-30T09:57:56.313Z",
+      "imageUrls": [
+        "https://res.cloudinary.com/dhvyvfu4n/image/upload/v1777540508/nodebb-frontend/feed-test-seed/photo-batch1-night-congee-8bb3a950.jpg",
+        "https://res.cloudinary.com/dhvyvfu4n/image/upload/v1777540509/nodebb-frontend/feed-test-seed/photo-batch1-night-congee-1a8a39d7.jpg"
+      ],
+      "sourceImageFiles": [
+        "微信图片_20260430163746_531_2.jpg",
+        "微信图片_20260430163748_532_2.jpg"
+      ],
+      "missingImages": [],
+      "tags": [
+        "推荐测试",
+        "美食菜单",
+        "夜宵",
+        "大墩村",
+        "真实动态"
+      ]
+    },
+    "111": {
+      "contentType": "food",
+      "vibeTags": [
+        "真实",
+        "在地",
+        "实用"
+      ],
+      "sceneTags": [
+        "饭点",
+        "食堂",
+        "今日吃什么"
+      ],
+      "locationId": "",
+      "locationArea": "食堂",
+      "qualityScore": 0.72,
+      "imageImpactScore": 0.62,
+      "riskScore": 0,
+      "officialScore": 0,
+      "visibility": "public",
+      "distribution": [
+        "home",
+        "map",
+        "search",
+        "detail"
+      ],
+      "keepAfterExpired": false,
+      "seedKey": "photo-batch1-canteen-tray",
+      "seedTitle": "[推荐测试] 今天这份食堂组合看起来挺顶饱",
+      "seedSource": "photo-post-candidates",
+      "seededAt": "2026-04-30T09:57:56.313Z",
+      "imageUrls": [
+        "https://res.cloudinary.com/dhvyvfu4n/image/upload/v1777540510/nodebb-frontend/feed-test-seed/photo-batch1-canteen-tray-19d8f89b.jpg",
+        "https://res.cloudinary.com/dhvyvfu4n/image/upload/v1777541258/nodebb-frontend/feed-test-seed/photo-batch1-canteen-tray-32aa96fc.jpg"
+      ],
+      "sourceImageFiles": [
+        "微信图片_20260430163755_535_2.jpg",
+        "微信图片_20260430163757_536_2.jpg"
+      ],
+      "missingImages": [],
+      "tags": [
+        "推荐测试",
+        "食堂",
+        "校园生活",
+        "今日吃什么"
+      ]
+    },
+    "112": {
+      "contentType": "food",
+      "vibeTags": [
+        "真实",
+        "在地"
+      ],
+      "sceneTags": [
+        "探店",
+        "晚饭"
+      ],
+      "locationId": "",
+      "locationArea": "大墩村",
+      "qualityScore": 0.68,
+      "imageImpactScore": 0.7,
+      "riskScore": 0,
+      "officialScore": 0,
+      "visibility": "public",
+      "distribution": [
+        "home",
+        "map",
+        "search",
+        "detail"
+      ],
+      "keepAfterExpired": false,
+      "seedKey": "photo-batch1-shrimp",
+      "seedTitle": "[推荐测试] 这盘虾看起来比菜单更有说服力",
+      "seedSource": "photo-post-candidates",
+      "seededAt": "2026-04-30T09:57:56.313Z",
+      "imageUrls": [
+        "https://res.cloudinary.com/dhvyvfu4n/image/upload/v1777540512/nodebb-frontend/feed-test-seed/photo-batch1-shrimp-9e32c252.jpg"
+      ],
+      "sourceImageFiles": [
+        "微信图片_20260430163742_529_2.jpg"
+      ],
+      "missingImages": [],
+      "tags": [
+        "推荐测试",
+        "美食",
+        "探店",
+        "大墩村",
+        "真实动态"
+      ]
+    },
+    "113": {
+      "contentType": "place_memory",
+      "vibeTags": [
+        "真实",
+        "有网感",
+        "在地"
+      ],
+      "sceneTags": [
+        "傍晚",
+        "拍照",
+        "地标"
+      ],
+      "locationId": "",
+      "locationArea": "运动区",
+      "qualityScore": 0.8,
+      "imageImpactScore": 0.88,
+      "riskScore": 0,
+      "officialScore": 0,
+      "visibility": "public",
+      "distribution": [
+        "home",
+        "map",
+        "search",
+        "detail"
+      ],
+      "keepAfterExpired": false,
+      "seedKey": "photo-batch1-climbing-tower",
+      "seedTitle": "[推荐测试] 傍晚的攀岩塔像游戏地图里的地标",
+      "seedSource": "photo-post-candidates",
+      "seededAt": "2026-04-30T09:57:56.313Z",
+      "imageUrls": [
+        "https://res.cloudinary.com/dhvyvfu4n/image/upload/v1777541260/nodebb-frontend/feed-test-seed/photo-batch1-climbing-tower-cceae31d.jpg"
+      ],
+      "sourceImageFiles": [
+        "微信图片_20260430163803_538_2.jpg"
+      ],
+      "missingImages": [],
+      "tags": [
+        "推荐测试",
+        "校园随手拍",
+        "地标",
+        "拍照点",
+        "黎安记忆"
+      ]
+    },
+    "114": {
+      "contentType": "map_tip",
+      "vibeTags": [
+        "在地",
+        "实用"
+      ],
+      "sceneTags": [
+        "路线",
+        "出门前",
+        "地图"
+      ],
+      "locationId": "",
+      "locationArea": "园区主路",
+      "qualityScore": 0.7,
+      "imageImpactScore": 0.55,
+      "riskScore": 0,
+      "officialScore": 0,
+      "visibility": "public",
+      "distribution": [
+        "map",
+        "search",
+        "detail"
+      ],
+      "keepAfterExpired": false,
+      "seedKey": "photo-batch1-road-crossing",
+      "seedTitle": "[推荐测试] 这个路口很适合放进地图说明里",
+      "seedSource": "photo-post-candidates",
+      "seededAt": "2026-04-30T09:57:56.314Z",
+      "imageUrls": [
+        "https://res.cloudinary.com/dhvyvfu4n/image/upload/v1777541261/nodebb-frontend/feed-test-seed/photo-batch1-road-crossing-c17d0da7.jpg"
+      ],
+      "sourceImageFiles": [
+        "微信图片_20260430163752_534_2.jpg"
+      ],
+      "missingImages": [],
+      "tags": [
+        "推荐测试",
+        "地图探索",
+        "路线提示",
+        "园区道路"
+      ]
+    },
+    "115": {
+      "contentType": "campus_tip",
+      "vibeTags": [
+        "真实",
+        "在地",
+        "实用"
+      ],
+      "sceneTags": [
+        "路况",
+        "出门前",
+        "施工"
+      ],
+      "locationId": "",
+      "locationArea": "园区道路",
+      "qualityScore": 0.82,
+      "imageImpactScore": 0.65,
+      "riskScore": 0.05,
+      "officialScore": 0,
+      "visibility": "public",
+      "distribution": [
+        "home",
+        "map",
+        "search",
+        "detail"
+      ],
+      "keepAfterExpired": false,
+      "seedKey": "photo-batch1-road-work",
+      "seedTitle": "[推荐测试] 这段路今天有施工，路过注意一下",
+      "seedSource": "photo-post-candidates",
+      "seededAt": "2026-04-30T09:57:56.314Z",
+      "imageUrls": [
+        "https://res.cloudinary.com/dhvyvfu4n/image/upload/v1777541261/nodebb-frontend/feed-test-seed/photo-batch1-road-work-467c3926.jpg"
+      ],
+      "sourceImageFiles": [
+        "微信图片_20260430163739_528_2.jpg"
+      ],
+      "missingImages": [],
+      "tags": [
+        "推荐测试",
+        "校园反馈",
+        "地图提示",
+        "路况",
+        "真实动态"
+      ]
+    },
+    "116": {
+      "contentType": "activity_scene",
+      "vibeTags": [
+        "真实",
+        "现场感"
+      ],
+      "sceneTags": [
+        "晚上",
+        "活动",
+        "国际交流"
+      ],
+      "locationId": "",
+      "locationArea": "活动现场",
+      "qualityScore": 0.76,
+      "imageImpactScore": 0.85,
+      "riskScore": 0.15,
+      "officialScore": 0.2,
+      "visibility": "public",
+      "distribution": [
+        "home",
+        "search",
+        "detail"
+      ],
+      "keepAfterExpired": false,
+      "seedKey": "photo-batch1-international-flags",
+      "seedTitle": "[推荐测试] 今晚这个活动现场很有国际感",
+      "seedSource": "photo-post-candidates",
+      "seededAt": "2026-04-30T09:57:56.314Z",
+      "imageUrls": [
+        "https://res.cloudinary.com/dhvyvfu4n/image/upload/v1777541262/nodebb-frontend/feed-test-seed/photo-batch1-international-flags-96a01469.jpg"
+      ],
+      "sourceImageFiles": [
+        "微信图片_20260430163750_533_2.jpg"
+      ],
+      "missingImages": [],
+      "tags": [
+        "推荐测试",
+        "活动现场",
+        "校园活动",
+        "国际交流"
+      ]
+    },
+    "117": {
+      "contentType": "activity_scene",
+      "vibeTags": [
+        "真实",
+        "现场感"
+      ],
+      "sceneTags": [
+        "活动",
+        "体育",
+        "晚上"
+      ],
+      "locationId": "",
+      "locationArea": "体育场馆",
+      "qualityScore": 0.72,
+      "imageImpactScore": 0.8,
+      "riskScore": 0.2,
+      "officialScore": 0.4,
+      "visibility": "public",
+      "distribution": [
+        "home",
+        "search",
+        "detail"
+      ],
+      "keepAfterExpired": false,
+      "seedKey": "photo-batch1-sports-stage",
+      "seedTitle": "[推荐测试] 体育精神主题活动现场，舞台效果挺强",
+      "seedSource": "photo-post-candidates",
+      "seededAt": "2026-04-30T09:57:56.314Z",
+      "imageUrls": [
+        "https://res.cloudinary.com/dhvyvfu4n/image/upload/v1777540516/nodebb-frontend/feed-test-seed/photo-batch1-sports-stage-06cde5d5.jpg"
+      ],
+      "sourceImageFiles": [
+        "微信图片_20260430163738_527_2.jpg"
+      ],
+      "missingImages": [],
+      "tags": [
+        "推荐测试",
+        "校园活动",
+        "活动现场",
+        "体育"
+      ]
+    },
+    "118": {
+      "contentType": "activity_scene",
+      "vibeTags": [
+        "真实",
+        "有网感",
+        "现场感"
+      ],
+      "sceneTags": [
+        "社团",
+        "电竞",
+        "室内"
+      ],
+      "locationId": "",
+      "locationArea": "教学楼",
+      "qualityScore": 0.72,
+      "imageImpactScore": 0.75,
+      "riskScore": 0.25,
+      "officialScore": 0,
+      "visibility": "campus",
+      "distribution": [
+        "home",
+        "search",
+        "detail"
+      ],
+      "keepAfterExpired": false,
+      "seedKey": "photo-batch2-esports-room",
+      "seedTitle": "[推荐测试] 这间电脑教室有点像校园里的临时赛场",
+      "seedSource": "photo-post-candidates",
+      "seededAt": "2026-04-30T09:57:56.314Z",
+      "imageUrls": [
+        "https://res.cloudinary.com/dhvyvfu4n/image/upload/v1777541264/nodebb-frontend/feed-test-seed/photo-batch2-esports-room-df562e44.jpg"
+      ],
+      "sourceImageFiles": [
+        "微信图片_20260430164704_547_2.jpg"
+      ],
+      "missingImages": [],
+      "tags": [
+        "推荐测试",
+        "校园活动",
+        "社团现场",
+        "电竞训练",
+        "真实动态"
+      ]
+    },
+    "119": {
+      "contentType": "map_tip",
+      "vibeTags": [
+        "在地",
+        "实用"
+      ],
+      "sceneTags": [
+        "地点",
+        "实践基地",
+        "地图"
+      ],
+      "locationId": "",
+      "locationArea": "学生劳动实践教育基地",
+      "qualityScore": 0.72,
+      "imageImpactScore": 0.65,
+      "riskScore": 0,
+      "officialScore": 0,
+      "visibility": "public",
+      "distribution": [
+        "map",
+        "search",
+        "detail"
+      ],
+      "keepAfterExpired": false,
+      "seedKey": "photo-batch2-labor-base",
+      "seedTitle": "[推荐测试] 这个“学生劳动实践教育基地”可以作为地图点位",
+      "seedSource": "photo-post-candidates",
+      "seededAt": "2026-04-30T09:57:56.314Z",
+      "imageUrls": [
+        "https://res.cloudinary.com/dhvyvfu4n/image/upload/v1777541265/nodebb-frontend/feed-test-seed/photo-batch2-labor-base-fb5e4280.jpg"
+      ],
+      "sourceImageFiles": [
+        "微信图片_20260430164706_548_2.jpg"
+      ],
+      "missingImages": [],
+      "tags": [
+        "推荐测试",
+        "地图探索",
+        "实践基地",
+        "地点"
+      ]
+    },
+    "120": {
+      "contentType": "place_memory",
+      "vibeTags": [
+        "真实",
+        "在地",
+        "实用"
+      ],
+      "sceneTags": [
+        "视野点",
+        "拍照",
+        "地图"
+      ],
+      "locationId": "",
+      "locationArea": "楼顶观景点",
+      "qualityScore": 0.82,
+      "imageImpactScore": 0.82,
+      "riskScore": 0,
+      "officialScore": 0,
+      "visibility": "public",
+      "distribution": [
+        "home",
+        "map",
+        "search",
+        "detail"
+      ],
+      "keepAfterExpired": false,
+      "seedKey": "photo-batch2-rooftop-view",
+      "seedTitle": "[推荐测试] 这个楼顶视角很适合看完整个园区",
+      "seedSource": "photo-post-candidates",
+      "seededAt": "2026-04-30T09:57:56.314Z",
+      "imageUrls": [
+        "https://res.cloudinary.com/dhvyvfu4n/image/upload/v1777540518/nodebb-frontend/feed-test-seed/photo-batch2-rooftop-view-41b8c575.jpg"
+      ],
+      "sourceImageFiles": [
+        "微信图片_20260430164708_549_2.jpg"
+      ],
+      "missingImages": [],
+      "tags": [
+        "推荐测试",
+        "校园随手拍",
+        "地图探索",
+        "拍照点",
+        "黎安记忆"
+      ]
+    },
+    "121": {
+      "contentType": "food",
+      "vibeTags": [
+        "真实",
+        "在地",
+        "实用"
+      ],
+      "sceneTags": [
+        "夜宵",
+        "饭点",
+        "探店"
+      ],
+      "locationId": "",
+      "locationArea": "大墩村",
+      "qualityScore": 0.72,
+      "imageImpactScore": 0.78,
+      "riskScore": 0,
+      "officialScore": 0,
+      "visibility": "public",
+      "distribution": [
+        "home",
+        "map",
+        "search",
+        "detail"
+      ],
+      "keepAfterExpired": false,
+      "seedKey": "photo-batch2-bbq",
+      "seedTitle": "[推荐测试] 这盘烧烤看起来很适合晚课后补一顿",
+      "seedSource": "photo-post-candidates",
+      "seededAt": "2026-04-30T09:57:56.314Z",
+      "imageUrls": [
+        "https://res.cloudinary.com/dhvyvfu4n/image/upload/v1777541267/nodebb-frontend/feed-test-seed/photo-batch2-bbq-6ee3d937.jpg"
+      ],
+      "sourceImageFiles": [
+        "微信图片_20260430164711_550_2.jpg"
+      ],
+      "missingImages": [],
+      "tags": [
+        "推荐测试",
+        "美食",
+        "夜宵",
+        "饭点",
+        "探店"
+      ]
+    },
+    "122": {
+      "contentType": "place_memory",
+      "vibeTags": [
+        "真实",
+        "有网感",
+        "在地"
+      ],
+      "sceneTags": [
+        "夜间",
+        "体育场",
+        "地标"
+      ],
+      "locationId": "",
+      "locationArea": "体育场",
+      "qualityScore": 0.78,
+      "imageImpactScore": 0.8,
+      "riskScore": 0,
+      "officialScore": 0,
+      "visibility": "public",
+      "distribution": [
+        "home",
+        "map",
+        "search",
+        "detail"
+      ],
+      "keepAfterExpired": false,
+      "seedKey": "photo-batch2-night-stadium",
+      "seedTitle": "[推荐测试] 晚上从高处看体育场，像一个发光的地图点",
+      "seedSource": "photo-post-candidates",
+      "seededAt": "2026-04-30T09:57:56.314Z",
+      "imageUrls": [
+        "https://res.cloudinary.com/dhvyvfu4n/image/upload/v1777541268/nodebb-frontend/feed-test-seed/photo-batch2-night-stadium-d6c2f03f.jpg"
+      ],
+      "sourceImageFiles": [
+        "微信图片_20260430164713_551_2.jpg"
+      ],
+      "missingImages": [],
+      "tags": [
+        "推荐测试",
+        "校园夜景",
+        "体育场",
+        "地标",
+        "黎安记忆"
+      ]
+    },
+    "123": {
+      "contentType": "campus_life",
+      "vibeTags": [
+        "真实",
+        "有网感",
+        "生活感"
+      ],
+      "sceneTags": [
+        "日落",
+        "海边",
+        "周边玩乐"
+      ],
+      "locationId": "",
+      "locationArea": "陵水海边",
+      "qualityScore": 0.82,
+      "imageImpactScore": 0.92,
+      "riskScore": 0.05,
+      "officialScore": 0,
+      "visibility": "public",
+      "distribution": [
+        "home",
+        "search",
+        "detail"
+      ],
+      "keepAfterExpired": false,
+      "seedKey": "photo-batch2-seaside-sunset",
+      "seedTitle": "[推荐测试] 海南的日落有时候会把人骗出门",
+      "seedSource": "photo-post-candidates",
+      "seededAt": "2026-04-30T09:57:56.314Z",
+      "imageUrls": [
+        "https://res.cloudinary.com/dhvyvfu4n/image/upload/v1777541269/nodebb-frontend/feed-test-seed/photo-batch2-seaside-sunset-d136b876.jpg"
+      ],
+      "sourceImageFiles": [
+        "微信图片_20260430164715_552_2.jpg"
+      ],
+      "missingImages": [],
+      "tags": [
+        "推荐测试",
+        "周边玩乐",
+        "海南生活",
+        "日落",
+        "真实动态"
+      ]
+    },
+    "124": {
+      "contentType": "place_memory",
+      "vibeTags": [
+        "真实",
+        "在地",
+        "有网感"
+      ],
+      "sceneTags": [
+        "傍晚",
+        "摆渡车",
+        "等车"
+      ],
+      "locationId": "",
+      "locationArea": "摆渡车站点",
+      "qualityScore": 0.78,
+      "imageImpactScore": 0.82,
+      "riskScore": 0,
+      "officialScore": 0,
+      "visibility": "public",
+      "distribution": [
+        "home",
+        "map",
+        "search",
+        "detail"
+      ],
+      "keepAfterExpired": false,
+      "seedKey": "photo-batch2-shuttle-sunset",
+      "seedTitle": "[推荐测试] 等车的时候，天边突然变得很好看",
+      "seedSource": "photo-post-candidates",
+      "seededAt": "2026-04-30T09:57:56.314Z",
+      "imageUrls": [
+        "https://res.cloudinary.com/dhvyvfu4n/image/upload/v1777541269/nodebb-frontend/feed-test-seed/photo-batch2-shuttle-sunset-5ee2f789.jpg"
+      ],
+      "sourceImageFiles": [
+        "微信图片_20260430164650_540_2.jpg"
+      ],
+      "missingImages": [],
+      "tags": [
+        "推荐测试",
+        "校园随手拍",
+        "摆渡车",
+        "等车",
+        "黎安记忆"
+      ]
+    },
+    "125": {
+      "contentType": "map_tip",
+      "vibeTags": [
+        "在地",
+        "实用"
+      ],
+      "sceneTags": [
+        "室内",
+        "找路",
+        "建筑空间"
+      ],
+      "locationId": "",
+      "locationArea": "教学楼内部",
+      "qualityScore": 0.65,
+      "imageImpactScore": 0.45,
+      "riskScore": 0,
+      "officialScore": 0,
+      "visibility": "public",
+      "distribution": [
+        "map",
+        "search",
+        "detail"
+      ],
+      "keepAfterExpired": false,
+      "seedKey": "photo-batch2-atrium",
+      "seedTitle": "[推荐测试] 这个中庭空间其实很适合标进地图",
+      "seedSource": "photo-post-candidates",
+      "seededAt": "2026-04-30T09:57:56.314Z",
+      "imageUrls": [
+        "https://res.cloudinary.com/dhvyvfu4n/image/upload/v1777541270/nodebb-frontend/feed-test-seed/photo-batch2-atrium-acd499be.jpg"
+      ],
+      "sourceImageFiles": [
+        "微信图片_20260430164651_541_2.jpg"
+      ],
+      "missingImages": [],
+      "tags": [
+        "推荐测试",
+        "地图探索",
+        "室内空间",
+        "找路"
+      ]
+    },
+    "126": {
+      "contentType": "learning_scene",
+      "vibeTags": [
+        "真实",
+        "有网感",
+        "现场感"
+      ],
+      "sceneTags": [
+        "课堂",
+        "学习",
+        "互动"
+      ],
+      "locationId": "",
+      "locationArea": "教室",
+      "qualityScore": 0.76,
+      "imageImpactScore": 0.75,
+      "riskScore": 0.3,
+      "officialScore": 0,
+      "visibility": "campus",
+      "distribution": [
+        "home",
+        "search",
+        "detail"
+      ],
+      "keepAfterExpired": false,
+      "seedKey": "photo-batch2-detective-class",
+      "seedTitle": "[推荐测试] 这节课的现场像在玩真人推理游戏",
+      "seedSource": "photo-post-candidates",
+      "seededAt": "2026-04-30T09:57:56.314Z",
+      "imageUrls": [
+        "https://res.cloudinary.com/dhvyvfu4n/image/upload/v1777541271/nodebb-frontend/feed-test-seed/photo-batch2-detective-class-55ca78fe.jpg"
+      ],
+      "sourceImageFiles": [
+        "微信图片_20260430164652_542_2.jpg"
+      ],
+      "missingImages": [],
+      "tags": [
+        "推荐测试",
+        "课堂",
+        "学习体验",
+        "真实动态",
+        "有网感"
+      ]
+    },
+    "127": {
+      "contentType": "library_moment",
+      "vibeTags": [
+        "真实",
+        "有网感",
+        "抽象"
+      ],
+      "sceneTags": [
+        "图书馆",
+        "阅读",
+        "书单"
+      ],
+      "locationId": "",
+      "locationArea": "图书馆",
+      "qualityScore": 0.8,
+      "imageImpactScore": 0.82,
+      "riskScore": 0,
+      "officialScore": 0,
+      "visibility": "public",
+      "distribution": [
+        "home",
+        "map",
+        "search",
+        "detail"
+      ],
+      "keepAfterExpired": false,
+      "seedKey": "photo-batch2-library-book",
+      "seedTitle": "[推荐测试] 在图书馆看到一本很适合今天的书：《庆祝无意义》",
+      "seedSource": "photo-post-candidates",
+      "seededAt": "2026-04-30T09:57:56.314Z",
+      "imageUrls": [
+        "https://res.cloudinary.com/dhvyvfu4n/image/upload/v1777540525/nodebb-frontend/feed-test-seed/photo-batch2-library-book-ec164d83.jpg"
+      ],
+      "sourceImageFiles": [
+        "微信图片_20260430164654_543_2.jpg"
+      ],
+      "missingImages": [],
+      "tags": [
+        "推荐测试",
+        "图书馆学习",
+        "书单",
+        "有网感",
+        "校园随手拍"
+      ]
+    },
+    "128": {
+      "contentType": "place_memory",
+      "vibeTags": [
+        "真实",
+        "在地",
+        "实用"
+      ],
+      "sceneTags": [
+        "实践课",
+        "工作室",
+        "教学空间"
+      ],
+      "locationId": "",
+      "locationArea": "实践教室",
+      "qualityScore": 0.78,
+      "imageImpactScore": 0.72,
+      "riskScore": 0.15,
+      "officialScore": 0,
+      "visibility": "public",
+      "distribution": [
+        "home",
+        "map",
+        "search",
+        "detail"
+      ],
+      "keepAfterExpired": false,
+      "seedKey": "photo-batch2-workshop",
+      "seedTitle": "[推荐测试] 这个实践教室比普通教室更像工作室",
+      "seedSource": "photo-post-candidates",
+      "seededAt": "2026-04-30T09:57:56.314Z",
+      "imageUrls": [
+        "https://res.cloudinary.com/dhvyvfu4n/image/upload/v1777541273/nodebb-frontend/feed-test-seed/photo-batch2-workshop-69322d65.jpg"
+      ],
+      "sourceImageFiles": [
+        "微信图片_20260430164657_544_2.jpg"
+      ],
+      "missingImages": [],
+      "tags": [
+        "推荐测试",
+        "实践教室",
+        "工作室",
+        "教学空间",
+        "地图探索"
+      ]
+    },
+    "129": {
+      "contentType": "campus_moment",
+      "vibeTags": [
+        "真实",
+        "在地",
+        "生活感"
+      ],
+      "sceneTags": [
+        "白天",
+        "庭院",
+        "植物"
+      ],
+      "locationId": "",
+      "locationArea": "校园庭院",
+      "qualityScore": 0.7,
+      "imageImpactScore": 0.65,
+      "riskScore": 0,
+      "officialScore": 0,
+      "visibility": "public",
+      "distribution": [
+        "home",
+        "map",
+        "search",
+        "detail"
+      ],
+      "keepAfterExpired": false,
+      "seedKey": "photo-batch2-mango-tree",
+      "seedTitle": "[推荐测试] 这棵树已经开始有海南味了",
+      "seedSource": "photo-post-candidates",
+      "seededAt": "2026-04-30T09:57:56.314Z",
+      "imageUrls": [
+        "https://res.cloudinary.com/dhvyvfu4n/image/upload/v1777541274/nodebb-frontend/feed-test-seed/photo-batch2-mango-tree-f8f38505.jpg"
+      ],
+      "sourceImageFiles": [
+        "微信图片_20260430164700_545_2.jpg"
+      ],
+      "missingImages": [],
+      "tags": [
+        "推荐测试",
+        "校园随手拍",
+        "植物",
+        "海南生活",
+        "黎安记忆"
+      ]
+    },
+    "130": {
+      "contentType": "place_memory",
+      "vibeTags": [
+        "真实",
+        "在地",
+        "实用"
+      ],
+      "sceneTags": [
+        "拍摄",
+        "影棚",
+        "功能空间"
+      ],
+      "locationId": "",
+      "locationArea": "拍摄空间",
+      "qualityScore": 0.78,
+      "imageImpactScore": 0.72,
+      "riskScore": 0.2,
+      "officialScore": 0,
+      "visibility": "campus",
+      "distribution": [
+        "home",
+        "map",
+        "search",
+        "detail"
+      ],
+      "keepAfterExpired": false,
+      "seedKey": "photo-batch2-studio",
+      "seedTitle": "[推荐测试] 原来这里还有一个像小型影棚的空间",
+      "seedSource": "photo-post-candidates",
+      "seededAt": "2026-04-30T09:57:56.314Z",
+      "imageUrls": [
+        "https://res.cloudinary.com/dhvyvfu4n/image/upload/v1777541274/nodebb-frontend/feed-test-seed/photo-batch2-studio-952c2971.jpg"
+      ],
+      "sourceImageFiles": [
+        "微信图片_20260430164702_546_2.jpg"
+      ],
+      "missingImages": [],
+      "tags": [
+        "推荐测试",
+        "拍摄空间",
+        "影棚",
+        "功能空间",
+        "地图探索"
+      ]
+    },
+    "131": {
+      "contentType": "deadline",
+      "vibeTags": [
+        "实用",
+        "及时"
+      ],
+      "sceneTags": [
+        "报名",
+        "截止",
+        "提醒"
+      ],
+      "locationId": "",
+      "locationArea": "",
+      "qualityScore": 0.74,
+      "imageImpactScore": 0,
+      "riskScore": 0,
+      "officialScore": 0.2,
+      "visibility": "public",
+      "distribution": [
+        "home",
+        "search",
+        "detail"
+      ],
+      "keepAfterExpired": false,
+      "timeLabel": "今天 22:00 前",
+      "expiresAt": "2026-04-30T22:00:00+08:00",
+      "seedKey": "text-boundary-deadline-signup",
+      "seedTitle": "[推荐测试] 今天 22:00 前，有个报名别忘了",
+      "seedSource": "photo-post-candidates",
+      "seededAt": "2026-04-30T09:57:56.371Z",
+      "imageUrls": [],
+      "sourceImageFiles": [],
+      "missingImages": [],
+      "tags": [
+        "推荐测试",
+        "报名机会",
+        "截止提醒",
+        "无图实用信息"
+      ]
+    },
+    "132": {
+      "contentType": "signup",
+      "vibeTags": [
+        "实用",
+        "在地"
+      ],
+      "sceneTags": [
+        "志愿者",
+        "周末",
+        "报名"
+      ],
+      "locationId": "",
+      "locationArea": "试验区",
+      "qualityScore": 0.7,
+      "imageImpactScore": 0,
+      "riskScore": 0,
+      "officialScore": 0.15,
+      "visibility": "public",
+      "distribution": [
+        "home",
+        "search",
+        "detail"
+      ],
+      "keepAfterExpired": false,
+      "timeLabel": "本周末",
+      "expiresAt": "2026-05-03T23:59:59+08:00",
+      "seedKey": "text-boundary-volunteer-recruit",
+      "seedTitle": "[推荐测试] 周末志愿者招募，想攒实践经历的可以看",
+      "seedSource": "photo-post-candidates",
+      "seededAt": "2026-04-30T09:57:56.426Z",
+      "imageUrls": [],
+      "sourceImageFiles": [],
+      "missingImages": [],
+      "tags": [
+        "推荐测试",
+        "志愿者招募",
+        "报名机会",
+        "校园活动",
+        "无图实用信息"
+      ]
+    },
+    "133": {
+      "contentType": "campus_moment",
+      "vibeTags": [
+        "真实",
+        "有网感",
+        "轻量",
+        "在地"
+      ],
+      "sceneTags": [
+        "临时活动",
+        "晚上",
+        "路过"
+      ],
+      "locationId": "",
+      "locationArea": "公共教学楼附近",
+      "qualityScore": 0.78,
+      "imageImpactScore": 0,
+      "riskScore": 0,
+      "officialScore": 0,
+      "visibility": "public",
+      "distribution": [
+        "home",
+        "search",
+        "detail"
+      ],
+      "keepAfterExpired": false,
+      "timeLabel": "今晚",
+      "expiresAt": "2026-04-30T23:59:59+08:00",
+      "seedKey": "text-boundary-p-friendly-pop-up",
+      "seedTitle": "[推荐测试] P 人友好：今晚可能临时有个小活动",
+      "seedSource": "photo-post-candidates",
+      "seededAt": "2026-04-30T09:57:56.480Z",
+      "imageUrls": [],
+      "sourceImageFiles": [],
+      "missingImages": [],
+      "tags": [
+        "推荐测试",
+        "临时活动",
+        "P人友好",
+        "校园随手拍",
+        "有网感"
+      ]
+    },
+    "134": {
+      "contentType": "general",
+      "vibeTags": [
+        "测试"
+      ],
+      "sceneTags": [
+        "风险过滤"
+      ],
+      "locationId": "",
+      "locationArea": "",
+      "qualityScore": 0.1,
+      "imageImpactScore": 0,
+      "riskScore": 0.95,
+      "officialScore": 0,
+      "visibility": "public",
+      "distribution": [
+        "home",
+        "search",
+        "detail"
+      ],
+      "keepAfterExpired": false,
+      "seedKey": "text-boundary-high-risk-filter",
+      "seedTitle": "[推荐测试] 高风险过滤样本：这条不应该自然进首页",
+      "seedSource": "photo-post-candidates",
+      "seededAt": "2026-04-30T09:57:56.532Z",
+      "imageUrls": [],
+      "sourceImageFiles": [],
+      "missingImages": [],
+      "tags": [
+        "推荐测试",
+        "系统测试",
+        "高风险过滤"
+      ]
+    },
+    "135": {
+      "contentType": "general",
+      "vibeTags": [
+        "测试"
+      ],
+      "sceneTags": [
+        "分发范围"
+      ],
+      "locationId": "",
+      "locationArea": "",
+      "qualityScore": 0.2,
+      "imageImpactScore": 0,
+      "riskScore": 0,
+      "officialScore": 0,
+      "visibility": "public",
+      "distribution": [
+        "detailOnly"
+      ],
+      "keepAfterExpired": false,
+      "seedKey": "text-boundary-detail-only",
+      "seedTitle": "[推荐测试] detailOnly 样本：只允许详情直达",
+      "seedSource": "photo-post-candidates",
+      "seededAt": "2026-04-30T09:57:56.584Z",
+      "imageUrls": [],
+      "sourceImageFiles": [],
+      "missingImages": [],
+      "tags": [
+        "推荐测试",
+        "系统测试",
+        "detailOnly"
+      ]
+    },
+    "136": {
+      "contentType": "activity_archive",
+      "vibeTags": [
+        "资料",
+        "实用"
+      ],
+      "sceneTags": [
+        "活动",
+        "复盘",
+        "过期保留"
+      ],
+      "locationId": "",
+      "locationArea": "试验区",
+      "qualityScore": 0.68,
+      "imageImpactScore": 0,
+      "riskScore": 0,
+      "officialScore": 0.2,
+      "visibility": "public",
+      "distribution": [
+        "home",
+        "search",
+        "detail"
+      ],
+      "keepAfterExpired": true,
+      "timeLabel": "已结束，保留资料",
+      "startsAt": "2026-04-01T00:00:00+08:00",
+      "endsAt": "2026-04-02T23:59:59+08:00",
+      "expiresAt": "2026-04-02T23:59:59+08:00",
+      "seedKey": "text-boundary-expired-activity-keep-home",
+      "seedTitle": "[推荐测试] 过期活动资料：虽然过期但仍可保留",
+      "seedSource": "photo-post-candidates",
+      "seededAt": "2026-04-30T09:57:56.638Z",
+      "imageUrls": [],
+      "sourceImageFiles": [],
+      "missingImages": [],
+      "tags": [
+        "推荐测试",
+        "过期资料",
+        "校园活动",
+        "资料库"
+      ]
+    },
+    "137": {
+      "contentType": "club_archive",
+      "vibeTags": [
+        "资料",
+        "在地"
+      ],
+      "sceneTags": [
+        "社团",
+        "过期保留",
+        "搜索"
+      ],
+      "locationId": "",
+      "locationArea": "试验区",
+      "qualityScore": 0.64,
+      "imageImpactScore": 0,
+      "riskScore": 0,
+      "officialScore": 0.1,
+      "visibility": "public",
+      "distribution": [
+        "search",
+        "detail"
+      ],
+      "keepAfterExpired": true,
+      "timeLabel": "已结束，资料保留",
+      "startsAt": "2026-03-01T00:00:00+08:00",
+      "endsAt": "2026-03-10T23:59:59+08:00",
+      "expiresAt": "2026-03-10T23:59:59+08:00",
+      "seedKey": "text-boundary-expired-club-keep-no-home",
+      "seedTitle": "[推荐测试] 过期社团资料：保留但不进首页",
+      "seedSource": "photo-post-candidates",
+      "seededAt": "2026-04-30T09:57:56.689Z",
+      "imageUrls": [],
+      "sourceImageFiles": [],
+      "missingImages": [],
+      "tags": [
+        "推荐测试",
+        "过期资料",
+        "社团内容",
+        "资料库"
+      ]
+    },
+    "138": {
+      "contentType": "official_recap",
+      "vibeTags": [
+        "正式",
+        "资料"
+      ],
+      "sceneTags": [
+        "讲座",
+        "回顾",
+        "官方"
+      ],
+      "locationId": "",
+      "locationArea": "试验区",
+      "qualityScore": 0.56,
+      "imageImpactScore": 0,
+      "riskScore": 0,
+      "officialScore": 1,
+      "visibility": "public",
+      "distribution": [
+        "home",
+        "search",
+        "detail"
+      ],
+      "keepAfterExpired": false,
+      "timeLabel": "讲座回顾",
+      "seedKey": "text-boundary-official-score-review",
+      "seedTitle": "[推荐测试] 正式讲座回顾：这类内容应被适度降权",
+      "seedSource": "photo-post-candidates",
+      "seededAt": "2026-04-30T09:57:56.741Z",
+      "imageUrls": [],
+      "sourceImageFiles": [],
+      "missingImages": [],
+      "tags": [
+        "推荐测试",
+        "官方资讯",
+        "讲座回顾",
+        "系统测试"
+      ]
     }
   }
 }

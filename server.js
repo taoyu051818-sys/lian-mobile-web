@@ -907,6 +907,58 @@ function extractSummary(html = "", title = "") {
   return summary.length > 92 ? `${summary.slice(0, 92)}...` : summary;
 }
 
+const defaultPostMetadata = {
+  contentType: "general",
+  vibeTags: [],
+  sceneTags: [],
+  locationId: "",
+  locationArea: "",
+  qualityScore: 0,
+  imageImpactScore: 0,
+  riskScore: 0,
+  officialScore: 0,
+  visibility: "public",
+  distribution: ["home", "search", "detail"],
+  keepAfterExpired: false
+};
+
+function metadataArray(value, fallback = []) {
+  if (!Array.isArray(value)) return [...fallback];
+  return value.map((item) => String(item || "").trim()).filter(Boolean);
+}
+
+function metadataString(value, fallback = "") {
+  return typeof value === "string" ? value : fallback;
+}
+
+function metadataNumber(value, fallback = 0) {
+  const number = Number(value);
+  return Number.isFinite(number) ? number : fallback;
+}
+
+function metadataBoolean(value, fallback = false) {
+  return typeof value === "boolean" ? value : fallback;
+}
+
+function normalizePostMetadata(meta = {}) {
+  return {
+    ...defaultPostMetadata,
+    ...meta,
+    contentType: metadataString(meta.contentType, defaultPostMetadata.contentType),
+    vibeTags: metadataArray(meta.vibeTags, defaultPostMetadata.vibeTags),
+    sceneTags: metadataArray(meta.sceneTags, defaultPostMetadata.sceneTags),
+    locationId: metadataString(meta.locationId, defaultPostMetadata.locationId),
+    locationArea: metadataString(meta.locationArea, defaultPostMetadata.locationArea),
+    qualityScore: metadataNumber(meta.qualityScore, defaultPostMetadata.qualityScore),
+    imageImpactScore: metadataNumber(meta.imageImpactScore, defaultPostMetadata.imageImpactScore),
+    riskScore: metadataNumber(meta.riskScore, defaultPostMetadata.riskScore),
+    officialScore: metadataNumber(meta.officialScore, defaultPostMetadata.officialScore),
+    visibility: metadataString(meta.visibility, defaultPostMetadata.visibility),
+    distribution: metadataArray(meta.distribution, defaultPostMetadata.distribution),
+    keepAfterExpired: metadataBoolean(meta.keepAfterExpired, defaultPostMetadata.keepAfterExpired)
+  };
+}
+
 function normalizeTopic(topic, detail = null, metadata = {}) {
   const firstPost = detail?.posts?.[0] || {};
   const contentHtml = firstPost.content || topic?.teaser?.content || "";
@@ -916,7 +968,7 @@ function normalizeTopic(topic, detail = null, metadata = {}) {
   const timestampISO = detail?.timestampISO || topic?.timestampISO || firstPost.timestampISO || "";
   const title = detail?.titleRaw || detail?.title || topic?.titleRaw || topic?.title || "未命名";
   const tid = detail?.tid || topic?.tid;
-  const meta = metadata[String(tid)] || {};
+  const meta = normalizePostMetadata(metadata[String(tid)] || {});
 
   return {
     id: String(tid),
@@ -933,6 +985,18 @@ function normalizeTopic(topic, detail = null, metadata = {}) {
     expiresAt: meta.expiresAt || null,
     priority: Number(meta.priority || 0),
     isExpired: Boolean(meta.expiresAt && Date.now() > Date.parse(meta.expiresAt)),
+    contentType: meta.contentType,
+    vibeTags: meta.vibeTags,
+    sceneTags: meta.sceneTags,
+    locationId: meta.locationId,
+    locationArea: meta.locationArea,
+    qualityScore: meta.qualityScore,
+    imageImpactScore: meta.imageImpactScore,
+    riskScore: meta.riskScore,
+    officialScore: meta.officialScore,
+    visibility: meta.visibility,
+    distribution: meta.distribution,
+    keepAfterExpired: meta.keepAfterExpired,
     author: userMeta.username || firstPost?.user?.username || topic?.user?.username || "同学",
     authorUserId: userMeta.userId || "",
     authorIdentityTag: userMeta.identityTag || "",
@@ -1038,7 +1102,34 @@ async function getAllRecentTopics(maxPages = 6) {
   return topics;
 }
 
-function scoreItem(item, rules) {
+function feedFeatureEnabled(rules, featureName) {
+  return Boolean(rules?.feedFeatures?.[featureName]);
+}
+
+function scoringRules(rules = {}) {
+  return {
+    readPenalty: -60,
+    qualityWeight: 40,
+    imageImpactWeight: 24,
+    riskPenalty: -220,
+    officialHomePenalty: -35,
+    riskHideThreshold: 0.7,
+    vibeWeights: {},
+    sceneWeights: {},
+    ...(rules.scoring || {})
+  };
+}
+
+function itemScoreTags(item = {}) {
+  return [
+    item.tag,
+    ...(Array.isArray(item.tags) ? item.tags : []),
+    ...(Array.isArray(item.vibeTags) ? item.vibeTags : []),
+    ...(Array.isArray(item.sceneTags) ? item.sceneTags : [])
+  ].map((tag) => String(tag || "").trim()).filter(Boolean);
+}
+
+function legacyScoreItem(item, rules) {
   if (item.isExpired) return -10_000;
   const pinnedIndex = (rules.pinnedTids || []).indexOf(Number(item.tid));
   const pinned = pinnedIndex >= 0 ? 1000 - pinnedIndex * 5 : 0;
@@ -1049,6 +1140,120 @@ function scoreItem(item, rules) {
   const recency = 60 * Math.pow(0.5, ageMs / (halfLife * 3600_000));
   const cover = item.cover ? Number(rules.coverBonus || 0) : 0;
   return pinned + tagWeight + recency + cover + item.priority;
+}
+
+function isFeedEligible(item, rules, { surface = "home" } = {}) {
+  if (!item) return false;
+  if (isChannelItem(item)) return false;
+  if (!feedFeatureEnabled(rules, "eligibility")) return true;
+
+  const scoring = scoringRules(rules);
+  if (item.isExpired && !item.keepAfterExpired) return false;
+  if (Number(item.riskScore || 0) >= Number(scoring.riskHideThreshold ?? 0.7)) return false;
+
+  const distribution = Array.isArray(item.distribution) ? item.distribution : defaultPostMetadata.distribution;
+  if (distribution.includes("detailOnly")) return false;
+  if (distribution.length && !distribution.includes("all")) {
+    const allowed = surface === "moment" ? ["moment", "home"] : [surface];
+    if (!allowed.some((candidate) => distribution.includes(candidate))) return false;
+  }
+  return true;
+}
+
+function scoreItem(item, rules, { readTids = new Set(), surface = "home", useOfficialPenalty = true } = {}) {
+  if (!feedFeatureEnabled(rules, "enhancedScoring")) return legacyScoreItem(item, rules);
+
+  const base = legacyScoreItem(item, rules);
+  const scoring = scoringRules(rules);
+  const tags = itemScoreTags(item);
+  const seen = new Set();
+  const tagScore = tags.reduce((sum, tag) => {
+    if (seen.has(tag)) return sum;
+    seen.add(tag);
+    const baseTagWeight = tag === item.tag ? 0 : Number(rules.tagWeights?.[tag] || 0);
+    return sum
+      + baseTagWeight
+      + Number(scoring.vibeWeights?.[tag] || 0)
+      + Number(scoring.sceneWeights?.[tag] || 0);
+  }, 0);
+  const quality = Number(item.qualityScore || 0) * Number(scoring.qualityWeight || 0);
+  const imageImpact = Number(item.imageImpactScore || 0) * Number(scoring.imageImpactWeight || 0);
+  const risk = Number(item.riskScore || 0) * Number(scoring.riskPenalty || 0);
+  const official = surface === "home" && useOfficialPenalty
+    ? Number(item.officialScore || 0) * Number(scoring.officialHomePenalty || 0)
+    : 0;
+  const read = readTids.has(Number(item.tid)) ? Number(scoring.readPenalty || 0) : 0;
+  return base + tagScore + quality + imageImpact + risk + official + read;
+}
+
+function diversityKey(value) {
+  const key = String(value || "").trim();
+  return key || "";
+}
+
+function exceedsDiversityLimits(item, counters, diversity) {
+  const contentType = diversityKey(item.contentType);
+  const locationArea = diversityKey(item.locationArea);
+  const primaryTag = diversityKey(item.tag || item.tags?.[0]);
+  return Boolean(
+    (contentType && counters.contentType[contentType] >= Number(diversity.maxSameContentType || Infinity)) ||
+    (locationArea && counters.locationArea[locationArea] >= Number(diversity.maxSameLocationArea || Infinity)) ||
+    (primaryTag && counters.primaryTag[primaryTag] >= Number(diversity.maxSamePrimaryTag || Infinity))
+  );
+}
+
+function addDiversityCounters(item, counters) {
+  const contentType = diversityKey(item.contentType);
+  const locationArea = diversityKey(item.locationArea);
+  const primaryTag = diversityKey(item.tag || item.tags?.[0]);
+  if (contentType) counters.contentType[contentType] = (counters.contentType[contentType] || 0) + 1;
+  if (locationArea) counters.locationArea[locationArea] = (counters.locationArea[locationArea] || 0) + 1;
+  if (primaryTag) counters.primaryTag[primaryTag] = (counters.primaryTag[primaryTag] || 0) + 1;
+}
+
+function diversifyItems(items, rules) {
+  const diversity = rules.diversity || {};
+  if (!feedFeatureEnabled(rules, "diversity") || diversity.enabled === false) return items;
+  const selected = [];
+  const delayed = [];
+  const counters = { contentType: {}, locationArea: {}, primaryTag: {} };
+
+  for (const item of items) {
+    if (exceedsDiversityLimits(item, counters, diversity)) {
+      delayed.push(item);
+      continue;
+    }
+    selected.push(item);
+    addDiversityCounters(item, counters);
+  }
+  return [...selected, ...delayed];
+}
+
+function momentScoreItem(item, rules) {
+  const activeTime = item.startsAt || item.endsAt || item.expiresAt || item.timestampISO || new Date().toISOString();
+  const ageMs = Math.max(0, Date.now() - Date.parse(activeTime));
+  const halfLife = Math.max(1, Number(rules.recencyHalfLifeHours || 48));
+  const recency = 90 * Math.pow(0.5, ageMs / (halfLife * 3600_000));
+  const quality = Number(item.qualityScore || 0) * 35;
+  const imageImpact = Number(item.imageImpactScore || 0) * 30;
+  const replies = Number(item.replyCount || 0) * 4;
+  const priority = Number(item.priority || 0);
+  const tags = new Set(itemScoreTags(item));
+  const momentVibe = ["真实", "在地", "有网感", "生活感", "现场感", "实用", "路况", "饭点", "夜宵", "傍晚", "夜间"];
+  const vibe = momentVibe.reduce((sum, tag) => sum + (tags.has(tag) ? 12 : 0), 0);
+  return recency + quality + imageImpact + replies + priority + vibe;
+}
+
+function selectMomentFeed(items, rules, { page, limit, readTids }) {
+  const momentItems = items
+    .filter((item) => isFeedEligible(item, rules, { surface: "moment" }))
+    .sort((a, b) => momentScoreItem(b, rules) - momentScoreItem(a, rules));
+  const diversified = diversifyItems(momentItems, rules);
+  const start = (page - 1) * limit;
+  return {
+    selected: personalizeBatch(diversified.slice(start, start + limit), readTids),
+    hasMore: start + limit < diversified.length
+  };
 }
 
 function getCuratedPages(rules) {
@@ -1095,41 +1300,61 @@ async function handleFeed(reqUrl, res) {
   const editionPageSize = Number(rules?.feedEditions?.pageSize || 10);
   const limit = Math.min(24, Math.max(4, Number(reqUrl.searchParams.get("limit") || editionPageSize || 10)));
   const readTids = parseReadTids(reqUrl.searchParams.get("read") || "");
-  const topics = (await getAllRecentTopics()).filter((topic) => !isChannelTopic(topic));
+  const isRecommendTab = tab === "推荐";
+  const isMomentTab = tab === "此刻" && feedFeatureEnabled(rules, "momentTab");
+  const surface = isMomentTab ? "moment" : "home";
+  const topics = await getAllRecentTopics();
   const basicItems = topics
     .map((topic) => normalizeTopic(topic, null, metadata))
-    .filter((item) => !isChannelItem(item));
+    .filter((item) => isFeedEligible(item, rules, { surface }));
   const itemByTid = new Map(basicItems.map((item) => [Number(item.tid), item]));
 
   let items = basicItems;
   let selected;
   let hasMore;
-  const curatedPages = tab === "推荐" ? getCuratedPages(rules) : [];
-  if (tab !== "推荐") {
+  let feedMode = "scored";
+  const curatedPages = isRecommendTab ? getCuratedPages(rules) : [];
+
+  if (isMomentTab) {
+    const momentFeed = selectMomentFeed(basicItems, rules, { page, limit, readTids });
+    selected = momentFeed.selected;
+    hasMore = momentFeed.hasMore;
+    feedMode = "moment";
+  } else if (!isRecommendTab) {
     items = items.filter((item) => item.tags.includes(tab) || item.tag === tab);
     const start = (page - 1) * limit;
     selected = items.slice(start, start + limit);
     hasMore = start + selected.length < items.length;
   } else if (curatedPages.length) {
+    feedMode = "curated";
     const used = new Set();
     const pages = curatedPages.map((tids) => {
       const pageItems = tids
         .map((tid) => itemByTid.get(Number(tid)))
-        .filter(Boolean);
+        .filter((item) => isFeedEligible(item, rules, { surface: "home" }));
       pageItems.forEach((item) => used.add(Number(item.tid)));
       return pageItems;
     });
     const rankedRest = basicItems
       .filter((item) => !used.has(Number(item.tid)))
-      .sort((a, b) => scoreItem(b, rules) - scoreItem(a, rules));
-    const restPages = chunkItems(rankedRest, Math.max(4, editionPageSize || limit));
+      .filter((item) => isFeedEligible(item, rules, { surface: "home" }))
+      .sort((a, b) => (
+        scoreItem(b, rules, { readTids, surface: "home", useOfficialPenalty: true })
+        - scoreItem(a, rules, { readTids, surface: "home", useOfficialPenalty: true })
+      ));
+    const restPages = chunkItems(diversifyItems(rankedRest, rules), Math.max(4, editionPageSize || limit));
     const allPages = [...pages, ...restPages].filter((batch) => batch.length);
-    selected = personalizeBatch(allPages[page - 1] || [], readTids);
+    const currentBatch = allPages[page - 1] || [];
+    selected = page <= pages.length ? personalizeBatch(currentBatch, readTids) : currentBatch;
     hasMore = page < allPages.length;
   } else {
-    items = items.sort((a, b) => scoreItem(b, rules) - scoreItem(a, rules));
+    items = items.sort((a, b) => (
+      scoreItem(b, rules, { readTids, surface: "home", useOfficialPenalty: true })
+      - scoreItem(a, rules, { readTids, surface: "home", useOfficialPenalty: true })
+    ));
+    items = diversifyItems(items, rules);
     const start = (page - 1) * limit;
-    selected = personalizeBatch(items.slice(start, start + limit), readTids);
+    selected = items.slice(start, start + limit);
     hasMore = start + selected.length < items.length;
   }
 
@@ -1144,18 +1369,25 @@ async function handleFeed(reqUrl, res) {
       }
     })
   );
+  const filtered = sliced
+    .filter((item) => isFeedEligible(item, rules, { surface }))
+    .filter((item) => isRecommendTab || isMomentTab || item.tags.includes(tab) || item.tag === tab);
+  const configuredTabs = Array.isArray(rules.tabs) && rules.tabs.length ? rules.tabs : ["推荐"];
+  const tabs = feedFeatureEnabled(rules, "momentTab") && !configuredTabs.includes("此刻")
+    ? ["推荐", "此刻", ...configuredTabs.filter((item) => item !== "推荐")]
+    : configuredTabs;
   sendJson(res, 200, {
-    items: sliced,
+    items: filtered,
     page,
     nextPage: hasMore ? page + 1 : null,
     hasMore,
-    tabs: rules.tabs || ["推荐"],
-    feedEdition: curatedPages.length ? {
+    tabs,
+    feedEdition: feedMode === "curated" ? {
       mode: "curated",
       pageSize: editionPageSize,
       generatedAt: rules.feedEditions?.generatedAt || null,
       pageNote: rules.feedEditions?.notes?.[page - 1] || ""
-    } : { mode: "scored" },
+    } : { mode: feedMode },
     dataSource: "api"
   });
 }

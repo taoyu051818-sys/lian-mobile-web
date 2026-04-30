@@ -1,12 +1,14 @@
 {
   "tabs": [
     "推荐",
+    "此刻",
     "校园活动",
     "报名机会",
     "图书馆学习",
     "周边玩乐",
     "安全通知",
-    "?????"
+    "试验区社团",
+    "美食菜单"
   ],
   "pinnedTids": [
     92,
@@ -23,20 +25,22 @@
     "周边玩乐": 78,
     "安全通知": 74,
     "图书馆学习": 68,
-    "?????": 72
+    "试验区社团": 72,
+    "美食菜单": 76
   },
   "recencyHalfLifeHours": 96,
   "coverBonus": 9,
   "feedEditions": {
     "pageSize": 10,
-    "generatedAt": "2026-04-28T05:59:06.929Z",
+    "generatedAt": "2026-04-28T08:43:22.452Z",
     "strategy": "daily-curated-batches",
     "notes": [
-      "????????????????????????",
-      "??????????????????????????????????"
+      "每天按时效性、重要性和学生使用场景排一版推荐流。",
+      "用户侧仍可根据已读状态做轻量队列调整。"
     ],
     "pages": [
       [
+        99,
         92,
         91,
         90,
@@ -45,8 +49,7 @@
         87,
         86,
         85,
-        84,
-        83
+        84
       ],
       [
         93,
@@ -56,5 +59,48 @@
         97
       ]
     ]
+  },
+  "feedFeatures": {
+    "eligibility": true,
+    "enhancedScoring": true,
+    "diversity": true,
+    "momentTab": true
+  },
+  "scoring": {
+    "readPenalty": -60,
+    "qualityWeight": 40,
+    "imageImpactWeight": 24,
+    "riskPenalty": -220,
+    "officialHomePenalty": -35,
+    "riskHideThreshold": 0.7,
+    "vibeWeights": {
+      "真实": 30,
+      "在地": 24,
+      "有网感": 20,
+      "抽象": 12,
+      "生活感": 14,
+      "现场感": 14,
+      "实用": 18,
+      "P人友好": 16
+    },
+    "sceneWeights": {
+      "饭点": 18,
+      "夜宵": 18,
+      "傍晚": 12,
+      "夜间": 12,
+      "周末": 14,
+      "学习": 10,
+      "图书馆": 10,
+      "地图": 12,
+      "出门前": 14,
+      "路况": 16,
+      "拍照": 10
+    }
+  },
+  "diversity": {
+    "enabled": true,
+    "maxSameContentType": 3,
+    "maxSameLocationArea": 3,
+    "maxSamePrimaryTag": 4
   }
 }
