@@ -14,7 +14,6 @@
 - `NODEBB_API_TOKEN`：NodeBB API token
 - `NODEBB_UID`：默认操作用户
 - `NODEBB_CID`：默认发帖分类
-- `DATA_MODE`：建议先用 `snapshot`
 - `CLOUDINARY_URL`：需要网页上传图片发帖时填写
 
 端口 `PORT` 也会写入 `.env`，但服务已经监听后不会自动换端口。修改端口后执行：
@@ -58,17 +57,9 @@ http://服务器IP:4100
 
 填完引导后，后续就是正式信息流。
 
-## 数据模式
+## 数据来源
 
-`live`：只读 NodeBB API，失败就直接报错。
-
-`snapshot`：先尝试连接 NodeBB API，并重试几次；成功后对比并更新本地 `data/nodebb-snapshot.json` 和本地图片资源。API 不通时读取本地快照，接口会返回 `dataSource: "snapshot"` 和 `apiError`。
-
-快照状态：
-
-```text
-GET /api/snapshot/status
-```
+服务端直接读取 LIAN API。接口连接失败时会把错误返回给前端，避免本地缓存掩盖真实问题。
 
 ## 主要接口
 

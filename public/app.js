@@ -1,38 +1,86 @@
 const state = {
-  tab: "推荐",
-  page: 1,
-  loading: false,
-  preloading: false,
-  hasMore: true,
-  mapReady: false,
-  routeFrame: null,
-  routeStartedAt: 0,
-  mapTransform: null,
-  mapDrag: null,
-  lastMapDragAt: 0,
-  mapRouteFilter: "all",
-  mapRoutesVisible: true,
-  mapShowPlaces: true,
-  mapShowMemories: true,
-  mapShowFoodMenus: true,
-  mapPickingLocation: false,
-  mapPickedPoint: null,
-  readTids: new Set(JSON.parse(localStorage.getItem("lian.readTids") || "[]")),
-  pullStartY: null,
-  pullActive: false,
+  feed: {
+    tab: "??",
+    page: 1,
+    loading: false,
+    preloading: false,
+    hasMore: true,
+    readTids: new Set(JSON.parse(localStorage.getItem("lian.readTids") || "[]")),
+    pullStartY: null,
+    pullActive: false,
+    scrollY: 0,
+    masonryHeights: [0, 0]
+  },
+  map: {
+    ready: false,
+    routeFrame: null,
+    routeStartedAt: 0,
+    transform: null,
+    drag: null,
+    lastDragAt: 0,
+    routeFilter: "all",
+    routesVisible: true,
+    showPlaces: true,
+    showMemories: true,
+    showFoodMenus: true,
+    pickingLocation: false,
+    pickedPoint: null
+  },
+  channel: {
+    loading: false,
+    offset: 0,
+    hasMore: true,
+    loadedIds: new Set()
+  },
+  auth: {
+    mode: "login",
+    currentUser: null
+  },
   previousView: "feed",
-  feedScrollY: 0,
-  channelLoading: false,
-  channelOffset: 0,
-  channelHasMore: true,
-  channelLoadedIds: new Set(),
-  authMode: "login",
-  currentUser: null,
-  masonryHeights: [0, 0],
   avatarCrop: null
 };
 
-const MAP_INITIAL_Y_OFFSET = 32;
+const stateAliases = {
+  tab: ["feed", "tab"],
+  page: ["feed", "page"],
+  loading: ["feed", "loading"],
+  preloading: ["feed", "preloading"],
+  hasMore: ["feed", "hasMore"],
+  readTids: ["feed", "readTids"],
+  pullStartY: ["feed", "pullStartY"],
+  pullActive: ["feed", "pullActive"],
+  feedScrollY: ["feed", "scrollY"],
+  masonryHeights: ["feed", "masonryHeights"],
+  mapReady: ["map", "ready"],
+  routeFrame: ["map", "routeFrame"],
+  routeStartedAt: ["map", "routeStartedAt"],
+  mapTransform: ["map", "transform"],
+  mapDrag: ["map", "drag"],
+  lastMapDragAt: ["map", "lastDragAt"],
+  mapRouteFilter: ["map", "routeFilter"],
+  mapRoutesVisible: ["map", "routesVisible"],
+  mapShowPlaces: ["map", "showPlaces"],
+  mapShowMemories: ["map", "showMemories"],
+  mapShowFoodMenus: ["map", "showFoodMenus"],
+  mapPickingLocation: ["map", "pickingLocation"],
+  mapPickedPoint: ["map", "pickedPoint"],
+  channelLoading: ["channel", "loading"],
+  channelOffset: ["channel", "offset"],
+  channelHasMore: ["channel", "hasMore"],
+  channelLoadedIds: ["channel", "loadedIds"],
+  authMode: ["auth", "mode"],
+  currentUser: ["auth", "currentUser"]
+};
+
+Object.defineProperties(state, Object.fromEntries(Object.entries(stateAliases).map(([key, [group, field]]) => [
+  key,
+  {
+    get: () => state[group][field],
+    set: (value) => {
+      state[group][field] = value;
+    }
+  }
+])));const MAP_INITIAL_Y_OFFSET = 32;
 
 const campusMap = {
   width: 1448,
