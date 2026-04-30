@@ -28,8 +28,11 @@ const state = {
   channelLoadedIds: new Set(),
   authMode: "login",
   currentUser: null,
-  masonryHeights: [0, 0]
+  masonryHeights: [0, 0],
+  avatarCrop: null
 };
+
+const MAP_INITIAL_Y_OFFSET = 32;
 
 const campusMap = {
   width: 1448,
@@ -189,7 +192,7 @@ async function api(path, options) {
 
 async function uploadImage(file, purpose = "") {
   const form = new FormData();
-  form.append("image", file);
+  form.append("image", file, file.name || "image.jpg");
   const query = purpose ? `?purpose=${encodeURIComponent(purpose)}` : "";
   const response = await fetch(`/api/upload/image${query}`, {
     method: "POST",
@@ -198,6 +201,116 @@ async function uploadImage(file, purpose = "") {
   const data = await response.json().catch(() => ({}));
   if (!response.ok) throw new Error(data.error || "图片上传失败");
   return data.url;
+}
+
+function clampAvatarCrop() {
+  const crop = state.avatarCrop;
+  if (!crop) return;
+  const frame = $("#avatarCropFrame");
+  const rect = frame.getBoundingClientRect();
+  const width = crop.naturalWidth * crop.scale;
+  const height = crop.naturalHeight * crop.scale;
+  crop.x = Math.min(0, Math.max(rect.width - width, crop.x));
+  crop.y = Math.min(0, Math.max(rect.height - height, crop.y));
+}
+
+function renderAvatarCrop() {
+  const crop = state.avatarCrop;
+  const img = $("#avatarCropImage");
+  if (!crop || !img) return;
+  clampAvatarCrop();
+  img.style.width = `${crop.naturalWidth}px`;
+  img.style.height = `${crop.naturalHeight}px`;
+  img.style.transform = `translate(${crop.x}px, ${crop.y}px) scale(${crop.scale})`;
+}
+
+function setAvatarZoom(multiplier) {
+  const crop = state.avatarCrop;
+  if (!crop) return;
+  const frame = $("#avatarCropFrame").getBoundingClientRect();
+  const centerX = frame.width / 2;
+  const centerY = frame.height / 2;
+  const imageCenterX = (centerX - crop.x) / crop.scale;
+  const imageCenterY = (centerY - crop.y) / crop.scale;
+  crop.scale = crop.minScale * Number(multiplier || 1);
+  crop.x = centerX - imageCenterX * crop.scale;
+  crop.y = centerY - imageCenterY * crop.scale;
+  renderAvatarCrop();
+}
+
+function openAvatarCrop(file) {
+  if (!file) return;
+  const img = $("#avatarCropImage");
+  const sheet = $("#avatarCropSheet");
+  const zoom = $("#avatarZoom");
+  const objectUrl = URL.createObjectURL(file);
+  img.onload = () => {
+    const frame = $("#avatarCropFrame").getBoundingClientRect();
+    const minScale = Math.max(frame.width / img.naturalWidth, frame.height / img.naturalHeight);
+    state.avatarCrop = {
+      file,
+      objectUrl,
+      naturalWidth: img.naturalWidth,
+      naturalHeight: img.naturalHeight,
+      minScale,
+      scale: minScale,
+      x: (frame.width - img.naturalWidth * minScale) / 2,
+      y: (frame.height - img.naturalHeight * minScale) / 2,
+      drag: null
+    };
+    zoom.value = "1";
+    renderAvatarCrop();
+    sheet.showModal();
+  };
+  img.src = objectUrl;
+}
+
+function closeAvatarCrop() {
+  if (state.avatarCrop?.objectUrl) URL.revokeObjectURL(state.avatarCrop.objectUrl);
+  state.avatarCrop = null;
+  $("#avatarCropSheet")?.close();
+}
+
+async function croppedAvatarBlob() {
+  const crop = state.avatarCrop;
+  const img = $("#avatarCropImage");
+  const frame = $("#avatarCropFrame").getBoundingClientRect();
+  if (!crop || !img.naturalWidth) throw new Error("请先选择头像");
+  const canvas = document.createElement("canvas");
+  canvas.width = 512;
+  canvas.height = 512;
+  const ctx = canvas.getContext("2d");
+  ctx.fillStyle = "#fff";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.drawImage(
+    img,
+    Math.max(0, -crop.x / crop.scale),
+    Math.max(0, -crop.y / crop.scale),
+    frame.width / crop.scale,
+    frame.height / crop.scale,
+    0,
+    0,
+    canvas.width,
+    canvas.height
+  );
+  return await new Promise((resolve, reject) => {
+    canvas.toBlob((blob) => blob ? resolve(blob) : reject(new Error("头像裁剪失败")), "image/jpeg", 0.86);
+  });
+}
+
+async function confirmAvatarCrop() {
+  const button = $("[data-confirm-avatar-crop]");
+  button.disabled = true;
+  try {
+    const blob = await croppedAvatarBlob();
+    const file = new File([blob], "avatar.jpg", { type: "image/jpeg" });
+    await changeAvatar(file);
+    closeAvatarCrop();
+  } catch (error) {
+    alert(error.message);
+  } finally {
+    button.disabled = false;
+  }
 }
 
 async function loadAuthMe() {
@@ -484,7 +597,7 @@ function defaultMapTransform() {
   return clampMapTransform({
     scale,
     x: (rect.width - campusMap.width * scale) / 2,
-    y: (rect.height - campusMap.height * scale) / 2
+    y: (rect.height - campusMap.height * scale) / 2 + MAP_INITIAL_Y_OFFSET
   });
 }
 
@@ -1228,6 +1341,8 @@ document.addEventListener("click", (event) => {
   }
   if (event.target.closest("[data-close-publish]")) $("#publishSheet").close();
   if (event.target.closest("[data-close-auth]")) $("#authSheet").close();
+  if (event.target.closest("[data-close-avatar-crop]")) closeAvatarCrop();
+  if (event.target.closest("[data-confirm-avatar-crop]")) confirmAvatarCrop();
 });
 
 window.addEventListener("popstate", () => {
@@ -1240,7 +1355,30 @@ $("#channelForm")?.addEventListener("submit", submitChannelMessage);
 $("#authForm")?.addEventListener("submit", submitAuth);
 document.addEventListener("submit", submitReply);
 document.addEventListener("change", (event) => {
-  if (event.target?.id === "avatarInput") changeAvatar(event.target.files?.[0]);
+  if (event.target?.id === "avatarInput") openAvatarCrop(event.target.files?.[0]);
+});
+
+$("#avatarZoom")?.addEventListener("input", (event) => setAvatarZoom(event.target.value));
+$("#avatarCropFrame")?.addEventListener("pointerdown", (event) => {
+  const crop = state.avatarCrop;
+  if (!crop) return;
+  event.preventDefault();
+  event.currentTarget.setPointerCapture(event.pointerId);
+  crop.drag = { startX: event.clientX, startY: event.clientY, x: crop.x, y: crop.y };
+});
+$("#avatarCropFrame")?.addEventListener("pointermove", (event) => {
+  const crop = state.avatarCrop;
+  if (!crop?.drag) return;
+  crop.x = crop.drag.x + event.clientX - crop.drag.startX;
+  crop.y = crop.drag.y + event.clientY - crop.drag.startY;
+  renderAvatarCrop();
+});
+$("#avatarCropFrame")?.addEventListener("pointerup", (event) => {
+  if (state.avatarCrop) state.avatarCrop.drag = null;
+  event.currentTarget.releasePointerCapture(event.pointerId);
+});
+$("#avatarCropFrame")?.addEventListener("pointercancel", () => {
+  if (state.avatarCrop) state.avatarCrop.drag = null;
 });
 
 window.addEventListener("scroll", maybePreloadFeed, { passive: true });

@@ -954,6 +954,11 @@ function optimizeCloudinaryUrl(url = "", width = 900) {
   return url.replace("/image/upload/", `/image/upload/${transform}/`);
 }
 
+function optimizeCloudinaryAvatarUrl(url = "") {
+  if (!/^https:\/\/res\.cloudinary\.com\/[^/]+\/image\/upload\//.test(url)) return url;
+  return url.replace("/image/upload/", "/image/upload/f_auto,q_auto,c_limit,w_512/");
+}
+
 function optimizePostImages(html = "", width = 900) {
   return html.replace(/(<img\b[^>]*\bsrc=["'])(https:\/\/res\.cloudinary\.com\/[^"']+)(["'][^>]*>)/gi, (_match, before, src, after) => {
     return `${before}${optimizeCloudinaryUrl(src.replace(/&amp;/g, "&"), width)}${after}`;
@@ -1374,14 +1379,14 @@ async function getCloudinaryUrl() {
   return "";
 }
 
-async function uploadImageToCloudinary(file) {
+async function uploadImageToCloudinary(file, purpose = "") {
   const cloudinaryUrl = await getCloudinaryUrl();
   if (!cloudinaryUrl) throw new Error("CLOUDINARY_URL is missing");
 
   const uri = new URL(cloudinaryUrl);
   const [apiKey, apiSecret] = decodeURIComponent(uri.username + ":" + uri.password).split(":");
   const cloudName = uri.hostname;
-  const folder = "nodebb-frontend/mobile-web-upload";
+  const folder = purpose === "avatar" ? "nodebb-frontend/avatars" : "nodebb-frontend/mobile-web-upload";
   const timestamp = Math.floor(Date.now() / 1000);
   const signature = crypto
     .createHash("sha1")
@@ -1403,10 +1408,10 @@ async function uploadImageToCloudinary(file) {
   if (!response.ok || !data.secure_url) {
     throw new Error(data?.error?.message || "Cloudinary upload failed");
   }
-  return data.secure_url;
+  return purpose === "avatar" ? optimizeCloudinaryAvatarUrl(data.secure_url) : data.secure_url;
 }
 
-async function handleUploadImage(req, res) {
+async function handleUploadImage(req, res, reqUrl) {
   const buffer = await readBodyBuffer(req);
   const parts = parseMultipart(buffer, req.headers["content-type"] || "");
   const file = parts.find((part) => part.name === "image" && part.filename && part.body.length);
@@ -1418,7 +1423,8 @@ async function handleUploadImage(req, res) {
     sendJson(res, 400, { error: "only image files are supported" });
     return;
   }
-  const url = await uploadImageToCloudinary(file);
+  const purpose = reqUrl.searchParams.get("purpose") === "avatar" ? "avatar" : "";
+  const url = await uploadImageToCloudinary(file, purpose);
   sendJson(res, 200, { url });
 }
 
@@ -2117,7 +2123,7 @@ async function handleApi(req, reqUrl, res) {
       const tid = Number(reqUrl.pathname.split("/").at(-2));
       return await handleCreateReply(tid, req, res);
     }
-    if (req.method === "POST" && reqUrl.pathname === "/api/upload/image") return await handleUploadImage(req, res);
+    if (req.method === "POST" && reqUrl.pathname === "/api/upload/image") return await handleUploadImage(req, res, reqUrl);
     if (req.method === "POST" && reqUrl.pathname === "/api/posts") return await handleCreatePost(req, res);
     sendJson(res, 404, { error: "not found" });
   } catch (error) {
