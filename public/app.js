@@ -1,10 +1,12 @@
 const state = {
   feed: {
-    tab: "??",
+    tab: "推荐",
     page: 1,
     loading: false,
     preloading: false,
     hasMore: true,
+    status: "idle",
+    requestId: 0,
     readTids: new Set(JSON.parse(localStorage.getItem("lian.readTids") || "[]")),
     pullStartY: null,
     pullActive: false,
@@ -536,6 +538,9 @@ function repliesTemplate(post) {
 
 async function loadFeed(reset = false) {
   if (state.loading || (!reset && !state.hasMore)) return;
+  const requestId = state.feed.requestId + 1;
+  state.feed.requestId = requestId;
+  state.feed.status = "loading";
   state.loading = true;
   state.preloading = !reset;
   try {
@@ -544,27 +549,44 @@ async function loadFeed(reset = false) {
       state.hasMore = true;
       ensureMasonryColumns(true);
     }
-    const data = await api(`/api/feed?tab=${encodeURIComponent(state.tab)}&page=${state.page}&limit=12&read=${encodeURIComponent(readQuery())}`);
+    const tab = state.tab || "推荐";
+    const page = state.page;
+    console.info(`[feed] start request=${requestId} tab=${tab} page=${page} reset=${reset}`);
+    const data = await api(`/api/feed?tab=${encodeURIComponent(tab)}&page=${page}&limit=12&read=${encodeURIComponent(readQuery())}`);
+    if (requestId !== state.feed.requestId) {
+      console.info(`[feed] ignore stale request=${requestId}`);
+      return;
+    }
+    console.info(`[feed] response request=${requestId} items=${data.items?.length || 0}`);
     renderTabs(data.tabs || ["推荐"]);
     if (!data.items.length && reset) {
-      $("#feedList").innerHTML = `<div class="empty-state">LIAN 没有返回帖子</div>`;
+      $("#feedList").innerHTML = `<div class="empty-state">LIAN 没有返回帖子（tab=${escapeHtml(tab)}，page=${page}，items=0）</div>`;
+      state.feed.status = "ready";
       return;
     }
     appendFeedItems(data.items);
+    console.info(`[feed] rendered request=${requestId} cards=${$$(".feed-card").length}`);
     state.hasMore = Boolean(data.hasMore);
     state.page = data.nextPage || state.page + 1;
+    state.feed.status = "ready";
   } catch (error) {
+    if (requestId !== state.feed.requestId) return;
+    state.feed.status = "error";
+    console.error(`[feed] error request=${requestId}`, error);
     $("#feedList").innerHTML = `<div class="empty-state">${escapeHtml(error.message)}</div>`;
   } finally {
-    state.loading = false;
-    state.preloading = false;
-    $("#pullIndicator").classList.remove("is-visible");
-    state.pullActive = false;
+    if (requestId === state.feed.requestId) {
+      state.loading = false;
+      state.preloading = false;
+      $("#pullIndicator").classList.remove("is-visible");
+      state.pullActive = false;
+    }
   }
 }
 
 function maybePreloadFeed() {
   if (!state.initialized) return;
+  if (state.feed.status !== "ready") return;
   if (state.loading || state.preloading || !state.hasMore) return;
   const remaining = document.documentElement.scrollHeight - (window.innerHeight + window.scrollY);
   if (remaining < 1100) loadFeed(false);
@@ -1480,11 +1502,11 @@ window.addEventListener("touchend", () => {
 async function initApp() {
   renderTabs(["推荐"]);
   ensureMasonryColumns(true);
-  await loadAuthMe().catch(() => null);
   await loadFeed(true);
   state.initialized = true;
   feedObserver.observe($("#feedSentinel"));
   maybePreloadFeed();
+  loadAuthMe().catch((error) => console.warn("[auth] me failed", error));
 }
 
 initApp();
