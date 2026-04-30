@@ -243,31 +243,47 @@ function openAvatarCrop(file) {
   const img = $("#avatarCropImage");
   const sheet = $("#avatarCropSheet");
   const zoom = $("#avatarZoom");
+  closeAvatarCrop();
   const objectUrl = URL.createObjectURL(file);
+  img.removeAttribute("style");
+  img.removeAttribute("src");
   img.onload = () => {
-    const frame = $("#avatarCropFrame").getBoundingClientRect();
-    const minScale = Math.max(frame.width / img.naturalWidth, frame.height / img.naturalHeight);
-    state.avatarCrop = {
-      file,
-      objectUrl,
-      naturalWidth: img.naturalWidth,
-      naturalHeight: img.naturalHeight,
-      minScale,
-      scale: minScale,
-      x: (frame.width - img.naturalWidth * minScale) / 2,
-      y: (frame.height - img.naturalHeight * minScale) / 2,
-      drag: null
-    };
-    zoom.value = "1";
-    renderAvatarCrop();
-    sheet.showModal();
+    if (!sheet.open) sheet.showModal();
+    requestAnimationFrame(() => {
+      const frame = $("#avatarCropFrame").getBoundingClientRect();
+      const frameSize = Math.max(1, Math.min(frame.width || 1, frame.height || 1));
+      const minScale = Math.max(frameSize / img.naturalWidth, frameSize / img.naturalHeight);
+      state.avatarCrop = {
+        file,
+        objectUrl,
+        naturalWidth: img.naturalWidth,
+        naturalHeight: img.naturalHeight,
+        minScale,
+        scale: minScale,
+        x: (frameSize - img.naturalWidth * minScale) / 2,
+        y: (frameSize - img.naturalHeight * minScale) / 2,
+        drag: null
+      };
+      zoom.value = "1";
+      renderAvatarCrop();
+    });
   };
+  img.onerror = () => {
+    URL.revokeObjectURL(objectUrl);
+    alert("头像图片读取失败，请换一张图片试试");
+  };
+  sheet.showModal();
   img.src = objectUrl;
 }
 
 function closeAvatarCrop() {
   if (state.avatarCrop?.objectUrl) URL.revokeObjectURL(state.avatarCrop.objectUrl);
   state.avatarCrop = null;
+  const img = $("#avatarCropImage");
+  if (img) {
+    img.removeAttribute("style");
+    img.removeAttribute("src");
+  }
   $("#avatarCropSheet")?.close();
 }
 
