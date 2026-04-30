@@ -947,8 +947,25 @@ function normalizeTopic(topic, detail = null, metadata = {}) {
 function isChannelTopic(topic = {}) {
   const tid = Number(topic.tid);
   const cid = Number(topic.cid);
+  const title = String(topic.titleRaw || topic.title || "").trim();
+  const tags = [
+    ...(Array.isArray(topic.tags) ? topic.tags : []),
+    ...(Array.isArray(topic.tagWhitelist) ? topic.tagWhitelist : [])
+  ].map((tag) => String(tag?.value || tag).trim());
+  const firstPostContent = topic.posts?.[0]?.content || topic.mainPost?.content || topic.content || "";
   if (config.nodebbChannelTopicTid && tid === config.nodebbChannelTopicTid) return true;
   if (config.nodebbChannelCidConfigured && config.nodebbChannelCid !== config.nodebbCid && cid === config.nodebbChannelCid) return true;
+  if (title === "校园频道") return true;
+  if (tags.includes("频道消息")) return true;
+  if (String(firstPostContent).includes("lian-channel-meta")) return true;
+  return false;
+}
+
+function isChannelItem(item = {}) {
+  if (!item) return false;
+  if (String(item.title || "").trim() === "校园频道") return true;
+  if (Array.isArray(item.tags) && item.tags.includes("频道消息")) return true;
+  if (item.tag === "频道消息") return true;
   return false;
 }
 
@@ -1079,7 +1096,9 @@ async function handleFeed(reqUrl, res) {
   const limit = Math.min(24, Math.max(4, Number(reqUrl.searchParams.get("limit") || editionPageSize || 10)));
   const readTids = parseReadTids(reqUrl.searchParams.get("read") || "");
   const topics = (await getAllRecentTopics()).filter((topic) => !isChannelTopic(topic));
-  const basicItems = topics.map((topic) => normalizeTopic(topic, null, metadata));
+  const basicItems = topics
+    .map((topic) => normalizeTopic(topic, null, metadata))
+    .filter((item) => !isChannelItem(item));
   const itemByTid = new Map(basicItems.map((item) => [Number(item.tid), item]));
 
   let items = basicItems;
@@ -1569,6 +1588,9 @@ async function handleChannelMessage(req, res) {
         tags: ["频道消息"]
       })
     });
+  }
+  if (data?.response?.tid || data?.tid || data?.topicData?.tid) {
+    config.nodebbChannelTopicTid = Number(data.response?.tid || data.tid || data.topicData?.tid || config.nodebbChannelTopicTid);
   }
   memory.feedPages.clear();
   memory.topicDetails.clear();
