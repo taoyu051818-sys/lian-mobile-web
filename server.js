@@ -1295,7 +1295,7 @@ function parseReadTids(value = "") {
 async function handleFeed(reqUrl, res) {
   const rules = await loadRules();
   const metadata = await loadMetadata();
-  const tab = reqUrl.searchParams.get("tab") || "推荐";
+  const tab = reqUrl.searchParams.get("tab") || "此刻";
   const page = Math.max(1, Number(reqUrl.searchParams.get("page") || 1));
   const editionPageSize = Number(rules?.feedEditions?.pageSize || 10);
   const limit = Math.min(24, Math.max(4, Number(reqUrl.searchParams.get("limit") || editionPageSize || 10)));

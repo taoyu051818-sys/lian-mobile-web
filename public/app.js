@@ -1,6 +1,6 @@
 const state = {
   feed: {
-    tab: "推荐",
+    tab: "此刻",
     page: 1,
     loading: false,
     preloading: false,
@@ -549,7 +549,7 @@ async function loadFeed(reset = false) {
       state.hasMore = true;
       ensureMasonryColumns(true);
     }
-    const tab = state.tab || "推荐";
+    const tab = state.tab || "此刻";
     const page = state.page;
     console.info(`[feed] start request=${requestId} tab=${tab} page=${page} reset=${reset}`);
     const data = await api(`/api/feed?tab=${encodeURIComponent(tab)}&page=${page}&limit=12&read=${encodeURIComponent(readQuery())}`);
@@ -558,7 +558,7 @@ async function loadFeed(reset = false) {
       return;
     }
     console.info(`[feed] response request=${requestId} items=${data.items?.length || 0}`);
-    renderTabs(data.tabs || ["推荐"]);
+    renderTabs(data.tabs || ["此刻", "推荐"]);
     if (!data.items.length && reset) {
       $("#feedList").innerHTML = `<div class="empty-state">LIAN 没有返回帖子（tab=${escapeHtml(tab)}，page=${page}，items=0）</div>`;
       state.feed.status = "ready";
@@ -1500,7 +1500,7 @@ window.addEventListener("touchend", () => {
 }, { passive: true });
 
 async function initApp() {
-  renderTabs(["推荐"]);
+  renderTabs(["此刻", "推荐"]);
   ensureMasonryColumns(true);
   await loadFeed(true);
   state.initialized = true;

@@ -1,0 +1,350 @@
+{
+  "mode": "execute",
+  "generatedAt": "2026-04-30T09:57:56.313Z",
+  "seedCount": 32,
+  "nodebbBaseUrl": "http://149.104.21.74:4567",
+  "nodebbCid": 2,
+  "nodebbUid": 2,
+  "resultPath": "F:\\26.3.13\\lian-mobile-web\\outputs\\feed-test-seed-result-2026-04-30.json",
+  "metadataBackupPath": "F:\\26.3.13\\lian-mobile-web\\data\\post-metadata.json.bak-2026-04-30T09-57-56-741Z",
+  "posts": [
+    {
+      "key": "photo-batch1-lizard-wheel",
+      "title": "[推荐测试] 车轮旁边发现一位“临时住户”",
+      "action": "reuse-existing",
+      "tid": 107,
+      "repairedPid": null,
+      "imageUrls": [
+        "https://res.cloudinary.com/dhvyvfu4n/image/upload/v1777540506/nodebb-frontend/feed-test-seed/photo-batch1-lizard-wheel-6c638941.jpg"
+      ],
+      "missingImage": []
+    },
+    {
+      "key": "photo-batch1-lizard-tile",
+      "title": "[推荐测试] 路上遇到一只校园小恐龙",
+      "action": "reuse-existing",
+      "tid": 108,
+      "repairedPid": null,
+      "imageUrls": [
+        "https://res.cloudinary.com/dhvyvfu4n/image/upload/v1777541253/nodebb-frontend/feed-test-seed/photo-batch1-lizard-tile-dc39c320.jpg"
+      ],
+      "missingImage": []
+    },
+    {
+      "key": "photo-batch1-xixi-baker",
+      "title": "[推荐测试] XIXI BAKER 这家店适合顺手买点甜的",
+      "action": "reuse-existing",
+      "tid": 109,
+      "repairedPid": null,
+      "imageUrls": [
+        "https://res.cloudinary.com/dhvyvfu4n/image/upload/v1777540507/nodebb-frontend/feed-test-seed/photo-batch1-xixi-baker-ee60cbf8.jpg"
+      ],
+      "missingImage": []
+    },
+    {
+      "key": "photo-batch1-night-congee",
+      "title": "[推荐测试] 晚上想吃点热的，这个粥摊可以记一下",
+      "action": "reuse-existing",
+      "tid": 110,
+      "repairedPid": null,
+      "imageUrls": [
+        "https://res.cloudinary.com/dhvyvfu4n/image/upload/v1777540508/nodebb-frontend/feed-test-seed/photo-batch1-night-congee-8bb3a950.jpg",
+        "https://res.cloudinary.com/dhvyvfu4n/image/upload/v1777540509/nodebb-frontend/feed-test-seed/photo-batch1-night-congee-1a8a39d7.jpg"
+      ],
+      "missingImage": []
+    },
+    {
+      "key": "photo-batch1-canteen-tray",
+      "title": "[推荐测试] 今天这份食堂组合看起来挺顶饱",
+      "action": "reuse-existing",
+      "tid": 111,
+      "repairedPid": null,
+      "imageUrls": [
+        "https://res.cloudinary.com/dhvyvfu4n/image/upload/v1777540510/nodebb-frontend/feed-test-seed/photo-batch1-canteen-tray-19d8f89b.jpg",
+        "https://res.cloudinary.com/dhvyvfu4n/image/upload/v1777541258/nodebb-frontend/feed-test-seed/photo-batch1-canteen-tray-32aa96fc.jpg"
+      ],
+      "missingImage": []
+    },
+    {
+      "key": "photo-batch1-shrimp",
+      "title": "[推荐测试] 这盘虾看起来比菜单更有说服力",
+      "action": "reuse-existing",
+      "tid": 112,
+      "repairedPid": null,
+      "imageUrls": [
+        "https://res.cloudinary.com/dhvyvfu4n/image/upload/v1777540512/nodebb-frontend/feed-test-seed/photo-batch1-shrimp-9e32c252.jpg"
+      ],
+      "missingImage": []
+    },
+    {
+      "key": "photo-batch1-climbing-tower",
+      "title": "[推荐测试] 傍晚的攀岩塔像游戏地图里的地标",
+      "action": "reuse-existing",
+      "tid": 113,
+      "repairedPid": null,
+      "imageUrls": [
+        "https://res.cloudinary.com/dhvyvfu4n/image/upload/v1777541260/nodebb-frontend/feed-test-seed/photo-batch1-climbing-tower-cceae31d.jpg"
+      ],
+      "missingImage": []
+    },
+    {
+      "key": "photo-batch1-road-crossing",
+      "title": "[推荐测试] 这个路口很适合放进地图说明里",
+      "action": "reuse-existing",
+      "tid": 114,
+      "repairedPid": null,
+      "imageUrls": [
+        "https://res.cloudinary.com/dhvyvfu4n/image/upload/v1777541261/nodebb-frontend/feed-test-seed/photo-batch1-road-crossing-c17d0da7.jpg"
+      ],
+      "missingImage": []
+    },
+    {
+      "key": "photo-batch1-road-work",
+      "title": "[推荐测试] 这段路今天有施工，路过注意一下",
+      "action": "reuse-existing",
+      "tid": 115,
+      "repairedPid": null,
+      "imageUrls": [
+        "https://res.cloudinary.com/dhvyvfu4n/image/upload/v1777541261/nodebb-frontend/feed-test-seed/photo-batch1-road-work-467c3926.jpg"
+      ],
+      "missingImage": []
+    },
+    {
+      "key": "photo-batch1-international-flags",
+      "title": "[推荐测试] 今晚这个活动现场很有国际感",
+      "action": "reuse-existing",
+      "tid": 116,
+      "repairedPid": null,
+      "imageUrls": [
+        "https://res.cloudinary.com/dhvyvfu4n/image/upload/v1777541262/nodebb-frontend/feed-test-seed/photo-batch1-international-flags-96a01469.jpg"
+      ],
+      "missingImage": []
+    },
+    {
+      "key": "photo-batch1-sports-stage",
+      "title": "[推荐测试] 体育精神主题活动现场，舞台效果挺强",
+      "action": "reuse-existing",
+      "tid": 117,
+      "repairedPid": null,
+      "imageUrls": [
+        "https://res.cloudinary.com/dhvyvfu4n/image/upload/v1777540516/nodebb-frontend/feed-test-seed/photo-batch1-sports-stage-06cde5d5.jpg"
+      ],
+      "missingImage": []
+    },
+    {
+      "key": "photo-batch2-esports-room",
+      "title": "[推荐测试] 这间电脑教室有点像校园里的临时赛场",
+      "action": "reuse-existing",
+      "tid": 118,
+      "repairedPid": null,
+      "imageUrls": [
+        "https://res.cloudinary.com/dhvyvfu4n/image/upload/v1777541264/nodebb-frontend/feed-test-seed/photo-batch2-esports-room-df562e44.jpg"
+      ],
+      "missingImage": []
+    },
+    {
+      "key": "photo-batch2-labor-base",
+      "title": "[推荐测试] 这个“学生劳动实践教育基地”可以作为地图点位",
+      "action": "reuse-existing",
+      "tid": 119,
+      "repairedPid": null,
+      "imageUrls": [
+        "https://res.cloudinary.com/dhvyvfu4n/image/upload/v1777541265/nodebb-frontend/feed-test-seed/photo-batch2-labor-base-fb5e4280.jpg"
+      ],
+      "missingImage": []
+    },
+    {
+      "key": "photo-batch2-rooftop-view",
+      "title": "[推荐测试] 这个楼顶视角很适合看完整个园区",
+      "action": "reuse-existing",
+      "tid": 120,
+      "repairedPid": null,
+      "imageUrls": [
+        "https://res.cloudinary.com/dhvyvfu4n/image/upload/v1777540518/nodebb-frontend/feed-test-seed/photo-batch2-rooftop-view-41b8c575.jpg"
+      ],
+      "missingImage": []
+    },
+    {
+      "key": "photo-batch2-bbq",
+      "title": "[推荐测试] 这盘烧烤看起来很适合晚课后补一顿",
+      "action": "reuse-existing",
+      "tid": 121,
+      "repairedPid": null,
+      "imageUrls": [
+        "https://res.cloudinary.com/dhvyvfu4n/image/upload/v1777541267/nodebb-frontend/feed-test-seed/photo-batch2-bbq-6ee3d937.jpg"
+      ],
+      "missingImage": []
+    },
+    {
+      "key": "photo-batch2-night-stadium",
+      "title": "[推荐测试] 晚上从高处看体育场，像一个发光的地图点",
+      "action": "reuse-existing",
+      "tid": 122,
+      "repairedPid": null,
+      "imageUrls": [
+        "https://res.cloudinary.com/dhvyvfu4n/image/upload/v1777541268/nodebb-frontend/feed-test-seed/photo-batch2-night-stadium-d6c2f03f.jpg"
+      ],
+      "missingImage": []
+    },
+    {
+      "key": "photo-batch2-seaside-sunset",
+      "title": "[推荐测试] 海南的日落有时候会把人骗出门",
+      "action": "reuse-existing",
+      "tid": 123,
+      "repairedPid": null,
+      "imageUrls": [
+        "https://res.cloudinary.com/dhvyvfu4n/image/upload/v1777541269/nodebb-frontend/feed-test-seed/photo-batch2-seaside-sunset-d136b876.jpg"
+      ],
+      "missingImage": []
+    },
+    {
+      "key": "photo-batch2-shuttle-sunset",
+      "title": "[推荐测试] 等车的时候，天边突然变得很好看",
+      "action": "reuse-existing",
+      "tid": 124,
+      "repairedPid": null,
+      "imageUrls": [
+        "https://res.cloudinary.com/dhvyvfu4n/image/upload/v1777541269/nodebb-frontend/feed-test-seed/photo-batch2-shuttle-sunset-5ee2f789.jpg"
+      ],
+      "missingImage": []
+    },
+    {
+      "key": "photo-batch2-atrium",
+      "title": "[推荐测试] 这个中庭空间其实很适合标进地图",
+      "action": "reuse-existing",
+      "tid": 125,
+      "repairedPid": null,
+      "imageUrls": [
+        "https://res.cloudinary.com/dhvyvfu4n/image/upload/v1777541270/nodebb-frontend/feed-test-seed/photo-batch2-atrium-acd499be.jpg"
+      ],
+      "missingImage": []
+    },
+    {
+      "key": "photo-batch2-detective-class",
+      "title": "[推荐测试] 这节课的现场像在玩真人推理游戏",
+      "action": "reuse-existing",
+      "tid": 126,
+      "repairedPid": null,
+      "imageUrls": [
+        "https://res.cloudinary.com/dhvyvfu4n/image/upload/v1777541271/nodebb-frontend/feed-test-seed/photo-batch2-detective-class-55ca78fe.jpg"
+      ],
+      "missingImage": []
+    },
+    {
+      "key": "photo-batch2-library-book",
+      "title": "[推荐测试] 在图书馆看到一本很适合今天的书：《庆祝无意义》",
+      "action": "reuse-existing",
+      "tid": 127,
+      "repairedPid": null,
+      "imageUrls": [
+        "https://res.cloudinary.com/dhvyvfu4n/image/upload/v1777540525/nodebb-frontend/feed-test-seed/photo-batch2-library-book-ec164d83.jpg"
+      ],
+      "missingImage": []
+    },
+    {
+      "key": "photo-batch2-workshop",
+      "title": "[推荐测试] 这个实践教室比普通教室更像工作室",
+      "action": "reuse-existing",
+      "tid": 128,
+      "repairedPid": null,
+      "imageUrls": [
+        "https://res.cloudinary.com/dhvyvfu4n/image/upload/v1777541273/nodebb-frontend/feed-test-seed/photo-batch2-workshop-69322d65.jpg"
+      ],
+      "missingImage": []
+    },
+    {
+      "key": "photo-batch2-mango-tree",
+      "title": "[推荐测试] 这棵树已经开始有海南味了",
+      "action": "reuse-existing",
+      "tid": 129,
+      "repairedPid": null,
+      "imageUrls": [
+        "https://res.cloudinary.com/dhvyvfu4n/image/upload/v1777541274/nodebb-frontend/feed-test-seed/photo-batch2-mango-tree-f8f38505.jpg"
+      ],
+      "missingImage": []
+    },
+    {
+      "key": "photo-batch2-studio",
+      "title": "[推荐测试] 原来这里还有一个像小型影棚的空间",
+      "action": "reuse-existing",
+      "tid": 130,
+      "repairedPid": null,
+      "imageUrls": [
+        "https://res.cloudinary.com/dhvyvfu4n/image/upload/v1777541274/nodebb-frontend/feed-test-seed/photo-batch2-studio-952c2971.jpg"
+      ],
+      "missingImage": []
+    },
+    {
+      "key": "text-boundary-deadline-signup",
+      "title": "[推荐测试] 今天 22:00 前，有个报名别忘了",
+      "action": "created",
+      "tid": 131,
+      "repairedPid": null,
+      "imageUrls": [],
+      "missingImage": []
+    },
+    {
+      "key": "text-boundary-volunteer-recruit",
+      "title": "[推荐测试] 周末志愿者招募，想攒实践经历的可以看",
+      "action": "created",
+      "tid": 132,
+      "repairedPid": null,
+      "imageUrls": [],
+      "missingImage": []
+    },
+    {
+      "key": "text-boundary-p-friendly-pop-up",
+      "title": "[推荐测试] P 人友好：今晚可能临时有个小活动",
+      "action": "created",
+      "tid": 133,
+      "repairedPid": null,
+      "imageUrls": [],
+      "missingImage": []
+    },
+    {
+      "key": "text-boundary-high-risk-filter",
+      "title": "[推荐测试] 高风险过滤样本：这条不应该自然进首页",
+      "action": "created",
+      "tid": 134,
+      "repairedPid": null,
+      "imageUrls": [],
+      "missingImage": []
+    },
+    {
+      "key": "text-boundary-detail-only",
+      "title": "[推荐测试] detailOnly 样本：只允许详情直达",
+      "action": "created",
+      "tid": 135,
+      "repairedPid": null,
+      "imageUrls": [],
+      "missingImage": []
+    },
+    {
+      "key": "text-boundary-expired-activity-keep-home",
+      "title": "[推荐测试] 过期活动资料：虽然过期但仍可保留",
+      "action": "created",
+      "tid": 136,
+      "repairedPid": null,
+      "imageUrls": [],
+      "missingImage": []
+    },
+    {
+      "key": "text-boundary-expired-club-keep-no-home",
+      "title": "[推荐测试] 过期社团资料：保留但不进首页",
+      "action": "created",
+      "tid": 137,
+      "repairedPid": null,
+      "imageUrls": [],
+      "missingImage": []
+    },
+    {
+      "key": "text-boundary-official-score-review",
+      "title": "[推荐测试] 正式讲座回顾：这类内容应被适度降权",
+      "action": "created",
+      "tid": 138,
+      "repairedPid": null,
+      "imageUrls": [],
+      "missingImage": []
+    }
+  ]
+}
