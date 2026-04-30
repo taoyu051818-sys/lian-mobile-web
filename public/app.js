@@ -36,6 +36,7 @@ const state = {
     mode: "login",
     currentUser: null
   },
+  initialized: false,
   previousView: "feed",
   avatarCrop: null
 };
@@ -563,6 +564,7 @@ async function loadFeed(reset = false) {
 }
 
 function maybePreloadFeed() {
+  if (!state.initialized) return;
   if (state.loading || state.preloading || !state.hasMore) return;
   const remaining = document.documentElement.scrollHeight - (window.innerHeight + window.scrollY);
   if (remaining < 1100) loadFeed(false);
@@ -1456,8 +1458,6 @@ const feedObserver = new IntersectionObserver((entries) => {
   threshold: 0
 });
 
-feedObserver.observe($("#feedSentinel"));
-
 window.addEventListener("touchstart", (event) => {
   if (window.scrollY > 0) return;
   state.pullStartY = event.touches[0].clientY;
@@ -1477,4 +1477,14 @@ window.addEventListener("touchend", () => {
   if (!state.loading) $("#pullIndicator").classList.remove("is-visible");
 }, { passive: true });
 
-loadAuthMe().catch(() => null).finally(() => loadFeed(true));
+async function initApp() {
+  renderTabs(["推荐"]);
+  ensureMasonryColumns(true);
+  await loadAuthMe().catch(() => null);
+  await loadFeed(true);
+  state.initialized = true;
+  feedObserver.observe($("#feedSentinel"));
+  maybePreloadFeed();
+}
+
+initApp();
