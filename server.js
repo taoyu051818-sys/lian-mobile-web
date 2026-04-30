@@ -809,6 +809,11 @@ function optimizeCloudinaryAvatarUrl(url = "") {
   return url.replace("/image/upload/", "/image/upload/f_auto,q_auto,c_limit,w_512/");
 }
 
+function proxiedNodebbAssetUrl(pathname = "", search = "", hash = "") {
+  if (!pathname.startsWith("/assets/")) return "";
+  return `/lian-assets${pathname}${search}${hash}`;
+}
+
 function absoluteNodebbUrl(url = "") {
   if (!url) return "";
   if (/^https?:\/\//i.test(url)) {
@@ -816,6 +821,8 @@ function absoluteNodebbUrl(url = "") {
       const parsed = new URL(url);
       const internal = new URL(config.nodebbBaseUrl);
       const isInternalLoopback = ["127.0.0.1", "localhost", "::1"].includes(parsed.hostname);
+      const proxiedAsset = proxiedNodebbAssetUrl(parsed.pathname, parsed.search, parsed.hash);
+      if (proxiedAsset && (parsed.origin === internal.origin || isInternalLoopback)) return proxiedAsset;
       if (parsed.origin === internal.origin || isInternalLoopback) {
         return `${config.nodebbPublicBaseUrl}${parsed.pathname}${parsed.search}${parsed.hash}`;
       }
@@ -824,12 +831,16 @@ function absoluteNodebbUrl(url = "") {
     }
     return url;
   }
+  if (url.startsWith("/assets/")) return proxiedNodebbAssetUrl(url);
   if (url.startsWith("/")) return `${config.nodebbPublicBaseUrl}${url}`;
   return url;
 }
 
 function optimizePostImages(html = "", width = 900) {
   return html
+    .replace(/(<img\b[^>]*\bsrc=["'])(https?:\/\/(?:127\.0\.0\.1|localhost|\[::1\]):?\d*\/assets\/[^"']+)(["'][^>]*>)/gi, (_match, before, src, after) => {
+      return `${before}${absoluteNodebbUrl(src.replace(/&amp;/g, "&"))}${after}`;
+    })
     .replace(/(<img\b[^>]*\bsrc=["'])(\/[^"']+)(["'][^>]*>)/gi, (_match, before, src, after) => {
       return `${before}${absoluteNodebbUrl(src.replace(/&amp;/g, "&"))}${after}`;
     })
@@ -2002,10 +2013,39 @@ async function serveStatic(reqUrl, res) {
   }
 }
 
+async function proxyLianAsset(reqUrl, res) {
+  const assetPath = reqUrl.pathname.replace(/^\/lian-assets/, "");
+  if (!assetPath.startsWith("/assets/")) {
+    sendText(res, 404, "not found");
+    return;
+  }
+  try {
+    const target = new URL(assetPath + reqUrl.search, config.nodebbBaseUrl);
+    const response = await fetch(target, { headers: { connection: "close" } });
+    if (!response.ok) {
+      sendText(res, response.status, "asset not found");
+      return;
+    }
+    const bytes = Buffer.from(await response.arrayBuffer());
+    const type = response.headers.get("content-type") || MIME[path.extname(assetPath).toLowerCase()] || "application/octet-stream";
+    res.writeHead(200, {
+      "content-type": type,
+      "cache-control": "public, max-age=3600"
+    });
+    res.end(bytes);
+  } catch (error) {
+    sendJson(res, 502, { error: error.message || "asset proxy failed" });
+  }
+}
+
 const server = http.createServer(async (req, res) => {
   const reqUrl = new URL(req.url || "/", `http://${req.headers.host || "localhost"}`);
   if (reqUrl.pathname.startsWith("/api/")) {
     await handleApi(req, reqUrl, res);
+    return;
+  }
+  if (reqUrl.pathname.startsWith("/lian-assets/")) {
+    await proxyLianAsset(reqUrl, res);
     return;
   }
   if (isSetupRequired()) {
