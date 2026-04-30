@@ -11,6 +11,7 @@
 引导页会保存这些配置到服务器本地 `.env`：
 
 - `NODEBB_BASE_URL`：NodeBB 地址。同一台 Linux 服务器建议填 `http://127.0.0.1:4567`
+- `NODEBB_PUBLIC_BASE_URL`：浏览器可访问的公开地址，用于头像、正文图片和跳转链接，不能填 `127.0.0.1`
 - `NODEBB_API_TOKEN`：NodeBB API token
 - `NODEBB_UID`：默认操作用户
 - `NODEBB_CID`：默认发帖分类
