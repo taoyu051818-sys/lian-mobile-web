@@ -433,6 +433,19 @@ async function loadMetadata() {
   return memory.metadata;
 }
 
+async function patchPostMetadata(tid, patch = {}) {
+  const key = String(Number(tid) || tid || "");
+  if (!key) return;
+  const raw = await fs.readFile(metadataPath, "utf8").catch(() => "{\"items\":{}}");
+  const data = JSON.parse(raw || "{\"items\":{}}");
+  data.items ||= {};
+  data.items[key] = { ...(data.items[key] || {}), ...patch };
+  await writeJsonFile(metadataPath, data);
+  memory.metadata = data.items;
+  memory.metadataLoadedAt = Date.now();
+  memory.feedPages.clear();
+}
+
 async function loadChannelReads() {
   const now = Date.now();
   if (memory.channelReads && now - memory.channelReadsLoadedAt < 5_000) return memory.channelReads;
@@ -792,15 +805,17 @@ function stripHtml(html = "") {
 
 function extractCover(html = "") {
   const img = html.match(/<img[^>]+src=["']([^"']+)["']/i);
-  if (img?.[1]) return optimizeCloudinaryUrl(absoluteNodebbUrl(img[1].replace(/&amp;/g, "&")), 600);
+  if (img?.[1]) return normalizePostImageUrl(img[1], { width: 600 });
   const md = html.match(/!\[[^\]]*]\(([^)\s]+)\)/i);
-  return md?.[1] ? optimizeCloudinaryUrl(absoluteNodebbUrl(md[1]), 600) : "";
+  return md?.[1] ? normalizePostImageUrl(md[1], { width: 600 }) : "";
 }
 
 function optimizeCloudinaryUrl(url = "", width = 900) {
   if (!/^https:\/\/res\.cloudinary\.com\/[^/]+\/image\/upload\//.test(url)) return url;
-  if (url.includes("/image/upload/f_auto,") || url.includes("/image/upload/q_auto,")) return url;
   const transform = `f_auto,q_auto,c_limit,w_${width}`;
+  if (url.includes("/image/upload/f_auto,") || url.includes("/image/upload/q_auto,")) {
+    return url.replace(/\/image\/upload\/[^/]*?(?:f_auto|q_auto)[^/]*\//, `/image/upload/${transform}/`);
+  }
   return url.replace("/image/upload/", `/image/upload/${transform}/`);
 }
 
@@ -816,9 +831,11 @@ function proxiedNodebbAssetUrl(pathname = "", search = "", hash = "") {
 
 function absoluteNodebbUrl(url = "") {
   if (!url) return "";
-  if (/^https?:\/\//i.test(url)) {
+  const cleanUrl = String(url).replace(/&amp;/g, "&").trim();
+  if (!cleanUrl) return "";
+  if (/^https?:\/\//i.test(cleanUrl)) {
     try {
-      const parsed = new URL(url);
+      const parsed = new URL(cleanUrl);
       const internal = new URL(config.nodebbBaseUrl);
       const isInternalLoopback = ["127.0.0.1", "localhost", "::1"].includes(parsed.hostname);
       const proxiedAsset = proxiedNodebbAssetUrl(parsed.pathname, parsed.search, parsed.hash);
@@ -827,25 +844,30 @@ function absoluteNodebbUrl(url = "") {
         return `${config.nodebbPublicBaseUrl}${parsed.pathname}${parsed.search}${parsed.hash}`;
       }
     } catch {
-      return url;
+      return cleanUrl;
     }
-    return url;
+    return cleanUrl;
   }
-  if (url.startsWith("/assets/")) return proxiedNodebbAssetUrl(url);
-  if (url.startsWith("/")) return `${config.nodebbPublicBaseUrl}${url}`;
-  return url;
+  if (cleanUrl.startsWith("/assets/")) return proxiedNodebbAssetUrl(cleanUrl);
+  if (cleanUrl.startsWith("/lian-assets/")) return cleanUrl;
+  if (cleanUrl.startsWith("/")) return `${config.nodebbPublicBaseUrl}${cleanUrl}`;
+  return cleanUrl;
+}
+
+function normalizePostImageUrl(url = "", { width = 900 } = {}) {
+  return optimizeCloudinaryUrl(absoluteNodebbUrl(url), width);
 }
 
 function optimizePostImages(html = "", width = 900) {
   return html
     .replace(/(<img\b[^>]*\bsrc=["'])(https?:\/\/(?:127\.0\.0\.1|localhost|\[::1\]):?\d*\/assets\/[^"']+)(["'][^>]*>)/gi, (_match, before, src, after) => {
-      return `${before}${absoluteNodebbUrl(src.replace(/&amp;/g, "&"))}${after}`;
+      return `${before}${normalizePostImageUrl(src, { width })}${after}`;
     })
     .replace(/(<img\b[^>]*\bsrc=["'])(\/[^"']+)(["'][^>]*>)/gi, (_match, before, src, after) => {
-      return `${before}${absoluteNodebbUrl(src.replace(/&amp;/g, "&"))}${after}`;
+      return `${before}${normalizePostImageUrl(src, { width })}${after}`;
     })
     .replace(/(<img\b[^>]*\bsrc=["'])(https:\/\/res\.cloudinary\.com\/[^"']+)(["'][^>]*>)/gi, (_match, before, src, after) => {
-      return `${before}${optimizeCloudinaryUrl(src.replace(/&amp;/g, "&"), width)}${after}`;
+      return `${before}${normalizePostImageUrl(src, { width })}${after}`;
     });
 }
 
@@ -911,6 +933,7 @@ const defaultPostMetadata = {
   contentType: "general",
   vibeTags: [],
   sceneTags: [],
+  imageUrls: [],
   locationId: "",
   locationArea: "",
   qualityScore: 0,
@@ -947,6 +970,7 @@ function normalizePostMetadata(meta = {}) {
     contentType: metadataString(meta.contentType, defaultPostMetadata.contentType),
     vibeTags: metadataArray(meta.vibeTags, defaultPostMetadata.vibeTags),
     sceneTags: metadataArray(meta.sceneTags, defaultPostMetadata.sceneTags),
+    imageUrls: metadataArray(meta.imageUrls, defaultPostMetadata.imageUrls).map((url) => normalizePostImageUrl(url, { width: 900 })),
     locationId: metadataString(meta.locationId, defaultPostMetadata.locationId),
     locationArea: metadataString(meta.locationArea, defaultPostMetadata.locationArea),
     qualityScore: metadataNumber(meta.qualityScore, defaultPostMetadata.qualityScore),
@@ -969,6 +993,7 @@ function normalizeTopic(topic, detail = null, metadata = {}) {
   const title = detail?.titleRaw || detail?.title || topic?.titleRaw || topic?.title || "未命名";
   const tid = detail?.tid || topic?.tid;
   const meta = normalizePostMetadata(metadata[String(tid)] || {});
+  const cover = meta.imageUrls[0] ? normalizePostImageUrl(meta.imageUrls[0], { width: 600 }) : extractCover(contentHtml);
 
   return {
     id: String(tid),
@@ -977,7 +1002,7 @@ function normalizeTopic(topic, detail = null, metadata = {}) {
     tag,
     tags: tags.map((item) => item.value || item.name || item).filter(Boolean),
     summary: extractSummary(contentHtml, title),
-    cover: extractCover(contentHtml),
+    cover,
     timestampISO,
     timeLabel: meta.timeLabel || "",
     startsAt: meta.startsAt || null,
@@ -1633,7 +1658,8 @@ function buildTopicHtml(payload) {
   const blocks = [];
   if (payload.currentUser) blocks.push(buildLianUserMeta(payload.currentUser));
   if (payload.imageUrl) {
-    blocks.push(`<img src="${escapeHtml(payload.imageUrl)}" alt="${escapeHtml(payload.title || "cover")}" style="max-width:100%;height:auto" />`);
+    const imageUrl = normalizePostImageUrl(payload.imageUrl, { width: 1200 });
+    blocks.push(`<img src="${escapeHtml(imageUrl)}" alt="${escapeHtml(payload.title || "cover")}" style="max-width:100%;height:auto" />`);
   }
   if (payload.tag) blocks.push(`<p><strong>#${escapeHtml(payload.tag)}</strong></p>`);
   const content = String(payload.content || "")
@@ -1652,6 +1678,18 @@ function buildTopicHtml(payload) {
   return `${blocks.join("\n\n").trim()}${userSignature(payload.currentUser)}`.trim();
 }
 
+function extractCreatedTid(data = {}) {
+  return Number(
+    data?.response?.tid ||
+    data?.response?.topicData?.tid ||
+    data?.response?.topic?.tid ||
+    data?.tid ||
+    data?.topicData?.tid ||
+    data?.topic?.tid ||
+    0
+  ) || 0;
+}
+
 async function handleCreatePost(req, res) {
   const auth = await requireUser(req);
   if (!config.nodebbToken) {
@@ -1666,7 +1704,8 @@ async function handleCreatePost(req, res) {
     return;
   }
   const nodebbUid = await ensureNodebbUid(auth);
-  const content = buildTopicHtml({ ...payload, currentUser: auth.user });
+  const imageUrl = payload.imageUrl ? normalizePostImageUrl(payload.imageUrl, { width: 1200 }) : "";
+  const content = buildTopicHtml({ ...payload, imageUrl, currentUser: auth.user });
   const body = {
     cid: Number(payload.cid || config.nodebbCid),
     title,
@@ -1681,6 +1720,12 @@ async function handleCreatePost(req, res) {
     },
     body: JSON.stringify(body)
   });
+  const tid = extractCreatedTid(data);
+  if (tid && imageUrl) {
+    await patchPostMetadata(tid, {
+      imageUrls: [imageUrl]
+    });
+  }
   memory.feedPages.clear();
   sendJson(res, 200, data);
 }
