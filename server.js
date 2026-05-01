@@ -1215,6 +1215,24 @@ function isFeedEligible(item, rules, { surface = "home" } = {}) {
   return true;
 }
 
+function feedFilterReason(item, rules, { surface = "home" } = {}) {
+  if (!item) return "missing-item";
+  if (isChannelItem(item)) return "channel-message";
+  if (!feedFeatureEnabled(rules, "eligibility")) return "";
+
+  const scoring = scoringRules(rules);
+  if (item.isExpired && !item.keepAfterExpired) return "expired";
+  if (Number(item.riskScore || 0) >= Number(scoring.riskHideThreshold ?? 0.7)) return "high-risk";
+
+  const distribution = Array.isArray(item.distribution) ? item.distribution : defaultPostMetadata.distribution;
+  if (distribution.includes("detailOnly")) return "detail-only";
+  if (distribution.length && !distribution.includes("all")) {
+    const allowed = surface === "moment" ? ["moment", "home"] : [surface];
+    if (!allowed.some((candidate) => distribution.includes(candidate))) return `not-distributed-to-${surface}`;
+  }
+  return "";
+}
+
 function scoreItem(item, rules, { readTids = new Set(), surface = "home", useOfficialPenalty = true } = {}) {
   if (!feedFeatureEnabled(rules, "enhancedScoring")) return legacyScoreItem(item, rules);
 
@@ -1239,6 +1257,47 @@ function scoreItem(item, rules, { readTids = new Set(), surface = "home", useOff
     : 0;
   const read = readTids.has(Number(item.tid)) ? Number(scoring.readPenalty || 0) : 0;
   return base + tagScore + quality + imageImpact + risk + official + read;
+}
+
+function scoreBreakdown(item, rules, { readTids = new Set(), surface = "home", useOfficialPenalty = true } = {}) {
+  const legacy = legacyScoreItem(item, rules);
+  if (!feedFeatureEnabled(rules, "enhancedScoring")) {
+    return {
+      legacy,
+      tag: 0,
+      vibe: 0,
+      scene: 0,
+      quality: 0,
+      imageImpact: 0,
+      risk: 0,
+      official: 0,
+      read: 0,
+      final: legacy
+    };
+  }
+
+  const scoring = scoringRules(rules);
+  const tags = itemScoreTags(item);
+  const seen = new Set();
+  let tag = 0;
+  let vibe = 0;
+  let scene = 0;
+  for (const scoreTag of tags) {
+    if (seen.has(scoreTag)) continue;
+    seen.add(scoreTag);
+    tag += scoreTag === item.tag ? 0 : Number(rules.tagWeights?.[scoreTag] || 0);
+    vibe += Number(scoring.vibeWeights?.[scoreTag] || 0);
+    scene += Number(scoring.sceneWeights?.[scoreTag] || 0);
+  }
+  const quality = Number(item.qualityScore || 0) * Number(scoring.qualityWeight || 0);
+  const imageImpact = Number(item.imageImpactScore || 0) * Number(scoring.imageImpactWeight || 0);
+  const risk = Number(item.riskScore || 0) * Number(scoring.riskPenalty || 0);
+  const official = surface === "home" && useOfficialPenalty
+    ? Number(item.officialScore || 0) * Number(scoring.officialHomePenalty || 0)
+    : 0;
+  const read = readTids.has(Number(item.tid)) ? Number(scoring.readPenalty || 0) : 0;
+  const final = legacy + tag + vibe + scene + quality + imageImpact + risk + official + read;
+  return { legacy, tag, vibe, scene, quality, imageImpact, risk, official, read, final };
 }
 
 function diversityKey(value) {
@@ -1443,6 +1502,133 @@ async function handleFeed(reqUrl, res) {
       generatedAt: rules.feedEditions?.generatedAt || null,
       pageNote: rules.feedEditions?.notes?.[page - 1] || ""
     } : { mode: feedMode },
+    dataSource: "api"
+  });
+}
+
+function feedDebugSource(item, { isRecommendTab, isMomentTab, tab, curatedTidSet }) {
+  if (isMomentTab) return "moment";
+  if (!isRecommendTab) return (item.tags.includes(tab) || item.tag === tab) ? "category" : "category";
+  return curatedTidSet.has(Number(item.tid)) ? "curated" : "rankedRest";
+}
+
+function feedDebugRow(item, rules, context) {
+  const reason = feedFilterReason(item, rules, { surface: context.surface });
+  const tabReason = context.tabFilterReason?.(item) || "";
+  const filteredReason = reason || tabReason;
+  const eligible = !filteredReason;
+  const breakdown = scoreBreakdown(item, rules, {
+    readTids: context.readTids,
+    surface: context.scoreSurface || context.surface,
+    useOfficialPenalty: context.useOfficialPenalty
+  });
+  return {
+    tid: Number(item.tid),
+    title: item.title,
+    tag: item.tag,
+    tags: item.tags,
+    contentType: item.contentType,
+    locationArea: item.locationArea,
+    distribution: item.distribution,
+    riskScore: item.riskScore,
+    officialScore: item.officialScore,
+    isExpired: item.isExpired,
+    hasCover: Boolean(item.cover),
+    eligible,
+    filteredReason,
+    source: feedDebugSource(item, context),
+    score: breakdown
+  };
+}
+
+async function handleFeedDebug(req, reqUrl, res) {
+  requireAdmin(req);
+  const rules = await loadRules();
+  const metadata = await loadMetadata();
+  const tab = reqUrl.searchParams.get("tab") || "此刻";
+  const page = Math.max(1, Number(reqUrl.searchParams.get("page") || 1));
+  const editionPageSize = Number(rules?.feedEditions?.pageSize || 10);
+  const limit = Math.min(60, Math.max(4, Number(reqUrl.searchParams.get("limit") || editionPageSize || 10)));
+  const readTids = parseReadTids(reqUrl.searchParams.get("read") || "");
+  const isRecommendTab = tab === "推荐";
+  const isMomentTab = tab === "此刻" && feedFeatureEnabled(rules, "momentTab");
+  const surface = isMomentTab ? "moment" : "home";
+  const topics = await getAllRecentTopics();
+  const allItems = topics.map((topic) => normalizeTopic(topic, null, metadata));
+  const curatedPages = getCuratedPages(rules);
+  const curatedTidSet = new Set(curatedPages.flat().map(Number));
+  const usedCurated = new Set();
+  const tabFilterReason = (item) => {
+    if (isRecommendTab || isMomentTab) return "";
+    return item.tags.includes(tab) || item.tag === tab ? "" : "not-in-tab";
+  };
+  const context = {
+    tab,
+    isRecommendTab,
+    isMomentTab,
+    curatedTidSet,
+    readTids,
+    surface,
+    scoreSurface: "home",
+    useOfficialPenalty: isRecommendTab || isMomentTab,
+    tabFilterReason
+  };
+  const rows = allItems.map((item) => feedDebugRow(item, rules, context));
+
+  let orderedRows;
+  let mode = "scored";
+  if (isMomentTab) {
+    mode = "moment";
+    orderedRows = [...rows].sort((a, b) => {
+      const itemA = allItems.find((item) => Number(item.tid) === a.tid);
+      const itemB = allItems.find((item) => Number(item.tid) === b.tid);
+      return momentScoreItem(itemB, rules) - momentScoreItem(itemA, rules);
+    });
+  } else if (!isRecommendTab) {
+    mode = "category";
+    orderedRows = rows.filter((row) => row.filteredReason !== "not-in-tab")
+      .sort((a, b) => Date.parse(allItems.find((item) => Number(item.tid) === b.tid)?.timestampISO || 0)
+        - Date.parse(allItems.find((item) => Number(item.tid) === a.tid)?.timestampISO || 0));
+  } else if (curatedPages.length) {
+    mode = "curated";
+    const itemByTid = new Map(allItems.map((item) => [Number(item.tid), item]));
+    const curatedRows = [];
+    for (const tids of curatedPages) {
+      for (const tid of tids) {
+        const item = itemByTid.get(Number(tid));
+        if (!item) continue;
+        usedCurated.add(Number(tid));
+        curatedRows.push(feedDebugRow(item, rules, context));
+      }
+    }
+    const restRows = allItems
+      .filter((item) => !usedCurated.has(Number(item.tid)))
+      .map((item) => feedDebugRow(item, rules, context))
+      .sort((a, b) => b.score.final - a.score.final);
+    orderedRows = [...curatedRows, ...restRows];
+  } else {
+    orderedRows = [...rows].sort((a, b) => b.score.final - a.score.final);
+  }
+
+  const start = (page - 1) * limit;
+  const pageRows = orderedRows.slice(start, start + limit);
+  sendJson(res, 200, {
+    tab,
+    page,
+    limit,
+    mode,
+    surface,
+    items: pageRows,
+    totals: {
+      candidates: rows.length,
+      eligible: rows.filter((row) => row.eligible).length,
+      filtered: rows.filter((row) => !row.eligible).length,
+      pageItems: pageRows.length
+    },
+    filteredReasons: rows.reduce((acc, row) => {
+      if (row.filteredReason) acc[row.filteredReason] = (acc[row.filteredReason] || 0) + 1;
+      return acc;
+    }, {}),
     dataSource: "api"
   });
 }
@@ -2296,6 +2482,7 @@ async function handleApi(req, reqUrl, res) {
     if (req.method === "POST" && reqUrl.pathname === "/api/auth/logout") return await handleAuthLogout(req, res);
     if (req.method === "POST" && reqUrl.pathname === "/api/auth/invites") return await handleCreateInvite(req, res);
     if (req.method === "GET" && reqUrl.pathname === "/api/feed") return await handleFeed(reqUrl, res);
+    if (req.method === "GET" && reqUrl.pathname === "/api/feed-debug") return await handleFeedDebug(req, reqUrl, res);
     if (req.method === "GET" && reqUrl.pathname === "/api/tags") return sendJson(res, 200, await nodebbFetch("/api/tags"));
     if (req.method === "GET" && reqUrl.pathname === "/api/map/items") {
       return sendJson(res, 200, {
