@@ -74,6 +74,22 @@ Completed deliverables:
 
 Future frontend deliverables should render draft fields as editable suggestions and require explicit user confirmation before any publish call.
 
+## Follow-up: AI Light Publish Flow
+
+The next MVP layer is now active:
+
+- clicking `+` opens a simplified AI upload entry;
+- image upload calls `/api/upload/image` first and then `/api/ai/post-preview`;
+- the user can choose a legacy map/manual location or skip location;
+- AI fields are editable before publish;
+- "保存草稿" writes `data/ai-post-drafts.jsonl`;
+- "发布到 LIAN" calls `/api/ai/post-publish`;
+- publish creates a NodeBB topic, writes `data/post-metadata.json`, and appends `data/ai-post-records.jsonl`.
+
+This flow still forbids AI automatic publishing. The publish API is only called after explicit user action.
+
+Map v2 is not implemented in this task. The current contract stores `locationDraft` with `mapVersion: "legacy"` so a future Map v2 picker can fill `locationId`, `lat/lng`, and `imagePoint` without changing the API shape.
+
 ## Handoff file
 
 Current handoff:
@@ -83,4 +99,3 @@ Current handoff:
 Historical original:
 
 - `../HANDOFF_ai-post-preview.md`
-

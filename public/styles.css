@@ -1001,6 +1001,95 @@ dialog::backdrop {
   font-weight: 700;
 }
 
+.ai-publish-upload,
+.ai-location-step,
+.ai-draft-step {
+  display: grid;
+  gap: 10px;
+}
+
+.ai-upload-drop {
+  min-height: 180px;
+  place-items: center;
+  padding: 20px;
+  border: 1px dashed #98a299;
+  border-radius: 8px;
+  background: #fbfaf7;
+  text-align: center;
+}
+
+.ai-upload-drop span {
+  color: var(--ink);
+  font-size: 18px;
+  font-weight: 900;
+}
+
+.ai-upload-drop small,
+.publish-status {
+  color: #69726b;
+  font-size: 13px;
+}
+
+.ai-publish-preview {
+  aspect-ratio: 4 / 3;
+  margin-bottom: 12px;
+  overflow: hidden;
+  border-radius: 8px;
+  background: #f2f0eb;
+}
+
+.ai-publish-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.ai-location-step,
+.ai-draft-step {
+  margin-bottom: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--line);
+}
+
+.ai-location-step h3,
+.ai-draft-step h3 {
+  margin: 0;
+  font-size: 16px;
+}
+
+.ai-risk-list {
+  display: grid;
+  gap: 6px;
+  padding: 10px;
+  border-radius: 8px;
+  background: #fff7e8;
+  color: #7a4b08;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.ai-risk-list p {
+  margin: 0;
+}
+
+.ai-publish-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.ai-publish-actions button {
+  min-height: 42px;
+  border-radius: 8px;
+  background: #f2f0eb;
+  color: #26312b;
+  font-weight: 900;
+}
+
+.ai-publish-actions .primary {
+  grid-column: 1 / -1;
+}
+
 .native-time-picker {
   position: fixed;
   left: 50%;

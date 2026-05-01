@@ -103,3 +103,29 @@ PowerShell Chinese may display as `???`. Verify with browser, curl, or a UTF-8 t
 - `../handoffs/ai-post-preview.md`
 - `../HANDOFF_ai-post-preview.md`
 
+## AI Light Publish Flow
+
+Current follow-up thread adds the user-confirmed publish flow around the preview endpoint.
+
+New APIs:
+
+- `POST /api/ai/post-drafts`
+- `POST /api/ai/post-publish`
+
+The preview endpoint still does not publish by itself. The frontend must first show editable fields, risk warnings, and location controls. Only the user clicking "发布到 LIAN" may call `/api/ai/post-publish`.
+
+Draft saves append private records to:
+
+```text
+data/ai-post-drafts.jsonl
+```
+
+Confirmed publishes:
+
+- create a NodeBB topic through the existing NodeBB topic creation helper;
+- write the final metadata to `data/post-metadata.json`;
+- append an analysis record to `data/ai-post-records.jsonl`.
+
+Location is represented with `locationDraft` so Map v2 can replace the legacy picker later without changing the publish contract.
+
+Current `locationDraft.mapVersion` is `legacy`. `locationId` remains empty unless a future trusted locations source confirms it.
