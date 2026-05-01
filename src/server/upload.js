@@ -3,7 +3,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 
 import { config } from "./config.js";
-import { warmupPostImages } from "./content-utils.js";
+import { optimizeCloudinaryAvatarUrl, warmupPostImages } from "./content-utils.js";
 import { sendJson } from "./http-response.js";
 import { rootDir } from "./paths.js";
 import { parseMultipart, readBodyBuffer } from "./request-utils.js";
