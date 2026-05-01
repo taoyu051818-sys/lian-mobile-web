@@ -79,7 +79,7 @@
         </label>
         <label>
           图片
-          <input name="image" type="file" accept="image/*">
+          <input name="image" type="file" accept="image/*" multiple>
         </label>
         <label>
           正文
@@ -105,6 +105,15 @@
         <input name="mapX" type="hidden">
         <input name="mapY" type="hidden">
         <p class="publish-location-note" id="publishLocationNote"></p>
+        <div class="publish-progress" id="publishProgress" hidden>
+          <div class="publish-progress-meta">
+            <span id="publishProgressText">准备上传</span>
+            <span id="publishProgressValue">0%</span>
+          </div>
+          <div class="publish-progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="发布进度">
+            <span id="publishProgressBar"></span>
+          </div>
+        </div>
         <button class="primary" type="submit">发布到 LIAN</button>
       </form>
     </dialog>

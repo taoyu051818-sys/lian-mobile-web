@@ -48,8 +48,11 @@ function buildChannelMessageHtml(content, user, identityTag) {
 function buildTopicHtml(payload) {
   const blocks = [];
   if (payload.currentUser) blocks.push(buildLianUserMeta(payload.currentUser));
-  if (payload.imageUrl) {
-    const imageUrl = normalizePostImageUrl(payload.imageUrl, { width: 1200 });
+  const imageUrls = Array.isArray(payload.imageUrls) && payload.imageUrls.length
+    ? payload.imageUrls
+    : [payload.imageUrl].filter(Boolean);
+  for (const rawImageUrl of imageUrls) {
+    const imageUrl = normalizePostImageUrl(rawImageUrl, { width: 1200 });
     blocks.push(`<img src="${escapeHtml(imageUrl)}" alt="${escapeHtml(payload.title || "cover")}" style="max-width:100%;height:auto" />`);
   }
   if (payload.tag) blocks.push(`<p><strong>#${escapeHtml(payload.tag)}</strong></p>`);
@@ -81,40 +84,6 @@ function extractCreatedTid(data = {}) {
   ) || 0;
 }
 
-async function createNodebbTopicFromPayload(auth, payload = {}, options = {}) {
-  const nodebbUid = Number(options.nodebbUid || 0) || await ensureNodebbUid(auth);
-  const imageUrl = payload.imageUrl ? normalizePostImageUrl(payload.imageUrl, { width: 1200 }) : "";
-  const content = buildTopicHtml({ ...payload, imageUrl, currentUser: auth.user });
-  const tags = Array.isArray(payload.tags) && payload.tags.length
-    ? payload.tags
-    : (payload.tag ? [payload.tag] : undefined);
-  const body = {
-    cid: Number(payload.cid || config.nodebbCid),
-    title: String(payload.title || "").trim(),
-    content,
-    tags
-  };
-  const data = await nodebbFetch(withNodebbUid("/api/v3/topics", nodebbUid), {
-    method: "POST",
-    headers: {
-      "content-type": "application/json; charset=utf-8",
-      authorization: `Bearer ${config.nodebbToken}`
-    },
-    body: JSON.stringify(body)
-  });
-  if (data?.status?.code && data.status.code !== "ok") {
-    const error = new Error(data.status.message || data.status.code || "NodeBB topic creation failed");
-    error.status = 400;
-    throw error;
-  }
-  return {
-    data,
-    tid: extractCreatedTid(data),
-    imageUrl,
-    nodebbUid
-  };
-}
-
 async function handleCreatePost(req, res) {
   const auth = await requireUser(req);
   if (!config.nodebbToken) {
@@ -128,13 +97,32 @@ async function handleCreatePost(req, res) {
     sendJson(res, 400, { error: "title is required" });
     return;
   }
-  const { data, tid, imageUrl } = await createNodebbTopicFromPayload(auth, payload);
-  if (tid && imageUrl) {
+  const nodebbUid = await ensureNodebbUid(auth);
+  const imageUrls = Array.isArray(payload.imageUrls)
+    ? payload.imageUrls.map((url) => normalizePostImageUrl(url, { width: 1200 })).filter(Boolean)
+    : (payload.imageUrl ? [normalizePostImageUrl(payload.imageUrl, { width: 1200 })] : []);
+  const content = buildTopicHtml({ ...payload, imageUrls, imageUrl: imageUrls[0] || "", currentUser: auth.user });
+  const body = {
+    cid: Number(payload.cid || config.nodebbCid),
+    title,
+    content,
+    tags: payload.tag ? [payload.tag] : undefined
+  };
+  const data = await nodebbFetch(withNodebbUid("/api/v3/topics", nodebbUid), {
+    method: "POST",
+    headers: {
+      "content-type": "application/json; charset=utf-8",
+      authorization: `Bearer ${config.nodebbToken}`
+    },
+    body: JSON.stringify(body)
+  });
+  const tid = extractCreatedTid(data);
+  if (tid && imageUrls.length) {
     await patchPostMetadata(tid, {
-      imageUrls: [imageUrl]
+      imageUrls
     });
   }
-  if (imageUrl) await warmupPostImages([imageUrl]);
+  if (imageUrls.length) await warmupPostImages(imageUrls);
   memory.feedPages.clear();
   sendJson(res, 200, data);
 }
@@ -173,7 +161,6 @@ async function replyToNodebbTopic(tid, content, user = null, nodebbUid = null) {
 export {
   buildChannelMessageHtml,
   buildLianUserMeta,
-  createNodebbTopicFromPayload,
   extractCreatedTid,
   handleCreatePost,
   replyToNodebbTopic,

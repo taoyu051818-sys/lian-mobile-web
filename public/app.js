@@ -11,7 +11,8 @@ const state = {
     pullStartY: null,
     pullActive: false,
     scrollY: 0,
-    masonryHeights: [0, 0]
+    masonryHeights: [0, 0],
+    revealIndex: 0
   },
   map: {
     ready: false,
@@ -209,6 +210,7 @@ const geoImagePairs = [
 
 const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
+const MAX_UPLOAD_IMAGE_BYTES = Math.floor(2.5 * 1024 * 1024);
 
 function ensureClientId() {
   const key = "lian.clientId";
@@ -268,6 +270,124 @@ async function uploadImage(file, purpose = "") {
   const data = await response.json().catch(() => ({}));
   if (!response.ok) throw new Error(data.error || "图片上传失败");
   return data.url;
+}
+
+function loadImageBitmap(file) {
+  if (window.createImageBitmap) {
+    return createImageBitmap(file).then((bitmap) => ({
+      image: bitmap,
+      width: bitmap.width,
+      height: bitmap.height,
+      close: () => bitmap.close?.()
+    }));
+  }
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const objectUrl = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(objectUrl);
+      resolve({
+        image: img,
+        width: img.naturalWidth || img.width,
+        height: img.naturalHeight || img.height,
+        close: () => {}
+      });
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(objectUrl);
+      reject(new Error("图片读取失败，请换一张图片试试"));
+    };
+    img.src = objectUrl;
+  });
+}
+
+function canvasToBlob(canvas, quality) {
+  return new Promise((resolve, reject) => {
+    canvas.toBlob((blob) => blob ? resolve(blob) : reject(new Error("图片压缩失败")), "image/jpeg", quality);
+  });
+}
+
+async function compressImageForUpload(file, maxBytes = MAX_UPLOAD_IMAGE_BYTES) {
+  if (!file?.type?.startsWith("image/")) return file;
+  if (file.size <= maxBytes && file.type === "image/jpeg") return file;
+
+  const bitmap = await loadImageBitmap(file);
+  try {
+    let width = bitmap.width;
+    let height = bitmap.height;
+    let quality = 0.86;
+
+    for (let resizeAttempt = 0; resizeAttempt < 10; resizeAttempt += 1) {
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.max(1, Math.round(width));
+      canvas.height = Math.max(1, Math.round(height));
+      const ctx = canvas.getContext("2d", { alpha: false });
+      if (!ctx) throw new Error("图片压缩失败");
+      ctx.fillStyle = "#fff";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(bitmap.image, 0, 0, canvas.width, canvas.height);
+
+      let low = 0.48;
+      let high = quality;
+      let bestBlob = null;
+      for (let i = 0; i < 6; i += 1) {
+        const nextQuality = (low + high) / 2;
+        const blob = await canvasToBlob(canvas, nextQuality);
+        if (blob.size <= maxBytes) {
+          bestBlob = blob;
+          low = nextQuality;
+        } else {
+          high = nextQuality;
+        }
+      }
+
+      const fallbackBlob = bestBlob || await canvasToBlob(canvas, 0.48);
+      if (fallbackBlob.size <= maxBytes) {
+        const baseName = String(file.name || "image").replace(/\.[^.]+$/, "");
+        return new File([fallbackBlob], `${baseName || "image"}.jpg`, {
+          type: "image/jpeg",
+          lastModified: Date.now()
+        });
+      }
+
+      const ratio = Math.sqrt(maxBytes / fallbackBlob.size) * 0.92;
+      const scale = Math.max(0.55, Math.min(0.85, ratio));
+      width *= scale;
+      height *= scale;
+      quality = 0.76;
+    }
+    throw new Error("图片太大，压缩到 2.5MB 以下失败，请换一张图片试试");
+  } finally {
+    bitmap.close();
+  }
+  return file;
+}
+
+async function uploadPostImages(files, onProgress = () => {}) {
+  const urls = [];
+  for (let index = 0; index < files.length; index += 1) {
+    onProgress(index, files.length, "compress");
+    const compressed = await compressImageForUpload(files[index]);
+    onProgress(index, files.length, "upload");
+    urls.push(await uploadImage(compressed));
+    onProgress(index, files.length, "done");
+  }
+  return urls;
+}
+
+function setPublishProgress({ visible = true, label = "", percent = 0 } = {}) {
+  const progress = $("#publishProgress");
+  if (!progress) return;
+  const value = Math.max(0, Math.min(100, Math.round(percent)));
+  progress.hidden = !visible;
+  $("#publishProgressText").textContent = label;
+  $("#publishProgressValue").textContent = `${value}%`;
+  $("#publishProgressBar").style.width = `${value}%`;
+  $(".publish-progress-track", progress).setAttribute("aria-valuenow", String(value));
+}
+
+function resetPublishProgress() {
+  setPublishProgress({ visible: false, label: "准备上传", percent: 0 });
 }
 
 function clampAvatarCrop() {
@@ -457,18 +577,16 @@ function ensureMasonryColumns(reset = false) {
       <div class="masonry-column" data-column="right"></div>
     `;
     state.masonryHeights = [0, 0];
+    state.feed.revealIndex = 0;
   }
   return $$(".masonry-column", list);
 }
 
 function estimateCardHeight(item) {
   const listWidth = $("#feedList")?.clientWidth || 340;
-  const columnWidth = Math.max(140, (listWidth - 10) / 2);
-  const titleLines = Math.min(3, Math.max(1, Math.ceil(String(item.title || "").length / 10)));
-  const summaryLines = item.summary ? Math.min(3, Math.max(1, Math.ceil(String(item.summary).length / 18))) : 0;
-  const imageHeight = item.cover ? columnWidth * 1.12 : 112;
-  const bodyHeight = 19 + titleLines * 20 + (summaryLines ? 8 + summaryLines * 18 : 0) + 24;
-  return imageHeight + bodyHeight + 12;
+  const columnWidth = Math.max(140, (listWidth - 12) / 2);
+  const imageHeight = item.cover ? columnWidth * 1.32 : Math.max(160, columnWidth * 1.05);
+  return imageHeight + 12;
 }
 
 function measureCardLater(card, columnIndex, estimatedHeight) {
@@ -489,33 +607,139 @@ function measureCardLater(card, columnIndex, estimatedHeight) {
 
 function appendFeedItems(items) {
   const columns = ensureMasonryColumns(false);
+  let revealIndex = state.feed.revealIndex || 0;
   for (const item of items) {
     const columnIndex = state.masonryHeights[0] <= state.masonryHeights[1] ? 0 : 1;
     const target = columns[columnIndex];
     const estimatedHeight = estimateCardHeight(item);
-    target.insertAdjacentHTML("beforeend", cardTemplate(item));
+    target.insertAdjacentHTML("beforeend", cardTemplate(item, revealIndex));
+    revealIndex += 1;
     state.masonryHeights[columnIndex] += estimatedHeight;
     measureCardLater(target.lastElementChild, columnIndex, estimatedHeight);
   }
+  state.feed.revealIndex = revealIndex;
 }
 
-function cardTemplate(item) {
+function cardTemplate(item, revealIndex = 0) {
+  const revealDelay = Math.min(12, Math.max(0, Number(revealIndex) || 0)) * 40;
   const thumb = item.cover
     ? `<img src="${escapeHtml(item.cover)}" alt="${escapeHtml(item.title)}" loading="lazy">`
     : `<div class="thumb-empty">${escapeHtml(item.tag || "黎安")}</div>`;
+  const authorName = item.author || "同学";
+  const authorAvatar = avatarHtml({
+    url: item.authorAvatarUrl || "",
+    text: item.authorAvatarText || authorName || "同"
+  });
+  const timeLabel = item.timeLabel || fixFmtDate(item.timestampISO);
   return `
-    <button class="feed-card" type="button" data-tid="${item.tid}">
-      ${thumb}
-      <div class="card-body">
-        <h2>${escapeHtml(item.title)}</h2>
-        <p>${escapeHtml(item.summary || "")}</p>
-        <div class="meta-row">
-          <span>${escapeHtml(item.tag || "信息")}</span>
-          <span>${escapeHtml(item.timeLabel || fixFmtDate(item.timestampISO))}</span>
+    <button class="feed-card" type="button" data-tid="${item.tid}" style="--reveal-delay:${revealDelay}ms">
+      <div class="card-media">
+        ${thumb}
+        <div class="card-glass">
+          <h2 class="card-title">${escapeHtml(item.title)}</h2>
+          <div class="card-meta">
+            <div class="card-author">
+              <span class="card-avatar">${authorAvatar}</span>
+              <span class="card-name">${escapeHtml(authorName)}</span>
+            </div>
+            <span class="card-time">${escapeHtml(timeLabel)}</span>
+          </div>
         </div>
       </div>
     </button>
   `;
+}
+
+function extractPostImages(contentHtml = "", fallbackUrl = "") {
+  const container = document.createElement("div");
+  container.innerHTML = String(contentHtml || "");
+  const urls = Array.from(container.querySelectorAll("img"))
+    .map((img) => img.getAttribute("src"))
+    .filter(Boolean);
+  container.querySelectorAll("img").forEach((img) => img.remove());
+  const unique = Array.from(new Set(urls));
+  if (!unique.length && fallbackUrl) unique.push(fallbackUrl);
+  return { images: unique, strippedHtml: container.innerHTML.trim() };
+}
+
+function galleryTemplate(images = [], title = "") {
+  if (!images.length) return "";
+  const safeTitle = escapeHtml(title || "图片");
+  const dots = images.length > 1
+    ? `<div class="detail-gallery-dots" data-gallery-dots>
+        ${images.map((_, index) => `
+          <button class="detail-dot ${index === 0 ? "is-active" : ""}" type="button" data-gallery-dot="${index}" aria-label="图片 ${index + 1}"></button>
+        `).join("")}
+      </div>`
+    : "";
+  return `
+    <div class="detail-hero">
+      <section class="detail-gallery" data-gallery>
+        ${images.map((url, index) => `
+          <figure class="detail-gallery-item">
+            <img src="${escapeHtml(url)}" alt="${safeTitle}" loading="lazy" data-zoom-image="${escapeHtml(url)}" data-gallery-index="${index}">
+          </figure>
+        `).join("")}
+      </section>
+      ${dots}
+    </div>
+  `;
+}
+
+function setupDetailGallery(root) {
+  const gallery = root?.querySelector("[data-gallery]");
+  const dots = root ? Array.from(root.querySelectorAll("[data-gallery-dot]")) : [];
+  if (!gallery || !dots.length) return;
+  let ticking = false;
+  const update = () => {
+    const index = Math.round(gallery.scrollLeft / Math.max(1, gallery.clientWidth));
+    dots.forEach((dot, dotIndex) => dot.classList.toggle("is-active", dotIndex === index));
+  };
+  gallery.addEventListener("scroll", () => {
+    if (ticking) return;
+    ticking = true;
+    requestAnimationFrame(() => {
+      update();
+      ticking = false;
+    });
+  }, { passive: true });
+  update();
+}
+
+function ensureImageLightbox() {
+  let lightbox = $("#imageLightbox");
+  if (lightbox) return lightbox;
+  lightbox = document.createElement("div");
+  lightbox.id = "imageLightbox";
+  lightbox.className = "image-lightbox";
+  lightbox.innerHTML = `
+    <div class="image-lightbox-backdrop" data-close-lightbox></div>
+    <img class="image-lightbox-image" alt="">
+    <button class="image-lightbox-close" type="button" data-close-lightbox aria-label="关闭">×</button>
+  `;
+  document.body.appendChild(lightbox);
+  return lightbox;
+}
+
+function openImageLightbox(src = "", alt = "") {
+  if (!src) return;
+  const lightbox = ensureImageLightbox();
+  const image = lightbox.querySelector(".image-lightbox-image");
+  image.src = src;
+  image.alt = alt || "image";
+  lightbox.classList.add("is-visible");
+  requestAnimationFrame(() => lightbox.classList.add("is-active"));
+}
+
+function closeImageLightbox() {
+  const lightbox = $("#imageLightbox");
+  if (!lightbox) return;
+  lightbox.classList.remove("is-active");
+  setTimeout(() => {
+    lightbox.classList.remove("is-visible");
+    const image = lightbox.querySelector(".image-lightbox-image");
+    if (image) image.src = "";
+  }, 220);
 }
 
 function originalLinkTemplate(post) {
@@ -624,15 +848,40 @@ async function openDetail(tid) {
   window.scrollTo({ top: 0 });
   try {
     const post = await api(`/api/posts/${tid}`);
+    const { images, strippedHtml } = extractPostImages(post.contentHtml || "", post.cover || "");
+    const gallery = galleryTemplate(images, post.title || "");
+    const authorName = post.author || "同学";
+    const authorAvatar = avatarHtml({
+      url: post.authorAvatarUrl || "",
+      text: post.authorAvatarText || authorName || "同"
+    });
+    const timeLabel = post.timeLabel || fixFmtDate(post.timestampISO);
+    const identityTag = post.authorIdentityTag
+      ? `<span class="detail-author-tag">${escapeHtml(post.authorIdentityTag)}</span>`
+      : "";
+    const bodyHtml = strippedHtml
+      ? `<div class="detail-body lian-html">${strippedHtml}</div>`
+      : "";
     $("#detailBody").innerHTML = `
+      ${gallery}
       <section class="detail-content">
-        <div class="tagline">${escapeHtml([post.tag || "信息", post.timeLabel].filter(Boolean).join(" · "))}</div>
-        <h2>${escapeHtml(post.title)}</h2>
-        <div class="lian-html">${post.contentHtml || ""}</div>
+        <div class="detail-meta-card">
+          <div class="detail-author-row">
+            <div class="detail-author-avatar">${authorAvatar}</div>
+            <div class="detail-author-info">
+              <div class="detail-author-name">${escapeHtml(authorName)}</div>
+              ${identityTag}
+            </div>
+            <div class="detail-time">${escapeHtml(timeLabel)}</div>
+          </div>
+          <h2>${escapeHtml(post.title)}</h2>
+        </div>
+        ${bodyHtml}
         ${originalLinkTemplate(post)}
         ${repliesTemplate(post)}
       </section>
     `;
+    setupDetailGallery($("#detailBody"));
   } catch (error) {
     $("#detailBody").innerHTML = `<div class="empty-state">${escapeHtml(error.message)}</div>`;
   }
@@ -1613,9 +1862,10 @@ async function submitPost(event) {
   const button = $(".primary", form);
   button.disabled = true;
   button.textContent = "发布中";
+  setPublishProgress({ visible: true, label: "准备发布", percent: 3 });
   try {
     const fields = new FormData(form);
-    const image = fields.get("image");
+    const images = fields.getAll("image").filter((file) => file && file.size);
     fields.delete("image");
     const payload = Object.fromEntries(fields.entries());
     if (payload.occurredAt) {
@@ -1630,16 +1880,26 @@ async function submitPost(event) {
         placeName: payload.placeName || ""
       };
     }
-    if (image && image.size) {
+    if (images.length) {
       button.textContent = "上传图片中";
-      payload.imageUrl = await uploadImage(image);
+      payload.imageUrls = await uploadPostImages(images, (index, total, stage) => {
+        const step = index * 2 + (stage === "compress" ? 0 : stage === "upload" ? 1 : 2);
+        const percent = 5 + (step / Math.max(1, total * 2)) * 82;
+        const action = stage === "compress" ? "压缩" : stage === "upload" ? "上传" : "完成";
+        const label = `${action}图片 ${index + 1}/${total}`;
+        button.textContent = label;
+        setPublishProgress({ visible: true, label, percent });
+      });
+      payload.imageUrl = payload.imageUrls[0] || "";
       button.textContent = "发布中";
     }
+    setPublishProgress({ visible: true, label: "提交内容", percent: 90 });
     await api("/api/posts", {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify(payload)
     });
+    setPublishProgress({ visible: true, label: "发布完成", percent: 100 });
     $("#publishSheet").close();
     form.reset();
     state.mapPickedPoint = null;
@@ -1649,11 +1909,36 @@ async function submitPost(event) {
     alert(error.message);
   } finally {
     button.disabled = false;
+    resetPublishProgress();
     button.textContent = "发布到 LIAN";
   }
 }
 
 document.addEventListener("click", (event) => {
+  const lightboxClose = event.target.closest("[data-close-lightbox]");
+  if (lightboxClose) {
+    closeImageLightbox();
+    return;
+  }
+
+  const zoomTarget = event.target.closest("[data-zoom-image]");
+  if (zoomTarget) {
+    openImageLightbox(zoomTarget.dataset.zoomImage, zoomTarget.getAttribute("alt") || "");
+    return;
+  }
+
+  const galleryDot = event.target.closest("[data-gallery-dot]");
+  if (galleryDot) {
+    const gallery = $(".detail-gallery");
+    const index = Number(galleryDot.dataset.galleryDot || 0);
+    if (gallery) {
+      const items = $$(".detail-gallery-item", gallery);
+      const target = items[index];
+      gallery.scrollTo({ left: target ? target.offsetLeft : gallery.clientWidth * index, behavior: "smooth" });
+    }
+    return;
+  }
+
   const routeControl = event.target.closest("[data-map-route]");
   if (routeControl) {
     if (routeControl.dataset.mapRoute === "all") {
@@ -1768,6 +2053,10 @@ document.addEventListener("click", (event) => {
   if (event.target.closest("[data-close-auth]")) $("#authSheet").close();
   if (event.target.closest("[data-close-avatar-crop]")) closeAvatarCrop();
   if (event.target.closest("[data-confirm-avatar-crop]")) confirmAvatarCrop();
+});
+
+window.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") closeImageLightbox();
 });
 
 window.addEventListener("popstate", () => {
