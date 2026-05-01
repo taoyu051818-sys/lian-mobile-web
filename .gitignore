@@ -16,3 +16,14 @@ outputs/club-posts/update-club-posts.cjs
 outputs/club-posts/upload-club-images.cjs
 outputs/club-posts/build-html-club-posts.cjs
 outputs/menu-post-*.cjs
+
+# Local Codex/editor artifacts
+outputs/batch*-files.txt
+outputs/contact-sheet-*.jpg
+outputs/photo-post-candidates.md
+outputs/feed-test-plan-*.md
+outputs/generate-wechat-pushes-*.cjs
+outputs/rewrite-wechat-pushes-*.cjs
+outputs/wechat-pushes-*/
+outputs/wewe-last-7-days.json
+data/post-metadata.json.bak-*
