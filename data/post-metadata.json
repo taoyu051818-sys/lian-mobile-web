@@ -659,6 +659,30 @@
       "sourceTimeText": "这条讲得比较细，适合要买进出海南机票的同学。4 月 25 日起到 9 月 30 日，每天 10:00-23:00 可以在“酷游海南”小程序或云闪付 APP 活动专区领取机票消费券，单用户每周可领 1 次，活动期最多领 5 次且只能核销 1 次，机票券 3 天有效"
     },
     "91": {
+      "contentType": "campus_activity",
+      "vibeTags": [
+        "在地",
+        "实用",
+        "生活感"
+      ],
+      "sceneTags": [
+        "运动",
+        "社团",
+        "课后"
+      ],
+      "locationId": "",
+      "locationArea": "运动区",
+      "qualityScore": 0.62,
+      "imageImpactScore": 0.45,
+      "riskScore": 0,
+      "officialScore": 0.2,
+      "visibility": "public",
+      "distribution": [
+        "home",
+        "search",
+        "detail"
+      ],
+      "keepAfterExpired": false,
       "timeLabel": "每周四 17:00-18:30",
       "startsAt": null,
       "endsAt": null,
@@ -667,6 +691,31 @@
       "sourceTimeText": "常规活动时间是每周四 17:00-18:30，地点在综合体育馆二楼热身篮球场。球拍需要自备，学生有优惠价，后续还会有内部友谊赛、季度赛、高校交流赛和系统培训课。咨询或进群可以加 17889700356"
     },
     "92": {
+      "contentType": "library_moment",
+      "vibeTags": [
+        "在地",
+        "实用",
+        "生活感"
+      ],
+      "sceneTags": [
+        "图书馆",
+        "学习",
+        "社群"
+      ],
+      "locationId": "",
+      "locationArea": "图书馆",
+      "qualityScore": 0.68,
+      "imageImpactScore": 0.5,
+      "riskScore": 0,
+      "officialScore": 0.15,
+      "visibility": "public",
+      "distribution": [
+        "home",
+        "search",
+        "detail",
+        "moment"
+      ],
+      "keepAfterExpired": false,
       "timeLabel": "每周三，初级班 15:00-16:00 / 中高级班 17:00-18:00",
       "startsAt": null,
       "endsAt": null,
@@ -675,6 +724,27 @@
       "sourceTimeText": "俱乐部每周三定期开展，地点在专享楼 A 座 101 图书馆会议室区域，面向海南国际学院全体学生，不限专业、年级和英语水平。首次活动分初级班 15:00-16:00、中高级班 17:00-18:00，后续按周三持续"
     },
     "93": {
+      "contentType": "activity_archive",
+      "vibeTags": [
+        "实用"
+      ],
+      "sceneTags": [
+        "社团",
+        "长期参考"
+      ],
+      "locationId": "",
+      "locationArea": "试验区社团",
+      "qualityScore": 0.48,
+      "imageImpactScore": 0.4,
+      "riskScore": 0,
+      "officialScore": 0.35,
+      "visibility": "public",
+      "distribution": [
+        "home",
+        "search",
+        "detail"
+      ],
+      "keepAfterExpired": false,
       "timeLabel": "长期参考",
       "startsAt": null,
       "endsAt": null,
@@ -683,6 +753,27 @@
       "sourceUrl": "https://www.study-hn.cn/NewsDetail/a9442f5345bd42ef8a3f1de7e88626ad/MjAyNi0wMi0wMg==/1?nav=%5B%5D"
     },
     "94": {
+      "contentType": "activity_archive",
+      "vibeTags": [
+        "实用"
+      ],
+      "sceneTags": [
+        "社团",
+        "运动"
+      ],
+      "locationId": "",
+      "locationArea": "试验区社团",
+      "qualityScore": 0.46,
+      "imageImpactScore": 0.38,
+      "riskScore": 0,
+      "officialScore": 0.35,
+      "visibility": "public",
+      "distribution": [
+        "home",
+        "search",
+        "detail"
+      ],
+      "keepAfterExpired": false,
       "timeLabel": "长期参考",
       "startsAt": null,
       "endsAt": null,
@@ -691,6 +782,27 @@
       "sourceUrl": "https://www.study-hn.cn/NewsDetail/a9442f5345bd42ef8a3f1de7e88626ad/MjAyNi0wMi0wMg==/1?nav=%5B%5D"
     },
     "95": {
+      "contentType": "activity_archive",
+      "vibeTags": [
+        "实用"
+      ],
+      "sceneTags": [
+        "社团",
+        "文艺"
+      ],
+      "locationId": "",
+      "locationArea": "试验区社团",
+      "qualityScore": 0.46,
+      "imageImpactScore": 0.38,
+      "riskScore": 0,
+      "officialScore": 0.35,
+      "visibility": "public",
+      "distribution": [
+        "home",
+        "search",
+        "detail"
+      ],
+      "keepAfterExpired": false,
       "timeLabel": "长期参考",
       "startsAt": null,
       "endsAt": null,
@@ -699,6 +811,27 @@
       "sourceUrl": "https://www.study-hn.cn/NewsDetail/a9442f5345bd42ef8a3f1de7e88626ad/MjAyNi0wMi0wMg==/1?nav=%5B%5D"
     },
     "96": {
+      "contentType": "activity_archive",
+      "vibeTags": [
+        "实用"
+      ],
+      "sceneTags": [
+        "社团",
+        "实践"
+      ],
+      "locationId": "",
+      "locationArea": "试验区社团",
+      "qualityScore": 0.46,
+      "imageImpactScore": 0.38,
+      "riskScore": 0,
+      "officialScore": 0.35,
+      "visibility": "public",
+      "distribution": [
+        "home",
+        "search",
+        "detail"
+      ],
+      "keepAfterExpired": false,
       "timeLabel": "长期参考",
       "startsAt": null,
       "endsAt": null,
@@ -707,6 +840,28 @@
       "sourceUrl": "https://www.study-hn.cn/NewsDetail/a9442f5345bd42ef8a3f1de7e88626ad/MjAyNi0wMi0wMg==/1?nav=%5B%5D"
     },
     "97": {
+      "contentType": "activity_archive",
+      "vibeTags": [
+        "实用",
+        "在地"
+      ],
+      "sceneTags": [
+        "社团",
+        "水上运动"
+      ],
+      "locationId": "",
+      "locationArea": "试验区社团",
+      "qualityScore": 0.5,
+      "imageImpactScore": 0.42,
+      "riskScore": 0,
+      "officialScore": 0.3,
+      "visibility": "public",
+      "distribution": [
+        "home",
+        "search",
+        "detail"
+      ],
+      "keepAfterExpired": false,
       "timeLabel": "长期参考",
       "startsAt": null,
       "endsAt": null,
@@ -715,12 +870,70 @@
       "sourceUrl": "https://www.study-hn.cn/NewsDetail/8b548310bcdb43adaf128265b72ca43a/MjAyNS0xMi0wMg==/1?nav=%5B%5D"
     },
     "99": {
+      "contentType": "food",
+      "vibeTags": [
+        "在地",
+        "实用",
+        "生活感"
+      ],
+      "sceneTags": [
+        "饭点",
+        "探店",
+        "课后"
+      ],
+      "locationId": "",
+      "locationArea": "大墩村",
+      "qualityScore": 0.64,
+      "imageImpactScore": 0.58,
+      "riskScore": 0,
+      "officialScore": 0.1,
+      "visibility": "public",
+      "distribution": [
+        "home",
+        "search",
+        "detail",
+        "moment"
+      ],
+      "keepAfterExpired": false,
       "timeLabel": "",
       "startsAt": null,
       "endsAt": null,
       "expiresAt": null,
       "priority": 18,
       "sourceUrl": "http://149.104.21.74:4100/menu-prototype-v2.html"
+    },
+    "100": {
+      "contentType": "place_memory",
+      "vibeTags": [
+        "真实",
+        "在地",
+        "生活感"
+      ],
+      "sceneTags": [
+        "傍晚",
+        "拍照",
+        "路过"
+      ],
+      "locationId": "",
+      "locationArea": "中国传媒大学楼",
+      "qualityScore": 0.7,
+      "imageImpactScore": 0.74,
+      "riskScore": 0,
+      "officialScore": 0,
+      "visibility": "public",
+      "distribution": [
+        "home",
+        "map",
+        "search",
+        "detail",
+        "moment"
+      ],
+      "keepAfterExpired": false,
+      "timeLabel": "",
+      "startsAt": null,
+      "endsAt": null,
+      "expiresAt": null,
+      "priority": 10
     },
     "107": {
       "contentType": "campus_moment",

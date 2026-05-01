@@ -33,7 +33,9 @@
   "feedEditions": {
     "pageSize": 10,
     "generatedAt": "2026-04-28T08:43:22.452Z",
-    "strategy": "daily-curated-batches",
+    "strategy": "curated-entry-plus-ranked-rest",
+    "rankedRestOnCuratedPages": true,
+    "curatedSlotsPerPage": 3,
     "notes": [
       "每天按时效性、重要性和学生使用场景排一版推荐流。",
       "用户侧仍可根据已读状态做轻量队列调整。"
@@ -42,21 +44,7 @@
       [
         99,
         92,
-        91,
-        90,
-        89,
-        88,
-        87,
-        86,
-        85,
-        84
-      ],
-      [
-        93,
-        94,
-        95,
-        96,
-        97
+        91
       ]
     ]
   },
@@ -73,6 +61,39 @@
     "riskPenalty": -220,
     "officialHomePenalty": -35,
     "riskHideThreshold": 0.7,
+    "missingLocationAreaPenalty": -26,
+    "momentMissingLocationAreaPenalty": -18,
+    "contentTypeWeights": {
+      "food": 76,
+      "campus_moment": 180,
+      "place_memory": 70,
+      "campus_tip": 180,
+      "library_moment": 62,
+      "activity_scene": 48,
+      "campus_activity": 42,
+      "signup": 30,
+      "learning_scene": 24,
+      "campus_life": 20,
+      "activity_archive": -180,
+      "club_archive": -180,
+      "official_recap": -42,
+      "general": -32
+    },
+    "momentContentTypeWeights": {
+      "campus_moment": 46,
+      "campus_tip": 44,
+      "place_memory": 40,
+      "food": 38,
+      "library_moment": 34,
+      "activity_scene": 30,
+      "campus_life": 20,
+      "learning_scene": 18,
+      "signup": 10,
+      "activity_archive": -20,
+      "club_archive": -20,
+      "official_recap": -48,
+      "general": -24
+    },
     "vibeWeights": {
       "真实": 30,
       "在地": 24,
@@ -99,8 +120,8 @@
   },
   "diversity": {
     "enabled": true,
-    "maxSameContentType": 3,
-    "maxSameLocationArea": 3,
+    "maxSameContentType": 2,
+    "maxSameLocationArea": 2,
     "maxSamePrimaryTag": 4
   }
 }
