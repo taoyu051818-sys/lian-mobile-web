@@ -82,7 +82,7 @@ The next MVP layer is now active:
 - image upload calls `/api/upload/image` first and then `/api/ai/post-preview`;
 - the user can choose a legacy map/manual location or skip location;
 - AI fields are editable before publish;
-- "保存草稿" writes `data/ai-post-drafts.jsonl`;
+- after AI preview/regenerate succeeds, the frontend silently writes a private draft to `data/ai-post-drafts.jsonl`;
 - "发布到 LIAN" calls `/api/ai/post-publish`;
 - publish creates a NodeBB topic, writes `data/post-metadata.json`, and appends `data/ai-post-records.jsonl`.
 

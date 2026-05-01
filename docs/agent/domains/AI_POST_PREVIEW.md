@@ -112,9 +112,9 @@ New APIs:
 - `POST /api/ai/post-drafts`
 - `POST /api/ai/post-publish`
 
-The preview endpoint still does not publish by itself. The frontend must first show editable fields, risk warnings, and location controls. Only the user clicking "发布到 LIAN" may call `/api/ai/post-publish`.
+The preview endpoint still does not publish by itself. After a preview/regenerate succeeds, the frontend silently saves a private draft through `/api/ai/post-drafts`, then shows editable fields, risk warnings, and location controls. Only the user clicking "发布到 LIAN" may call `/api/ai/post-publish`.
 
-Draft saves append private records to:
+Silent draft saves append private records to:
 
 ```text
 data/ai-post-drafts.jsonl

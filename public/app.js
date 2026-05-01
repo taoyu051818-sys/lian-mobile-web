@@ -49,7 +49,10 @@ const state = {
     metadata: {},
     locationDraft: null,
     previewLoading: false,
-    uploadLoading: false
+    uploadLoading: false,
+    draftSaving: false,
+    draftSaveStatus: "",
+    draftId: ""
   },
   initialized: false,
   previousView: "feed",
@@ -1171,7 +1174,10 @@ function resetAiPublish() {
     metadata: {},
     locationDraft: defaultAiLocationDraft(),
     previewLoading: false,
-    uploadLoading: false
+    uploadLoading: false,
+    draftSaving: false,
+    draftSaveStatus: "",
+    draftId: ""
   };
   state.mapPickedPoint = null;
 }
@@ -1220,7 +1226,13 @@ function renderAiPublishSheet() {
       </section>
       <section class="ai-draft-step">
         <h3>编辑草稿</h3>
-        <p class="publish-status">${state.aiPublish.previewLoading ? "AI 正在生成草稿..." : ""}</p>
+        <p class="publish-status">${
+          state.aiPublish.previewLoading
+            ? "AI 正在生成草稿..."
+            : state.aiPublish.draftSaving
+              ? "草稿自动保存中..."
+              : (state.aiPublish.draftSaveStatus || "")
+        }</p>
         <label>
           标题
           <input name="title" maxlength="40" required value="${escapeHtml(state.aiPublish.title || "")}">
@@ -1241,7 +1253,6 @@ function renderAiPublishSheet() {
       </section>
       <div class="ai-publish-actions">
         <button class="primary" type="submit" data-ai-publish>发布到 LIAN</button>
-        <button type="button" data-save-ai-draft>保存草稿</button>
         <button type="button" data-regenerate-ai>重新生成</button>
         <button type="button" data-close-publish>取消</button>
       </div>
@@ -1281,6 +1292,8 @@ async function requestAiPreview() {
       })
     });
     applyAiPreview(data);
+    renderAiPublishSheet();
+    await saveAiDraftSilently();
   } catch (error) {
     alert(error.message);
   } finally {
@@ -1315,13 +1328,32 @@ function syncAiLocationFromInput() {
 
 async function saveAiDraft() {
   const payload = currentAiPublishPayload();
-  const data = await api("/api/ai/post-drafts", {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify(payload)
-  });
-  alert(`草稿已保存：${data.draftId}`);
-  $("#publishSheet").close();
+  state.aiPublish.draftSaving = true;
+  state.aiPublish.draftSaveStatus = "";
+  renderAiPublishSheet();
+  try {
+    const data = await api("/api/ai/post-drafts", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+    state.aiPublish.draftId = data.draftId || "";
+    state.aiPublish.draftSaveStatus = data.draftId ? "草稿已自动保存" : "";
+    return data;
+  } finally {
+    state.aiPublish.draftSaving = false;
+    renderAiPublishSheet();
+  }
+}
+
+async function saveAiDraftSilently() {
+  try {
+    await saveAiDraft();
+  } catch (error) {
+    state.aiPublish.draftSaving = false;
+    state.aiPublish.draftSaveStatus = `草稿自动保存失败：${error.message}`;
+    renderAiPublishSheet();
+  }
 }
 
 async function publishAiPost() {
@@ -1721,11 +1753,6 @@ document.addEventListener("click", (event) => {
   if (event.target.closest("[data-skip-ai-location]")) {
     state.aiPublish.locationDraft = skippedAiLocationDraft();
     renderAiPublishSheet();
-    return;
-  }
-  if (event.target.closest("[data-save-ai-draft]")) {
-    syncAiLocationFromInput();
-    saveAiDraft().catch((error) => alert(error.message));
     return;
   }
   if (event.target.closest("[data-regenerate-ai]")) {

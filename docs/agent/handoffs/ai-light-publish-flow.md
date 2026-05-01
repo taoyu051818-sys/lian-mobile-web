@@ -18,7 +18,7 @@ Runtime files created by use:
 
 `POST /api/ai/post-drafts`
 
-Saves a private AI light publish draft to `data/ai-post-drafts.jsonl`. It does not publish and does not write `post-metadata.json`.
+Saves a private AI light publish draft to `data/ai-post-drafts.jsonl`. The frontend calls it silently after each successful AI preview/regenerate. It does not publish and does not write `post-metadata.json`.
 
 `POST /api/ai/post-publish`
 
@@ -31,8 +31,9 @@ Publishes after explicit user confirmation. It creates a NodeBB topic, writes th
 3. Image upload uses the existing `/api/upload/image` path.
 4. The uploaded `imageUrl` is sent to `/api/ai/post-preview`.
 5. The sheet shows legacy/manual location controls with a skip option.
-6. The AI draft fields are editable: title, body, tags, location.
-7. Actions: publish to LIAN, save draft, regenerate, cancel.
+6. When the AI draft returns, the frontend silently calls `/api/ai/post-drafts` once to keep a private draft record. A failed silent save is shown as status text but does not block editing or publishing.
+7. The AI draft fields are editable: title, body, tags, location.
+8. Actions: publish to LIAN, regenerate, cancel. There is no explicit save-draft button in the MVP UI.
 
 ## NodeBB Reuse
 
