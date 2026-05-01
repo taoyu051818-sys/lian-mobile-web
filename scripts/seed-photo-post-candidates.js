@@ -951,6 +951,44 @@ async function uploadImageToCloudinary(config, filePath, publicIdHint) {
   return data.secure_url;
 }
 
+function optimizeCloudinaryUrl(url = "", width = 900) {
+  if (!/^https:\/\/res\.cloudinary\.com\/[^/]+\/image\/upload\//.test(url)) return url;
+  const transform = `f_auto,q_auto,c_limit,w_${width}`;
+  if (url.includes("/image/upload/f_auto,") || url.includes("/image/upload/q_auto,")) {
+    return url.replace(/\/image\/upload\/[^/]*?(?:f_auto|q_auto)[^/]*\//, `/image/upload/${transform}/`);
+  }
+  return url.replace("/image/upload/", `/image/upload/${transform}/`);
+}
+
+function cloudinaryWarmupUrls(url = "") {
+  const cleanUrl = String(url || "").replace(/&amp;/g, "&").trim();
+  if (!/^https:\/\/res\.cloudinary\.com\/[^/]+\/image\/upload\//.test(cleanUrl)) return [];
+  return [600, 900, 1200].map((width) => optimizeCloudinaryUrl(cleanUrl, width));
+}
+
+async function warmupImageUrl(url = "", timeoutMs = 15_000) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const response = await fetch(url, {
+      method: "HEAD",
+      signal: controller.signal,
+      headers: { accept: "image/avif,image/webp,image/*,*/*" },
+    });
+    return { url, ok: response.ok, status: response.status };
+  } catch (error) {
+    return { url, ok: false, status: 0, error: error?.message || String(error) };
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+async function warmupPostImages(imageUrls = []) {
+  const targets = [...new Set(imageUrls.flatMap((url) => cloudinaryWarmupUrls(url)))];
+  if (!targets.length) return [];
+  return Promise.all(targets.map((url) => warmupImageUrl(url)));
+}
+
 function escapeHtml(value) {
   return String(value ?? "")
     .replace(/&/g, "&amp;")
@@ -1180,6 +1218,7 @@ async function main() {
           imageUrls.push(...(await fetchTopicImageUrls(config, tid)));
         }
       }
+      const warmup = await warmupPostImages(imageUrls);
 
       metadata.items[String(tid)] = {
         ...(metadata.items[String(tid)] || {}),
@@ -1193,6 +1232,7 @@ async function main() {
         tid,
         repairedPid,
         imageUrls,
+        warmup,
         missingImage: imageStatus.missing.map((filePath) => path.basename(filePath)),
       });
     } catch (error) {

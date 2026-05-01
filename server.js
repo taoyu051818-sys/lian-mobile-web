@@ -858,6 +858,36 @@ function normalizePostImageUrl(url = "", { width = 900 } = {}) {
   return optimizeCloudinaryUrl(absoluteNodebbUrl(url), width);
 }
 
+function cloudinaryWarmupUrls(url = "") {
+  const normalized = absoluteNodebbUrl(url);
+  if (!/^https:\/\/res\.cloudinary\.com\/[^/]+\/image\/upload\//.test(normalized)) return [];
+  return [600, 900, 1200].map((width) => optimizeCloudinaryUrl(normalized, width));
+}
+
+async function warmupImageUrl(url = "", timeoutMs = 15_000) {
+  if (!url) return { url, ok: false, status: 0, error: "empty url" };
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const response = await fetch(url, {
+      method: "HEAD",
+      signal: controller.signal,
+      headers: { accept: "image/avif,image/webp,image/*,*/*" }
+    });
+    return { url, ok: response.ok, status: response.status };
+  } catch (error) {
+    return { url, ok: false, status: 0, error: error?.message || String(error) };
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+async function warmupPostImages(urls = []) {
+  const targets = [...new Set(urls.flatMap((url) => cloudinaryWarmupUrls(url)))];
+  if (!targets.length) return [];
+  return Promise.all(targets.map((url) => warmupImageUrl(url)));
+}
+
 function optimizePostImages(html = "", width = 900) {
   return html
     .replace(/(<img\b[^>]*\bsrc=["'])(https?:\/\/(?:127\.0\.0\.1|localhost|\[::1\]):?\d*\/assets\/[^"']+)(["'][^>]*>)/gi, (_match, before, src, after) => {
@@ -1579,6 +1609,7 @@ async function handleUploadImage(req, res, reqUrl) {
   }
   const purpose = reqUrl.searchParams.get("purpose") === "avatar" ? "avatar" : "";
   const url = await uploadImageToCloudinary(file, purpose);
+  if (purpose !== "avatar") await warmupPostImages([url]);
   sendJson(res, 200, { url });
 }
 
@@ -1726,6 +1757,7 @@ async function handleCreatePost(req, res) {
       imageUrls: [imageUrl]
     });
   }
+  if (imageUrl) await warmupPostImages([imageUrl]);
   memory.feedPages.clear();
   sendJson(res, 200, data);
 }
