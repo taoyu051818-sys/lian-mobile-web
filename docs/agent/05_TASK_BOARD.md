@@ -82,6 +82,16 @@ Split files:
 
 Handoff: `docs/agent/handoffs/frontend-app-split.md`
 
+### Frontend Stability Smoke
+
+Browserless HTTP smoke test for the split frontend. 21 checks covering homepage HTML, static JS reachability, API JSON validity, frontend syntax, and CSS.
+
+Script: `scripts/smoke-frontend.js`
+
+Usage: `node scripts/smoke-frontend.js [URL]`
+
+Handoff: `docs/agent/handoffs/frontend-stability-smoke.md`
+
 ---
 
 ## Ready
@@ -123,21 +133,6 @@ Affected files:
 Risk: low to medium. Data-only, but wrong coordinates would make the map misleading.
 
 Acceptance: 9 old calibrated locations appear in Map v2 with both `lat/lng` and `legacyPoint`.
-
-### Task: Frontend Stability Smoke
-
-Task doc: `docs/agent/tasks/frontend-stability-smoke.md`
-
-Goal: add smoke checks for the split frontend scripts and homepage loading.
-
-Affected files:
-
-- `scripts/smoke-frontend.js`
-- split frontend files only if a smoke check exposes a real bug
-
-Risk: low. New script and validation only.
-
-Acceptance: smoke command checks homepage, required scripts, `/api/feed`, and `/api/map/v2/items`.
 
 ### Task: AI Publish Polish
 
