@@ -31,14 +31,11 @@ Still out of scope unless a new task explicitly reopens it:
 - `../04_DECISIONS.md`
 - `../05_TASK_BOARD.md`
 - `../domains/FEED_SYSTEM.md`
-- `../HANDOFF_feed-optimization.md`
 - `../handoffs/feed-optimization.md`
 - before snapshot: `../../outputs/feed-snapshot-20260501-161614.md`
 - after snapshot: `../../outputs/feed-snapshot-20260501-162140.md`
 
 ## Validation
-
-Historical validation was recorded in `../HANDOFF_feed-optimization.md`.
 
 Expected checks for future feed changes:
 
@@ -71,8 +68,4 @@ Completed deliverables:
 Current handoff:
 
 - `../handoffs/feed-optimization.md`
-
-Historical original:
-
-- `../HANDOFF_feed-optimization.md`
 

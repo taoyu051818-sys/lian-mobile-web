@@ -1,42 +1,60 @@
 # Handoff: AI Post Preview
 
-This normalized handoff corresponds to the older root file:
-
-```text
-../HANDOFF_ai-post-preview.md
-```
-
-Keep the root file for historical detail.
+Date: 2026-05-01
 
 ## Status
 
-Backend completed and integration-tested on 2026-05-01.
+Backend completed and integration-tested.
 
-## Changed Areas
+## Changed Files
 
-Historical implementation changed:
-
-- `server.js`
-- `.env.example`
-- `docs/agent/AI_POST_PREVIEW.md`
-- `docs/agent/HANDOFF_ai-post-preview.md`
-
-This refresh only updates docs under `docs/agent`.
+- `src/server/ai-post-preview.js` — preview endpoint, MiMo adapter, mock fallback
+- `src/server/api-router.js` — route registration
+- `.env.example` — MiMo config placeholders
 
 ## New API
 
-```text
-POST /api/ai/post-preview
+`POST /api/ai/post-preview`
+
+Generates an editable draft preview. Does not publish, does not call NodeBB, does not write `data/post-metadata.json`.
+
+## Test Commands
+
+Syntax check:
+
+```powershell
+node --check server.js
+node scripts\validate-post-metadata.js
 ```
 
-Implemented:
+Mock request:
 
-- `mockPostPreview()`
-- `callMimoVisionPostPreview()`
-- MiMo adapter
-- prompt construction
-- JSON parse and normalize
-- `imageBase64` length limits
+```powershell
+$env:AI_POST_PREVIEW_MODE="mock"; node server.js
+```
+
+```powershell
+Invoke-RestMethod -Method Post -Uri "http://localhost:4100/api/ai/post-preview" -ContentType "application/json" -Body (@{
+  imageUrl = "https://example.com/image.jpg"
+  template = "campus_moment"
+  userText = "刚刚路过看到的"
+  locationHint = "大墩村"
+  visibilityHint = "public"
+} | ConvertTo-Json)
+```
+
+MiMo request:
+
+```powershell
+$env:AI_POST_PREVIEW_MODE="mimo"; $env:MIMO_API_KEY="replace-with-key"; node server.js
+```
+
+Feed smoke checks:
+
+```powershell
+Invoke-RestMethod "http://localhost:4100/api/feed"
+Invoke-RestMethod "http://localhost:4100/api/feed-debug?token=$env:ADMIN_TOKEN"
+```
 
 ## Modes
 
@@ -50,30 +68,49 @@ MiMo mode:
 - uses `MIMO_BASE_URL=https://api.xiaomimimo.com/v1`
 - uses `MIMO_MODEL=mimo-v2.5`
 - returns `mode=mimo` when successful
+- falls back to mock with `fallbackReason=mimo_unavailable` when MiMo fails
 
-## Validation
+## Environment Variables
 
-Passed:
+- `AI_POST_PREVIEW_MODE=mock | mimo`
+- `MIMO_API_KEY`
+- `MIMO_BASE_URL=https://api.xiaomimimo.com/v1`
+- `MIMO_MODEL=mimo-v2.5`
 
-- mock mode
-- MiMo mode
-- Cloudinary image URL input
+Without `MIMO_API_KEY`, the endpoint automatically uses mock mode.
 
-PowerShell Chinese may display `???`; verify with browser, curl, or a UTF-8 terminal before treating this as API mojibake.
+## Frontend Integration Notes
+
+- Call `/api/ai/post-preview` after image upload or when the user enters a public image URL.
+- Prefer sending Cloudinary/public `imageUrl`. Use `imageBase64` only for temporary preview.
+- Render `draft.title`, `draft.body`, `draft.tags`, `draft.metadata`, `locationSuggestions`, and `riskFlags` as editable fields.
+- Do not publish automatically. Require explicit user confirmation.
+- Treat `riskFlags` as user-facing warnings, not automatic allow/deny decisions.
+- Treat `locationId` as optional. The backend clears unknown AI-provided IDs.
 
 ## Safety Boundaries
 
 The endpoint does not:
 
-- publish automatically;
-- call NodeBB post creation;
-- write `data/post-metadata.json`;
-- change recommendation;
-- change map behavior.
+- publish automatically
+- call NodeBB post creation
+- write `data/post-metadata.json`
+- change recommendation
+- change map behavior
 
-Real `MIMO_API_KEY` values must only live in `.env` or server environment variables and must never be committed.
+## Risks
+
+- MiMo may return malformed JSON; backend normalizes and falls back to mock.
+- Vision output may infer a wrong place; unknown `locationId` is cleared.
+- Base64 requests can be large; backend has body and base64 length limits.
+- PowerShell Chinese may display `???`; verify with browser, curl, or UTF-8 terminal.
+
+## Rollback
+
+- Remove `/api/ai/post-preview` route and helpers from `ai-post-preview.js`.
+- Remove MiMo env entries from `.env.example`.
+- No runtime data files are written by this feature.
 
 ## Next Thread Notes
 
-Frontend integration should render AI output as editable suggestions and require explicit user confirmation before any publish call.
-
+Frontend integration should render AI output as editable suggestions and require explicit user confirmation before any publish call. See `ai-light-publish-flow.md` for the full publish flow handoff.

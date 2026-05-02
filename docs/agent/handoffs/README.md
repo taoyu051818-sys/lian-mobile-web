@@ -2,12 +2,7 @@
 
 Use this directory for thread handoff notes when a Codex thread changes behavior, performs validation, or leaves follow-up decisions for another thread.
 
-Older root handoff files are historical originals and must be kept:
-
-- `../HANDOFF_feed-optimization.md`
-- `../HANDOFF_ai-post-preview.md`
-
-New normalized handoffs live here:
+Normalized handoffs live here:
 
 - `feed-optimization.md`
 - `ai-post-preview.md`
@@ -15,9 +10,7 @@ New normalized handoffs live here:
 
 ## Relationship To Numbered Docs
 
-Numbered docs such as `../04_DECISIONS.md` and `../05_TASK_BOARD.md` are the current workspace entry points.
-
-Root handoff files preserve detailed history. The normalized handoff files in this directory summarize or point to those historical records so later threads can find them consistently.
+Numbered docs such as `../04_DECISIONS.md` and `../05_TASK_BOARD.md` are the current workspace entry points. Handoff files in this directory record thread context for the next thread.
 
 ## Recommended Handoff Sections
 

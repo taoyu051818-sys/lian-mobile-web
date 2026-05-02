@@ -35,8 +35,6 @@ Still out of scope unless a new task explicitly reopens it:
 - `../04_DECISIONS.md`
 - `../05_TASK_BOARD.md`
 - `../domains/AI_POST_PREVIEW.md`
-- `../AI_POST_PREVIEW.md`
-- `../HANDOFF_ai-post-preview.md`
 - `../handoffs/ai-post-preview.md`
 
 ## Validation
@@ -95,7 +93,3 @@ Map v2 is not implemented in this task. The current contract stores `locationDra
 Current handoff:
 
 - `../handoffs/ai-post-preview.md`
-
-Historical original:
-
-- `../HANDOFF_ai-post-preview.md`

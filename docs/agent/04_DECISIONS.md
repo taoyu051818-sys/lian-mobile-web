@@ -77,3 +77,18 @@ Task market, errand/runner workflows, and drone workflows are paused.
 
 The current priority is feed observability, metadata quality, AI draft preview, publishing basics, and map foundations.
 
+## 2026-05-01: AI Light Publish Flow Is Active
+
+The AI light publish flow is roughly complete on both frontend and backend.
+
+- `POST /api/ai/post-preview` generates editable drafts (mock or MiMo).
+- `POST /api/ai/post-drafts` silently saves drafts to `data/ai-post-drafts.jsonl`.
+- `POST /api/ai/post-publish` publishes after explicit user confirmation.
+- Both `/api/posts` and `/api/ai/post-publish` use `createNodebbTopicFromPayload()`.
+- AI posts are published as the logged-in user's NodeBB account, not as `NODEBB_UID`.
+- Currently single image only. Flow has rough edges.
+
+## 2026-05-01: Location Model Is A Sketch
+
+The location model is currently a sketch. `locationId` remains empty in most data. Plan to introduce AMap (高德地图) for precise map workflows. Do not create `data/locations.json` or `scripts/validate-locations.js` until the location model is formally designed.
+

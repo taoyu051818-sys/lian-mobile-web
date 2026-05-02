@@ -84,5 +84,4 @@ Metadata was filled for tids `91-97`, `99`, and `100`.
 - `../05_TASK_BOARD.md`
 - `../tasks/feed-optimization.md`
 - `../handoffs/feed-optimization.md`
-- `../HANDOFF_feed-optimization.md`
 
