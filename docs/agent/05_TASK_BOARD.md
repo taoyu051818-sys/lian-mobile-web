@@ -102,6 +102,12 @@ Multi-image AI publish support, non-blocking draft saves, JSONL archive tool.
 
 Handoff: `docs/agent/handoffs/ai-publish-polish.md`
 
+### Avatar NodeBB Fallback
+
+Real identity avatar falls back to NodeBB `user.picture` when no Cloudinary avatar uploaded. Alias avatar stays alias-only.
+
+Changed files: `src/server/auth-service.js`, `src/server/post-service.js`
+
 ---
 
 ## Ready
@@ -189,53 +195,6 @@ Risk: low. Tooling only.
 
 Acceptance: `--diff` compares two snapshots and reports useful feed composition differences.
 
-### Task: Create `validate-locations.js` Placeholder
-
-Goal: create a placeholder script referenced in task board but not yet existing. Location model is a sketch; script should validate whatever shape exists.
-
-Affected files:
-
-- `scripts/validate-locations.js` (new)
-
-Risk: low. New file, no impact on existing code.
-
-Acceptance:
-
-- `node --check scripts/validate-locations.js`
-- `node scripts/validate-locations.js` runs without error
-- Script is read-only, does not modify data
-
-### Task: JSONL Archive/Cleanup Tool
-
-Goal: create a script to archive or clean up `data/ai-post-drafts.jsonl` and `data/ai-post-records.jsonl`.
-
-Affected files:
-
-- `scripts/archive-ai-records.js` (new, or similar name)
-
-Risk: low. New file, append-only data.
-
-Acceptance:
-
-- `node --check scripts/archive-ai-records.js`
-- Script can list, count, and optionally archive records
-- Does not corrupt existing JSONL on partial failure
-
-### Task: Feed Snapshot Diff
-
-Goal: add diff capability to `scripts/snapshot-feed.js` so two snapshots can be compared programmatically.
-
-Affected files:
-
-- `scripts/snapshot-feed.js`
-
-Risk: low. Existing script, additive change.
-
-Acceptance:
-
-- `node --check scripts/snapshot-feed.js`
-- `node scripts/snapshot-feed.js --diff outputs/snapshot-a.md outputs/snapshot-b.md` produces readable diff
-
 ### Task: Static Data Expansion
 
 Goal: add entries to `mapItems` or `authInstitutions` in `static-data.js`.
@@ -251,20 +210,6 @@ Acceptance:
 - `node --check src/server/static-data.js`
 - `GET /api/map/items` returns new items
 - New institutions appear in auth rules
-
-### Task: Polish AI Light Publish Flow
-
-Goal: fix rough edges in the AI publish flow. Specific issues need per-item confirmation before fixing.
-
-Affected files: to be determined per issue.
-
-Risk: low to medium. Depends on the specific fix.
-
-Acceptance: per-issue verification. General:
-
-- `node --check src/server/ai-light-publish.js`
-- `node --check src/server/ai-post-preview.js`
-- End-to-end: upload → preview → edit → save draft → publish succeeds
 
 ---
 
