@@ -39,12 +39,27 @@ New files under `src/server/` are open for creation. Use the naming pattern `<mo
 
 | File | Level | Owner | Notes |
 |---|---|---|---|
-| `app.js` | soft-lock | Programmer B | All frontend logic (2151 lines). Highest conflict risk. Consider splitting before parallel work. |
+| `app.js` | soft-lock | Programmer B | Event delegation, global listeners, pull refresh, app initialization. Keep thin. |
+| `app-state.js` | soft-lock | Programmer B | Global state, state aliases, legacy static map data. Load before all app feature scripts. |
+| `app-utils.js` | soft-lock | Programmer B | DOM helpers, API helper, upload/compression helpers, publish progress. Shared by most frontend files. |
+| `app-auth-avatar.js` | soft-lock | Programmer B | Auth UI helpers, current user loading, avatar crop flow. |
+| `app-feed.js` | soft-lock | Programmer B | Feed tabs, masonry cards, detail view, image gallery/lightbox. |
+| `app-legacy-map.js` | soft-lock | Programmer B | Old illustrated map compatibility, route animation, old coordinate conversion. |
+| `app-ai-publish.js` | soft-lock | Programmer B | AI light publish sheet, AI preview/draft/publish, location draft handling, Map v2 location pick bridge. |
+| `app-messages-profile.js` | soft-lock | Programmer B | Channel messages, replies, auth submit, profile panel, regular post submit. |
 | `styles.css` | soft-lock | Programmer B | All styles. |
 | `index.html` | soft-lock | Programmer B | HTML structure. Rarely changes. |
 | `assets/` | open | — | Images, icons. |
 
-New files under `public/` are allowed when splitting `app.js` into modules (e.g., `api-client.js`, `app-state.js`, `location-ui.js`).
+New files under `public/` are allowed when they keep one clear feature boundary. Do not add new frontend logic back into `app.js` unless it is event binding or initialization.
+
+Classic script load order is currently part of the architecture:
+
+1. `map-v2.js`
+2. `app-state.js`
+3. `app-utils.js`
+4. feature scripts
+5. `app.js`
 
 ## data/ — Runtime data
 

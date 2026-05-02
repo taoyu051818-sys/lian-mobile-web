@@ -92,3 +92,40 @@ The AI light publish flow is roughly complete on both frontend and backend.
 
 The location model is currently a sketch. `locationId` remains empty in most data. Plan to introduce AMap (高德地图) for precise map workflows. Do not create `data/locations.json` or `scripts/validate-locations.js` until the location model is formally designed.
 
+## 2026-05-02: Map V2 Is Implemented As An MVP
+
+The older "Map V2 Is Design-Only For Now" decision is superseded by later Map v2 implementation work.
+
+Map v2 now exists as a Gaode-tile-based campus map with LIAN overlays, location drafts, and a standalone internal editor. Follow-up Map v2 work should focus on data quality, asset integration, validation, and editor ergonomics.
+
+Map v2 work must not change feed ranking, NodeBB publishing, or AI publish semantics unless a new task explicitly authorizes that boundary crossing.
+
+## 2026-05-02: Frontend App Split Is The New Baseline
+
+`public/app.js` has been mechanically split into feature-scoped classic scripts:
+
+- `public/app-state.js`
+- `public/app-utils.js`
+- `public/app-auth-avatar.js`
+- `public/app-feed.js`
+- `public/app-legacy-map.js`
+- `public/app-ai-publish.js`
+- `public/app-messages-profile.js`
+- `public/app.js`
+
+This is a conflict-reduction split, not a product behavior change. Future frontend work should modify the narrowest split file instead of adding new logic back into `public/app.js`.
+
+Do not convert to ES modules, bundlers, TypeScript, or a framework in the same thread as product work.
+
+## 2026-05-02: Architect Workstreams Are The Coordination Layer
+
+`docs/agent/ARCHITECTURE_WORKPLAN.md` is the current entry point for assigning next work.
+
+Implementation threads should take one task at a time:
+
+- `map-v2-data-assets`
+- `frontend-stability-smoke`
+- `ai-publish-polish`
+- `feed-ops-snapshot-diff`
+
+Do not combine feed scoring, publishing, map editor/data, auth, and frontend shell loading in one PR.

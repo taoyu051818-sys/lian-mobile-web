@@ -6,7 +6,10 @@ Normalized handoffs live here:
 
 - `feed-optimization.md`
 - `ai-post-preview.md`
-- `map-v2-tech-plan.md` when map planning is complete
+- `ai-light-publish-flow.md`
+- `map-v2-gaode.md`
+- `map-v2-editor.md`
+- `frontend-app-split.md`
 
 ## Relationship To Numbered Docs
 
@@ -27,3 +30,6 @@ Numbered docs such as `../04_DECISIONS.md` and `../05_TASK_BOARD.md` are the cur
 
 A handoff transfers context. It should not silently introduce new product scope.
 
+## Current Architect Entry Point
+
+Read `../ARCHITECTURE_WORKPLAN.md` before starting a new implementation thread.

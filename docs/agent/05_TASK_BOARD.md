@@ -65,9 +65,111 @@ Changed files: `public/tools/map-v2-editor.*`, `public/assets/campus-grass.png`,
 
 Handoff: `docs/agent/handoffs/map-v2-editor.md`
 
+### Frontend App Split
+
+`public/app.js` has been mechanically split into smaller classic-script files. This is now the frontend baseline.
+
+Split files:
+
+- `public/app-state.js`
+- `public/app-utils.js`
+- `public/app-auth-avatar.js`
+- `public/app-feed.js`
+- `public/app-legacy-map.js`
+- `public/app-ai-publish.js`
+- `public/app-messages-profile.js`
+- `public/app.js`
+
+Handoff: `docs/agent/handoffs/frontend-app-split.md`
+
 ---
 
 ## Ready
+
+Architecture entry point: `docs/agent/ARCHITECTURE_WORKPLAN.md`
+
+### Task: Map v2 Data Assets
+
+Task doc: `docs/agent/tasks/map-v2-data-assets.md`
+
+Goal: improve Map v2 data, assets, bounds validation, and editor ergonomics without changing feed or publishing.
+
+Affected files:
+
+- `public/map-v2.js`
+- `public/tools/map-v2-editor.*`
+- `public/assets/*`
+- `src/server/map-v2-service.js`
+- `data/locations.json`
+- `data/map-v2-layers.json`
+- `scripts/validate-locations.js`
+
+Risk: medium. Map data and editor affect location picking.
+
+Acceptance: editor can preview assets, validate bounds, and save valid locations/routes/areas.
+
+### Task: Restore Legacy Geo Anchors To Map v2
+
+Task doc: `docs/agent/tasks/map-v2-restore-legacy-geo.md`
+
+Goal: restore the original real-world coordinate anchors from v1 `geoImagePairs` into `data/locations.json` for Map v2.
+
+Affected files:
+
+- `data/locations.json`
+- `scripts/validate-locations.js`
+- optional one-time migration script
+
+Risk: low to medium. Data-only, but wrong coordinates would make the map misleading.
+
+Acceptance: 9 old calibrated locations appear in Map v2 with both `lat/lng` and `legacyPoint`.
+
+### Task: Frontend Stability Smoke
+
+Task doc: `docs/agent/tasks/frontend-stability-smoke.md`
+
+Goal: add smoke checks for the split frontend scripts and homepage loading.
+
+Affected files:
+
+- `scripts/smoke-frontend.js`
+- split frontend files only if a smoke check exposes a real bug
+
+Risk: low. New script and validation only.
+
+Acceptance: smoke command checks homepage, required scripts, `/api/feed`, and `/api/map/v2/items`.
+
+### Task: AI Publish Polish
+
+Task doc: `docs/agent/tasks/ai-publish-polish.md`
+
+Goal: add multi-image AI publish support and safer JSONL record hygiene.
+
+Affected files:
+
+- `src/server/ai-light-publish.js`
+- `src/server/ai-post-preview.js`
+- `public/app-ai-publish.js`
+- `scripts/archive-ai-records.js`
+
+Risk: medium. Touches confirmed publishing flow.
+
+Acceptance: 2+ images in AI publish appear in the NodeBB topic; single-image flow remains working.
+
+### Task: Feed Ops Snapshot Diff
+
+Task doc: `docs/agent/tasks/feed-ops-snapshot-diff.md`
+
+Goal: add diff capability to feed snapshots without changing runtime ranking.
+
+Affected files:
+
+- `scripts/snapshot-feed.js`
+- `docs/agent/domains/FEED_SYSTEM.md`
+
+Risk: low. Tooling only.
+
+Acceptance: `--diff` compares two snapshots and reports useful feed composition differences.
 
 ### Task: AI Publish Multi-Image Support
 
@@ -167,28 +269,11 @@ Acceptance: per-issue verification. General:
 
 ## Blocked
 
-### Map V2 Implementation
+### Map V2 Implementation (superseded)
 
-Goal: replace legacy static map with interactive map using AMap (高德地图).
+This blocked item is superseded by the completed Map v2 Gaode/editor work and the new `map-v2-data-assets` task.
 
-Blocked by: `MAP_V2_TECH_PLAN.md` must be produced and reviewed first.
-
-Current constraints (until plan is approved):
-
-- Do not modify `public/app.js`
-- Do not add Leaflet or AMap SDK
-- Do not change `/api/map/items` behavior
-
-Affected files (when unblocked): `public/app.js`, `src/server/static-data.js`, potentially new map service module.
-
-Risk: high. Touches high-conflict `app.js`, adds external dependency.
-
-Acceptance (when unblocked):
-
-- Interactive map renders campus POIs
-- Location picker works for post creation
-- `node --check server.js`
-- Manual browser test on mobile viewport
+Do not treat this as an active blocker. Use `docs/agent/ARCHITECTURE_WORKPLAN.md` and `docs/agent/tasks/map-v2-data-assets.md` for current Map v2 work.
 
 ---
 
@@ -236,12 +321,12 @@ Source: `api-router.js:27-94`
 
 ## Current Rule
 
-Documentation refresh threads must only update `docs/agent/*`.
+Architecture/documentation refresh threads must only update `docs/agent/*`.
 
 Do not modify:
 
 - `server.js`
-- `public/app.js`
+- runtime frontend files
 - `data/*`
 
 Do not commit real API keys. `MIMO_API_KEY` belongs only in `.env` or server environment variables.
