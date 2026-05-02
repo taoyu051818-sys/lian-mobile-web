@@ -1329,6 +1329,7 @@ function applyMapV2LocationPick(locationDraft) {
     form.elements.mapY.value = locationDraft.legacyPoint?.y ?? "";
     updatePublishLocationNote(form);
   }
+  updatePublishIdentityNote();
   window.MapV2?.stopPick?.();
   $("#publishSheet").showModal();
 }
@@ -1347,7 +1348,17 @@ function pickPublishMapLocation(event) {
   updatePublishLocationNote();
   if (state.aiPublish.active) state.aiPublish.locationDraft = buildLocationDraftFromForm(form);
   renderCampusMap();
+  updatePublishIdentityNote();
   $("#publishSheet").showModal();
+}
+
+function updatePublishIdentityNote() {
+  const note = $("#publishIdentityNote");
+  if (!note) return;
+  const activeAlias = state.currentUser?.aliases?.find((a) => a.id === state.currentUser?.activeAliasId);
+  note.textContent = activeAlias
+    ? `当前发布身份：${activeAlias.name}`
+    : `当前发布身份：${state.currentUser?.username || "真实身份"}`;
 }
 
 function updatePublishLocationNote(form = $("#publishForm")) {
@@ -1446,7 +1457,8 @@ function currentAiPublishPayload() {
     riskFlags: state.aiPublish.riskFlags || [],
     confidence: state.aiPublish.confidence || 0,
     needsHumanReview: Boolean(state.aiPublish.needsHumanReview),
-    aiMode: state.aiPublish.aiMode || ""
+    aiMode: state.aiPublish.aiMode || "",
+    aliasId: state.currentUser?.activeAliasId || undefined
   };
 }
 
@@ -2099,6 +2111,7 @@ document.addEventListener("click", (event) => {
     if (!requireLoginUi()) return;
     resetAiPublish();
     renderAiPublishSheet();
+    updatePublishIdentityNote();
     $("#publishSheet").showModal();
     return;
   }
