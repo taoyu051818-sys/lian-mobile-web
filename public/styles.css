@@ -1613,6 +1613,60 @@ textarea {
   color: #69706b;
 }
 
+.ai-publish-preview {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 4px 0;
+}
+
+.ai-image-thumb {
+  position: relative;
+  flex: 0 0 auto;
+  width: 100px;
+  height: 100px;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.ai-image-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.ai-image-remove {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 22px;
+  height: 22px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ai-add-more {
+  flex: 0 0 auto;
+  width: 100px;
+  height: 100px;
+  border: 2px dashed #c4c9c5;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  color: #69706b;
+  cursor: pointer;
+}
+
 @media (min-width: 720px) {
   .app-shell {
     box-shadow: 0 0 0 1px rgba(20, 20, 20, 0.06), 0 30px 70px rgba(20, 20, 20, 0.16);

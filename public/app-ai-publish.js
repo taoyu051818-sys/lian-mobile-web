@@ -181,7 +181,8 @@ function currentAiPublishPayload() {
   metadata.visibility ||= "public";
   metadata.distribution = locationArea ? ["home", "map", "search", "detail"] : ["home", "search", "detail"];
   return {
-    imageUrl: state.aiPublish.imageUrl,
+    imageUrl: state.aiPublish.imageUrls[0] || "",
+    imageUrls: state.aiPublish.imageUrls,
     title: form.elements.title?.value || "",
     body: form.elements.body?.value || "",
     tags: parseTagsText(form.elements.tags?.value || ""),
@@ -199,7 +200,7 @@ function resetAiPublish() {
   state.aiPublish = {
     active: true,
     step: "upload",
-    imageUrl: "",
+    imageUrls: [],
     aiMode: "",
     confidence: 0,
     needsHumanReview: false,
@@ -218,7 +219,7 @@ function resetAiPublish() {
 function renderAiPublishSheet() {
   const form = $("#publishForm");
   if (!form || !state.aiPublish.active) return;
-  const hasImage = Boolean(state.aiPublish.imageUrl);
+  const hasImages = state.aiPublish.imageUrls.length > 0;
   const locationDraft = state.aiPublish.locationDraft || defaultAiLocationDraft();
   const locationLabel = locationDraft.skipped
     ? "已跳过定位"
@@ -228,21 +229,30 @@ function renderAiPublishSheet() {
       <h2>AI 轻投稿</h2>
       <button class="sheet-close" type="button" data-close-publish aria-label="关闭">×</button>
     </header>
-    ${!hasImage ? `
+    ${!hasImages ? `
       <section class="ai-publish-upload">
         <label class="ai-upload-drop">
           <span>上传图片</span>
-          <small>上传一张图片，LIAN 会帮你生成标题、正文和标签</small>
-          <input id="publishImageInput" name="image" type="file" accept="image/*">
+          <small>上传图片，LIAN 会帮你生成标题、正文和标签</small>
+          <input id="publishImageInput" name="image" type="file" accept="image/*" multiple>
         </label>
         <p class="publish-status">${state.aiPublish.uploadLoading ? "图片上传中..." : ""}</p>
       </section>
     ` : `
       <section class="ai-publish-preview">
-        <img src="${escapeHtml(displayImageUrl(state.aiPublish.imageUrl))}" alt="">
+        ${state.aiPublish.imageUrls.map((url, i) => `
+          <div class="ai-image-thumb">
+            <img src="${escapeHtml(displayImageUrl(url))}" alt="">
+            <button type="button" data-remove-ai-image="${i}" class="ai-image-remove" aria-label="移除图片">×</button>
+          </div>
+        `).join("")}
+        <label class="ai-add-more">
+          <span>+ 继续添加</span>
+          <input id="publishImageInput" name="image" type="file" accept="image/*" multiple style="display:none">
+        </label>
       </section>
       <section class="ai-location-step">
-        <h3>这张照片在哪里？</h3>
+        <h3>这些照片在哪里？</h3>
         <div class="publish-tools">
           <button type="button" data-pick-map-location>旧地图标记</button>
           <button type="button" data-skip-ai-location>跳过定位</button>
@@ -309,7 +319,7 @@ function applyAiPreview(data = {}) {
 }
 
 async function requestAiPreview() {
-  if (!state.aiPublish.imageUrl) return;
+  if (!state.aiPublish.imageUrls.length) return;
   state.aiPublish.previewLoading = true;
   renderAiPublishSheet();
   try {
@@ -318,7 +328,8 @@ async function requestAiPreview() {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({
-        imageUrl: state.aiPublish.imageUrl,
+        imageUrl: state.aiPublish.imageUrls[0],
+        imageUrls: state.aiPublish.imageUrls,
         template: "campus_moment",
         locationHint: locationDraft.locationArea || "",
         visibilityHint: "public"
@@ -326,7 +337,7 @@ async function requestAiPreview() {
     });
     applyAiPreview(data);
     renderAiPublishSheet();
-    await saveAiDraftSilently();
+    saveAiDraftSilently();
   } catch (error) {
     alert(error.message);
   } finally {
@@ -335,22 +346,39 @@ async function requestAiPreview() {
   }
 }
 
-async function startAiImageUpload(file) {
-  if (!file) return;
+async function startAiImageUpload(files) {
+  if (!files?.length) return;
   state.aiPublish.uploadLoading = true;
   renderAiPublishSheet();
   try {
-    state.aiPublish.imageUrl = await uploadImage(file, "ai-light-publish");
+    for (const file of files) {
+      const url = await uploadImage(file, "ai-light-publish");
+      state.aiPublish.imageUrls.push(url);
+    }
     state.aiPublish.step = "compose";
     renderAiPublishSheet();
-    requestAiPreview();
+    if (state.aiPublish.imageUrls.length === files.length) {
+      requestAiPreview();
+    }
   } catch (error) {
     alert(error.message);
-    state.aiPublish.imageUrl = "";
     renderAiPublishSheet();
   } finally {
     state.aiPublish.uploadLoading = false;
   }
+}
+
+function removeAiImage(index) {
+  state.aiPublish.imageUrls.splice(index, 1);
+  if (!state.aiPublish.imageUrls.length) {
+    state.aiPublish.step = "upload";
+    state.aiPublish.title = "";
+    state.aiPublish.body = "";
+    state.aiPublish.tags = [];
+    state.aiPublish.metadata = {};
+    state.aiPublish.riskFlags = [];
+  }
+  renderAiPublishSheet();
 }
 
 function syncAiLocationFromInput() {
@@ -384,7 +412,7 @@ async function saveAiDraftSilently() {
     await saveAiDraft();
   } catch (error) {
     state.aiPublish.draftSaving = false;
-    state.aiPublish.draftSaveStatus = `草稿自动保存失败：${error.message}`;
+    state.aiPublish.draftSaveStatus = "";
     renderAiPublishSheet();
   }
 }

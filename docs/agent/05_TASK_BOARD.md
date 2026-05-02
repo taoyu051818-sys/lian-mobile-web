@@ -92,11 +92,51 @@ Usage: `node scripts/smoke-frontend.js [URL]`
 
 Handoff: `docs/agent/handoffs/frontend-stability-smoke.md`
 
+### AI Publish Polish
+
+Multi-image AI publish support, non-blocking draft saves, JSONL archive tool.
+
+- `ai-light-publish.js`: `normalizeAiPostPayload` handles `imageUrls` array, passes all to `createNodebbTopicFromPayload`
+- `app-ai-publish.js`: state uses `imageUrls[]`, multi-file upload with remove buttons, draft save is fire-and-forget
+- `scripts/archive-ai-records.js`: count/list/archive commands for JSONL hygiene
+
+Handoff: `docs/agent/handoffs/ai-publish-polish.md`
+
 ---
 
 ## Ready
 
 Architecture entry point: `docs/agent/ARCHITECTURE_WORKPLAN.md`
+
+### Task: NodeBB Integration Audit
+
+Task doc: `docs/agent/tasks/nodebb-integration-audit.md`
+
+Goal: verify every current NodeBB endpoint, auth mode, `_uid` behavior, and failure mode before adding audience or group sync work.
+
+Affected files:
+
+- `docs/agent/domains/NODEBB_INTEGRATION.md`
+- optional smoke script only if explicitly scoped
+
+Risk: low if docs-only. Medium if smoke scripts call real NodeBB write endpoints.
+
+Acceptance: endpoint table is verified against code and deployment config, with no runtime behavior change.
+
+### Task: Audience Permission Design
+
+Task doc: `docs/agent/tasks/audience-permission-design.md`
+
+Goal: design LIAN's school/org audience model and permission functions before implementing multi-school visibility.
+
+Affected files:
+
+- `docs/agent/domains/NODEBB_INTEGRATION.md`
+- future `docs/agent/domains/AUDIENCE_SYSTEM.md`
+
+Risk: docs-only if kept to design. High if implemented without a separate task.
+
+Acceptance: identifies every API surface that must call `canViewPost` before school/org visibility can ship.
 
 ### Task: Map v2 Data Assets
 
@@ -134,23 +174,6 @@ Risk: low to medium. Data-only, but wrong coordinates would make the map mislead
 
 Acceptance: 9 old calibrated locations appear in Map v2 with both `lat/lng` and `legacyPoint`.
 
-### Task: AI Publish Polish
-
-Task doc: `docs/agent/tasks/ai-publish-polish.md`
-
-Goal: add multi-image AI publish support and safer JSONL record hygiene.
-
-Affected files:
-
-- `src/server/ai-light-publish.js`
-- `src/server/ai-post-preview.js`
-- `public/app-ai-publish.js`
-- `scripts/archive-ai-records.js`
-
-Risk: medium. Touches confirmed publishing flow.
-
-Acceptance: 2+ images in AI publish appear in the NodeBB topic; single-image flow remains working.
-
 ### Task: Feed Ops Snapshot Diff
 
 Task doc: `docs/agent/tasks/feed-ops-snapshot-diff.md`
@@ -165,23 +188,6 @@ Affected files:
 Risk: low. Tooling only.
 
 Acceptance: `--diff` compares two snapshots and reports useful feed composition differences.
-
-### Task: AI Publish Multi-Image Support
-
-Goal: allow AI publish flow to handle multiple images instead of only the first one.
-
-Affected files:
-
-- `src/server/ai-light-publish.js` — `normalizeAiPostPayload` currently only passes first image to `createNodebbTopicFromPayload`
-- `src/server/ai-post-preview.js` — may need to accept multiple image inputs
-
-Risk: low. `post-service.js:51-57` already iterates `imageUrls` array. The plumbing exists; AI flow just needs to pass all images through.
-
-Acceptance:
-
-- Upload 2+ images via AI flow, verify all appear in the published NodeBB topic
-- `node --check src/server/ai-light-publish.js`
-- `node --check src/server/ai-post-preview.js`
 
 ### Task: Create `validate-locations.js` Placeholder
 

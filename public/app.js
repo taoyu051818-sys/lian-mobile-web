@@ -125,6 +125,11 @@ document.addEventListener("click", (event) => {
     renderAiPublishSheet();
     return;
   }
+  const removeImageBtn = event.target.closest("[data-remove-ai-image]");
+  if (removeImageBtn) {
+    removeAiImage(Number(removeImageBtn.dataset.removeAiImage));
+    return;
+  }
   if (event.target.closest("[data-regenerate-ai]")) {
     syncAiLocationFromInput();
     requestAiPreview();
@@ -155,7 +160,7 @@ $("#authForm")?.addEventListener("submit", submitAuth);
 document.addEventListener("submit", submitReply);
 document.addEventListener("change", (event) => {
   if (event.target?.id === "avatarInput") openAvatarCrop(event.target.files?.[0]);
-  if (event.target?.id === "publishImageInput") startAiImageUpload(event.target.files?.[0]);
+  if (event.target?.id === "publishImageInput") startAiImageUpload(Array.from(event.target.files || []));
   if (event.target?.name === "placeName" && state.aiPublish.active) syncAiLocationFromInput();
 });
 document.addEventListener("input", (event) => {

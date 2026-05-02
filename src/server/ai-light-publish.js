@@ -65,7 +65,10 @@ function normalizeAiPublishMetadata(value = {}, locationDraft = {}, request = {}
 }
 
 function normalizeAiPostPayload(payload = {}, { requireImage = false } = {}) {
-  const imageUrl = payload.imageUrl ? normalizePostImageUrl(payload.imageUrl, { width: 1200 }) : "";
+  const imageUrls = Array.isArray(payload.imageUrls)
+    ? payload.imageUrls.map((url) => normalizePostImageUrl(url, { width: 1200 })).filter(Boolean)
+    : (payload.imageUrl ? [normalizePostImageUrl(payload.imageUrl, { width: 1200 })].filter(Boolean) : []);
+  const imageUrl = imageUrls[0] || "";
   if (requireImage && !imageUrl) {
     const error = new Error("imageUrl is required");
     error.status = 400;
@@ -95,9 +98,10 @@ function normalizeAiPostPayload(payload = {}, { requireImage = false } = {}) {
     locationHint: payload.locationHint || ""
   });
   metadata.title = title;
-  metadata.imageUrls = imageUrl ? [imageUrl] : [];
+  metadata.imageUrls = imageUrls;
   return {
     imageUrl,
+    imageUrls,
     title,
     body,
     tags: compactStringArray(payload.tags, 5, 16),
@@ -130,6 +134,7 @@ async function handleAiPostDraft(req, res) {
     status: "draft",
     createdAt: new Date().toISOString(),
     imageUrl: normalized.imageUrl,
+    imageUrls: normalized.imageUrls,
     title: normalized.title,
     body: normalized.body,
     tags: normalized.tags,
@@ -160,6 +165,7 @@ async function handleAiPostPublish(req, res) {
     status: "pending_publish",
     createdAt: new Date().toISOString(),
     imageUrl: normalized.imageUrl,
+    imageUrls: normalized.imageUrls,
     title: normalized.title,
     body: normalized.body,
     tags: normalized.tags,
@@ -179,6 +185,7 @@ async function handleAiPostPublish(req, res) {
       title: normalized.title,
       content: normalized.body,
       imageUrl: normalized.imageUrl,
+      imageUrls: normalized.imageUrls,
       tag: normalized.tags[0] || "",
       tags: normalized.tags,
       aliasId,
@@ -223,7 +230,7 @@ async function handleAiPostPublish(req, res) {
       url: `${config.nodebbPublicBaseUrl}/topic/${tid}`,
       publishedAt: new Date().toISOString()
     });
-    if (normalized.imageUrl) await warmupPostImages([normalized.imageUrl]);
+    if (normalized.imageUrls.length) await warmupPostImages(normalized.imageUrls);
     memory.feedPages.clear();
     return sendJson(res, 200, {
       ok: true,
