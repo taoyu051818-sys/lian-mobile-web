@@ -31,7 +31,7 @@ function buildLianUserMeta(user = {}, identityTag = "", alias = null) {
     aliasName: alias?.name || "",
     identityTag: identityTag || selectIdentityTag(user),
     avatarText: String(displayName || "同").slice(0, 1),
-    avatarUrl: alias ? (alias.avatarUrl || "") : (user.avatarUrl || ""),
+    avatarUrl: alias ? (alias.avatarUrl || "") : (user.avatarUrl || user.nodebbPicture || ""),
     sentAt: new Date().toISOString()
   };
   return `<!-- lian-user-meta ${escapeHtml(JSON.stringify(meta))} -->`;

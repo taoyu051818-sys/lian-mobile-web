@@ -23,7 +23,7 @@ function publicAuthUser(user = null) {
     id: user.id,
     email: user.email,
     username: user.username,
-    avatarUrl: user.avatarUrl || "",
+    avatarUrl: user.avatarUrl || user.nodebbPicture || "",
     nodebbUid: user.nodebbUid || null,
     institution: user.institution || "",
     tags: user.tags || [],
@@ -115,6 +115,7 @@ async function ensureNodebbUid(auth) {
 
   auth.user.nodebbUid = uid;
   auth.user.nodebbUsername = nodebbUser.username || auth.user.username;
+  auth.user.nodebbPicture = nodebbUser.picture || "";
   auth.user.nodebbLinkedAt = new Date().toISOString();
   await saveAuthStore(auth.store);
   return uid;
