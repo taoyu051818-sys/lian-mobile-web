@@ -536,7 +536,25 @@ button {
   filter: drop-shadow(0 5px 12px rgba(19, 28, 24, 0.28));
 }
 
-.map-v2-location-card,
+.map-v2-location-card {
+  display: block;
+  width: 160px;
+  height: 50px;
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  cursor: pointer;
+}
+
+.map-v2-location-card img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
 .map-v2-post-card {
   display: grid;
   grid-template-columns: 52px 1fr;
@@ -553,7 +571,6 @@ button {
   text-align: left;
 }
 
-.map-v2-location-card img,
 .map-v2-post-card img {
   width: 48px;
   height: 54px;
@@ -561,7 +578,6 @@ button {
   object-fit: cover;
 }
 
-.map-v2-location-card span,
 .map-v2-post-card span {
   display: grid;
   gap: 2px;
@@ -571,18 +587,6 @@ button {
   font-size: 12px;
   font-weight: 800;
   line-height: 1.25;
-}
-
-.map-v2-location-card strong,
-.map-v2-location-card small {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.map-v2-location-card small {
-  color: #6b746f;
-  font-size: 10px;
 }
 
 .map-v2-area {

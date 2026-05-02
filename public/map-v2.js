@@ -107,16 +107,12 @@
     const image = card.imageUrl || item.icon?.url || "";
     return L.divIcon({
       className: "map-v2-location-card-icon",
-      iconSize: [168, 76],
-      iconAnchor: [84, 88],
-      popupAnchor: [0, -76],
+      iconSize: [160, 50],
+      iconAnchor: [80, 50],
+      popupAnchor: [0, -50],
       html: `
-        <button class="map-v2-location-card" type="button" data-map-v2-location-id="${escapeHtml(item.id)}">
-          ${image ? `<img src="${escapeHtml(displayImageUrl(image))}" alt="">` : ""}
-          <span>
-            <strong>${escapeHtml(card.title || item.name)}</strong>
-            <small>${escapeHtml(card.subtitle || card.tag || item.type || "")}</small>
-          </span>
+        <button class="map-v2-location-card" type="button" data-map-v2-location-id="${escapeHtml(item.id)}" title="${escapeHtml(item.name)}">
+          ${image ? `<img src="${escapeHtml(displayImageUrl(image))}" alt="${escapeHtml(item.name)}">` : ""}
         </button>
       `
     });
@@ -172,20 +168,21 @@
   function renderLocations(locations = []) {
     state.layers.locations.clearLayers();
     for (const item of locations) {
-      const marker = L.marker([item.lat, item.lng], {
-        icon: placeIcon(item),
-        title: item.name
-      }).bindPopup(popupHtml(item));
-      marker.on("click", () => {
-        if (state.mode === "pick") selectLocation(item);
-      });
-      marker.addTo(state.layers.locations);
-      if (item.card?.alwaysShow) {
+      if (item.card?.alwaysShow && (item.card?.imageUrl || item.icon?.url)) {
         L.marker([item.lat, item.lng], {
           icon: placeCardIcon(item),
           interactive: true,
           title: item.name
         }).bindPopup(popupHtml(item)).addTo(state.layers.locations);
+      } else {
+        const marker = L.marker([item.lat, item.lng], {
+          icon: placeIcon(item),
+          title: item.name
+        }).bindPopup(popupHtml(item));
+        marker.on("click", () => {
+          if (state.mode === "pick") selectLocation(item);
+        });
+        marker.addTo(state.layers.locations);
       }
     }
   }
@@ -218,14 +215,18 @@
     if (!el || !window.L) return;
     const data = state.data || await loadData();
     if (!state.map) {
+      const bounds = data.bounds || { south: 18.3700734, west: 109.9940365, north: 18.4149043, east: 110.0503482 };
       state.map = L.map(el, {
         center: [data.center?.lat || 18.3935, data.center?.lng || 110.0159],
         zoom: data.zoom || 16,
+        minZoom: 15,
+        maxZoom: 16,
+        maxBounds: [[bounds.south, bounds.west], [bounds.north, bounds.east]],
+        maxBoundsViscosity: 1,
         zoomControl: true,
-        attributionControl: true
+        attributionControl: false
       });
-      const bounds = data.bounds || { south: 18.373050, west: 109.995380, north: 18.413856, east: 110.036262 };
-      L.imageOverlay("/assets/campus-grass.png", [[bounds.south, bounds.west], [bounds.north, bounds.east]], {
+      L.imageOverlay("/assets/campus-base-map.png", [[bounds.south, bounds.west], [bounds.north, bounds.east]], {
         interactive: false,
         zIndex: 0
       }).addTo(state.map);
@@ -233,7 +234,7 @@
         subdomains: ["1", "2", "3", "4"],
         maxZoom: 19,
         minZoom: 3,
-        opacity: 0.35,
+        opacity: 0,
         attribution: "&copy; Gaode Map"
       }).addTo(state.map);
       initLayerGroups();

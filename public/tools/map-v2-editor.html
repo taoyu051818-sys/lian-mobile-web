@@ -13,91 +13,100 @@
         <div id="mapEditorStage" class="map-stage" aria-label="Map v2 editor"></div>
         <div class="map-modebar">
           <button type="button" data-editor-mode="browse" class="is-active">浏览</button>
-          <button type="button" data-editor-mode="location">放地点</button>
-          <button type="button" data-editor-mode="area">画区域</button>
-          <button type="button" data-editor-mode="route">画路线</button>
+          <button type="button" data-editor-mode="location">地点</button>
+          <button type="button" data-editor-mode="area">区域</button>
+          <button type="button" data-editor-mode="route">路线</button>
+          <button type="button" data-editor-mode="crop">截取</button>
         </div>
       </section>
       <aside class="side-panel">
         <header>
           <div>
             <h1>Map v2 Editor</h1>
-            <p>独立内部工具，不进入用户端前端。</p>
+            <p>内部地图编辑工具</p>
           </div>
-          <button type="button" data-reload>重载</button>
+          <button type="button" data-reload>刷新</button>
         </header>
 
-        <section class="status-panel">
-          <strong>试验区约束</strong>
-          <p>SW 18.373050 / 109.995380，NE 18.413856 / 110.036262。保存时后端会再次校验。</p>
-          <p id="editorStatus"></p>
+        <div id="selectionInfo" class="selection-info">
+          <div class="sel-header">
+            <span id="selName" class="sel-name">—</span>
+            <button type="button" class="danger" data-delete-selected>删除</button>
+          </div>
+          <div id="selMeta" class="sel-meta"></div>
+        </div>
+
+        <section class="section">
+          <strong>状态</strong>
+          <p>试验区: SW 18.370 / 109.994 → NE 18.415 / 110.050</p>
+          <p id="editorStatus">加载中…</p>
+        </section>
+
+        <section class="section bounds-adjust">
+          <strong>底图微调</strong>
+          <div class="bounds-grid">
+            <label>N<input id="boundN" type="number" step="0.0001" value="18.4149043"></label>
+            <label>S<input id="boundS" type="number" step="0.0001" value="18.3700734"></label>
+            <label>W<input id="boundW" type="number" step="0.0001" value="109.9940365"></label>
+            <label>E<input id="boundE" type="number" step="0.0001" value="110.0503482"></label>
+          </div>
+          <div class="nudge-row">
+            <button type="button" data-nudge="up">↑</button>
+            <button type="button" data-nudge="down">↓</button>
+            <button type="button" data-nudge="left">←</button>
+            <button type="button" data-nudge="right">→</button>
+            <label class="step-label">步长<select id="nudgeStep">
+              <option value="0.0001">0.0001</option>
+              <option value="0.0005">0.0005</option>
+              <option value="0.001" selected>0.001</option>
+              <option value="0.005">0.005</option>
+              <option value="0.01">0.01</option>
+            </select></label>
+          </div>
+          <div class="nudge-row">
+            <button type="button" data-nudge="wider">横向 +</button>
+            <button type="button" data-nudge="narrower">横向 -</button>
+            <button type="button" data-nudge="taller">纵向 +</button>
+            <button type="button" data-nudge="shorter">纵向 -</button>
+          </div>
+          <button type="button" data-apply-bounds>应用底图</button>
+          <button type="button" class="secondary" data-copy-bounds>复制边界</button>
+        </section>
+
+        <section class="section crop-section">
+          <strong>截取底图</strong>
+          <p>切换到"截取"模式，在地图上画矩形选择区域</p>
+          <div id="cropInfo" class="crop-info" style="display:none">
+            <span id="cropRect"></span>
+          </div>
+          <div class="action-row">
+            <button type="button" data-crop-save style="display:none">保存截取</button>
+            <button type="button" class="secondary" data-crop-cancel style="display:none">取消</button>
+          </div>
         </section>
 
         <section class="layer-panel">
-          <strong>图层控制</strong>
-          <label class="layer-toggle">
-            <input type="checkbox" data-layer="grass" checked> 草坪底层
-          </label>
-          <label class="layer-range">
-            <span>底层透明度</span>
-            <input type="range" id="grassOpacity" min="0" max="100" value="100">
-          </label>
-          <label class="layer-toggle">
-            <input type="checkbox" data-layer="tiles" checked> 高德瓦片
-          </label>
-          <label class="layer-range">
-            <span>瓦片透明度</span>
-            <input type="range" id="tilesOpacity" min="0" max="100" value="35">
-          </label>
-          <label class="layer-toggle">
-            <input type="checkbox" data-layer="bounds" checked> 试验区边界
-          </label>
-          <label class="layer-toggle">
-            <input type="checkbox" data-layer="areas" checked> 区域图层
-          </label>
-          <label class="layer-toggle">
-            <input type="checkbox" data-layer="routes" checked> 路线图层
-          </label>
-          <label class="layer-toggle">
-            <input type="checkbox" data-layer="locations" checked> 地点图层
-          </label>
-          <label class="layer-toggle">
-            <input type="checkbox" data-layer="draft" checked> 采点图层
-          </label>
+          <strong>图层</strong>
+          <label class="layer-toggle"><input type="checkbox" data-layer="grass" checked> 环境底图</label>
+          <label class="layer-range"><span>透明度</span><input type="range" id="grassOpacity" min="0" max="100" value="100"></label>
+          <label class="layer-toggle"><input type="checkbox" data-layer="tiles" checked> 高德瓦片</label>
+          <label class="layer-range"><span>透明度</span><input type="range" id="tilesOpacity" min="0" max="100" value="35"></label>
+          <label class="layer-toggle"><input type="checkbox" data-layer="bounds" checked> 边界</label>
+          <label class="layer-toggle"><input type="checkbox" data-layer="areas" checked> 区域</label>
+          <label class="layer-toggle"><input type="checkbox" data-layer="routes" checked> 路线</label>
+          <label class="layer-toggle"><input type="checkbox" data-layer="locations" checked> 地点</label>
+          <label class="layer-toggle"><input type="checkbox" data-layer="posts" checked> 帖子</label>
+          <label class="layer-toggle"><input type="checkbox" data-layer="draft" checked> 采点</label>
         </section>
 
         <section class="form-grid">
-          <label>
-            Admin token
-            <input id="adminToken" autocomplete="off" placeholder="ADMIN_TOKEN">
-          </label>
-          <label>
-            当前采点对象 ID
-            <input id="draftId" autocomplete="off" placeholder="new-place / new-area / new-route">
-          </label>
-          <label>
-            名称
-            <input id="draftName" autocomplete="off" placeholder="地点或图层名称">
-          </label>
-          <label>
-            类型
-            <input id="draftType" autocomplete="off" placeholder="campus / food / route / area">
-          </label>
-          <label>
-            Icon URL
-            <input id="draftIconUrl" autocomplete="off" placeholder="/assets/map/icon.png">
-          </label>
-          <label>
-            主动显示卡片
-            <select id="draftAlwaysShow">
-              <option value="false">否</option>
-              <option value="true">是</option>
-            </select>
-          </label>
-          <label>
-            卡片副标题
-            <input id="draftSubtitle" autocomplete="off" placeholder="例如 饭点 / 摆渡车 / 自习">
-          </label>
+          <label>Admin token<input id="adminToken" autocomplete="off" placeholder="自动注入"></label>
+          <label>ID<input id="draftId" autocomplete="off" placeholder="new-place"></label>
+          <label>名称<input id="draftName" autocomplete="off" placeholder="名称"></label>
+          <label>类型<input id="draftType" autocomplete="off" placeholder="campus / food"></label>
+          <label>Icon URL<input id="draftIconUrl" autocomplete="off" placeholder="/assets/map/icon.png"></label>
+          <label>卡片<select id="draftAlwaysShow"><option value="false">否</option><option value="true">是</option></select></label>
+          <label>副标题<input id="draftSubtitle" autocomplete="off" placeholder="副标题"></label>
         </section>
 
         <div class="action-row">
@@ -106,14 +115,8 @@
           <button class="primary" type="button" data-save>保存到后端</button>
         </div>
 
-        <label class="json-block">
-          locations.json
-          <textarea id="locationsJson" spellcheck="false"></textarea>
-        </label>
-        <label class="json-block">
-          map-v2-layers.json
-          <textarea id="layersJson" spellcheck="false"></textarea>
-        </label>
+        <label class="json-block">locations.json<textarea id="locationsJson" spellcheck="false"></textarea></label>
+        <label class="json-block">map-v2-layers.json<textarea id="layersJson" spellcheck="false"></textarea></label>
       </aside>
     </main>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>

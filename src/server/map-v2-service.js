@@ -7,10 +7,10 @@ import { readJsonBody } from "./request-utils.js";
 
 const DEFAULT_CENTER = { lat: 18.3935, lng: 110.0159 };
 const MAP_V2_BOUNDS = {
-  south: 18.373050,
-  west: 109.995380,
-  north: 18.413856,
-  east: 110.036262
+  south: 18.3700734,
+  west: 109.9940365,
+  north: 18.4149043,
+  east: 110.0503482
 };
 
 function numberOrNull(value) {

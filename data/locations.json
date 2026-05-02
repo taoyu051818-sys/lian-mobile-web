@@ -3,69 +3,597 @@
   "coordSystem": "gcj02",
   "items": [
     {
-      "id": "li-an-campus-core",
-      "name": "黎安试验区",
-      "type": "campus",
-      "aliases": ["黎安", "试验区"],
-      "lat": 18.3935,
-      "lng": 110.0159,
+      "id": "cuc-hainan",
+      "name": "中国传媒大学",
+      "type": "school",
+      "aliases": [
+        "中传"
+      ],
+      "lat": 18.3971362,
+      "lng": 110.0182378,
       "coordSystem": "gcj02",
-      "legacyPoint": { "x": 724, "y": 540 },
+      "legacyPoint": {
+        "x": 573,
+        "y": 567
+      },
+      "icon": {
+        "url": "",
+        "size": [
+          34,
+          34
+        ],
+        "anchor": [
+          17,
+          34
+        ],
+        "className": ""
+      },
+      "card": {
+        "title": "",
+        "subtitle": "",
+        "imageUrl": "",
+        "tag": "",
+        "alwaysShow": false
+      },
       "status": "active"
     },
     {
-      "id": "dadun-village",
-      "name": "大墩村",
-      "type": "village",
-      "aliases": ["大墩", "村里"],
-      "lat": 18.3869,
-      "lng": 110.0086,
+      "id": "public-teaching-building",
+      "name": "公共教学楼",
+      "type": "study",
+      "aliases": [
+        "公教",
+        "教学楼"
+      ],
+      "lat": 18.3982561,
+      "lng": 110.0211239,
       "coordSystem": "gcj02",
-      "legacyPoint": { "x": 360, "y": 760 },
+      "legacyPoint": {
+        "x": 744,
+        "y": 491
+      },
+      "icon": {
+        "url": "",
+        "size": [
+          34,
+          34
+        ],
+        "anchor": [
+          17,
+          34
+        ],
+        "className": ""
+      },
+      "card": {
+        "title": "",
+        "subtitle": "",
+        "imageUrl": "",
+        "tag": "",
+        "alwaysShow": false
+      },
       "status": "active"
     },
     {
-      "id": "shuttle-stop-main",
-      "name": "摆渡车站点",
-      "type": "transport",
-      "aliases": ["摆渡车", "车站", "站点"],
-      "lat": 18.3916,
-      "lng": 110.0134,
+      "id": "public-lab-building",
+      "name": "公共实验楼",
+      "type": "study",
+      "aliases": [
+        "实验楼"
+      ],
+      "lat": 18.3995286,
+      "lng": 110.0226581,
       "coordSystem": "gcj02",
-      "legacyPoint": { "x": 620, "y": 610 },
+      "legacyPoint": {
+        "x": 843,
+        "y": 431
+      },
+      "icon": {
+        "url": "",
+        "size": [
+          34,
+          34
+        ],
+        "anchor": [
+          17,
+          34
+        ],
+        "className": ""
+      },
+      "card": {
+        "title": "",
+        "subtitle": "",
+        "imageUrl": "",
+        "tag": "",
+        "alwaysShow": false
+      },
       "status": "active"
     },
     {
       "id": "library",
       "name": "图书馆",
       "type": "study",
-      "aliases": ["图书馆", "自习"],
-      "lat": 18.3952,
-      "lng": 110.0168,
+      "aliases": [
+        "图书馆",
+        "自习"
+      ],
+      "lat": 18.4010251,
+      "lng": 110.0189781,
       "coordSystem": "gcj02",
-      "legacyPoint": { "x": 790, "y": 470 },
+      "legacyPoint": {
+        "x": 629,
+        "y": 325
+      },
+      "icon": {
+        "url": "/assets/library.png",
+        "size": [
+          120,
+          40
+        ],
+        "anchor": [
+          60,
+          40
+        ],
+        "className": ""
+      },
+      "card": {
+        "title": "图书馆",
+        "subtitle": "",
+        "imageUrl": "/assets/library.png",
+        "tag": "study",
+        "alwaysShow": true
+      },
+      "status": "active"
+    },
+    {
+      "id": "life-zone-1",
+      "name": "生活一区",
+      "type": "life",
+      "aliases": [
+        "一区"
+      ],
+      "lat": 18.3941075,
+      "lng": 110.0208557,
+      "coordSystem": "gcj02",
+      "legacyPoint": {
+        "x": 761,
+        "y": 716
+      },
+      "icon": {
+        "url": "/assets/life-zone-1.png",
+        "size": [
+          120,
+          40
+        ],
+        "anchor": [
+          60,
+          40
+        ],
+        "className": ""
+      },
+      "card": {
+        "title": "生活一区",
+        "subtitle": "",
+        "imageUrl": "/assets/life-zone-1.png",
+        "tag": "life",
+        "alwaysShow": true
+      },
+      "status": "active"
+    },
+    {
+      "id": "life-zone-2",
+      "name": "生活二区",
+      "type": "life",
+      "aliases": [
+        "二区"
+      ],
+      "lat": 18.3957975,
+      "lng": 110.0227654,
+      "coordSystem": "gcj02",
+      "legacyPoint": {
+        "x": 869,
+        "y": 620
+      },
+      "icon": {
+        "url": "/assets/life-zone-2.png",
+        "size": [
+          120,
+          40
+        ],
+        "anchor": [
+          60,
+          40
+        ],
+        "className": ""
+      },
+      "card": {
+        "title": "生活二区",
+        "subtitle": "",
+        "imageUrl": "/assets/life-zone-2.png",
+        "tag": "life",
+        "alwaysShow": true
+      },
+      "status": "active"
+    },
+    {
+      "id": "innovation-center",
+      "name": "创新创业中心",
+      "type": "campus",
+      "aliases": [
+        "双创中心"
+      ],
+      "lat": 18.3936035,
+      "lng": 110.017063,
+      "coordSystem": "gcj02",
+      "legacyPoint": {
+        "x": 521,
+        "y": 770
+      },
+      "icon": {
+        "url": "",
+        "size": [
+          34,
+          34
+        ],
+        "anchor": [
+          17,
+          34
+        ],
+        "className": ""
+      },
+      "card": {
+        "title": "",
+        "subtitle": "",
+        "imageUrl": "",
+        "tag": "",
+        "alwaysShow": false
+      },
+      "status": "active"
+    },
+    {
+      "id": "bupt-hainan",
+      "name": "北京邮电大学",
+      "type": "school",
+      "aliases": [
+        "北邮"
+      ],
+      "lat": 18.3923513,
+      "lng": 110.0110281,
+      "coordSystem": "gcj02",
+      "legacyPoint": {
+        "x": 330,
+        "y": 724
+      },
+      "icon": {
+        "url": "",
+        "size": [
+          34,
+          34
+        ],
+        "anchor": [
+          17,
+          34
+        ],
+        "className": ""
+      },
+      "card": {
+        "title": "",
+        "subtitle": "",
+        "imageUrl": "",
+        "tag": "",
+        "alwaysShow": false
+      },
+      "status": "active"
+    },
+    {
+      "id": "uestc-hainan",
+      "name": "电子科技大学",
+      "type": "school",
+      "aliases": [
+        "电子科大"
+      ],
+      "lat": 18.3937359,
+      "lng": 110.0138605,
+      "coordSystem": "gcj02",
+      "legacyPoint": {
+        "x": 203,
+        "y": 819
+      },
+      "icon": {
+        "url": "",
+        "size": [
+          34,
+          34
+        ],
+        "anchor": [
+          17,
+          34
+        ],
+        "className": ""
+      },
+      "card": {
+        "title": "",
+        "subtitle": "",
+        "imageUrl": "",
+        "tag": "",
+        "alwaysShow": false
+      },
+      "status": "active"
+    },
+    {
+      "id": "dadun-village",
+      "name": "大墩村",
+      "type": "village",
+      "aliases": [
+        "大墩",
+        "村里"
+      ],
+      "lat": 18.400791,
+      "lng": 110.0299108,
+      "coordSystem": "gcj02",
+      "legacyPoint": {
+        "x": 360,
+        "y": 760
+      },
+      "icon": {
+        "url": "",
+        "size": [
+          34,
+          34
+        ],
+        "anchor": [
+          17,
+          34
+        ],
+        "className": ""
+      },
+      "card": {
+        "title": "",
+        "subtitle": "",
+        "imageUrl": "",
+        "tag": "",
+        "alwaysShow": false
+      },
+      "status": "active"
+    },
+    {
+      "id": "shuttle-stop-main",
+      "name": "摆渡车站点",
+      "type": "transport",
+      "aliases": [
+        "摆渡车",
+        "车站",
+        "站点"
+      ],
+      "lat": 18.3947107,
+      "lng": 110.0236264,
+      "coordSystem": "gcj02",
+      "legacyPoint": {
+        "x": 620,
+        "y": 610
+      },
+      "icon": {
+        "url": "",
+        "size": [
+          34,
+          34
+        ],
+        "anchor": [
+          17,
+          34
+        ],
+        "className": ""
+      },
+      "card": {
+        "title": "",
+        "subtitle": "",
+        "imageUrl": "",
+        "tag": "",
+        "alwaysShow": false
+      },
       "status": "active"
     },
     {
       "id": "canteen",
       "name": "食堂",
       "type": "food",
-      "aliases": ["食堂", "饭堂"],
-      "lat": 18.3923,
-      "lng": 110.0176,
+      "aliases": [
+        "食堂",
+        "饭堂"
+      ],
+      "lat": 18.3997424,
+      "lng": 110.0244927,
       "coordSystem": "gcj02",
-      "legacyPoint": { "x": 840, "y": 590 },
+      "legacyPoint": {
+        "x": 840,
+        "y": 590
+      },
+      "icon": {
+        "url": "",
+        "size": [
+          34,
+          34
+        ],
+        "anchor": [
+          17,
+          34
+        ],
+        "className": ""
+      },
+      "card": {
+        "title": "",
+        "subtitle": "",
+        "imageUrl": "",
+        "tag": "",
+        "alwaysShow": false
+      },
       "status": "active"
     },
     {
       "id": "sports-field",
       "name": "体育场",
       "type": "sports",
-      "aliases": ["操场", "体育场"],
-      "lat": 18.3902,
-      "lng": 110.0197,
+      "aliases": [
+        "操场",
+        "体育场"
+      ],
+      "lat": 18.3993352,
+      "lng": 110.0176156,
       "coordSystem": "gcj02",
-      "legacyPoint": { "x": 930, "y": 690 },
+      "legacyPoint": {
+        "x": 930,
+        "y": 690
+      },
+      "icon": {
+        "url": "",
+        "size": [
+          34,
+          34
+        ],
+        "anchor": [
+          17,
+          34
+        ],
+        "className": ""
+      },
+      "card": {
+        "title": "",
+        "subtitle": "",
+        "imageUrl": "",
+        "tag": "",
+        "alwaysShow": false
+      },
+      "status": "active"
+    },
+    {
+      "id": "map-item-1777714824095",
+      "name": "黎安书院",
+      "type": "location",
+      "aliases": [],
+      "lat": 18.4052906,
+      "lng": 110.0220895,
+      "coordSystem": "gcj02",
+      "legacyPoint": {
+        "x": 0,
+        "y": 0
+      },
+      "icon": {
+        "url": "/assets/lian-academy.png",
+        "size": [
+          120,
+          40
+        ],
+        "anchor": [
+          60,
+          40
+        ],
+        "className": ""
+      },
+      "card": {
+        "title": "黎安书院",
+        "subtitle": "",
+        "imageUrl": "/assets/lian-academy.png",
+        "tag": "location",
+        "alwaysShow": true
+      },
+      "status": "active"
+    },
+    {
+      "id": "map-item-1777714834071",
+      "name": "中央民族大学",
+      "type": "location",
+      "aliases": [],
+      "lat": 18.4010862,
+      "lng": 110.022068,
+      "coordSystem": "gcj02",
+      "legacyPoint": {
+        "x": 0,
+        "y": 0
+      },
+      "icon": {
+        "url": "",
+        "size": [
+          34,
+          34
+        ],
+        "anchor": [
+          17,
+          34
+        ],
+        "className": ""
+      },
+      "card": {
+        "title": "中央民族大学",
+        "subtitle": "",
+        "imageUrl": "",
+        "tag": "location",
+        "alwaysShow": false
+      },
+      "status": "active"
+    },
+    {
+      "id": "map-item-1777714876503",
+      "name": "北京体育大学",
+      "type": "location",
+      "aliases": [],
+      "lat": 18.4028779,
+      "lng": 110.0233877,
+      "coordSystem": "gcj02",
+      "legacyPoint": {
+        "x": 0,
+        "y": 0
+      },
+      "icon": {
+        "url": "/assets/bupt-sport.png",
+        "size": [
+          120,
+          40
+        ],
+        "anchor": [
+          60,
+          40
+        ],
+        "className": ""
+      },
+      "card": {
+        "title": "北京体育大学",
+        "subtitle": "",
+        "imageUrl": "/assets/bupt-sport.png",
+        "tag": "location",
+        "alwaysShow": true
+      },
+      "status": "active"
+    },
+    {
+      "id": "map-item-1777714889367",
+      "name": "综合体育中心",
+      "type": "location",
+      "aliases": [],
+      "lat": 18.402603,
+      "lng": 110.0257587,
+      "coordSystem": "gcj02",
+      "legacyPoint": {
+        "x": 0,
+        "y": 0
+      },
+      "icon": {
+        "url": "",
+        "size": [
+          34,
+          34
+        ],
+        "anchor": [
+          17,
+          34
+        ],
+        "className": ""
+      },
+      "card": {
+        "title": "综合体育中心",
+        "subtitle": "",
+        "imageUrl": "",
+        "tag": "location",
+        "alwaysShow": false
+      },
       "status": "active"
     }
   ]
