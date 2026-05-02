@@ -23,7 +23,7 @@ function parseArgs(argv) {
   const args = {
     baseUrl: process.env.LIAN_BASE_URL || "http://localhost:4100",
     limit: 12,
-    tabs: ["推荐", "此刻"]
+    tabs: ["精选", "此刻"]
   };
   for (let index = 2; index < argv.length; index += 1) {
     const arg = argv[index];

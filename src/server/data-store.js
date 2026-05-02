@@ -30,7 +30,7 @@ async function loadRules() {
     const raw = await fs.readFile(rulesPath, "utf8");
     memory.rules = JSON.parse(raw);
   } catch {
-    memory.rules = { tabs: ["推荐"], pinnedTids: [], tagWeights: {}, recencyHalfLifeHours: 96, coverBonus: 0 };
+    memory.rules = { tabs: ["精选"], pinnedTids: [], tagWeights: {}, recencyHalfLifeHours: 96, coverBonus: 0 };
   }
   memory.rulesLoadedAt = now;
   return memory.rules;

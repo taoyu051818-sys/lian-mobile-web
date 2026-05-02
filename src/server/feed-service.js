@@ -492,7 +492,7 @@ async function handleFeed(reqUrl, res) {
   const editionPageSize = Number(rules?.feedEditions?.pageSize || 10);
   const limit = Math.min(24, Math.max(4, Number(reqUrl.searchParams.get("limit") || editionPageSize || 10)));
   const readTids = parseReadTids(reqUrl.searchParams.get("read") || "");
-  const isRecommendTab = tab === "推荐";
+  const isRecommendTab = tab === "精选";
   const isMomentTab = tab === "此刻" && feedFeatureEnabled(rules, "momentTab");
   const surface = isMomentTab ? "moment" : "home";
   const topics = await getAllRecentTopics();
@@ -578,9 +578,9 @@ async function handleFeed(reqUrl, res) {
   const filtered = sliced
     .filter((item) => isFeedEligible(item, rules, { surface }))
     .filter((item) => isRecommendTab || isMomentTab || item.tags.includes(tab) || item.tag === tab);
-  const configuredTabs = Array.isArray(rules.tabs) && rules.tabs.length ? rules.tabs : ["推荐"];
+  const configuredTabs = Array.isArray(rules.tabs) && rules.tabs.length ? rules.tabs : ["精选"];
   const tabs = feedFeatureEnabled(rules, "momentTab") && !configuredTabs.includes("此刻")
-    ? ["推荐", "此刻", ...configuredTabs.filter((item) => item !== "推荐")]
+    ? ["此刻", "精选", ...configuredTabs.filter((item) => item !== "此刻" && item !== "精选")]
     : configuredTabs;
   sendJson(res, 200, {
     items: filtered,
@@ -642,7 +642,7 @@ async function handleFeedDebug(req, reqUrl, res) {
   const editionPageSize = Number(rules?.feedEditions?.pageSize || 10);
   const limit = Math.min(60, Math.max(4, Number(reqUrl.searchParams.get("limit") || editionPageSize || 10)));
   const readTids = parseReadTids(reqUrl.searchParams.get("read") || "");
-  const isRecommendTab = tab === "推荐";
+  const isRecommendTab = tab === "精选";
   const isMomentTab = tab === "此刻" && feedFeatureEnabled(rules, "momentTab");
   const surface = isMomentTab ? "moment" : "home";
   const topics = await getAllRecentTopics();
