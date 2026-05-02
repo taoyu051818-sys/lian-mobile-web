@@ -806,7 +806,7 @@ async function loadFeed(reset = false) {
       return;
     }
     console.info(`[feed] response request=${requestId} items=${data.items?.length || 0}`);
-    renderTabs(data.tabs || ["此刻", "推荐"]);
+    renderTabs(data.tabs || ["此刻", "精选"]);
     if (!data.items.length && reset) {
       $("#feedList").innerHTML = `<div class="empty-state">LIAN 没有返回帖子（tab=${escapeHtml(tab)}，page=${page}，items=0）</div>`;
       state.feed.status = "ready";
@@ -2139,7 +2139,7 @@ window.addEventListener("touchend", () => {
 }, { passive: true });
 
 async function initApp() {
-  renderTabs(["此刻", "推荐"]);
+  renderTabs(["此刻", "精选"]);
   ensureMasonryColumns(true);
   await loadFeed(true);
   state.initialized = true;
