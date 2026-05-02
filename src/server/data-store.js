@@ -50,17 +50,33 @@ async function loadMetadata() {
   return memory.metadata;
 }
 
+let metadataWriteQueue = Promise.resolve();
+
+async function backupMetadata() {
+  try {
+    const raw = await fs.readFile(metadataPath, "utf8");
+    const backupPath = `${metadataPath}.bak`;
+    await fs.writeFile(backupPath, raw, "utf8");
+    return backupPath;
+  } catch {
+    return null;
+  }
+}
+
 async function patchPostMetadata(tid, patch = {}) {
   const key = String(Number(tid) || tid || "");
   if (!key) return;
-  const raw = await fs.readFile(metadataPath, "utf8").catch(() => "{\"items\":{}}");
-  const data = JSON.parse(raw || "{\"items\":{}}");
-  data.items ||= {};
-  data.items[key] = { ...(data.items[key] || {}), ...patch };
-  await writeJsonFile(metadataPath, data);
-  memory.metadata = data.items;
-  memory.metadataLoadedAt = Date.now();
-  memory.feedPages.clear();
+  metadataWriteQueue = metadataWriteQueue.then(async () => {
+    const raw = await fs.readFile(metadataPath, "utf8").catch(() => "{\"items\":{}}");
+    const data = JSON.parse(raw || "{\"items\":{}}");
+    data.items ||= {};
+    data.items[key] = { ...(data.items[key] || {}), ...patch };
+    await writeJsonFile(metadataPath, data);
+    memory.metadata = data.items;
+    memory.metadataLoadedAt = Date.now();
+    memory.feedPages.clear();
+  });
+  return metadataWriteQueue;
 }
 
 async function loadChannelReads() {
@@ -108,6 +124,7 @@ async function saveAuthStore(data) {
 
 export {
   appendJsonLine,
+  backupMetadata,
   loadAuthStore,
   loadChannelReads,
   loadMetadata,

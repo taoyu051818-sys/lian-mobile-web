@@ -252,7 +252,7 @@ Required phase order:
 6. Stage reverse proxy deployment.
 7. Remove backend ownership from current repo only after backend repo is validated.
 
-Status: **P0 Ready**. Do not move code before Phase 0 contract inventory is complete.
+Status: **Phase 0 Done** — API contract frozen at `docs/agent/contracts/api-contract.md`. 48 endpoints inventoried (29 frontend-required, 11 admin-only, 2 backend-only, 6 deprecated). Ready for Phase 1 (backend repo bootstrap).
 
 ### Implementation Batch: Safety-Gated Product Continuation
 
@@ -269,7 +269,7 @@ Recommended assignment:
 
 | Lane | Owner thread | Task doc | Status | Dependency | Scope |
 |---|---|---|---|---|---|
-| A | Backend safety | `docs/agent/tasks/metadata-write-safety.md` | Ready | none | Serialized `post-metadata.json` write protocol, backup, temp rename, patch tests |
+| A | Backend safety | `docs/agent/tasks/metadata-write-safety.md` | **Done** | none | Serialized `post-metadata.json` write protocol, backup, temp rename, patch tests |
 | B | Route safety | `docs/agent/tasks/route-matcher-tests.md` | **Done** | none | Route matcher tests for existing API behavior; no framework migration |
 | C | Publish UX | `docs/agent/tasks/publish-v2-page.md` | Verify/fix | A + B recommended | Confirm images -> immediate Map v2 picker; uploads/AI run in background; user confirms publish |
 | D | Audience correctness | `docs/agent/tasks/audience-auth-hydration.md` | Ready | B recommended | Canonical viewer hydration from `institution`/`tags`/auth store shape |
