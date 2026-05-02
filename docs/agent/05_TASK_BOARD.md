@@ -199,11 +199,127 @@ Handoff: `docs/agent/handoffs/nodebb-detail-actions-profile-history.md`
 
 Status: **待审核** — 实现完成，review 修复已应用。需 smoke test NodeBB `/:slug/bookmarks` 和 `/:slug/upvoted` 端点，验证中文标签无乱码。
 
+### Publish V2 Page
+
+Dedicated publish page replacing old modal. 3-step flow: imageSelect → locationPick → draftReview. Multi-image upload with compression, embedded Map v2 picker, AI draft generation, audience picker (公开/校园/本校/仅自己), draft save, and publish.
+
+Confirmed product correction:
+
+- After the user confirms selected images, the flow must immediately enter Map v2 location picking.
+- Upload progress and later AI preview latency should overlap with the user's location-picking time.
+- Location picking must include both `确认地点` and `跳过定位`.
+- Default expectation is a coordinate-bearing `locationDraft` when the user confirms a map point/location.
+
+Changed files: `public/publish-page.js` (new), `public/index.html`, `public/app.js`, `public/app-state.js`, `public/map-v2.js`, `public/styles.css`
+
+Handoff: `docs/agent/handoffs/publish-v2-page.md`
+
+Status: **待审核** — review 修正已应用。图片选择后立即进入地图选点，上传在后台进行，AI preview 等待上传完成后触发。
+
 ---
 
 ## Ready
 
 Architecture entry point: `docs/agent/ARCHITECTURE_WORKPLAN.md`
+
+### P0: Repo Split - Frontend Here, Backend Elsewhere
+
+Task doc: `docs/agent/tasks/repo-split-frontend-backend.md`
+
+Handoff: `docs/agent/handoffs/repo-split-frontend-backend.md`
+
+Goal: turn the current repo into the frontend/mobile web workspace and move the complete backend/server/data integration layer into a separate backend repository.
+
+Target ownership:
+
+- current repo: frontend app, frontend assets, Publish UI, feed/detail/messages/profile UI, Map v2 UI, static admin/editor frontend tools, frontend smoke, frontend docs;
+- backend repo: `server.js`, `src/server/*`, NodeBB integration, AI adapters, feed services, auth/session, upload proxy, metadata writes, Audience, Map v2 data/admin APIs, backend validators, backend deployment.
+
+Why P0:
+
+- frontend and backend work are now stepping on each other in the same repo;
+- Publish V2, Map v2, Messages, Audience, and NodeBB integration need separate implementation lanes;
+- backend contains secrets and server-owned data that should not live in a frontend-first workspace long term;
+- future agents need clearer ownership boundaries before larger refactors.
+
+Required phase order:
+
+1. Inventory frontend API calls.
+2. Inventory backend routes.
+3. Freeze API contract docs.
+4. Bootstrap backend repo without changing runtime behavior.
+5. Add frontend API base URL configuration in current repo.
+6. Stage reverse proxy deployment.
+7. Remove backend ownership from current repo only after backend repo is validated.
+
+Status: **P0 Ready**. Do not move code before Phase 0 contract inventory is complete.
+
+### Implementation Batch: Safety-Gated Product Continuation
+
+This batch is the current work distribution after Pro review. It keeps runtime implementation work out of this architecture thread and gives implementation threads narrow ownership.
+
+Execution rule:
+
+1. Do not combine more than one track in a single implementation PR unless the task explicitly depends on a shared file change.
+2. Safety gates come first because Publish V2, AI publish, Audience, Messages, and Map v2 all depend on stable metadata writes and stable routing.
+3. Runtime code threads must write or update a handoff after each task.
+4. Architecture/doc threads may adjust scope and acceptance criteria, but should not implement runtime changes.
+
+Recommended assignment:
+
+| Lane | Owner thread | Task doc | Status | Dependency | Scope |
+|---|---|---|---|---|---|
+| A | Backend safety | `docs/agent/tasks/metadata-write-safety.md` | Ready | none | Serialized `post-metadata.json` write protocol, backup, temp rename, patch tests |
+| B | Route safety | `docs/agent/tasks/route-matcher-tests.md` | **Done** | none | Route matcher tests for existing API behavior; no framework migration |
+| C | Publish UX | `docs/agent/tasks/publish-v2-page.md` | Verify/fix | A + B recommended | Confirm images -> immediate Map v2 picker; uploads/AI run in background; user confirms publish |
+| D | Audience correctness | `docs/agent/tasks/audience-auth-hydration.md` | Ready | B recommended | Canonical viewer hydration from `institution`/`tags`/auth store shape |
+| E | NodeBB contracts | `docs/agent/tasks/nodebb-contract-smoke-tests.md` | Ready | B recommended | Live smoke of notifications/bookmarks/upvoted/replies/votes without leaking secrets |
+| F | Messages discussion | `docs/agent/tasks/nodebb-reply-notifications-messages.md` | Ready | D + E | Current-user reply notifications in Messages; not private chat |
+| G | Channel safety | `docs/agent/tasks/channel-messages-audience-filtering.md` | Ready | D | Audience filtering for `/api/channel` and natural discussion timelines |
+| H | Map v2 picker safety | `docs/agent/tasks/map-v2-bounds-picker-validation.md` | Ready | B recommended | Product bounds, picker confirm/skip output, validated map data |
+| I | Map v2 editor continuation | `docs/agent/tasks/map-v2-admin-editor.md` | Later | H recommended | Curves, route semantics, asset placement, building hierarchy |
+
+Parallelization guidance:
+
+- Lanes A and B can run in parallel.
+- Lane D can start after B or with careful coordination if it does not touch `api-router.js`.
+- Lane E can run in parallel with D because it should be diagnostic-first.
+- Lane C should wait for A and B when possible, because publish writes metadata and routes through the central router.
+- Lanes F and G should wait for D. F should also wait for E because notification endpoint shape must be verified first.
+- Lane H can run after B and can proceed in parallel with D/E if it does not touch publish code.
+- Lane I should not block Publish V2 and should not proceed until the picker/bounds contract is stable.
+
+Blocking gates before calling a product thread "done":
+
+- `node --check` for every touched JS file.
+- `node scripts/validate-post-metadata.js` when publishing or metadata code is touched.
+- `node scripts/test-routes.js` after router or endpoint work.
+- `node scripts/test-audience.js` after audience work.
+- NodeBB contract smoke after NodeBB endpoint assumptions change.
+- Browser smoke for Publish V2 or Messages UI work.
+
+### Task: High-Risk Refactor Execution Plan
+
+Task doc: `docs/agent/tasks/high-risk-execution-plan.md`
+
+Reference: `docs/agent/references/HIGH_RISK_AREAS.md`
+
+Goal: execute future high-risk refactors through controlled tracks: baseline observation, smoke tests, narrow behavior-preserving change, validation, and handoff.
+
+Priority order:
+
+1. Runtime safety gates
+2. `post-metadata.json` write safety
+3. `api-router.js` route safety
+4. Audience/auth hydration
+5. NodeBB integration contracts
+6. Frontend script load order
+7. Feed scoring cleanup
+8. Auth modularization
+
+Risk: high if combined with product changes; medium if executed as one narrow track per PR.
+
+Acceptance: each implementation thread touches only one high-risk track, preserves behavior unless the task explicitly says otherwise, runs the required smoke/validation commands, and writes a handoff.
 
 ### Task: Map v2 Data Assets
 
@@ -229,17 +345,15 @@ Acceptance: editor can preview assets, validate bounds, and save valid locations
 
 Task doc: `docs/agent/tasks/map-v2-admin-editor.md` (revised 2026-05-02)
 
-Handoffs: `docs/agent/handoffs/admin-editor-v1.md`, `docs/agent/handoffs/road-draw-mvp.md`
+Handoffs: `docs/agent/handoffs/admin-editor-v1.md`, `docs/agent/handoffs/road-draw-mvp.md`, `docs/agent/handoffs/road-junctions-phase1b.md`, `docs/agent/handoffs/curves-route-semantics-phase1c.md`
 
-Goal: expand the internal map editor. V1 backend/data model is implemented (new normalizers for buildings/environment/entrances/groups, extended load/save/API, validation, property panels, vertex editing, export). Phase 1A road draw MVP completed: game-engine-style click-drag road drawing, 4 road types, properties panel, point simplification, save/reload/export, bounds validation.
+Goal: expand the internal map editor. V1 backend/data model is implemented. Phase 1A road draw MVP completed. Phase 1B junctions completed. Phase 1C curves completed: Chaikin smoothing preview, bend angle classification, auto-classify button, shuttle route `routeRef`, curve hint export.
 
 Remaining phases:
-- Phase 1B: road editing + junctions (auto-snapping, crossing detection, segment splitting)
-- Phase 1C: curves + route semantics
 - Phase 2: asset placement mode
 - Phase 3: building group hierarchy
 
-Status: **Phase 1A 完成** — 路网绘制引擎 MVP 已实现，等待 Phase 1B。
+Status: **Phase 1C 完成** — 曲线平滑预览和弯道分类已实现，等待 Phase 2。
 
 Risk: medium-high. It changes admin tooling and map data shape, but should not affect feed or publishing if kept isolated.
 
@@ -265,35 +379,6 @@ Risk: high. This touches frontend map navigation, map data model, post associati
 
 Acceptance: overview building click opens a building view, floor selector works, room polygons are clickable, and related posts respect future visibility rules.
 
-### Task: Publish V2 Page
-
-Task doc: `docs/agent/tasks/publish-v2-page.md`
-
-Goal: replace the modal-style publish MVP with a dedicated page that supports multi-image upload, simple frontend compression, automatic transition to Map v2 location picking, editable AI draft review, and user-confirmed audience selection.
-
-Current baseline: modal-era multi-image publish support already exists from `AI Publish Polish`. This task should migrate the product flow to a dedicated page, reuse existing `imageUrls[]` behavior where practical, and add Map v2 picker plus user-confirmed audience handling.
-
-Affected files:
-
-- `public/index.html`
-- `public/publish-page.js`
-- `public/app.js`
-- `public/app-state.js`
-- `public/app-ai-publish.js`
-- `public/app-utils.js`
-- `public/map-v2.js`
-- `public/styles.css`
-- `src/server/ai-post-preview.js`
-- `src/server/ai-light-publish.js`
-
-Risk: high. This touches the main publish entry, image upload, Map v2 picking, AI preview, final NodeBB publish, and draft recovery.
-
-Acceptance: main `+` opens the dedicated Publish page; user can select multiple images, confirm them once, move directly to Map v2 location picking, pick or skip location, receive one AI draft based on all images, edit audience/location/content, save draft, and publish only after explicit confirmation. Failed publish must not write `post-metadata.json`.
-
-Handoff: `docs/agent/handoffs/publish-v2-page.md`
-
-Status: **Ready** — plan reconciled with current multi-image baseline, 8-phase execution order defined, failure paths documented.
-
 ### Task: NodeBB Like Feed Card Validation
 
 Task doc: `docs/agent/tasks/nodebb-like-feed-card-validation.md`
@@ -303,6 +388,66 @@ Goal: validate the started feed-card like integration against the actual NodeBB 
 Risk: medium. It touches `post-service.js`, `feed-service.js`, `api-router.js`, and frontend card rendering.
 
 Acceptance: clicking the heart toggles NodeBB vote state for the topic's first post, count updates correctly after refresh, and feed ranking remains unchanged.
+
+### Task: NodeBB Reply Notifications In Messages Page
+
+Goal: make NodeBB replies/comments enter LIAN's messages experience as user-scoped notifications and discussion updates, without turning the messages page into private chat.
+
+Product decision:
+
+- The messages page means real-time discussion activity.
+- Comment/reply information should enter the messages page when the current user has permission to see the related post.
+- This is not private chat. It is a discussion/notification surface backed by NodeBB replies and notifications.
+
+Current finding:
+
+- `POST /api/posts/:tid/replies` already writes replies to NodeBB.
+- `GET /api/messages` currently reads NodeBB `/api/notifications`, but it is not user-scoped to the current LIAN user and is not wired into the visible messages page.
+- The visible messages page currently loads `/api/channel`, which is the public/channel timeline, not personal reply notifications.
+
+Affected files:
+
+- `src/server/channel-service.js` or a new `src/server/notification-service.js`
+- `src/server/api-router.js`
+- `public/app-messages-profile.js`
+- `public/styles.css`
+- `docs/agent/domains/NODEBB_INTEGRATION.md`
+
+Backend requirements:
+
+- `GET /api/messages` must require/login-resolve the current LIAN user when returning personal notifications.
+- Resolve the current user's NodeBB uid with `ensureNodebbUid(auth)`.
+- Call NodeBB notifications with the current user's `_uid`, not the fallback/platform `NODEBB_UID`.
+- Normalize NodeBB reply notifications into LIAN items with `id`, `type`, `title`, `excerpt`, `tid`, `pid`, `actor`, `time`, `read`, and LIAN detail URL.
+- Map raw NodeBB topic paths to LIAN post detail navigation. Do not send users to raw NodeBB public URLs by default.
+- If a notification can be tied to a topic, apply `canViewPost(auth.user, post, "detail")` before returning it.
+- Do not mark notifications read on fetch. Mark read only on click/open or explicit action, using NodeBB's native read endpoint after smoke testing.
+- Preserve the distinction between personal discussion notifications and the public/channel timeline.
+
+Frontend requirements:
+
+- Keep the current channel timeline separate.
+- Add a messages-page tab or section for `回复/通知`.
+- Reply notification click opens LIAN detail for the topic, with optional future reply highlight.
+- Message labels should make the product meaning clear: `讨论`, `回复`, `通知`, not `私信`.
+- Empty/error states must be normal UTF-8 Chinese.
+
+Non-goals:
+
+- No private messages/chat.
+- No push notification system.
+- No moderation inbox in this task.
+- No recommendation/feed ranking changes.
+- No new NodeBB plugin.
+
+Acceptance:
+
+- User B receives a LIAN messages notification when user A replies to B's post and NodeBB emits the notification.
+- The notification list is scoped to user B's NodeBB uid, not the platform/default uid.
+- Unauthorized school/org/private post notifications are hidden or rendered as a safe unavailable item.
+- Clicking a reply notification opens LIAN's post detail, not raw NodeBB.
+- `/api/channel` continues to behave as the channel timeline.
+- Chinese labels show as `回复`, `通知`, `暂无通知`, `加载中` without mojibake.
 
 ---
 
