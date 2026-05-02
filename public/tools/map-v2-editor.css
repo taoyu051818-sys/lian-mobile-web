@@ -10,6 +10,10 @@
   --radius: 10px;
   --shadow: 0 1px 3px rgba(15,26,20,0.06), 0 6px 16px rgba(15,26,20,0.06);
   --shadow-lg: 0 4px 12px rgba(15,26,20,0.08), 0 16px 40px rgba(15,26,20,0.1);
+  --building-color: #7c3aed;
+  --env-color: #059669;
+  --entrance-color: #f59e0b;
+  --road-color: #6b7280;
 }
 
 * { box-sizing: border-box; }
@@ -434,6 +438,68 @@ input:focus, select:focus, textarea:focus {
 .bounds-adjust button[data-apply-bounds]:hover { background: #1a2e24; }
 .bounds-adjust button[data-copy-bounds] {
   width: 100%;
+}
+
+/* Mode sub-selector */
+.mode-sub-selector {
+  position: absolute;
+  left: 16px;
+  top: 60px;
+  z-index: 500;
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  border-radius: var(--radius);
+  background: var(--card);
+  box-shadow: var(--shadow-lg);
+}
+.mode-sub-selector select {
+  min-height: 30px;
+  min-width: 90px;
+  font-size: 12px;
+  font-weight: 600;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+/* Property panels */
+.prop-section { display: none; }
+.prop-section.active { display: block; }
+.prop-section .form-grid { margin-top: 6px; }
+.prop-section label.full-width { grid-column: 1 / -1; }
+
+/* Building groups section */
+.building-groups-section { margin-top: 6px; }
+.building-groups-section .group-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 0;
+  font-size: 12px;
+  border-bottom: 1px solid var(--line);
+}
+.building-groups-section .group-item:last-child { border-bottom: 0; }
+.building-groups-section .group-item .group-name { font-weight: 600; }
+.building-groups-section .group-item .group-count { color: var(--muted); font-size: 11px; }
+.building-groups-section .group-item button { min-height: 24px; padding: 0 8px; font-size: 11px; }
+
+/* Road drawing */
+.map-stage.road-draw-mode { cursor: crosshair; }
+.road-draw-preview {
+  pointer-events: none;
+}
+.readonly-field {
+  display: flex;
+  align-items: center;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+  min-height: 36px;
+  padding: 6px 10px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 7px;
 }
 
 @media (max-width: 900px) {

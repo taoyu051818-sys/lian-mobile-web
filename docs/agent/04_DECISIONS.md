@@ -2,6 +2,12 @@
 
 This numbered file is the current decision log for future Codex threads. Older root docs under `docs/agent/` are historical context and should not override this file unless a newer dated decision is added.
 
+## Active Supersessions
+
+- `2026-05-02: Map V2 Is Implemented As An MVP` supersedes `2026-05-01: Map V2 Is Design-Only For Now`.
+- `2026-05-02: Frontend App Split Is The New Baseline` supersedes old references to `public/app.js` as one 2,151-line frontend file.
+- `2026-05-02: NodeBB Integration Boundary Is Formalized` is the current NodeBB architecture reference.
+
 ## 2026-05-01: NodeBB Remains The Content Backend
 
 NodeBB continues as the content backend and system of record for topics, posts, replies, users, tags, categories, permissions, and moderation primitives.
@@ -139,3 +145,35 @@ LIAN remains responsible for campus product state: feed ranking, Map v2 data, AI
 The current integration details live in `docs/agent/domains/NODEBB_INTEGRATION.md`.
 
 Future multi-school and organization visibility must use a LIAN-owned audience model first. NodeBB groups/categories may mirror LIAN permissions for hard boundaries, but NodeBB should not become the only source of truth for LIAN-specific audience state.
+
+## 2026-05-02: Publish V2 Uses A Dedicated Page
+
+The user-facing flow is named **发布 / Publish**, not "AI light publish".
+
+Publish V2 should move out of modal-style UI into a dedicated page.
+
+The V2 flow starts with multi-image selection, applies simple frontend compression, uploads all confirmed images, immediately moves to Map v2 location picking, then generates one editable AI draft from all image URLs and context.
+
+AI may suggest a visibility/audience option, but the user must make the final confirmation before publishing.
+
+Legacy map/location picking is in retirement. New publish location work should target Map v2.
+
+## 2026-05-02: Map V2 Becomes A Spatial Asset System
+
+Map v2 should evolve from a map display into an editable campus spatial asset system.
+
+The natural base layer already covers broad environmental context such as ocean, beach, grass, and terrain-like areas. Next work should add editable roads, routes, environment elements, buildings, building groups, entrances, clickable icons, and post/card overlays.
+
+Detailed visual rendering may be done by external AI/design tools. LIAN should own the structured map data, render specs, render job records, preview/approval workflow, and published map versions. Rendered images must not replace editable structured layers as the source of truth.
+
+Campus overview can link into a higher-precision 2D building/floor/room view. Clicking building icons or building polygons should open a planar view where users can inspect floors, room functions, and related posts.
+
+Do not implement 3D, live indoor positioning, or automatic room recognition in the first version.
+
+## 2026-05-02: NodeBB Native Features Require Product Cuts
+
+NodeBB has native capabilities that LIAN has not fully connected yet, including likes/upvotes, bookmarks/favorites, read state/history, reports/flags, edit/delete/hide, groups, and category privileges.
+
+These should not be connected all at once. Each capability needs a narrow product cut, endpoint verification against the installed NodeBB version, failure-mode notes, and audience/privacy checks where relevant.
+
+Good first candidates are report/flag, save/favorite, like/useful, and read-state browsing history. Feed ranking must not change in the same PR as the first like/useful integration.

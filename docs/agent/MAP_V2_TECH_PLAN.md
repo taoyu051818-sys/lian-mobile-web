@@ -1,5 +1,7 @@
 # Map V2 Technical Plan
 
+> Historical implementation plan. Map v2 Gaode/editor MVP work has since landed. Use this as planning context only; for current state read `docs/agent/domains/MAP_SYSTEM.md`, `docs/agent/handoffs/map-v2-gaode.md`, `docs/agent/handoffs/map-v2-editor.md`, and `docs/agent/tasks/map-v2-data-assets.md`.
+
 ## Status
 
 Implementation started in the `map-v2-gaode` thread after product approval.

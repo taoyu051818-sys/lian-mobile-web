@@ -59,6 +59,30 @@ document.addEventListener("click", (event) => {
     return;
   }
 
+  const likeButton = event.target.closest("[data-like-tid]");
+  if (likeButton) {
+    event.preventDefault();
+    event.stopPropagation();
+    togglePostLike(likeButton);
+    return;
+  }
+
+  const saveButton = event.target.closest("[data-save-tid]");
+  if (saveButton) {
+    event.preventDefault();
+    event.stopPropagation();
+    togglePostSave(saveButton);
+    return;
+  }
+
+  const reportButton = event.target.closest("[data-report-tid]");
+  if (reportButton) {
+    event.preventDefault();
+    event.stopPropagation();
+    handleReportPost(reportButton.dataset.reportTid);
+    return;
+  }
+
   const card = event.target.closest("[data-tid]");
   if (card) {
     if (card.closest("#messageList")) return;

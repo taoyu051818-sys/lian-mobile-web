@@ -1,5 +1,7 @@
 import fs from "node:fs/promises";
 
+import { canViewPost } from "./audience-service.js";
+import { getCurrentUser } from "./auth-service.js";
 import { loadMetadata, writeJsonFile } from "./data-store.js";
 import { sendJson } from "./http-response.js";
 import { locationsPath, mapV2LayersPath } from "./paths.js";
@@ -125,6 +127,94 @@ function normalizeArea(item = {}) {
   };
 }
 
+function normalizeEntrance(item = {}) {
+  const center = point(item);
+  return {
+    id: compactText(item.id, 80),
+    name: compactText(item.name, 80),
+    lat: center.lat,
+    lng: center.lng,
+    icon: normalizeIcon(item.icon),
+    clickAction: compactText(item.clickAction || "", 120)
+  };
+}
+
+function normalizeBuilding(item = {}) {
+  return {
+    id: compactText(item.id, 80),
+    name: compactText(item.name, 80),
+    type: compactText(item.type || "building", 40),
+    polygon: Array.isArray(item.polygon) ? item.polygon.map(point).filter((p) => p.lat !== null && p.lng !== null) : [],
+    entrances: Array.isArray(item.entrances) ? item.entrances.map(normalizeEntrance).filter((e) => e.lat !== null && e.lng !== null) : [],
+    icon: normalizeIcon(item.icon),
+    clickAction: compactText(item.clickAction || "open_floor_plan", 120),
+    floorPlanIds: Array.isArray(item.floorPlanIds) ? item.floorPlanIds.map((id) => compactText(id, 80)).filter(Boolean).slice(0, 20) : [],
+    relatedLocationIds: Array.isArray(item.relatedLocationIds) ? item.relatedLocationIds.map((id) => compactText(id, 80)).filter(Boolean).slice(0, 20) : [],
+    status: item.status === "hidden" ? "hidden" : "active"
+  };
+}
+
+const VALID_ENV_TYPES = new Set(["beach", "forest", "water", "grass", "sand", "rock", "other"]);
+
+function normalizeEnvironmentElement(item = {}) {
+  return {
+    id: compactText(item.id, 80),
+    name: compactText(item.name, 80),
+    type: VALID_ENV_TYPES.has(item.type) ? item.type : "other",
+    shape: item.shape === "point" ? "point" : "polygon",
+    points: Array.isArray(item.points) ? item.points.map(point).filter((p) => p.lat !== null && p.lng !== null) : [],
+    style: {
+      fill: compactText(item.style?.fill || "#059669", 24),
+      opacity: Math.max(0, Math.min(1, Number(item.style?.opacity ?? 0.5)))
+    },
+    renderHint: compactText(item.renderHint || "", 200)
+  };
+}
+
+function normalizeBuildingGroup(item = {}) {
+  return {
+    id: compactText(item.id, 80),
+    name: compactText(item.name, 80),
+    buildingIds: Array.isArray(item.buildingIds) ? item.buildingIds.map((id) => compactText(id, 80)).filter(Boolean).slice(0, 40) : [],
+    description: compactText(item.description || "", 200)
+  };
+}
+
+const VALID_ROAD_TYPES = new Set(["main_road", "pedestrian_path", "shuttle_route", "service_path"]);
+const ROAD_TYPE_STYLES = {
+  main_road: { color: "#6b7280", weight: 6, dashArray: "" },
+  pedestrian_path: { color: "#9ca3af", weight: 3, dashArray: "6 4" },
+  shuttle_route: { color: "#2563eb", weight: 4, dashArray: "" },
+  service_path: { color: "#a3a3a3", weight: 2, dashArray: "4 6" }
+};
+
+function normalizeRoad(item = {}) {
+  const roadType = VALID_ROAD_TYPES.has(item.type) ? item.type : "main_road";
+  const defaultStyle = ROAD_TYPE_STYLES[roadType];
+  return {
+    id: compactText(item.id, 80),
+    name: compactText(item.name, 80),
+    type: roadType,
+    points: Array.isArray(item.points) ? item.points.map(point).filter((p) => p.lat !== null && p.lng !== null) : [],
+    segments: Array.isArray(item.segments) ? item.segments : [],
+    junctionIds: Array.isArray(item.junctionIds) ? item.junctionIds.map((id) => compactText(id, 80)).filter(Boolean) : [],
+    style: {
+      color: compactText(item.style?.color || defaultStyle.color, 24),
+      weight: Math.max(1, Math.min(12, Number(item.style?.weight || defaultStyle.weight))),
+      dashArray: compactText(item.style?.dashArray || defaultStyle.dashArray, 24)
+    },
+    renderHint: {
+      surface: compactText(item.renderHint?.surface || "", 40),
+      curveStyle: compactText(item.renderHint?.curveStyle || "", 40),
+      edgeStyle: compactText(item.renderHint?.edgeStyle || "", 40)
+    },
+    interactive: item.interactive !== false,
+    status: item.status === "hidden" ? "hidden" : "active",
+    source: compactText(item.source || "admin_drawn", 40),
+    updatedAt: compactText(item.updatedAt || "", 40)
+  };
+}
+
 async function readJson(filePath, fallback) {
   try {
     return JSON.parse(await fs.readFile(filePath, "utf8"));
@@ -141,7 +231,11 @@ async function loadMapV2Data() {
     center: DEFAULT_CENTER,
     zoom: 16,
     areas: [],
-    routes: []
+    routes: [],
+    roads: [],
+    buildings: [],
+    environmentElements: [],
+    buildingGroups: []
   });
   const locations = Array.isArray(locationsRaw.items)
     ? locationsRaw.items.map(normalizeLocation).filter((item) => item.id && item.name && item.lat !== null && item.lng !== null)
@@ -159,14 +253,19 @@ async function loadMapV2Data() {
       center: point(layersRaw.center || DEFAULT_CENTER),
       zoom: Math.max(3, Math.min(19, Number(layersRaw.zoom || 16))),
       areas: Array.isArray(layersRaw.areas) ? layersRaw.areas.map(normalizeArea).filter((item) => item.id && item.points.length >= 3) : [],
-      routes: Array.isArray(layersRaw.routes) ? layersRaw.routes.map(normalizeRoute).filter((item) => item.id && item.points.length >= 2) : []
+      routes: Array.isArray(layersRaw.routes) ? layersRaw.routes.map(normalizeRoute).filter((item) => item.id && item.points.length >= 2) : [],
+      roads: Array.isArray(layersRaw.roads) ? layersRaw.roads.map(normalizeRoad).filter((item) => item.id && item.points.length >= 2) : [],
+      buildings: Array.isArray(layersRaw.buildings) ? layersRaw.buildings.map(normalizeBuilding).filter((item) => item.id && item.polygon.length >= 3) : [],
+      environmentElements: Array.isArray(layersRaw.environmentElements) ? layersRaw.environmentElements.map(normalizeEnvironmentElement).filter((item) => item.id) : [],
+      buildingGroups: Array.isArray(layersRaw.buildingGroups) ? layersRaw.buildingGroups.map(normalizeBuildingGroup).filter((item) => item.id) : []
     }
   };
 }
 
-function mapPostsFromMetadata(metadata = {}, locations = []) {
+function mapPostsFromMetadata(metadata = {}, locations = [], currentUser = null) {
   const byId = new Map(locations.map((item) => [item.id, item]));
   return Object.entries(metadata).map(([tid, item]) => {
+    if (!canViewPost(currentUser, item, "map")) return null;
     const lat = numberOrNull(item.lat ?? item.locationDraft?.lat);
     const lng = numberOrNull(item.lng ?? item.locationDraft?.lng);
     const location = item.locationId ? byId.get(item.locationId) : null;
@@ -187,9 +286,10 @@ function mapPostsFromMetadata(metadata = {}, locations = []) {
   }).filter(Boolean).slice(0, 80);
 }
 
-async function handleMapV2Items(_req, res) {
+async function handleMapV2Items(req, res) {
   const { bounds, locations, layers } = await loadMapV2Data();
   const metadata = await loadMetadata();
+  const auth = await getCurrentUser(req);
   return sendJson(res, 200, {
     ok: true,
     mapVersion: "gaode_v2",
@@ -200,9 +300,13 @@ async function handleMapV2Items(_req, res) {
     locations: locations.items.filter((item) => item.status === "active"),
     layers: {
       areas: layers.areas,
-      routes: layers.routes
+      routes: layers.routes,
+      roads: layers.roads.filter((r) => r.status === "active"),
+      buildings: layers.buildings.filter((b) => b.status === "active"),
+      environmentElements: layers.environmentElements,
+      buildingGroups: layers.buildingGroups
     },
-    posts: mapPostsFromMetadata(metadata, locations.items)
+    posts: mapPostsFromMetadata(metadata, locations.items, auth.user)
   });
 }
 
@@ -239,13 +343,35 @@ async function handleAdminMapV2(req, res) {
         assertPointInBounds(routePoint, `layers.routes[${routeIndex}].points[${pointIndex}]`);
       }
     }
+    for (const [bldgIndex, bldg] of (payload.layers?.buildings || []).entries()) {
+      for (const [pointIndex, bldgPoint] of (bldg.polygon || []).entries()) {
+        assertPointInBounds(bldgPoint, `layers.buildings[${bldgIndex}].polygon[${pointIndex}]`);
+      }
+      for (const [entIndex, ent] of (bldg.entrances || []).entries()) {
+        if (ent.lat != null && ent.lng != null) assertPointInBounds(ent, `layers.buildings[${bldgIndex}].entrances[${entIndex}]`);
+      }
+    }
+    for (const [envIndex, env] of (payload.layers?.environmentElements || []).entries()) {
+      for (const [pointIndex, envPoint] of (env.points || []).entries()) {
+        assertPointInBounds(envPoint, `layers.environmentElements[${envIndex}].points[${pointIndex}]`);
+      }
+    }
+    for (const [roadIndex, road] of (payload.layers?.roads || []).entries()) {
+      for (const [pointIndex, roadPoint] of (road.points || []).entries()) {
+        assertPointInBounds(roadPoint, `layers.roads[${roadIndex}].points[${pointIndex}]`);
+      }
+    }
     const layers = {
       version: 1,
       coordSystem: "gcj02",
       center: point(payload.layers?.center || DEFAULT_CENTER),
       zoom: Math.max(3, Math.min(19, Number(payload.layers?.zoom || 16))),
       areas: Array.isArray(payload.layers?.areas) ? payload.layers.areas.map(normalizeArea).filter((item) => item.id && item.points.length >= 3) : [],
-      routes: Array.isArray(payload.layers?.routes) ? payload.layers.routes.map(normalizeRoute).filter((item) => item.id && item.points.length >= 2) : []
+      routes: Array.isArray(payload.layers?.routes) ? payload.layers.routes.map(normalizeRoute).filter((item) => item.id && item.points.length >= 2) : [],
+      roads: Array.isArray(payload.layers?.roads) ? payload.layers.roads.map(normalizeRoad).filter((item) => item.id && item.points.length >= 2) : [],
+      buildings: Array.isArray(payload.layers?.buildings) ? payload.layers.buildings.map(normalizeBuilding).filter((item) => item.id && item.polygon.length >= 3) : [],
+      environmentElements: Array.isArray(payload.layers?.environmentElements) ? payload.layers.environmentElements.map(normalizeEnvironmentElement).filter((item) => item.id) : [],
+      buildingGroups: Array.isArray(payload.layers?.buildingGroups) ? payload.layers.buildingGroups.map(normalizeBuildingGroup).filter((item) => item.id) : []
     };
     await writeJsonFile(locationsPath, locations);
     await writeJsonFile(mapV2LayersPath, layers);

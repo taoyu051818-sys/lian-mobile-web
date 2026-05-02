@@ -1,3 +1,5 @@
+import { canViewPost } from "./audience-service.js";
+import { ensureNodebbUid, getCurrentUser } from "./auth-service.js";
 import { memory } from "./cache.js";
 import { config } from "./config.js";
 import {
@@ -14,7 +16,7 @@ import {
 } from "./content-utils.js";
 import { loadMetadata, loadRules } from "./data-store.js";
 import { sendJson } from "./http-response.js";
-import { nodebbFetch } from "./nodebb-client.js";
+import { nodebbFetch, withNodebbUid } from "./nodebb-client.js";
 import { requireAdmin } from "./request-utils.js";
 
 const defaultPostMetadata = {
@@ -80,6 +82,8 @@ function normalizeTopic(topic, detail = null, metadata = {}) {
   const timestampISO = detail?.timestampISO || topic?.timestampISO || firstPost.timestampISO || "";
   const title = detail?.titleRaw || detail?.title || topic?.titleRaw || topic?.title || "未命名";
   const tid = detail?.tid || topic?.tid;
+  const firstPostPid = Number(firstPost.pid || topic?.mainPid || topic?.teaserPid || topic?.teaser?.pid || 0) || null;
+  const likeCount = Number(firstPost.upvotes ?? firstPost.votes ?? firstPost.reputation ?? topic?.upvotes ?? topic?.votes ?? topic?.reputation ?? 0) || 0;
   const meta = normalizePostMetadata(metadata[String(tid)] || {});
   const cover = meta.imageUrls[0] ? proxiedPostImageUrl(meta.imageUrls[0], { width: 600 }) : extractCover(contentHtml);
 
@@ -108,6 +112,7 @@ function normalizeTopic(topic, detail = null, metadata = {}) {
     riskScore: meta.riskScore,
     officialScore: meta.officialScore,
     visibility: meta.visibility,
+    audience: meta.audience || null,
     distribution: meta.distribution,
     keepAfterExpired: meta.keepAfterExpired,
     author: userMeta.username || firstPost?.user?.username || topic?.user?.username || "同学",
@@ -116,6 +121,8 @@ function normalizeTopic(topic, detail = null, metadata = {}) {
     authorAvatarText: userMeta.avatarText || String(userMeta.username || "").slice(0, 1),
     authorAvatarUrl: userMeta.avatarUrl || "",
     replyCount: detail?.postcount ? Math.max(0, detail.postcount - 1) : topic?.postcount || 0,
+    firstPostPid,
+    likeCount: Math.max(0, likeCount),
     nodebbUrl: `${config.nodebbPublicBaseUrl}/topic/${tid}`,
     sourceUrl: meta.sourceUrl || extractSourceUrl(contentHtml)
   };
@@ -259,7 +266,7 @@ function legacyScoreItem(item, rules) {
   return pinned + tagWeight + recency + cover + item.priority;
 }
 
-function isFeedEligible(item, rules, { surface = "home" } = {}) {
+function isFeedEligible(item, rules, { surface = "home", currentUser = null } = {}) {
   if (!item) return false;
   if (isChannelItem(item)) return false;
   if (!feedFeatureEnabled(rules, "eligibility")) return true;
@@ -274,10 +281,11 @@ function isFeedEligible(item, rules, { surface = "home" } = {}) {
     const allowed = surface === "moment" ? ["moment", "home"] : [surface];
     if (!allowed.some((candidate) => distribution.includes(candidate))) return false;
   }
+  if (!canViewPost(currentUser, item, "feed")) return false;
   return true;
 }
 
-function feedFilterReason(item, rules, { surface = "home" } = {}) {
+function feedFilterReason(item, rules, { surface = "home", currentUser = null } = {}) {
   if (!item) return "missing-item";
   if (isChannelItem(item)) return "channel-message";
   if (!feedFeatureEnabled(rules, "eligibility")) return "";
@@ -292,6 +300,7 @@ function feedFilterReason(item, rules, { surface = "home" } = {}) {
     const allowed = surface === "moment" ? ["moment", "home"] : [surface];
     if (!allowed.some((candidate) => distribution.includes(candidate))) return `not-distributed-to-${surface}`;
   }
+  if (!canViewPost(currentUser, item, "feed")) return "audience-denied";
   return "";
 }
 
@@ -430,9 +439,9 @@ function momentScoreItem(item, rules) {
   return recency + quality + imageImpact + replies + priority + vibe + contentType + locationArea;
 }
 
-function selectMomentFeed(items, rules, { page, limit, readTids }) {
+function selectMomentFeed(items, rules, { page, limit, readTids, currentUser = null }) {
   const momentItems = items
-    .filter((item) => isFeedEligible(item, rules, { surface: "moment" }))
+    .filter((item) => isFeedEligible(item, rules, { surface: "moment", currentUser }))
     .sort((a, b) => momentScoreItem(b, rules) - momentScoreItem(a, rules));
   const diversified = diversifyItems(momentItems, rules);
   const start = (page - 1) * limit;
@@ -484,9 +493,11 @@ function parseReadTids(value = "") {
   );
 }
 
-async function handleFeed(reqUrl, res) {
+async function handleFeed(req, reqUrl, res) {
   const rules = await loadRules();
   const metadata = await loadMetadata();
+  const auth = await getCurrentUser(req);
+  const currentUser = auth.user;
   const tab = reqUrl.searchParams.get("tab") || "此刻";
   const page = Math.max(1, Number(reqUrl.searchParams.get("page") || 1));
   const editionPageSize = Number(rules?.feedEditions?.pageSize || 10);
@@ -498,7 +509,7 @@ async function handleFeed(reqUrl, res) {
   const topics = await getAllRecentTopics();
   const basicItems = topics
     .map((topic) => normalizeTopic(topic, null, metadata))
-    .filter((item) => isFeedEligible(item, rules, { surface }));
+    .filter((item) => isFeedEligible(item, rules, { surface, currentUser }));
   const itemByTid = new Map(basicItems.map((item) => [Number(item.tid), item]));
 
   let items = basicItems;
@@ -508,7 +519,7 @@ async function handleFeed(reqUrl, res) {
   const curatedPages = isRecommendTab ? getCuratedPages(rules) : [];
 
   if (isMomentTab) {
-    const momentFeed = selectMomentFeed(basicItems, rules, { page, limit, readTids });
+    const momentFeed = selectMomentFeed(basicItems, rules, { page, limit, readTids, currentUser });
     selected = momentFeed.selected;
     hasMore = momentFeed.hasMore;
     feedMode = "moment";
@@ -524,13 +535,13 @@ async function handleFeed(reqUrl, res) {
     const pages = curatedPages.map((tids) => (
       tids
         .map((tid) => itemByTid.get(Number(tid)))
-        .filter((item) => isFeedEligible(item, rules, { surface: "home" }))
+        .filter((item) => isFeedEligible(item, rules, { surface: "home", currentUser }))
         .slice(0, curatedSlots)
     ));
     pages.flat().forEach((item) => used.add(Number(item.tid)));
     const rankedRest = basicItems
       .filter((item) => !used.has(Number(item.tid)))
-      .filter((item) => isFeedEligible(item, rules, { surface: "home" }))
+      .filter((item) => isFeedEligible(item, rules, { surface: "home", currentUser }))
       .sort((a, b) => (
         scoreItem(b, rules, { readTids, surface: "home", useOfficialPenalty: true })
         - scoreItem(a, rules, { readTids, surface: "home", useOfficialPenalty: true })
@@ -576,7 +587,7 @@ async function handleFeed(reqUrl, res) {
     })
   );
   const filtered = sliced
-    .filter((item) => isFeedEligible(item, rules, { surface }))
+    .filter((item) => isFeedEligible(item, rules, { surface, currentUser }))
     .filter((item) => isRecommendTab || isMomentTab || item.tags.includes(tab) || item.tag === tab);
   const configuredTabs = Array.isArray(rules.tabs) && rules.tabs.length ? rules.tabs : ["精选"];
   const tabs = feedFeatureEnabled(rules, "momentTab") && !configuredTabs.includes("此刻")
@@ -605,7 +616,7 @@ function feedDebugSource(item, { isRecommendTab, isMomentTab, tab, curatedTidSet
 }
 
 function feedDebugRow(item, rules, context) {
-  const reason = feedFilterReason(item, rules, { surface: context.surface });
+  const reason = feedFilterReason(item, rules, { surface: context.surface, currentUser: context.currentUser || null });
   const tabReason = context.tabFilterReason?.(item) || "";
   const filteredReason = reason || tabReason;
   const eligible = !filteredReason;
@@ -654,6 +665,7 @@ async function handleFeedDebug(req, reqUrl, res) {
     if (isRecommendTab || isMomentTab) return "";
     return item.tags.includes(tab) || item.tag === tab ? "" : "not-in-tab";
   };
+  const debugAuth = await getCurrentUser(req);
   const context = {
     tab,
     isRecommendTab,
@@ -663,7 +675,8 @@ async function handleFeedDebug(req, reqUrl, res) {
     surface,
     scoreSurface: "home",
     useOfficialPenalty: isRecommendTab || isMomentTab,
-    tabFilterReason
+    tabFilterReason,
+    currentUser: debugAuth.user
   };
   const rows = allItems.map((item) => feedDebugRow(item, rules, context));
 
@@ -738,7 +751,7 @@ async function handleFeedDebug(req, reqUrl, res) {
   });
 }
 
-async function handlePostDetail(tid, res) {
+async function handlePostDetail(req, tid, res) {
   const metadata = await loadMetadata();
   const detail = await getTopicDetail(tid);
   if (!detail) {
@@ -747,7 +760,25 @@ async function handlePostDetail(tid, res) {
   }
   const firstPost = detail?.posts?.[0] || {};
   const meta = metadata[String(tid)] || {};
+  const auth = await getCurrentUser(req);
+  const postForAccess = { visibility: meta.visibility, audience: meta.audience, authorUserId: "" };
+  const userMetaForAccess = parseLianUserMeta(firstPost.content || "");
+  if (userMetaForAccess.userId) postForAccess.authorUserId = userMetaForAccess.userId;
+  if (!canViewPost(auth.user, postForAccess)) {
+    sendJson(res, 403, { error: "access denied" });
+    return;
+  }
   const sourceUrl = meta.sourceUrl || extractSourceUrl(firstPost.content || "");
+  let bookmarked = false;
+  if (auth.user) {
+    try {
+      const nodebbUid = await ensureNodebbUid(auth);
+      const userDetail = await nodebbFetch(withNodebbUid(`/api/topic/${tid}`, nodebbUid));
+      bookmarked = Boolean(userDetail?.posts?.[0]?.bookmarked);
+    } catch {
+      bookmarked = false;
+    }
+  }
   const replies = (detail?.posts || []).slice(1).map((post) => {
     const userMeta = parseLianUserMeta(post.content || "");
     return {
@@ -764,6 +795,7 @@ async function handlePostDetail(tid, res) {
     ...normalizeTopic({ tid }, detail, metadata),
     sourceUrl,
     contentHtml: renderPostContent(firstPost.content || ""),
+    bookmarked,
     replies,
     dataSource: "api",
     raw: {

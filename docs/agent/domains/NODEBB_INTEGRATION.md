@@ -1,7 +1,7 @@
 # NodeBB Integration
 
 Date: 2026-05-02
-Updated: 2026-05-02 — added Failure Modes section
+Updated: 2026-05-02 — added Failure Modes section, added Native Capability Audit (8-Point Checklist)
 
 This document defines the current and future integration boundary between LIAN and NodeBB.
 
@@ -17,6 +17,12 @@ LIAN should not rebuild core forum infrastructure. LIAN should use NodeBB for:
 - tags;
 - categories;
 - notifications;
+- likes/upvotes, if product semantics match;
+- bookmarks/favorites, if product semantics match;
+- read state / browsing history, with LIAN privacy rules;
+- reports/flags;
+- moderation queues;
+- user groups and category privileges;
 - future groups / privileges / moderation primitives.
 
 LIAN owns the campus product layer:
@@ -69,11 +75,269 @@ Current behavior:
 | Regular topic create | `createNodebbTopicFromPayload()` | `POST /api/v3/topics?_uid=<userUid>` |
 | AI confirmed publish | `handleAiPostPublish()` -> `createNodebbTopicFromPayload()` | `POST /api/v3/topics?_uid=<userUid>` |
 | Replies | `replyToNodebbTopic()` | `POST /api/v3/topics/:tid` then fallback `POST /api/v3/topics/:tid/posts` |
+| Like/upvote first post | `handleTogglePostLike()` | `PUT /api/v3/posts/:pid/vote` with `{ "delta": 1 }`, `DELETE /api/v3/posts/:pid/vote` to undo |
+| Bookmark/save first post | `handleTogglePostSave()` | `PUT /api/v3/posts/:pid/bookmark`, `DELETE /api/v3/posts/:pid/bookmark` |
+| Report/flag post | `handleReportPost()` | `POST /api/v3/posts/:pid/flag` with `{ reason }` |
+| User bookmarks list | `handleGetSavedPosts()` | `GET /api/user/:slug/bookmarks` |
+| User upvoted list | `handleGetLikedPosts()` | `GET /api/user/:slug/upvoted` |
 | Mark topic read | `markNodebbTopicRead()` | `POST/PUT /api/v3/topics/:tid/read` then fallback `/api/topic/:tid/read` |
 | Notifications | `handleMessages()` | `GET /api/notifications` |
 | Current fallback user | `handleMe()` | `GET /api/user/uid/:uid` |
 | Find NodeBB user | `findNodebbUserByUsername()` | `GET /api/users?query=...`, fallback `GET /api/search/users?query=...` |
 | Create NodeBB user | `createNodebbUserForLian()` | `POST /api/v3/users` |
+
+## Native Capability Inventory
+
+This is a planning inventory. Do not implement all items at once. Pick one integration cut, write a task doc, and validate the NodeBB endpoint shape before touching product UI.
+
+### P0/P1 Candidates
+
+| Capability | NodeBB role | LIAN product meaning | Suggested LIAN surface | Integration status | Priority |
+|---|---|---|---|---|---|
+| Reply/comment | Source of truth for replies | Post discussion | Detail page | partially integrated | P0 polish |
+| Notifications | Source of truth for topic/user notifications | Message center and activity reminders | Messages page | partially integrated | P0 polish |
+| Read state | Tracks topic read/unread state | Browsing history, unread badges, continue reading | Feed/detail/messages | partially integrated via mark read | P1 |
+| Likes/upvotes | Source of truth if LIAN treats it as appreciation | Lightweight positive feedback | Feed cards, detail page | first feed-card cut implemented | P1 |
+| Bookmarks/favorites | Source of truth if NodeBB bookmark semantics fit | Save post for later | Detail page, profile "我的收藏" | detail + profile list implemented | P1 |
+| Reports/flags | Source of truth for moderation signals | Report privacy issue, false info, abuse | Detail page only | detail implemented, needs operator workflow | P1 |
+| Topic edit/delete | NodeBB durable content operations | Author correction, admin takedown | Detail author menu/admin | not integrated | P1/P2 |
+| Groups | Hard permission mirror | school/org/category boundaries | auth/admin/audience | planned | P1/P2 |
+| Category privileges | Hard forum-level access boundary | public/campus/restricted categories | publish/audience | planned | P1/P2 |
+
+### P2 / Later Candidates
+
+| Capability | NodeBB role | LIAN product meaning | Suggested LIAN surface | Reason to wait |
+|---|---|---|---|---|
+| Polls | Native/plugin feature depending on NodeBB setup | Campus voting / activity decisions | Post composer/detail | Needs product rules and moderation |
+| Topic following/watching | Notification preference | Follow a post/location/org | Detail and location pages | Needs notification strategy |
+| User reputation | Native community signal | Contributor trust, not gamification | Profile/admin | Risk of noisy gamification |
+| Private messages/chat | Native messaging | Direct communication | Messages | Brings harassment, transaction, and moderation risk |
+| Badges/achievements | Native or plugin feature | Map contributor badges | Profile/tasks | Better after contribution model is stable |
+
+## Native Capability Audit (8-Point Checklist)
+
+Date: 2026-05-02
+
+Each capability below is audited against the 8-point checklist from the task doc. Items verified from LIAN code are marked [code]. Items from NodeBB v3 API knowledge are marked [api] and need runtime smoke tests.
+
+### Like / Upvote
+
+| # | Item | Finding |
+|---|---|---|
+| 1 | Endpoint | `PUT /api/v3/posts/:pid/vote` (like), `DELETE /api/v3/posts/:pid/vote` (unlike). Fallback: `/api/v3/posts/:pid/votes`. [code] |
+| 2 | Level | Post-level. LIAN operates on the first post of a topic. [code] |
+| 3 | Auth | `Authorization: Bearer NODEBB_API_TOKEN` + `_uid=<real user>`. [code] |
+| 4 | Response | `{ status: { code: "ok" }, ... }`. LIAN re-fetches topic to get synced count. [code] |
+| 5 | Idempotent | PUT is idempotent (repeated PUT = still liked). DELETE is idempotent. [api] |
+| 6 | No permission | Returns 401/403 if `_uid` is invalid or token is wrong. [api] |
+| 7 | Source of truth | NodeBB is source of truth for like state and count. LIAN does not cache. [code] |
+| 8 | Failure mode | Connection fail → 502. Non-2xx → error propagated. Feed cache cleared on toggle. [code] |
+
+Status: **First feed-card cut implemented.** Needs detail-page surface and validation.
+
+### Save / Bookmark
+
+| # | Item | Finding |
+|---|---|---|
+| 1 | Endpoint | `PUT /api/v3/posts/:pid/bookmark` (save), `DELETE /api/v3/posts/:pid/bookmark` (unsave). [api] |
+| 2 | Level | Post-level. Bookmark is on individual posts, not topics. [api] |
+| 3 | Auth | `x-api-token` + `_uid=<real user>`. [api] |
+| 4 | Response | `{ status: { code: "ok" } }`. Bookmarked state available in topic detail response (`posts[].bookmarked`). [api] |
+| 5 | Idempotent | PUT is idempotent. DELETE is idempotent. [api] |
+| 6 | No permission | 401 if not logged in. No special permission otherwise. [api] |
+| 7 | Source of truth | NodeBB is source of truth. LIAN should NOT duplicate bookmark state. |
+| 8 | Failure mode | Connection fail → 502. Saved list needs audience filter (saved post may become inaccessible). |
+
+Status: **Not integrated.** Needs: endpoint smoke test, saved-list UI, audience enforcement on saved list.
+
+Product placement:
+
+- Save/bookmark belongs on the post detail page, not on homepage cards.
+- Homepage cards should not receive more actions beyond the existing like cut.
+- Saved posts appear in profile under "我的收藏".
+- Posts are the core saved unit. If a post includes a location, users navigate to that location from the post detail page.
+- Do not create a separate location collection/favorite model in this phase.
+
+### Read State / Browsing History
+
+| # | Item | Finding |
+|---|---|---|
+| 1 | Endpoint | `PUT /api/v3/topics/:tid/read` (mark read). Fallback: `POST /api/topic/:tid/read`. [code] |
+| 2 | Level | Topic-level. Marks entire topic as read. [code] |
+| 3 | Auth | `x-api-token` + `_uid=<real user>`. [code] |
+| 4 | Response | `{ status: { code: "ok" } }`. Read state available in topic index (`topics[].teaser.timestamp` comparison). [api] |
+| 5 | Idempotent | Yes, marking read is idempotent. [api] |
+| 6 | No permission | 401 if not logged in. No special permission. [api] |
+| 7 | Source of truth | NodeBB is source of truth for read/unread. LIAN should not duplicate. |
+| 8 | Failure mode | Current `markNodebbTopicRead()` silently catches errors. Feed card visited state is LIAN-side only. |
+
+Status: **Partially integrated** (mark-read on detail open). Needs: unread badge on feed cards, optional history page.
+
+Privacy rule: mark read on detail open only, not on card impression. Do not expose other users' read history.
+
+Product placement:
+
+- Browsing history belongs in profile.
+- Only the current user can see their own browsing history.
+- Feed cards should not show browsing-history controls.
+
+### Report / Flag
+
+| # | Item | Finding |
+|---|---|---|
+| 1 | Endpoint | `POST /api/v3/posts/:pid/flag` with body `{ reason: "..." }`. [api] |
+| 2 | Level | Post-level. Flags a specific post. [api] |
+| 3 | Auth | `x-api-token` + `_uid=<real user>` (the reporter). [api] |
+| 4 | Response | `{ status: { code: "ok" } }`. Report goes to NodeBB moderation queue. [api] |
+| 5 | Idempotent | Not idempotent — may create duplicate flags. Check NodeBB behavior. [api] |
+| 6 | No permission | 401 if not logged in. May require minimum reputation on some setups. [api] |
+| 7 | Source of truth | NodeBB moderation queue is source of truth. LIAN should add campus-specific metadata (report category, location context). |
+| 8 | Failure mode | Connection fail → 502. No moderation queue UI in LIAN yet — reports go to NodeBB admin only. |
+
+Status: **Not integrated.** Needs: runtime smoke test, report UI in detail page, LIAN-side report category metadata, operator moderation workflow.
+
+Risk: must define where operators see reports before enabling broad reporting.
+
+Product placement:
+
+- Report/flag belongs on the post detail page only.
+- Do not put report actions on homepage cards in the first version.
+- Detail page report categories should include privacy issue, false information, abuse, wrong location, expired content, and visibility/audience mistake.
+
+### Topic Edit / Delete / Hide
+
+| # | Item | Finding |
+|---|---|---|
+| 1 | Endpoint | `PUT /api/v3/topics/:tid` (edit title/tags), `PUT /api/v3/topics/:tid/state` (soft delete/restore), `DELETE /api/v3/topics/:tid` (hard delete). [api] |
+| 2 | Level | Topic-level. Affects the whole topic, not individual posts. [api] |
+| 3 | Auth | `Authorization: Bearer NODEBB_API_TOKEN` + `_uid=<user>`. Owner or admin. [api] |
+| 4 | Response | `{ status: { code: "ok" } }`. [api] |
+| 5 | Idempotent | State toggle is idempotent (repeated delete = still deleted). Edit is not idempotent. [api] |
+| 6 | No permission | 403 if user is not owner and not admin. [api] |
+| 7 | Source of truth | NodeBB is source of truth for topic state. LIAN `post-metadata.json` must be synced on edit/delete. |
+| 8 | Failure mode | Metadata desync: topic deleted in NodeBB but metadata remains in LIAN. Need cleanup strategy. |
+
+Status: **Not integrated.** Needs: author menu in detail page, admin moderation UI, metadata sync on edit/delete.
+
+Risk: LIAN metadata and NodeBB topic state must stay in sync. Consider soft-delete only for first cut.
+
+### Groups / Category Privileges
+
+| # | Item | Finding |
+|---|---|---|
+| 1 | Endpoint | `POST /api/v3/groups` (create), `PUT /api/v3/groups/:slug/membership` (add member), `DELETE /api/v3/groups/:slug/membership` (remove). Category: `PUT /api/v3/categories/:cid/privileges`. [api] |
+| 2 | Level | Group-level and category-level. Groups are global; privileges are per-category. [api] |
+| 3 | Auth | `Authorization: Bearer NODEBB_API_TOKEN` + `_uid=<admin>`. Admin-only for group/privilege management. [api] |
+| 4 | Response | `{ status: { code: "ok" } }`. [api] |
+| 5 | Idempotent | Add membership is idempotent. Remove membership is idempotent. [api] |
+| 6 | No permission | 403 if user is not admin. [api] |
+| 7 | Source of truth | LIAN owns school/org membership. NodeBB groups mirror hard access boundaries. |
+| 8 | Failure mode | Group sync failure → user loses access to restricted content. Need reconciliation job. |
+
+Status: **Planned, not integrated.** Blocked on: audience permission design, school/org membership model.
+
+Rule: LIAN owns school/org membership first. NodeBB groups/categories mirror hard access boundaries.
+
+## Integration Cut Options
+
+Wait for an explicit product cut before implementation. Good first cuts:
+
+### Cut A: Like Button
+
+Goal:
+
+- Add a simple "like" or "useful" action to feed/detail.
+- Use NodeBB's native vote/like capability if the endpoint matches the installed NodeBB version.
+- LIAN can later use count as a ranking signal, but the first cut must not change feed ranking.
+
+First implementation:
+
+- feed cards replace the old right-side time label with a like button;
+- empty heart `♡` means not liked;
+- filled red heart `♥` means liked;
+- count is shown next to the heart;
+- LIAN calls `POST /api/posts/:tid/like`, which toggles the first post's NodeBB vote state;
+- feed ranking is unchanged.
+
+Surfaces:
+
+- feed card action;
+- post detail action;
+- optional count display.
+
+Risks:
+
+- NodeBB endpoint/version differences;
+- duplicate local state if LIAN stores counts separately;
+- feed ranking should not change in the first PR.
+
+### Cut B: Save / Favorite
+
+Goal:
+
+- Let users save posts.
+- Prefer NodeBB bookmark/favorite if it maps cleanly.
+- LIAN may later show saved posts in profile.
+
+Surfaces:
+
+- detail action;
+- "Saved" section in profile.
+- no homepage card action.
+
+Risks:
+
+- NodeBB bookmark semantics may be per-post or per-topic depending on version/plugins;
+- private/audience posts must not leak through saved list.
+
+### Cut C: Browsing History / Read State
+
+Goal:
+
+- Use NodeBB read-state primitives to track topic read/unread.
+- LIAN can show visited/read markers and continue-reading history.
+
+Surfaces:
+
+- messages/unread badge;
+- profile browsing-history page/list.
+- no homepage card control.
+
+Risks:
+
+- privacy expectations;
+- read-state calls on every card impression would be too noisy. Only mark on actual detail open.
+
+### Cut D: Report / Flag
+
+Goal:
+
+- Add a report action for privacy, false information, abuse, wrong location, expired content, or organization visibility mistake.
+- Use NodeBB report/flag primitives when possible.
+- LIAN should attach campus-specific report metadata if supported or store a LIAN-side audit record.
+
+Surfaces:
+
+- detail page overflow menu;
+- admin moderation page later.
+
+Risks:
+
+- moderation queue ownership;
+- reports need operator workflow, not just an API call.
+
+## Endpoint Verification Rule
+
+Before implementing any new NodeBB native capability:
+
+1. Inspect the installed NodeBB API docs/version or test against the local instance.
+2. Add an endpoint row to this document.
+3. Confirm auth mode and `_uid` behavior.
+4. Confirm failure shape and status codes.
+5. Decide whether LIAN stores only a mirror/cache or treats NodeBB as the source of truth.
+6. Add a narrow task doc.
+
+Do not infer endpoint names from memory inside product code.
 
 ## Publish Path
 
@@ -189,6 +453,7 @@ NodeBB is a good fit for:
 - category-level hard access boundaries;
 - group membership mirrors for hard permissions;
 - tags/categories when they are forum-level concepts.
+- likes/upvotes, bookmarks, read-state, reports, and notifications when NodeBB's native semantics match LIAN's product intent.
 
 ## What LIAN Should Own Long Term
 
@@ -386,4 +651,4 @@ Deliverable:
 - Rebuilding NodeBB notification system.
 - Writing a NodeBB plugin before LIAN-side audience checks exist.
 - Adding payments, task markets, errands, or drone workflows.
-
+- Adding all native NodeBB features at once without a product cut.

@@ -64,6 +64,7 @@ function appendFeedItems(items) {
 
 function cardTemplate(item, revealIndex = 0) {
   const revealDelay = Math.min(12, Math.max(0, Number(revealIndex) || 0)) * 40;
+  const likedTids = readLikedTids();
   const thumb = item.cover
     ? `<img src="${escapeHtml(displayImageUrl(item.cover))}" alt="${escapeHtml(item.title)}" loading="lazy">`
     : `<div class="thumb-empty">${escapeHtml(item.tag || "黎安")}</div>`;
@@ -72,9 +73,12 @@ function cardTemplate(item, revealIndex = 0) {
     url: item.authorAvatarUrl || "",
     text: item.authorAvatarText || authorName || "同"
   });
-  const timeLabel = item.timeLabel || fixFmtDate(item.timestampISO);
+  const likeCount = Math.max(0, Number(item.likeCount || 0));
+  const isLiked = likedTids.has(String(item.tid));
+  const likedClass = isLiked ? " is-liked" : "";
+  const heart = isLiked ? "♥" : "♡";
   return `
-    <button class="feed-card" type="button" data-tid="${item.tid}" style="--reveal-delay:${revealDelay}ms">
+    <article class="feed-card" role="button" tabindex="0" data-tid="${item.tid}" style="--reveal-delay:${revealDelay}ms">
       <div class="card-media">
         ${thumb}
         <div class="card-glass">
@@ -84,12 +88,127 @@ function cardTemplate(item, revealIndex = 0) {
               <span class="card-avatar">${authorAvatar}</span>
               <span class="card-name">${escapeHtml(authorName)}</span>
             </div>
-            <span class="card-time">${escapeHtml(timeLabel)}</span>
+            <button class="card-like${likedClass}" type="button" data-like-tid="${escapeHtml(item.tid)}" aria-label="点赞">
+              <span class="card-like-icon" data-like-icon aria-hidden="true">${heart}</span>
+              <span data-like-count>${likeCount}</span>
+            </button>
           </div>
         </div>
       </div>
-    </button>
+    </article>
   `;
+}
+
+function readLikedTids() {
+  try {
+    return new Set(JSON.parse(localStorage.getItem("lian.likedTids") || "[]").map(String));
+  } catch {
+    return new Set();
+  }
+}
+
+function saveLikedTids(tids) {
+  localStorage.setItem("lian.likedTids", JSON.stringify(Array.from(tids).slice(-1000)));
+}
+
+function setLikeButtonState(button, liked, likeCount) {
+  const countEl = button.querySelector("[data-like-count]");
+  const iconEl = button.querySelector("[data-like-icon]");
+  button.classList.toggle("is-liked", Boolean(liked));
+  if (iconEl) iconEl.textContent = liked ? "♥" : "♡";
+  if (countEl) countEl.textContent = String(Math.max(0, Number(likeCount || 0)));
+}
+
+async function togglePostLike(button) {
+  const tid = button?.dataset?.likeTid;
+  if (!tid) return;
+  if (!requireLoginUi()) return;
+  const likedTids = readLikedTids();
+  const previousLiked = button.classList.contains("is-liked");
+  const previousCount = Math.max(0, Number(button.querySelector("[data-like-count]")?.textContent || 0));
+  const nextLiked = !previousLiked;
+  const nextCount = Math.max(0, previousCount + (nextLiked ? 1 : -1));
+  button.disabled = true;
+  setLikeButtonState(button, nextLiked, nextCount);
+  if (nextLiked) likedTids.add(String(tid));
+  else likedTids.delete(String(tid));
+  saveLikedTids(likedTids);
+  try {
+    const data = await api(`/api/posts/${tid}/like`, {
+      method: "POST",
+      body: JSON.stringify({ liked: nextLiked })
+    });
+    setLikeButtonState(button, Boolean(data.liked), data.likeCount);
+    const syncedLiked = readLikedTids();
+    if (data.liked) syncedLiked.add(String(tid));
+    else syncedLiked.delete(String(tid));
+    saveLikedTids(syncedLiked);
+  } catch (error) {
+    setLikeButtonState(button, previousLiked, previousCount);
+    const restored = readLikedTids();
+    if (previousLiked) restored.add(String(tid));
+    else restored.delete(String(tid));
+    saveLikedTids(restored);
+    alert(error.message);
+  } finally {
+    button.disabled = false;
+  }
+}
+
+async function togglePostSave(button) {
+  const tid = button?.dataset?.saveTid;
+  if (!tid) return;
+  if (!requireLoginUi()) return;
+  const previousSaved = button.classList.contains("is-saved");
+  const nextSaved = !previousSaved;
+  button.disabled = true;
+  button.classList.toggle("is-saved", nextSaved);
+  const icon = button.querySelector("[data-save-icon]");
+  if (icon) icon.textContent = nextSaved ? "★" : "☆";
+  try {
+    const data = await api(`/api/posts/${tid}/save`, {
+      method: "POST",
+      body: JSON.stringify({ saved: nextSaved })
+    });
+    button.classList.toggle("is-saved", Boolean(data.saved));
+    if (icon) icon.textContent = data.saved ? "★" : "☆";
+  } catch (error) {
+    button.classList.toggle("is-saved", previousSaved);
+    if (icon) icon.textContent = previousSaved ? "★" : "☆";
+    alert(error.message);
+  } finally {
+    button.disabled = false;
+  }
+}
+
+const reportCategories = [
+  { value: "privacy", label: "隐私问题" },
+  { value: "false_info", label: "虚假信息" },
+  { value: "abuse", label: "违规内容" },
+  { value: "wrong_location", label: "位置错误" },
+  { value: "expired", label: "过期内容" },
+  { value: "other", label: "其他" }
+];
+
+async function handleReportPost(tid) {
+  if (!requireLoginUi()) return;
+  const reason = prompt(
+    "请选择举报原因（输入数字）：\n" +
+    reportCategories.map((c, i) => `${i + 1}. ${c.label}`).join("\n"),
+    ""
+  );
+  if (!reason) return;
+  const index = Number(reason) - 1;
+  const category = reportCategories[index] || reportCategories[reportCategories.length - 1];
+  try {
+    await api(`/api/posts/${tid}/report`, {
+      method: "POST",
+      body: JSON.stringify({ reason: category.label, category: category.value })
+    });
+    alert("举报已提交，感谢反馈。");
+  } catch (error) {
+    alert(error.message);
+  }
 }
 
 function extractPostImages(contentHtml = "", fallbackUrl = "") {
@@ -317,6 +436,20 @@ async function openDetail(tid) {
             <div class="detail-time">${escapeHtml(timeLabel)}</div>
           </div>
           <h2>${escapeHtml(post.title)}</h2>
+        </div>
+        <div class="detail-actions">
+          <button class="detail-action-btn${post.bookmarked ? " is-saved" : ""}" type="button" data-save-tid="${escapeHtml(String(post.tid))}" aria-label="收藏">
+            <span data-save-icon>${post.bookmarked ? "★" : "☆"}</span>
+            <span>收藏</span>
+          </button>
+          <button class="detail-action-btn" type="button" data-like-tid="${escapeHtml(String(post.tid))}" aria-label="点赞">
+            <span data-like-icon>${readLikedTids().has(String(post.tid)) ? "♥" : "♡"}</span>
+            <span data-like-count>${Math.max(0, Number(post.likeCount || 0))}</span>
+          </button>
+          <button class="detail-action-btn detail-action-report" type="button" data-report-tid="${escapeHtml(String(post.tid))}" aria-label="举报">
+            <span>⚠</span>
+            <span>举报</span>
+          </button>
         </div>
         ${bodyHtml}
         ${originalLinkTemplate(post)}

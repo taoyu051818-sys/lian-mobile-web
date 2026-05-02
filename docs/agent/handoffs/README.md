@@ -4,12 +4,25 @@ Use this directory for thread handoff notes when a Codex thread changes behavior
 
 Normalized handoffs live here:
 
-- `feed-optimization.md`
-- `ai-post-preview.md`
+- `admin-editor-v1.md`
 - `ai-light-publish-flow.md`
-- `map-v2-gaode.md`
-- `map-v2-editor.md`
+- `ai-post-preview.md`
+- `ai-publish-polish.md`
+- `alias-phase-1.md`
+- `alias-phase-2.md`
+- `alias-phase-3.md`
+- `audience-permission-design.md`
+- `audience-system-phase1-3.md`
+- `feed-optimization.md`
+- `feed-ops-snapshot-diff.md`
 - `frontend-app-split.md`
+- `frontend-stability-smoke.md`
+- `map-v2-editor.md`
+- `map-v2-gaode.md`
+- `map-v2-restore-legacy-geo.md`
+- `nodebb-integration-audit.md`
+- `post-metadata-gap-check.md`
+- `road-draw-mvp.md`
 
 ## Relationship To Numbered Docs
 

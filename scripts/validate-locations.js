@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const rootDir = path.dirname(__dirname);
 const locationsPath = path.join(rootDir, "data", "locations.json");
+const layersPath = path.join(rootDir, "data", "map-v2-layers.json");
 
 const MAP_V2_BOUNDS = {
   south: 18.3700734,
@@ -17,6 +18,9 @@ const VALID_TYPES = new Set([
   "campus", "school", "study", "life", "transport",
   "food", "sports", "village", "landmark", "other",
 ]);
+
+const VALID_ENV_TYPES = new Set(["beach", "forest", "water", "grass", "sand", "rock", "other"]);
+const VALID_ROAD_TYPES = new Set(["main_road", "pedestrian_path", "shuttle_route", "service_path"]);
 
 function isObject(value) {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
@@ -117,6 +121,105 @@ function checkDuplicates(items, errors) {
   }
 }
 
+function validatePointArray(points, id, label, errors) {
+  if (!Array.isArray(points)) {
+    issue(errors, id, label, "must be an array");
+    return;
+  }
+  for (const [i, p] of points.entries()) {
+    if (typeof p.lat !== "number" || !Number.isFinite(p.lat)) {
+      issue(errors, id, `${label}[${i}].lat`, "must be a finite number");
+    } else if (!inBounds(p.lat, p.lng)) {
+      issue(errors, id, `${label}[${i}]`, `(${p.lat}, ${p.lng}) is outside bounds`);
+    }
+    if (typeof p.lng !== "number" || !Number.isFinite(p.lng)) {
+      issue(errors, id, `${label}[${i}].lng`, "must be a finite number");
+    }
+  }
+}
+
+function validateBuilding(bldg, errors, warnings) {
+  const id = bldg.id || "(no id)";
+  if (typeof bldg.id !== "string" || !bldg.id.trim()) issue(errors, id, "id", "must be a non-empty string");
+  if (typeof bldg.name !== "string" || !bldg.name.trim()) issue(errors, id, "name", "must be a non-empty string");
+  if (!Array.isArray(bldg.polygon) || bldg.polygon.length < 3) {
+    issue(errors, id, "polygon", "must be an array with at least 3 points");
+  } else {
+    validatePointArray(bldg.polygon, id, "polygon", errors);
+  }
+  if (Array.isArray(bldg.entrances)) {
+    for (const [i, ent] of bldg.entrances.entries()) {
+      if (typeof ent.lat === "number" && typeof ent.lng === "number" && !inBounds(ent.lat, ent.lng)) {
+        issue(errors, id, `entrances[${i}]`, `(${ent.lat}, ${ent.lng}) is outside bounds`);
+      }
+    }
+  }
+}
+
+function validateEnvironmentElement(env, errors) {
+  const id = env.id || "(no id)";
+  if (typeof env.id !== "string" || !env.id.trim()) issue(errors, id, "id", "must be a non-empty string");
+  if (typeof env.name !== "string" || !env.name.trim()) issue(errors, id, "name", "must be a non-empty string");
+  if (env.type && !VALID_ENV_TYPES.has(env.type)) issue(errors, id, "type", `invalid env type "${env.type}"`);
+  if (env.shape === "polygon") {
+    if (!Array.isArray(env.points) || env.points.length < 3) {
+      issue(errors, id, "points", "polygon shape requires at least 3 points");
+    } else {
+      validatePointArray(env.points, id, "points", errors);
+    }
+  } else if (env.shape === "point") {
+    if (Array.isArray(env.points) && env.points.length > 0) {
+      validatePointArray(env.points.slice(0, 1), id, "points", errors);
+    }
+  }
+}
+
+function validateBuildingGroup(group, buildingIds, errors) {
+  const id = group.id || "(no id)";
+  if (typeof group.id !== "string" || !group.id.trim()) issue(errors, id, "id", "must be a non-empty string");
+  if (typeof group.name !== "string" || !group.name.trim()) issue(errors, id, "name", "must be a non-empty string");
+  if (Array.isArray(group.buildingIds)) {
+    for (const bid of group.buildingIds) {
+      if (!buildingIds.has(bid)) {
+        issue(errors, id, "buildingIds", `references unknown building "${bid}"`);
+      }
+    }
+  }
+}
+
+function validateRoad(road, errors, warnings) {
+  const id = road.id || "(no id)";
+  if (typeof road.id !== "string" || !road.id.trim()) issue(errors, id, "id", "must be a non-empty string");
+  if (typeof road.name !== "string" || !road.name.trim()) issue(errors, id, "name", "must be a non-empty string");
+  if (road.type && !VALID_ROAD_TYPES.has(road.type)) {
+    issue(warnings, id, "type", `unknown road type "${road.type}"`);
+  }
+  if (!Array.isArray(road.points) || road.points.length < 2) {
+    issue(errors, id, "points", "must be an array with at least 2 points");
+  } else {
+    validatePointArray(road.points, id, "points", errors);
+  }
+}
+
+function checkCrossCollectionIds(locations, layers, errors) {
+  const allIds = new Map();
+  function check(collection, collectionName) {
+    for (const item of collection) {
+      if (!item.id) continue;
+      if (allIds.has(item.id)) {
+        issue(errors, item.id, "id", `duplicate id across collections (also in ${allIds.get(item.id)})`);
+      }
+      allIds.set(item.id, collectionName);
+    }
+  }
+  check(locations, "locations");
+  check(layers.areas || [], "areas");
+  check(layers.routes || [], "routes");
+  check(layers.roads || [], "roads");
+  check(layers.buildings || [], "buildings");
+  check(layers.environmentElements || [], "environmentElements");
+}
+
 async function main() {
   const raw = await fs.readFile(locationsPath, "utf8");
   const data = JSON.parse(raw);
@@ -145,9 +248,52 @@ async function main() {
 
   checkDuplicates(data.items, errors);
 
+  // Validate layers file
+  let layers = {};
+  let checkedLayers = 0;
+  try {
+    const layersRaw = await fs.readFile(layersPath, "utf8");
+    layers = JSON.parse(layersRaw);
+
+    if (Array.isArray(layers.buildings)) {
+      for (const bldg of layers.buildings) {
+        validateBuilding(bldg, errors, warnings);
+      }
+      checkedLayers += layers.buildings.length;
+    }
+
+    if (Array.isArray(layers.environmentElements)) {
+      for (const env of layers.environmentElements) {
+        validateEnvironmentElement(env, errors);
+      }
+      checkedLayers += layers.environmentElements.length;
+    }
+
+    if (Array.isArray(layers.roads)) {
+      for (const road of layers.roads) {
+        validateRoad(road, errors, warnings);
+      }
+      checkedLayers += layers.roads.length;
+    }
+
+    if (Array.isArray(layers.buildingGroups)) {
+      const buildingIds = new Set((layers.buildings || []).map((b) => b.id));
+      for (const group of layers.buildingGroups) {
+        validateBuildingGroup(group, buildingIds, errors);
+      }
+      checkedLayers += layers.buildingGroups.length;
+    }
+
+    checkCrossCollectionIds(data.items, layers, errors);
+  } catch (e) {
+    if (e.code !== "ENOENT") {
+      issue(warnings, "(layers)", "", `could not read layers file: ${e.message}`);
+    }
+  }
+
   const result = {
     ok: errors.length === 0,
-    checked: data.items.length,
+    checked: data.items.length + checkedLayers,
     errors,
     warnings,
   };

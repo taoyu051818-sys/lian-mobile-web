@@ -4,6 +4,20 @@ Date: 2026-05-02
 
 This document is the current architect-level work assignment for the next LIAN threads. It replaces ad hoc continuation in the current chat. Future coding threads should start from this file, then read the specific task doc assigned to them.
 
+## Current Codex Thread Rule
+
+The current Codex thread, and only this thread, is operating as an architect/documentation thread.
+
+This is not a global restriction on other agents or implementation threads.
+
+For this Codex thread:
+
+- update architecture docs, task docs, decision logs, and handoffs;
+- do not implement runtime code directly unless the user explicitly changes this role again;
+- when product work is requested, translate it into task docs, acceptance criteria, affected files, risks, and handoff notes for implementation threads.
+
+Other implementation agents may still edit runtime files when their own task docs allow it.
+
 ## Current System State
 
 LIAN is now organized around these product layers:
@@ -23,6 +37,7 @@ Recent completed work:
 - Map v2 MVP is implemented with Gaode tiles, LIAN overlays, Map v2 location drafts, and a standalone internal editor.
 - `public/app.js` has been mechanically split into smaller classic-script files, without changing the build system.
 - NodeBB integration has a dedicated domain document: `docs/agent/domains/NODEBB_INTEGRATION.md`.
+- Publish V2 is now planned as a dedicated page with multi-image upload, Map v2 location picking, and user-confirmed audience selection.
 
 Important stale docs to keep in mind:
 
@@ -100,10 +115,17 @@ Do not touch:
 
 Task doc: `docs/agent/tasks/ai-publish-polish.md`
 
+Next product task: `docs/agent/tasks/publish-v2-page.md`
+
 Goal:
 
 - Move AI light publish from MVP to reliable daily use.
-- Add multi-image support and better draft/record hygiene.
+- Move the user-facing flow to a dedicated Publish page.
+- Add multi-image input so the LLM sees all selected images before generating copy.
+- Add simple frontend compression before upload.
+- Move users automatically from image confirmation to Map v2 location picking.
+- Add user-confirmed audience selection. AI may suggest, but cannot decide.
+- Keep better draft/record hygiene.
 
 Primary files:
 
@@ -173,6 +195,30 @@ Near-term tasks:
 - `nodebb-restricted-category-plan`
 
 Do not implement these in one code thread. Start with design and endpoint audit.
+
+### Workstream G: NodeBB Native Interaction Cuts
+
+Domain doc: `docs/agent/domains/NODEBB_INTEGRATION.md`
+
+Goal:
+
+- Connect selected NodeBB native features through narrow product cuts.
+- Keep each cut isolated from feed ranking and recommendation changes.
+- Verify endpoint shape against the installed NodeBB version before implementation.
+
+Candidate tasks:
+
+- like/useful on feed cards and detail;
+- save/favorite/bookmark;
+- report/flag;
+- browsing history/read state;
+- groups/category privilege mirror.
+
+Current status:
+
+- The first feed-card like cut has been started in runtime code during this thread before the architect-only rule was clarified. Implementation follow-up should validate behavior against the actual NodeBB instance and either finish or revert in a dedicated implementation thread.
+
+Do not combine these with audience enforcement, Publish V2, or Map v2 work.
 
 ## Required Handoff Format
 

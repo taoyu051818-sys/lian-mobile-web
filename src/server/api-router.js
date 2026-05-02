@@ -25,7 +25,15 @@ import { sendJson } from "./http-response.js";
 import { handleImageProxy } from "./image-proxy.js";
 import { handleMapV2Items } from "./map-v2-service.js";
 import { nodebbFetch } from "./nodebb-client.js";
-import { handleCreatePost } from "./post-service.js";
+import {
+  handleCreatePost,
+  handleGetHistory,
+  handleGetLikedPosts,
+  handleGetSavedPosts,
+  handleReportPost,
+  handleTogglePostLike,
+  handleTogglePostSave
+} from "./post-service.js";
 import { readJsonBody } from "./request-utils.js";
 import { mapItems } from "./static-data.js";
 import { handleUploadImage } from "./upload.js";
@@ -74,7 +82,7 @@ async function handleApi(req, reqUrl, res) {
     if (req.method === "POST" && reqUrl.pathname === "/api/auth/aliases") return await handleCreateAlias(req, res);
     if (req.method === "POST" && reqUrl.pathname === "/api/auth/aliases/deactivate") return await handleDeactivateAlias(req, res);
     if (req.method === "POST" && reqUrl.pathname === "/api/auth/aliases/activate") return await handleActivateAlias(req, res);
-    if (req.method === "GET" && reqUrl.pathname === "/api/feed") return await handleFeed(reqUrl, res);
+    if (req.method === "GET" && reqUrl.pathname === "/api/feed") return await handleFeed(req, reqUrl, res);
     if (req.method === "GET" && reqUrl.pathname === "/api/feed-debug") return await handleFeedDebug(req, reqUrl, res);
     if (req.method === "GET" && reqUrl.pathname === "/api/tags") return sendJson(res, 200, await nodebbFetch("/api/tags"));
     if (req.method === "GET" && reqUrl.pathname === "/api/map/v2/items") return await handleMapV2Items(req, res);
@@ -89,13 +97,28 @@ async function handleApi(req, reqUrl, res) {
     if (req.method === "POST" && reqUrl.pathname === "/api/channel/messages") return await handleChannelMessage(req, res);
     if (req.method === "GET" && reqUrl.pathname === "/api/messages") return await handleMessages(res);
     if (req.method === "GET" && reqUrl.pathname === "/api/me") return await handleMe(req, res);
+    if (req.method === "GET" && reqUrl.pathname === "/api/me/saved") return await handleGetSavedPosts(req, res);
+    if (req.method === "GET" && reqUrl.pathname === "/api/me/liked") return await handleGetLikedPosts(req, res);
+    if (req.method === "POST" && reqUrl.pathname === "/api/me/history") return await handleGetHistory(req, res);
     if (req.method === "GET" && /^\/api\/posts\/\d+$/.test(reqUrl.pathname)) {
       const tid = Number(reqUrl.pathname.split("/").pop());
-      return await handlePostDetail(tid, res);
+      return await handlePostDetail(req, tid, res);
     }
     if (req.method === "POST" && /^\/api\/posts\/\d+\/replies$/.test(reqUrl.pathname)) {
       const tid = Number(reqUrl.pathname.split("/").at(-2));
       return await handleCreateReply(tid, req, res);
+    }
+    if (req.method === "POST" && /^\/api\/posts\/\d+\/like$/.test(reqUrl.pathname)) {
+      const tid = Number(reqUrl.pathname.split("/").at(-2));
+      return await handleTogglePostLike(tid, req, res);
+    }
+    if (req.method === "POST" && /^\/api\/posts\/\d+\/save$/.test(reqUrl.pathname)) {
+      const tid = Number(reqUrl.pathname.split("/").at(-2));
+      return await handleTogglePostSave(tid, req, res);
+    }
+    if (req.method === "POST" && /^\/api\/posts\/\d+\/report$/.test(reqUrl.pathname)) {
+      const tid = Number(reqUrl.pathname.split("/").at(-2));
+      return await handleReportPost(tid, req, res);
     }
     if (req.method === "POST" && reqUrl.pathname === "/api/upload/image") return await handleUploadImage(req, res, reqUrl);
     if (req.method === "POST" && reqUrl.pathname === "/api/posts") return await handleCreatePost(req, res);

@@ -12,11 +12,35 @@
       <section class="map-panel">
         <div id="mapEditorStage" class="map-stage" aria-label="Map v2 editor"></div>
         <div class="map-modebar">
+          <button type="button" data-editor-mode="select">选择</button>
           <button type="button" data-editor-mode="browse" class="is-active">浏览</button>
-          <button type="button" data-editor-mode="location">地点</button>
-          <button type="button" data-editor-mode="area">区域</button>
+          <button type="button" data-editor-mode="point">点</button>
+          <button type="button" data-editor-mode="polygon">多边形</button>
           <button type="button" data-editor-mode="route">路线</button>
+          <button type="button" data-editor-mode="road">路网</button>
           <button type="button" data-editor-mode="crop">截取</button>
+        </div>
+        <div class="mode-sub-selector" id="pointSubType" style="display:none">
+          <select id="pointDrawType">
+            <option value="location">地点</option>
+            <option value="entrance">入口</option>
+            <option value="icon">图标</option>
+          </select>
+        </div>
+        <div class="mode-sub-selector" id="polygonSubType" style="display:none">
+          <select id="polygonDrawType">
+            <option value="area">区域</option>
+            <option value="building">建筑</option>
+            <option value="environment">环境</option>
+          </select>
+        </div>
+        <div class="mode-sub-selector" id="roadSubType" style="display:none">
+          <select id="roadDrawType">
+            <option value="main_road">主路</option>
+            <option value="pedestrian_path">人行道</option>
+            <option value="shuttle_route">班车路线</option>
+            <option value="service_path">服务通道</option>
+          </select>
         </div>
       </section>
       <aside class="side-panel">
@@ -94,6 +118,9 @@
           <label class="layer-toggle"><input type="checkbox" data-layer="bounds" checked> 边界</label>
           <label class="layer-toggle"><input type="checkbox" data-layer="areas" checked> 区域</label>
           <label class="layer-toggle"><input type="checkbox" data-layer="routes" checked> 路线</label>
+          <label class="layer-toggle"><input type="checkbox" data-layer="roads" checked> 路网</label>
+          <label class="layer-toggle"><input type="checkbox" data-layer="buildings" checked> 建筑</label>
+          <label class="layer-toggle"><input type="checkbox" data-layer="environmentElements" checked> 环境</label>
           <label class="layer-toggle"><input type="checkbox" data-layer="locations" checked> 地点</label>
           <label class="layer-toggle"><input type="checkbox" data-layer="posts" checked> 帖子</label>
           <label class="layer-toggle"><input type="checkbox" data-layer="draft" checked> 采点</label>
@@ -104,15 +131,117 @@
           <label>ID<input id="draftId" autocomplete="off" placeholder="new-place"></label>
           <label>名称<input id="draftName" autocomplete="off" placeholder="名称"></label>
           <label>类型<input id="draftType" autocomplete="off" placeholder="campus / food"></label>
-          <label>Icon URL<input id="draftIconUrl" autocomplete="off" placeholder="/assets/map/icon.png"></label>
-          <label>卡片<select id="draftAlwaysShow"><option value="false">否</option><option value="true">是</option></select></label>
-          <label>副标题<input id="draftSubtitle" autocomplete="off" placeholder="副标题"></label>
         </section>
+
+        <!-- Location-specific properties -->
+        <div class="prop-section active" data-for="location">
+          <section class="form-grid">
+            <label>Icon URL<input id="propIconUrl" autocomplete="off" placeholder="/assets/map/icon.png"></label>
+            <label>卡片<select id="propAlwaysShow"><option value="false">否</option><option value="true">是</option></select></label>
+            <label class="full-width">副标题<input id="propSubtitle" autocomplete="off" placeholder="副标题"></label>
+          </section>
+        </div>
+
+        <!-- Building-specific properties -->
+        <div class="prop-section" data-for="building">
+          <section class="form-grid">
+            <label>Icon URL<input id="propBldgIconUrl" autocomplete="off" placeholder="/assets/building.png"></label>
+            <label>点击行为<select id="propClickAction">
+              <option value="open_floor_plan">打开楼层</option>
+              <option value="open_detail">打开详情</option>
+              <option value="none">无</option>
+            </select></label>
+            <label class="full-width">楼层ID<textarea id="propFloorPlanIds" rows="2" placeholder="floor-library-1, floor-library-2"></textarea></label>
+            <label class="full-width">关联地点ID<textarea id="propRelatedLocationIds" rows="2" placeholder="library, canteen"></textarea></label>
+            <label>状态<select id="propBldgStatus"><option value="active">active</option><option value="hidden">hidden</option></select></label>
+            <label class="full-width">入口 (JSON)<textarea id="propEntrances" rows="3" placeholder="[]"></textarea></label>
+          </section>
+        </div>
+
+        <!-- Environment-specific properties -->
+        <div class="prop-section" data-for="environment">
+          <section class="form-grid">
+            <label>环境类型<select id="propEnvType">
+              <option value="beach">沙滩</option>
+              <option value="forest">树林</option>
+              <option value="water">水体</option>
+              <option value="grass">草地</option>
+              <option value="sand">沙地</option>
+              <option value="rock">岩石</option>
+              <option value="other">其他</option>
+            </select></label>
+            <label>形状<select id="propEnvShape">
+              <option value="polygon">多边形</option>
+              <option value="point">点</option>
+            </select></label>
+            <label>填充色<input id="propEnvFill" type="color" value="#059669"></label>
+            <label>透明度<input id="propEnvOpacity" type="range" min="0" max="1" step="0.05" value="0.5"></label>
+            <label class="full-width">渲染提示<input id="propRenderHint" autocomplete="off" placeholder="fine sand beach edge"></label>
+          </section>
+        </div>
+
+        <!-- Area-specific properties -->
+        <div class="prop-section" data-for="area">
+          <section class="form-grid">
+            <label>描边色<input id="propStrokeColor" type="color" value="#2563eb"></label>
+            <label>填充色<input id="propFillColor" type="color" value="#2563eb"></label>
+            <label>线宽<input id="propWeight" type="number" min="1" max="12" value="3"></label>
+            <label>填充透明度<input id="propAreaFillOpacity" type="range" min="0" max="0.6" step="0.02" value="0.08"></label>
+          </section>
+        </div>
+
+        <!-- Route-specific properties -->
+        <div class="prop-section" data-for="route">
+          <section class="form-grid">
+            <label>颜色<input id="propRouteColor" type="color" value="#2563eb"></label>
+            <label>线宽<input id="propRouteWeight" type="number" min="1" max="12" value="4"></label>
+            <label class="full-width">虚线<input id="propDashArray" autocomplete="off" placeholder="5,10"></label>
+          </section>
+        </div>
+
+        <!-- Road-specific properties -->
+        <div class="prop-section" data-for="road">
+          <section class="form-grid">
+            <label>路网类型<select id="propRoadType">
+              <option value="main_road">主路</option>
+              <option value="pedestrian_path">人行道</option>
+              <option value="shuttle_route">班车路线</option>
+              <option value="service_path">服务通道</option>
+            </select></label>
+            <label>线宽<input id="propRoadWeight" type="number" min="1" max="12" value="6"></label>
+            <label>颜色<input id="propRoadColor" type="color" value="#6b7280"></label>
+            <label>虚线<input id="propRoadDashArray" autocomplete="off" placeholder="4 6"></label>
+            <label>表面<select id="propRoadSurface">
+              <option value="">未指定</option>
+              <option value="asphalt">沥青</option>
+              <option value="paved">铺装</option>
+              <option value="dirt">土路</option>
+              <option value="gravel">碎石</option>
+            </select></label>
+            <label>曲率<select id="propRoadCurveStyle">
+              <option value="">未指定</option>
+              <option value="smooth">平滑</option>
+              <option value="corner">折角</option>
+            </select></label>
+            <label>状态<select id="propRoadStatus"><option value="active">active</option><option value="hidden">hidden</option></select></label>
+            <label>点数<span id="propRoadPointCount" class="readonly-field">0</span></label>
+          </section>
+        </div>
 
         <div class="action-row">
           <button type="button" data-commit-draft>写入 JSON</button>
           <button type="button" data-clear-draft>清空采点</button>
           <button class="primary" type="button" data-save>保存到后端</button>
+        </div>
+
+        <section class="section building-groups-section">
+          <strong>建筑组</strong>
+          <div id="buildingGroupsList"></div>
+          <button type="button" data-add-building-group>+ 新建组</button>
+        </section>
+
+        <div class="action-row">
+          <button type="button" data-export-spec>导出渲染规格</button>
         </div>
 
         <label class="json-block">locations.json<textarea id="locationsJson" spellcheck="false"></textarea></label>

@@ -1,5 +1,6 @@
 import crypto from "node:crypto";
 
+import { normalizeAudience, deriveSchoolId } from "./audience-service.js";
 import { memory } from "./cache.js";
 import { warmupPostImages, normalizePostImageUrl } from "./content-utils.js";
 import { appendJsonLine, patchPostMetadata } from "./data-store.js";
@@ -33,7 +34,8 @@ function normalizeAiPublishMetadata(value = {}, locationDraft = {}, request = {}
   const contentType = AI_ALLOWED_CONTENT_TYPES.has(input.contentType)
     ? input.contentType
     : (AI_ALLOWED_CONTENT_TYPES.has(request.template) ? request.template : AI_DEFAULT_METADATA.contentType);
-  const visibility = AI_ALLOWED_VISIBILITY.has(input.visibility) ? input.visibility : "public";
+  const visibility = AI_ALLOWED_VISIBILITY.has(input.visibility) ? input.visibility
+    : (AI_ALLOWED_VISIBILITY.has(request.visibilityHint) ? request.visibilityHint : "public");
   const locationArea = locationDraft?.skipped
     ? truncateText(input.locationArea || request.locationHint || "", 40)
     : truncateText(locationDraft.locationArea || input.locationArea || request.locationHint || "", 40);
@@ -52,6 +54,7 @@ function normalizeAiPublishMetadata(value = {}, locationDraft = {}, request = {}
     riskScore: clampNumber(input.riskScore),
     officialScore: clampNumber(input.officialScore),
     visibility,
+    audience: normalizeAudience(input.audience, visibility),
     distribution: distribution.length
       ? distribution
       : (locationArea ? ["home", "map", "search", "detail"] : ["home", "search", "detail"]),
@@ -157,6 +160,9 @@ async function handleAiPostPublish(req, res) {
 
   const payload = await readJsonBody(req, AI_POST_PREVIEW_MAX_BODY_BYTES);
   const normalized = normalizeAiPostPayload(payload, { requireImage: true });
+  if (normalized.metadata.audience.visibility === "school" && !normalized.metadata.audience.schoolIds.length && auth.user.institution) {
+    normalized.metadata.audience.schoolIds = [deriveSchoolId(auth.user.institution) || auth.user.institution];
+  }
   const aliasId = String(payload.aliasId || "").trim();
   const recordId = crypto.randomUUID();
   const recordBase = {

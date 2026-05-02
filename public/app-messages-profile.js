@@ -195,32 +195,53 @@ async function loadProfile() {
             `).join("")}
           ` : `<p class="identity-hint">暂无可用官方马甲，当前使用真实身份发布。</p>`}
         </div>
+        <div class="profile-tabs">
+          <button class="profile-tab is-active" type="button" data-profile-tab="history">浏览记录</button>
+          <button class="profile-tab" type="button" data-profile-tab="saved">收藏</button>
+          <button class="profile-tab" type="button" data-profile-tab="liked">赞过</button>
+        </div>
+        <div class="profile-tab-content" id="profileTabContent">
+          <div class="empty-state">加载中</div>
+        </div>
         <div class="profile-actions">
           ${user.invitePermission ? `<button type="button" data-create-invite>生成邀请码</button>` : ""}
           <button type="button" data-auth-logout>退出登录</button>
         </div>
         <p class="invite-result" id="inviteResult"></p>
       `;
-      panel.addEventListener("change", async (event) => {
-        if (event.target.name !== "profileIdentity") return;
-        const aliasId = event.target.value;
-        try {
-          if (aliasId) {
-            const data = await api("/api/auth/aliases/activate", {
-              method: "POST",
-              headers: { "content-type": "application/json" },
-              body: JSON.stringify({ aliasId })
-            });
-            state.currentUser.activeAliasId = data.activeAliasId;
-          } else {
-            await api("/api/auth/aliases/deactivate", { method: "POST" });
-            state.currentUser.activeAliasId = null;
+      loadProfileTab("history");
+      if (!panel._profileBound) {
+        panel._profileBound = true;
+        panel.addEventListener("click", async (event) => {
+          const tab = event.target.closest("[data-profile-tab]");
+          if (tab) {
+            panel.querySelectorAll("[data-profile-tab]").forEach((t) => t.classList.remove("is-active"));
+            tab.classList.add("is-active");
+            loadProfileTab(tab.dataset.profileTab);
+            return;
           }
-        } catch (error) {
-          alert(error.message);
-          await loadProfile();
-        }
-      });
+        });
+        panel.addEventListener("change", async (event) => {
+          if (event.target.name !== "profileIdentity") return;
+          const aliasId = event.target.value;
+          try {
+            if (aliasId) {
+              const data = await api("/api/auth/aliases/activate", {
+                method: "POST",
+                headers: { "content-type": "application/json" },
+                body: JSON.stringify({ aliasId })
+              });
+              state.currentUser.activeAliasId = data.activeAliasId;
+            } else {
+              await api("/api/auth/aliases/deactivate", { method: "POST" });
+              state.currentUser.activeAliasId = null;
+            }
+          } catch (error) {
+            alert(error.message);
+            await loadProfile();
+          }
+        });
+      }
       return;
     }
     const me = await api("/api/me");
@@ -234,6 +255,58 @@ async function loadProfile() {
     `;
   } catch (error) {
     panel.innerHTML = `<div class="empty-state">${escapeHtml(error.message)}</div>`;
+  }
+}
+
+function profileListItem(item) {
+  const cover = item.cover
+    ? `<img src="${escapeHtml(item.cover)}" alt="${escapeHtml(item.title)}" loading="lazy">`
+    : `<div class="profile-list-thumb-empty">${escapeHtml((item.title || "").slice(0, 1))}</div>`;
+  const time = item.timestampISO ? new Date(item.timestampISO).toLocaleDateString("zh-CN") : "";
+  return `
+    <article class="profile-list-item" role="button" tabindex="0" data-tid="${item.tid}">
+      <div class="profile-list-thumb">${cover}</div>
+      <div class="profile-list-info">
+        <h4>${escapeHtml(item.title)}</h4>
+        <p>${escapeHtml(time)}</p>
+      </div>
+    </article>
+  `;
+}
+
+async function loadProfileTab(tabName) {
+  const content = $("#profileTabContent");
+  if (!content) return;
+  content.innerHTML = `<div class="empty-state">加载中</div>`;
+  try {
+    let items = [];
+    if (tabName === "history") {
+      const readTids = state.readTids ? Array.from(state.readTids) : [];
+      if (readTids.length) {
+        const data = await api("/api/me/history", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ tids: readTids.slice(-50) })
+        });
+        items = data.items || [];
+      }
+    } else if (tabName === "saved") {
+      const data = await api("/api/me/saved");
+      items = data.items || [];
+    } else if (tabName === "liked") {
+      const data = await api("/api/me/liked");
+      items = data.items || [];
+    }
+    if (!items.length) {
+      const emptyText = tabName === "history" ? "暂无浏览记录"
+        : tabName === "saved" ? "暂无收藏"
+        : "暂无点赞";
+      content.innerHTML = `<div class="empty-state">${emptyText}</div>`;
+      return;
+    }
+    content.innerHTML = `<div class="profile-list">${items.map(profileListItem).join("")}</div>`;
+  } catch (error) {
+    content.innerHTML = `<div class="empty-state">${escapeHtml(error.message)}</div>`;
   }
 }
 

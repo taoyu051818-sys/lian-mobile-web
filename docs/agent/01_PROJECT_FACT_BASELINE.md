@@ -1,5 +1,7 @@
 # Project Fact Baseline
 
+> Historical baseline. This file records an earlier snapshot of the project and is no longer the highest source of truth for Map v2 or the frontend split. Before acting on any fact here, compare with current code, `docs/agent/README.md`, `docs/agent/ARCHITECTURE_WORKPLAN.md`, `docs/agent/04_DECISIONS.md`, and the latest handoff for the task area.
+
 > Generated: 2026-05-02
 > Principle: code is the highest truth source; `docs/agent/` is supplementary.
 > No secrets, tokens, or API keys are recorded here.

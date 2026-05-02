@@ -6,6 +6,50 @@ AI post preview provides draft assistance for lightweight campus posting. It red
 
 This is the current workspace summary for AI post preview and light publish flow.
 
+## Product Naming
+
+User-facing naming is now **Publish** / **发布**.
+
+Do not call the user-facing flow "AI light publish" or "AI 轻投稿" in product UI. AI remains an implementation capability behind the publish flow:
+
+- AI post preview: backend capability and API domain.
+- Publish page: user-facing page.
+- Publish V2: next product workflow.
+
+## Publish V2 Direction
+
+Publish V2 should become a dedicated page, not a modal layered over the existing feed shell.
+
+Required user flow:
+
+1. User taps `+`.
+2. App opens the dedicated Publish page.
+3. First step accepts multiple images at once.
+4. Frontend does simple client-side compression before upload.
+5. User confirms the selected images.
+6. App uploads all images, then immediately moves to the Map v2 location picking step.
+7. Location picking uses Map v2 as the primary picker.
+8. AI preview is called with all uploaded image URLs so the LLM can see the full image set before generating one draft.
+9. Draft page shows editable title, body, tags, location, risk flags, and audience/visibility.
+10. AI may suggest an audience/visibility option, but the user must make the final confirmation.
+11. User can publish to LIAN, save draft, regenerate, or cancel.
+
+The preview endpoint must support multi-image input. The product contract should prefer:
+
+```json
+{
+  "imageUrls": ["https://example.com/1.jpg", "https://example.com/2.jpg"],
+  "template": "campus_moment",
+  "userText": "",
+  "locationHint": "",
+  "visibilityHint": "campus"
+}
+```
+
+Keep `imageUrl` as backward-compatible input, but new frontend work should send `imageUrls`.
+
+The Publish page is allowed to help users pick a visibility option by explaining likely use cases, but AI must not silently lock or publish the audience setting.
+
 ## Current Status
 
 Backend implementation is complete and real integration has passed.
@@ -64,6 +108,7 @@ Real `MIMO_API_KEY` values must only live in `.env` or server environment variab
 
 ```json
 {
+  "imageUrls": ["https://example.com/image-1.jpg", "https://example.com/image-2.jpg"],
   "imageUrl": "https://example.com/image.jpg",
   "imageBase64": "",
   "template": "campus_moment",
@@ -73,7 +118,8 @@ Real `MIMO_API_KEY` values must only live in `.env` or server environment variab
 }
 ```
 
-- `imageUrl`: 优先使用，适合 Cloudinary 或公网可访问图片。
+- `imageUrls`: new preferred multi-image input. The LLM should receive all images in one preview call and generate one coherent draft.
+- `imageUrl`: backward-compatible single-image input, still accepted for old clients.
 - `imageBase64`: 备用输入，服务端限制长度（1.5MB），避免大请求压垮服务。
 - `template`: 支持 `campus_moment`, `food`, `campus_tip`, `place_memory`, `library_moment`, `activity_scene`。
 - `userText`: 用户补充文字，最多 300 字。
@@ -155,6 +201,7 @@ AI may suggest:
 - risk/privacy warnings
 - LIAN metadata draft fields
 - scores（0 到 1）
+- audience/visibility suggestions, as editable suggestions only
 
 ## Hard Boundaries
 
@@ -165,6 +212,7 @@ AI must not:
 - write `data/post-metadata.json`
 - change recommendation behavior
 - change map behavior
+- decide final audience/visibility without user confirmation
 - invent a trusted `locationId` without server-side known-place confirmation
 - return `MIMO_API_KEY` to frontend or log it
 
@@ -216,6 +264,8 @@ Confirmed publishes:
 - write the final metadata to `data/post-metadata.json`;
 - append an analysis record to `data/ai-post-records.jsonl`.
 
-Location is represented with `locationDraft` so Map v2 can replace the legacy picker later without changing the publish contract.
+Location is represented with `locationDraft`.
 
-Current `locationDraft.mapVersion` is `legacy`. `locationId` remains empty unless a future trusted locations source confirms it.
+V2 direction: Publish should use Map v2 as the primary location picker after image confirmation. The legacy picker is in retirement and should only remain as a compatibility fallback while old workflows are removed.
+
+`locationId` remains empty unless a trusted locations source confirms it.

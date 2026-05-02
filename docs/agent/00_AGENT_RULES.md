@@ -6,12 +6,14 @@ Every Agent session must read this file before making changes.
 
 Read these files at the start of every task:
 
-1. `CLAUDE.md` — project-wide rules
-2. `docs/agent/00_AGENT_RULES.md` — this file
-3. `docs/agent/05_TASK_BOARD.md` — current priorities and task status
-4. `docs/agent/03_FILE_OWNERSHIP.md` — file conflict levels
-5. `docs/agent/tasks/<your-task>.md` — your task details (if exists)
-6. `docs/agent/handoffs/<your-task>.md` — previous handoff (if exists)
+1. `CLAUDE.md` - project-wide rules
+2. `docs/agent/README.md` - docs index and source-of-truth order
+3. `docs/agent/00_AGENT_RULES.md` - this file
+4. `docs/agent/ARCHITECTURE_WORKPLAN.md` - current architecture direction
+5. `docs/agent/05_TASK_BOARD.md` - current priorities and task status
+6. `docs/agent/03_FILE_OWNERSHIP.md` - file conflict levels
+7. `docs/agent/tasks/<your-task>.md` - your task details (if exists)
+8. `docs/agent/handoffs/<your-task>.md` - previous handoff (if exists)
 
 ## Forbidden actions
 
@@ -41,16 +43,16 @@ Read these files at the start of every task:
 
 These modules can be developed in parallel with minimal conflict:
 
-- `src/server/audience-service.js` (new) — independent of location
-- `src/server/location-service.js` (new) — independent of audience
-- `scripts/validate-*.js` (new) — read-only scripts, no conflict
-- `docs/agent/**` — documentation only
-- `public/location-ui.js` / `public/audience-ui.js` (new) — if app.js is split
+- `src/server/audience-service.js` (new) 鈥?independent of location
+- `src/server/location-service.js` (new) 鈥?independent of audience
+- `scripts/validate-*.js` (new) 鈥?read-only scripts, no conflict
+- `docs/agent/**` 鈥?documentation only
+- `public/location-ui.js` / `public/audience-ui.js` (new) 鈥?if app.js is split
 
 These modules conflict with each other and should not be modified simultaneously:
 
-- `feed-service.js` + `post-service.js` — both touch publishing and metadata
-- `app.js` + any new `public/*.js` — if app.js is not yet split, adding files requires coordinating with the app.js owner
+- `feed-service.js` + `post-service.js` 鈥?both touch publishing and metadata
+- `app.js` + any new `public/*.js` 鈥?if app.js is not yet split, adding files requires coordinating with the app.js owner
 
 ## Small task vs large task
 

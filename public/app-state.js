@@ -55,6 +55,28 @@ const state = {
     draftSaveStatus: "",
     draftId: ""
   },
+  publish: {
+    active: false,
+    step: "imageSelect",
+    imageUrls: [],
+    uploadProgress: {},
+    locationDraft: null,
+    title: "",
+    body: "",
+    tags: [],
+    metadata: {},
+    audience: null,
+    userEditedAudience: false,
+    riskFlags: [],
+    confidence: 0,
+    needsHumanReview: false,
+    aiMode: "",
+    previewLoading: false,
+    uploadLoading: false,
+    draftSaving: false,
+    draftSaveStatus: "",
+    draftId: ""
+  },
   initialized: false,
   previousView: "feed",
   avatarCrop: null
