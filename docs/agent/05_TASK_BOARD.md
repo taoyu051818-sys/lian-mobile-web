@@ -114,26 +114,17 @@ Verified all NodeBB endpoints, auth modes, `_uid` behavior, and failure modes. A
 
 Handoff: `docs/agent/handoffs/nodebb-integration-audit.md`
 
+### Audience Permission Design
+
+Designed audience model with 5 permission functions, 8 enforcement points, NodeBB mirror strategy, and 5-phase migration plan.
+
+Handoff: `docs/agent/handoffs/audience-permission-design.md`
+
 ---
 
 ## Ready
 
 Architecture entry point: `docs/agent/ARCHITECTURE_WORKPLAN.md`
-
-### Task: Audience Permission Design
-
-Task doc: `docs/agent/tasks/audience-permission-design.md`
-
-Goal: design LIAN's school/org audience model and permission functions before implementing multi-school visibility.
-
-Affected files:
-
-- `docs/agent/domains/NODEBB_INTEGRATION.md`
-- future `docs/agent/domains/AUDIENCE_SYSTEM.md`
-
-Risk: docs-only if kept to design. High if implemented without a separate task.
-
-Acceptance: identifies every API surface that must call `canViewPost` before school/org visibility can ship.
 
 ### Task: Map v2 Data Assets
 
