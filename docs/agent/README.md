@@ -41,6 +41,10 @@ Use `handoffs/` for completed-thread summaries and next-thread instructions. Han
 
 Read `handoffs/README.md` for the normalized handoff list.
 
+## References
+
+- `references/HIGH_RISK_AREAS.md` — 6 个高风险区域结构化调研（前端加载顺序、Feed 评分、NodeBB 集成、认证系统、metadata 格式、路由结构）
+
 ## Historical References
 
 These files are useful for history but should not override newer docs or code:
