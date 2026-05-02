@@ -22,6 +22,7 @@ Recent completed work:
 - AI light publish MVP is implemented: image upload, AI draft, silent draft save, user-confirmed publish.
 - Map v2 MVP is implemented with Gaode tiles, LIAN overlays, Map v2 location drafts, and a standalone internal editor.
 - `public/app.js` has been mechanically split into smaller classic-script files, without changing the build system.
+- NodeBB integration has a dedicated domain document: `docs/agent/domains/NODEBB_INTEGRATION.md`.
 
 Important stale docs to keep in mind:
 
@@ -37,6 +38,7 @@ Important stale docs to keep in mind:
 5. Prefer additive validation scripts before schema-heavy refactors.
 6. Treat `public/app.js` split files as feature boundaries. Do not merge them back into one file.
 7. Keep Map v2 data and editor work separate from user-facing publish flow polish.
+8. Do not add multi-school or organization visibility until the LIAN audience model is designed.
 
 ## Workstream Ownership
 
@@ -152,6 +154,25 @@ Primary files:
 - `docs/agent/handoffs/*`
 
 Do not touch runtime code in this workstream.
+
+### Workstream F: NodeBB Integration And Audience Planning
+
+Domain doc: `docs/agent/domains/NODEBB_INTEGRATION.md`
+
+Goal:
+
+- Audit the current NodeBB integration boundary.
+- Design how future school/org audience rules will use LIAN permissions plus NodeBB groups/categories.
+- Avoid leaking private school/org content through raw NodeBB topic access.
+
+Near-term tasks:
+
+- `nodebb-integration-audit`
+- `audience-permission-design`
+- `nodebb-groups-sync-plan`
+- `nodebb-restricted-category-plan`
+
+Do not implement these in one code thread. Start with design and endpoint audit.
 
 ## Required Handoff Format
 

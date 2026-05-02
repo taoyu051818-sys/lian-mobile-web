@@ -33,10 +33,10 @@ None.
 
 ## Acceptance criteria
 
-- [ ] `scripts/snapshot-feed.js --diff <before> <after>` produces a readable diff.
-- [ ] Diff highlights content type distribution, location coverage, official ratio, image ratio, and changed tids.
-- [ ] Existing snapshot generation still works.
-- [ ] No feed runtime behavior changes.
+- [x] `scripts/snapshot-feed.js --diff <before> <after>` produces a readable diff.
+- [x] Diff highlights content type distribution, location coverage, official ratio, image ratio, and changed tids.
+- [x] Existing snapshot generation still works.
+- [x] No feed runtime behavior changes.
 
 ## Validation commands
 

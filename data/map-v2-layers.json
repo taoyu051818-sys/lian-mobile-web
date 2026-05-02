@@ -1,58 +1,11 @@
 {
   "version": 1,
   "coordSystem": "gcj02",
-  "center": { "lat": 18.3935, "lng": 110.0159 },
+  "center": {
+    "lat": 18.3935,
+    "lng": 110.0159
+  },
   "zoom": 16,
-  "areas": [
-    {
-      "id": "campus-core-area",
-      "name": "校园核心区",
-      "type": "campus",
-      "points": [
-        { "lat": 18.3984, "lng": 110.0113 },
-        { "lat": 18.3982, "lng": 110.0218 },
-        { "lat": 18.3882, "lng": 110.0222 },
-        { "lat": 18.3878, "lng": 110.0111 }
-      ],
-      "style": { "strokeColor": "#2563eb", "fillColor": "#2563eb", "fillOpacity": 0.08 }
-    },
-    {
-      "id": "dadun-life-area",
-      "name": "大墩生活区",
-      "type": "life",
-      "points": [
-        { "lat": 18.3898, "lng": 110.0049 },
-        { "lat": 18.3896, "lng": 110.0117 },
-        { "lat": 18.3836, "lng": 110.0118 },
-        { "lat": 18.3838, "lng": 110.0046 }
-      ],
-      "style": { "strokeColor": "#059669", "fillColor": "#059669", "fillOpacity": 0.1 }
-    }
-  ],
-  "routes": [
-    {
-      "id": "shuttle-main-route",
-      "name": "摆渡车主线",
-      "type": "shuttle",
-      "points": [
-        { "lat": 18.3869, "lng": 110.0086 },
-        { "lat": 18.3892, "lng": 110.0114 },
-        { "lat": 18.3916, "lng": 110.0134 },
-        { "lat": 18.3935, "lng": 110.0159 },
-        { "lat": 18.3952, "lng": 110.0168 }
-      ],
-      "style": { "color": "#2563eb", "weight": 4, "dashArray": "" }
-    },
-    {
-      "id": "food-walk-route",
-      "name": "饭点常走线",
-      "type": "walk",
-      "points": [
-        { "lat": 18.3923, "lng": 110.0176 },
-        { "lat": 18.3902, "lng": 110.0197 },
-        { "lat": 18.3869, "lng": 110.0086 }
-      ],
-      "style": { "color": "#f59e0b", "weight": 3, "dashArray": "8 8" }
-    }
-  ]
+  "areas": [],
+  "routes": []
 }

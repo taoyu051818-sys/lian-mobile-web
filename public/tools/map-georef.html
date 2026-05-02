@@ -1,0 +1,286 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>LIAN Map Georeference Tool</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <style>
+      :root { --ink: #0f1a14; --line: #e2e8e5; --accent: #2563eb; }
+      * { box-sizing: border-box; margin: 0; }
+      body { font-family: -apple-system, system-ui, sans-serif; background: #f4f7f5; color: var(--ink); }
+      .georef-shell { display: grid; grid-template-columns: 1fr 1fr; height: 100vh; }
+      .pane { position: relative; border-right: 2px solid var(--line); overflow: hidden; }
+      .pane-title { position: absolute; top: 8px; left: 50%; transform: translateX(-50%); z-index: 500;
+        padding: 4px 14px; border-radius: 6px; background: rgba(255,255,255,0.95);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.12); font-size: 13px; font-weight: 700; pointer-events: none; }
+      #imageCanvas { display: block; cursor: grab; }
+      #imageCanvas.grabbing { cursor: grabbing; }
+      #gaodeMap { width: 100%; height: 100%; }
+      .sidebar { position: fixed; right: 0; top: 0; width: 320px; height: 100vh; overflow-y: auto;
+        background: #fff; border-left: 1px solid var(--line); padding: 12px; z-index: 600; }
+      .sidebar h2 { font-size: 15px; margin-bottom: 8px; }
+      .sidebar p { font-size: 11px; color: #6b746f; margin-bottom: 8px; line-height: 1.5; }
+      .point-list { list-style: none; padding: 0; margin: 0 0 10px; }
+      .point-list li { display: grid; grid-template-columns: 1fr 1fr auto; gap: 4px; align-items: center;
+        padding: 4px 0; border-bottom: 1px solid var(--line); font-size: 11px; }
+      .point-list .del { background: none; border: 0; color: #dc2626; cursor: pointer; font-size: 14px; padding: 0 4px; }
+      button.calc { width: 100%; padding: 10px; border: 0; border-radius: 8px; background: var(--ink);
+        color: #fff; font-weight: 700; font-size: 13px; cursor: pointer; margin-top: 6px; }
+      button.calc:hover { background: #1a2e24; }
+      .result { margin-top: 10px; padding: 10px; border-radius: 8px; background: #f0fdf4; border: 1px solid #bbf7d0; }
+      .result pre { font-size: 11px; white-space: pre-wrap; word-break: break-all; }
+      .hint { position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%); z-index: 500;
+        padding: 3px 10px; border-radius: 5px; background: rgba(0,0,0,0.6); color: #fff;
+        font-size: 11px; pointer-events: none; }
+    </style>
+  </head>
+  <body>
+    <div class="georef-shell">
+      <div class="pane" id="imagePane">
+        <div class="pane-title">环境底图（滚轮缩放，拖拽平移，右键打点）</div>
+        <canvas id="imageCanvas"></canvas>
+        <div class="hint">滚轮缩放 · 左键拖拽 · 右键打点</div>
+      </div>
+      <div class="pane">
+        <div class="pane-title">高德地图（点击打点）</div>
+        <div id="gaodeMap"></div>
+      </div>
+    </div>
+    <aside class="sidebar">
+      <h2>地图配准</h2>
+      <p>在左边底图上右键打点，再在右边高德地图上点击同一位置。至少 3 对点后点击"计算边界"。</p>
+      <ul id="pointList" class="point-list"></ul>
+      <button class="calc" id="calcBtn">计算边界</button>
+      <div id="result" class="result" style="display:none"></div>
+    </aside>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+    (function () {
+      const GAODE_TILE_URL = "https://webrd0{s}.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=8&x={x}&y={y}&z={z}";
+      const IMG_URL = "/assets/campus-base-map.png";
+
+      const canvas = document.getElementById("imageCanvas");
+      const ctx = canvas.getContext("2d");
+      const pairs = [];
+      let imgW = 0, imgH = 0;
+
+      // View state
+      let viewScale = 1;
+      let viewOffX = 0, viewOffY = 0;
+      let dragStartX = 0, dragStartY = 0;
+      let dragOffX = 0, dragOffY = 0;
+      let isDragging = false;
+
+      const imageObj = new Image();
+      imageObj.onload = function () {
+        imgW = imageObj.width;
+        imgH = imageObj.height;
+        fitImage();
+        draw();
+      };
+      imageObj.src = IMG_URL;
+
+      function fitImage() {
+        const rect = canvas.parentElement.getBoundingClientRect();
+        canvas.width = rect.width;
+        canvas.height = rect.height;
+        const scale = Math.min(canvas.width / imgW, canvas.height / imgH) * 0.95;
+        viewScale = scale;
+        viewOffX = (canvas.width - imgW * scale) / 2;
+        viewOffY = (canvas.height - imgH * scale) / 2;
+      }
+
+      function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        if (!imgW) return;
+        ctx.save();
+        ctx.translate(viewOffX, viewOffY);
+        ctx.scale(viewScale, viewScale);
+        ctx.drawImage(imageObj, 0, 0);
+        ctx.restore();
+        // Draw markers
+        for (let i = 0; i < pairs.length; i++) {
+          const p = pairs[i];
+          if (p.px === undefined) continue;
+          const sx = p.px * viewScale + viewOffX;
+          const sy = p.py * viewScale + viewOffY;
+          ctx.beginPath();
+          ctx.arc(sx, sy, 6, 0, Math.PI * 2);
+          ctx.fillStyle = p.lat !== undefined ? "#2563eb" : "#dc2626";
+          ctx.fill();
+          ctx.lineWidth = 2;
+          ctx.strokeStyle = "#fff";
+          ctx.stroke();
+          ctx.fillStyle = "#fff";
+          ctx.font = "bold 9px sans-serif";
+          ctx.textAlign = "center";
+          ctx.fillText(String(i + 1), sx, sy + 3);
+        }
+      }
+
+      function screenToImg(sx, sy) {
+        return { ix: (sx - viewOffX) / viewScale, iy: (sy - viewOffY) / viewScale };
+      }
+
+      // Mouse: drag to pan
+      canvas.addEventListener("mousedown", function (e) {
+        if (e.button === 0) {
+          isDragging = true;
+          dragStartX = e.clientX;
+          dragStartY = e.clientY;
+          dragOffX = viewOffX;
+          dragOffY = viewOffY;
+          canvas.classList.add("grabbing");
+        }
+      });
+      window.addEventListener("mousemove", function (e) {
+        if (!isDragging) return;
+        viewOffX = dragOffX + (e.clientX - dragStartX);
+        viewOffY = dragOffY + (e.clientY - dragStartY);
+        draw();
+      });
+      window.addEventListener("mouseup", function () {
+        isDragging = false;
+        canvas.classList.remove("grabbing");
+      });
+
+      // Mouse: wheel to zoom
+      canvas.addEventListener("wheel", function (e) {
+        e.preventDefault();
+        const rect = canvas.getBoundingClientRect();
+        const mx = e.clientX - rect.left;
+        const my = e.clientY - rect.top;
+        const factor = e.deltaY < 0 ? 1.15 : 1 / 1.15;
+        const newScale = Math.max(0.2, Math.min(20, viewScale * factor));
+        // Zoom toward cursor
+        viewOffX = mx - (mx - viewOffX) * (newScale / viewScale);
+        viewOffY = my - (my - viewOffY) * (newScale / viewScale);
+        viewScale = newScale;
+        draw();
+      }, { passive: false });
+
+      // Mouse: right-click to place point
+      canvas.addEventListener("contextmenu", function (e) {
+        e.preventDefault();
+        const rect = canvas.getBoundingClientRect();
+        const sx = e.clientX - rect.left;
+        const sy = e.clientY - rect.top;
+        const { ix, iy } = screenToImg(sx, sy);
+        if (ix < 0 || iy < 0 || ix > imgW || iy > imgH) return;
+        let unpaired = pairs.find(p => p.px !== undefined && p.lat === undefined);
+        if (unpaired) {
+          unpaired.px = ix; unpaired.py = iy;
+        } else {
+          pairs.push({ px: ix, py: iy });
+        }
+        draw();
+        renderList();
+      });
+
+      // Gaode map
+      const map = L.map("gaodeMap", { center: [18.3935, 110.0159], zoom: 16, minZoom: 14, maxZoom: 19, attributionControl: false });
+      L.tileLayer(GAODE_TILE_URL, { subdomains: ["1","2","3","4"], maxZoom: 19, minZoom: 3 }).addTo(map);
+
+      map.on("click", function (e) {
+        const { lat, lng } = e.latlng;
+        let unpaired = pairs.find(p => p.px !== undefined && p.lat === undefined);
+        if (!unpaired) return;
+        unpaired.lat = lat;
+        unpaired.lng = lng;
+        L.circleMarker([lat, lng], { radius: 6, color: "#2563eb", fillColor: "#2563eb", fillOpacity: 1 }).addTo(map)
+          .bindTooltip(`#${pairs.indexOf(unpaired) + 1}`, { permanent: true, direction: "right", offset: [8, 0] });
+        draw();
+        renderList();
+      });
+
+      function renderList() {
+        const ul = document.getElementById("pointList");
+        ul.innerHTML = "";
+        pairs.forEach((p, i) => {
+          const li = document.createElement("li");
+          const imgStr = p.px !== undefined ? `${p.px.toFixed(0)}, ${p.py.toFixed(0)}` : "—";
+          const geoStr = p.lat !== undefined ? `${p.lat.toFixed(5)}, ${p.lng.toFixed(5)}` : "—";
+          li.innerHTML = `<span>图:${imgStr}</span><span>图:${geoStr}</span>`;
+          const del = document.createElement("button");
+          del.className = "del";
+          del.textContent = "×";
+          del.onclick = function () { pairs.splice(i, 1); draw(); renderList(); };
+          li.appendChild(del);
+          ul.appendChild(li);
+        });
+      }
+
+      // Calculate
+      document.getElementById("calcBtn").addEventListener("click", function () {
+        const complete = pairs.filter(p => p.px !== undefined && p.lat !== undefined);
+        if (complete.length < 3) { alert("至少需要 3 对对应点！"); return; }
+        const A = [], blat = [], blng = [];
+        for (const p of complete) {
+          A.push([p.px, p.py, 1]);
+          blat.push(p.lat);
+          blng.push(p.lng);
+        }
+        const latC = leastSquares(A, blat);
+        const lngC = leastSquares(A, blng);
+        const corners = [{x:0,y:0},{x:imgW,y:0},{x:imgW,y:imgH},{x:0,y:imgH}];
+        const geo = corners.map(c => ({
+          lat: latC[0]*c.x + latC[1]*c.y + latC[2],
+          lng: lngC[0]*c.x + lngC[1]*c.y + lngC[2]
+        }));
+        const south = Math.min(...geo.map(c=>c.lat));
+        const north = Math.max(...geo.map(c=>c.lat));
+        const west = Math.min(...geo.map(c=>c.lng));
+        const east = Math.max(...geo.map(c=>c.lng));
+        let maxErr = 0;
+        for (const p of complete) {
+          const err = Math.sqrt(
+            (latC[0]*p.px+latC[1]*p.py+latC[2]-p.lat)**2 +
+            (lngC[0]*p.px+lngC[1]*p.py+lngC[2]-p.lng)**2
+          );
+          if (err > maxErr) maxErr = err;
+        }
+        const result = document.getElementById("result");
+        result.style.display = "block";
+        result.innerHTML = `<pre>边界:
+  south: ${south.toFixed(7)}
+  north: ${north.toFixed(7)}
+  west: ${west.toFixed(7)}
+  east: ${east.toFixed(7)}
+
+四角:
+  左上: ${geo[0].lat.toFixed(7)}, ${geo[0].lng.toFixed(7)}
+  右上: ${geo[1].lat.toFixed(7)}, ${geo[1].lng.toFixed(7)}
+  右下: ${geo[2].lat.toFixed(7)}, ${geo[2].lng.toFixed(7)}
+  左下: ${geo[3].lat.toFixed(7)}, ${geo[3].lng.toFixed(7)}
+
+最大残差: ${(maxErr*111000).toFixed(1)} 米 | 点数: ${complete.length}</pre>`;
+        L.rectangle([[south,west],[north,east]], {color:"#2563eb",weight:2,fill:false,dashArray:"8 4"}).addTo(map);
+      });
+
+      function leastSquares(A, b) {
+        const m=A.length, n=A[0].length;
+        const AtA=Array.from({length:n},()=>Array(n).fill(0)), Atb=Array(n).fill(0);
+        for(let i=0;i<m;i++) for(let j=0;j<n;j++){
+          Atb[j]+=A[i][j]*b[i];
+          for(let k=0;k<n;k++) AtA[j][k]+=A[i][j]*A[i][k];
+        }
+        return gauss(AtA, Atb);
+      }
+      function gauss(A, b) {
+        const n=A.length, M=A.map((r,i)=>[...r,b[i]]);
+        for(let c=0;c<n;c++){
+          let mr=c; for(let r=c+1;r<n;r++) if(Math.abs(M[r][c])>Math.abs(M[mr][c])) mr=r;
+          [M[c],M[mr]]=[M[mr],M[c]];
+          for(let r=c+1;r<n;r++){ const f=M[r][c]/M[c][c]; for(let j=c;j<=n;j++) M[r][j]-=f*M[c][j]; }
+        }
+        const x=Array(n).fill(0);
+        for(let i=n-1;i>=0;i--){ x[i]=M[i][n]; for(let j=i+1;j<n;j++) x[i]-=M[i][j]*x[j]; x[i]/=M[i][i]; }
+        return x;
+      }
+
+      window.addEventListener("resize", () => { fitImage(); draw(); });
+    })();
+    </script>
+  </body>
+</html>

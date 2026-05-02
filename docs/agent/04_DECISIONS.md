@@ -129,3 +129,13 @@ Implementation threads should take one task at a time:
 - `feed-ops-snapshot-diff`
 
 Do not combine feed scoring, publishing, map editor/data, auth, and frontend shell loading in one PR.
+
+## 2026-05-02: NodeBB Integration Boundary Is Formalized
+
+NodeBB is the durable content/community backend for topics, replies, users, tags, categories, notifications, and future moderation primitives.
+
+LIAN remains responsible for campus product state: feed ranking, Map v2 data, AI drafts/records, post metadata, audience rules, and school/org membership.
+
+The current integration details live in `docs/agent/domains/NODEBB_INTEGRATION.md`.
+
+Future multi-school and organization visibility must use a LIAN-owned audience model first. NodeBB groups/categories may mirror LIAN permissions for hard boundaries, but NodeBB should not become the only source of truth for LIAN-specific audience state.

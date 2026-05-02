@@ -120,6 +120,34 @@ Designed audience model with 5 permission functions, 8 enforcement points, NodeB
 
 Handoff: `docs/agent/handoffs/audience-permission-design.md`
 
+### Feed Ops Snapshot Diff
+
+Added `--diff` mode to `scripts/snapshot-feed.js` for comparing two feed snapshots. Diff highlights content type distribution, location coverage, official ratio, image ratio, and changed tids with position shifts.
+
+Handoff: `docs/agent/handoffs/feed-ops-snapshot-diff.md`
+
+### Restore Legacy Geo Anchors To Map v2
+
+Restored 9 real-world coordinate anchors from v1 `geoImagePairs` into `data/locations.json`. 14 total locations with GCJ-02 coordinates and legacyPoint preserved.
+
+Changed files: `data/locations.json`, `scripts/validate-locations.js`
+
+Handoff: `docs/agent/handoffs/map-v2-restore-legacy-geo.md`
+
+### Static Data Expansion
+
+Expanded `mapItems` from 10 to 17 entries, aligned with `locations.json` coordinates. Added missing schools (BUPT, UESTC), campus places (食堂, 体育场, 创新创业中心, 大墩村, 摆渡车站点). `authInstitutions` was already complete (6 schools).
+
+Changed files: `src/server/static-data.js`
+
+### Post Metadata Gap Check
+
+Audited all NodeBB tids against `post-metadata.json`. Found 11 gaps (tid 98, 101-106, 139-142). tid 98 doesn't exist; tid 101-105 are 401 (private/auth-only); tid 106 is a system channel topic; tid 139/140 are test posts. Added metadata for tid 141 (campus_life) and tid 142 (campus_activity, 摆渡车站点) which are real posts visible in feed.
+
+Changed files: `data/post-metadata.json`
+
+Handoff: `docs/agent/handoffs/post-metadata-gap-check.md`
+
 ---
 
 ## Ready
@@ -145,53 +173,6 @@ Affected files:
 Risk: medium. Map data and editor affect location picking.
 
 Acceptance: editor can preview assets, validate bounds, and save valid locations/routes/areas.
-
-### Task: Restore Legacy Geo Anchors To Map v2
-
-Task doc: `docs/agent/tasks/map-v2-restore-legacy-geo.md`
-
-Goal: restore the original real-world coordinate anchors from v1 `geoImagePairs` into `data/locations.json` for Map v2.
-
-Affected files:
-
-- `data/locations.json`
-- `scripts/validate-locations.js`
-- optional one-time migration script
-
-Risk: low to medium. Data-only, but wrong coordinates would make the map misleading.
-
-Acceptance: 9 old calibrated locations appear in Map v2 with both `lat/lng` and `legacyPoint`.
-
-### Task: Feed Ops Snapshot Diff
-
-Task doc: `docs/agent/tasks/feed-ops-snapshot-diff.md`
-
-Goal: add diff capability to feed snapshots without changing runtime ranking.
-
-Affected files:
-
-- `scripts/snapshot-feed.js`
-- `docs/agent/domains/FEED_SYSTEM.md`
-
-Risk: low. Tooling only.
-
-Acceptance: `--diff` compares two snapshots and reports useful feed composition differences.
-
-### Task: Static Data Expansion
-
-Goal: add entries to `mapItems` or `authInstitutions` in `static-data.js`.
-
-Affected files:
-
-- `src/server/static-data.js`
-
-Risk: low. Pure data, no logic changes.
-
-Acceptance:
-
-- `node --check src/server/static-data.js`
-- `GET /api/map/items` returns new items
-- New institutions appear in auth rules
 
 ---
 

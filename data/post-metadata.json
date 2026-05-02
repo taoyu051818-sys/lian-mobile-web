@@ -2309,6 +2309,89 @@
         "讲座回顾",
         "系统测试"
       ]
+    },
+    "141": {
+      "contentType": "campus_life",
+      "vibeTags": ["治愈", "休闲"],
+      "sceneTags": ["校园", "室内"],
+      "locationId": "",
+      "locationArea": "",
+      "qualityScore": 0.7,
+      "imageImpactScore": 0.7,
+      "riskScore": 0,
+      "officialScore": 0,
+      "visibility": "public",
+      "distribution": ["home", "search", "detail"],
+      "keepAfterExpired": false
+    },
+    "142": {
+      "contentType": "campus_activity",
+      "vibeTags": ["幕后", "筹备"],
+      "sceneTags": ["校园", "户外", "活动"],
+      "locationId": "shuttle-stop",
+      "locationArea": "摆渡车站点",
+      "qualityScore": 0.7,
+      "imageImpactScore": 0.8,
+      "riskScore": 0,
+      "officialScore": 0,
+      "visibility": "public",
+      "distribution": ["home", "search", "detail", "map"],
+      "keepAfterExpired": false
+    },
+    "143": {
+      "contentType": "campus_moment",
+      "vibeTags": [
+        "治愈",
+        "可爱",
+        "温暖"
+      ],
+      "sceneTags": [
+        "校园",
+        "户外",
+        "动物"
+      ],
+      "locationId": "",
+      "locationArea": "Map pick",
+      "qualityScore": 0.8,
+      "imageImpactScore": 0.9,
+      "riskScore": 0.1,
+      "officialScore": 0,
+      "visibility": "public",
+      "distribution": [
+        "home",
+        "map",
+        "search",
+        "detail"
+      ],
+      "keepAfterExpired": false,
+      "imageUrls": [
+        "https://res.cloudinary.com/dhvyvfu4n/image/upload/f_auto,q_auto,c_limit,w_1200/v1777706179/nodebb-frontend/mobile-web-upload/r1gwejee0pvqlax6gj5s.jpg",
+        "https://res.cloudinary.com/dhvyvfu4n/image/upload/f_auto,q_auto,c_limit,w_1200/v1777706205/nodebb-frontend/mobile-web-upload/ks0hhrlzsz0erkql3iir.jpg"
+      ],
+      "lat": 18.4021765,
+      "lng": 110.0284503,
+      "mapVersion": "gaode_v2",
+      "locationDraft": {
+        "source": "map_v2",
+        "locationId": "",
+        "locationArea": "Map pick",
+        "displayName": "Map pick",
+        "lat": 18.4021765,
+        "lng": 110.0284503,
+        "legacyPoint": {
+          "x": null,
+          "y": null
+        },
+        "imagePoint": {
+          "x": null,
+          "y": null
+        },
+        "mapVersion": "gaode_v2",
+        "confidence": 0.72,
+        "skipped": false,
+        "note": ""
+      },
+      "title": "校园偶遇小可爱，被治愈的一天"
     }
   }
 }

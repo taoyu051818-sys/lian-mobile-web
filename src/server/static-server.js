@@ -15,8 +15,24 @@ async function serveStatic(reqUrl, res) {
     return;
   }
   try {
-    const data = await fs.readFile(filePath);
-    const type = MIME[path.extname(filePath).toLowerCase()] || "application/octet-stream";
+    const ext = path.extname(filePath).toLowerCase();
+    const type = MIME[ext] || "application/octet-stream";
+    // Only read as UTF-8 for HTML files (need injection), everything else as Buffer
+    const isHtml = ext === ".html" || ext === ".htm";
+    let data = await fs.readFile(filePath, isHtml ? "utf8" : undefined);
+    // Inject config into editor page
+    if (isHtml && pathname === "/tools/map-v2-editor.html") {
+      if (config.adminToken) {
+        data = data.replace(
+          'id="adminToken"',
+          `id="adminToken" value="${config.adminToken}"`
+        );
+      }
+      data = data.replace(
+        "</head>",
+        `<script>window.LIAN_NODEBB_URL="${config.nodebbPublicBaseUrl}";</script></head>`
+      );
+    }
     res.writeHead(200, { "content-type": type, "cache-control": "no-cache" });
     res.end(data);
   } catch {

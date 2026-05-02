@@ -44,14 +44,21 @@ export const authInstitutions = [
 ];
 
 export const mapItems = [
-  { id: "teaching", title: "公共教学楼", type: "place", lat: 18.400032, lng: 110.016989 },
-  { id: "lab", title: "公共实验楼", type: "place", lat: 18.401458, lng: 110.018094 },
+  { id: "teaching", title: "公共教学楼", type: "place", lat: 18.3982561, lng: 110.0211239 },
+  { id: "lab", title: "公共实验楼", type: "place", lat: 18.399722, lng: 110.022583 },
   { id: "canteen-1", title: "一号食堂", type: "food", lat: 18.401799, lng: 110.020122 },
-  { id: "library", title: "图书馆", type: "study", lat: 18.403036, lng: 110.014774 },
+  { id: "canteen", title: "食堂", type: "food", lat: 18.3997424, lng: 110.0244927 },
+  { id: "library", title: "图书馆", type: "study", lat: 18.4010862, lng: 110.019182 },
   { id: "gym", title: "综合体育馆", type: "sport", lat: 18.404374, lng: 110.02143 },
-  { id: "dorm-1", title: "生活一区", type: "life", lat: 18.395955, lng: 110.016671 },
-  { id: "dorm-2", title: "生活二区", type: "life", lat: 18.397625, lng: 110.018474 },
+  { id: "sports-field", title: "体育场", type: "sport", lat: 18.3992639, lng: 110.0174975 },
+  { id: "dorm-1", title: "生活一区", type: "life", lat: 18.3941889, lng: 110.0209898 },
+  { id: "dorm-2", title: "生活二区", type: "life", lat: 18.3957924, lng: 110.0226796 },
   { id: "hall", title: "学生会堂", type: "place", lat: 18.39596, lng: 110.014161 },
-  { id: "bsu", title: "北京体育大学专享楼", type: "school", lat: 18.403964, lng: 110.018973 },
-  { id: "cuc", title: "中国传媒大学专享楼", type: "school", lat: 18.399433, lng: 110.013919 }
+  { id: "innovation-center", title: "创新创业中心", type: "place", lat: 18.3936595, lng: 110.0169879 },
+  { id: "bsu", title: "北京体育大学", type: "school", lat: 18.403964, lng: 110.018973 },
+  { id: "cuc", title: "中国传媒大学", type: "school", lat: 18.3969835, lng: 110.0182807 },
+  { id: "bupt", title: "北京邮电大学", type: "school", lat: 18.3921986, lng: 110.0111675 },
+  { id: "uestc", title: "电子科技大学", type: "school", lat: 18.3936646, lng: 110.0137639 },
+  { id: "dadun-village", title: "大墩村", type: "food", lat: 18.4006688, lng: 110.0296855 },
+  { id: "shuttle-stop", title: "摆渡车站点", type: "transport", lat: 18.3946521, lng: 110.0235164 }
 ];

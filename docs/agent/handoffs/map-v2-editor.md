@@ -67,3 +67,33 @@ files_changed:
 - User will provide more art assets to layer on top of grass
 - Consider georeferencing the grass image more precisely
 - Consider adding route/area editing (move/delete points) to editor
+
+---
+
+## Update 2026-05-02: Editor synced with user-facing map
+
+### What changed
+
+Editor now renders the same data as the user-facing map (map-v2.js):
+
+1. **Type-specific SVG icons** — location markers show different icons per type (food=utensils, transport=bus, sports=globe, village/life=house, campus=pin), matching map-v2.js `TYPE_COLORS` + `iconSvg()`
+2. **Posts layer** — fetches posts from `GET /api/map/v2/items` (public API) and renders as cards with image + title
+3. **Cloudinary image proxy** — `displayImageUrl()` routes Cloudinary URLs through `/api/image-proxy`
+4. **Post-aware popups** — popups show name, type, and "Open post" button for items with `tid`
+5. **API center/zoom** — map initializes with center/zoom from API response instead of hardcoded defaults
+6. **Click-to-select** — clicking a location fills the side panel form fields (ID, name, type, icon URL, card settings)
+7. **Posts layer toggle** — "帖子图层" checkbox in layer controls
+
+### Files changed
+
+- `public/tools/map-v2-editor.js` — added TYPE_COLORS, iconSvg, displayImageUrl, placeIcon, postIcon, placeCardIcon, popupHtml, selectItem, renderPosts, popupopen handler, posts layer group
+- `public/tools/map-v2-editor.html` — added posts layer toggle
+- `public/tools/map-v2-editor.css` — replaced old editor icon styles with map-v2 styles (map-v2-place-glyph, map-v2-place-asset, map-v2-post-card, map-v2-location-card, map-v2-popup)
+
+### How to verify
+
+- Editor: http://localhost:4100/tools/map-v2-editor.html
+- Locations show type-specific icons (not just first character)
+- Posts appear as cards (if any posts have coordinates)
+- Click a location → form fields auto-fill
+- Layer toggle shows/hides posts
