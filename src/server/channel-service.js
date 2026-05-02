@@ -1,9 +1,10 @@
 import crypto from "node:crypto";
 
+import { canReplyToPost } from "./audience-service.js";
 import { config } from "./config.js";
 import { memory } from "./cache.js";
 import { stripHtml } from "./content-utils.js";
-import { loadChannelReads, saveChannelReads } from "./data-store.js";
+import { loadChannelReads, loadMetadata, saveChannelReads } from "./data-store.js";
 import { getAllRecentTopics, getTopicDetail, normalizeChannelEvent } from "./feed-service.js";
 import { sendJson } from "./http-response.js";
 import { nodebbFetch, withNodebbUid } from "./nodebb-client.js";
@@ -121,6 +122,11 @@ async function handleCreateReply(tid, req, res) {
   const auth = await requireUser(req);
   if (!config.nodebbToken) return sendJson(res, 500, { error: "LIAN API token is missing" });
   if (auth.user.status === "limited") return sendJson(res, 403, { error: "account is limited" });
+  const metadata = await loadMetadata();
+  const postMeta = metadata[String(tid)];
+  if (postMeta && !canReplyToPost(auth.user, postMeta)) {
+    return sendJson(res, 403, { error: "access denied" });
+  }
   const payload = await readJsonBody(req);
   const content = String(payload.content || "").trim();
   if (!content) return sendJson(res, 400, { error: "content is required" });

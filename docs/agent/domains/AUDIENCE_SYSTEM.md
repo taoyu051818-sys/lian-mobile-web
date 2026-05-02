@@ -10,7 +10,7 @@ LIAN needs multi-school and multi-organization content visibility. This document
 
 Existing fields in `post-metadata.json`:
 
-- `visibility`: `"public"` | `"campus"` | `"school"` | `"linkOnly"` | `"private"` — currently display-only, not enforced
+- `visibility`: `"public"` | `"campus"` | `"school"` | `"linkOnly"` | `"private"` — Phase 1-3: read-side enforced via `canViewPost`; write-side not yet enforced (Phase 4)
 - `distribution`: `["home", "search", "detail", "map"]` — controls which surfaces show the post
 
 Existing user fields in `auth-users.json`:
@@ -57,60 +57,60 @@ No school/org membership model exists yet. No permission checks exist beyond `st
 | `private` | Specific users only | `userIds` required |
 | `linkOnly` | Not distributed, link-accessible | `linkOnly: true` |
 
-### User membership (future `auth-users.json` extension)
+### Canonical schoolId (Phase 1-3)
+
+Current canonical schoolId is the Chinese short name from `authInstitutions.tags[0]`. This is derived at read time by `deriveSchoolId(institution)` in `audience-service.js`.
+
+| institution | canonical schoolId |
+|---|---|
+| 中国传媒大学海南国际学院 | 中国传媒大学 |
+| 北京邮电大学玛丽女王海南学院 | 北京邮电大学 |
+| 北京体育大学阿尔伯塔国际休闲体育与旅游学院 | 北京体育大学 |
+| 中央民族大学海南国际学院 | 中央民族大学 |
+| 北京语言大学 | 北京语言大学 |
+| 电子科技大学格拉斯哥海南学院 | 电子科技大学 |
+
+Future migration may introduce slug-based IDs (e.g., `cuc-hainan`), but Phase 1-3 uses Chinese short names exclusively.
+
+### User membership (auth-users.json)
 
 ```json
 {
-  "schoolId": "cuc-hainan",
-  "orgIds": ["org-lian-student-council"],
+  "schoolId": "中国传媒大学",
+  "orgIds": ["council", "photo-club"],
   "roleIds": ["user"]
 }
 ```
 
-### School definition (future `data/schools.json`)
+### Organization definition
 
-```json
-{
-  "schools": [
-    {
-      "id": "cuc-hainan",
-      "name": "海南立国际教育创新区",
-      "domain": "hainanlian.edu.cn",
-      "status": "active"
-    }
-  ]
-}
-```
+Phase 1-3 does not use a separate `organization` visibility level. Organization-scoped posts use `visibility: "private"` with `orgIds` array.
 
-### Organization definition (future `data/organizations.json`)
-
-```json
-{
-  "organizations": [
-    {
-      "id": "org-lian-student-council",
-      "name": "学生会",
-      "schoolId": "cuc-hainan",
-      "status": "active"
-    }
-  ]
-}
-```
+| orgId | name | member schools |
+|---|---|---|
+| council | 试验区学生会 | 中国传媒大学, 北京邮电大学, 中央民族大学 |
+| photo-club | 光影摄影社 | 中国传媒大学 |
+| basketball-club | 飞鹰篮球社 | 北京邮电大学 |
 
 ## Permission Functions
 
-### `canViewPost(user, post)`
+### `canViewPost(user, post, context)`
 
-Determines if a user can see a post.
+Determines if a user can see a post. `context` is `"feed"`, `"map"`, or `"detail"` (default).
+
+- **feed/map**: linkOnly posts always return `false` (never distributed).
+- **detail**: linkOnly posts are accessible by direct link, check base visibility.
 
 ```javascript
-function canViewPost(user, post) {
+function canViewPost(user, post, context = "detail") {
   const audience = post.audience || {};
   const visibility = audience.visibility || "public";
 
-  // linkOnly posts are visible to anyone with the link,
-  // but not distributed to feed/search/map
-  // Direct access check still applies based on visibility level
+  if (audience.linkOnly) {
+    if (context === "feed" || context === "map") return false;
+    // detail: check base visibility + author/admin override
+    // ...
+  }
 
   switch (visibility) {
     case "public":
@@ -258,12 +258,12 @@ if (audience.linkOnly) {
 
 ### Groups
 
-Mirror LIAN school/org membership to NodeBB groups:
+Mirror LIAN school/org membership to NodeBB groups (Phase 5 — not yet implemented):
 
 | LIAN entity | NodeBB group |
 |---|---|
-| `schoolId: "cuc-hainan"` | `group: "school:cuc-hainan"` |
-| `orgId: "org-lian-student-council"` | `group: "org:lian-student-council"` |
+| `schoolId: "中国传媒大学"` | `group: "school:中国传媒大学"` |
+| `orgId: "council"` | `group: "org:council"` |
 | Admin | `group: "role:admin"` |
 
 Sync triggers:
