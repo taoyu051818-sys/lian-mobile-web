@@ -53,6 +53,18 @@ Both `/api/posts` and `/api/ai/post-publish` use `createNodebbTopicFromPayload()
 - `scripts/snapshot-feed.js` generates feed snapshots
 - `scripts/validate-post-metadata.js` validates metadata structure
 
+### Map v2 Editor + Grass Base Layer
+
+Standalone internal editor tool page at `/tools/map-v2-editor.html`. Campus grass texture as map base layer with Gaode tiles at 35% opacity. Editor has layer visibility toggles and opacity sliders for all layer groups (grass, tiles, bounds, areas, routes, locations, draft).
+
+Backend: `PUT /api/admin/map-v2` with full bounds validation (SW 18.373050/109.995380, NE 18.413856/110.036262). Location icon (url/size/anchor) and card (title/subtitle/imageUrl/alwaysShow) support in `map-v2-service.js`.
+
+Also fixed Chinese encoding corruption in index.html (commit 3340f65 double-encoded UTF-8).
+
+Changed files: `public/tools/map-v2-editor.*`, `public/assets/campus-grass.png`, `public/map-v2.js`, `public/styles.css`, `public/index.html`
+
+Handoff: `docs/agent/handoffs/map-v2-editor.md`
+
 ---
 
 ## Ready
