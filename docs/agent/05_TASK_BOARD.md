@@ -108,26 +108,17 @@ Real identity avatar falls back to NodeBB `user.picture` when no Cloudinary avat
 
 Changed files: `src/server/auth-service.js`, `src/server/post-service.js`
 
+### NodeBB Integration Audit
+
+Verified all NodeBB endpoints, auth modes, `_uid` behavior, and failure modes. Added Failure Modes section to `NODEBB_INTEGRATION.md`.
+
+Handoff: `docs/agent/handoffs/nodebb-integration-audit.md`
+
 ---
 
 ## Ready
 
 Architecture entry point: `docs/agent/ARCHITECTURE_WORKPLAN.md`
-
-### Task: NodeBB Integration Audit
-
-Task doc: `docs/agent/tasks/nodebb-integration-audit.md`
-
-Goal: verify every current NodeBB endpoint, auth mode, `_uid` behavior, and failure mode before adding audience or group sync work.
-
-Affected files:
-
-- `docs/agent/domains/NODEBB_INTEGRATION.md`
-- optional smoke script only if explicitly scoped
-
-Risk: low if docs-only. Medium if smoke scripts call real NodeBB write endpoints.
-
-Acceptance: endpoint table is verified against code and deployment config, with no runtime behavior change.
 
 ### Task: Audience Permission Design
 
