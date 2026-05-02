@@ -72,6 +72,37 @@ function buildTopicHtml(payload) {
   return `${blocks.join("\n\n").trim()}${userSignature(payload.currentUser)}`.trim();
 }
 
+function buildMapMetadataPatch(mapLocation = {}) {
+  if (!mapLocation || typeof mapLocation !== "object") return {};
+  const lat = Number(mapLocation.lat);
+  const lng = Number(mapLocation.lng);
+  const hasLatLng = Number.isFinite(lat) && Number.isFinite(lng);
+  const x = Number(mapLocation.x);
+  const y = Number(mapLocation.y);
+  const hasLegacyPoint = Number.isFinite(x) && Number.isFinite(y);
+  if (!hasLatLng && !hasLegacyPoint && !mapLocation.placeName) return {};
+  return {
+    locationArea: String(mapLocation.placeName || "").trim(),
+    lat: hasLatLng ? lat : undefined,
+    lng: hasLatLng ? lng : undefined,
+    mapVersion: hasLatLng ? "gaode_v2" : "legacy",
+    locationDraft: {
+      source: hasLatLng ? "map_v2" : "legacy_map",
+      locationId: "",
+      locationArea: String(mapLocation.placeName || "").trim(),
+      displayName: String(mapLocation.placeName || "").trim(),
+      lat: hasLatLng ? lat : null,
+      lng: hasLatLng ? lng : null,
+      legacyPoint: { x: hasLegacyPoint ? x : null, y: hasLegacyPoint ? y : null },
+      imagePoint: { x: hasLegacyPoint ? x : null, y: hasLegacyPoint ? y : null },
+      mapVersion: hasLatLng ? "gaode_v2" : "legacy",
+      confidence: hasLatLng ? 0.72 : (hasLegacyPoint ? 0.65 : 0.4),
+      skipped: false,
+      note: ""
+    }
+  };
+}
+
 function extractCreatedTid(data = {}) {
   return Number(
     data?.response?.tid ||
@@ -143,9 +174,11 @@ async function handleCreatePost(req, res) {
     ...payload,
     title
   });
-  if (tid && imageUrls.length) {
+  if (tid && (imageUrls.length || payload.mapLocation)) {
     await patchPostMetadata(tid, {
-      imageUrls
+      title,
+      imageUrls,
+      ...buildMapMetadataPatch(payload.mapLocation)
     });
   }
   if (imageUrls.length) await warmupPostImages(imageUrls);

@@ -1,51 +1,59 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="zh-CN">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-    <title>黎安信息流</title>
+    <title>榛庡畨淇℃伅娴?/title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
     <link rel="stylesheet" href="/styles.css">
   </head>
   <body>
     <main class="app-shell">
       <section class="view view-feed is-active" data-view="feed">
-        <div class="pull-indicator" id="pullIndicator">松开刷新</div>
-        <nav class="chips" id="feedTabs" aria-label="信息分类"></nav>
+        <div class="pull-indicator" id="pullIndicator">鏉惧紑鍒锋柊</div>
+        <nav class="chips" id="feedTabs" aria-label="淇℃伅鍒嗙被"></nav>
         <section class="masonry" id="feedList" aria-live="polite"></section>
         <div class="feed-sentinel" id="feedSentinel" aria-hidden="true"></div>
       </section>
 
       <section class="view view-map" data-view="map">
-        <div class="campus-map-stage" id="campusMapStage">
+        <div class="map-v2-shell">
+          <div class="map-v2-stage" id="mapV2Stage" aria-label="LIAN Map v2"></div>
+          <div class="map-v2-toolbar">
+            <button type="button" data-map-v2-mode="browse">娴忚</button>
+            <button type="button" data-map-v2-mode="pick">閫夌偣</button>
+          </div>
+        </div>
+        <div class="campus-map-stage is-legacy-hidden" id="campusMapStage">
           <img class="campus-map-image" id="campusMapImage" src="/assets/lian-illustrated-map.webp" alt="">
           <svg class="campus-route-layer" id="campusRouteLayer" aria-hidden="true"></svg>
-          <div class="campus-label-layer" id="campusLabelLayer" aria-label="校园地点"></div>
-          <div class="campus-post-layer" id="campusPostLayer" aria-label="地图信息"></div>
-          <nav class="map-filterbar" id="mapFilterbar" aria-label="地图图层"></nav>
+          <div class="campus-label-layer" id="campusLabelLayer" aria-label="鏍″洯鍦扮偣"></div>
+          <div class="campus-post-layer" id="campusPostLayer" aria-label="鍦板浘淇℃伅"></div>
+          <nav class="map-filterbar" id="mapFilterbar" aria-label="鍦板浘鍥惧眰"></nav>
         </div>
       </section>
 
       <section class="view" data-view="messages">
         <header class="topbar compact">
           <div>
-            <h1>消息</h1>
-            <p>校园频道</p>
+            <h1>娑堟伅</h1>
+            <p>鏍″洯棰戦亾</p>
           </div>
         </header>
         <section class="message-list" id="messageList"></section>
         <form class="channel-composer" id="channelForm">
-          <span class="composer-avatar" id="channelComposerAvatar">同</span>
-          <select name="identityTag" aria-label="身份标签"></select>
-          <input name="content" maxlength="800" autocomplete="off" placeholder="说点什么">
-          <button type="submit">发送</button>
+          <span class="composer-avatar" id="channelComposerAvatar">鍚?/span>
+          <select name="identityTag" aria-label="韬唤鏍囩"></select>
+          <input name="content" maxlength="800" autocomplete="off" placeholder="璇寸偣浠€涔?>
+          <button type="submit">鍙戦€?/button>
         </form>
       </section>
 
       <section class="view" data-view="profile">
         <header class="topbar compact">
           <div>
-            <h1>我的</h1>
-            <p>账号和发布记录</p>
+            <h1>鎴戠殑</h1>
+            <p>璐﹀彿鍜屽彂甯冭褰?/p>
           </div>
         </header>
         <section class="profile-panel" id="profilePanel"></section>
@@ -53,51 +61,51 @@
 
       <section class="view detail-view" data-view="detail">
         <header class="detail-nav">
-          <button class="back-button" type="button" data-back-feed aria-label="返回">‹</button>
+          <button class="back-button" type="button" data-back-feed aria-label="杩斿洖">鈥?/button>
         </header>
         <article id="detailBody"></article>
       </section>
 
-      <nav class="tabbar" aria-label="主导航">
-        <button class="tab is-active" type="button" data-tab="feed">首页</button>
-        <button class="tab" type="button" data-tab="map">探索</button>
-        <button class="publish-fab" type="button" data-open-publish aria-label="发布">＋</button>
-        <button class="tab" type="button" data-tab="messages">消息</button>
-        <button class="tab" type="button" data-tab="profile">我的</button>
+      <nav class="tabbar" aria-label="涓诲鑸?>
+        <button class="tab is-active" type="button" data-tab="feed">棣栭〉</button>
+        <button class="tab" type="button" data-tab="map">鎺㈢储</button>
+        <button class="publish-fab" type="button" data-open-publish aria-label="鍙戝竷">锛?/button>
+        <button class="tab" type="button" data-tab="messages">娑堟伅</button>
+        <button class="tab" type="button" data-tab="profile">鎴戠殑</button>
       </nav>
     </main>
 
     <dialog class="publish-sheet" id="publishSheet">
       <form method="dialog" id="publishForm">
         <header>
-          <h2>发布信息</h2>
-          <button class="sheet-close" type="button" data-close-publish aria-label="关闭">×</button>
+          <h2>鍙戝竷淇℃伅</h2>
+          <button class="sheet-close" type="button" data-close-publish aria-label="鍏抽棴">脳</button>
         </header>
         <label>
-          标题
+          鏍囬
           <input name="title" required maxlength="80" autocomplete="off">
         </label>
         <label>
-          图片
+          鍥剧墖
           <input name="image" type="file" accept="image/*" multiple>
         </label>
         <label>
-          正文
+          姝ｆ枃
           <textarea name="content" required rows="7"></textarea>
         </label>
         <div class="publish-tools">
-          <button type="button" data-pick-time>选择时间</button>
-          <button type="button" data-use-current-location>当前位置</button>
-          <button type="button" data-pick-map-location>地图标记</button>
+          <button type="button" data-pick-time>閫夋嫨鏃堕棿</button>
+          <button type="button" data-use-current-location>褰撳墠浣嶇疆</button>
+          <button type="button" data-pick-map-location>鍦板浘鏍囪</button>
         </div>
         <div class="publish-grid">
           <label>
-            时间
-            <input name="occurredAt" autocomplete="off" placeholder="当前时间或选择时间" readonly>
+            鏃堕棿
+            <input name="occurredAt" autocomplete="off" placeholder="褰撳墠鏃堕棿鎴栭€夋嫨鏃堕棿" readonly>
           </label>
           <label>
-            地点
-            <input name="placeName" autocomplete="off" placeholder="选择或获取位置">
+            鍦扮偣
+            <input name="placeName" autocomplete="off" placeholder="閫夋嫨鎴栬幏鍙栦綅缃?>
           </label>
         </div>
         <input name="lat" type="hidden">
@@ -107,79 +115,81 @@
         <p class="publish-location-note" id="publishLocationNote"></p>
         <div class="publish-progress" id="publishProgress" hidden>
           <div class="publish-progress-meta">
-            <span id="publishProgressText">准备上传</span>
+            <span id="publishProgressText">鍑嗗涓婁紶</span>
             <span id="publishProgressValue">0%</span>
           </div>
-          <div class="publish-progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="发布进度">
+          <div class="publish-progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="鍙戝竷杩涘害">
             <span id="publishProgressBar"></span>
           </div>
         </div>
-        <button class="primary" type="submit">发布到 LIAN</button>
+        <button class="primary" type="submit">鍙戝竷鍒?LIAN</button>
       </form>
     </dialog>
 
     <dialog class="auth-sheet" id="authSheet">
       <form method="dialog" id="authForm">
         <header>
-          <h2>登录 / 注册</h2>
-          <button class="sheet-close" type="button" data-close-auth aria-label="关闭">×</button>
+          <h2>鐧诲綍 / 娉ㄥ唽</h2>
+          <button class="sheet-close" type="button" data-close-auth aria-label="鍏抽棴">脳</button>
         </header>
         <div class="auth-tabs">
-          <button class="auth-tab is-active" type="button" data-auth-mode="login">登录</button>
-          <button class="auth-tab" type="button" data-auth-mode="register">注册</button>
+          <button class="auth-tab is-active" type="button" data-auth-mode="login">鐧诲綍</button>
+          <button class="auth-tab" type="button" data-auth-mode="register">娉ㄥ唽</button>
         </div>
         <label class="auth-login-only">
-          邮箱或昵称
+          閭鎴栨樀绉?
           <input name="login" autocomplete="username">
         </label>
         <label class="auth-register-only">
-          昵称
+          鏄电О
           <input name="username" maxlength="30" autocomplete="nickname">
         </label>
         <label class="auth-register-only">
-          高校邮箱
-          <input name="email" type="email" autocomplete="email" placeholder="邀请码注册可不填">
+          楂樻牎閭
+          <input name="email" type="email" autocomplete="email" placeholder="閭€璇风爜娉ㄥ唽鍙笉濉?>
         </label>
         <label class="auth-register-only">
-          邮箱验证码
+          閭楠岃瘉鐮?
           <div class="auth-code-row">
-            <input name="emailCode" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="高校邮箱注册填写">
-            <button type="button" data-send-email-code>发送</button>
+            <input name="emailCode" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="楂樻牎閭娉ㄥ唽濉啓">
+            <button type="button" data-send-email-code>鍙戦€?/button>
           </div>
         </label>
         <label>
-          密码
+          瀵嗙爜
           <input name="password" type="password" required minlength="8" autocomplete="current-password">
         </label>
         <label class="auth-register-only">
-          邀请码
-          <input name="inviteCode" autocomplete="off" placeholder="非高校邮箱时填写">
+          閭€璇风爜
+          <input name="inviteCode" autocomplete="off" placeholder="闈為珮鏍￠偖绠辨椂濉啓">
         </label>
-        <p class="auth-note" id="authNote">高校邮箱注册需要验证码；邀请码注册可以不填邮箱。</p>
-        <button class="primary" type="submit">登录</button>
+        <p class="auth-note" id="authNote">楂樻牎閭娉ㄥ唽闇€瑕侀獙璇佺爜锛涢個璇风爜娉ㄥ唽鍙互涓嶅～閭銆?/p>
+        <button class="primary" type="submit">鐧诲綍</button>
       </form>
     </dialog>
 
     <dialog class="avatar-crop-sheet" id="avatarCropSheet">
       <form method="dialog">
         <header>
-          <h2>调整头像</h2>
-          <button class="sheet-close" type="button" data-close-avatar-crop aria-label="关闭">×</button>
+          <h2>璋冩暣澶村儚</h2>
+          <button class="sheet-close" type="button" data-close-avatar-crop aria-label="鍏抽棴">脳</button>
         </header>
         <div class="avatar-crop-frame" id="avatarCropFrame">
           <img id="avatarCropImage" alt="">
         </div>
         <label class="avatar-zoom">
-          缩放
+          缂╂斁
           <input id="avatarZoom" type="range" min="1" max="3" step="0.01" value="1">
         </label>
         <div class="avatar-crop-actions">
-          <button type="button" data-close-avatar-crop>取消</button>
-          <button class="primary" type="button" data-confirm-avatar-crop>确认使用</button>
+          <button type="button" data-close-avatar-crop>鍙栨秷</button>
+          <button class="primary" type="button" data-confirm-avatar-crop>纭浣跨敤</button>
         </div>
       </form>
     </dialog>
 
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="/map-v2.js"></script>
     <script src="/app.js"></script>
   </body>
 </html>

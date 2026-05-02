@@ -1,0 +1,47 @@
+{
+  "version": 1,
+  "aliases": [
+    {
+      "id": "quiet-observer",
+      "name": "安静观察者",
+      "description": "喜欢默默看帖，偶尔冒泡",
+      "avatarSeed": "quiet",
+      "order": 1
+    },
+    {
+      "id": "curious-passenger",
+      "name": "好奇路人",
+      "description": "什么都想点进来看看",
+      "avatarSeed": "curious",
+      "order": 2
+    },
+    {
+      "id": "island-anonymous",
+      "name": "匿名小岛民",
+      "description": "小岛上的匿名居民",
+      "avatarSeed": "island",
+      "order": 3
+    },
+    {
+      "id": "evening-recorder",
+      "name": "晚风记录员",
+      "description": "记录校园里的晚风与故事",
+      "avatarSeed": "evening",
+      "order": 4
+    },
+    {
+      "id": "night-owl",
+      "name": "深夜猫头鹰",
+      "description": "夜猫子，深夜出没",
+      "avatarSeed": "night",
+      "order": 5
+    },
+    {
+      "id": "morning-breeze",
+      "name": "晨风收集者",
+      "description": "早起的人，收集清晨的风",
+      "avatarSeed": "morning",
+      "order": 6
+    }
+  ]
+}

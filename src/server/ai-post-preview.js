@@ -162,7 +162,7 @@ function normalizeLocationDraft(value = {}, { aiLocationArea = "", locationHint 
     lng: nullableNumber(input.lng),
     legacyPoint: nullablePoint(input.legacyPoint),
     imagePoint: nullablePoint(input.imagePoint),
-    mapVersion: "legacy",
+    mapVersion: input.mapVersion === "gaode_v2" || source === "map_v2" ? "gaode_v2" : "legacy",
     confidence: clampNumber(input.confidence, 0, 1, locationArea ? 0.55 : 0),
     skipped: false,
     note: truncateText(input.note || "", 120)

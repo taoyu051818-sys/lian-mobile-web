@@ -392,7 +392,223 @@ button {
 
 .view-map {
   padding: 0 0 calc(74px + env(safe-area-inset-bottom));
-  background: #101c18;
+  background: #eef2f0;
+}
+
+.map-v2-shell {
+  position: relative;
+  width: 100%;
+  height: calc(100vh - 74px - env(safe-area-inset-bottom));
+  min-height: 560px;
+  overflow: hidden;
+  background: #e9efed;
+}
+
+.map-v2-stage {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+
+.map-v2-stage.leaflet-container {
+  font-family: inherit;
+  background: #e9efed;
+}
+
+.map-v2-toolbar {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 16px;
+  z-index: 480;
+  display: flex;
+  gap: 8px;
+  padding: 8px;
+  border: 1px solid rgba(29, 43, 36, 0.12);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 8px 24px rgba(20, 33, 27, 0.16);
+  backdrop-filter: blur(12px);
+}
+
+.map-v2-toolbar button {
+  flex: 1;
+  min-height: 38px;
+  border-radius: 7px;
+  background: #f3f6f4;
+  color: #27342e;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.map-v2-toolbar button.is-active,
+.is-map-v2-picking .map-v2-toolbar [data-map-v2-mode="pick"] {
+  background: var(--ink);
+  color: #fff;
+}
+
+.map-v2-editor {
+  position: absolute;
+  left: 10px;
+  right: 10px;
+  top: 10px;
+  z-index: 500;
+  max-height: calc(100% - 92px);
+  overflow: auto;
+  padding: 12px;
+  border: 1px solid rgba(28, 42, 35, 0.14);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.98);
+  box-shadow: 0 14px 36px rgba(20, 33, 27, 0.18);
+}
+
+.map-v2-editor header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.map-v2-editor label {
+  display: grid;
+  gap: 6px;
+  margin: 10px 0;
+  font-size: 12px;
+  font-weight: 800;
+  color: #334139;
+}
+
+.map-v2-editor textarea {
+  width: 100%;
+  min-height: 160px;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  font: 12px/1.45 ui-monospace, SFMono-Regular, Consolas, monospace;
+  resize: vertical;
+}
+
+.map-v2-editor-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.map-v2-editor-actions button {
+  min-height: 40px;
+  border-radius: 7px;
+  background: #eef2f0;
+  font-weight: 800;
+}
+
+.map-v2-editor-actions .primary {
+  width: auto;
+  background: var(--ink);
+}
+
+.map-v2-place-glyph {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  background: var(--marker-color);
+  box-shadow: 0 4px 14px rgba(19, 28, 24, 0.3);
+}
+
+.map-v2-place-glyph svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: #fff;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.map-v2-post-card {
+  display: grid;
+  grid-template-columns: 54px 1fr;
+  align-items: center;
+  width: 156px;
+  min-height: 62px;
+  padding: 4px;
+  overflow: hidden;
+  border: 1px solid rgba(28, 42, 35, 0.16);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.96);
+  color: #1d2722;
+  box-shadow: 0 8px 22px rgba(20, 33, 27, 0.24);
+  text-align: left;
+}
+
+.map-v2-post-card img {
+  width: 50px;
+  height: 54px;
+  border-radius: 6px;
+  object-fit: cover;
+}
+
+.map-v2-post-card span {
+  display: -webkit-box;
+  overflow: hidden;
+  padding: 0 6px;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.25;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+
+.map-v2-area {
+  filter: drop-shadow(0 2px 8px rgba(37, 99, 235, 0.2));
+}
+
+.map-v2-route {
+  filter: drop-shadow(0 2px 6px rgba(17, 24, 39, 0.24));
+}
+
+.map-v2-picked-icon span {
+  display: block;
+  width: 28px;
+  height: 28px;
+  border: 3px solid #fff;
+  border-radius: 50% 50% 50% 0;
+  background: #dc2626;
+  box-shadow: 0 5px 16px rgba(0, 0, 0, 0.28);
+  transform: rotate(-45deg);
+}
+
+.map-v2-popup {
+  min-width: 180px;
+  color: #1d2722;
+}
+
+.map-v2-popup strong {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 14px;
+}
+
+.map-v2-popup p {
+  margin: 0 0 8px;
+  color: #69706b;
+  font-size: 12px;
+}
+
+.map-v2-popup button {
+  min-height: 32px;
+  padding: 0 10px;
+  border-radius: 7px;
+  background: var(--ink);
+  color: #fff;
+  font-weight: 800;
+}
+
+.is-legacy-hidden {
+  display: none;
 }
 
 .campus-map-stage {

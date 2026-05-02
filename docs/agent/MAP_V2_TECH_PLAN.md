@@ -2,18 +2,21 @@
 
 ## Status
 
-Design-only draft. Do not implement Map v2 until this plan is reviewed.
+Implementation started in the `map-v2-gaode` thread after product approval.
 
-Until approval:
+Current decision:
 
-- do not modify `public/app.js`;
-- do not add Leaflet;
-- do not change locations API implementation.
+- use Gaode raster tiles as the base map;
+- render LIAN visual layers above Gaode, including areas, routes, location icons, and post cards;
+- use Map v2 as the primary map surface;
+- keep the old illustrated map code hidden for compatibility during migration;
+- add a lightweight admin JSON editor for locations, polygons, and routes;
+- allow publishing flows to store Map v2 `lat` / `lng` and `locationDraft`.
 
 ## Goals
 
-- Keep the illustrated campus map as the main exploration surface.
-- Use Leaflet only for precise location workflows.
+- Use Gaode as the base map for campus exploration and precise location workflows.
+- Render LIAN's own visual identity through overlay layers above Gaode.
 - Make `locationId` the formal place key.
 - Keep `locationArea` as compatibility/display fallback.
 - Support old metadata without forcing fake exact pins.
@@ -116,4 +119,3 @@ During implementation:
 - Illustrated-map image coordinates can drift if asset dimensions or CSS transforms change.
 - Leaflet can make the product feel like a generic map if used as the default experience.
 - AI location suggestions can be wrong and must remain confirm-before-save.
-

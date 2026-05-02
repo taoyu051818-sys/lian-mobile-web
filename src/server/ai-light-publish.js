@@ -39,6 +39,7 @@ function normalizeAiPublishMetadata(value = {}, locationDraft = {}, request = {}
     : truncateText(locationDraft.locationArea || input.locationArea || request.locationHint || "", 40);
   const distribution = compactStringArray(input.distribution, 4, 20)
     .filter((item) => AI_ALLOWED_DISTRIBUTION.has(item));
+  const hasLatLng = !locationDraft?.skipped && Number.isFinite(Number(locationDraft?.lat)) && Number.isFinite(Number(locationDraft?.lng));
   return {
     ...AI_DEFAULT_METADATA,
     contentType,
@@ -55,7 +56,11 @@ function normalizeAiPublishMetadata(value = {}, locationDraft = {}, request = {}
       ? distribution
       : (locationArea ? ["home", "map", "search", "detail"] : ["home", "search", "detail"]),
     keepAfterExpired: Boolean(input.keepAfterExpired),
-    imageUrls: metadataArray(input.imageUrls, [])
+    imageUrls: metadataArray(input.imageUrls, []),
+    lat: hasLatLng ? Number(locationDraft.lat) : undefined,
+    lng: hasLatLng ? Number(locationDraft.lng) : undefined,
+    mapVersion: locationDraft?.mapVersion || (hasLatLng ? "gaode_v2" : "legacy"),
+    locationDraft
   };
 }
 
@@ -89,6 +94,7 @@ function normalizeAiPostPayload(payload = {}, { requireImage = false } = {}) {
     template: metadataInput.contentType,
     locationHint: payload.locationHint || ""
   });
+  metadata.title = title;
   metadata.imageUrls = imageUrl ? [imageUrl] : [];
   return {
     imageUrl,

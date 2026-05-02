@@ -311,3 +311,10 @@ export {
   handleMe,
   handleSendEmailCode
 };
+
+export {
+  handleCreateAlias,
+  handleDeactivateAlias,
+  handleGetAliases,
+  handleGetAliasPool
+} from "./alias-service.js";

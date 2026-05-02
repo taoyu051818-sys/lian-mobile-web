@@ -6,6 +6,7 @@ import { sendJson } from "./http-response.js";
 import { metadataPath, rulesPath } from "./paths.js";
 import { readJsonBody, requireAdmin } from "./request-utils.js";
 import { applyInviteViolation, publicAuthUser } from "./auth-service.js";
+import { handleAdminMapV2 } from "./map-v2-service.js";
 
 async function handleAdminUserStatus(req, reqUrl, res) {
   requireAdmin(req);
@@ -36,6 +37,10 @@ async function handleAdmin(req, reqUrl, res) {
   if (req.method === "GET" && reqUrl.pathname === "/api/admin/feed-rules") {
     const raw = await fs.readFile(rulesPath, "utf8");
     return sendJson(res, 200, JSON.parse(raw));
+  }
+
+  if ((req.method === "GET" || req.method === "PUT") && reqUrl.pathname === "/api/admin/map-v2") {
+    return await handleAdminMapV2(req, res);
   }
 
   if (req.method === "PUT" && reqUrl.pathname === "/api/admin/feed-rules") {

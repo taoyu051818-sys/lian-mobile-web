@@ -6,20 +6,20 @@ The map system supports campus exploration, route awareness, and location-attach
 
 ## Current Status
 
-Map v2 is not ready for direct implementation.
+Map v2 implementation has started after product approval.
 
-The next step is design-only:
+Current Map v2 direction:
 
-```text
-docs/agent/MAP_V2_TECH_PLAN.md
-```
-
-Do not modify `public/app.js`, add Leaflet, or change locations API implementation until the technical plan is reviewed.
+- Gaode raster tiles are the base map.
+- LIAN renders areas, routes, location icons, and post cards as overlays.
+- The publisher uses Map v2 for user-selected location drafts.
+- Admins can edit the first version of `locations.json` and `map-v2-layers.json` through a lightweight JSON editor.
 
 ## Product Split
 
-- Illustrated map: default visual exploration surface.
-- Leaflet: precise map layer for coordinate calibration, location picking, and coordinate verification.
+- Gaode map: default map surface and precise location picker.
+- LIAN overlays: product-specific campus areas, routes, location icons, and post cards.
+- Old illustrated map: hidden compatibility layer during migration.
 
 ## Location Rules
 
@@ -44,4 +44,3 @@ Do not modify `public/app.js`, add Leaflet, or change locations API implementati
 - `../04_DECISIONS.md`
 - `../tasks/map-v2-tech-plan.md`
 - `../MAP_V2_TECH_PLAN.md`
-

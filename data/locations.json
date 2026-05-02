@@ -1,0 +1,72 @@
+{
+  "version": 1,
+  "coordSystem": "gcj02",
+  "items": [
+    {
+      "id": "li-an-campus-core",
+      "name": "黎安试验区",
+      "type": "campus",
+      "aliases": ["黎安", "试验区"],
+      "lat": 18.3935,
+      "lng": 110.0159,
+      "coordSystem": "gcj02",
+      "legacyPoint": { "x": 724, "y": 540 },
+      "status": "active"
+    },
+    {
+      "id": "dadun-village",
+      "name": "大墩村",
+      "type": "village",
+      "aliases": ["大墩", "村里"],
+      "lat": 18.3869,
+      "lng": 110.0086,
+      "coordSystem": "gcj02",
+      "legacyPoint": { "x": 360, "y": 760 },
+      "status": "active"
+    },
+    {
+      "id": "shuttle-stop-main",
+      "name": "摆渡车站点",
+      "type": "transport",
+      "aliases": ["摆渡车", "车站", "站点"],
+      "lat": 18.3916,
+      "lng": 110.0134,
+      "coordSystem": "gcj02",
+      "legacyPoint": { "x": 620, "y": 610 },
+      "status": "active"
+    },
+    {
+      "id": "library",
+      "name": "图书馆",
+      "type": "study",
+      "aliases": ["图书馆", "自习"],
+      "lat": 18.3952,
+      "lng": 110.0168,
+      "coordSystem": "gcj02",
+      "legacyPoint": { "x": 790, "y": 470 },
+      "status": "active"
+    },
+    {
+      "id": "canteen",
+      "name": "食堂",
+      "type": "food",
+      "aliases": ["食堂", "饭堂"],
+      "lat": 18.3923,
+      "lng": 110.0176,
+      "coordSystem": "gcj02",
+      "legacyPoint": { "x": 840, "y": 590 },
+      "status": "active"
+    },
+    {
+      "id": "sports-field",
+      "name": "体育场",
+      "type": "sports",
+      "aliases": ["操场", "体育场"],
+      "lat": 18.3902,
+      "lng": 110.0197,
+      "coordSystem": "gcj02",
+      "legacyPoint": { "x": 930, "y": 690 },
+      "status": "active"
+    }
+  ]
+}

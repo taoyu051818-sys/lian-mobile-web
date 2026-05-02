@@ -8,7 +8,11 @@ import {
   handleAuthMe,
   handleAuthRegister,
   handleAuthRules,
+  handleCreateAlias,
   handleCreateInvite,
+  handleDeactivateAlias,
+  handleGetAliases,
+  handleGetAliasPool,
   handleMe,
   handleSendEmailCode
 } from "./auth-routes.js";
@@ -18,6 +22,7 @@ import { config, isSetupRequired, saveSetupConfig } from "./config.js";
 import { handleFeed, handleFeedDebug, handlePostDetail } from "./feed-service.js";
 import { sendJson } from "./http-response.js";
 import { handleImageProxy } from "./image-proxy.js";
+import { handleMapV2Items } from "./map-v2-service.js";
 import { nodebbFetch } from "./nodebb-client.js";
 import { handleCreatePost } from "./post-service.js";
 import { readJsonBody } from "./request-utils.js";
@@ -48,6 +53,7 @@ async function handleApi(req, reqUrl, res) {
       return sendJson(res, 200, { ok: true, configured: true });
     }
     if (req.method === "GET" && reqUrl.pathname === "/api/image-proxy") return await handleImageProxy(reqUrl, res);
+    if (req.method === "GET" && reqUrl.pathname === "/api/alias-pool") return await handleGetAliasPool(req, res);
     if (req.method === "POST" && reqUrl.pathname === "/api/ai/post-preview") return await handleAiPostPreview(req, res);
     if (reqUrl.pathname.startsWith("/api/admin/")) return await handleAdmin(req, reqUrl, res);
     if (isSetupRequired()) {
@@ -63,9 +69,13 @@ async function handleApi(req, reqUrl, res) {
     if (req.method === "POST" && reqUrl.pathname === "/api/auth/login") return await handleAuthLogin(req, res);
     if (req.method === "POST" && reqUrl.pathname === "/api/auth/logout") return await handleAuthLogout(req, res);
     if (req.method === "POST" && reqUrl.pathname === "/api/auth/invites") return await handleCreateInvite(req, res);
+    if (req.method === "GET" && reqUrl.pathname === "/api/auth/aliases") return await handleGetAliases(req, res);
+    if (req.method === "POST" && reqUrl.pathname === "/api/auth/aliases") return await handleCreateAlias(req, res);
+    if (req.method === "POST" && reqUrl.pathname === "/api/auth/aliases/deactivate") return await handleDeactivateAlias(req, res);
     if (req.method === "GET" && reqUrl.pathname === "/api/feed") return await handleFeed(reqUrl, res);
     if (req.method === "GET" && reqUrl.pathname === "/api/feed-debug") return await handleFeedDebug(req, reqUrl, res);
     if (req.method === "GET" && reqUrl.pathname === "/api/tags") return sendJson(res, 200, await nodebbFetch("/api/tags"));
+    if (req.method === "GET" && reqUrl.pathname === "/api/map/v2/items") return await handleMapV2Items(req, res);
     if (req.method === "GET" && reqUrl.pathname === "/api/map/items") {
       return sendJson(res, 200, {
         bounds: { southWest: { lat: 18.37305, lng: 109.99538 }, northEast: { lat: 18.413856, lng: 110.036262 } },

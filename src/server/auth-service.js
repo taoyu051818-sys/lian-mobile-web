@@ -32,7 +32,10 @@ function publicAuthUser(user = null) {
     registerMethod: user.registerMethod || "",
     invitePermission: Boolean(user.invitePermission),
     invitedBy: user.invitedBy || null,
-    createdAt: user.createdAt || ""
+    createdAt: user.createdAt || "",
+    aliases: Array.isArray(user.aliases) ? user.aliases : [],
+    activeAliasId: user.activeAliasId || null,
+    badges: Array.isArray(user.badges) ? user.badges : []
   };
 }
 

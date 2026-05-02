@@ -895,12 +895,14 @@ async function openDetail(tid) {
   }
 }
 
+window.openDetail = openDetail;
+
 function switchView(name) {
   if (name !== "detail") state.previousView = name;
   $$(".view").forEach((view) => view.classList.toggle("is-active", view.dataset.view === name));
   $$(".tab").forEach((tab) => tab.classList.toggle("is-active", tab.dataset.tab === name));
   $(".tabbar").classList.remove("is-hidden");
-  if (name === "map") initMap();
+  if (name === "map") window.MapV2?.init?.();
   if (name === "messages") loadMessages();
   if (name === "profile") loadProfile();
 }
@@ -1308,8 +1310,27 @@ function startMapLocationPick() {
   state.mapPickingLocation = true;
   $("#publishSheet").close();
   switchView("map");
-  initMap();
-  renderCampusMap();
+  window.MapV2?.startPick?.(applyMapV2LocationPick);
+}
+
+function applyMapV2LocationPick(locationDraft) {
+  state.mapPickingLocation = false;
+  state.mapPickedPoint = null;
+  if (state.aiPublish.active) {
+    state.aiPublish.locationDraft = locationDraft;
+    renderAiPublishSheet();
+  }
+  const form = $("#publishForm");
+  if (form) {
+    form.elements.placeName.value = locationDraft.displayName || locationDraft.locationArea || "";
+    form.elements.lat.value = locationDraft.lat ?? "";
+    form.elements.lng.value = locationDraft.lng ?? "";
+    form.elements.mapX.value = locationDraft.legacyPoint?.x ?? "";
+    form.elements.mapY.value = locationDraft.legacyPoint?.y ?? "";
+    updatePublishLocationNote(form);
+  }
+  window.MapV2?.stopPick?.();
+  $("#publishSheet").showModal();
 }
 
 function pickPublishMapLocation(event) {
@@ -1329,13 +1350,18 @@ function pickPublishMapLocation(event) {
   $("#publishSheet").showModal();
 }
 
-function updatePublishLocationNote() {
-  const form = $("#publishForm");
+function updatePublishLocationNote(form = $("#publishForm")) {
   const note = $("#publishLocationNote");
   if (!note) return;
   const mapX = form.elements.mapX.value;
   const mapY = form.elements.mapY.value;
+  const lat = form.elements.lat.value;
+  const lng = form.elements.lng.value;
   const placeName = form.elements.placeName.value;
+  if (lat && lng) {
+    note.textContent = `已选点：${placeName || "地图位置"} (${Number(lat).toFixed(5)}, ${Number(lng).toFixed(5)})`;
+    return;
+  }
   note.textContent = mapX && mapY ? `已标记：${placeName || "地图位置"} (${mapX}, ${mapY})` : "";
 }
 
@@ -1373,15 +1399,15 @@ function buildLocationDraftFromForm(form = $("#publishForm")) {
   const lng = form.elements.lng?.value;
   return {
     ...defaultAiLocationDraft(),
-    source: mapX && mapY ? "legacy_map" : (placeName ? "manual" : "legacy_map"),
+    source: lat && lng ? "map_v2" : (mapX && mapY ? "legacy_map" : (placeName ? "manual" : "legacy_map")),
     locationArea: placeName,
     displayName: placeName,
     lat: lat ? Number(lat) : null,
     lng: lng ? Number(lng) : null,
     legacyPoint: { x: mapX ? Number(mapX) : null, y: mapY ? Number(mapY) : null },
     imagePoint: { x: mapX ? Number(mapX) : null, y: mapY ? Number(mapY) : null },
-    mapVersion: "legacy",
-    confidence: placeName ? 0.65 : 0,
+    mapVersion: lat && lng ? "gaode_v2" : "legacy",
+    confidence: lat && lng ? 0.72 : (placeName ? 0.65 : 0),
     skipped: false
   };
 }
@@ -1403,6 +1429,11 @@ function currentAiPublishPayload() {
     : (locationDraft.locationArea || metadata.locationArea || "");
   metadata.locationId = "";
   metadata.locationArea = locationArea;
+  if (!locationDraft.skipped && locationDraft.lat && locationDraft.lng) {
+    metadata.lat = locationDraft.lat;
+    metadata.lng = locationDraft.lng;
+    metadata.mapVersion = locationDraft.mapVersion || "gaode_v2";
+  }
   metadata.visibility ||= "public";
   metadata.distribution = locationArea ? ["home", "map", "search", "detail"] : ["home", "search", "detail"];
   return {
@@ -1879,13 +1910,14 @@ async function submitPost(event) {
     if (payload.occurredAt) {
       payload.content = `${payload.content || ""}\n\n时间：${formatOccurredAt(payload.occurredAt)}`.trim();
     }
-    if (payload.mapX && payload.mapY) {
+    if ((payload.mapX && payload.mapY) || (payload.lat && payload.lng)) {
       payload.mapLocation = {
-        x: Number(payload.mapX),
-        y: Number(payload.mapY),
+        x: payload.mapX ? Number(payload.mapX) : undefined,
+        y: payload.mapY ? Number(payload.mapY) : undefined,
         lat: payload.lat ? Number(payload.lat) : undefined,
         lng: payload.lng ? Number(payload.lng) : undefined,
-        placeName: payload.placeName || ""
+        placeName: payload.placeName || "",
+        mapVersion: payload.lat && payload.lng ? "gaode_v2" : "legacy"
       };
     }
     if (images.length) {
