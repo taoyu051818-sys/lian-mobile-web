@@ -1,0 +1,274 @@
+:root {
+  color-scheme: light;
+  --ink: #18231e;
+  --line: #dfe7e2;
+  --muted: #6b746f;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: #eef2f0;
+  color: var(--ink);
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+button {
+  border: 0;
+  border-radius: 7px;
+  background: #e8efeb;
+  color: var(--ink);
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.editor-shell {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 420px;
+  min-height: 100vh;
+}
+
+.map-panel {
+  position: relative;
+  min-height: 100vh;
+}
+
+.map-stage {
+  position: absolute;
+  inset: 0;
+}
+
+.map-modebar {
+  position: absolute;
+  left: 16px;
+  top: 16px;
+  z-index: 500;
+  display: flex;
+  gap: 8px;
+  padding: 8px;
+  border: 1px solid rgba(29, 43, 36, 0.12);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 8px 24px rgba(20, 33, 27, 0.16);
+}
+
+.map-modebar button {
+  min-height: 36px;
+  padding: 0 12px;
+}
+
+.map-modebar button.is-active,
+.primary {
+  background: var(--ink);
+  color: #fff;
+}
+
+.side-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: 100vh;
+  overflow: auto;
+  padding: 16px;
+  border-left: 1px solid var(--line);
+  background: #fff;
+}
+
+.side-panel header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+h1 {
+  margin: 0 0 4px;
+  font-size: 20px;
+}
+
+p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.status-panel {
+  display: grid;
+  gap: 5px;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #f7faf8;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+label {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+  color: #34413a;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+input,
+select,
+textarea {
+  width: 100%;
+  min-height: 38px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  padding: 8px 10px;
+  background: #fff;
+}
+
+.action-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+}
+
+.action-row button {
+  min-height: 40px;
+}
+
+.json-block textarea {
+  min-height: 240px;
+  font: 12px/1.45 ui-monospace, SFMono-Regular, Consolas, monospace;
+  resize: vertical;
+}
+
+.editor-location-icon {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  background: #2563eb;
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(19, 28, 24, 0.3);
+}
+
+.editor-location-icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.editor-card {
+  display: grid;
+  grid-template-columns: 50px 1fr;
+  align-items: center;
+  width: 170px;
+  min-height: 66px;
+  padding: 5px;
+  border: 1px solid rgba(28, 42, 35, 0.16);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 8px 24px rgba(20, 33, 27, 0.22);
+}
+
+.editor-card img {
+  width: 46px;
+  height: 52px;
+  border-radius: 7px;
+  object-fit: cover;
+}
+
+.editor-card strong,
+.editor-card small {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.editor-card small {
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.layer-panel {
+  display: grid;
+  gap: 6px;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #f7faf8;
+}
+
+.layer-panel strong {
+  margin-bottom: 2px;
+  font-size: 13px;
+}
+
+.layer-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.layer-toggle input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  min-height: auto;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  accent-color: var(--ink);
+  cursor: pointer;
+}
+
+.layer-range {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--muted);
+}
+
+.layer-range input[type="range"] {
+  width: 100%;
+  min-height: auto;
+  border: 0;
+  padding: 0;
+  accent-color: var(--ink);
+  cursor: pointer;
+}
+
+@media (max-width: 900px) {
+  .editor-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .map-panel {
+    min-height: 56vh;
+  }
+
+  .side-panel {
+    max-height: none;
+    border-left: 0;
+    border-top: 1px solid var(--line);
+  }
+}

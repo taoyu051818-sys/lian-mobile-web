@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>LIAN Map v2 Editor</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <link rel="stylesheet" href="/tools/map-v2-editor.css">
+  </head>
+  <body>
+    <main class="editor-shell">
+      <section class="map-panel">
+        <div id="mapEditorStage" class="map-stage" aria-label="Map v2 editor"></div>
+        <div class="map-modebar">
+          <button type="button" data-editor-mode="browse" class="is-active">浏览</button>
+          <button type="button" data-editor-mode="location">放地点</button>
+          <button type="button" data-editor-mode="area">画区域</button>
+          <button type="button" data-editor-mode="route">画路线</button>
+        </div>
+      </section>
+      <aside class="side-panel">
+        <header>
+          <div>
+            <h1>Map v2 Editor</h1>
+            <p>独立内部工具，不进入用户端前端。</p>
+          </div>
+          <button type="button" data-reload>重载</button>
+        </header>
+
+        <section class="status-panel">
+          <strong>试验区约束</strong>
+          <p>SW 18.373050 / 109.995380，NE 18.413856 / 110.036262。保存时后端会再次校验。</p>
+          <p id="editorStatus"></p>
+        </section>
+
+        <section class="layer-panel">
+          <strong>图层控制</strong>
+          <label class="layer-toggle">
+            <input type="checkbox" data-layer="grass" checked> 草坪底层
+          </label>
+          <label class="layer-range">
+            <span>底层透明度</span>
+            <input type="range" id="grassOpacity" min="0" max="100" value="100">
+          </label>
+          <label class="layer-toggle">
+            <input type="checkbox" data-layer="tiles" checked> 高德瓦片
+          </label>
+          <label class="layer-range">
+            <span>瓦片透明度</span>
+            <input type="range" id="tilesOpacity" min="0" max="100" value="35">
+          </label>
+          <label class="layer-toggle">
+            <input type="checkbox" data-layer="bounds" checked> 试验区边界
+          </label>
+          <label class="layer-toggle">
+            <input type="checkbox" data-layer="areas" checked> 区域图层
+          </label>
+          <label class="layer-toggle">
+            <input type="checkbox" data-layer="routes" checked> 路线图层
+          </label>
+          <label class="layer-toggle">
+            <input type="checkbox" data-layer="locations" checked> 地点图层
+          </label>
+          <label class="layer-toggle">
+            <input type="checkbox" data-layer="draft" checked> 采点图层
+          </label>
+        </section>
+
+        <section class="form-grid">
+          <label>
+            Admin token
+            <input id="adminToken" autocomplete="off" placeholder="ADMIN_TOKEN">
+          </label>
+          <label>
+            当前采点对象 ID
+            <input id="draftId" autocomplete="off" placeholder="new-place / new-area / new-route">
+          </label>
+          <label>
+            名称
+            <input id="draftName" autocomplete="off" placeholder="地点或图层名称">
+          </label>
+          <label>
+            类型
+            <input id="draftType" autocomplete="off" placeholder="campus / food / route / area">
+          </label>
+          <label>
+            Icon URL
+            <input id="draftIconUrl" autocomplete="off" placeholder="/assets/map/icon.png">
+          </label>
+          <label>
+            主动显示卡片
+            <select id="draftAlwaysShow">
+              <option value="false">否</option>
+              <option value="true">是</option>
+            </select>
+          </label>
+          <label>
+            卡片副标题
+            <input id="draftSubtitle" autocomplete="off" placeholder="例如 饭点 / 摆渡车 / 自习">
+          </label>
+        </section>
+
+        <div class="action-row">
+          <button type="button" data-commit-draft>写入 JSON</button>
+          <button type="button" data-clear-draft>清空采点</button>
+          <button class="primary" type="button" data-save>保存到后端</button>
+        </div>
+
+        <label class="json-block">
+          locations.json
+          <textarea id="locationsJson" spellcheck="false"></textarea>
+        </label>
+        <label class="json-block">
+          map-v2-layers.json
+          <textarea id="layersJson" spellcheck="false"></textarea>
+        </label>
+      </aside>
+    </main>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="/tools/map-v2-editor.js"></script>
+  </body>
+</html>

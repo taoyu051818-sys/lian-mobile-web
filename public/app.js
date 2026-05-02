@@ -1837,12 +1837,49 @@ async function loadProfile() {
         </div>
         <p>${escapeHtml((user.tags || []).join(" · "))}</p>
         <p>状态：${escapeHtml(user.status)} · 邀请权限：${user.invitePermission ? "可用" : "不可用"}</p>
+        <div class="profile-identity-section">
+          <h3>发布身份</h3>
+          ${(user.aliases || []).length ? `
+            <label class="profile-identity-option">
+              <input type="radio" name="profileIdentity" value="" ${!user.activeAliasId ? "checked" : ""}>
+              <span>${escapeHtml(user.username)}</span>
+              <span class="identity-hint">真实身份</span>
+            </label>
+            ${user.aliases.map((a) => `
+              <label class="profile-identity-option">
+                <input type="radio" name="profileIdentity" value="${escapeHtml(a.id)}" ${a.id === user.activeAliasId ? "checked" : ""}>
+                <span>${escapeHtml(a.name)}</span>
+                <span class="identity-hint">官方马甲</span>
+              </label>
+            `).join("")}
+          ` : `<p class="identity-hint">暂无可用官方马甲，当前使用真实身份发布。</p>`}
+        </div>
         <div class="profile-actions">
           ${user.invitePermission ? `<button type="button" data-create-invite>生成邀请码</button>` : ""}
           <button type="button" data-auth-logout>退出登录</button>
         </div>
         <p class="invite-result" id="inviteResult"></p>
       `;
+      panel.addEventListener("change", async (event) => {
+        if (event.target.name !== "profileIdentity") return;
+        const aliasId = event.target.value;
+        try {
+          if (aliasId) {
+            const data = await api("/api/auth/aliases/activate", {
+              method: "POST",
+              headers: { "content-type": "application/json" },
+              body: JSON.stringify({ aliasId })
+            });
+            state.currentUser.activeAliasId = data.activeAliasId;
+          } else {
+            await api("/api/auth/aliases/deactivate", { method: "POST" });
+            state.currentUser.activeAliasId = null;
+          }
+        } catch (error) {
+          alert(error.message);
+          await loadProfile();
+        }
+      });
       return;
     }
     const me = await api("/api/me");
@@ -1932,6 +1969,9 @@ async function submitPost(event) {
       });
       payload.imageUrl = payload.imageUrls[0] || "";
       button.textContent = "发布中";
+    }
+    if (state.currentUser?.activeAliasId) {
+      payload.aliasId = state.currentUser.activeAliasId;
     }
     setPublishProgress({ visible: true, label: "提交内容", percent: 90 });
     await api("/api/posts", {

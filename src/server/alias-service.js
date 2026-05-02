@@ -128,10 +128,23 @@ async function handleDeactivateAlias(req, res) {
   });
 }
 
+async function handleActivateAlias(req, res) {
+  const auth = await requireUser(req);
+  const payload = await readJsonBody(req);
+  const aliasId = String(payload.aliasId || "").trim();
+  if (!aliasId) return sendJson(res, 400, { error: "aliasId is required" });
+  const alias = findUserAlias(auth.user, aliasId);
+  if (!alias) return sendJson(res, 404, { error: "alias not found" });
+  auth.user.activeAliasId = alias.id;
+  await saveAuthStore(auth.store);
+  sendJson(res, 200, { ok: true, activeAliasId: alias.id });
+}
+
 export {
   activeAlias,
   findPoolEntry,
   findUserAlias,
+  handleActivateAlias,
   handleCreateAlias,
   handleDeactivateAlias,
   handleGetAliasPool,

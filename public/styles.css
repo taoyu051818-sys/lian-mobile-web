@@ -528,38 +528,61 @@ button {
   stroke-linejoin: round;
 }
 
+.map-v2-place-asset {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 5px 12px rgba(19, 28, 24, 0.28));
+}
+
+.map-v2-location-card,
 .map-v2-post-card {
   display: grid;
-  grid-template-columns: 54px 1fr;
+  grid-template-columns: 52px 1fr;
   align-items: center;
-  width: 156px;
-  min-height: 62px;
-  padding: 4px;
+  width: 168px;
+  min-height: 68px;
+  padding: 5px;
   overflow: hidden;
   border: 1px solid rgba(28, 42, 35, 0.16);
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.96);
   color: #1d2722;
-  box-shadow: 0 8px 22px rgba(20, 33, 27, 0.24);
+  box-shadow: 0 8px 24px rgba(20, 33, 27, 0.22);
   text-align: left;
 }
 
+.map-v2-location-card img,
 .map-v2-post-card img {
-  width: 50px;
+  width: 48px;
   height: 54px;
-  border-radius: 6px;
+  border-radius: 7px;
   object-fit: cover;
 }
 
+.map-v2-location-card span,
 .map-v2-post-card span {
-  display: -webkit-box;
-  overflow: hidden;
+  display: grid;
+  gap: 2px;
+  min-width: 0;
   padding: 0 6px;
+  overflow: hidden;
   font-size: 12px;
   font-weight: 800;
   line-height: 1.25;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 3;
+}
+
+.map-v2-location-card strong,
+.map-v2-location-card small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.map-v2-location-card small {
+  color: #6b746f;
+  font-size: 10px;
 }
 
 .map-v2-area {

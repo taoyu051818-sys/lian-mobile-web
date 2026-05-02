@@ -11,22 +11,27 @@ import { sendJson } from "./http-response.js";
 import { nodebbFetch, withNodebbUid } from "./nodebb-client.js";
 import { readJsonBody } from "./request-utils.js";
 import { ensureNodebbUid, requireUser, selectIdentityTag } from "./auth-service.js";
+import { findUserAlias } from "./alias-service.js";
 
-function userSignature(user) {
+function userSignature(user, alias = null) {
   if (!user) return "";
+  const displayName = alias?.name || user.username || "同学";
   const tags = Array.isArray(user.tags) && user.tags.length ? `｜${user.tags.join(" ")}` : "";
-  return `\n\n<p style="color:#69706b;font-size:13px">来自 ${escapeHtml(user.username || "同学")}${escapeHtml(tags)}</p>`;
+  return `\n\n<p style="color:#69706b;font-size:13px">来自 ${escapeHtml(displayName)}${escapeHtml(tags)}</p>`;
 }
 
-function buildLianUserMeta(user = {}, identityTag = "") {
+function buildLianUserMeta(user = {}, identityTag = "", alias = null) {
   if (!user?.id) return "";
+  const displayName = alias?.name || user.username || "";
   const meta = {
     userId: user.id,
     nodebbUid: user.nodebbUid || null,
-    username: user.username || "",
+    username: displayName,
+    aliasId: alias?.id || "",
+    aliasName: alias?.name || "",
     identityTag: identityTag || selectIdentityTag(user),
-    avatarText: String(user.username || "同").slice(0, 1),
-    avatarUrl: user.avatarUrl || "",
+    avatarText: String(displayName || "同").slice(0, 1),
+    avatarUrl: alias ? (alias.avatarUrl || "") : (user.avatarUrl || ""),
     sentAt: new Date().toISOString()
   };
   return `<!-- lian-user-meta ${escapeHtml(JSON.stringify(meta))} -->`;
@@ -47,7 +52,7 @@ function buildChannelMessageHtml(content, user, identityTag) {
 
 function buildTopicHtml(payload) {
   const blocks = [];
-  if (payload.currentUser) blocks.push(buildLianUserMeta(payload.currentUser));
+  if (payload.currentUser) blocks.push(buildLianUserMeta(payload.currentUser, "", payload.alias || null));
   const imageUrls = Array.isArray(payload.imageUrls) && payload.imageUrls.length
     ? payload.imageUrls
     : [payload.imageUrl].filter(Boolean);
@@ -69,7 +74,7 @@ function buildTopicHtml(payload) {
   if (payload.mapLocation && typeof payload.mapLocation === "object") {
     blocks.push(`<!-- lian-map-location ${escapeHtml(JSON.stringify(payload.mapLocation))} -->`);
   }
-  return `${blocks.join("\n\n").trim()}${userSignature(payload.currentUser)}`.trim();
+  return `${blocks.join("\n\n").trim()}${userSignature(payload.currentUser, payload.alias || null)}`.trim();
 }
 
 function buildMapMetadataPatch(mapLocation = {}) {
@@ -117,6 +122,13 @@ function extractCreatedTid(data = {}) {
 
 async function createNodebbTopicFromPayload(auth, payload = {}, options = {}) {
   const nodebbUid = Number(options.nodebbUid || 0) || await ensureNodebbUid(auth);
+  const aliasId = String(payload.aliasId || "").trim();
+  const alias = aliasId ? findUserAlias(auth.user, aliasId) : null;
+  if (aliasId && !alias) {
+    const error = new Error("aliasId is invalid or does not belong to current user");
+    error.status = 400;
+    throw error;
+  }
   const imageUrls = Array.isArray(payload.imageUrls) && payload.imageUrls.length
     ? payload.imageUrls.map((url) => normalizePostImageUrl(url, { width: 1200 })).filter(Boolean)
     : (payload.imageUrl ? [normalizePostImageUrl(payload.imageUrl, { width: 1200 })] : []);
@@ -124,7 +136,8 @@ async function createNodebbTopicFromPayload(auth, payload = {}, options = {}) {
     ...payload,
     imageUrls,
     imageUrl: imageUrls[0] || "",
-    currentUser: auth.user
+    currentUser: auth.user,
+    alias
   });
   const tags = Array.isArray(payload.tags) && payload.tags.length
     ? payload.tags
@@ -153,7 +166,8 @@ async function createNodebbTopicFromPayload(auth, payload = {}, options = {}) {
     tid: extractCreatedTid(data),
     imageUrl: imageUrls[0] || "",
     imageUrls,
-    nodebbUid
+    nodebbUid,
+    aliasId: alias?.id || ""
   };
 }
 

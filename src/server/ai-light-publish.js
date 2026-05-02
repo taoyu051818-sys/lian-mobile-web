@@ -152,6 +152,7 @@ async function handleAiPostPublish(req, res) {
 
   const payload = await readJsonBody(req, AI_POST_PREVIEW_MAX_BODY_BYTES);
   const normalized = normalizeAiPostPayload(payload, { requireImage: true });
+  const aliasId = String(payload.aliasId || "").trim();
   const recordId = crypto.randomUUID();
   const recordBase = {
     id: recordId,
@@ -168,6 +169,7 @@ async function handleAiPostPublish(req, res) {
     confidence: normalized.confidence,
     needsHumanReview: normalized.needsHumanReview,
     aiMode: normalized.aiMode,
+    aliasId,
     lianUser: lianUserRecord(auth.user)
   };
 
@@ -179,6 +181,7 @@ async function handleAiPostPublish(req, res) {
       imageUrl: normalized.imageUrl,
       tag: normalized.tags[0] || "",
       tags: normalized.tags,
+      aliasId,
       placeName: normalized.locationDraft.displayName || normalized.locationDraft.locationArea || normalized.metadata.locationArea,
       mapLocation: normalized.locationDraft.skipped ? null : {
         x: normalized.locationDraft.legacyPoint.x ?? normalized.locationDraft.imagePoint.x ?? undefined,

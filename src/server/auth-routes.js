@@ -313,6 +313,7 @@ export {
 };
 
 export {
+  handleActivateAlias,
   handleCreateAlias,
   handleDeactivateAlias,
   handleGetAliases,

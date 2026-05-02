@@ -2,6 +2,7 @@ import { handleAdmin } from "./admin-routes.js";
 import { handleAiPostDraft, handleAiPostPublish } from "./ai-light-publish.js";
 import { handleAiPostPreview } from "./ai-post-preview.js";
 import {
+  handleActivateAlias,
   handleAuthAvatar,
   handleAuthLogin,
   handleAuthLogout,
@@ -72,6 +73,7 @@ async function handleApi(req, reqUrl, res) {
     if (req.method === "GET" && reqUrl.pathname === "/api/auth/aliases") return await handleGetAliases(req, res);
     if (req.method === "POST" && reqUrl.pathname === "/api/auth/aliases") return await handleCreateAlias(req, res);
     if (req.method === "POST" && reqUrl.pathname === "/api/auth/aliases/deactivate") return await handleDeactivateAlias(req, res);
+    if (req.method === "POST" && reqUrl.pathname === "/api/auth/aliases/activate") return await handleActivateAlias(req, res);
     if (req.method === "GET" && reqUrl.pathname === "/api/feed") return await handleFeed(reqUrl, res);
     if (req.method === "GET" && reqUrl.pathname === "/api/feed-debug") return await handleFeedDebug(req, reqUrl, res);
     if (req.method === "GET" && reqUrl.pathname === "/api/tags") return sendJson(res, 200, await nodebbFetch("/api/tags"));

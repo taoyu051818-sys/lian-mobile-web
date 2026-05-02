@@ -224,10 +224,16 @@
         zoomControl: true,
         attributionControl: true
       });
+      const bounds = data.bounds || { south: 18.373050, west: 109.995380, north: 18.413856, east: 110.036262 };
+      L.imageOverlay("/assets/campus-grass.png", [[bounds.south, bounds.west], [bounds.north, bounds.east]], {
+        interactive: false,
+        zIndex: 0
+      }).addTo(state.map);
       L.tileLayer(GAODE_TILE_URL, {
         subdomains: ["1", "2", "3", "4"],
         maxZoom: 19,
         minZoom: 3,
+        opacity: 0.35,
         attribution: "&copy; Gaode Map"
       }).addTo(state.map);
       initLayerGroups();
