@@ -17,6 +17,7 @@ import { handleChannel, handleChannelMessage, handleChannelRead, handleCreateRep
 import { config, isSetupRequired, saveSetupConfig } from "./config.js";
 import { handleFeed, handleFeedDebug, handlePostDetail } from "./feed-service.js";
 import { sendJson } from "./http-response.js";
+import { handleImageProxy } from "./image-proxy.js";
 import { nodebbFetch } from "./nodebb-client.js";
 import { handleCreatePost } from "./post-service.js";
 import { readJsonBody } from "./request-utils.js";
@@ -46,6 +47,7 @@ async function handleApi(req, reqUrl, res) {
       });
       return sendJson(res, 200, { ok: true, configured: true });
     }
+    if (req.method === "GET" && reqUrl.pathname === "/api/image-proxy") return await handleImageProxy(reqUrl, res);
     if (req.method === "POST" && reqUrl.pathname === "/api/ai/post-preview") return await handleAiPostPreview(req, res);
     if (reqUrl.pathname.startsWith("/api/admin/")) return await handleAdmin(req, reqUrl, res);
     if (isSetupRequired()) {

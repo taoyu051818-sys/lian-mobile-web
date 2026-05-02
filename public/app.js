@@ -237,6 +237,14 @@ function avatarHtml({ url = "", text = "同" } = {}) {
     : escapeHtml(label);
 }
 
+function displayImageUrl(url = "") {
+  const value = String(url || "");
+  if (/^https:\/\/res\.cloudinary\.com\/[^/]+\/image\/upload\//.test(value)) {
+    return `/api/image-proxy?url=${encodeURIComponent(value)}`;
+  }
+  return value;
+}
+
 function fixFmtDate(value) {
   if (!value) return "";
   const date = new Date(value);
@@ -623,7 +631,7 @@ function appendFeedItems(items) {
 function cardTemplate(item, revealIndex = 0) {
   const revealDelay = Math.min(12, Math.max(0, Number(revealIndex) || 0)) * 40;
   const thumb = item.cover
-    ? `<img src="${escapeHtml(item.cover)}" alt="${escapeHtml(item.title)}" loading="lazy">`
+    ? `<img src="${escapeHtml(displayImageUrl(item.cover))}" alt="${escapeHtml(item.title)}" loading="lazy">`
     : `<div class="thumb-empty">${escapeHtml(item.tag || "黎安")}</div>`;
   const authorName = item.author || "同学";
   const authorAvatar = avatarHtml({
@@ -677,7 +685,7 @@ function galleryTemplate(images = [], title = "") {
       <section class="detail-gallery" data-gallery>
         ${images.map((url, index) => `
           <figure class="detail-gallery-item">
-            <img src="${escapeHtml(url)}" alt="${safeTitle}" loading="lazy" data-zoom-image="${escapeHtml(url)}" data-gallery-index="${index}">
+          <img src="${escapeHtml(displayImageUrl(url))}" alt="${safeTitle}" loading="lazy" data-zoom-image="${escapeHtml(displayImageUrl(url))}" data-gallery-index="${index}">
           </figure>
         `).join("")}
       </section>
@@ -1074,7 +1082,7 @@ function renderCampusMap() {
     const screen = screenPoint(post, fit);
     return `
       <button class="campus-post-pin" type="button" data-tid="${post.tid}" style="left:${screen.x.toFixed(1)}px;top:${screen.y.toFixed(1)}px">
-        <img src="${escapeHtml(post.imageUrl)}" alt="${escapeHtml(post.title)}" loading="lazy">
+        <img src="${escapeHtml(displayImageUrl(post.imageUrl))}" alt="${escapeHtml(post.title)}" loading="lazy">
         <span>${escapeHtml(post.title)}</span>
       </button>
     `;
@@ -1455,7 +1463,7 @@ function renderAiPublishSheet() {
       </section>
     ` : `
       <section class="ai-publish-preview">
-        <img src="${escapeHtml(state.aiPublish.imageUrl)}" alt="">
+        <img src="${escapeHtml(displayImageUrl(state.aiPublish.imageUrl))}" alt="">
       </section>
       <section class="ai-location-step">
         <h3>这张照片在哪里？</h3>

@@ -46,9 +46,9 @@ function stripHtml(html = "") {
 
 function extractCover(html = "") {
   const img = html.match(/<img[^>]+src=["']([^"']+)["']/i);
-  if (img?.[1]) return normalizePostImageUrl(img[1], { width: 600 });
+  if (img?.[1]) return proxiedPostImageUrl(img[1], { width: 600 });
   const md = html.match(/!\[[^\]]*]\(([^)\s]+)\)/i);
-  return md?.[1] ? normalizePostImageUrl(md[1], { width: 600 }) : "";
+  return md?.[1] ? proxiedPostImageUrl(md[1], { width: 600 }) : "";
 }
 
 function optimizeCloudinaryUrl(url = "", width = 900) {
@@ -99,6 +99,12 @@ function normalizePostImageUrl(url = "", { width = 900 } = {}) {
   return optimizeCloudinaryUrl(absoluteNodebbUrl(url), width);
 }
 
+function proxiedPostImageUrl(url = "", { width = 900 } = {}) {
+  const normalized = normalizePostImageUrl(url, { width });
+  if (!/^https:\/\/res\.cloudinary\.com\/[^/]+\/image\/upload\//.test(normalized)) return normalized;
+  return `/api/image-proxy?url=${encodeURIComponent(normalized)}`;
+}
+
 function cloudinaryWarmupUrls(url = "") {
   const normalized = absoluteNodebbUrl(url);
   if (!/^https:\/\/res\.cloudinary\.com\/[^/]+\/image\/upload\//.test(normalized)) return [];
@@ -132,13 +138,13 @@ async function warmupPostImages(urls = []) {
 function optimizePostImages(html = "", width = 900) {
   return html
     .replace(/(<img\b[^>]*\bsrc=["'])(https?:\/\/(?:127\.0\.0\.1|localhost|\[::1\]):?\d*\/assets\/[^"']+)(["'][^>]*>)/gi, (_match, before, src, after) => {
-      return `${before}${normalizePostImageUrl(src, { width })}${after}`;
+      return `${before}${proxiedPostImageUrl(src, { width })}${after}`;
     })
     .replace(/(<img\b[^>]*\bsrc=["'])(\/[^"']+)(["'][^>]*>)/gi, (_match, before, src, after) => {
-      return `${before}${normalizePostImageUrl(src, { width })}${after}`;
+      return `${before}${proxiedPostImageUrl(src, { width })}${after}`;
     })
     .replace(/(<img\b[^>]*\bsrc=["'])(https:\/\/res\.cloudinary\.com\/[^"']+)(["'][^>]*>)/gi, (_match, before, src, after) => {
-      return `${before}${normalizePostImageUrl(src, { width })}${after}`;
+      return `${before}${proxiedPostImageUrl(src, { width })}${after}`;
     });
 }
 
@@ -175,7 +181,7 @@ function renderPostContent(content = "") {
     .map((block) => {
       const image = block.match(/^!\[([^\]]*)]\((https?:\/\/[^)\s]+)\)$/i);
       if (image) {
-        return `<p><img src="${escapeHtml(optimizeCloudinaryUrl(image[2], 900))}" alt="${escapeHtml(image[1] || "image")}" loading="lazy" /></p>`;
+        return `<p><img src="${escapeHtml(proxiedPostImageUrl(image[2], { width: 900 }))}" alt="${escapeHtml(image[1] || "image")}" loading="lazy" /></p>`;
       }
       const heading = block.match(/^\*\*([^*]+)\*\*$/);
       if (heading) return `<h3>${escapeHtml(heading[1])}</h3>`;
@@ -223,6 +229,7 @@ export {
   optimizePostImages,
   parseLianChannelMeta,
   parseLianUserMeta,
+  proxiedPostImageUrl,
   proxiedNodebbAssetUrl,
   removeOriginalLinkBlocks,
   renderInlineMarkdown,

@@ -8,6 +8,7 @@ import {
   normalizePostImageUrl,
   parseLianChannelMeta,
   parseLianUserMeta,
+  proxiedPostImageUrl,
   renderPostContent,
   stripHtml
 } from "./content-utils.js";
@@ -80,7 +81,7 @@ function normalizeTopic(topic, detail = null, metadata = {}) {
   const title = detail?.titleRaw || detail?.title || topic?.titleRaw || topic?.title || "未命名";
   const tid = detail?.tid || topic?.tid;
   const meta = normalizePostMetadata(metadata[String(tid)] || {});
-  const cover = meta.imageUrls[0] ? normalizePostImageUrl(meta.imageUrls[0], { width: 600 }) : extractCover(contentHtml);
+  const cover = meta.imageUrls[0] ? proxiedPostImageUrl(meta.imageUrls[0], { width: 600 }) : extractCover(contentHtml);
 
   return {
     id: String(tid),
