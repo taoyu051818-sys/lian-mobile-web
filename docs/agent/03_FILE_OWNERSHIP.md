@@ -32,6 +32,11 @@
 | `static-data.js` | open | — | Institutions list, map points. |
 | `static-server.js` | open | — | Static file serving. |
 | `setup-page.js` | open | — | First-run setup page. |
+| `audience-service.js` | soft-lock | shared | Permission functions (canViewPost etc.) used by feed, map, detail, channel. |
+| `alias-service.js` | open | — | Alias pool management. |
+| `notification-service.js` | soft-lock | shared | User-scoped notifications from NodeBB. |
+| `map-v2-service.js` | soft-lock | shared | Map v2 data API, admin writes, bounds validation. |
+| `route-matcher.js` | soft-lock | shared | URL pattern matching for API router. |
 
 New files under `src/server/` are open for creation. Use the naming pattern `<module>-service.js` or `<module>-routes.js`.
 
@@ -49,6 +54,9 @@ New files under `src/server/` are open for creation. Use the naming pattern `<mo
 | `app-messages-profile.js` | soft-lock | Programmer B | Channel messages, replies, auth submit, profile panel, regular post submit. |
 | `styles.css` | soft-lock | Programmer B | All styles. |
 | `index.html` | soft-lock | Programmer B | HTML structure. Rarely changes. |
+| `map-v2.js` | soft-lock | Programmer B | Leaflet map, overlays, location picker. IIFE with local api(). |
+| `publish-page.js` | soft-lock | Programmer B | Publish V2 dedicated page. 3-step flow. |
+| `mock-api.js` | open | — | Mock API layer for frontend repo only. Not in main repo. |
 | `assets/` | open | — | Images, icons. |
 
 New files under `public/` are allowed when they keep one clear feature boundary. Do not add new frontend logic back into `app.js` unless it is event binding or initialization.
@@ -61,6 +69,10 @@ Classic script load order is currently part of the architecture:
 4. feature scripts
 5. `app.js`
 
+Menu prototypes (`menu-prototype*`, `menu-data.json`) are experimental demos, not part of the main app. Status: demo/experimental.
+
+Frontend repo note: `mock-api.js` lives in the frontend repo (`lian-frontend`) only, not in this backend repo. `public/tools/` are admin-only tools (map editor) and belong in the backend repo.
+
 ## data/ — Runtime data
 
 | File | Level | Owner | Notes |
@@ -70,15 +82,38 @@ Classic script load order is currently part of the architecture:
 | `auth-users.json` | — | — | In .gitignore. Never commit. Managed by auth-service. |
 | `channel-reads.json` | — | — | In .gitignore. Managed by channel-service. |
 | `clubs.json` | open | — | Static club data. |
+| `alias-pool.json` | open | — | Alias pool data. |
+| `locations.json` | soft-lock | shared | Location coordinates for Map v2. |
+| `map-v2-layers.json` | soft-lock | shared | Map layer definitions (areas, routes, assets). |
+| `study-hn-club-discoveries.json` | open | — | Club discovery data. Archive candidate. |
 
 ## scripts/ — Validation and ops
 
-| File | Level | Notes |
-|---|---|---|
-| `validate-post-metadata.js` | open | Run before handoff if it exists. |
-| `validate-locations.js` | open | Run before handoff if it exists. |
-| `snapshot-feed.js` | open | Feed snapshot tool. |
-| `seed-photo-post-candidates.js` | open | Data seeding tool. |
+Lifecycle: **active** = run regularly or on change. **ops** = deploy/infra. **one-shot** = maintenance, rarely rerun.
+
+| File | Level | Lifecycle | Notes |
+|---|---|---|---|
+| `validate-post-metadata.js` | open | active | Run before handoff if it exists. |
+| `validate-locations.js` | open | active | Run before handoff if it exists. |
+| `snapshot-feed.js` | open | active | Feed snapshot tool. |
+| `seed-photo-post-candidates.js` | open | one-shot | Data seeding tool. |
+| `smoke-frontend.js` | open | active | Frontend HTTP smoke test. 21 checks. |
+| `test-routes.js` | open | active | API route matcher tests. 61 checks. |
+| `test-audience.js` | open | active | Audience permission tests. |
+| `test-audience-hydration.js` | open | active | Audience hydration tests. 61 checks. |
+| `smoke-nodebb-contracts.js` | open | active | NodeBB endpoint validation. |
+| `test-metadata-write-safety.js` | open | active | Metadata write safety. |
+| `validate-project-structure.js` | open | active | Project structure validation. |
+| `audit-feed-rules.js` | open | active | Feed config audit. |
+| `audit-post-metadata.js` | open | active | Metadata audit. |
+| `diff-feed-snapshots.js` | open | active | Snapshot comparison. |
+| `archive-ai-records.js` | open | one-shot | JSONL hygiene. |
+| `cleanup-audience-test.js` | open | one-shot | Test data cleanup. |
+| `setup-audience-test.js` | open | one-shot | Test data setup. |
+| `rewrite-test-posts.js` | open | one-shot | Test post rewriting. |
+| `deploy.sh` | open | ops | Deployment script. |
+| `install-linux-env.sh` | open | ops | Linux environment setup. |
+| `start-local.ps1` | open | ops | Local dev startup (PowerShell). |
 
 New scripts are encouraged. Place under `scripts/`.
 
@@ -90,6 +125,38 @@ All files under `docs/agent/` are open. This is the primary coordination layer.
 - `handoffs/` — task handoffs
 - `domains/` — domain documentation
 - `templates/` — templates for tasks and handoffs
+- `references/` — audit reports, high-risk areas
+- `contracts/` — frozen API contracts
+
+## outputs/ — Generated artifacts
+
+`outputs/` contains generated snapshots, reports, and publishing artifacts. Not source of truth.
+
+| Category | Tracked? | Policy |
+|---|---|---|
+| Feed snapshots (`feed-snapshot-*.md`) | yes | Keep as historical reference |
+| Feed diffs (`feed-diff-*.md`) | yes | Keep as historical reference |
+| Club content (`club-posts/*.md`) | yes | Content reference |
+| Club images (`club-posts/images/`) | no | Ignored. Large binary assets. |
+| Menu scripts (`menu-post-*.cjs`) | no | Ignored. Generated one-shot scripts. |
+| Seed results (`*-result-*.json`) | varies | Archive candidate. |
+
+## data/ — File classification
+
+| File | Type | Tracked | Policy |
+|---|---|---|---|
+| `post-metadata.json` | Product data | yes | Source of truth. Never bulk-format. |
+| `feed-rules.json` | Product config | yes | Changes affect all users immediately. |
+| `locations.json` | Product data | yes | Map v2 coordinates. |
+| `map-v2-layers.json` | Product data | yes | Map layer definitions. |
+| `clubs.json` | Static reference | yes | Static club data. |
+| `alias-pool.json` | Operational data | yes | Alias pool. |
+| `study-hn-club-discoveries.json` | Discovery artifact | yes | Archive candidate. |
+| `auth-users.json` | Local runtime | no | Never commit. Managed by auth-service. |
+| `channel-reads.json` | Local runtime | no | Never commit. Managed by channel-service. |
+| `ai-post-drafts.jsonl` | Generated records | no | Append-only. Never hand-edit. |
+| `ai-post-records.jsonl` | Generated records | no | Append-only. Never hand-edit. |
+| `post-metadata.json.bak` | Backup | no | Add `*.bak` to .gitignore. |
 
 ## High-conflict file modification process
 

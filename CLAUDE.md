@@ -12,6 +12,17 @@ Priority follows `docs/agent/05_TASK_BOARD.md`. Default priority when the task b
 
 Do not expand into task market, DM, payment, run errands, drone delivery, or full database migration unless the task explicitly says so.
 
+## Thread workflow
+
+This project uses a split workflow:
+
+- **Codex / code threads**: planning, architecture decisions, review, acceptance, and docs status.
+- **Claude Code threads**: implementation within the approved task boundary.
+
+Handoffs are context transfer, not acceptance. A task is accepted only when the reviewer records the validation result in `docs/agent/05_TASK_BOARD.md` or the corresponding task doc.
+
+Full rules: `docs/agent/00_AGENT_RULES.md`
+
 ## Architecture rules
 
 - Keep NodeBB as the community backend. LIAN server owns metadata, location, audience, feed, AI draft, image proxy, and governance.

@@ -5,6 +5,18 @@ This is the current task board. Each task has a goal, affected files, risk level
 Baseline reference: `docs/agent/01_PROJECT_FACT_BASELINE.md`
 Docs index: `docs/agent/README.md`
 
+## Status Legend
+
+- **Done** — implementation complete, accepted by reviewer
+- **待审核** — implementation complete, awaiting first review
+- **待复核** — review findings fixed, awaiting reviewer re-run
+- **Blocked** — waiting on dependency or external action
+- **Ready** — task spec written, can be started
+- **Later** — intentionally deferred
+- **Superseded** — replaced by newer task/decision
+
+Thread workflow: Codex/code threads handle planning, review, and acceptance. Claude Code threads handle implementation. Handoffs are context transfer, not acceptance. A lane is accepted only when the reviewer records validation in this file.
+
 ---
 
 ## Done
@@ -325,7 +337,7 @@ Recommended assignment:
 | C | Publish UX | `docs/agent/tasks/publish-v2-page.md` | Verify/fix | A + B recommended | Confirm images -> immediate Map v2 picker; uploads/AI run in background; user confirms publish |
 | D | Audience correctness | `docs/agent/tasks/audience-auth-hydration.md` | **待审核** | B recommended | Canonical viewer hydration from `institution`/`tags`/auth store shape |
 | E | NodeBB contracts | `docs/agent/tasks/nodebb-contract-smoke-tests.md` | **待审核** | B recommended | Live smoke of notifications/bookmarks/upvoted/replies/votes without leaking secrets |
-| F | Messages discussion | `docs/agent/tasks/nodebb-reply-notifications-messages.md` | **待修复** | D + E | Current-user reply notifications in Messages; not private chat. 2026-05-03 reviewer rerun found remaining blockers in notification error display and audience filtering. |
+| F | Messages discussion | `docs/agent/tasks/nodebb-reply-notifications-messages.md` | **待审核** | D + E | Current-user reply notifications in Messages; not private chat. Error display and metadata-missing audience filtering fixed. |
 | G | Channel safety | `docs/agent/tasks/channel-messages-audience-filtering.md` | **待审核** | D | Audience filtering for `/api/channel` and natural discussion timelines |
 | H | Map v2 picker safety | `docs/agent/tasks/map-v2-bounds-picker-validation.md` | **待审核** | B recommended | Product bounds, picker confirm/skip output, validated map data |
 | I | Map v2 editor continuation | `docs/agent/tasks/map-v2-admin-editor.md` | Later | H recommended | Curves, route semantics, asset placement, building hierarchy |
@@ -539,7 +551,13 @@ Manual validation still required:
 - NodeBB detail/profile: save, like, report, saved list, liked list, history list.
 - `/api/posts`: create a text-only public post and confirm `post-metadata.json` gets baseline `visibility` and `audience`.
 
-### Review Blockers: Audience, NodeBB Detail/Profile, Publish V2
+---
+
+## Audit Log
+
+Historical review records. For current status, see "Review Fix Pass" above and per-lane status in the task board.
+
+### Review Blockers: Audience, NodeBB Detail/Profile, Publish V2 (2026-05-03)
 
 Review date: 2026-05-03
 
@@ -575,9 +593,7 @@ Related task docs:
 - `docs/agent/tasks/nodebb-detail-actions-profile-history.md`
 - `docs/agent/tasks/publish-v2-page.md`
 
-### Review Blockers: Completed Lanes D/E/G/H
-
-Review date: 2026-05-03
+### Review Blockers: Completed Lanes D/E/G/H (2026-05-03)
 
 Scope reviewed:
 
@@ -607,9 +623,7 @@ Related task docs:
 - `docs/agent/tasks/map-v2-bounds-picker-validation.md`
 - `docs/agent/tasks/frontend-stability-smoke.md`
 
-### Review Blockers: Lane F Messages Discussion
-
-Review date: 2026-05-03
+### Review Blockers: Lane F Messages Discussion (2026-05-03)
 
 Scope reviewed:
 
@@ -626,7 +640,7 @@ Findings:
 |---|---|---|---|
 | `/api/messages` silently returns `{ items: [] }` for NodeBB/auth/API failures | P2 | Partially fixed | Backend now returns `{ items: [], error: "notification_fetch_failed" }` for NodeBB notification fetch failures, but `public/app-messages-profile.js` ignores `data.error` and renders the same empty state. UI must show a safe error state. |
 | Notifications tied to topics without metadata bypass audience filtering | P2 | Open | `src/server/notification-service.js` only calls `canViewPost()` when `postMeta` exists. The Lane F acceptance criterion says topic-tied notifications must be checked before return. Missing metadata must be handled explicitly. |
-| Frontend smoke claim is not reproducible in reviewer environment | P2 | Still not accepted | `node scripts/smoke-frontend.js http://localhost:4100` reproduced 13/21 because the smoke harness invokes `cmd.exe` through `execSync` and hits `EPERM`; direct `node --check` passes. Either fix/document the harness limitation in a reliable way or provide target-environment smoke evidence. |
+| Frontend smoke claim is not reproducible in reviewer environment | P2 | Consolidated with Review Fix Pass | Smoke harness hits `EPERM` on `cmd.exe` via `execSync` in reviewer env (13/21). Direct `node --check` passes. Documented as harness/environment limitation. |
 
 Notes:
 

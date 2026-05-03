@@ -197,13 +197,13 @@ Both are about the same work items but present different conclusions. A new thre
 | File | Current role | Recommendation |
 |---|---|---|
 | `README.md` | Project overview, dev setup | Keep as-is. Current. |
-| `CLAUDE.md` | Agent operating rules (loaded by Claude Code) | Keep as-is. Current. Active. |
+| `CLAUDE.md` | Agent operating rules (loaded by Claude Code) | **P2 — needs thread workflow pointer.** Project uses Codex for planning/review, Claude Code for execution. `CLAUDE.md` must link to `00_AGENT_RULES.md` thread division so execution threads don't treat handoffs as acceptance. |
 | `EDITORIAL_PRINCIPLES.md` | Content style guide | Keep. Current. |
 | `package.json` | Project metadata | Keep. Current. |
 | `server.js` | Backend entry point | Keep. Current. |
 | `.env.example` | Environment template | Keep. Current. |
 
-**Recommendation:** No changes needed for root docs. All are current.
+**Recommendation:** `CLAUDE.md` needs a thread workflow pointer (P2). Other root docs are current.
 
 ---
 
@@ -247,6 +247,7 @@ The main repo `lian-mobile-web` does not have `mock-api.js`.
 | P2 | Add script lifecycle status | 1 file |
 | P2 | Mark `FEED_REFACTOR_PLAN.md` as historical | 1 file |
 | P2 | Add `data/*.bak` to `.gitignore` | 1 file |
+| P2 | Add thread workflow pointer to `CLAUDE.md` | 1 file |
 | P3 | Classify menu prototypes | 1-2 files |
 | P3 | Consider untracking `outputs/` seed results | 1 file |
 

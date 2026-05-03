@@ -27,6 +27,7 @@ outputs/rewrite-wechat-pushes-*.cjs
 outputs/wechat-pushes-*/
 outputs/wewe-last-7-days.json
 data/post-metadata.json.bak-*
+data/*.bak
 data/ai-post-drafts.jsonl
 data/ai-post-records.jsonl
 
