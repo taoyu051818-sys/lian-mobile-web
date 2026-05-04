@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256" role="img" aria-label="好奇路人">
+  <rect width="256" height="256" rx="64" fill="#FEF3C7"/>
+  <circle cx="128" cy="128" r="88" fill="#fff" opacity="0.72"/>
+  <path d="M128 58l16 45 46 16-46 16-16 45-16-45-46-16 46-16 16-45Z" fill="#0EA5E9"/><circle cx="176" cy="72" r="10" fill="#D97706"/><circle cx="78" cy="176" r="8" fill="#D97706"/>
+</svg>

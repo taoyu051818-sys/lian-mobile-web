@@ -2,7 +2,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 
 import { memory } from "./cache.js";
-import { authUsersPath, channelReadsPath, metadataPath, rulesPath } from "./paths.js";
+import { authUsersPath, channelReadsPath, metadataPath, rulesPath, userCachePath } from "./paths.js";
 
 async function writeJsonFile(filePath, data) {
   await fs.mkdir(path.dirname(filePath), { recursive: true });
@@ -122,15 +122,105 @@ async function saveAuthStore(data) {
   await fs.writeFile(authUsersPath, `${JSON.stringify(data, null, 2)}\n`, "utf8");
 }
 
+async function loadUserCache() {
+  const now = Date.now();
+  if (memory.userCache && now - memory.userCacheLoadedAt < 15_000) return memory.userCache;
+  try {
+    const raw = await fs.readFile(userCachePath, "utf8");
+    const data = JSON.parse(raw);
+    memory.userCache = data && typeof data === "object" ? data : { version: 1, users: {}, actors: {} };
+  } catch {
+    memory.userCache = { version: 1, users: {}, actors: {} };
+  }
+  if (!memory.userCache.users) memory.userCache.users = {};
+  if (!memory.userCache.actors) memory.userCache.actors = {};
+  memory.userCacheLoadedAt = now;
+  return memory.userCache;
+}
+
+async function saveUserCache(data) {
+  await writeJsonFile(userCachePath, data);
+  memory.userCache = data;
+  memory.userCacheLoadedAt = Date.now();
+}
+
+function ensureUserEntry(cache, userId) {
+  if (!cache.users[userId]) {
+    cache.users[userId] = { likedTids: [], savedTids: [], updatedAt: new Date().toISOString() };
+  }
+  return cache.users[userId];
+}
+
+async function recordUserLike(userId, tid, liked) {
+  const cache = await loadUserCache();
+  const entry = ensureUserEntry(cache, userId);
+  const tidNum = Number(tid);
+  if (liked) {
+    if (!entry.likedTids.includes(tidNum)) entry.likedTids.push(tidNum);
+  } else {
+    entry.likedTids = entry.likedTids.filter((t) => t !== tidNum);
+  }
+  entry.updatedAt = new Date().toISOString();
+  await saveUserCache(cache);
+}
+
+async function recordUserSave(userId, tid, saved) {
+  const cache = await loadUserCache();
+  const entry = ensureUserEntry(cache, userId);
+  const tidNum = Number(tid);
+  if (saved) {
+    if (!entry.savedTids.includes(tidNum)) entry.savedTids.push(tidNum);
+  } else {
+    entry.savedTids = entry.savedTids.filter((t) => t !== tidNum);
+  }
+  entry.updatedAt = new Date().toISOString();
+  await saveUserCache(cache);
+}
+
+async function recordActorMeta(nodebbUid, meta) {
+  const cache = await loadUserCache();
+  const key = String(nodebbUid);
+  cache.actors[key] = {
+    username: meta.username || cache.actors[key]?.username || "",
+    identityTag: meta.identityTag || cache.actors[key]?.identityTag || "",
+    avatarUrl: meta.avatarUrl || cache.actors[key]?.avatarUrl || "",
+    updatedAt: new Date().toISOString()
+  };
+  await saveUserCache(cache);
+}
+
+function getUserLikedTids(userId) {
+  const cache = memory.userCache;
+  return cache?.users?.[userId]?.likedTids || [];
+}
+
+function getUserSavedTids(userId) {
+  const cache = memory.userCache;
+  return cache?.users?.[userId]?.savedTids || [];
+}
+
+function getActorMeta(nodebbUid) {
+  const cache = memory.userCache;
+  return cache?.actors?.[String(nodebbUid)] || null;
+}
+
 export {
   appendJsonLine,
   backupMetadata,
+  getActorMeta,
+  getUserLikedTids,
+  getUserSavedTids,
   loadAuthStore,
   loadChannelReads,
   loadMetadata,
   loadRules,
+  loadUserCache,
   patchPostMetadata,
+  recordActorMeta,
+  recordUserLike,
+  recordUserSave,
   saveAuthStore,
   saveChannelReads,
+  saveUserCache,
   writeJsonFile
 };

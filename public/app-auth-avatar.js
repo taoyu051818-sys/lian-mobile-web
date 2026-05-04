@@ -134,16 +134,21 @@ async function loadAuthMe() {
 function renderChannelIdentityOptions() {
   const select = $("#channelForm [name='identityTag']");
   if (!select) return;
-  const tags = state.currentUser?.identityTags?.length ? state.currentUser.identityTags : [];
+  const user = state.currentUser;
+  const tags = user?.identityTags?.length ? user.identityTags : [];
   select.innerHTML = tags.length
     ? tags.map((tag) => `<option value="${escapeHtml(tag)}">${escapeHtml(tag)}</option>`).join("")
     : `<option value="">同学</option>`;
   select.disabled = !tags.length;
+  const activeAlias = user?.activeAliasId
+    ? (user.aliases || []).find((a) => a.id === user.activeAliasId)
+    : null;
+  const displayName = activeAlias?.name || user?.username || "同";
+  const displayAvatar = activeAlias?.avatarUrl || user?.avatarUrl || "";
   const avatar = $("#channelComposerAvatar");
-  if (avatar) avatar.innerHTML = avatarHtml({
-    url: state.currentUser?.avatarUrl || "",
-    text: state.currentUser?.username || "同"
-  });
+  if (avatar) avatar.innerHTML = avatarHtml({ url: displayAvatar, text: displayName });
+  const nameLabel = $("#channelComposerName");
+  if (nameLabel) nameLabel.textContent = displayName;
 }
 
 function openAuth(mode = "login") {

@@ -7,13 +7,13 @@ Docs index: `docs/agent/README.md`
 
 ## Status Legend
 
-- **Done** — implementation complete, accepted by reviewer
-- **待审核** — implementation complete, awaiting first review
-- **待复核** — review findings fixed, awaiting reviewer re-run
-- **Blocked** — waiting on dependency or external action
-- **Ready** — task spec written, can be started
-- **Later** — intentionally deferred
-- **Superseded** — replaced by newer task/decision
+- **Done** - implementation complete, accepted by reviewer
+- **待审核** - implementation complete, awaiting first review
+- **待复核** - review findings fixed, awaiting reviewer re-run
+- **Blocked** - waiting on dependency or external action
+- **Ready** - task spec written, can be started
+- **Later** - intentionally deferred
+- **Superseded** - replaced by newer task/decision
 
 Thread workflow: Codex/code threads handle planning, review, and acceptance. Claude Code threads handle implementation. Handoffs are context transfer, not acceptance. A lane is accepted only when the reviewer records validation in this file.
 
@@ -45,17 +45,17 @@ Frontend and backend roughly complete. Currently single image only.
 
 Backend APIs:
 
-- `POST /api/ai/post-preview` — draft generation (mock/mimo)
-- `POST /api/ai/post-drafts` — silent draft save to JSONL
-- `POST /api/ai/post-publish` — user-confirmed publish to NodeBB
+- `POST /api/ai/post-preview` - draft generation (mock/mimo)
+- `POST /api/ai/post-drafts` - silent draft save to JSONL
+- `POST /api/ai/post-publish` - user-confirmed publish to NodeBB
 
 Frontend flow:
 
-1. User taps `+` → simplified AI upload entry
-2. Image upload → `/api/upload/image` → `/api/ai/post-preview`
+1. User taps `+` -> simplified AI upload entry
+2. Image upload -> `/api/upload/image` -> `/api/ai/post-preview`
 3. User edits draft fields (title, body, tags, location)
 4. Silent draft save to `/api/ai/post-drafts`
-5. User clicks "发布到 LIAN" → `/api/ai/post-publish`
+5. User clicks "发布到 LIAN" -> `/api/ai/post-publish`
 6. Publish creates NodeBB topic, writes `post-metadata.json`, appends `ai-post-records.jsonl`
 
 Both `/api/posts` and `/api/ai/post-publish` use `createNodebbTopicFromPayload()`. AI posts use the logged-in user's NodeBB account.
@@ -70,7 +70,7 @@ Both `/api/posts` and `/api/ai/post-publish` use `createNodebbTopicFromPayload()
 
 Standalone internal editor tool page at `/tools/map-v2-editor.html`. Campus grass texture as map base layer with Gaode tiles at 35% opacity. Editor has layer visibility toggles and opacity sliders for all layer groups (grass, tiles, bounds, areas, routes, locations, draft).
 
-Backend: `PUT /api/admin/map-v2` with full bounds validation (SW 18.373050/109.995380, NE 18.413856/110.036262). Location icon (url/size/anchor) and card (title/subtitle/imageUrl/alwaysShow) support in `map-v2-service.js`.
+Backend: `PUT /api/admin/map-v2` with full bounds validation. Current base-map bounds are SW 18.37107/109.98464 to NE 18.41730/110.04775. Location icon (url/size/anchor) and card (title/subtitle/imageUrl/alwaysShow) support in `map-v2-service.js`.
 
 Also fixed Chinese encoding corruption in index.html (commit 3340f65 double-encoded UTF-8).
 
@@ -186,7 +186,7 @@ Handoff: `docs/agent/handoffs/nodebb-native-capability-inventory.md`
 Read-side audience enforcement. Write-side (`canCreatePostWithAudience`) is Phase 4, not yet wired.
 
 - New module: `src/server/audience-service.js` with 7 permission functions
-- `canViewPost(user, post, context)` — context is `"feed"`, `"map"`, or `"detail"` (default)
+- `canViewPost(user, post, context)` - context is `"feed"`, `"map"`, or `"detail"` (default)
 - linkOnly posts: never distributed to feed/map; detail page checks base visibility
 - canonical schoolId = Chinese short name (e.g., `中国传媒大学`), derived from `institution` at read time
 - Organization posts use `visibility: "private"` + `orgIds` (no separate `organization` enum)
@@ -199,7 +199,7 @@ Changed files: `src/server/audience-service.js` (new), `src/server/feed-service.
 Test plan: `docs/agent/tasks/audience-test-users-and-posts.md`
 Handoff: `docs/agent/handoffs/audience-system-phase1-3.md`
 
-Status: **待审核** — 二次修正完成。linkOnly+private 泄漏已修复，回复权限已接入，测试期望已更正，文档已更新。需运行 `node scripts/setup-audience-test.js && node scripts/test-audience.js` 验证。
+Status: **Done / Accepted with follow-up** - read-side Audience Phase 1-3 accepted. `hydrateAudienceUser()` and `canViewPost(..., context)` are in place, linkOnly/feed/map/detail behavior is defined, and read-side follow-ups are no longer blocking this task. Write-side enforcement is split into P0 task `audience-write-side-minimum-enforcement` below.
 
 ### NodeBB Detail Actions & Profile Activity
 
@@ -209,11 +209,11 @@ Changed files: `src/server/post-service.js`, `src/server/api-router.js`, `src/se
 
 Handoff: `docs/agent/handoffs/nodebb-detail-actions-profile-history.md`
 
-Status: **待审核** — 实现完成，review 修复已应用。需 smoke test NodeBB `/:slug/bookmarks` 和 `/:slug/upvoted` 端点，验证中文标签无乱码。
+Status: **Superseded by P0 live acceptance** - implementation work is no longer reviewed as this broad task. Remaining validation is tracked by `nodebb-detail-profile-messages-live-acceptance` and `P0: Publish/Profile/NodeBB Regression Fix`: live NodeBB like/unlike, save/unsave, saved list, liked list, history, report, and selected-identity actor display.
 
 ### Publish V2 Page
 
-Dedicated publish page replacing old modal. 3-step flow: imageSelect → locationPick → draftReview. Multi-image upload with compression, embedded Map v2 picker, AI draft generation, audience picker (公开/校园/本校/仅自己), draft save, and publish.
+Dedicated publish page replacing old modal. 3-step flow: imageSelect -> locationPick -> draftReview. Multi-image upload with compression, embedded Map v2 picker, AI draft generation, audience picker (公开/校园/本校/仅自己), draft save, and publish.
 
 Confirmed product correction:
 
@@ -226,19 +226,27 @@ Changed files: `public/publish-page.js` (new), `public/index.html`, `public/app.
 
 Handoff: `docs/agent/handoffs/publish-v2-page.md`
 
-Status: **待审核** — review 修正已应用。图片选择后立即进入地图选点，上传在后台进行，AI preview 等待上传完成后触发。
+Status: **Done / Accepted with release checks** - product correction is accepted: image selection now immediately enters Map v2 location picking while upload/AI continue in the background. Release-level browser validation is tracked separately by `publish-v2-final-browser-acceptance`.
 
 ### Frontend Mock API Layer
 
-Standalone mock API for frontend repo (`lian-frontend`). `public/mock-api.js` intercepts `api()` and `uploadImage()` to serve all 29 endpoints from local data. Enabled with `?mock=1` query param.
+Standalone mock API for frontend repo (`lian-frontend`). This is not owned or validated in the current `lian-mobile-web` main repo.
 
 Mock data: 20 feed items (paginated), 6 full post details with replies, 5 map locations + 2 areas + 1 route + 3 map posts, 8 channel messages, mock user with aliases, profile lists (history/saved/liked), AI draft preview.
 
-Deployment guide: `DEPLOY.md`. Verification script: `scripts/verify-mock.js` (79 checks, all passing).
+Deployment guide and verification script belong to the `lian-frontend` repo. Do not treat missing `scripts/verify-mock.js` in `lian-mobile-web` as a main-repo blocker.
 
-Changed files: `public/mock-api.js` (new), `public/index.html`, `scripts/verify-mock.js` (new), `DEPLOY.md` (new)
+Expected changed files in `lian-frontend`: `public/mock-api.js` (new), `public/index.html`, `scripts/verify-mock.js` (new), `DEPLOY.md` (new)
 
-Status: **待审核** — Node.js 验证 79/79 通过，需浏览器验证：首页卡片渲染、详情页内容/回复、地图标记、频道消息、个人中心、发布流程。
+Status: **External** - ignore for `lian-mobile-web` review. Validate in the `lian-frontend` repo/thread. Do not restore or create `scripts/verify-mock.js` in this repo just to satisfy old review references.
+
+### PC Task Board Web UI
+
+Read-only PC task board viewer at `/tools/task-board.html`. Fetches `05_TASK_BOARD.md` via `GET /api/internal/task-board`, parses tasks, renders filterable table with sidebar filters, status/priority badges, human-assisted indicators, detail panel with doc/handoff links.
+
+Changed files: `public/tools/task-board.html` (new), `public/tools/task-board.css` (new), `public/tools/task-board.js` (new), `src/server/task-board-service.js` (new), `src/server/api-router.js`, `src/server/paths.js`
+
+Handoff: `docs/agent/handoffs/pc-task-board-webui-v1.md`
 
 ---
 
@@ -264,6 +272,225 @@ Notes:
 - Review findings are blockers unless explicitly waived in the task doc.
 - Claude Code should stop and hand back if the implementation requires changing scope, touching forbidden files, or resolving product ambiguity.
 - Codex / code should not mix review with broad runtime refactors unless the user explicitly asks it to execute fixes.
+
+### Operating Rule: Map Development Requires Human Assistance
+
+Status: **Active rule**.
+
+Map development is no longer available for independent Claude Code implementation.
+
+This applies to Map v2 editor, Map v2 data assets, road networks, junctions, curves, routes, asset placement, building hierarchy, render workflow, floor-plan view, location redraw, and any implementation task that edits `data/map-v2-layers.json`, `data/locations.json`, `public/map-v2.js`, `public/tools/map-v2-editor.*`, or `src/server/map-v2-service.js`.
+
+Claude Code may still do documentation, read-only audits, validation reruns, review findings, and task scoping for map work.
+
+Before implementation, a human must provide concrete map/design input or approve the exact implementation cut, and intermediate editor/map output must be shown to a human before acceptance. Claude Code must not independently invent campus geometry, road layout, building hierarchy, or visual asset placement.
+
+Status label for these tasks: **Human-assisted only**.
+
+### Pro Decision: Stabilize Before Expanding
+
+Reference: `docs/agent/references/PRO_ENGINEERING_DECISION_2026-05-03.md`
+
+Current decision:
+
+```text
+Stabilize validation, Publish V2, Messages, Audience boundaries, docs baseline, and repo split boundaries before adding new product scope.
+```
+
+Next execution order:
+
+0. **P0** Fix manual-review regressions in Publish V2, profile activity, NodeBB like/save state, saved/liked lists, and reply discussion messages.
+   - Task: `docs/agent/tasks/p0-publish-profile-nodebb-regression-fix.md`
+   - Handoff: `docs/agent/handoffs/p0-publish-profile-nodebb-regression-fix.md`
+1. **P0** Fix `scripts/smoke-frontend.js` so frontend smoke is reproducible in the reviewer environment.
+   - Task: `docs/agent/tasks/frontend-stability-smoke.md`
+2. **P0** Rerun Lane F messages/notifications after smoke is fixed; do not mark accepted before reproducible validation or explicit reviewer waiver.
+   - Task: `docs/agent/tasks/lane-f-messages-review-rerun.md`
+3. **P0** Run Publish V2 browser/manual acceptance for image upload, Map v2 location picking, AI draft, audience picker, publish, metadata, feed/detail.
+   - Task: `docs/agent/tasks/publish-v2-browser-acceptance.md`
+4. **P1** Run NodeBB detail/profile browser/manual acceptance for save, like, report, saved list, liked list, and history.
+   - Task: `docs/agent/tasks/nodebb-detail-actions-profile-history.md`
+5. **P1** Clean docs/agent baseline and source-of-truth order.
+   - Task: `docs/agent/tasks/project-file-index-and-doc-cleanup.md`
+6. **P1** Audit Audience write-side minimum enforcement.
+   - Task: `docs/agent/tasks/audience-write-side-minimum-audit.md`
+7. **P1/P2** Prepare backend repo bootstrap; do not delete backend files from this repo until backend staging validates.
+   - Task: `docs/agent/tasks/repo-split-frontend-backend.md`
+
+Explicitly paused for this phase:
+
+- new recommendation strategy or personalization;
+- LLM auto-publish or auto-review;
+- place pages and food maps;
+- complex Map v2 editor continuation;
+- broad UI redesign;
+- NodeBB rewrites;
+- Express/Fastify migration;
+- full PostgreSQL migration;
+- full organization permission platform.
+
+### RPO Decision: Release Baseline Stabilization Sprint
+
+Reference: `docs/agent/references/RPO_NEXT_STEP_BRIEF_2026-05-03.md`
+
+Decision source: RPO review supplied by the user on 2026-05-03.
+
+Current one-line judgment:
+
+```text
+Stabilize acceptance, add Audience minimum write-side enforcement, then prepare non-destructive backend repo bootstrap. Do not expand product scope or start large refactors now.
+```
+
+Scope rule:
+
+- this sprint is for acceptance, permission safety, docs/task-board consistency, and repo-split readiness;
+- implementation threads must not add new product lines while these tasks are open;
+- map road/raw geometry work is human-assisted only and cannot be independently implemented by Claude Code;
+- backend repo bootstrap can be planned now, but copying/validation is gated by P0 acceptance.
+
+P0 task distribution:
+
+| Task | Status | Owner | Goal | Acceptance |
+|---|---|---|---|---|
+| `stabilization-canonical-review` | **Ready / P0** | Reviewer / Codex | Rerun and record one canonical validation state for frontend smoke, routes, audience hydration, metadata, locations, and project structure. | Task board has one current test report; old conflicting 13/21 vs 21/21 smoke status is resolved or explicitly waived. |
+| `publish-v2-final-browser-acceptance` | **Ready / P0** | Frontend owner + Backend owner + Reviewer | Manually validate Publish V2 with real browser/session: multi-image upload, immediate Map v2 location picking, AI draft, audience picker, publish, metadata, feed/detail/map. | User-confirmed publish only; no AI auto-publish; no missing `imageUrls`, `locationDraft`, `audience`, or `visibility`; clear failure state. |
+| `nodebb-detail-profile-messages-live-acceptance` | **Partially accepted / P0 remainder** | Frontend owner + Backend owner + Reviewer | Detail/Profile live acceptance passed for like/unlike, save/unsave, report, saved list, liked list, and history on 2026-05-03. Remaining scope is reply messages and current selected identity display. | Replies show as discussion/reply, not private chat/system-only; actor uses current selected identity. |
+| `audience-write-side-minimum-enforcement` | **Ready / P0** | Backend implementation thread | Enforce legal audience choices at publish time for `public`, `campus`, `school`, `private`, and `linkOnly`. | Backend rejects forged audience; frontend options come from allowed choices; `linkOnly` does not naturally distribute; `private` is author/admin only; school publishing is constrained. |
+| `map-road-network-policy-and-human-review` | **Ready / P0 / Human-assisted only** | Human-assisted map thread + RPO | Decide and verify road-network preview boundary. Raw imported road network preview is admin/editor only; student map may only show curated/published route layers. | Raw road overlay is not shown on normal student exploration page; any student-facing route layer is explicitly reviewed/published. |
+| `active-docs-task-board-cleanup` | **Ready / P0** | Codex / docs thread | Keep active docs and task board consistent after RPO decision. Do not turn historical mojibake/audit logs into blockers unless they are active source of truth. | Active task-board, file index, README, ownership, and split notes are readable and consistent; historical logs can remain marked as audit history. |
+
+P0 implementation/review breakdown:
+
+1. `stabilization-canonical-review`
+   - run: `node scripts/validate-project-structure.js`;
+   - run: `node scripts/test-routes.js`;
+   - run: `node scripts/test-audience-hydration.js`;
+   - run: `node scripts/validate-post-metadata.js`;
+   - run: `node scripts/validate-locations.js`;
+   - run frontend smoke once against the active local server and record the canonical result;
+   - update this board with one current result instead of keeping old contradictory smoke results as active blockers.
+
+2. `publish-v2-final-browser-acceptance`
+   - verify one-image and multi-image upload;
+   - verify immediate Map v2 location picking starts as soon as images are selected/confirmed;
+   - verify upload and AI draft generation continue in the background;
+   - verify confirm location and skip location;
+   - verify audience selection survives AI preview/regenerate;
+   - verify final publish creates NodeBB topic and writes `imageUrls`, `locationDraft`, `audience`, `visibility`, and distribution metadata;
+   - verify feed/detail/map behavior after publish.
+
+3. `nodebb-detail-profile-messages-live-acceptance`
+   - accepted 2026-05-03: like/unlike, save/unsave, report, saved list, liked list, and history;
+   - remaining: replies enter messages as discussion/reply items;
+   - remaining: reply actor uses the user's current selected identity;
+   - superseded checks below are kept as historical detail only.
+   - accepted detail/profile checks are no longer blockers;
+   - verify replies enter messages as discussion/reply items;
+   - verify reply actor uses the user's current selected identity.
+
+4. `audience-write-side-minimum-enforcement`
+   - add/verify backend allowed audience options;
+   - ensure Publish V2 does not hard-code unavailable audience choices;
+   - enforce `public`, `campus`, `school`, `private`, and `linkOnly` on publish;
+   - reject forged school/org/private/linkOnly payloads server-side;
+   - keep organization audience disabled or admin-only unless membership rules are proven.
+
+5. `map-road-network-policy-and-human-review`
+   - open the admin/editor preview;
+   - confirm road-network alignment controls and export;
+   - confirm no write to official `data/map-v2-layers.json`;
+   - confirm raw road overlay is not shown to normal student users;
+   - create a separate future task for curated/published student route layers.
+
+6. `active-docs-task-board-cleanup`
+   - keep only current blockers in active sections;
+   - move old review records to Audit Log;
+   - keep paused product lines marked Later, not Ready;
+   - keep human-assisted map tasks out of independent implementation queues.
+
+P1 task distribution:
+
+| Task | Status | Owner | Goal | Acceptance |
+|---|---|---|---|---|
+| `backend-repo-bootstrap-readiness-plan` | **Ready / P1** | Architecture / DevOps | Write the non-destructive backend repo bootstrap plan: file boundary, runtime-data policy, API base URL, staging validation, rollback, owners. | Plan exists; no backend files are deleted from this repo; execution is gated by P0 acceptance. |
+| `backend-repo-bootstrap-copy-and-validate` | **Blocked / P1 gated** | DevOps + backend owner | Copy backend runtime into separate repo and validate staging without cutting over current repo. | Only starts when P0 is green or explicitly waived by RPO; current repo remains runnable. |
+| `db-migration-rfc` | **Ready / P1** | Architecture / backend | Design future DB migration without implementing it. Cover users, schools, orgs, memberships, post audience, post metadata, audit logs, AI drafts. | RFC explains migration order and what remains JSON/JSONL for now. |
+| `frontend-modernization-rfc` | **Later / P2 planning** | Frontend architecture | Plan but do not implement a future frontend modernization path. | RFC only; no framework migration in this sprint. |
+
+Explicit go/no-go for backend repo split:
+
+Go only if:
+
+- canonical validation state is recorded;
+- Publish V2 browser acceptance passes;
+- NodeBB detail/profile/messages live acceptance passes;
+- Audience write-side minimum enforcement is implemented or explicitly waived by RPO;
+- Map road raw-preview policy is resolved;
+- active docs/task-board are consistent;
+- current repo remains runnable;
+- secrets and local runtime data are not included in split outputs.
+
+No-go if:
+
+- Publish V2 has blocking bugs;
+- saved/liked/messages fail in a live NodeBB session;
+- audience can be forged from the frontend;
+- smoke status remains contradictory without a reviewer waiver;
+- raw map road preview appears on the student-facing map;
+- backend staging and rollback ownership are unclear.
+
+Paused until this sprint closes:
+
+- place pages;
+- food map;
+- merchant objects;
+- delivery / errands;
+- task market;
+- drone / low-altitude delivery;
+- points / rewards / redemption;
+- full organization admin platform;
+- full PostgreSQL migration implementation;
+- frontend framework migration implementation;
+- Express/Fastify migration;
+- Map v2 building/floor editor;
+- recommendation strategy redesign.
+
+### LLM 客服对接商家接单模块 + 美术资源处理
+
+Scope: 开发 LLM 作为客服对接商家接单的模块；处理美术资源。
+
+Status: **Later / Paused by RPO** - not part of the Release Baseline Stabilization Sprint. Keep as future product planning only; do not implement until Publish/Audience/Messages/Map baseline and repo split readiness are accepted.
+
+### 外卖配送骑手模块
+
+Scope: 增加外卖配送场景下骑手端的模块，包括骑手注册/接单/配送状态流转/轨迹/结算等。
+
+Status: **Later / Paused by RPO** - delivery/rider work is explicitly paused. Do not design or implement until food/place/merchant foundations, governance, and transaction-risk policy exist.
+
+### P0: Publish/Profile/NodeBB Regression Fix
+
+Task doc: `docs/agent/tasks/p0-publish-profile-nodebb-regression-fix.md`
+
+Handoff: `docs/agent/handoffs/p0-publish-profile-nodebb-regression-fix.md`
+
+Source: manual browser review reported by the user on 2026-05-03.
+
+Goal: fix runtime regressions in the already-implemented Publish V2, profile activity, NodeBB like/save, saved/liked lists, and reply messages flows.
+
+Observed bugs:
+
+- Publish page topbar/back button remains visible after leaving or completing publish.
+- Publish V2 still waits on a visible `下一步` button after images instead of immediately entering Map v2 location picking.
+- Profile `浏览记录` appears or expands without click and pushes away `我的收藏` / `赞过`.
+- Detail like UI does not match the feed-card red-heart pattern.
+- Feed-card like state is not durable/toggle-safe; second click attempts to like again.
+- Bookmark toggle can return `You have already bookmarked this post`.
+- Profile `我的收藏` and `赞过` return empty even though saved/liked content exists.
+- Replies should enter messages as discussion/reply items, not generic system messages.
+
+Status: **Partially accepted / P0 remainder** - user browser validation passed for like/unlike, save/unsave, report, profile saved list, profile liked list, and browsing history on 2026-05-03. Remaining validation is reply discussion messages and actor identity using the user's current selected identity. Publish flow is tracked separately by `publish-v2-final-browser-acceptance`.
+
+Acceptance: see the task doc and handoff. This task requires browser/manual validation with a logged-in user and a reachable NodeBB instance; `node --check` alone is not enough.
 
 ### P0: Repo Split - Frontend Here, Backend Elsewhere
 
@@ -295,7 +522,7 @@ Required phase order:
 6. Stage reverse proxy deployment.
 7. Remove backend ownership from current repo only after backend repo is validated.
 
-Status: **Phase 0.5 Done** — API contract frozen. `LIAN_API_BASE_URL` configured in `app-utils.js`, `map-v2.js`, `map-v2-editor.js`. Set `window.LIAN_API_BASE_URL` before scripts to point at remote backend. Ready for Phase 1 (backend repo bootstrap).
+Status: **Phase 0.5 Done / gated for Phase 1** - API contract frozen. `LIAN_API_BASE_URL` configured in `app-utils.js`, `map-v2.js`, `map-v2-editor.js`. Set `window.LIAN_API_BASE_URL` before scripts to point at remote backend. Ready for backend repo bootstrap, but do not remove `server.js`, `src/server/*`, or server-owned data from this repo until backend staging validates Publish V2 and Messages.
 
 ### P0: Project File Index And Documentation Cleanup
 
@@ -317,6 +544,20 @@ Acceptance:
 - generated outputs and local runtime files are not mistaken for maintained source;
 - no runtime code changes are made.
 
+Changed files: `docs/agent/03_FILE_OWNERSHIP.md`, `docs/agent/05_TASK_BOARD.md`, `CLAUDE.md`, `.gitignore`, `docs/agent/references/DOC_CLEANUP_AUDIT_2026-05-03.md` (new), `docs/agent/PROJECT_FILE_INDEX.md` (new), `docs/agent/README.md`
+
+Status: **Done / Accepted** - reviewer validation completed on 2026-05-03.
+
+Validation:
+
+- `PROJECT_FILE_INDEX.md`, `README.md`, and `03_FILE_OWNERSHIP.md` are ASCII-only.
+- Mojibake pattern search returned no matches for the reviewed docs.
+- Source-of-truth order is consistent between `README.md` and `PROJECT_FILE_INDEX.md`.
+- `public/tools/` repo split ownership is consistent: frontend repo, backend provides API only.
+- `data/user-cache.json` is classified as local runtime cache / never commit and is listed in `.gitignore`.
+- `hard-review` conflict level is defined.
+- `node scripts/validate-project-structure.js` passed: 43 passed, 0 failed.
+
 ### Implementation Batch: Safety-Gated Product Continuation
 
 This batch is the current work distribution after Pro review. It keeps runtime implementation work out of this architecture thread and gives implementation threads narrow ownership.
@@ -334,13 +575,18 @@ Recommended assignment:
 |---|---|---|---|---|---|
 | A | Backend safety | `docs/agent/tasks/metadata-write-safety.md` | **Done** | none | Serialized `post-metadata.json` write protocol, backup, temp rename, patch tests |
 | B | Route safety | `docs/agent/tasks/route-matcher-tests.md` | **Done** | none | Route matcher tests for existing API behavior; no framework migration |
-| C | Publish UX | `docs/agent/tasks/publish-v2-page.md` | Verify/fix | A + B recommended | Confirm images -> immediate Map v2 picker; uploads/AI run in background; user confirms publish |
-| D | Audience correctness | `docs/agent/tasks/audience-auth-hydration.md` | **待审核** | B recommended | Canonical viewer hydration from `institution`/`tags`/auth store shape |
-| E | NodeBB contracts | `docs/agent/tasks/nodebb-contract-smoke-tests.md` | **待审核** | B recommended | Live smoke of notifications/bookmarks/upvoted/replies/votes without leaking secrets |
-| F | Messages discussion | `docs/agent/tasks/nodebb-reply-notifications-messages.md` | **待审核** | D + E | Current-user reply notifications in Messages; not private chat. Error display and metadata-missing audience filtering fixed. |
-| G | Channel safety | `docs/agent/tasks/channel-messages-audience-filtering.md` | **待审核** | D | Audience filtering for `/api/channel` and natural discussion timelines |
-| H | Map v2 picker safety | `docs/agent/tasks/map-v2-bounds-picker-validation.md` | **待审核** | B recommended | Product bounds, picker confirm/skip output, validated map data |
-| I | Map v2 editor continuation | `docs/agent/tasks/map-v2-admin-editor.md` | Later | H recommended | Curves, route semantics, asset placement, building hierarchy |
+| C | Publish UX | `docs/agent/tasks/publish-v2-page.md` | **P0 Browser acceptance required** | A + B recommended | Confirm images -> immediate Map v2 picker; uploads/AI run in background; user confirms publish |
+| D | Audience correctness | `docs/agent/tasks/audience-auth-hydration.md` | **Done** | B recommended | Accepted in reviewer rerun 2026-05-03. `test-audience-hydration` passed 61/61. Full integration setup is still separate because it mutates NodeBB/data. |
+| E | NodeBB contracts | `docs/agent/tasks/nodebb-contract-smoke-tests.md` | **Done** | B recommended | Accepted in reviewer rerun 2026-05-03. Remote smoke passed 4/4 with network access. |
+| F | Messages discussion | `docs/agent/tasks/lane-f-messages-review-rerun.md` | **P0 pending reviewer rerun** | D + E + frontend smoke | Runtime findings appear fixed, but acceptance is blocked until frontend smoke is reproducible or explicitly waived by reviewer. |
+| G | Channel safety | `docs/agent/tasks/channel-messages-audience-filtering.md` | **Done / P3 follow-up** | D | Accepted. Follow-up: `/api/channel` slices topics before audience filtering, so pages may under-fill when hidden topics are skipped. Do not fix in the current P0 batch. |
+| H | Map v2 picker safety | `docs/agent/tasks/map-v2-bounds-picker-validation.md` | **Done** | B recommended | Accepted in reviewer rerun 2026-05-03. Bounds validation passes with 0 errors. |
+| I | Map v2 editor continuation | `docs/agent/tasks/map-v2-admin-editor.md` | **Human-assisted only / Later** | H + human approval | Claude Code may not independently develop this line. Requires human map/design input and intermediate human review. |
+
+Deferred follow-up:
+
+- **P3 Channel pagination under-fill**: `handleChannel()` currently slices topics before audience filtering. This can return fewer than `limit` visible messages when hidden topics are skipped. Do not fix in the current P0 batch; schedule a narrow backend task later to over-fetch before filtering.
+- **External Frontend Mock API Layer**: belongs to `lian-frontend`. Do not create `scripts/verify-mock.js` in `lian-mobile-web` just to satisfy stale references.
 
 Parallelization guidance:
 
@@ -400,9 +646,40 @@ Affected files:
 - `data/map-v2-layers.json`
 - `scripts/validate-locations.js`
 
-Risk: medium. Map data and editor affect location picking.
+Status: **Human-assisted only**.
+
+Risk: medium-high. Map data and editor affect location picking, and previous map-data loss shows this line needs human-supervised changes.
 
 Acceptance: editor can preview assets, validate bounds, and save valid locations/routes/areas.
+
+### Task: Map v2 Road Network Import Preview
+
+Task doc: `docs/agent/tasks/map-v2-road-network-import-preview.md`
+
+Handoff: `docs/agent/handoffs/map-v2-road-network-import-preview.md`
+
+Goal: render the exported public-map road network as a Map v2 admin/editor preview layer, then let the human drag-align it against the Gaode/base map.
+
+Human input provided:
+
+- `F:/26.3.13/lian-campusmind-agent/campusmind/exports/road_network_mapWITH/junctions.csv`
+- `F:/26.3.13/lian-campusmind-agent/campusmind/exports/road_network_mapWITH/lane_nodes.csv`
+- `F:/26.3.13/lian-campusmind-agent/campusmind/exports/road_network_mapWITH/lanes.csv`
+- `F:/26.3.13/lian-campusmind-agent/campusmind/exports/road_network_mapWITH/lanes.geojson`
+- `F:/26.3.13/lian-campusmind-agent/campusmind/exports/road_network_mapWITH/road_network_summary.json`
+- `F:/26.3.13/lian-campusmind-agent/campusmind/exports/road_network_mapWITH/roads.csv`
+
+Required behavior:
+
+- preview road/lane/junction overlay in `/tools/map-v2-editor.html`;
+- drag-align the whole road network as one group;
+- expose transform controls or at least export transform values;
+- export a draft preview JSON;
+- do not automatically overwrite `data/map-v2-layers.json`.
+
+Status: **Human-assisted only / policy review required** - imported road preview must be reviewed by a human. RPO policy: raw road-network preview is admin/editor only; normal student exploration must not show raw road overlay. Implementation must be adjusted or explicitly accepted against that policy.
+
+Acceptance: road-network preview is visible in `/tools/map-v2-editor.html`, can be dragged/aligned/exported, and does not write official map data. Student-facing `/` must not show raw road overlay unless a separate curated/published route layer is approved.
 
 ### Task: Map v2 Admin Editor
 
@@ -415,7 +692,9 @@ Goal: expand the internal map editor. V1 backend/data model is implemented. Phas
 Remaining phases:
 - Phase 3: building group hierarchy
 
-Status: **Phase 2 完成** — 外部资产放置模式已实现，等待 Phase 3。
+Human-assistance rule: Phase 3 and any further Map editor implementation must not be independently implemented by Claude Code. A human must provide/approve the building hierarchy scope and review intermediate editor output.
+
+Status: **Done / Phase 2 accepted; Phase 3 human-assisted later** - road draw, junctions, curves, and asset placement phases are accepted as completed work. Building group hierarchy and any further editor/map implementation are not Ready for independent development and require human-assisted scope approval and review.
 
 Risk: medium-high. It changes admin tooling and map data shape, but should not affect feed or publishing if kept isolated.
 
@@ -427,6 +706,8 @@ Task doc: `docs/agent/tasks/map-v2-render-workflow.md`
 
 Goal: support export of structured map specs to external AI/design renderers, upload/bind rendered outputs, preview with live overlays, and publish/rollback map versions.
 
+Status: **Human-assisted only / Later**.
+
 Risk: medium. This is mostly admin/data workflow, but versioning mistakes can break map display.
 
 Acceptance: render spec exports valid JSON without secrets/private user data; rendered output can be previewed and bound to a map version without flattening interactive overlays.
@@ -436,6 +717,8 @@ Acceptance: render spec exports valid JSON without secrets/private user data; re
 Task doc: `docs/agent/tasks/map-v2-building-floor-plan.md`
 
 Goal: let users click a building/building group on the campus map and enter a higher-precision 2D floor/room view with related function posts.
+
+Status: **Human-assisted only / Later**.
 
 Risk: high. This touches frontend map navigation, map data model, post association, and future audience filtering.
 
@@ -450,6 +733,8 @@ Goal: validate the started feed-card like integration against the actual NodeBB 
 Risk: medium. It touches `post-service.js`, `feed-service.js`, `api-router.js`, and frontend card rendering.
 
 Acceptance: clicking the heart toggles NodeBB vote state for the topic's first post, count updates correctly after refresh, and feed ranking remains unchanged.
+
+Status: **Superseded by P0 live acceptance** - this is covered by `nodebb-detail-profile-messages-live-acceptance` and `P0: Publish/Profile/NodeBB Regression Fix`; do not keep a separate Ready task unless a new feed-card-only regression appears.
 
 ### Task: NodeBB Reply Notifications In Messages Page
 
@@ -494,6 +779,8 @@ Frontend requirements:
 - Message labels should make the product meaning clear: `讨论`, `回复`, `通知`, not `私信`.
 - Empty/error states must be normal UTF-8 Chinese.
 
+Status: **Superseded by P0 live acceptance** - implementation scope and product semantics are now covered by `nodebb-detail-profile-messages-live-acceptance` and `P0: Publish/Profile/NodeBB Regression Fix`. Keep this section as the product contract, not as a separate Ready implementation task.
+
 Non-goals:
 
 - No private messages/chat.
@@ -532,8 +819,8 @@ Fixes recorded:
 | Mojibake review blocker | Fixed by implementation report | No mojibake found in the reviewed touched labels; visible UTF-8 labels still need normal browser verification before release. |
 | Publish V2 audience display precedence | Fixed / needs browser check | Publish rendering now uses `p.audience` first, then `p.metadata?.visibility`. |
 | Publish V2 upload failure path | Fixed / needs browser check | Failed uploads are filtered out; if no valid image URL remains, the user stays on image selection. |
-| Frontend smoke | Fixed | `scripts/smoke-frontend.js` rewritten with server connectivity probe, graceful skip for HTTP checks, and separate passed/failed/skipped reporting. Now passes 21/21. |
-| Map validator bounds drift | Fixed | `scripts/validate-locations.js` now uses approved bounds `18.373050/109.995380` to `18.413856/110.036262`. Verified identical to `map-v2-service.js`. |
+| Frontend smoke | Not accepted | Reviewer rerun still reports 13/21. Direct `node --check` for each frontend file passes; failure is caused by the smoke harness invoking `node --check` through `execSync()`/shell in this environment. |
+| Map validator bounds drift | Fixed | `scripts/validate-locations.js` now uses current base-map bounds `18.37107/109.98464` to `18.41730/110.04775`. Must remain identical to `map-v2-service.js`. |
 
 Required reviewer validation before closing:
 
@@ -609,11 +896,11 @@ Current decision:
 | D Audience Auth Hydration | Accepted with follow-up | `hydrateAudienceUser()` exists, permission functions auto-hydrate, and `node scripts/test-audience-hydration.js` passed 61/61. Follow-up: role-scoped viewing is not implemented even though `audience.roleIds` is normalized. |
 | E NodeBB Contract Smoke | Accepted | `node scripts/smoke-nodebb-contracts.js` passed against the remote NodeBB service when network access was allowed. It confirms notifications/bookmarks/upvoted require `Authorization: Bearer`. |
 | G Channel Audience Filtering | Accepted with follow-up | `/api/channel` now resolves an optional viewer and filters with `canViewPost(..., "map")`. Follow-up: it slices topics before filtering, so pages can be under-filled when hidden topics are encountered. |
-| H Map v2 Bounds | Accepted | Bounds constants now match between `map-v2-service.js` and `validate-locations.js` (both use `18.373050/109.995380` to `18.413856/110.036262`). `node scripts/validate-locations.js` passes with 0 errors. |
+| H Map v2 Bounds | Accepted | Bounds constants must match between `map-v2-service.js`, `validate-locations.js`, `public/map-v2.js`, and `public/tools/map-v2-editor.js` using current base-map bounds `18.37107/109.98464` to `18.41730/110.04775`. |
 
-Shared validation issue (resolved):
+Shared validation issue (current reviewer result):
 
-- `node scripts/smoke-frontend.js` now passes 21/21. The harness was rewritten to probe server connectivity first and skip HTTP checks gracefully when the server is unreachable.
+- `node scripts/smoke-frontend.js` still reports 13/21 in the reviewer environment. Direct frontend `node --check` commands pass. Treat this as an open smoke-harness issue until fixed or explicitly scoped.
 
 Related task docs:
 
@@ -622,6 +909,51 @@ Related task docs:
 - `docs/agent/tasks/channel-messages-audience-filtering.md`
 - `docs/agent/tasks/map-v2-bounds-picker-validation.md`
 - `docs/agent/tasks/frontend-stability-smoke.md`
+
+### Reviewer Rerun: Pending Items (2026-05-03)
+
+Scope reviewed:
+
+- Lane D Audience Auth Hydration
+- Lane E NodeBB Contract Smoke
+- Lane F Messages Discussion / Notifications
+- Lane G Channel Audience Filtering
+- Lane H Map v2 Bounds
+- top-level Frontend Mock API Layer status (confirmed external to `lian-mobile-web`)
+
+Commands run:
+
+```bash
+node scripts/test-audience-hydration.js
+node scripts/smoke-nodebb-contracts.js
+node scripts/validate-locations.js
+node scripts/test-routes.js
+node scripts/smoke-frontend.js http://localhost:4100
+node --check public/app-state.js
+node --check public/app-utils.js
+node --check public/app-auth-avatar.js
+node --check public/app-feed.js
+node --check public/app-legacy-map.js
+node --check public/app-ai-publish.js
+node --check public/app-messages-profile.js
+node --check public/app.js
+```
+
+Result:
+
+| Item | Review result | Notes |
+|---|---|---|
+| Lane D Audience Auth Hydration | Accepted | `test-audience-hydration` passed 61/61. Full `setup-audience-test && test-audience` was not run because setup creates remote/local test data. |
+| Lane E NodeBB Contract Smoke | Accepted | Passed 4/4 against remote NodeBB when network access was allowed. |
+| Lane F Messages Discussion | Not accepted | Backend error state and metadata-missing audience branch are present, but frontend smoke still fails due harness shell invocation. |
+| Lane G Channel Audience Filtering | Accepted with follow-up | Filtering exists; pagination may under-fill because slicing happens before filtering. |
+| Lane H Map v2 Bounds | Accepted | `validate-locations` returned `ok: true`, 0 errors. |
+| Frontend Mock API Layer | Out of scope | Confirmed as `lian-frontend` repo work; missing `scripts/verify-mock.js` is not a blocker for `lian-mobile-web`. |
+
+Open blockers:
+
+1. Fix `scripts/smoke-frontend.js` so syntax checks do not rely on shell execution that fails in the reviewer environment. Prefer `spawnSync(process.execPath, ["--check", fullPath], { shell: false })`.
+2. Browser/manual checks still remain for Publish V2 and NodeBB detail/profile actions.
 
 ### Review Blockers: Lane F Messages Discussion (2026-05-03)
 
@@ -632,24 +964,24 @@ Scope reviewed:
 - `docs/agent/tasks/nodebb-reply-notifications-messages.md`
 - `docs/agent/handoffs/nodebb-reply-notifications-messages.md`
 
-Current decision: Lane F is not accepted. Reviewer rerun found remaining blockers after the recorded fixes.
+Current decision: historical blocker record. See "Reviewer Rerun: Pending Items (2026-05-03)" above for current status.
 
 Findings:
 
 | Finding | Severity | Status | Required fix |
 |---|---|---|---|
-| `/api/messages` silently returns `{ items: [] }` for NodeBB/auth/API failures | P2 | Partially fixed | Backend now returns `{ items: [], error: "notification_fetch_failed" }` for NodeBB notification fetch failures, but `public/app-messages-profile.js` ignores `data.error` and renders the same empty state. UI must show a safe error state. |
-| Notifications tied to topics without metadata bypass audience filtering | P2 | Open | `src/server/notification-service.js` only calls `canViewPost()` when `postMeta` exists. The Lane F acceptance criterion says topic-tied notifications must be checked before return. Missing metadata must be handled explicitly. |
-| Frontend smoke claim is not reproducible in reviewer environment | P2 | Consolidated with Review Fix Pass | Smoke harness hits `EPERM` on `cmd.exe` via `execSync` in reviewer env (13/21). Direct `node --check` passes. Documented as harness/environment limitation. |
+| `/api/messages` silently returns `{ items: [] }` for NodeBB/auth/API failures | P2 | Fixed in code / pending smoke | Backend returns `{ items: [], error: "notification_fetch_failed" }`, and `public/app-messages-profile.js` now displays a safe notification-load failure state. |
+| Notifications tied to topics without metadata bypass audience filtering | P2 | Fixed in code / pending smoke | `notification-service.js` now calls `canViewPost()` for metadata-missing topics using legacy-public defaults. |
+| Frontend smoke claim is not reproducible in reviewer environment | P2 | Open | Smoke harness still reports 13/21 because syntax checks shell through `execSync`. Direct `node --check` passes. |
 
 Notes:
 
 - Direct frontend syntax checks pass, so the smoke failure appears harness/environment-specific, but the Lane F handoff's 21/21 claim is not accepted in this reviewer environment.
 - Guest `/api/messages` returns `{ items: [] }`, which is acceptable for guests.
 - `node scripts/test-routes.js` passes 61/61.
-- Do not close Lane F until the two runtime blockers above are fixed and smoke status is either reproducible or explicitly scoped as a known harness limitation.
-- Executor thread should fix only the two runtime blockers and smoke documentation/path. Do not add private chat, mark-read, push notifications, reply highlight, or notification type redesign in this lane.
-- Reviewer thread should re-check API error display, metadata-missing audience behavior, guest behavior, route tests, and the smoke-script limitation before moving Lane F out of `待修复`.
+- Do not close Lane F until the smoke status is reproducible or explicitly scoped as a known harness limitation.
+- Executor thread should fix only the smoke documentation/path or smoke harness. Do not add private chat, mark-read, push notifications, reply highlight, or notification type redesign in this lane.
+- Reviewer thread should re-check guest behavior, route tests, and the smoke-script limitation before moving Lane F out of `Blocked`.
 
 Related task docs:
 

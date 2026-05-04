@@ -6,5 +6,7 @@ export const memory = {
   metadata: null,
   metadataLoadedAt: 0,
   channelReads: null,
-  channelReadsLoadedAt: 0
+  channelReadsLoadedAt: 0,
+  userCache: null,
+  userCacheLoadedAt: 0
 };

@@ -8,6 +8,7 @@ npm-debug.log*
 data/nodebb-snapshot.json
 data/channel-reads.json
 data/auth-users.json
+data/user-cache.json
 public/snapshot-assets/
 outputs/club-posts/images/
 outputs/club-posts/*results.json

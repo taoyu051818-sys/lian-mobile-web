@@ -18,6 +18,7 @@
           <button type="button" data-editor-mode="polygon">多边形</button>
           <button type="button" data-editor-mode="route">路线</button>
           <button type="button" data-editor-mode="road">路网</button>
+          <button type="button" data-editor-mode="place">放置</button>
           <button type="button" data-editor-mode="crop">截取</button>
         </div>
         <div class="mode-sub-selector" id="pointSubType" style="display:none">
@@ -41,6 +42,17 @@
             <option value="shuttle_route">班车路线</option>
             <option value="service_path">服务通道</option>
           </select>
+        </div>
+        <div class="mode-sub-selector" id="placeSubType" style="display:none">
+          <select id="assetDrawKind">
+            <option value="building_icon">建筑</option>
+            <option value="environment">环境</option>
+            <option value="poi_marker">标记</option>
+            <option value="label">标签</option>
+            <option value="other">其他</option>
+          </select>
+          <input id="assetDrawUrl" type="text" placeholder="图片 URL" style="min-width:140px">
+          <button type="button" data-upload-asset>上传</button>
         </div>
       </section>
       <aside class="side-panel">
@@ -119,11 +131,14 @@
           <label class="layer-toggle"><input type="checkbox" data-layer="areas" checked> 区域</label>
           <label class="layer-toggle"><input type="checkbox" data-layer="routes" checked> 路线</label>
           <label class="layer-toggle"><input type="checkbox" data-layer="roads" checked> 路网</label>
+          <label class="layer-toggle"><input type="checkbox" data-layer="junctions" checked> 路口</label>
           <label class="layer-toggle"><input type="checkbox" data-layer="buildings" checked> 建筑</label>
           <label class="layer-toggle"><input type="checkbox" data-layer="environmentElements" checked> 环境</label>
           <label class="layer-toggle"><input type="checkbox" data-layer="locations" checked> 地点</label>
+          <label class="layer-toggle"><input type="checkbox" data-layer="assets" checked> 资产</label>
           <label class="layer-toggle"><input type="checkbox" data-layer="posts" checked> 帖子</label>
           <label class="layer-toggle"><input type="checkbox" data-layer="draft" checked> 采点</label>
+          <label class="layer-toggle"><input type="checkbox" data-layer="roadPreview" checked> 路网预览</label>
         </section>
 
         <section class="form-grid">
@@ -225,7 +240,60 @@
             </select></label>
             <label>状态<select id="propRoadStatus"><option value="active">active</option><option value="hidden">hidden</option></select></label>
             <label>点数<span id="propRoadPointCount" class="readonly-field">0</span></label>
+            <label>跳过检测<select id="propRoadNoSnap"><option value="false">否</option><option value="true">是</option></select></label>
+            <label>曲线类型<span id="propRoadCurveHint" class="readonly-field">—</span></label>
+            <label>路线引用<input id="propRoadRouteRef" autocomplete="off" placeholder="被引用路段 ID"></label>
           </section>
+        </div>
+
+        <!-- Junction properties -->
+        <div class="prop-section" data-for="junction">
+          <section class="form-grid">
+            <label>类型<span id="propJxType" class="readonly-field">—</span></label>
+            <label>状态<span id="propJxStatus" class="readonly-field">—</span></label>
+            <label>连接路数<span id="propJxRoadCount" class="readonly-field">0</span></label>
+            <label>纬度<span id="propJxLat" class="readonly-field">—</span></label>
+            <label>经度<span id="propJxLng" class="readonly-field">—</span></label>
+            <label class="full-width">连接道路<textarea id="propJxRoads" rows="3" readonly></textarea></label>
+          </section>
+        </div>
+
+        <!-- Asset properties -->
+        <div class="prop-section" data-for="asset">
+          <section class="form-grid">
+            <label class="full-width">图片 URL<input id="propAssetUrl" autocomplete="off" placeholder="/assets/map/icon.png"></label>
+            <label>类型<select id="propAssetKind">
+              <option value="building_icon">建筑</option>
+              <option value="environment">环境</option>
+              <option value="poi_marker">标记</option>
+              <option value="label">标签</option>
+              <option value="other">其他</option>
+            </select></label>
+            <label>点击行为<select id="propAssetClickBehavior">
+              <option value="none">无</option>
+              <option value="open_floor_plan">打开楼层</option>
+              <option value="open_detail">打开详情</option>
+            </select></label>
+            <label>宽<input id="propAssetWidth" type="number" min="8" max="300" value="64"></label>
+            <label>高<input id="propAssetHeight" type="number" min="8" max="300" value="64"></label>
+            <label>锚点 X<input id="propAssetAnchorX" type="number" min="0" max="300" value="32"></label>
+            <label>锚点 Y<input id="propAssetAnchorY" type="number" min="0" max="300" value="64"></label>
+            <label>旋转<input id="propAssetRotation" type="number" min="-180" max="180" value="0"></label>
+            <label>透明度<input id="propAssetOpacity" type="range" min="0" max="1" step="0.05" value="1"></label>
+            <label>绑定类型<input id="propAssetBoundType" autocomplete="off" placeholder="building / location"></label>
+            <label>绑定 ID<input id="propAssetBoundId" autocomplete="off" placeholder="building-library"></label>
+            <label>状态<select id="propAssetStatus"><option value="active">active</option><option value="hidden">hidden</option></select></label>
+          </section>
+          <div class="action-row">
+            <button type="button" class="primary" data-publish-selected-asset>推到用户端</button>
+            <button type="button" class="secondary" data-hide-selected-asset>从用户端隐藏</button>
+          </div>
+        </div>
+
+        <div class="action-row">
+          <button type="button" data-detect-junctions>检测路口</button>
+          <button type="button" data-auto-classify-curves>曲线分类</button>
+          <button type="button" data-toggle-smooth>平滑预览</button>
         </div>
 
         <div class="action-row">
@@ -243,6 +311,35 @@
         <div class="action-row">
           <button type="button" data-export-spec>导出渲染规格</button>
         </div>
+
+        <section class="section road-preview-section">
+          <strong>路网预览 (road_network_mapWITH)</strong>
+          <div class="lane-toggle-row">
+            <label><input type="checkbox" id="previewShowLanes" checked> <span class="lane-color" style="background:#e8e8e8;border:1px solid #aaa"></span> 车道线</label>
+            <label><input type="checkbox" id="previewShowRoads"> <span class="lane-color" style="background:#8a8a8a"></span> 道路</label>
+            <label><input type="checkbox" id="previewShowJunctions"> <span class="lane-color" style="background:#8a8a8a;border:1px solid #555"></span> 路口</label>
+          </div>
+          <div class="road-preview-controls">
+            <label>透明度 <input type="range" id="previewOpacity" min="0" max="100" value="70"></label>
+            <label>线宽 <input type="range" id="previewLineWidth" min="0.5" max="5" step="0.5" value="1.5"></label>
+          </div>
+          <div class="transform-row">
+            <label>X偏移 <input type="number" id="previewTx" step="1" value="442"></label>
+            <label>Y偏移 <input type="number" id="previewTy" step="1" value="-184"></label>
+            <label>缩放 <input type="number" id="previewScale" step="0.01" value="1"></label>
+            <label>旋转 <input type="number" id="previewRot" step="0.5" value="0"></label>
+          </div>
+          <div class="action-row">
+            <button type="button" data-load-preview>加载预览</button>
+            <button type="button" data-toggle-align-mode>对齐模式</button>
+            <button type="button" data-export-preview>导出对齐</button>
+          </div>
+          <div class="action-row">
+            <button type="button" class="secondary" data-reset-preview-transform>重置变换</button>
+            <button type="button" class="danger" data-clear-preview>清除</button>
+          </div>
+          <p style="font-size:11px;color:var(--muted)">点击"对齐模式"后拖拽移动路网；再点一次退出</p>
+        </section>
 
         <label class="json-block">locations.json<textarea id="locationsJson" spellcheck="false"></textarea></label>
         <label class="json-block">map-v2-layers.json<textarea id="layersJson" spellcheck="false"></textarea></label>

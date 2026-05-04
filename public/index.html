@@ -33,12 +33,17 @@
         <header class="topbar compact">
           <div>
             <h1>消息</h1>
-            <p>校园频道</p>
+            <nav class="message-tabs" id="messageTabs">
+              <button class="message-tab is-active" type="button" data-message-tab="channel">频道</button>
+              <button class="message-tab" type="button" data-message-tab="notifications">通知</button>
+            </nav>
           </div>
         </header>
         <section class="message-list" id="messageList"></section>
+        <section class="notification-list" id="notificationList" style="display:none"></section>
         <form class="channel-composer" id="channelForm">
           <span class="composer-avatar" id="channelComposerAvatar">同</span>
+          <span class="composer-name" id="channelComposerName"></span>
           <select name="identityTag" aria-label="身份标签"></select>
           <input name="content" maxlength="800" autocomplete="off" placeholder="说点什么">
           <button type="submit">发送</button>
@@ -202,6 +207,7 @@
     <script src="/app-feed.js"></script>
     <script src="/app-legacy-map.js"></script>
     <script src="/app-ai-publish.js"></script>
+    <script src="/publish-page.js"></script>
     <script src="/app-messages-profile.js"></script>
     <script src="/app.js"></script>
   </body>

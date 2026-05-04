@@ -62,6 +62,7 @@ async function handleGetAliasPool(_req, res) {
       id: item.id,
       name: item.name,
       description: item.description || "",
+      avatarUrl: item.avatarUrl || "",
       avatarSeed: item.avatarSeed || "",
       order: item.order || 0
     }))
@@ -99,7 +100,7 @@ async function handleCreateAlias(req, res) {
     id: crypto.randomUUID(),
     poolId: entry.id,
     name: entry.name,
-    avatarUrl: "",
+    avatarUrl: entry.avatarUrl || "",
     avatarSeed: entry.avatarSeed || "",
     createdAt: new Date().toISOString(),
     status: "active"

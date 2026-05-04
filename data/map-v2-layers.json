@@ -7,5 +7,137 @@
   },
   "zoom": 16,
   "areas": [],
-  "routes": []
+  "routes": [],
+  "roads": [],
+  "junctions": [],
+  "buildings": [],
+  "environmentElements": [],
+  "buildingGroups": [],
+  "assets": [
+    {
+      "id": "asset-moprp1fd",
+      "url": "https://res.cloudinary.com/dhvyvfu4n/image/upload/v1777812553/nodebb-frontend/mobile-web-upload/lqyzz6txsyba6dm7shob.png",
+      "kind": "building_icon",
+      "position": {
+        "lat": 18.4028474,
+        "lng": 110.0171542
+      },
+      "size": [
+        180,
+        180
+      ],
+      "anchor": [
+        36,
+        91
+      ],
+      "rotation": 0,
+      "opacity": 1,
+      "zIndex": 40,
+      "boundObjectType": "",
+      "boundObjectId": "",
+      "clickBehavior": "none",
+      "alwaysShowCard": false,
+      "status": "active"
+    },
+    {
+      "id": "asset-mopt4n87",
+      "url": "https://res.cloudinary.com/dhvyvfu4n/image/upload/v1777814963/nodebb-frontend/mobile-web-upload/nggesombtiobehlo7umt.png",
+      "kind": "building_icon",
+      "position": {
+        "lat": 18.394642,
+        "lng": 110.0242567
+      },
+      "size": [
+        150,
+        150
+      ],
+      "anchor": [
+        150,
+        150
+      ],
+      "rotation": -12,
+      "opacity": 1,
+      "zIndex": 40,
+      "boundObjectType": "",
+      "boundObjectId": "",
+      "clickBehavior": "none",
+      "alwaysShowCard": false,
+      "status": "active"
+    },
+    {
+      "id": "asset-moqfrsq6",
+      "url": "https://res.cloudinary.com/dhvyvfu4n/image/upload/v1777852992/nodebb-frontend/mobile-web-upload/v0ub3geu69nnv09odexm.png",
+      "kind": "building_icon",
+      "position": {
+        "lat": 18.4017271,
+        "lng": 110.0247069
+      },
+      "size": [
+        120,
+        120
+      ],
+      "anchor": [
+        120,
+        120
+      ],
+      "rotation": 0,
+      "opacity": 1,
+      "zIndex": 40,
+      "boundObjectType": "",
+      "boundObjectId": "",
+      "clickBehavior": "none",
+      "alwaysShowCard": false,
+      "status": "active"
+    },
+    {
+      "id": "asset-moqftj4d",
+      "url": "https://res.cloudinary.com/dhvyvfu4n/image/upload/v1777853075/nodebb-frontend/mobile-web-upload/ee7g5gky3h0p6ru5ufwb.png",
+      "kind": "building_icon",
+      "position": {
+        "lat": 18.3926465,
+        "lng": 110.0221325
+      },
+      "size": [
+        150,
+        150
+      ],
+      "anchor": [
+        150,
+        150
+      ],
+      "rotation": 3,
+      "opacity": 1,
+      "zIndex": 40,
+      "boundObjectType": "",
+      "boundObjectId": "",
+      "clickBehavior": "none",
+      "alwaysShowCard": false,
+      "status": "active"
+    },
+    {
+      "id": "asset-moqfz33z",
+      "url": "https://res.cloudinary.com/dhvyvfu4n/image/upload/v1777853333/nodebb-frontend/mobile-web-upload/twjwcmyv8z77qm9vxtai.png",
+      "kind": "building_icon",
+      "position": {
+        "lat": 18.4045982,
+        "lng": 110.022583
+      },
+      "size": [
+        180,
+        180
+      ],
+      "anchor": [
+        100,
+        180
+      ],
+      "rotation": 0,
+      "opacity": 1,
+      "zIndex": 40,
+      "boundObjectType": "",
+      "boundObjectId": "",
+      "clickBehavior": "none",
+      "alwaysShowCard": false,
+      "status": "active"
+    }
+  ]
 }

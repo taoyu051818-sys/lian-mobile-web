@@ -1,5 +1,6 @@
 (function () {
   const GAODE_TILE_URL = "https://webrd0{s}.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=8&x={x}&y={y}&z={z}";
+  const LIAN_API_BASE = (typeof window !== "undefined" && window.LIAN_API_BASE_URL) || "";
   const TYPE_COLORS = {
     campus: "#2563eb",
     study: "#2563eb",
@@ -31,7 +32,8 @@
   }
 
   async function api(path, options = {}) {
-    const response = await fetch(path, {
+    const url = path.startsWith("/") ? `${LIAN_API_BASE}${path}` : path;
+    const response = await fetch(url, {
       credentials: "include",
       ...options
     });
@@ -43,7 +45,7 @@
   function displayImageUrl(url = "") {
     const value = String(url || "");
     if (/^https:\/\/res\.cloudinary\.com\/[^/]+\/image\/upload\//.test(value)) {
-      return `/api/image-proxy?url=${encodeURIComponent(value)}`;
+      return `${LIAN_API_BASE}/api/image-proxy?url=${encodeURIComponent(value)}`;
     }
     return value;
   }
@@ -90,9 +92,9 @@
     const image = post.imageUrl ? `<img src="${escapeHtml(displayImageUrl(post.imageUrl))}" alt="">` : "";
     return L.divIcon({
       className: "map-v2-post-icon",
-      iconSize: [156, 68],
-      iconAnchor: [78, 74],
-      popupAnchor: [0, -70],
+      iconSize: [132, 118],
+      iconAnchor: [66, 124],
+      popupAnchor: [0, -118],
       html: `
         <button class="map-v2-post-card" type="button" data-map-v2-tid="${escapeHtml(post.tid)}">
           ${image}
@@ -118,6 +120,33 @@
     });
   }
 
+  function assetIcon(asset) {
+    const baseSize = Array.isArray(asset.size) ? asset.size : [64, 64];
+    const baseAnchor = Array.isArray(asset.anchor) ? asset.anchor : [baseSize[0] / 2, baseSize[1]];
+    const shouldScaleWithZoom = asset.kind === "building_icon" || asset.scaleWithZoom === true;
+    const maxZoom = state.map?.getMaxZoom?.() || 16;
+    const currentZoom = state.map?.getZoom?.() || maxZoom;
+    const zoomScale = shouldScaleWithZoom ? Math.pow(2, currentZoom - maxZoom) : 1;
+    const size = baseSize.map((value) => Math.max(1, Math.round(Number(value || 0) * zoomScale)));
+    const anchor = baseAnchor.map((value) => Math.round(Number(value || 0) * zoomScale));
+    const rotation = Number(asset.rotation || 0);
+    const opacity = Math.max(0, Math.min(1, Number(asset.opacity ?? 1)));
+    return L.divIcon({
+      className: `map-v2-asset-icon map-v2-asset-${escapeHtml(asset.kind || "other")}`,
+      iconSize: size,
+      iconAnchor: anchor,
+      popupAnchor: [0, -Math.round(size[1] * 0.65)],
+      html: `
+        <img
+          class="map-v2-asset-image"
+          src="${escapeHtml(displayImageUrl(asset.url))}"
+          alt=""
+          style="opacity:${opacity};transform:rotate(${rotation}deg)"
+        >
+      `
+    });
+  }
+
   function popupHtml(item) {
     return `
       <div class="map-v2-popup">
@@ -128,11 +157,78 @@
     `;
   }
 
+  // Road network preview
+  const ROAD_PREVIEW = {
+    data: null,
+    canvas: null,
+    ctx: null,
+    tx: 442,
+    ty: -184,
+    scale: 1,
+    rotation: 0,
+    opacity: 0.7
+  };
+
+  function renderRoadPreview() {
+    const { canvas, ctx, data } = ROAD_PREVIEW;
+    if (!canvas || !ctx || !data || !state.map) return;
+
+    const map = state.map;
+    const bounds = map.getBounds();
+    const topLeft = map.latLngToLayerPoint(bounds.getNorthWest());
+    const size = map.getSize();
+    const dpr = window.devicePixelRatio || 1;
+
+    canvas.style.left = topLeft.x + 'px';
+    canvas.style.top = topLeft.y + 'px';
+    canvas.width = size.x * dpr;
+    canvas.height = size.y * dpr;
+    canvas.style.width = size.x + 'px';
+    canvas.style.height = size.y + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, size.x, size.y);
+
+    const zoom = map.getZoom();
+    const center = map.getCenter();
+    const cosLat = Math.cos(center.lat * Math.PI / 180);
+
+    function project(lat, lng) {
+      const xMeters = (lng - 110.015821) * 111320 * cosLat;
+      const yMeters = (lat - 18.393453) * 111320;
+      const px = xMeters * ROAD_PREVIEW.scale + ROAD_PREVIEW.tx;
+      const py = yMeters * ROAD_PREVIEW.scale + ROAD_PREVIEW.ty;
+      const lng2 = px / (111320 * cosLat) + 110.015821;
+      const lat2 = py / 111320 + 18.393453;
+      const ppt = map.latLngToLayerPoint([lat2, lng2]);
+      return { x: ppt.x - topLeft.x, y: ppt.y - topLeft.y };
+    }
+
+    ctx.globalAlpha = ROAD_PREVIEW.opacity;
+    ctx.strokeStyle = '#888';
+    ctx.lineWidth = 1;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+
+    for (const lane of data.lanes) {
+      if (!lane.points || lane.points.length < 2) continue;
+      ctx.beginPath();
+      const p0 = project(lane.points[0][0], lane.points[0][1]);
+      ctx.moveTo(p0.x, p0.y);
+      for (let i = 1; i < lane.points.length; i++) {
+        const p = project(lane.points[i][0], lane.points[i][1]);
+        ctx.lineTo(p.x, p.y);
+      }
+      ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+  }
+
   function initLayerGroups() {
     if (state.layers) Object.values(state.layers).forEach((layer) => layer.remove());
     state.layers = {
       areas: L.layerGroup().addTo(state.map),
       routes: L.layerGroup().addTo(state.map),
+      assets: L.layerGroup().addTo(state.map),
       locations: L.layerGroup().addTo(state.map),
       posts: L.layerGroup().addTo(state.map),
       pick: L.layerGroup().addTo(state.map)
@@ -162,6 +258,22 @@
         opacity: 0.92,
         className: "map-v2-route"
       }).bindTooltip(route.name, { sticky: true }).addTo(state.layers.routes);
+    }
+  }
+
+  function renderAssets(assets = []) {
+    state.layers.assets.clearLayers();
+    for (const asset of assets) {
+      if (!asset.url || !asset.position?.lat || !asset.position?.lng) continue;
+      const interactive = asset.clickBehavior && asset.clickBehavior !== "none";
+      const marker = L.marker([asset.position.lat, asset.position.lng], {
+        icon: assetIcon(asset),
+        interactive,
+        keyboard: interactive,
+        zIndexOffset: Number(asset.zIndex || 40)
+      });
+      if (interactive) marker.bindPopup(popupHtml({ name: asset.id, type: asset.kind }));
+      marker.addTo(state.layers.assets);
     }
   }
 
@@ -201,6 +313,7 @@
     if (!state.map || !state.data) return;
     renderAreas(state.data.layers?.areas || []);
     renderRoutes(state.data.layers?.routes || []);
+    renderAssets(state.data.layers?.assets || []);
     renderLocations(state.data.locations || []);
     renderPosts(state.data.posts || []);
   }
@@ -215,7 +328,7 @@
     if (!el || !window.L) return;
     const data = state.data || await loadData();
     if (!state.map) {
-      const bounds = data.bounds || { south: 18.3700734, west: 109.9940365, north: 18.4149043, east: 110.0503482 };
+      const bounds = data.bounds || { south: 18.37107, west: 109.98464, north: 18.41730, east: 110.04775 };
       state.map = L.map(el, {
         center: [data.center?.lat || 18.3935, data.center?.lng || 110.0159],
         zoom: data.zoom || 16,
@@ -240,6 +353,24 @@
       initLayerGroups();
       state.map.on("click", handleMapClick);
       state.map.on("popupopen", bindPopupActions);
+      state.map.on("zoomend", () => renderAssets(state.data?.layers?.assets || []));
+
+      // Road network canvas overlay
+      const pane = state.map.getPane('overlayPane');
+      const canvas = document.createElement('canvas');
+      canvas.style.position = 'absolute';
+      canvas.style.pointerEvents = 'none';
+      canvas.style.zIndex = '350';
+      pane.appendChild(canvas);
+      ROAD_PREVIEW.canvas = canvas;
+      ROAD_PREVIEW.ctx = canvas.getContext('2d');
+      state.map.on('moveend zoomend move', renderRoadPreview);
+
+      // Load road network data
+      fetch('/assets/road-network-preview.json')
+        .then(r => r.ok ? r.json() : null)
+        .then(data => { if (data && data.lanes) { ROAD_PREVIEW.data = data; renderRoadPreview(); } })
+        .catch(() => {});
     }
     renderAll();
     setTimeout(() => state.map.invalidateSize(), 50);
@@ -344,11 +475,55 @@
     if (post) window.openDetail?.(post.dataset.mapV2Tid);
   });
 
+  async function startPickInContainer(container, callback) {
+    if (!container || !window.L) return;
+    const data = state.data || await loadData();
+    const bounds = data.bounds || { south: 18.37107, west: 109.98464, north: 18.41730, east: 110.04775 };
+    const miniMap = L.map(container, {
+      center: [data.center?.lat || 18.3935, data.center?.lng || 110.0159],
+      zoom: data.zoom || 16,
+      minZoom: 15,
+      maxZoom: 16,
+      maxBounds: [[bounds.south, bounds.west], [bounds.north, bounds.east]],
+      maxBoundsViscosity: 1,
+      zoomControl: false,
+      attributionControl: false
+    });
+    L.imageOverlay("/assets/campus-base-map.png", [[bounds.south, bounds.west], [bounds.north, bounds.east]], {
+      interactive: false,
+      zIndex: 0
+    }).addTo(miniMap);
+    L.tileLayer(GAODE_TILE_URL, {
+      subdomains: ["1", "2", "3", "4"],
+      maxZoom: 19,
+      minZoom: 3,
+      opacity: 0
+    }).addTo(miniMap);
+    const pickLayer = L.layerGroup().addTo(miniMap);
+    miniMap.on("click", (event) => {
+      const location = nearestLocation(event.latlng);
+      const draft = locationDraftFrom({ latlng: event.latlng, location });
+      pickLayer.clearLayers();
+      L.marker([draft.lat, draft.lng], {
+        icon: L.divIcon({
+          className: "map-v2-picked-icon",
+          iconSize: [28, 28],
+          iconAnchor: [14, 28],
+          html: "<span></span>"
+        })
+      }).addTo(pickLayer).bindTooltip(draft.displayName || "Map pick", { permanent: false });
+      if (typeof callback === "function") callback(draft);
+    });
+    setTimeout(() => miniMap.invalidateSize(), 80);
+    container._miniMap = miniMap;
+  }
+
   window.MapV2 = {
     init,
     loadData,
     reload: reloadEditor,
     startPick,
+    startPickInContainer,
     stopPick,
     setMode
   };

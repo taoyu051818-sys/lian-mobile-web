@@ -2,6 +2,15 @@
 
 This directory is the working memory for Codex threads. Treat newer task and handoff files as more specific than older baseline documents.
 
+## Thread Workflow
+
+Default division of labor:
+
+- Codex / code thread: project management, planning, architecture decisions, review, acceptance, and docs status.
+- Claude Code thread: implementation inside the approved task boundary.
+
+Do not treat executor handoffs as acceptance. A lane becomes accepted only when the Codex / code review records the validation result in `05_TASK_BOARD.md` or the corresponding task doc.
+
 ## Start Here
 
 Read these in order before starting implementation work:
@@ -10,10 +19,11 @@ Read these in order before starting implementation work:
 2. `ARCHITECTURE_WORKPLAN.md` - current architecture direction and work organization
 3. `05_TASK_BOARD.md` - current done/ready/risky items
 4. `03_FILE_OWNERSHIP.md` - ownership and conflict boundaries
-5. `04_DECISIONS.md` - recorded architecture/product decisions
-6. `domains/<area>.md` - domain context for the task area
-7. `tasks/<task>.md` - current task specification, if present
-8. `handoffs/<task>.md` - latest thread handoff, if present
+5. `PROJECT_FILE_INDEX.md` - canonical file index with status, owner, repo split destination
+6. `04_DECISIONS.md` - recorded architecture/product decisions
+7. `domains/<area>.md` - domain context for the task area
+8. `tasks/<task>.md` - current task specification, if present
+9. `handoffs/<task>.md` - latest thread handoff, if present
 
 ## Current Domain Docs
 
@@ -29,6 +39,7 @@ Use `tasks/` for active or ready-to-resume implementation specs. A task doc shou
 
 Notable ready/resumable work:
 
+- `tasks/project-file-index-and-doc-cleanup.md`
 - `tasks/map-v2-data-assets.md`
 - `tasks/map-v2-restore-legacy-geo.md`
 - `tasks/audience-permission-design.md`
@@ -43,7 +54,7 @@ Read `handoffs/README.md` for the normalized handoff list.
 
 ## References
 
-- `references/HIGH_RISK_AREAS.md` — 6 个高风险区域结构化调研（前端加载顺序、Feed 评分、NodeBB 集成、认证系统、metadata 格式、路由结构）
+- `references/HIGH_RISK_AREAS.md` - 6 high-risk area audits (frontend load order, feed scoring, NodeBB integration, auth, metadata format, route structure)
 
 ## Historical References
 
@@ -58,6 +69,8 @@ When docs disagree, prefer this order:
 1. Current code
 2. Latest handoff for the task area
 3. Current task doc
-4. `ARCHITECTURE_WORKPLAN.md`
-5. `04_DECISIONS.md`
-6. Historical baseline/planning docs
+4. `PROJECT_FILE_INDEX.md` - canonical file index
+5. `domains/<area>.md` - domain documentation
+6. `ARCHITECTURE_WORKPLAN.md`
+7. `04_DECISIONS.md`
+8. Historical baseline/planning docs

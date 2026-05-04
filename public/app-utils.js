@@ -27,12 +27,28 @@ function avatarHtml({ url = "", text = "同" } = {}) {
     : escapeHtml(label);
 }
 
+const LIAN_API_BASE = (typeof window !== "undefined" && window.LIAN_API_BASE_URL) || "";
+
 function displayImageUrl(url = "") {
   const value = String(url || "");
   if (/^https:\/\/res\.cloudinary\.com\/[^/]+\/image\/upload\//.test(value)) {
-    return `/api/image-proxy?url=${encodeURIComponent(value)}`;
+    return `${LIAN_API_BASE}/api/image-proxy?url=${encodeURIComponent(value)}`;
   }
   return value;
+}
+
+function formatRelativeTime(value) {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  const now = Date.now();
+  const diff = now - date.getTime();
+  if (diff < 60_000) return "刚刚";
+  if (diff < 3_600_000) return `${Math.floor(diff / 60_000)}分钟前`;
+  if (diff < 86_400_000) return `${Math.floor(diff / 3_600_000)}小时前`;
+  if (diff < 172_800_000) return "昨天";
+  if (diff < 604_800_000) return `${Math.floor(diff / 86_400_000)}天前`;
+  return `${date.getMonth() + 1}月${date.getDate()}日`;
 }
 
 function fixFmtDate(value) {
@@ -51,7 +67,8 @@ function fmtMinute(value) {
 }
 
 async function api(path, options) {
-  const response = await fetch(path, options);
+  const url = path.startsWith("/") ? `${LIAN_API_BASE}${path}` : path;
+  const response = await fetch(url, options);
   const data = await response.json().catch(() => ({}));
   if (!response.ok) throw new Error(data.error || "请求失败");
   return data;
@@ -61,7 +78,7 @@ async function uploadImage(file, purpose = "") {
   const form = new FormData();
   form.append("image", file, file.name || "image.jpg");
   const query = purpose ? `?purpose=${encodeURIComponent(purpose)}` : "";
-  const response = await fetch(`/api/upload/image${query}`, {
+  const response = await fetch(`${LIAN_API_BASE}/api/upload/image${query}`, {
     method: "POST",
     body: form
   });

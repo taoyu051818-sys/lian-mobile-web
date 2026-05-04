@@ -86,7 +86,17 @@ document.addEventListener("click", (event) => {
   const card = event.target.closest("[data-tid]");
   if (card) {
     if (card.closest("#messageList")) return;
+    if (card.closest("#notificationList")) {
+      openDetail(card.dataset.tid);
+      return;
+    }
     openDetail(card.dataset.tid);
+    return;
+  }
+
+  const messageTab = event.target.closest("[data-message-tab]");
+  if (messageTab) {
+    switchMessageTab(messageTab.dataset.messageTab);
     return;
   }
 
@@ -125,10 +135,7 @@ document.addEventListener("click", (event) => {
 
   if (event.target.closest("[data-open-publish]")) {
     if (!requireLoginUi()) return;
-    resetAiPublish();
-    renderAiPublishSheet();
-    updatePublishIdentityNote();
-    $("#publishSheet").showModal();
+    publishPageOpen();
     return;
   }
   if (event.target.closest("[data-pick-time]")) {
@@ -163,6 +170,46 @@ document.addEventListener("click", (event) => {
     backToFeed();
     return;
   }
+
+  if (event.target.closest("[data-publish-back]")) {
+    publishPageBack();
+    return;
+  }
+  if (event.target.closest("[data-publish-confirm-images]")) {
+    publishPageConfirmImages();
+    return;
+  }
+  if (event.target.closest("[data-publish-skip-location]")) {
+    publishPageSkipLocation();
+    return;
+  }
+  if (event.target.closest("[data-publish-confirm-location]")) {
+    publishPageConfirmLocation();
+    return;
+  }
+  if (event.target.closest("[data-publish-remove-image]")) {
+    const btn = event.target.closest("[data-publish-remove-image]");
+    publishPageRemoveImage(Number(btn.dataset.publishRemoveImage));
+    return;
+  }
+  if (event.target.closest("[data-publish-save-draft]")) {
+    publishPageSaveDraft();
+    return;
+  }
+  if (event.target.closest("[data-publish-submit]")) {
+    publishPagePublish();
+    return;
+  }
+  if (event.target.closest("[data-publish-regenerate]")) {
+    publishPageRegenerate();
+    return;
+  }
+  if (event.target.closest("[data-publish-audience]")) {
+    const btn = event.target.closest("[data-publish-audience]");
+    publishPageSetAudience(btn.dataset.publishAudience);
+    return;
+  }
+
   if (event.target.closest("[data-close-publish]")) $("#publishSheet").close();
   if (event.target.closest("[data-close-auth]")) $("#authSheet").close();
   if (event.target.closest("[data-close-avatar-crop]")) closeAvatarCrop();
@@ -185,6 +232,7 @@ document.addEventListener("submit", submitReply);
 document.addEventListener("change", (event) => {
   if (event.target?.id === "avatarInput") openAvatarCrop(event.target.files?.[0]);
   if (event.target?.id === "publishImageInput") startAiImageUpload(Array.from(event.target.files || []));
+  if (event.target?.id === "publishPageImageInput") publishPageHandleImageSelect(Array.from(event.target.files || []));
   if (event.target?.name === "placeName" && state.aiPublish.active) syncAiLocationFromInput();
 });
 document.addEventListener("input", (event) => {

@@ -14,6 +14,22 @@ function deriveSchoolId(institution) {
   return "";
 }
 
+// Normalize raw auth-store user into canonical viewer context.
+// Auth store users have `institution` + `tags` but NOT `schoolId`, `orgIds`, `roleIds`.
+// options.isAdmin: pass true when ADMIN_TOKEN header matched (not stored in user object).
+function hydrateAudienceUser(user, options = {}) {
+  if (!user) {
+    return { id: "", schoolId: "", orgIds: [], roleIds: [], isGuest: true, isAdmin: false };
+  }
+  const schoolId = user.schoolId || deriveSchoolId(user.institution);
+  const orgIds = Array.isArray(user.orgIds) ? user.orgIds : [];
+  let roleIds = Array.isArray(user.roleIds) ? [...user.roleIds] : [];
+  if (options.isAdmin && !roleIds.includes("admin")) {
+    roleIds.push("admin");
+  }
+  return { id: user.id || "", schoolId, orgIds, roleIds, isGuest: false, isAdmin: roleIds.includes("admin") };
+}
+
 function normalizeAudience(audience, flatVisibility) {
   if (audience && typeof audience === "object" && audience.visibility) {
     return {
@@ -39,27 +55,29 @@ function normalizeAudience(audience, flatVisibility) {
 // context: "feed" | "map" | "detail" (default)
 // - feed/map: linkOnly posts are NEVER distributed, always return false
 // - detail: linkOnly posts are accessible by direct link, check base visibility
+// user: raw auth-store user or pre-hydrated viewer (auto-hydrated internally)
 function canViewPost(user, post, context = "detail") {
+  const viewer = hydrateAudienceUser(user);
   const audience = normalizeAudience(post.audience, post.visibility);
 
   if (audience.linkOnly) {
     if (context === "feed" || context === "map") return false;
     // detail access: check base visibility + author/admin override
-    if (post.authorUserId && user && post.authorUserId === user.id) return true;
-    if (user && user.roleIds && user.roleIds.includes("admin")) return true;
+    if (post.authorUserId && !viewer.isGuest && post.authorUserId === viewer.id) return true;
+    if (viewer.isAdmin) return true;
     switch (audience.visibility) {
       case "public":
         return true;
       case "campus":
-        return Boolean(user);
+        return !viewer.isGuest;
       case "school":
-        if (!user) return false;
+        if (viewer.isGuest) return false;
         if (!audience.schoolIds.length) return true;
-        return audience.schoolIds.includes(user.schoolId);
+        return audience.schoolIds.includes(viewer.schoolId);
       case "private":
-        if (!user) return false;
-        if (audience.userIds.length && audience.userIds.includes(user.id)) return true;
-        if (audience.orgIds.length && user.orgIds && audience.orgIds.some((id) => user.orgIds.includes(id))) return true;
+        if (viewer.isGuest) return false;
+        if (audience.userIds.length && audience.userIds.includes(viewer.id)) return true;
+        if (audience.orgIds.length && audience.orgIds.some((id) => viewer.orgIds.includes(id))) return true;
         return false;
       default:
         return false;
@@ -70,15 +88,15 @@ function canViewPost(user, post, context = "detail") {
     case "public":
       return true;
     case "campus":
-      return Boolean(user);
+      return !viewer.isGuest;
     case "school":
-      if (!user) return false;
+      if (viewer.isGuest) return false;
       if (!audience.schoolIds.length) return true;
-      return audience.schoolIds.includes(user.schoolId);
+      return audience.schoolIds.includes(viewer.schoolId);
     case "private":
-      if (!user) return false;
-      if (audience.userIds.length && audience.userIds.includes(user.id)) return true;
-      if (audience.orgIds.length && user.orgIds && audience.orgIds.some((id) => user.orgIds.includes(id))) return true;
+      if (viewer.isGuest) return false;
+      if (audience.userIds.length && audience.userIds.includes(viewer.id)) return true;
+      if (audience.orgIds.length && audience.orgIds.some((id) => viewer.orgIds.includes(id))) return true;
       return false;
     default:
       return true;
@@ -86,9 +104,10 @@ function canViewPost(user, post, context = "detail") {
 }
 
 function canCreatePostWithAudience(user, audience) {
+  const viewer = hydrateAudienceUser(user);
   const vis = audience?.visibility || "public";
   if (vis === "public" || vis === "campus") return true;
-  if (vis === "school") return Array.isArray(audience.schoolIds) && audience.schoolIds.includes(user.schoolId);
+  if (vis === "school") return Array.isArray(audience.schoolIds) && audience.schoolIds.includes(viewer.schoolId);
   if (vis === "private") return true;
   return true;
 }
@@ -99,17 +118,21 @@ function canReplyToPost(user, post) {
 }
 
 function canModeratePost(user, post) {
-  if (!user) return false;
-  if (user.roleIds && user.roleIds.includes("admin")) return true;
-  if (user.roleIds && user.roleIds.includes("moderator")) return true;
-  if (post.authorUserId && post.authorUserId === user.id) return true;
+  const viewer = hydrateAudienceUser(user);
+  if (viewer.isGuest) return false;
+  if (viewer.roleIds.includes("admin")) return true;
+  if (viewer.roleIds.includes("moderator")) return true;
+  if (post.authorUserId && post.authorUserId === viewer.id) return true;
   return false;
 }
 
 function canSeeAudienceOption(user, option) {
   if (option.visibility === "public") return true;
   if (option.visibility === "campus") return true;
-  if (option.visibility === "school") return user.schoolId != null;
+  if (option.visibility === "school") {
+    const viewer = hydrateAudienceUser(user);
+    return Boolean(viewer.schoolId);
+  }
   if (option.visibility === "private") return true;
   return false;
 }
@@ -121,5 +144,6 @@ export {
   canSeeAudienceOption,
   canViewPost,
   deriveSchoolId,
+  hydrateAudienceUser,
   normalizeAudience
 };

@@ -14,7 +14,7 @@ import {
   renderPostContent,
   stripHtml
 } from "./content-utils.js";
-import { loadMetadata, loadRules } from "./data-store.js";
+import { loadMetadata, loadRules, getUserLikedTids, loadUserCache } from "./data-store.js";
 import { sendJson } from "./http-response.js";
 import { nodebbFetch, withNodebbUid } from "./nodebb-client.js";
 import { requireAdmin } from "./request-utils.js";
@@ -770,13 +770,23 @@ async function handlePostDetail(req, tid, res) {
   }
   const sourceUrl = meta.sourceUrl || extractSourceUrl(firstPost.content || "");
   let bookmarked = false;
+  let liked = false;
   if (auth.user) {
     try {
       const nodebbUid = await ensureNodebbUid(auth);
       const userDetail = await nodebbFetch(withNodebbUid(`/api/topic/${tid}`, nodebbUid));
-      bookmarked = Boolean(userDetail?.posts?.[0]?.bookmarked);
+      const up = userDetail?.posts?.[0] || {};
+      bookmarked = Boolean(up.bookmarked);
+      liked = Boolean(up.upvoted || up.voted === 1 || up.vote === 1);
     } catch {
       bookmarked = false;
+      liked = false;
+    }
+    // Fallback to local cache if NodeBB didn't report liked state
+    if (!liked) {
+      await loadUserCache();
+      const cachedTids = getUserLikedTids(auth.user.id);
+      if (cachedTids.includes(Number(tid))) liked = true;
     }
   }
   const replies = (detail?.posts || []).slice(1).map((post) => {
@@ -796,6 +806,7 @@ async function handlePostDetail(req, tid, res) {
     sourceUrl,
     contentHtml: renderPostContent(firstPost.content || ""),
     bookmarked,
+    liked,
     replies,
     dataSource: "api",
     raw: {

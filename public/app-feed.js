@@ -3,12 +3,12 @@ function renderTabs(tabs) {
   el.innerHTML = tabs.map((tab) => `<button class="chip ${tab === state.tab ? "is-active" : ""}" type="button" data-feed-tab="${escapeHtml(tab)}">${escapeHtml(tab)}</button>`).join("");
 }
 
-function saveReadTids() {
-  localStorage.setItem("lian.readTids", JSON.stringify(Array.from(state.readTids).slice(-500)));
+function saveReadHistory() {
+  localStorage.setItem("lian.readHistory", JSON.stringify(state.feed.readHistory.slice(-500)));
 }
 
 function readQuery() {
-  return Array.from(state.readTids).join(",");
+  return state.feed.readHistory.map((e) => e.tid).join(",");
 }
 
 function ensureMasonryColumns(reset = false) {
@@ -400,8 +400,13 @@ function maybeLoadOlderMessages() {
 }
 
 async function openDetail(tid) {
-  state.readTids.add(Number(tid));
-  saveReadTids();
+  const tidNum = Number(tid);
+  const now = new Date().toISOString();
+  const readHistory = state.feed.readHistory;
+  const existing = readHistory.findIndex((e) => e.tid === tidNum);
+  if (existing >= 0) readHistory.splice(existing, 1);
+  readHistory.push({ tid: tidNum, lastViewedAt: now });
+  saveReadHistory();
   state.feedScrollY = window.scrollY;
   $("#detailBody").innerHTML = `<div class="empty-state">加载中</div>`;
   switchView("detail");
@@ -409,6 +414,11 @@ async function openDetail(tid) {
   window.scrollTo({ top: 0 });
   try {
     const post = await api(`/api/posts/${tid}`);
+    // Sync localStorage liked state with backend
+    const likedTids = readLikedTids();
+    if (post.liked) likedTids.add(String(tid));
+    else likedTids.delete(String(tid));
+    saveLikedTids(likedTids);
     const { images, strippedHtml } = extractPostImages(post.contentHtml || "", post.cover || "");
     const gallery = galleryTemplate(images, post.title || "");
     const authorName = post.author || "同学";
@@ -442,8 +452,8 @@ async function openDetail(tid) {
             <span data-save-icon>${post.bookmarked ? "★" : "☆"}</span>
             <span>收藏</span>
           </button>
-          <button class="detail-action-btn" type="button" data-like-tid="${escapeHtml(String(post.tid))}" aria-label="点赞">
-            <span data-like-icon>${readLikedTids().has(String(post.tid)) ? "♥" : "♡"}</span>
+          <button class="detail-action-btn${post.liked ? " is-liked" : ""}" type="button" data-like-tid="${escapeHtml(String(post.tid))}" aria-label="点赞">
+            <span data-like-icon>${post.liked ? "♥" : "♡"}</span>
             <span data-like-count>${Math.max(0, Number(post.likeCount || 0))}</span>
           </button>
           <button class="detail-action-btn detail-action-report" type="button" data-report-tid="${escapeHtml(String(post.tid))}" aria-label="举报">
@@ -470,7 +480,7 @@ function switchView(name) {
   $$(".tab").forEach((tab) => tab.classList.toggle("is-active", tab.dataset.tab === name));
   $(".tabbar").classList.remove("is-hidden");
   if (name === "map") window.MapV2?.init?.();
-  if (name === "messages") loadMessages();
+  if (name === "messages") switchMessageTab("channel");
   if (name === "profile") loadProfile();
 }
 

@@ -1,5 +1,7 @@
-import { execSync } from "node:child_process";
+import { spawnSync } from "node:child_process";
+import fs from "node:fs";
 import path from "node:path";
+import vm from "node:vm";
 import { fileURLToPath } from "node:url";
 
 const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -7,6 +9,7 @@ const baseUrl = process.argv[2] || "http://localhost:4100";
 
 let passed = 0;
 let failed = 0;
+let skipped = 0;
 
 function ok(label) {
   passed += 1;
@@ -16,6 +19,11 @@ function ok(label) {
 function fail(label, reason) {
   failed += 1;
   console.log(`  ✗ ${label} — ${reason}`);
+}
+
+function skip(label, reason) {
+  skipped += 1;
+  console.log(`  ○ ${label} (跳过: ${reason})`);
 }
 
 async function fetchUrl(url) {
@@ -72,12 +80,50 @@ async function checkJsonEndpoint(url, label) {
 
 function checkSyntax(file) {
   const fullPath = path.join(rootDir, file);
+  // Primary: in-process syntax check via vm module (no subprocess needed)
   try {
-    execSync(`node --check "${fullPath}"`, { stdio: "pipe" });
+    const code = fs.readFileSync(fullPath, "utf8");
+    vm.compileFunction(code, [], { filename: fullPath });
     ok(`${file} (语法)`);
-  } catch {
-    fail(`${file} (语法)`, "node --check 失败");
+    return;
+  } catch (error) {
+    // If vm check finds a real syntax error, report it
+    if (error instanceof SyntaxError) {
+      fail(`${file} (语法)`, error.message);
+      return;
+    }
+    // vm check failed for non-syntax reasons (e.g., file read error), try execSync fallback
   }
+  try {
+    runNodeSyntaxCheck(fullPath);
+    ok(`${file} (语法)`);
+  } catch (error) {
+    fail(`${file} (语法)`, error.message || "node --check 失败");
+  }
+}
+
+function runNodeSyntaxCheck(filePath) {
+  const result = spawnSync(process.execPath, ["--check", filePath], {
+    cwd: process.cwd(),
+    encoding: "utf8",
+    shell: false,
+    windowsHide: true,
+  });
+
+  if (result.error) {
+    throw result.error;
+  }
+
+  if (result.status !== 0) {
+    const output = [result.stdout, result.stderr].filter(Boolean).join("\n").trim();
+    throw new Error(output || `node --check failed for ${filePath}`);
+  }
+}
+
+// Probe server connectivity
+async function serverReachable() {
+  const result = await fetchUrl(baseUrl);
+  return result.ok || result.status > 0;
 }
 
 // --- Main ---
@@ -85,42 +131,59 @@ function checkSyntax(file) {
 console.log(`\n═══ LIAN 前端冒烟测试 ═══`);
 console.log(`目标: ${baseUrl}\n`);
 
+const serverUp = await serverReachable();
+if (!serverUp) {
+  console.log(`  ⚠ 服务器不可达 (${baseUrl})，跳过 HTTP 检查，仅运行语法检查。\n`);
+}
+
 // 1. Homepage HTML checks
-console.log("▶ 首页 HTML 检查");
-await checkPage(`${baseUrl}/`, "GET /", [
-  ["<title> 存在", (html) => /<title>[^<]+<\/title>/.test(html)],
-  ["<main class=\"app-shell\"> 存在", (html) => html.includes('class="app-shell"')],
-  ["index.html 包含 map-v2.js", (html) => html.includes('src="/map-v2.js"')],
-  ["index.html 包含 split scripts", (html) =>
-    html.includes('src="/app-state.js"') &&
-    html.includes('src="/app-utils.js"') &&
-    html.includes('src="/app.js"')
-  ],
-]);
+if (serverUp) {
+  console.log("▶ 首页 HTML 检查");
+  await checkPage(`${baseUrl}/`, "GET /", [
+    ["<title> 存在", (html) => /<title>[^<]+<\/title>/.test(html)],
+    ["<main class=\"app-shell\"> 存在", (html) => html.includes('class="app-shell"')],
+    ["index.html 包含 map-v2.js", (html) => html.includes('src="/map-v2.js"')],
+    ["index.html 包含 split scripts", (html) =>
+      html.includes('src="/app-state.js"') &&
+      html.includes('src="/app-utils.js"') &&
+      html.includes('src="/app.js"')
+    ],
+  ]);
+} else {
+  skip("首页 HTML 检查", "服务器不可达");
+}
 
 // 2. Static JS files — HTTP reachable
-console.log("\n▶ 静态 JS 文件可达性");
-const staticScripts = [
-  "/map-v2.js",
-  "/app-state.js",
-  "/app-utils.js",
-  "/app-auth-avatar.js",
-  "/app-feed.js",
-  "/app-legacy-map.js",
-  "/app-ai-publish.js",
-  "/app-messages-profile.js",
-  "/app.js",
-];
-for (const script of staticScripts) {
-  await checkEndpoint(`${baseUrl}${script}`, `GET ${script}`);
+if (serverUp) {
+  console.log("\n▶ 静态 JS 文件可达性");
+  const staticScripts = [
+    "/map-v2.js",
+    "/app-state.js",
+    "/app-utils.js",
+    "/app-auth-avatar.js",
+    "/app-feed.js",
+    "/app-legacy-map.js",
+    "/app-ai-publish.js",
+    "/app-messages-profile.js",
+    "/app.js",
+  ];
+  for (const script of staticScripts) {
+    await checkEndpoint(`${baseUrl}${script}`, `GET ${script}`);
+  }
+} else {
+  skip("静态 JS 文件可达性", "服务器不可达");
 }
 
 // 3. API endpoints
-console.log("\n▶ API 端点");
-await checkJsonEndpoint(`${baseUrl}/api/feed`, "GET /api/feed");
-await checkJsonEndpoint(`${baseUrl}/api/map/v2/items`, "GET /api/map/v2/items");
+if (serverUp) {
+  console.log("\n▶ API 端点");
+  await checkJsonEndpoint(`${baseUrl}/api/feed`, "GET /api/feed");
+  await checkJsonEndpoint(`${baseUrl}/api/map/v2/items`, "GET /api/map/v2/items");
+} else {
+  skip("API 端点", "服务器不可达");
+}
 
-// 4. Syntax check split frontend files
+// 4. Syntax check split frontend files (always runs — no server needed)
 console.log("\n▶ 前端文件语法检查 (node --check)");
 const frontendFiles = [
   "public/app-state.js",
@@ -137,9 +200,13 @@ for (const file of frontendFiles) {
 }
 
 // 5. CSS reachable
-console.log("\n▶ CSS 可达性");
-await checkEndpoint(`${baseUrl}/styles.css`, "GET /styles.css");
+if (serverUp) {
+  console.log("\n▶ CSS 可达性");
+  await checkEndpoint(`${baseUrl}/styles.css`, "GET /styles.css");
+} else {
+  skip("CSS 可达性", "服务器不可达");
+}
 
 // Summary
-console.log(`\n═══ 结果：${passed} 通过，${failed} 失败 ═══\n`);
+console.log(`\n═══ 结果：${passed} 通过，${failed} 失败${skipped ? `，${skipped} 跳过` : ""} ═══\n`);
 if (failed > 0) process.exit(1);

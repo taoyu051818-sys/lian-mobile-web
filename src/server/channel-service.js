@@ -1,15 +1,14 @@
 import crypto from "node:crypto";
 
-import { canReplyToPost } from "./audience-service.js";
+import { canReplyToPost, canViewPost } from "./audience-service.js";
 import { config } from "./config.js";
 import { memory } from "./cache.js";
-import { stripHtml } from "./content-utils.js";
 import { loadChannelReads, loadMetadata, saveChannelReads } from "./data-store.js";
 import { getAllRecentTopics, getTopicDetail, normalizeChannelEvent } from "./feed-service.js";
 import { sendJson } from "./http-response.js";
 import { nodebbFetch, withNodebbUid } from "./nodebb-client.js";
 import { readJsonBody } from "./request-utils.js";
-import { ensureNodebbUid, requireUser, selectIdentityTag } from "./auth-service.js";
+import { ensureNodebbUid, getCurrentUser, requireUser, selectIdentityTag } from "./auth-service.js";
 import { buildChannelMessageHtml, replyToNodebbTopic } from "./post-service.js";
 
 async function markNodebbTopicRead(tid) {
@@ -32,16 +31,32 @@ function clientReaderId(req, payload = {}) {
   return crypto.createHash("sha1").update(String(raw)).digest("hex").slice(0, 24);
 }
 
-async function handleChannel(reqUrl, res) {
+async function handleChannel(reqUrl, req, res) {
   const limit = Math.min(80, Math.max(10, Number(reqUrl.searchParams.get("limit") || 40)));
   const offset = Math.max(0, Number(reqUrl.searchParams.get("offset") || 0));
+
+  // Resolve viewer (optional login — guest allowed)
+  let viewer = null;
+  try {
+    const auth = await getCurrentUser(req);
+    viewer = auth.user || null;
+  } catch {
+    // guest
+  }
+
   const reads = await loadChannelReads();
+  const metadata = await loadMetadata();
   const topics = await getAllRecentTopics(3);
   const selectedTopics = topics.slice(offset, offset + limit);
   const events = [];
   for (const topic of selectedTopics) {
     try {
       const detail = await getTopicDetail(topic.tid);
+      // Audience filter: channel is distribution surface like feed/map
+      const postMeta = metadata[String(topic.tid)];
+      if (postMeta && !canViewPost(viewer, { visibility: postMeta.visibility, audience: postMeta.audience }, "map")) {
+        continue;
+      }
       for (const post of detail?.posts || []) {
         if (!post || post.deleted) continue;
         events.push(normalizeChannelEvent({ ...topic, ...detail }, post, reads));
@@ -138,19 +153,4 @@ async function handleCreateReply(tid, req, res) {
   sendJson(res, 200, data);
 }
 
-async function handleMessages(res) {
-  try {
-    const data = await nodebbFetch("/api/notifications");
-    const items = (data?.notifications || []).slice(0, 30).map((item) => ({
-      id: item.nid || item.datetime || item.path,
-      title: stripHtml(item.bodyShort || item.bodyLong || item.text || "新消息"),
-      time: item.datetimeISO || item.datetime || "",
-      url: item.path ? `${config.nodebbPublicBaseUrl}${item.path}` : config.nodebbPublicBaseUrl
-    }));
-    sendJson(res, 200, { items });
-  } catch {
-    sendJson(res, 200, { items: [] });
-  }
-}
-
-export { handleChannel, handleChannelMessage, handleChannelRead, handleCreateReply, handleMessages };
+export { handleChannel, handleChannelMessage, handleChannelRead, handleCreateReply };

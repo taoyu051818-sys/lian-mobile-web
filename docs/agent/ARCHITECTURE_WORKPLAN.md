@@ -54,16 +54,85 @@ Important stale docs to keep in mind:
 6. Treat `public/app.js` split files as feature boundaries. Do not merge them back into one file.
 7. Keep Map v2 data and editor work separate from user-facing publish flow polish.
 8. Do not add multi-school or organization visibility until the LIAN audience model is designed.
+9. For high-risk refactors, follow `docs/agent/tasks/high-risk-execution-plan.md`: baseline observation -> tests/smoke -> narrow behavior-preserving change -> validation -> handoff.
+
+## Map Development Human-Assistance Rule
+
+Map development requires human assistance.
+
+Claude Code must not independently implement Map v2 editor/data/render/floor-plan tasks or invent campus geometry, road layout, building hierarchy, or asset placement.
+
+Allowed without human approval:
+
+- documentation updates;
+- read-only audits;
+- validation reruns;
+- review findings;
+- task scoping.
+
+Runtime or data changes require human-provided map/design input and intermediate human review.
 
 ## Workstream Ownership
+
+### P0 Workstream: Repository Split
+
+Task doc: `docs/agent/tasks/repo-split-frontend-backend.md`
+
+Handoff: `docs/agent/handoffs/repo-split-frontend-backend.md`
+
+Goal:
+
+- Keep the frontend/mobile web experience in the current repository.
+- Move the complete backend/server/data integration layer into a separate backend repository.
+- Use explicit API contracts between the two repos.
+
+Target repository ownership:
+
+```text
+New backend repo: lian-platform-server
+  -> ALL local files except public/
+  -> server.js, src/server/*, data/*, scripts/*
+  -> package.json, .env.example, CLAUDE.md
+  -> docs/, outputs/, .claude/
+  -> owns full backend runtime, NodeBB integration, AI adapters,
+     feed services, auth/session, upload proxy, metadata writes,
+     Audience, Map v2 data/admin APIs, validators, deployment
+
+Current repo becomes frontend repo: lian-mobile-web
+  -> public/* (HTML, CSS, JS, assets, tools)
+  -> scripts/smoke-frontend.js (safe frontend-only smoke test)
+  -> docs/agent/contracts/api-contract.md (frozen API reference)
+  -> .gitignore, README.md
+```
+
+Phase order:
+
+1. Inventory frontend API calls.
+2. Inventory backend routes.
+3. Freeze API contract docs.
+4. Bootstrap backend repo without framework migration or behavior changes.
+5. Add configurable frontend API base URL.
+6. Stage reverse proxy deployment.
+7. Remove backend runtime ownership from current repo only after backend staging validation.
+
+Do not:
+
+- move secrets into the frontend repo;
+- delete backend files from the current repo before backend staging is validated;
+- combine repo split with PostgreSQL migration, Fastify/Express migration, or frontend framework migration.
 
 ### Workstream A: Map v2 Data Assets
 
 Task doc: `docs/agent/tasks/map-v2-data-assets.md`
 
+Status: **Human-assisted only**.
+
+Claude Code threads may not independently implement this workstream. They may document, audit, validate, and scope it, but runtime/data changes require human-provided map/design input and intermediate human review.
+
 Immediate subtask:
 
 - `docs/agent/tasks/map-v2-restore-legacy-geo.md`
+- `docs/agent/tasks/map-v2-road-network-import-preview.md`
 
 Goal:
 
@@ -89,6 +158,37 @@ Do not touch:
 - `data/feed-rules.json`
 - `src/server/post-service.js`
 - AI publish route logic
+
+Human approval required before touching:
+
+- `data/map-v2-layers.json`
+- `data/locations.json`
+- `public/map-v2.js`
+- `public/tools/map-v2-editor.*`
+- `src/server/map-v2-service.js`
+
+Approved human-assisted implementation cut:
+
+- render the provided `road_network_mapWITH` public-map export as a read-only/draggable road-network preview in the Map v2 admin editor;
+- allow the human to align it visually and export transform/draft output;
+- do not automatically write official map data.
+
+### Workstream A2: PC Task Board Web UI
+
+Task doc: `docs/agent/tasks/pc-task-board-webui.md`
+
+Goal:
+
+- Build a PC-oriented internal task-board UI.
+- Visualize P0/P1 execution order, blocked tasks, accepted tasks, human-assisted tasks, and Map-line restrictions.
+- Link task docs and handoffs.
+- Allow simple human comments or review notes without editing Markdown directly.
+
+First cut:
+
+- Prefer read-only `/tools/task-board.html`.
+- Use Markdown task docs as source of truth.
+- Add JSONL comment storage only if it can be admin-protected and append-only.
 
 ### Workstream B: Frontend Stability And Smoke Tests
 
@@ -176,6 +276,31 @@ Primary files:
 - `docs/agent/handoffs/*`
 
 Do not touch runtime code in this workstream.
+
+### Workstream H: High-Risk Refactor Execution
+
+Task doc: `docs/agent/tasks/high-risk-execution-plan.md`
+
+Reference: `docs/agent/references/HIGH_RISK_AREAS.md`
+
+Goal:
+
+- Convert the six high-risk investigation areas into controlled implementation tracks.
+- Prevent product work from accidentally becoming large structural rewrites.
+- Define smoke tests, acceptance criteria, rollback, and merge boundaries before implementation.
+
+Track order:
+
+1. Runtime safety gates
+2. `post-metadata.json` write safety
+3. `api-router.js` route safety
+4. Audience/auth hydration
+5. NodeBB integration contracts
+6. Frontend script load order
+7. Feed scoring cleanup
+8. Auth modularization
+
+Do not touch runtime code in architecture-only threads. Implementation threads may take one track at a time after reading the task doc.
 
 ### Workstream F: NodeBB Integration And Audience Planning
 

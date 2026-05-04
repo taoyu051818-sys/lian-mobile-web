@@ -1,3 +1,66 @@
+function switchMessageTab(tabName) {
+  const tabs = document.querySelectorAll("[data-message-tab]");
+  tabs.forEach((t) => t.classList.toggle("is-active", t.dataset.messageTab === tabName));
+  const messageList = $("#messageList");
+  const notificationList = $("#notificationList");
+  const composer = $("#channelForm");
+  if (tabName === "notifications") {
+    if (messageList) messageList.style.display = "none";
+    if (notificationList) notificationList.style.display = "";
+    if (composer) composer.style.display = "none";
+    loadNotifications();
+  } else {
+    if (messageList) messageList.style.display = "";
+    if (notificationList) notificationList.style.display = "none";
+    if (composer) composer.style.display = "";
+    loadMessages();
+  }
+}
+
+async function loadNotifications() {
+  const list = $("#notificationList");
+  if (!list) return;
+  if (!state.currentUser) {
+    list.innerHTML = `<div class="empty-state">登录后查看通知</div>`;
+    return;
+  }
+  list.innerHTML = `<div class="empty-state">加载中</div>`;
+  try {
+    const data = await api("/api/messages");
+    if (data.error) {
+      list.innerHTML = `<div class="empty-state">通知加载失败，请稍后再试</div>`;
+      return;
+    }
+    if (!data.items?.length) {
+      list.innerHTML = `<div class="empty-state">暂无通知</div>`;
+      return;
+    }
+    list.innerHTML = data.items.map(notificationItemTemplate).join("");
+  } catch (error) {
+    list.innerHTML = `<div class="empty-state">${escapeHtml(error.message)}</div>`;
+  }
+}
+
+function notificationItemTemplate(item) {
+  const actorName = item.actor?.displayName || "";
+  const identityTag = item.actor?.identityTag || "";
+  const time = item.time ? new Date(item.time).toLocaleString("zh-CN", { hour: "2-digit", minute: "2-digit", month: "numeric", day: "numeric" }) : "";
+  const title = item.title || "新回复";
+  const isReply = item.type === "new-reply" || item.type === "reply" || item.type === "new-post" || item.type === "post-reply";
+  const fallbackLabel = isReply ? "回复" : "通知";
+  const tagBadge = identityTag ? `<span class="notification-tag">${escapeHtml(identityTag)}</span>` : "";
+  return `
+    <article class="notification-item${item.read ? "" : " notification-unread"}" role="button" tabindex="0" data-tid="${item.tid}">
+      <div class="notification-actor">${actorName ? escapeHtml(actorName) : fallbackLabel}${tagBadge}</div>
+      <div class="notification-body">
+        <p class="notification-title">${escapeHtml(title)}</p>
+        ${item.excerpt && item.excerpt !== title ? `<p class="notification-excerpt">${escapeHtml(item.excerpt)}</p>` : ""}
+      </div>
+      <time class="notification-time">${escapeHtml(time)}</time>
+    </article>
+  `;
+}
+
 async function loadMessages({ older = false } = {}) {
   if (state.channelLoading || (older && !state.channelHasMore)) return;
   state.channelLoading = true;
@@ -262,7 +325,8 @@ function profileListItem(item) {
   const cover = item.cover
     ? `<img src="${escapeHtml(item.cover)}" alt="${escapeHtml(item.title)}" loading="lazy">`
     : `<div class="profile-list-thumb-empty">${escapeHtml((item.title || "").slice(0, 1))}</div>`;
-  const time = item.timestampISO ? new Date(item.timestampISO).toLocaleDateString("zh-CN") : "";
+  const timeSrc = item.lastViewedAt || item.timestampISO || "";
+  const time = timeSrc ? formatRelativeTime(timeSrc) : "";
   return `
     <article class="profile-list-item" role="button" tabindex="0" data-tid="${item.tid}">
       <div class="profile-list-thumb">${cover}</div>
@@ -274,21 +338,28 @@ function profileListItem(item) {
   `;
 }
 
+let profileTabGeneration = 0;
+
 async function loadProfileTab(tabName) {
+  const generation = ++profileTabGeneration;
   const content = $("#profileTabContent");
   if (!content) return;
   content.innerHTML = `<div class="empty-state">加载中</div>`;
   try {
     let items = [];
     if (tabName === "history") {
-      const readTids = state.readTids ? Array.from(state.readTids) : [];
-      if (readTids.length) {
+      const history = (state.feed.readHistory || []).slice().reverse().slice(0, 50);
+      if (history.length) {
+        const viewMap = Object.fromEntries(history.map((e) => [e.tid, e.lastViewedAt]));
         const data = await api("/api/me/history", {
           method: "POST",
           headers: { "content-type": "application/json" },
-          body: JSON.stringify({ tids: readTids.slice(-50) })
+          body: JSON.stringify({ tids: history.map((e) => e.tid) })
         });
-        items = data.items || [];
+        items = (data.items || []).map((item) => ({
+          ...item,
+          lastViewedAt: viewMap[item.tid] || item.timestampISO || ""
+        }));
       }
     } else if (tabName === "saved") {
       const data = await api("/api/me/saved");
@@ -297,6 +368,7 @@ async function loadProfileTab(tabName) {
       const data = await api("/api/me/liked");
       items = data.items || [];
     }
+    if (generation !== profileTabGeneration) return;
     if (!items.length) {
       const emptyText = tabName === "history" ? "暂无浏览记录"
         : tabName === "saved" ? "暂无收藏"
@@ -306,6 +378,7 @@ async function loadProfileTab(tabName) {
     }
     content.innerHTML = `<div class="profile-list">${items.map(profileListItem).join("")}</div>`;
   } catch (error) {
+    if (generation !== profileTabGeneration) return;
     content.innerHTML = `<div class="empty-state">${escapeHtml(error.message)}</div>`;
   }
 }

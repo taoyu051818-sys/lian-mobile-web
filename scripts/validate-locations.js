@@ -8,10 +8,10 @@ const locationsPath = path.join(rootDir, "data", "locations.json");
 const layersPath = path.join(rootDir, "data", "map-v2-layers.json");
 
 const MAP_V2_BOUNDS = {
-  south: 18.3700734,
-  west: 109.9940365,
-  north: 18.4149043,
-  east: 110.0503482,
+  south: 18.37107,
+  west: 109.98464,
+  north: 18.41730,
+  east: 110.04775,
 };
 
 const VALID_TYPES = new Set([
@@ -201,6 +201,27 @@ function validateRoad(road, errors, warnings) {
   }
 }
 
+const VALID_JUNCTION_TYPES = new Set(["endpoint", "T", "cross", "multi"]);
+
+function validateJunction(jx, roadIds, errors, warnings) {
+  const id = jx.id || "(no id)";
+  if (typeof jx.id !== "string" || !jx.id.trim()) issue(errors, id, "id", "must be a non-empty string");
+  if (jx.type && !VALID_JUNCTION_TYPES.has(jx.type)) issue(warnings, id, "type", `unknown junction type "${jx.type}"`);
+  if (!jx.position || typeof jx.position.lat !== "number" || !Number.isFinite(jx.position.lat)) {
+    issue(errors, id, "position.lat", "must be a finite number");
+  } else if (!inBounds(jx.position.lat, jx.position.lng)) {
+    issue(errors, id, "position", `(${jx.position.lat}, ${jx.position.lng}) is outside bounds`);
+  }
+  if (jx.position && typeof jx.position.lng !== "number" && !Number.isFinite(jx.position.lng)) {
+    issue(errors, id, "position.lng", "must be a finite number");
+  }
+  if (Array.isArray(jx.connectedRoadIds)) {
+    for (const rid of jx.connectedRoadIds) {
+      if (!roadIds.has(rid)) issue(errors, id, "connectedRoadIds", `references unknown road "${rid}"`);
+    }
+  }
+}
+
 function checkCrossCollectionIds(locations, layers, errors) {
   const allIds = new Map();
   function check(collection, collectionName) {
@@ -216,6 +237,7 @@ function checkCrossCollectionIds(locations, layers, errors) {
   check(layers.areas || [], "areas");
   check(layers.routes || [], "routes");
   check(layers.roads || [], "roads");
+  check(layers.junctions || [], "junctions");
   check(layers.buildings || [], "buildings");
   check(layers.environmentElements || [], "environmentElements");
 }
@@ -274,6 +296,14 @@ async function main() {
         validateRoad(road, errors, warnings);
       }
       checkedLayers += layers.roads.length;
+    }
+
+    if (Array.isArray(layers.junctions)) {
+      const roadIds = new Set((layers.roads || []).map((r) => r.id));
+      for (const jx of layers.junctions) {
+        validateJunction(jx, roadIds, errors, warnings);
+      }
+      checkedLayers += layers.junctions.length;
     }
 
     if (Array.isArray(layers.buildingGroups)) {

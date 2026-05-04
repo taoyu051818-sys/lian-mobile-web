@@ -12,4 +12,6 @@ export const mapV2LayersPath = path.join(rootDir, "data", "map-v2-layers.json");
 export const aiPostDraftsPath = path.join(rootDir, "data", "ai-post-drafts.jsonl");
 export const aiPostRecordsPath = path.join(rootDir, "data", "ai-post-records.jsonl");
 export const aliasPoolPath = path.join(rootDir, "data", "alias-pool.json");
+export const userCachePath = path.join(rootDir, "data", "user-cache.json");
 export const envPath = path.join(rootDir, ".env");
+export const taskBoardPath = path.join(rootDir, "docs", "agent", "05_TASK_BOARD.md");

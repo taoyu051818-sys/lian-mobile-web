@@ -135,17 +135,17 @@ Default base URL configured in `config.js:37`. Actual value lives in `.env` only
 
 ### Three Endpoints
 
-1. `POST /api/ai/post-preview` — generates editable draft (mock or MiMo)
+1. `POST /api/ai/post-preview` - generates editable draft (mock or MiMo)
    - Source: `ai-post-preview.js:388-420`
-2. `POST /api/ai/post-drafts` — silently saves draft to `data/ai-post-drafts.jsonl`
+2. `POST /api/ai/post-drafts` - silently saves draft to `data/ai-post-drafts.jsonl`
    - Source: `ai-light-publish.js:116-140`
-3. `POST /api/ai/post-publish` — publishes to NodeBB after user confirmation
+3. `POST /api/ai/post-publish` - publishes to NodeBB after user confirmation
    - Source: `ai-light-publish.js:142-236`
 
 ### Mode Switching
 
-- No `MIMO_API_KEY` or `AI_POST_PREVIEW_MODE=mock` → mock mode
-- Key present → MiMo mode, auto-fallback to mock on failure (`fallbackReason: "mimo_unavailable"`)
+- No `MIMO_API_KEY` or `AI_POST_PREVIEW_MODE=mock` -> mock mode
+- Key present -> MiMo mode, auto-fallback to mock on failure (`fallbackReason: "mimo_unavailable"`)
   - Source: `ai-post-preview.js:391-419`
 
 ### MiMo Configuration
@@ -157,7 +157,7 @@ Default base URL configured in `config.js:37`. Actual value lives in `.env` only
 
 ### Publish Flow
 
-`handleAiPostPublish()` → `normalizeAiPostPayload()` → `createNodebbTopicFromPayload()` → `patchPostMetadata()` → append JSONL
+`handleAiPostPublish()` -> `normalizeAiPostPayload()` -> `createNodebbTopicFromPayload()` -> `patchPostMetadata()` -> append JSONL
 
 - Source: `ai-light-publish.js:142-236`
 - AI posts use the logged-in user's `nodebbUid`, not `NODEBB_UID`
@@ -235,15 +235,15 @@ Default base URL configured in `config.js:37`. Actual value lives in `.env` only
 
 **Implementation**: reuses NodeBB topic as channel message container
 
-- If `NODEBB_CHANNEL_TOPIC_Tid` exists → reply to that topic
-- Otherwise → create new topic (title: "校园频道"), subsequent messages reply to it
+- If `NODEBB_CHANNEL_TOPIC_Tid` exists -> reply to that topic
+- Otherwise -> create new topic (title: "校园频道"), subsequent messages reply to it
   - Source: `channel-service.js:83-118`
 
 **Read tracking**: local JSON file `data/channel-reads.json`, per readerId
 
 - Source: `channel-service.js:63-81`
 
-**Channel identification**: multiple signals — `nodebbChannelTopicTid`, `nodebbChannelCid`, title "校园频道", tag "频道消息", content contains `lian-channel-meta`
+**Channel identification**: multiple signals - `nodebbChannelTopicTid`, `nodebbChannelCid`, title "校园频道", tag "频道消息", content contains `lian-channel-meta`
 
 - Source: `feed-service.js:124-139`
 
@@ -318,7 +318,7 @@ Source: `package.json`, `server.js`, `cache.js`
 
 | File | Lines | Purpose |
 |------|-------|---------|
-| `data/post-metadata.json` | 2,314 | Post metadata (tid → metadata object) |
+| `data/post-metadata.json` | 2,314 | Post metadata (tid -> metadata object) |
 | `data/feed-rules.json` | 127 | Feed configuration, scoring weights, tabs |
 | `data/auth-users.json` | (gitignored) | User accounts, sessions, nodebbUid mapping |
 | `data/channel-reads.json` | needs verification | Channel read state per readerId |

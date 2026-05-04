@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256" role="img" aria-label="晚风记录员">
+  <rect width="256" height="256" rx="64" fill="#FCE7F3"/>
+  <circle cx="128" cy="128" r="88" fill="#fff" opacity="0.72"/>
+  <path d="M82 172l18-52 58-58 36 36-58 58-54 16Z" fill="#F59E0B"/><path d="M152 68l36 36" stroke="#BE185D" stroke-width="12" stroke-linecap="round"/><path d="M92 162l30-10-20-20-10 30Z" fill="#BE185D"/>
+</svg>

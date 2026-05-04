@@ -4,44 +4,74 @@
     {
       "id": "quiet-observer",
       "name": "安静观察者",
-      "description": "喜欢默默看帖，偶尔冒泡",
+      "description": "喜欢默默看世界，偶尔冒泡",
       "avatarSeed": "quiet",
-      "order": 1
+      "order": 1,
+      "bg": "#DCE7F7",
+      "fg": "#2563EB",
+      "accent": "#7C3AED",
+      "mark": "eye",
+      "avatarUrl": "/assets/aliases/quiet-observer.svg"
     },
     {
       "id": "curious-passenger",
       "name": "好奇路人",
       "description": "什么都想点进来看看",
       "avatarSeed": "curious",
-      "order": 2
+      "order": 2,
+      "bg": "#FEF3C7",
+      "fg": "#D97706",
+      "accent": "#0EA5E9",
+      "mark": "spark",
+      "avatarUrl": "/assets/aliases/curious-passenger.svg"
     },
     {
       "id": "island-anonymous",
       "name": "匿名小岛民",
       "description": "小岛上的匿名居民",
       "avatarSeed": "island",
-      "order": 3
+      "order": 3,
+      "bg": "#CCFBF1",
+      "fg": "#0F766E",
+      "accent": "#F97316",
+      "mark": "wave",
+      "avatarUrl": "/assets/aliases/island-anonymous.svg"
     },
     {
       "id": "evening-recorder",
       "name": "晚风记录员",
       "description": "记录校园里的晚风与故事",
       "avatarSeed": "evening",
-      "order": 4
+      "order": 4,
+      "bg": "#FCE7F3",
+      "fg": "#BE185D",
+      "accent": "#F59E0B",
+      "mark": "pen",
+      "avatarUrl": "/assets/aliases/evening-recorder.svg"
     },
     {
       "id": "night-owl",
       "name": "深夜猫头鹰",
       "description": "夜猫子，深夜出没",
       "avatarSeed": "night",
-      "order": 5
+      "order": 5,
+      "bg": "#E0E7FF",
+      "fg": "#4338CA",
+      "accent": "#111827",
+      "mark": "moon",
+      "avatarUrl": "/assets/aliases/night-owl.svg"
     },
     {
       "id": "morning-breeze",
       "name": "晨风收集者",
       "description": "早起的人，收集清晨的风",
       "avatarSeed": "morning",
-      "order": 6
+      "order": 6,
+      "bg": "#DCFCE7",
+      "fg": "#16A34A",
+      "accent": "#FACC15",
+      "mark": "sun",
+      "avatarUrl": "/assets/aliases/morning-breeze.svg"
     }
   ]
 }

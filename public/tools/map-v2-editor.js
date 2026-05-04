@@ -1,12 +1,13 @@
-(function () {
+﻿(function () {
   const GAODE_TILE_URL = "https://webrd0{s}.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=8&x={x}&y={y}&z={z}";
   const NODEBB_URL = (window.LIAN_NODEBB_URL || "http://149.104.21.74:4567").replace(/\/$/, "");
+  const LIAN_API_BASE = (typeof window !== "undefined" && window.LIAN_API_BASE_URL) || "";
   const DEFAULT_CENTER = [18.3935, 110.0159];
   const BOUNDS = {
-    south: 18.3700734,
-    west: 109.9940365,
-    north: 18.4149043,
-    east: 110.0503482
+    south: 18.37107,
+    west: 109.98464,
+    north: 18.41730,
+    east: 110.04775
   };
   // BOUNDS object properties are mutated by the adjustment panel
 
@@ -28,7 +29,7 @@
   const DEFAULT_LAYERS_FALLBACK = {
     version: 1, coordSystem: "gcj02",
     center: { lat: DEFAULT_CENTER[0], lng: DEFAULT_CENTER[1] }, zoom: 16,
-    areas: [], routes: [], roads: [], buildings: [], environmentElements: [], buildingGroups: []
+    areas: [], routes: [], roads: [], junctions: [], buildings: [], environmentElements: [], buildingGroups: [], assets: []
   };
 
   const ROAD_TYPE_STYLES = {
@@ -58,7 +59,30 @@
     cropRect: null,
     baseImage: null,
     roadDrawing: false,
-    roadPreviewLine: null
+    roadPreviewLine: null,
+    showSmoothCurves: false,
+    assetUrl: "",
+    assetKind: "building_icon",
+    assetAspectRatio: 1,
+    assetLastSize: { width: 64, height: 64 },
+    assetSizeSyncing: false,
+    placingAsset: false,
+    roadPreview: null,
+    previewCanvas: null,
+    previewCtx: null,
+    previewData: null,
+    previewOpacity: 0.7,
+    previewLineWidth: 1.5,
+    previewShowLanes: true,
+    previewShowRoads: false,
+    previewShowJunctions: false,
+    previewTx: 0,
+    previewTy: 0,
+    previewScale: 1,
+    previewRotation: 0,
+    previewDragging: false,
+    previewDragStart: null,
+    previewAlignMode: false
   };
 
   const $ = (selector, root = document) => root.querySelector(selector);
@@ -99,10 +123,328 @@
     return Math.hypot(pt.lat - (lineStart.lat + t * dx), pt.lng - (lineStart.lng + t * dy));
   }
 
+  // --- Junction geometry utilities ---
+  const SNAP_DISTANCE_METERS = 5;
+  const JUNCTION_MERGE_METERS = 1;
+
+  function haversineDist(a, b) {
+    const metersPerDeg = 111320;
+    const dLat = (a.lat - b.lat) * metersPerDeg;
+    const dLng = (a.lng - b.lng) * metersPerDeg * Math.cos(a.lat * Math.PI / 180);
+    return Math.hypot(dLat, dLng);
+  }
+
+  function segmentIntersection(p1, p2, p3, p4) {
+    const d1x = p2.lat - p1.lat, d1y = p2.lng - p1.lng;
+    const d2x = p4.lat - p3.lat, d2y = p4.lng - p3.lng;
+    const denom = d1x * d2y - d1y * d2x;
+    if (Math.abs(denom) < 1e-12) return null;
+    const dx = p3.lat - p1.lat, dy = p3.lng - p1.lng;
+    const t = (dx * d2y - dy * d2x) / denom;
+    const u = (dx * d1y - dy * d1x) / denom;
+    if (t < -1e-9 || t > 1 + 1e-9 || u < -1e-9 || u > 1 + 1e-9) return null;
+    return { lat: p1.lat + t * d1x, lng: p1.lng + t * d1y, t: Math.max(0, Math.min(1, t)), u: Math.max(0, Math.min(1, u)) };
+  }
+
+  function closestPointOnSegment(p, a, b) {
+    const dx = b.lat - a.lat, dy = b.lng - a.lng;
+    const lenSq = dx * dx + dy * dy;
+    if (lenSq === 0) return { lat: a.lat, lng: a.lng, distance: haversineDist(p, a), t: 0 };
+    let t = ((p.lat - a.lat) * dx + (p.lng - a.lng) * dy) / lenSq;
+    t = Math.max(0, Math.min(1, t));
+    const proj = { lat: a.lat + t * dx, lng: a.lng + t * dy };
+    return { lat: proj.lat, lng: proj.lng, distance: haversineDist(p, proj), t };
+  }
+
+  function findSnapTarget(p, roadPoints) {
+    let best = null;
+    for (let i = 0; i < roadPoints.length; i++) {
+      const d = haversineDist(p, roadPoints[i]);
+      if (d < SNAP_DISTANCE_METERS && (!best || d < best.distance)) {
+        best = { lat: roadPoints[i].lat, lng: roadPoints[i].lng, pointIndex: i, segIndex: -1, distance: d };
+      }
+    }
+    for (let i = 0; i < roadPoints.length - 1; i++) {
+      const cp = closestPointOnSegment(p, roadPoints[i], roadPoints[i + 1]);
+      if (cp.distance < SNAP_DISTANCE_METERS && (!best || cp.distance < best.distance)) {
+        if (cp.t > 0.01 && cp.t < 0.99) {
+          best = { lat: cp.lat, lng: cp.lng, pointIndex: -1, segIndex: i, distance: cp.distance };
+        }
+      }
+    }
+    return best;
+  }
+
+  function insertPointIntoRoad(road, pt, segIndex) {
+    road.points.splice(segIndex + 1, 0, { lat: Number(pt.lat.toFixed(7)), lng: Number(pt.lng.toFixed(7)) });
+    return segIndex + 1;
+  }
+
+  function generateJunctionId(position) {
+    const lat = position.lat.toFixed(5).replace(".", "");
+    const lng = position.lng.toFixed(5).replace(".", "");
+    return `junction-${lat}-${lng}-${Date.now().toString(36)}`;
+  }
+
+  function classifyJunction(roadCount) {
+    if (roadCount <= 1) return "endpoint";
+    if (roadCount <= 3) return "T";
+    return "cross";
+  }
+
+  // --- Curve smoothing and classification ---
+
+  function smoothPolylineChaikin(points, iterations = 2) {
+    if (points.length < 3) return points.map((p) => [p.lat, p.lng]);
+    let result = [];
+    for (let i = 0; i < points.length - 1; i++) {
+      const a = points[i], b = points[i + 1];
+      const isJunctionA = i === 0 || i === points.length - 2;
+      if (isJunctionA) result.push([a.lat, a.lng]);
+      result.push([a.lat * 0.75 + b.lat * 0.25, a.lng * 0.75 + b.lng * 0.25]);
+      result.push([a.lat * 0.25 + b.lat * 0.75, a.lng * 0.25 + b.lng * 0.75]);
+    }
+    result.push([points[points.length - 1].lat, points[points.length - 1].lng]);
+    for (let iter = 1; iter < iterations; iter++) {
+      const next = [];
+      for (let i = 0; i < result.length - 1; i++) {
+        const a = result[i], b = result[i + 1];
+        const isFirst = i === 0, isLast = i === result.length - 2;
+        if (isFirst) next.push(a);
+        next.push([a[0] * 0.75 + b[0] * 0.25, a[1] * 0.75 + b[1] * 0.25]);
+        next.push([a[0] * 0.25 + b[0] * 0.75, a[1] * 0.25 + b[1] * 0.75]);
+        if (isLast) next.push(b);
+      }
+      result = next;
+    }
+    return result;
+  }
+
+  function calculateBendAngles(points) {
+    const angles = [];
+    for (let i = 1; i < points.length - 1; i++) {
+      const prev = points[i - 1], cur = points[i], next = points[i + 1];
+      const dLat1 = cur.lat - prev.lat, dLng1 = cur.lng - prev.lng;
+      const dLat2 = next.lat - cur.lat, dLng2 = next.lng - cur.lng;
+      const len1 = Math.hypot(dLat1, dLng1), len2 = Math.hypot(dLat2, dLng2);
+      if (len1 < 1e-10 || len2 < 1e-10) continue;
+      const dot = (dLat1 * dLat2 + dLng1 * dLng2) / (len1 * len2);
+      const angle = Math.acos(Math.max(-1, Math.min(1, dot))) * (180 / Math.PI);
+      const deflection = 180 - angle;
+      angles.push({ index: i, angle, deflection });
+    }
+    return angles;
+  }
+
+  const SHARP_BEND_THRESHOLD = 30;
+
+  function classifyRoadCurvature(points) {
+    if (points.length < 3) return "";
+    const bends = calculateBendAngles(points);
+    if (bends.length === 0) return "";
+    let sharpCount = 0;
+    for (const b of bends) {
+      if (b.deflection > SHARP_BEND_THRESHOLD) sharpCount++;
+    }
+    const ratio = sharpCount / bends.length;
+    return ratio > 0.3 ? "corner" : "smooth";
+  }
+
+  function autoClassifyCurves() {
+    const layers = parseJson("#layersJson", DEFAULT_LAYERS_FALLBACK);
+    const roads = layers.roads || [];
+    let updated = 0;
+    for (const road of roads) {
+      if (road.status === "hidden") continue;
+      if ((road.points || []).length < 3) continue;
+      if (road.renderHint && road.renderHint.curveStyle) continue;
+      const style = classifyRoadCurvature(road.points);
+      if (!style) continue;
+      road.renderHint = road.renderHint || {};
+      road.renderHint.curveStyle = style;
+      updated++;
+    }
+    $("#layersJson").value = JSON.stringify(layers, null, 2);
+    renderData();
+    setStatus(`Curve classification complete: ${updated} roads updated with curveHint.`);
+  }
+
+  // --- Junction detection pipeline ---
+  function upsertJunction(position, roadA, idxA, roadB, idxB, junctions) {
+    for (const jx of junctions) {
+      if (haversineDist(position, jx.position) < JUNCTION_MERGE_METERS) {
+        if (!jx.connectedRoadIds.includes(roadA.id)) {
+          jx.connectedRoadIds.push(roadA.id);
+          jx.connectionRefs.push({ roadId: roadA.id, pointIndex: idxA });
+        }
+        if (!jx.connectedRoadIds.includes(roadB.id)) {
+          jx.connectedRoadIds.push(roadB.id);
+          jx.connectionRefs.push({ roadId: roadB.id, pointIndex: idxB });
+        }
+        jx.type = classifyJunction(jx.connectedRoadIds.length);
+        return jx;
+      }
+    }
+    const jx = {
+      id: generateJunctionId(position),
+      type: classifyJunction(2),
+      position: { lat: Number(position.lat.toFixed(7)), lng: Number(position.lng.toFixed(7)) },
+      connectedRoadIds: [roadA.id, roadB.id],
+      connectionRefs: [
+        { roadId: roadA.id, pointIndex: idxA },
+        { roadId: roadB.id, pointIndex: idxB }
+      ],
+      status: "active"
+    };
+    junctions.push(jx);
+    return jx;
+  }
+
+  function detectJunctions(roads, existingJunctions) {
+    const junctions = existingJunctions.map((j) => ({
+      ...j,
+      connectedRoadIds: [...j.connectedRoadIds],
+      connectionRefs: j.connectionRefs.map((r) => ({ ...r }))
+    }));
+    const modifiedRoadIds = new Set();
+    const activeRoads = roads.filter((r) => r.status !== "hidden" && !r.noSnap && r.points.length >= 2);
+
+    // Phase A: endpoint-to-endpoint snap
+    for (let i = 0; i < activeRoads.length; i++) {
+      for (let j = i + 1; j < activeRoads.length; j++) {
+        const a = activeRoads[i], b = activeRoads[j];
+        const ends = [
+          [0, 0, a.points[0], b.points[0]],
+          [0, b.points.length - 1, a.points[0], b.points[b.points.length - 1]],
+          [a.points.length - 1, 0, a.points[a.points.length - 1], b.points[0]],
+          [a.points.length - 1, b.points.length - 1, a.points[a.points.length - 1], b.points[b.points.length - 1]]
+        ];
+        for (const [ai, bi, pa, pb] of ends) {
+          const d = haversineDist(pa, pb);
+          if (d > 0.1 && d < SNAP_DISTANCE_METERS) {
+            const mid = { lat: (pa.lat + pb.lat) / 2, lng: (pa.lng + pb.lng) / 2 };
+            a.points[ai] = { lat: Number(mid.lat.toFixed(7)), lng: Number(mid.lng.toFixed(7)) };
+            b.points[bi] = { lat: Number(mid.lat.toFixed(7)), lng: Number(mid.lng.toFixed(7)) };
+            upsertJunction(mid, a, ai, b, bi, junctions);
+            modifiedRoadIds.add(a.id);
+            modifiedRoadIds.add(b.id);
+          }
+        }
+      }
+    }
+
+    // Phase B: endpoint-to-segment snap
+    for (const road of activeRoads) {
+      for (const endIdx of [0, road.points.length - 1]) {
+        const ep = road.points[endIdx];
+        for (const other of activeRoads) {
+          if (other.id === road.id) continue;
+          if (other.noSnap) continue;
+          const snap = findSnapTarget(ep, other.points);
+          if (snap && snap.segIndex >= 0 && snap.distance > 0.1) {
+            const insertIdx = insertPointIntoRoad(other, snap, snap.segIndex);
+            road.points[endIdx] = { lat: Number(snap.lat.toFixed(7)), lng: Number(snap.lng.toFixed(7)) };
+            upsertJunction(snap, road, endIdx, other, insertIdx, junctions);
+            modifiedRoadIds.add(road.id);
+            modifiedRoadIds.add(other.id);
+          }
+        }
+      }
+    }
+
+    // Phase C: segment-segment crossings
+    for (let i = 0; i < activeRoads.length; i++) {
+      for (let j = i + 1; j < activeRoads.length; j++) {
+        const a = activeRoads[i], b = activeRoads[j];
+        const intersections = [];
+        for (let ai = 0; ai < a.points.length - 1; ai++) {
+          for (let bi = 0; bi < b.points.length - 1; bi++) {
+            const cross = segmentIntersection(a.points[ai], a.points[ai + 1], b.points[bi], b.points[bi + 1]);
+            if (!cross) continue;
+            const pt = { lat: cross.lat, lng: cross.lng };
+            const nearA = haversineDist(pt, a.points[ai]) < 1 || haversineDist(pt, a.points[ai + 1]) < 1;
+            const nearB = haversineDist(pt, b.points[bi]) < 1 || haversineDist(pt, b.points[bi + 1]) < 1;
+            if (!nearA && !nearB) {
+              intersections.push({ pt, ai, bi });
+            }
+          }
+        }
+        intersections.sort((x, y) => y.ai - x.ai || y.bi - x.bi);
+        for (const { pt, ai, bi } of intersections) {
+          const idxA = insertPointIntoRoad(a, pt, ai);
+          const idxB = insertPointIntoRoad(b, pt, bi);
+          upsertJunction(pt, a, idxA, b, idxB, junctions);
+          modifiedRoadIds.add(a.id);
+          modifiedRoadIds.add(b.id);
+        }
+      }
+    }
+
+    // Update junctionIds on modified roads
+    for (const road of roads) {
+      if (!modifiedRoadIds.has(road.id)) continue;
+      road.junctionIds = junctions
+        .filter((jx) => jx.connectedRoadIds.includes(road.id))
+        .map((jx) => jx.id);
+    }
+
+    return { junctions, modifiedRoadIds: [...modifiedRoadIds] };
+  }
+
+  function recalculateSegments(road, junctions) {
+    const refs = [];
+    for (const jx of junctions) {
+      const ref = jx.connectionRefs.find((r) => r.roadId === road.id);
+      if (ref) refs.push({ junctionId: jx.id, pointIndex: ref.pointIndex });
+    }
+    refs.sort((a, b) => a.pointIndex - b.pointIndex);
+    road.segments = [];
+    let prev = 0;
+    let prevJunctionId = null;
+    for (const ref of refs) {
+      if (ref.pointIndex > prev) {
+        road.segments.push({
+          id: `${road.id}-seg${road.segments.length}`,
+          roadId: road.id,
+          fromJunctionId: prevJunctionId,
+          toJunctionId: ref.junctionId,
+          pointRange: [prev, ref.pointIndex],
+          type: road.type
+        });
+      }
+      prev = ref.pointIndex;
+      prevJunctionId = ref.junctionId;
+    }
+    if (prev < road.points.length - 1) {
+      road.segments.push({
+        id: `${road.id}-seg${road.segments.length}`,
+        roadId: road.id,
+        fromJunctionId: prevJunctionId,
+        toJunctionId: null,
+        pointRange: [prev, road.points.length - 1],
+        type: road.type
+      });
+    }
+  }
+
+  function runJunctionDetection() {
+    const layers = parseJson("#layersJson", DEFAULT_LAYERS_FALLBACK);
+    const roads = layers.roads || [];
+    const existing = layers.junctions || [];
+    const { junctions, modifiedRoadIds } = detectJunctions(roads, existing);
+    for (const road of roads) {
+      recalculateSegments(road, junctions);
+    }
+    layers.junctions = junctions;
+    $("#layersJson").value = JSON.stringify(layers, null, 2);
+    renderData();
+    setStatus(`Junction detection complete: ${junctions.length} junctions, ${modifiedRoadIds.length} roads affected.`);
+  }
+
   function displayImageUrl(url = "") {
     const value = String(url || "");
     if (/^https:\/\/res\.cloudinary\.com\/[^/]+\/image\/upload\//.test(value)) {
-      return `/api/image-proxy?url=${encodeURIComponent(value)}`;
+      return `${LIAN_API_BASE}/api/image-proxy?url=${encodeURIComponent(value)}`;
     }
     return value;
   }
@@ -133,15 +475,89 @@
     el.style.color = isError ? "#dc2626" : "#256c45";
   }
 
+  function positiveNumber(value, fallback = 0) {
+    const number = Number(value);
+    return Number.isFinite(number) && number > 0 ? number : fallback;
+  }
+
+  function selectedAssetFrom(layers) {
+    if (state.selectedTarget !== "assets" || !state.selectedId) return null;
+    return (layers.assets || []).find((item) => item.id === state.selectedId) || null;
+  }
+
+  function summarizeSave(locations, layers) {
+    const parts = [
+      `Locations: ${(locations.items || []).length}`,
+      `Areas: ${(layers.areas || []).length}`,
+      `Routes: ${(layers.routes || []).length}`,
+      `Roads: ${(layers.roads || []).length}`,
+      `Junctions: ${(layers.junctions || []).length}`,
+      `Buildings: ${(layers.buildings || []).length}`,
+      `Assets: ${(layers.assets || []).length}`
+    ];
+    const asset = selectedAssetFrom(layers);
+    if (asset) {
+      const size = Array.isArray(asset.size) ? asset.size : [64, 64];
+      const anchor = Array.isArray(asset.anchor) ? asset.anchor : [size[0] / 2, size[1]];
+      parts.push(
+        "",
+        `Selected asset: ${asset.id}`,
+        `Kind: ${asset.kind || "other"}`,
+        `Status: ${asset.status || "active"}`,
+        `Size: ${size[0]} x ${size[1]}`,
+        `Anchor: ${anchor[0]} x ${anchor[1]}`,
+        `Position: ${asset.position?.lat ?? ""}, ${asset.position?.lng ?? ""}`
+      );
+    }
+    return parts.join("\n");
+  }
+
+  function syncAssetSizeRatio(changedId) {
+    if (state.assetSizeSyncing) return;
+    if (state.selectedTarget !== "assets") return;
+    const widthInput = $("#propAssetWidth");
+    const heightInput = $("#propAssetHeight");
+    if (!widthInput || !heightInput) return;
+
+    const ratio = positiveNumber(state.assetAspectRatio, 1);
+    const previous = state.assetLastSize || { width: 64, height: 64 };
+    const next = {
+      width: positiveNumber(widthInput.value, previous.width || 64),
+      height: positiveNumber(heightInput.value, previous.height || 64)
+    };
+
+    if (changedId === "propAssetWidth") {
+      next.height = Math.max(1, Math.round(next.width / ratio));
+    } else if (changedId === "propAssetHeight") {
+      next.width = Math.max(1, Math.round(next.height * ratio));
+    } else {
+      return;
+    }
+
+    const scaleX = previous.width ? next.width / previous.width : 1;
+    const scaleY = previous.height ? next.height / previous.height : 1;
+    const anchorX = $("#propAssetAnchorX");
+    const anchorY = $("#propAssetAnchorY");
+
+    state.assetSizeSyncing = true;
+    widthInput.value = String(next.width);
+    heightInput.value = String(next.height);
+    if (anchorX) anchorX.value = String(Math.round(positiveNumber(anchorX.value, previous.width / 2) * scaleX));
+    if (anchorY) anchorY.value = String(Math.round(positiveNumber(anchorY.value, previous.height) * scaleY));
+    state.assetLastSize = next;
+    state.assetSizeSyncing = false;
+  }
+
   function getToken() {
     return $("#adminToken")?.value?.trim() || localStorage.getItem("lian.adminToken") || "";
   }
 
   async function api(path, options = {}) {
+    const url = path.startsWith("/") ? `${LIAN_API_BASE}${path}` : path;
     const headers = { ...(options.headers || {}) };
     const token = getToken();
     if (token) headers["x-admin-token"] = token;
-    const response = await fetch(path, { credentials: "include", ...options, headers });
+    const response = await fetch(url, { credentials: "include", ...options, headers });
     const data = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(data.error || `HTTP ${response.status}`);
     return data;
@@ -205,6 +621,28 @@
             <small>${escapeHtml(card.subtitle || card.tag || item.type || "")}</small>
           </span>
         </button>
+      `
+    });
+  }
+
+  function assetIcon(asset) {
+    const size = Array.isArray(asset.size) ? asset.size : [64, 64];
+    const anchor = Array.isArray(asset.anchor) ? asset.anchor : [size[0] / 2, size[1]];
+    const rotation = Number(asset.rotation || 0);
+    const opacity = Math.max(0, Math.min(1, Number(asset.opacity ?? 1)));
+    const statusClass = asset.status === "hidden" ? " is-hidden" : "";
+    return L.divIcon({
+      className: `map-v2-asset-icon map-v2-asset-${escapeHtml(asset.kind || "other")}${statusClass}`,
+      iconSize: size,
+      iconAnchor: anchor,
+      popupAnchor: [0, -Math.round(size[1] * 0.65)],
+      html: `
+        <img
+          class="map-v2-asset-image"
+          src="${escapeHtml(displayImageUrl(asset.url))}"
+          style="opacity:${opacity};transform:rotate(${rotation}deg)"
+          alt=""
+        >
       `
     });
   }
@@ -305,6 +743,8 @@
     if (target === "buildings") panelType = "building";
     if (target === "environmentElements") panelType = "environment";
     if (target === "roads") panelType = "road";
+    if (target === "junctions") panelType = "junction";
+    if (target === "assets") panelType = "asset";
     showPropertyPanel(panelType);
 
     // Populate type-specific fields
@@ -343,6 +783,36 @@
       $("#propRoadCurveStyle").value = item.renderHint?.curveStyle || "";
       $("#propRoadStatus").value = item.status || "active";
       $("#propRoadPointCount").textContent = (item.points || []).length;
+      if ($("#propRoadNoSnap")) $("#propRoadNoSnap").value = item.noSnap ? "true" : "false";
+      if ($("#propRoadCurveHint")) $("#propRoadCurveHint").textContent = item.renderHint?.curveStyle || "-";
+      if ($("#propRoadRouteRef")) $("#propRoadRouteRef").value = item.routeRef || "";
+      const routeRefRow = $("#propRoadRouteRef")?.closest("label");
+      if (routeRefRow) routeRefRow.style.display = item.type === "shuttle_route" ? "" : "none";
+    } else if (target === "junctions") {
+      if ($("#propJxType")) $("#propJxType").value = item.type || "cross";
+      if ($("#propJxStatus")) $("#propJxStatus").value = item.status || "active";
+      if ($("#propJxRoadCount")) $("#propJxRoadCount").textContent = (item.connectedRoadIds || []).length;
+      if ($("#propJxLat")) $("#propJxLat").textContent = item.position?.lat?.toFixed(7) || "";
+      if ($("#propJxLng")) $("#propJxLng").textContent = item.position?.lng?.toFixed(7) || "";
+      if ($("#propJxRoads")) $("#propJxRoads").value = (item.connectionRefs || []).map((r) => `${r.roadId} [${r.pointIndex}]`).join("\n");
+      } else if (target === "assets") {
+        const assetSize = item.size || [64, 64];
+        const assetWidth = positiveNumber(assetSize[0], 64);
+        const assetHeight = positiveNumber(assetSize[1], 64);
+        state.assetAspectRatio = assetWidth / assetHeight;
+        state.assetLastSize = { width: assetWidth, height: assetHeight };
+        if ($("#propAssetUrl")) $("#propAssetUrl").value = item.url || "";
+        if ($("#propAssetKind")) $("#propAssetKind").value = item.kind || "other";
+        if ($("#propAssetWidth")) $("#propAssetWidth").value = assetWidth;
+        if ($("#propAssetHeight")) $("#propAssetHeight").value = assetHeight;
+      if ($("#propAssetAnchorX")) $("#propAssetAnchorX").value = (item.anchor || [32, 64])[0];
+      if ($("#propAssetAnchorY")) $("#propAssetAnchorY").value = (item.anchor || [32, 64])[1];
+      if ($("#propAssetRotation")) $("#propAssetRotation").value = item.rotation || 0;
+      if ($("#propAssetOpacity")) $("#propAssetOpacity").value = item.opacity ?? 1;
+      if ($("#propAssetClickBehavior")) $("#propAssetClickBehavior").value = item.clickBehavior || "none";
+      if ($("#propAssetBoundType")) $("#propAssetBoundType").value = item.boundObjectType || "";
+      if ($("#propAssetBoundId")) $("#propAssetBoundId").value = item.boundObjectId || "";
+      if ($("#propAssetStatus")) $("#propAssetStatus").value = item.status || "active";
     }
 
     // Show vertex markers for polygon types and roads
@@ -364,23 +834,25 @@
     // Show selection panel
     const panel = $("#selectionInfo");
     panel.classList.add("active");
-    $("#selName").textContent = item.name || item.id || "—";
+    $("#selName").textContent = item.name || item.id || "-";
     const meta = [];
     if (item.type) meta.push(item.type);
     if (item.lat) meta.push(`${item.lat.toFixed(5)}, ${item.lng.toFixed(5)}`);
-    if (target === "areas" || target === "environmentElements") meta.push(`${(item.points || []).length} 点`);
-    if (target === "routes") meta.push(`${(item.points || []).length} 点`);
-    if (target === "roads") meta.push(`${(item.points || []).length} 点 · ${item.type}`);
-    if (target === "buildings") meta.push(`${(item.polygon || []).length} 顶点, ${(item.entrances || []).length} 入口`);
-    $("#selMeta").textContent = meta.join(" · ");
-    setStatus(`已选中: ${item.name || item.id}`);
+    if (target === "areas" || target === "environmentElements") meta.push(`${(item.points || []).length} points`);
+    if (target === "routes") meta.push(`${(item.points || []).length} points`);
+    if (target === "roads") meta.push(`${(item.points || []).length} points / ${item.type}`);
+    if (target === "junctions") meta.push(`${item.type} / ${(item.connectedRoadIds || []).length} roads`);
+    if (target === "assets") meta.push(`${item.kind} / ${item.clickBehavior || "none"}`);
+    if (target === "buildings") meta.push(`${(item.polygon || []).length} vertices, ${(item.entrances || []).length} entrances`);
+    $("#selMeta").textContent = meta.join(" / ");
+    setStatus(`Selected: ${item.name || item.id}`);
   }
 
   function deleteSelected() {
     const id = state.selectedId;
     const target = state.selectedTarget;
-    if (!id) return setStatus("请先选中一个元素。", true);
-    if (!confirm(`确定删除 "${id}"？`)) return;
+    if (!id) return setStatus("Select an item first.", true);
+    if (!confirm(`Delete "${id}"?`)) return;
     if (target === "locations") {
       const locations = parseJson("#locationsJson", { version: 1, coordSystem: "gcj02", items: [] });
       locations.items = (locations.items || []).filter((item) => item.id !== id);
@@ -388,11 +860,17 @@
     } else {
       const layers = parseJson("#layersJson", DEFAULT_LAYERS_FALLBACK);
       layers[target] = (layers[target] || []).filter((item) => item.id !== id);
+      if (target === "junctions") {
+        for (const road of layers.roads || []) {
+          road.junctionIds = (road.junctionIds || []).filter((jid) => jid !== id);
+          road.segments = (road.segments || []).filter((s) => s.fromJunctionId !== id && s.toJunctionId !== id);
+        }
+      }
       $("#layersJson").value = JSON.stringify(layers, null, 2);
     }
     clearSelection();
     renderData();
-    setStatus(`已删除 ${id}，点击"保存到后端"提交。`);
+    setStatus(`Deleted ${id}. Click save to submit changes.`);
   }
 
   function renderPosts() {
@@ -418,11 +896,14 @@
       areas: L.layerGroup().addTo(state.map),
       routes: L.layerGroup().addTo(state.map),
       roads: L.layerGroup().addTo(state.map),
+      junctions: L.layerGroup().addTo(state.map),
       buildings: L.layerGroup().addTo(state.map),
       environmentElements: L.layerGroup().addTo(state.map),
       locations: L.layerGroup().addTo(state.map),
       posts: L.layerGroup().addTo(state.map),
-      draft: L.layerGroup().addTo(state.map)
+      assets: L.layerGroup().addTo(state.map),
+      draft: L.layerGroup().addTo(state.map),
+      roadPreview: state.roadPreview || L.layerGroup().addTo(state.map)
     };
     const locations = parseJson("#locationsJson", { items: [] });
     const layers = parseJson("#layersJson", DEFAULT_LAYERS_FALLBACK);
@@ -445,16 +926,53 @@
       line.on("click", () => selectItem(route, "routes"));
       line.addTo(state.layers.routes);
     }
-    for (const road of layers.roads || []) {
+    const allRoads = layers.roads || [];
+    for (const road of allRoads) {
       const roadStyle = {
         color: road.style?.color || "#6b7280",
         weight: Number(road.style?.weight || 6),
         dashArray: road.style?.dashArray || ""
       };
-      const line = L.polyline((road.points || []).map((p) => [p.lat, p.lng]), roadStyle)
+      let points = road.points || [];
+      if (road.type === "shuttle_route" && road.routeRef) {
+        const refRoad = allRoads.find((r) => r.id === road.routeRef && r.id !== road.id);
+        if (refRoad && refRoad.points && refRoad.points.length >= 2) points = refRoad.points;
+      }
+      if (points.length < 2) continue;
+      const line = L.polyline(points.map((p) => [p.lat, p.lng]), roadStyle)
         .bindTooltip(`${road.name || road.id} (${road.type})`);
       line.on("click", () => selectItem(road, "roads"));
       line.addTo(state.layers.roads);
+      if (state.showSmoothCurves && points.length >= 3) {
+        const smoothPts = smoothPolylineChaikin(points, 2);
+        L.polyline(smoothPts, {
+          color: roadStyle.color,
+          weight: roadStyle.weight,
+          opacity: 0.4,
+          dashArray: "4 3",
+          interactive: false
+        }).addTo(state.layers.roads);
+      }
+    }
+    for (const jx of layers.junctions || []) {
+      if (!Number.isFinite(jx.position?.lat) || !Number.isFinite(jx.position?.lng)) continue;
+      const jxType = jx.type || "cross";
+      let color = "#ef4444", size = 14, shape = "square";
+      if (jxType === "endpoint") { color = "#f59e0b"; size = 12; shape = "circle"; }
+      else if (jxType === "T") { color = "#3b82f6"; size = 14; shape = "diamond"; }
+      const border = `2px solid ${color}`;
+      const borderRadius = shape === "circle" ? "50%" : shape === "diamond" ? "3px" : "2px";
+      const transform = shape === "diamond" ? "rotate(45deg)" : "";
+      const marker = L.marker([jx.position.lat, jx.position.lng], {
+        icon: L.divIcon({
+          className: "map-v2-junction-icon",
+          iconSize: [size, size],
+          iconAnchor: [size / 2, size / 2],
+          html: `<div style="width:${size}px;height:${size}px;background:#fff;border:${border};border-radius:${borderRadius};transform:${transform};box-shadow:0 1px 4px rgba(0,0,0,0.3)"></div>`
+        })
+      }).bindTooltip(`${jx.id} (${jxType}) / ${(jx.connectedRoadIds || []).length} roads`);
+      marker.on("click", () => selectItem(jx, "junctions"));
+      marker.addTo(state.layers.junctions);
     }
     for (const bldg of layers.buildings || []) {
       const poly = L.polygon((bldg.polygon || []).map((p) => [p.lat, p.lng]), {
@@ -504,14 +1022,14 @@
       marker.on("dragend", (event) => {
         const next = event.target.getLatLng();
         if (!inBounds(next)) {
-          setStatus(`${item.name || item.id} 超出试验区范围`, true);
+          setStatus(`${item.name || item.id} is outside bounds.`, true);
           event.target.setLatLng([item.lat, item.lng]);
           return;
         }
         item.lat = Number(next.lat.toFixed(7));
         item.lng = Number(next.lng.toFixed(7));
         $("#locationsJson").value = JSON.stringify(locations, null, 2);
-        setStatus("地点坐标已更新，保存前请检查 JSON。");
+        setStatus("Location coordinates updated. Review JSON before saving.");
       });
       marker.addTo(state.layers.locations);
       if (item.card?.alwaysShow) {
@@ -521,6 +1039,34 @@
           title: item.name
         }).bindPopup(popupHtml(item)).addTo(state.layers.locations);
       }
+    }
+    for (const asset of layers.assets || []) {
+      if (!Number.isFinite(asset.position?.lat) || !Number.isFinite(asset.position?.lng)) continue;
+      if (!asset.url) continue;
+      const marker = L.marker([asset.position.lat, asset.position.lng], {
+        icon: assetIcon(asset),
+        draggable: true,
+        zIndexOffset: asset.zIndex || 0
+      });
+      marker.bindTooltip(`${asset.id} (${asset.kind}${asset.status === "hidden" ? ", hidden" : ", active"})`);
+      marker.on("click", () => selectItem(asset, "assets"));
+      marker.on("dragend", (event) => {
+        const next = event.target.getLatLng();
+        if (!inBounds(next)) {
+          setStatus(`${asset.id} is outside bounds.`, true);
+          event.target.setLatLng([asset.position.lat, asset.position.lng]);
+          return;
+        }
+        const layers = parseJson("#layersJson", DEFAULT_LAYERS_FALLBACK);
+        const arr = layers.assets || [];
+        const idx = arr.findIndex((a) => a.id === asset.id);
+        if (idx >= 0) {
+          arr[idx].position = { lat: Number(next.lat.toFixed(7)), lng: Number(next.lng.toFixed(7)) };
+          $("#layersJson").value = JSON.stringify(layers, null, 2);
+          setStatus("Asset position updated.");
+        }
+      });
+      marker.addTo(state.layers.assets);
     }
     renderPosts();
     renderBuildingGroupsList();
@@ -584,24 +1130,29 @@
     if (pointSub) pointSub.style.display = mode === "point" ? "flex" : "none";
     if (polySub) polySub.style.display = mode === "polygon" ? "flex" : "none";
     if (roadSub) roadSub.style.display = mode === "road" ? "flex" : "none";
+    const placeSub = $("#placeSubType");
+    if (placeSub) placeSub.style.display = mode === "place" ? "flex" : "none";
     // Toggle road draw cursor
     const stage = $("#mapEditorStage");
     if (stage) stage.classList.toggle("road-draw-mode", mode === "road");
+    if (stage) stage.classList.toggle("place-mode", mode === "place");
     renderDraft();
     if (mode === "crop") {
-      setStatus("截取模式：点击地图两个角点选择区域。");
+      setStatus("Crop mode: click two map corners.");
     } else if (mode === "browse") {
-      setStatus("浏览模式");
+      setStatus("Browse mode.");
     } else if (mode === "select") {
-      setStatus("选择模式：点击地图上的元素进行编辑。");
+      setStatus("Select mode: click map objects to edit.");
     } else if (mode === "point") {
-      setStatus(`点模式 (${state.pointSubType})：点击地图放置点。`);
+      setStatus(`Point mode (${state.pointSubType}): click map to place a point.`);
     } else if (mode === "polygon") {
-      setStatus(`多边形模式 (${state.drawSubType})：点击地图画多边形，双击完成。`);
+      setStatus(`Polygon mode (${state.drawSubType}): click map to draw polygon.`);
     } else if (mode === "road") {
-      setStatus(`路网模式 (${state.roadSubType})：按住鼠标拖动绘制路网，松开完成。`);
+      setStatus(`Road mode (${state.roadSubType}): drag to draw road.`);
+    } else if (mode === "place") {
+      setStatus(`Asset mode (${state.assetKind}): click map to place asset.`);
     } else {
-      setStatus("点击地图采点。");
+      setStatus("Click map to pick a point.");
     }
   }
 
@@ -623,7 +1174,7 @@
       state.posts = [];
     }
     renderData();
-    setStatus("已加载后端 Map v2 数据。");
+    setStatus("Loaded backend Map v2 data.");
   }
 
   function buildDraftItem() {
@@ -632,7 +1183,7 @@
     const type = $("#draftType").value.trim();
 
     if (state.mode === "point") {
-      if (state.draftPoints.length !== 1) throw new Error("点模式需要点击 1 个点。");
+      if (state.draftPoints.length !== 1) throw new Error("Point mode needs exactly 1 point.");
       const pt = state.draftPoints[0];
       const sub = state.pointSubType;
 
@@ -678,7 +1229,7 @@
     }
 
     if (state.mode === "polygon") {
-      if (state.draftPoints.length < 3) throw new Error("多边形模式至少需要 3 个点。");
+      if (state.draftPoints.length < 3) throw new Error("Polygon mode needs at least 3 points.");
       const sub = state.drawSubType;
 
       if (sub === "area") {
@@ -723,7 +1274,7 @@
     }
 
     if (state.mode === "route") {
-      if (state.draftPoints.length < 2) throw new Error("路线模式至少需要 2 个点。");
+      if (state.draftPoints.length < 2) throw new Error("Route mode needs at least 2 points.");
       return {
         target: "routes",
         value: {
@@ -734,7 +1285,7 @@
       };
     }
     if (state.mode === "road") {
-      if (state.draftPoints.length < 2) throw new Error("路网模式至少需要 2 个点。");
+      if (state.draftPoints.length < 2) throw new Error("Road mode needs at least 2 points.");
       const roadType = state.roadSubType;
       const defaultStyle = ROAD_TYPE_STYLES[roadType] || ROAD_TYPE_STYLES.main_road;
       return {
@@ -761,7 +1312,7 @@
         }
       };
     }
-    throw new Error("当前模式不支持写入。");
+    throw new Error("Current mode does not support writing to JSON.");
   }
 
   function commitDraft() {
@@ -775,10 +1326,10 @@
       } else if (draft.target === "buildings_entrance") {
         // Attach entrance to the currently selected building
         const bldgId = state.selectedId;
-        if (!bldgId || state.selectedTarget !== "buildings") throw new Error("请先选中一个建筑，再添加入口。");
+        if (!bldgId || state.selectedTarget !== "buildings") throw new Error("Select a building before adding an entrance.");
         const layers = parseJson("#layersJson", DEFAULT_LAYERS_FALLBACK);
         const bldg = (layers.buildings || []).find((b) => b.id === bldgId);
-        if (!bldg) throw new Error(`未找到建筑 "${bldgId}"。`);
+        if (!bldg) throw new Error(`Building "${bldgId}" not found.`);
         bldg.entrances = bldg.entrances || [];
         bldg.entrances = bldg.entrances.filter((e) => e.id !== draft.value.id);
         bldg.entrances.push(draft.value);
@@ -792,7 +1343,10 @@
       state.draftPoints = [];
       renderData();
       renderDraft();
-      setStatus("已写入 JSON，确认后点击保存到后端。");
+      if (draft.target === "roads") {
+        runJunctionDetection();
+      }
+      setStatus("Written to JSON. Review and click save to submit.");
     } catch (error) {
       setStatus(error.message, true);
     }
@@ -809,11 +1363,32 @@
         headers: { "content-type": "application/json", "x-admin-token": token },
         body: JSON.stringify({ locations, layers })
       });
+      const summary = summarizeSave(locations, layers);
       await loadData();
-      setStatus("已保存到后端。");
+      setStatus("Saved to backend.");
+      window.alert(`Map v2 saved.\n\n${summary}`);
     } catch (error) {
       setStatus(error.message, true);
     }
+  }
+
+  async function setSelectedAssetUserVisibility(status) {
+    if (state.selectedTarget !== "assets" || !state.selectedId) {
+      return setStatus("Select an asset first.", true);
+    }
+    const layers = parseJson("#layersJson", DEFAULT_LAYERS_FALLBACK);
+    const asset = (layers.assets || []).find((item) => item.id === state.selectedId);
+    if (!asset) return setStatus(`Asset ${state.selectedId} not found.`, true);
+    asset.status = status;
+    asset.kind = asset.kind || "building_icon";
+    asset.clickBehavior = asset.clickBehavior || "none";
+    asset.opacity = Number.isFinite(Number(asset.opacity)) ? Number(asset.opacity) : 1;
+    asset.zIndex = Number.isFinite(Number(asset.zIndex)) ? Number(asset.zIndex) : 40;
+    $("#layersJson").value = JSON.stringify(layers, null, 2);
+    if ($("#propAssetStatus")) $("#propAssetStatus").value = status;
+    renderData();
+    await saveData();
+    setStatus(status === "active" ? `Asset ${asset.id} published to user side.` : `Asset ${asset.id} hidden from user side.`);
   }
 
   function initMap() {
@@ -838,7 +1413,7 @@
       opacity: 0.35,
       attribution: "&copy; Gaode Map"
     }).addTo(state.map);
-    // Road drawing engine: mousedown → start, mousemove → record, mouseup → finish
+    // Road drawing engine: mousedown -> start, mousemove -> record, mouseup -> finish
     state.map.on("mousedown", (event) => {
       if (state.mode !== "road") return;
       if (!inBounds(event.latlng)) return;
@@ -856,7 +1431,7 @@
         opacity: 0.7,
         className: "road-draw-preview"
       }).addTo(state.map);
-      setStatus("拖动鼠标绘制路网…");
+      setStatus("Drag to draw road network.");
     });
     state.map.on("mousemove", (event) => {
       if (!state.roadDrawing || state.mode !== "road") return;
@@ -875,13 +1450,13 @@
       if (state.roadPreviewLine) { state.roadPreviewLine.remove(); state.roadPreviewLine = null; }
       if (state.draftPoints.length < 2) {
         state.draftPoints = [];
-        setStatus("路网至少需要 2 个点。", true);
+        setStatus("Road network needs at least 2 points.", true);
         return;
       }
       // Simplify points (tolerance ~2m in lat/lng degrees)
       state.draftPoints = simplifyPoints(state.draftPoints, 0.00002);
       renderDraft();
-      setStatus(`路网绘制完成: ${state.draftPoints.length} 点。点击"写入 JSON"保存。`);
+      setStatus(`Road drawing complete: ${state.draftPoints.length} points. Click write JSON and save.`);
     });
 
     state.map.on("click", (event) => {
@@ -890,7 +1465,7 @@
       if (state.mode === "crop") {
         state.cropPoints.push(event.latlng);
         if (state.cropPoints.length === 1) {
-          setStatus("点击第二个角点完成截取区域。");
+          setStatus("Click the second corner to finish crop area.");
         }
         if (state.cropPoints.length >= 2) {
           if (state.cropRect) state.cropRect.remove();
@@ -906,25 +1481,44 @@
           const p2 = geoToPixel(north, east);
           const pw = Math.abs(p2.x - p1.x);
           const ph = Math.abs(p2.y - p1.y);
-          $("#cropRect").textContent = `像素: ${Math.round(pw)} x ${Math.round(ph)} | SW ${south.toFixed(5)}, ${west.toFixed(5)} → NE ${north.toFixed(5)}, ${east.toFixed(5)}`;
+          $("#cropRect").textContent = `像素: ${Math.round(pw)} x ${Math.round(ph)} | SW ${south.toFixed(5)}, ${west.toFixed(5)} -> NE ${north.toFixed(5)}, ${east.toFixed(5)}`;
           showCropUI(true);
-          setStatus("点击[保存截取]下载裁剪图片。");
+          setStatus("Click save crop to download cropped image.");
           state.cropPoints = [];
         }
         return;
       }
       if (!inBounds(event.latlng)) {
-        setStatus("采点超出试验区范围。", true);
+        setStatus("Picked point is outside bounds.", true);
         return;
       }
       if (state.mode === "select") return;
+      if (state.mode === "place") {
+        const url = state.assetUrl;
+        if (!url) { setStatus("Enter or upload an asset URL first.", true); return; }
+        const id = `asset-${Date.now().toString(36)}`;
+        const pt = { lat: Number(event.latlng.lat.toFixed(7)), lng: Number(event.latlng.lng.toFixed(7)) };
+        const layers = parseJson("#layersJson", DEFAULT_LAYERS_FALLBACK);
+        layers.assets = layers.assets || [];
+        layers.assets.push({
+          id, url, kind: state.assetKind,
+          position: pt, size: [64, 64], anchor: [32, 64],
+          rotation: 0, opacity: 1, zIndex: 40,
+          boundObjectType: "", boundObjectId: "",
+          clickBehavior: "none", alwaysShowCard: false, status: "active"
+        });
+        $("#layersJson").value = JSON.stringify(layers, null, 2);
+        renderData();
+        setStatus(`Asset ${id} placed. Drag to adjust position.`);
+        return;
+      }
       if (state.mode === "point") state.draftPoints = [];
       state.draftPoints.push({
         lat: Number(event.latlng.lat.toFixed(7)),
         lng: Number(event.latlng.lng.toFixed(7))
       });
       renderDraft();
-      setStatus(`已采点 ${state.draftPoints.length} 个。`);
+      setStatus(`Picked ${state.draftPoints.length} points.`);
     });
     state.map.on("popupopen", (event) => {
       const el = event.popup.getElement();
@@ -935,6 +1529,45 @@
         });
       }
     });
+
+    // --- Road preview drag alignment (toggle align mode) ---
+    state.map.getContainer().addEventListener('mousedown', (event) => {
+      if (!state.previewAlignMode) return;
+      if (!state.previewData || !state.previewCanvas) return;
+      state.previewDragging = true;
+      state.previewDragStart = { x: event.clientX, y: event.clientY, tx: state.previewTx, ty: state.previewTy };
+      state.map.dragging.disable();
+      state.map.getContainer().style.cursor = 'grabbing';
+      if (state.previewCanvas) state.previewCanvas.style.cursor = 'grabbing';
+      event.preventDefault();
+    });
+
+    window.addEventListener('mousemove', (event) => {
+      if (!state.previewDragging || !state.previewDragStart) return;
+      const zoom = state.map.getZoom();
+      const center = state.map.getCenter();
+      const cosLat = Math.cos(center.lat * Math.PI / 180);
+      const mPerPx = 1 / (Math.pow(2, zoom) * 256 / 360 * 111320 * cosLat);
+      const dxPx = event.clientX - state.previewDragStart.x;
+      const dyPx = event.clientY - state.previewDragStart.y;
+      state.previewTx = state.previewDragStart.tx + dxPx * mPerPx;
+      state.previewTy = state.previewDragStart.ty - dyPx * mPerPx;
+      const $tx = $("#previewTx"), $ty = $("#previewTy");
+      if ($tx) $tx.value = state.previewTx.toFixed(4);
+      if ($ty) $ty.value = state.previewTy.toFixed(4);
+      renderPreviewCanvas();
+      setStatus(`对齐偏移: X ${state.previewTx.toFixed(4)}m, Y ${state.previewTy.toFixed(4)}m`);
+    });
+
+    window.addEventListener('mouseup', () => {
+      if (state.previewDragging) {
+        state.previewDragging = false;
+        state.previewDragStart = null;
+        state.map.dragging.enable();
+        updateAlignCursor();
+      }
+    });
+
     // Safety net: snap back if map drifts out of bounds
     state.map.on("moveend", () => {
       const c = state.map.getCenter();
@@ -957,10 +1590,12 @@
     if (event.target.closest("[data-clear-draft]")) {
       state.draftPoints = [];
       renderDraft();
-      return setStatus("采点已清空。");
+      return setStatus("Draft points cleared.");
     }
     if (event.target.closest("[data-save]")) return saveData();
     if (event.target.closest("[data-delete-selected]")) return deleteSelected();
+    if (event.target.closest("[data-publish-selected-asset]")) return setSelectedAssetUserVisibility("active");
+    if (event.target.closest("[data-hide-selected-asset]")) return setSelectedAssetUserVisibility("hidden");
     const postBtn = event.target.closest("[data-map-v2-tid]");
     if (postBtn) {
       const tid = postBtn.dataset.mapV2Tid;
@@ -972,7 +1607,7 @@
     if (event.target.matches("#locationsJson, #layersJson")) renderData();
   });
 
-  // Property panel input → JSON sync
+  // Property panel input -> JSON sync
   function syncPropertyToJSON() {
     const id = state.selectedId;
     const target = state.selectedCollection;
@@ -1033,6 +1668,23 @@
         item.renderHint.surface = $("#propRoadSurface")?.value || "";
         item.renderHint.curveStyle = $("#propRoadCurveStyle")?.value || "";
         item.status = $("#propRoadStatus")?.value || "active";
+        item.noSnap = $("#propRoadNoSnap")?.value === "true";
+        item.routeRef = roadType === "shuttle_route" ? ($("#propRoadRouteRef")?.value?.trim() || "") : "";
+      } else if (target === "assets") {
+        item.url = $("#propAssetUrl")?.value?.trim() || "";
+        item.kind = $("#propAssetKind")?.value || "other";
+        const assetWidth = positiveNumber($("#propAssetWidth")?.value, 64);
+        const assetHeight = positiveNumber($("#propAssetHeight")?.value, 64);
+        item.size = [assetWidth, assetHeight];
+        item.anchor = [Number($("#propAssetAnchorX")?.value || Math.round(assetWidth / 2)), Number($("#propAssetAnchorY")?.value || assetHeight)];
+        item.rotation = Number($("#propAssetRotation")?.value || 0);
+        item.opacity = Number($("#propAssetOpacity")?.value ?? 1);
+        item.clickBehavior = $("#propAssetClickBehavior")?.value || "none";
+        item.boundObjectType = $("#propAssetBoundType")?.value?.trim() || "";
+        item.boundObjectId = $("#propAssetBoundId")?.value?.trim() || "";
+        item.status = $("#propAssetStatus")?.value || "active";
+        state.assetAspectRatio = assetWidth / assetHeight;
+        state.assetLastSize = { width: assetWidth, height: assetHeight };
       }
       $("#layersJson").value = JSON.stringify(layers, null, 2);
     }
@@ -1040,10 +1692,16 @@
   }
 
   document.addEventListener("change", (event) => {
+    if (event.target.id === "propAssetWidth" || event.target.id === "propAssetHeight") {
+      syncAssetSizeRatio(event.target.id);
+    }
     if (event.target.closest(".prop-section")) syncPropertyToJSON();
   });
   document.addEventListener("input", (event) => {
     if (event.target.closest(".prop-section") && !event.target.matches("#locationsJson, #layersJson")) {
+      if (event.target.id === "propAssetWidth" || event.target.id === "propAssetHeight") {
+        syncAssetSizeRatio(event.target.id);
+      }
       clearTimeout(state._propSyncTimer);
       state._propSyncTimer = setTimeout(syncPropertyToJSON, 300);
     }
@@ -1053,11 +1711,11 @@
   document.addEventListener("change", (event) => {
     if (event.target.id === "pointDrawType") {
       state.pointSubType = event.target.value;
-      setStatus(`点模式 (${state.pointSubType})：点击地图放置点。`);
+      setStatus(`Point mode (${state.pointSubType}): click map to place a point.`);
     }
     if (event.target.id === "polygonDrawType") {
       state.drawSubType = event.target.value;
-      setStatus(`多边形模式 (${state.drawSubType})：点击地图画多边形，双击完成。`);
+      setStatus(`Polygon mode (${state.drawSubType}): click map to draw polygon.`);
     }
     if (event.target.id === "roadDrawType") {
       state.roadSubType = event.target.value;
@@ -1065,7 +1723,14 @@
       if ($("#propRoadColor")) $("#propRoadColor").value = style.color;
       if ($("#propRoadWeight")) $("#propRoadWeight").value = style.weight;
       if ($("#propRoadDashArray")) $("#propRoadDashArray").value = style.dashArray;
-      setStatus(`路网模式 (${state.roadSubType})：按住鼠标拖动绘制路网，松开完成。`);
+      setStatus(`Road mode (${state.roadSubType}): drag to draw road.`);
+    }
+    if (event.target.id === "assetDrawKind") {
+      state.assetKind = event.target.value;
+      setStatus(`Asset mode (${state.assetKind}): click map to place asset.`);
+    }
+    if (event.target.id === "assetDrawUrl") {
+      state.assetUrl = event.target.value.trim();
     }
     // Road type change in property panel
     if (event.target.id === "propRoadType") {
@@ -1075,6 +1740,45 @@
       if ($("#propRoadWeight")) $("#propRoadWeight").value = style.weight;
       if ($("#propRoadDashArray")) $("#propRoadDashArray").value = style.dashArray;
       syncPropertyToJSON();
+    }
+  });
+
+  // Detect junctions button
+  document.addEventListener("click", (event) => {
+    if (event.target.closest("[data-detect-junctions]")) runJunctionDetection();
+    if (event.target.closest("[data-auto-classify-curves]")) autoClassifyCurves();
+    if (event.target.closest("[data-toggle-smooth]")) {
+      state.showSmoothCurves = !state.showSmoothCurves;
+      const btn = event.target.closest("[data-toggle-smooth]");
+      if (btn) btn.classList.toggle("is-active", state.showSmoothCurves);
+      renderData();
+      setStatus(state.showSmoothCurves ? "Curve smoothing preview enabled." : "Curve smoothing preview disabled.");
+    }
+    if (event.target.closest("[data-upload-asset]")) {
+      const input = document.createElement("input");
+      input.type = "file";
+      input.accept = "image/*";
+      input.onchange = async () => {
+        const file = input.files?.[0];
+        if (!file) return;
+        setStatus("Uploading...");
+        try {
+          const form = new FormData();
+          form.append("image", file);
+          const token = getToken();
+          const headers = {};
+          if (token) headers["x-admin-token"] = token;
+          const resp = await fetch(`${LIAN_API_BASE}/api/upload/image`, { method: "POST", body: form, credentials: "include", headers });
+          const data = await resp.json().catch(() => ({}));
+          if (!resp.ok || !data.url) throw new Error(data.error || `Upload failed HTTP ${resp.status}`);
+          state.assetUrl = data.url;
+          if ($("#assetDrawUrl")) $("#assetDrawUrl").value = data.url;
+          setStatus(`Upload succeeded: ${data.url}`);
+        } catch (err) {
+          setStatus(err.message, true);
+        }
+      };
+      input.click();
     }
   });
 
@@ -1090,10 +1794,12 @@
       center: layers.center || { lat: DEFAULT_CENTER[0], lng: DEFAULT_CENTER[1] },
       zoom: layers.zoom || 16,
       locations: (locations.items || []).filter((i) => i.status === "active"),
-      roads: layers.roads || [],
+      roads: (layers.roads || []).map((r) => ({ ...r, curveHint: r.renderHint?.curveStyle || "", routeRef: r.routeRef || "" })),
+      junctions: layers.junctions || [],
       buildings: layers.buildings || [],
       environmentElements: layers.environmentElements || [],
       buildingGroups: layers.buildingGroups || [],
+      assets: layers.assets || [],
       areas: layers.areas || [],
       routes: layers.routes || []
     };
@@ -1104,7 +1810,304 @@
     a.download = "map-v2-render-spec.json";
     a.click();
     URL.revokeObjectURL(url);
-    setStatus("已导出渲染规格文件。");
+    setStatus("Render spec exported.");
+  });
+
+  // --- Road network preview ---
+  function previewToLatLng(x, y) {
+    const PREVIEW_PROJ_LAT0 = 18.393453;
+    const PREVIEW_PROJ_LON0 = 110.015821;
+    const latRad = PREVIEW_PROJ_LAT0 * Math.PI / 180;
+    const mPerDegLat = 111320;
+    const mPerDegLng = mPerDegLat * Math.cos(latRad);
+    return [PREVIEW_PROJ_LAT0 + y / mPerDegLat, PREVIEW_PROJ_LON0 + x / mPerDegLng];
+  }
+
+  function latLngToPreviewXy(lat, lng) {
+    const PREVIEW_PROJ_LAT0 = 18.393453;
+    const PREVIEW_PROJ_LON0 = 110.015821;
+    const latRad = PREVIEW_PROJ_LAT0 * Math.PI / 180;
+    const mPerDegLat = 111320;
+    const mPerDegLng = mPerDegLat * Math.cos(latRad);
+    return [(lng - PREVIEW_PROJ_LON0) * mPerDegLng, (lat - PREVIEW_PROJ_LAT0) * mPerDegLat];
+  }
+
+  function renderPreviewCanvas() {
+    const canvas = state.previewCanvas;
+    const ctx = state.previewCtx;
+    const data = state.previewData;
+    if (!canvas || !ctx || !data) return;
+
+    const map = state.map;
+    const bounds = map.getBounds();
+    const topLeft = map.latLngToLayerPoint(bounds.getNorthWest());
+    const size = map.getSize();
+
+    canvas.style.left = topLeft.x + 'px';
+    canvas.style.top = topLeft.y + 'px';
+    canvas.width = size.x * (window.devicePixelRatio || 1);
+    canvas.height = size.y * (window.devicePixelRatio || 1);
+    canvas.style.width = size.x + 'px';
+    canvas.style.height = size.y + 'px';
+    ctx.setTransform(window.devicePixelRatio || 1, 0, 0, window.devicePixelRatio || 1, 0, 0);
+
+    ctx.clearRect(0, 0, size.x, size.y);
+
+    const zoom = map.getZoom();
+    const center = map.getCenter();
+    const centerPt = map.latLngToLayerPoint(center);
+    const scale = Math.pow(2, zoom) * 256 / 360;
+    const scaleRad = Math.pow(2, zoom) * 256 / (2 * Math.PI);
+
+    const txMeters = state.previewTx;
+    const tyMeters = state.previewTy;
+    const scl = state.previewScale;
+    const rot = state.previewRotation * Math.PI / 180;
+
+    function project(lat, lng) {
+      const xMeters = (lng - 110.015821) * 111320 * Math.cos(18.393453 * Math.PI / 180);
+      const yMeters = (lat - 18.393453) * 111320;
+      let px = xMeters * scl + txMeters;
+      let py = yMeters * scl + tyMeters;
+      if (rot !== 0) {
+        const cosR = Math.cos(rot), sinR = Math.sin(rot);
+        const rpx = px * cosR - py * sinR;
+        const rpy = px * sinR + py * cosR;
+        px = rpx; py = rpy;
+      }
+      const lng2 = px / (111320 * Math.cos(18.393453 * Math.PI / 180)) + 110.015821;
+      const lat2 = py / 111320 + 18.393453;
+      const ppt = map.latLngToLayerPoint([lat2, lng2]);
+      return { x: ppt.x - topLeft.x, y: ppt.y - topLeft.y };
+    }
+
+    const lw = state.previewLineWidth;
+    const cosLat = Math.cos(center.lat * Math.PI / 180);
+    const pxPerMeter = Math.pow(2, zoom) * 256 / 360 * 111320 * cosLat;
+
+    function drawPolyline(points, style) {
+      if (points.length < 2) return;
+      ctx.beginPath();
+      const p0 = project(points[0][0], points[0][1]);
+      ctx.moveTo(p0.x, p0.y);
+      for (let i = 1; i < points.length; i++) {
+        const p = project(points[i][0], points[i][1]);
+        ctx.lineTo(p.x, p.y);
+      }
+      ctx.stroke();
+    }
+
+    // --- Roads: body + border ---
+    if (state.previewShowRoads && data.roads) {
+      ctx.globalAlpha = state.previewOpacity;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+
+      for (const road of data.roads) {
+        if (!road.points || road.points.length < 2) continue;
+        const roadWidthM = (road.width_m || 3.2) * (road.lane_count || 2);
+        const roadPx = Math.max(3, roadWidthM * pxPerMeter * state.previewScale);
+
+        // Road body (asphalt gray)
+        ctx.strokeStyle = '#8a8a8a';
+        ctx.lineWidth = roadPx;
+        drawPolyline(road.points);
+
+        // Road border (darker edge)
+        ctx.strokeStyle = '#555';
+        ctx.lineWidth = roadPx + 2;
+        ctx.globalCompositeOperation = 'destination-over';
+        drawPolyline(road.points);
+        ctx.globalCompositeOperation = 'source-over';
+      }
+    }
+
+    // --- Lanes ---
+    if (state.previewShowLanes && data.lanes) {
+      ctx.globalAlpha = state.previewOpacity;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.strokeStyle = '#888';
+      ctx.lineWidth = Math.max(1, lw);
+      for (const lane of data.lanes) {
+        if (!lane.points || lane.points.length < 2) continue;
+        drawPolyline(lane.points);
+      }
+    }
+
+    // --- Junctions ---
+    if (state.previewShowJunctions && data.junctions) {
+      ctx.globalAlpha = state.previewOpacity;
+      for (const jx of data.junctions) {
+        if (!jx.position) continue;
+        const p = project(jx.position.lat, jx.position.lng);
+        const r = Math.max(4, 8 * state.previewScale);
+        // Junction fill (same as road color)
+        ctx.fillStyle = '#8a8a8a';
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
+        ctx.fill();
+        // Junction border
+        ctx.strokeStyle = '#555';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+      }
+    }
+
+    ctx.globalAlpha = 1;
+  }
+
+  function initPreviewCanvasLayer() {
+    if (state.previewCanvas) return;
+    const pane = state.map.getPane('overlayPane');
+    const canvas = document.createElement('canvas');
+    canvas.style.position = 'absolute';
+    canvas.style.pointerEvents = 'none';
+    canvas.style.zIndex = '450';
+    pane.appendChild(canvas);
+    state.previewCanvas = canvas;
+    state.previewCtx = canvas.getContext('2d');
+    state.roadPreview = { remove() { canvas.remove(); state.previewCanvas = null; state.previewCtx = null; } };
+    state.map.on('moveend zoomend', renderPreviewCanvas);
+    state.map.on('move', renderPreviewCanvas);
+  }
+
+  function syncPreviewInputs() {
+    const $tx = $("#previewTx"), $ty = $("#previewTy");
+    const $sc = $("#previewScale"), $rot = $("#previewRot");
+    if ($tx) $tx.value = state.previewTx;
+    if ($ty) $ty.value = state.previewTy;
+    if ($sc) $sc.value = state.previewScale;
+    if ($rot) $rot.value = state.previewRotation;
+    renderPreviewCanvas();
+  }
+
+  function syncPreviewFromInputs() {
+    state.previewTx = Number($("#previewTx")?.value || 0);
+    state.previewTy = Number($("#previewTy")?.value || 0);
+    state.previewScale = Number($("#previewScale")?.value || 1);
+    state.previewRotation = Number($("#previewRot")?.value || 0);
+    renderPreviewCanvas();
+  }
+
+  const $opacity = $("#previewOpacity");
+  if ($opacity) $opacity.addEventListener("input", () => {
+    state.previewOpacity = Number($opacity.value) / 100;
+    renderPreviewCanvas();
+  });
+
+  const $lw = $("#previewLineWidth");
+  if ($lw) $lw.addEventListener("input", () => {
+    state.previewLineWidth = Number($lw.value);
+    renderPreviewCanvas();
+  });
+
+  const $showLanes = $("#previewShowLanes");
+  if ($showLanes) $showLanes.addEventListener("change", () => {
+    state.previewShowLanes = $showLanes.checked;
+    renderPreviewCanvas();
+  });
+
+  const $showRoads = $("#previewShowRoads");
+  if ($showRoads) $showRoads.addEventListener("change", () => {
+    state.previewShowRoads = $showRoads.checked;
+    renderPreviewCanvas();
+  });
+
+  const $showJx = $("#previewShowJunctions");
+  if ($showJx) $showJx.addEventListener("change", () => {
+    state.previewShowJunctions = $showJx.checked;
+    renderPreviewCanvas();
+  });
+
+  ["previewTx", "previewTy", "previewScale", "previewRot"].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener("change", syncPreviewFromInputs);
+  });
+
+  function updateAlignCursor() {
+    const container = state.map?.getContainer();
+    if (!container) return;
+    if (state.previewAlignMode) {
+      container.style.cursor = 'grab';
+      if (state.previewCanvas) state.previewCanvas.style.cursor = 'grab';
+    } else {
+      container.style.cursor = '';
+      if (state.previewCanvas) state.previewCanvas.style.cursor = '';
+    }
+  }
+
+  document.addEventListener("click", (event) => {
+    if (event.target.closest("[data-toggle-align-mode]")) {
+      if (!state.previewData) { setStatus("Load road preview first.", true); return; }
+      state.previewAlignMode = !state.previewAlignMode;
+      const btn = event.target.closest("[data-toggle-align-mode]");
+      if (btn) btn.classList.toggle("is-active", state.previewAlignMode);
+      updateAlignCursor();
+      setStatus(state.previewAlignMode ? "Align mode: drag map to move road preview." : "Align mode exited.");
+    }
+    if (event.target.closest("[data-reset-preview-transform]")) {
+      state.previewTx = 0;
+      state.previewTy = 0;
+      state.previewScale = 1;
+      state.previewRotation = 0;
+      syncPreviewInputs();
+      setStatus("Preview transform reset.");
+    }
+    if (event.target.closest("[data-export-preview]")) {
+      const out = {
+        source: 'road_network_mapWITH',
+        transform: { translateX: state.previewTx, translateY: state.previewTy, scale: state.previewScale, rotation: state.previewRotation },
+        generatedAt: new Date().toISOString(),
+        warning: 'This is preview alignment data, not official map data.',
+        laneCount: state.previewData?.lanes?.length || 0,
+        roadCount: state.previewData?.roads?.length || 0,
+        junctionCount: state.previewData?.junctions?.length || 0
+      };
+      const blob = new Blob([JSON.stringify(out, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'map-v2-road-network-alignment.json';
+      a.click();
+      URL.revokeObjectURL(url);
+      setStatus('Alignment parameters exported.');
+    }
+    if (event.target.closest("[data-clear-preview]")) {
+      state.previewData = null;
+      state.previewAlignMode = false;
+      const alignBtn = document.querySelector("[data-toggle-align-mode]");
+      if (alignBtn) alignBtn.classList.remove("is-active");
+      updateAlignCursor();
+      if (state.roadPreview) { state.roadPreview.remove(); state.roadPreview = null; }
+      renderPreviewCanvas();
+      setStatus('Road preview cleared.');
+    }
+    if (event.target.closest("[data-load-preview]")) {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = '.json';
+      input.onchange = async () => {
+        const file = input.files?.[0];
+        if (!file) return;
+        try {
+          const text = await file.text();
+          const data = JSON.parse(text);
+          if (!data.lanes || !data.roads) throw new Error('Missing lanes or roads fields');
+          state.previewData = data;
+          state.previewTx = data.transform?.translateX || 0;
+          state.previewTy = data.transform?.translateY || 0;
+          state.previewScale = data.transform?.scale || 1;
+          state.previewRotation = data.transform?.rotation || 0;
+          initPreviewCanvasLayer();
+          syncPreviewInputs();
+          setStatus(`Road preview loaded: ${data.lanes.length} lanes, ${data.roads.length} roads, ${data.junctions?.length || 0} junctions.`);
+        } catch (err) {
+          setStatus('Load failed: ' + err.message, true);
+        }
+      };
+      input.click();
+    }
   });
 
   // Building groups panel
@@ -1114,14 +2117,14 @@
     const layers = parseJson("#layersJson", DEFAULT_LAYERS_FALLBACK);
     const groups = layers.buildingGroups || [];
     if (groups.length === 0) {
-      container.innerHTML = '<p style="font-size:11px;color:var(--muted)">暂无建筑组</p>';
+      container.innerHTML = '<p style="font-size:11px;color:var(--muted)">No building groups</p>';
       return;
     }
     container.innerHTML = groups.map((g) => `
       <div class="group-item" data-group-id="${escapeHtml(g.id)}">
         <span class="group-name">${escapeHtml(g.name || g.id)}</span>
-        <span class="group-count">${(g.buildingIds || []).length} 建筑</span>
-        <button type="button" class="danger" data-delete-group="${escapeHtml(g.id)}">删</button>
+        <span class="group-count">${(g.buildingIds || []).length} buildings</span>
+        <button type="button" class="danger" data-delete-group="${escapeHtml(g.id)}">Delete</button>
       </div>
     `).join("");
   }
@@ -1130,7 +2133,7 @@
     const delBtn = event.target.closest("[data-delete-group]");
     if (delBtn) {
       const gid = delBtn.dataset.deleteGroup;
-      if (!confirm(`删除建筑组 "${gid}"？`)) return;
+      if (!confirm(`Delete building group "${gid}"?`)) return;
       const layers = parseJson("#layersJson", DEFAULT_LAYERS_FALLBACK);
       layers.buildingGroups = (layers.buildingGroups || []).filter((g) => g.id !== gid);
       $("#layersJson").value = JSON.stringify(layers, null, 2);
@@ -1138,19 +2141,19 @@
       return;
     }
     if (event.target.closest("[data-add-building-group]")) {
-      const groupId = prompt("建筑组 ID:");
+      const groupId = prompt("Building group ID:");
       if (!groupId) return;
-      const groupName = prompt("建筑组名称:") || groupId;
+      const groupName = prompt("Building group name:") || groupId;
       const layers = parseJson("#layersJson", DEFAULT_LAYERS_FALLBACK);
       layers.buildingGroups = layers.buildingGroups || [];
       if (layers.buildingGroups.find((g) => g.id === groupId)) {
-        setStatus(`建筑组 "${groupId}" 已存在。`, true);
+        setStatus(`Building group "${groupId}" already exists.`, true);
         return;
       }
       layers.buildingGroups.push({ id: groupId, name: groupName, buildingIds: [], description: "" });
       $("#layersJson").value = JSON.stringify(layers, null, 2);
       renderData();
-      setStatus(`已添加建筑组 "${groupId}"。`);
+      setStatus(`Added building group "${groupId}".`);
     }
   });
 
@@ -1184,7 +2187,7 @@
     BOUNDS.west = b.west;
     BOUNDS.east = b.east;
     state.map.setMaxBounds([[b.south, b.west], [b.north, b.east]]);
-    setStatus(`底图已更新: SW ${b.south.toFixed(5)} / ${b.west.toFixed(5)} → NE ${b.north.toFixed(5)} / ${b.east.toFixed(5)}`);
+    setStatus(`底图已更新: SW ${b.south.toFixed(5)} / ${b.west.toFixed(5)} -> NE ${b.north.toFixed(5)} / ${b.east.toFixed(5)}`);
   }
 
   function nudgeBounds(dir) {
@@ -1331,4 +2334,23 @@
   }
   initMap();
   loadData().catch((error) => setStatus(error.message, true));
+
+  // Auto-load road network preview
+  (async () => {
+    try {
+      const resp = await fetch('/assets/road-network-preview.json');
+      if (!resp.ok) return;
+      const data = await resp.json();
+      if (!data.lanes || !data.roads) return;
+      state.previewData = data;
+      state.previewTx = 442;
+      state.previewTy = -184;
+      state.previewScale = 1;
+      state.previewRotation = 0;
+      initPreviewCanvasLayer();
+      syncPreviewInputs();
+      renderPreviewCanvas();
+      setStatus(`路网预览已加载: ${data.lanes.length} 车道, ${data.roads.length} 道路, ${data.junctions?.length || 0} 路口 (偏移 X438 Y-190)`);
+    } catch {}
+  })();
 })();

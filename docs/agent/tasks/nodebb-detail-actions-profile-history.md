@@ -195,3 +195,80 @@ Security:
 - Remove profile sections and their API calls.
 - Remove LIAN proxy routes for save/report/history/liked lists.
 - Do not touch feed ranking rollback.
+
+---
+
+## Review Blockers Added 2026-05-03
+
+This task is not approved yet.
+
+Findings:
+
+- Detail actions and profile lists rely on `canViewPost()`. Until canonical audience user hydration is fixed, save/like/report and profile filtering can deny valid school users or mis-handle private/org visibility.
+- Runtime user-facing labels in the touched frontend files still contain mojibake. This directly fails the task's own encoding-safety requirement.
+- `scripts/smoke-frontend.js` did not finish green during review. Individual `node --check` on key files passed, but the task cannot be accepted until the smoke result is clean or the harness issue is fixed and documented.
+- Action endpoints pass simplified `{ visibility, audience }` objects to `canViewPost()`. If private/linkOnly author override matters for an action, the caller must include the author context or explicitly document why it is not required.
+
+Acceptance additions:
+
+- [ ] Browser-visible labels for save, report, history, saved, liked, loading, and empty states render as normal UTF-8 Chinese.
+- [ ] Frontend smoke is green after the label cleanup.
+- [ ] Save/like/report are tested with public, campus, school, private, and linkOnly posts.
+- [ ] Profile saved/liked/history lists hide inaccessible posts after audience hydration is fixed.
+- [ ] Runtime verification against NodeBB confirms `GET /api/user/:slug/bookmarks` and `GET /api/user/:slug/upvoted` response shapes.
+
+---
+
+## Fix Pass Result Added 2026-05-03
+
+Status: fixed, pending NodeBB interaction smoke.
+
+Recorded implementation result:
+
+- Audience hydration dependency is resolved by Lane D.
+- `/api/posts` baseline metadata write was fixed in `post-service.js`.
+- No mojibake found in the latest touched labels according to the implementation handoff.
+- Frontend smoke reports 21/21 pass.
+- The broader fix pass reports 143/143 tests passing.
+
+Reviewer validation still required:
+
+```bash
+node scripts/smoke-frontend.js http://localhost:4100
+node scripts/smoke-nodebb-contracts.js
+```
+
+Manual checks still required:
+
+- Save and unsave one visible post from detail.
+- Like and unlike one visible post.
+- Report one visible test post.
+- Confirm profile saved, liked, and history lists load for the current user and hide inaccessible posts.
+
+---
+
+## P1 Browser Acceptance Requirement Added 2026-05-03
+
+Current Pro decision: validate this after Publish V2, or in parallel if a separate reviewer is available.
+
+Do not add new NodeBB native features in this acceptance pass. The scope is only:
+
+- detail save/unsave;
+- detail like/unlike;
+- detail report;
+- profile browsing history;
+- profile saved posts;
+- profile liked posts.
+
+Acceptance must include:
+
+- [ ] Browser-visible Chinese labels render normally.
+- [ ] Save state remains correct after page refresh.
+- [ ] Like count/state remains correct after page refresh.
+- [ ] Report action returns a clear success/failure state.
+- [ ] Saved list uses the current user, not platform/default uid.
+- [ ] Liked list uses the current user, not platform/default uid.
+- [ ] History list uses the current user and hides inaccessible posts.
+- [ ] Inaccessible school/private/org/linkOnly posts do not leak through profile lists.
+
+If any runtime issue appears, open a separate narrow fix task instead of expanding this acceptance task.

@@ -2,6 +2,9 @@ function publishPageOpen() {
   state.publish.active = true;
   state.publish.step = "imageSelect";
   state.publish.imageUrls = [];
+  state.publish.localImageUrls = [];
+  state.publish.selectedFiles = [];
+  state.publish.uploadPromise = null;
   state.publish.uploadProgress = {};
   state.publish.locationDraft = null;
   state.publish.title = "";
@@ -61,7 +64,8 @@ function publishPageRender() {
 }
 
 function publishPageRenderImageSelect(container) {
-  const hasImages = state.publish.imageUrls.length > 0;
+  const hasImages = state.publish.selectedFiles.length > 0 || state.publish.imageUrls.length > 0;
+  const thumbUrls = state.publish.localImageUrls.length > 0 ? state.publish.localImageUrls : state.publish.imageUrls;
   container.innerHTML = `
     <div class="publish-page-section">
       ${!hasImages ? `
@@ -72,9 +76,9 @@ function publishPageRenderImageSelect(container) {
         </label>
       ` : `
         <div class="publish-image-grid">
-          ${state.publish.imageUrls.map((url, i) => `
+          ${thumbUrls.map((url, i) => `
             <div class="publish-image-thumb">
-              <img src="${escapeHtml(displayImageUrl(url))}" alt="">
+              <img src="${escapeHtml(state.publish.imageUrls[i] ? displayImageUrl(state.publish.imageUrls[i]) : url)}" alt="">
               <button type="button" data-publish-remove-image="${i}" class="publish-image-remove" aria-label="移除">×</button>
             </div>
           `).join("")}
@@ -84,13 +88,8 @@ function publishPageRenderImageSelect(container) {
           <input id="publishPageImageInput" type="file" accept="image/*" multiple style="display:none">
         </label>
       `}
-      ${state.publish.uploadLoading ? '<p class="publish-status">图片上传中...</p>' : ""}
+      ${state.publish.uploadLoading ? '<p class="publish-status">图片上传中，可先选择地点...</p>' : ""}
     </div>
-    ${hasImages ? `
-      <div class="publish-actions">
-        <button class="primary" type="button" data-publish-confirm-images>下一步</button>
-      </div>
-    ` : ""}
   `;
 }
 
@@ -99,9 +98,13 @@ function publishPageRenderLocationPick(container) {
   const locationLabel = draft?.skipped
     ? "已跳过定位"
     : (draft?.displayName || draft?.locationArea || "未选择地点");
+  const uploadedCount = state.publish.imageUrls.filter(Boolean).length;
+  const totalCount = state.publish.selectedFiles.length;
+  const uploadDone = !state.publish.uploadLoading && uploadedCount >= totalCount;
   container.innerHTML = `
     <div class="publish-page-section">
       <h3>这些照片在哪里？</h3>
+      ${!uploadDone ? `<p class="publish-status">图片上传中 (${uploadedCount}/${totalCount})，可先选择地点</p>` : ""}
       <div class="publish-location-embed" id="publishMapEmbed"></div>
       <label>
         地点
@@ -128,7 +131,7 @@ function publishPageRenderDraftReview(container) {
     { value: "school", label: "本校" },
     { value: "private", label: "仅自己" }
   ];
-  const currentAudience = p.metadata?.visibility || "public";
+  const currentAudience = p.audience || p.metadata?.visibility || "public";
   container.innerHTML = `
     <div class="publish-page-section">
       <p class="publish-status">${
@@ -170,12 +173,12 @@ function publishPageRenderDraftReview(container) {
 }
 
 function publishPageConfirmImages() {
-  if (!state.publish.imageUrls.length) return;
+  if (!state.publish.selectedFiles.length) return;
   state.publish.step = "locationPick";
   publishPageRender();
 }
 
-function publishPageSkipLocation() {
+async function publishPageSkipLocation() {
   state.publish.locationDraft = {
     source: "skipped",
     locationId: "",
@@ -190,12 +193,19 @@ function publishPageSkipLocation() {
     skipped: true,
     note: ""
   };
+  if (state.publish.uploadPromise) await state.publish.uploadPromise;
+  state.publish.imageUrls = state.publish.imageUrls.filter(Boolean);
+  if (!state.publish.imageUrls.length) {
+    state.publish.step = "imageSelect";
+    publishPageRender();
+    return;
+  }
   state.publish.step = "draftReview";
   publishPageRender();
   publishPageRequestPreview();
 }
 
-function publishPageConfirmLocation() {
+async function publishPageConfirmLocation() {
   const input = $("#publishLocationInput");
   const placeName = input ? input.value.trim() : "";
   if (!state.publish.locationDraft || state.publish.locationDraft.skipped) {
@@ -213,6 +223,13 @@ function publishPageConfirmLocation() {
       skipped: false,
       note: ""
     };
+  }
+  if (state.publish.uploadPromise) await state.publish.uploadPromise;
+  state.publish.imageUrls = state.publish.imageUrls.filter(Boolean);
+  if (!state.publish.imageUrls.length) {
+    state.publish.step = "imageSelect";
+    publishPageRender();
+    return;
   }
   state.publish.step = "draftReview";
   publishPageRender();
@@ -233,25 +250,42 @@ function publishPageInitMapPick() {
 
 async function publishPageHandleImageSelect(files) {
   if (!files?.length) return;
-  state.publish.uploadLoading = true;
-  publishPageRender();
-  try {
-    for (const file of files) {
-      const url = await uploadImage(file, "publish-v2");
-      state.publish.imageUrls.push(url);
-    }
-    publishPageRender();
-  } catch (error) {
-    alert(error.message);
-    publishPageRender();
-  } finally {
-    state.publish.uploadLoading = false;
+  for (const file of files) {
+    state.publish.selectedFiles.push(file);
+    state.publish.localImageUrls.push(URL.createObjectURL(file));
   }
+  state.publish.uploadLoading = true;
+  state.publish.step = "locationPick";
+  publishPageRender();
+  state.publish.uploadPromise = (async () => {
+    try {
+      for (let i = state.publish.imageUrls.length; i < state.publish.selectedFiles.length; i++) {
+        try {
+          const compressed = await compressImageForUpload(state.publish.selectedFiles[i]);
+          const url = await uploadImage(compressed, "publish-v2");
+          state.publish.imageUrls[i] = url;
+        } catch (err) {
+          console.warn("image upload failed:", err.message);
+        }
+      }
+      state.publish.imageUrls = state.publish.imageUrls.filter(Boolean);
+    } catch (error) {
+      alert(error.message);
+    } finally {
+      state.publish.uploadLoading = false;
+      publishPageRender();
+    }
+  })();
 }
 
 function publishPageRemoveImage(index) {
+  if (state.publish.localImageUrls[index]) {
+    URL.revokeObjectURL(state.publish.localImageUrls[index]);
+  }
+  state.publish.localImageUrls.splice(index, 1);
+  state.publish.selectedFiles.splice(index, 1);
   state.publish.imageUrls.splice(index, 1);
-  if (!state.publish.imageUrls.length) {
+  if (!state.publish.selectedFiles.length) {
     state.publish.step = "imageSelect";
   }
   publishPageRender();

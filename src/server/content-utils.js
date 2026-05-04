@@ -26,6 +26,16 @@ function parseLianChannelMeta(content = "") {
   return parseEscapedJsonComment(content, "lian-channel-meta");
 }
 
+function safeDecodeEntity(_, code) {
+  const n = Number(code);
+  return Number.isInteger(n) && n >= 0 && n <= 0x10FFFF ? String.fromCodePoint(n) : "";
+}
+
+function safeDecodeHexEntity(_, hex) {
+  const n = parseInt(hex, 16);
+  return Number.isInteger(n) && n >= 0 && n <= 0x10FFFF ? String.fromCodePoint(n) : "";
+}
+
 function stripHtml(html = "") {
   return html
     .replace(/<!--[\s\S]*?-->/g, "")
@@ -40,6 +50,8 @@ function stripHtml(html = "") {
     .replace(/&gt;/g, ">")
     .replace(/&quot;/g, "\"")
     .replace(/&#39;/g, "'")
+    .replace(/&#(\d+);/g, safeDecodeEntity)
+    .replace(/&#x([0-9a-fA-F]+);/g, safeDecodeHexEntity)
     .replace(/\n{3,}/g, "\n\n")
     .trim();
 }

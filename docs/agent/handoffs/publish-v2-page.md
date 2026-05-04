@@ -2,11 +2,28 @@
 
 Date: 2026-05-02
 
+Status: **待审核** — review correction applied. Image selection now shows local thumbnails immediately, uploads run in background, map picker is entered instantly after confirmation. Upload promise is awaited before AI preview.
+
 ## Plan Summary
 
 Publish V2 moves from a `<dialog>` modal to a dedicated `<section data-view="publish">` view with three internal steps: imageSelect → locationPick → draftReview.
 
-A new `public/publish-page.js` (~500-700 lines) owns the dedicated page rendering and state. Map v2 gets an embedded pick mode. The existing multi-image publish baseline is reused instead of rebuilt from scratch. Audience picker is added to draft review and must be user-confirmed before publish.
+A new `public/publish-page.js` (~415 lines) owns the dedicated page rendering and state. Map v2 gets an embedded pick mode (`startPickInContainer`). The existing multi-image publish baseline is reused instead of rebuilt from scratch. Audience picker is added to draft review and must be user-confirmed before publish.
+
+Confirmed product flow after review:
+
+```text
+ click
+→ choose multiple images
+→ confirm upload/images
+→ immediately enter Map v2 location picker
+→ user confirms coordinate location or taps skip
+→ when image URLs are ready, call AI preview with all images and location context
+→ editable draft review
+→ explicit publish or save draft
+```
+
+The map step must include both "确认地点" and "跳过定位". Default expectation is a coordinate-bearing `locationDraft` from Map v2 when the user confirms a point/location.
 
 ## Current Baseline
 
@@ -26,22 +43,44 @@ Publish V2 should migrate and harden the user-facing flow, not duplicate these c
 - Map v2 needs a visible container; modal cannot host Leaflet without z-index issues
 - Integrates with existing `switchView()` SPA pattern
 
-## Files to Change
+## Files Changed
 
-| File | Change | Risk |
+| File | Change | Lines |
 |---|---|---|
-| `public/publish-page.js` | **NEW** — all publish page rendering and state | Medium |
-| `public/index.html` | Add `<section data-view="publish">` (~15 lines) | Low |
-| `public/app.js` | Wire `+` button to `publishPageOpen()`, add delegated handlers (~40 lines) | Medium |
-| `public/app-state.js` | Add `publish` state block (~20 lines) | Low |
-| `public/map-v2.js` | Add `startPickInContainer()` for embedded mode (~40 lines) | Medium |
-| `public/styles.css` | Publish page styles (~120 lines) | Low |
-| `public/app-ai-publish.js` | Keep old modal compatibility; extract/reuse helpers only if needed | Medium |
-| `public/app-utils.js` | Optional shared image compression/upload helper | Low |
-| `src/server/ai-post-preview.js` | Verify/complete multi-image MiMo content parts; keep `imageUrl` compatibility | Low |
-| `src/server/ai-light-publish.js` | Preserve `imageUrls[]`; pass confirmed visibility/audience only if needed | Low |
+| `public/publish-page.js` | **NEW** — all publish page rendering and state, 3 steps, ~415 lines | ~415 |
+| `public/index.html` | Added `<section data-view="publish">` + `<script src="/publish-page.js">` | +20 |
+| `public/app.js` | `+` button → `publishPageOpen()`, 10 delegated click handlers, 1 change handler | +45 |
+| `public/app-state.js` | Added `publish` state block (20 fields) | +20 |
+| `public/map-v2.js` | Added `startPickInContainer()` for embedded Leaflet picker, exported on `window.MapV2` | +40 |
+| `public/styles.css` | Publish page styles (view, topbar, sections, upload zone, image grid, location embed, audience picker) | +120 |
 
-Unchanged unless specifically required: `src/server/audience-service.js`, `src/server/api-router.js`.
+Unchanged (reused as-is): `public/app-ai-publish.js`, `public/app-utils.js`, `src/server/ai-post-preview.js`, `src/server/ai-light-publish.js`, `src/server/api-router.js`.
+
+## Implementation Status
+
+All 7 phases completed:
+
+| Phase | Description | Status |
+|---|---|---|
+| 1 | Page shell: state, HTML, CSS, button wiring, event delegation | Done |
+| 2 | Image select: compress via `compressImageForUpload` + upload via `uploadImage` | Done |
+| 3 | Map v2 embedded picker: `startPickInContainer` creates standalone Leaflet map | Done |
+| 4 | AI preview: `POST /api/ai/post-preview`, `publishPageApplyPreview`, regenerate | Done |
+| 5 | Audience picker: 4-option (公开/校园/本校/仅自己), `userEditedAudience` flag | Done |
+| 6 | Save/publish: draft save to `/api/ai/post-drafts`, publish to `/api/ai/post-publish` | Done |
+| 7 | Polish: step labels, status messages, risk flags display | Done |
+
+Key implementation details:
+
+- `+` button now calls `publishPageOpen()` instead of old `resetAiPublish()` + `showModal()` path
+- Image select: local thumbnails via `URL.createObjectURL` shown immediately, compression + upload runs in background
+- Upload is non-blocking: user can proceed to location picking while uploads continue
+- `publishPageSkipLocation` / `publishPageConfirmLocation` await `uploadPromise` before calling AI preview
+- Location pick step shows upload progress (`N/M`) when uploads still in progress
+- `startPickInContainer` creates a Leaflet map independent from main map state, with click-to-pick and nearest-location snapping
+- Audience picker uses `userEditedAudience` flag so AI preview doesn't override user choice
+- `publishPageBuildPayload` sets `metadata.distribution` based on whether location was set (includes `"map"` only when location present)
+- Old modal path (`#publishSheet`) still exists but is no longer reachable from `+` button
 
 ## API Changes
 
@@ -83,9 +122,9 @@ Browser smoke test:
 1. Click `+`
 2. Select multiple images
 3. Confirm images
-4. Verify automatic transition to Map v2 embed
-5. Pick or skip location
-6. Verify AI draft uses all images
+4. Verify immediate transition to Map v2 embed while upload/progress state is visible if needed
+5. Pick a coordinate location or skip location from the location step
+6. Verify AI draft waits for image URLs, then uses all images plus the confirmed/skipped location context
 7. Edit audience
 8. Save draft
 9. Publish to LIAN
@@ -111,9 +150,17 @@ Failure-path checks:
 - Map distribution must be removed or avoided when the user skips location.
 - `post-metadata.json` writes must not corrupt existing entries.
 
+## Review Findings (Resolved)
+
+1. ~~The image step currently does not enter map picking immediately after confirmation.~~ **Fixed**: `publishPageConfirmImages` transitions to locationPick immediately; `selectedFiles`/`localImageUrls` used for thumbnails instead of waiting for `imageUrls`.
+2. ~~Upload and AI preview latency should be overlapped with user location selection.~~ **Fixed**: `publishPageHandleImageSelect` starts upload via `uploadPromise` in background; location step shows upload progress (`N/M`); `publishPageSkipLocation`/`publishPageConfirmLocation` await `uploadPromise` before calling AI preview.
+3. ~~The map picker must return coordinates by default when the user confirms a location.~~ **Already correct**: `startPickInContainer` returns `locationDraft` with `lat`/`lng` from Leaflet click event; `nearestLocation` snaps to known locations within 120m.
+4. ~~The map picker step must always show "确认地点" and "跳过定位".~~ **Already correct**: `publishPageRenderLocationPick` renders both buttons unconditionally.
+
 ## Follow-up TODOs
 
-- Deprecate old modal publish path once V2 is stable
+- Deprecate old modal publish path once V2 is stable (remove `#publishSheet` dialog and `app-ai-publish.js` event handlers)
 - Add concurrent image upload (Promise.all with limit) if sequential is too slow
 - Add audience-specific validation on backend (school visibility requires valid schoolId)
-- Consider step indicator (dots/labels) at top of publish view for UX
+- Add `miniMap.remove()` cleanup when leaving locationPick step to free memory
+- Wire Map v2 location markers (show existing locations on embedded picker for reference)

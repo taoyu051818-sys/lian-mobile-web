@@ -12,17 +12,26 @@ Normalized handoffs live here:
 - `alias-phase-2.md`
 - `alias-phase-3.md`
 - `audience-permission-design.md`
+- `asset-placement-phase2.md`
 - `audience-system-phase1-3.md`
+- `curves-route-semantics-phase1c.md`
 - `feed-optimization.md`
 - `feed-ops-snapshot-diff.md`
 - `frontend-app-split.md`
 - `frontend-stability-smoke.md`
+- `implementation-batch-2026-05-02.md`
 - `map-v2-editor.md`
 - `map-v2-gaode.md`
+- `map-v2-road-network-import-preview.md`
 - `map-v2-restore-legacy-geo.md`
 - `nodebb-integration-audit.md`
 - `post-metadata-gap-check.md`
+- `pc-task-board-webui.md`
+- `p0-publish-profile-nodebb-regression-fix.md`
+- `pro-engineering-decision-task-split.md`
+- `repo-split-frontend-backend.md`
 - `road-draw-mvp.md`
+- `road-junctions-phase1b.md`
 
 ## Relationship To Numbered Docs
 

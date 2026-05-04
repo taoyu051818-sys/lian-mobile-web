@@ -3,10 +3,11 @@
 ## Conflict level definitions
 
 - **hard-lock**: only the designated owner should modify. Other contributors must get owner review before merge.
+- **hard-review**: like hard-lock, but the owner reviews rather than exclusively modifies. Used for core services where changes need domain expert review.
 - **soft-lock**: can be modified by anyone, but must check the current task doc and understand the context first.
 - **open**: low conflict risk. New files in these directories are generally safe.
 
-## src/server/ — Backend services
+## src/server/ - Backend services
 
 | File | Level | Owner | Notes |
 |---|---|---|---|
@@ -15,32 +16,32 @@
 | `post-service.js` | hard-review | Programmer A | Publishing core: HTML building, NodeBB topic creation, reply handling. |
 | `auth-service.js` | soft-lock | Programmer A | User model, password, session, NodeBB uid mapping. |
 | `auth-routes.js` | soft-lock | Programmer A | Register/login/logout endpoints. Depends on auth-service. |
-| `ai-post-preview.js` | open | — | AI draft generation. Self-contained, low conflict. |
-| `ai-light-publish.js` | open | — | AI draft save + publish. Depends on post-service. |
-| `channel-service.js` | open | — | Campus channel messages. Independent module. |
-| `admin-routes.js` | open | — | Admin endpoints. Depends on data-store. |
+| `ai-post-preview.js` | open | - | AI draft generation. Self-contained, low conflict. |
+| `ai-light-publish.js` | open | - | AI draft save + publish. Depends on post-service. |
+| `channel-service.js` | open | - | Campus channel messages. Independent module. |
+| `admin-routes.js` | open | - | Admin endpoints. Depends on data-store. |
 | `nodebb-client.js` | soft-lock | Programmer A | NodeBB HTTP client. All NodeBB calls go through here. |
 | `content-utils.js` | soft-lock | shared | HTML processing, image URL helpers. Used by many services. |
-| `image-proxy.js` | open | — | Cloudinary proxy. Self-contained. |
-| `upload.js` | open | — | Image upload to Cloudinary. Self-contained. |
+| `image-proxy.js` | open | - | Cloudinary proxy. Self-contained. |
+| `upload.js` | open | - | Image upload to Cloudinary. Self-contained. |
 | `data-store.js` | soft-lock | shared | JSON file read/write. Changes here affect all data operations. |
 | `config.js` | soft-lock | shared | Environment loading. Rarely needs changes. |
-| `cache.js` | open | — | In-memory cache maps. |
-| `paths.js` | open | — | File path constants. |
-| `http-response.js` | open | — | Response helpers. |
-| `request-utils.js` | open | — | Body parsing, admin auth. |
-| `static-data.js` | open | — | Institutions list, map points. |
-| `static-server.js` | open | — | Static file serving. |
-| `setup-page.js` | open | — | First-run setup page. |
+| `cache.js` | open | - | In-memory cache maps. |
+| `paths.js` | open | - | File path constants. |
+| `http-response.js` | open | - | Response helpers. |
+| `request-utils.js` | open | - | Body parsing, admin auth. |
+| `static-data.js` | open | - | Institutions list, map points. |
+| `static-server.js` | open | - | Static file serving. |
+| `setup-page.js` | open | - | First-run setup page. |
 | `audience-service.js` | soft-lock | shared | Permission functions (canViewPost etc.) used by feed, map, detail, channel. |
-| `alias-service.js` | open | — | Alias pool management. |
+| `alias-service.js` | open | - | Alias pool management. |
 | `notification-service.js` | soft-lock | shared | User-scoped notifications from NodeBB. |
 | `map-v2-service.js` | soft-lock | shared | Map v2 data API, admin writes, bounds validation. |
 | `route-matcher.js` | soft-lock | shared | URL pattern matching for API router. |
 
 New files under `src/server/` are open for creation. Use the naming pattern `<module>-service.js` or `<module>-routes.js`.
 
-## public/ — Frontend
+## public/ - Frontend
 
 | File | Level | Owner | Notes |
 |---|---|---|---|
@@ -56,8 +57,8 @@ New files under `src/server/` are open for creation. Use the naming pattern `<mo
 | `index.html` | soft-lock | Programmer B | HTML structure. Rarely changes. |
 | `map-v2.js` | soft-lock | Programmer B | Leaflet map, overlays, location picker. IIFE with local api(). |
 | `publish-page.js` | soft-lock | Programmer B | Publish V2 dedicated page. 3-step flow. |
-| `mock-api.js` | open | — | Mock API layer for frontend repo only. Not in main repo. |
-| `assets/` | open | — | Images, icons. |
+| `mock-api.js` | open | - | Mock API layer for frontend repo only. Not in main repo. |
+| `assets/` | open | - | Images, icons. |
 
 New files under `public/` are allowed when they keep one clear feature boundary. Do not add new frontend logic back into `app.js` unless it is event binding or initialization.
 
@@ -71,23 +72,23 @@ Classic script load order is currently part of the architecture:
 
 Menu prototypes (`menu-prototype*`, `menu-data.json`) are experimental demos, not part of the main app. Status: demo/experimental.
 
-Frontend repo note: `mock-api.js` lives in the frontend repo (`lian-frontend`) only, not in this backend repo. `public/tools/` are admin-only tools (map editor) and belong in the backend repo.
+Frontend repo note: `mock-api.js` lives in the frontend repo (`lian-frontend`) only, not in this backend repo. `public/tools/` are admin/internal tools (map editor, task board) and belong in the frontend repo; backend only provides API endpoints.
 
-## data/ — Runtime data
+## data/ - Runtime data
 
 | File | Level | Owner | Notes |
 |---|---|---|---|
 | `post-metadata.json` | soft-lock | shared | 2314 lines. Only modify entries for your task's tids. Never bulk-format. Backup before large changes. |
 | `feed-rules.json` | soft-lock | shared | Feed config. Changes affect all users immediately. |
-| `auth-users.json` | — | — | In .gitignore. Never commit. Managed by auth-service. |
-| `channel-reads.json` | — | — | In .gitignore. Managed by channel-service. |
-| `clubs.json` | open | — | Static club data. |
-| `alias-pool.json` | open | — | Alias pool data. |
+| `auth-users.json` | - | - | In .gitignore. Never commit. Managed by auth-service. |
+| `channel-reads.json` | - | - | In .gitignore. Managed by channel-service. |
+| `clubs.json` | open | - | Static club data. |
+| `alias-pool.json` | open | - | Alias pool data. |
 | `locations.json` | soft-lock | shared | Location coordinates for Map v2. |
 | `map-v2-layers.json` | soft-lock | shared | Map layer definitions (areas, routes, assets). |
-| `study-hn-club-discoveries.json` | open | — | Club discovery data. Archive candidate. |
+| `study-hn-club-discoveries.json` | open | - | Club discovery data. Archive candidate. |
 
-## scripts/ — Validation and ops
+## scripts/ - Validation and ops
 
 Lifecycle: **active** = run regularly or on change. **ops** = deploy/infra. **one-shot** = maintenance, rarely rerun.
 
@@ -117,18 +118,18 @@ Lifecycle: **active** = run regularly or on change. **ops** = deploy/infra. **on
 
 New scripts are encouraged. Place under `scripts/`.
 
-## docs/agent/ — Documentation
+## docs/agent/ - Documentation
 
 All files under `docs/agent/` are open. This is the primary coordination layer.
 
-- `tasks/` — task definitions
-- `handoffs/` — task handoffs
-- `domains/` — domain documentation
-- `templates/` — templates for tasks and handoffs
-- `references/` — audit reports, high-risk areas
-- `contracts/` — frozen API contracts
+- `tasks/` - task definitions
+- `handoffs/` - task handoffs
+- `domains/` - domain documentation
+- `templates/` - templates for tasks and handoffs
+- `references/` - audit reports, high-risk areas
+- `contracts/` - frozen API contracts
 
-## outputs/ — Generated artifacts
+## outputs/ - Generated artifacts
 
 `outputs/` contains generated snapshots, reports, and publishing artifacts. Not source of truth.
 
@@ -141,7 +142,7 @@ All files under `docs/agent/` are open. This is the primary coordination layer.
 | Menu scripts (`menu-post-*.cjs`) | no | Ignored. Generated one-shot scripts. |
 | Seed results (`*-result-*.json`) | varies | Archive candidate. |
 
-## data/ — File classification
+## data/ - File classification
 
 | File | Type | Tracked | Policy |
 |---|---|---|---|

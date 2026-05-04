@@ -18,12 +18,14 @@ import {
   handleSendEmailCode
 } from "./auth-routes.js";
 import { memory } from "./cache.js";
-import { handleChannel, handleChannelMessage, handleChannelRead, handleCreateReply, handleMessages } from "./channel-service.js";
+import { handleChannel, handleChannelMessage, handleChannelRead, handleCreateReply } from "./channel-service.js";
+import { handleMessages } from "./notification-service.js";
 import { config, isSetupRequired, saveSetupConfig } from "./config.js";
 import { handleFeed, handleFeedDebug, handlePostDetail } from "./feed-service.js";
 import { sendJson } from "./http-response.js";
 import { handleImageProxy } from "./image-proxy.js";
 import { handleMapV2Items } from "./map-v2-service.js";
+import { handleTaskBoard } from "./task-board-service.js";
 import { nodebbFetch } from "./nodebb-client.js";
 import {
   handleCreatePost,
@@ -62,6 +64,7 @@ async function handleApi(req, reqUrl, res) {
       return sendJson(res, 200, { ok: true, configured: true });
     }
     if (req.method === "GET" && reqUrl.pathname === "/api/image-proxy") return await handleImageProxy(reqUrl, res);
+    if (req.method === "GET" && reqUrl.pathname === "/api/internal/task-board") return await handleTaskBoard(req, res);
     if (req.method === "GET" && reqUrl.pathname === "/api/alias-pool") return await handleGetAliasPool(req, res);
     if (req.method === "POST" && reqUrl.pathname === "/api/ai/post-preview") return await handleAiPostPreview(req, res);
     if (reqUrl.pathname.startsWith("/api/admin/")) return await handleAdmin(req, reqUrl, res);
@@ -92,10 +95,10 @@ async function handleApi(req, reqUrl, res) {
         items: mapItems
       });
     }
-    if (req.method === "GET" && reqUrl.pathname === "/api/channel") return await handleChannel(reqUrl, res);
+    if (req.method === "GET" && reqUrl.pathname === "/api/channel") return await handleChannel(reqUrl, req, res);
     if (req.method === "POST" && reqUrl.pathname === "/api/channel/read") return await handleChannelRead(req, res);
     if (req.method === "POST" && reqUrl.pathname === "/api/channel/messages") return await handleChannelMessage(req, res);
-    if (req.method === "GET" && reqUrl.pathname === "/api/messages") return await handleMessages(res);
+    if (req.method === "GET" && reqUrl.pathname === "/api/messages") return await handleMessages(req, res);
     if (req.method === "GET" && reqUrl.pathname === "/api/me") return await handleMe(req, res);
     if (req.method === "GET" && reqUrl.pathname === "/api/me/saved") return await handleGetSavedPosts(req, res);
     if (req.method === "GET" && reqUrl.pathname === "/api/me/liked") return await handleGetLikedPosts(req, res);

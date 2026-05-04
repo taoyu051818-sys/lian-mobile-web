@@ -4,9 +4,94 @@ This numbered file is the current decision log for future Codex threads. Older r
 
 ## Active Supersessions
 
+- `2026-05-03: Map Development Requires Human Assistance` blocks independent Claude Code implementation for Map v2 data/editor/render/floor-plan work.
+- `2026-05-03: Pro Engineering Decision - Stabilize Before Expanding` is the current route for task priority and repo split pacing.
+- `2026-05-03: Map V2 Editor Phases 1A-1C And Phase 2 Complete` supersedes earlier map editor planning.
 - `2026-05-02: Map V2 Is Implemented As An MVP` supersedes `2026-05-01: Map V2 Is Design-Only For Now`.
 - `2026-05-02: Frontend App Split Is The New Baseline` supersedes old references to `public/app.js` as one 2,151-line frontend file.
 - `2026-05-02: NodeBB Integration Boundary Is Formalized` is the current NodeBB architecture reference.
+- `2026-05-02: API Contract Is Frozen For Repo Split` supersedes any assumptions about shared in-repo API knowledge.
+
+## 2026-05-03: Pro Engineering Decision - Stabilize Before Expanding
+
+Reference: `docs/agent/references/PRO_ENGINEERING_DECISION_2026-05-03.md`
+
+The next engineering phase is stabilization, not feature expansion.
+
+Priority order:
+
+1. Fix `scripts/smoke-frontend.js` so reviewer validation is reproducible.
+2. Rerun Lane F messages/notifications and update acceptance status.
+3. Run Publish V2 browser/manual acceptance.
+4. Run NodeBB detail/profile browser/manual acceptance.
+5. Clean docs/agent baseline and file ownership.
+6. Audit Audience write-side minimum enforcement.
+7. Prepare backend repo bootstrap.
+
+Do not continue expanding recommendation strategy, LLM automation, place pages, food maps, task-market concepts, complex Map v2 editor work, broad UI redesign, NodeBB rewrites, framework migration, full PostgreSQL migration, or full organization permission platform work in this phase.
+
+Repo split direction is accepted, but destructive split is not approved yet. Bootstrap the backend repo first, keep the current repo runnable, validate backend staging, and only then remove backend ownership from `lian-mobile-web`.
+
+## 2026-05-03: Map Development Requires Human Assistance
+
+Map development is now human-assisted only.
+
+Claude Code threads must not independently implement:
+
+- Map v2 editor;
+- Map v2 data assets;
+- road network, junction, curve, route, asset-placement, or building hierarchy work;
+- Map v2 render workflow;
+- building/floor-plan view;
+- location data redraw after data loss;
+- tasks touching `data/map-v2-layers.json`, `data/locations.json`, `public/map-v2.js`, `public/tools/map-v2-editor.*`, or `src/server/map-v2-service.js`.
+
+Claude Code may still document, audit, rerun validation, write review findings, and scope map work.
+
+Before runtime or data implementation:
+
+1. A human must provide concrete map/design input or approve the exact implementation cut.
+2. The task doc must record the approved scope.
+3. Intermediate editor/map output must be shown to a human before acceptance.
+4. Claude Code must not invent campus geometry, road layout, building hierarchy, or asset placement independently.
+
+Reason: Map v2 is a spatial product/design line with real campus geography, visual assets, and previous data-loss risk. It needs human map/design judgment, not autonomous implementation.
+
+## 2026-05-03: Map V2 Bounds Must Be Single Source Of Truth
+
+`MAP_V2_BOUNDS` was inconsistent between `map-v2-editor.js` (wider: 18.370/109.994->18.415/110.050) and `map-v2-service.js` + `validate-locations.js` (tighter: 18.373/109.995->18.414/110.036). This caused data loss - `map-v2-layers.json` was emptied with no git backup.
+
+Fix: all three files now use the wider bounds. Future rule: **bounds must be defined in one place and imported by others**. If bounds change, all three files must be updated together.
+
+Canonical bounds updated by human instruction on 2026-05-03 for the latest base map:
+
+- southwest: 18.37107 / 109.98464
+- northeast: 18.41730 / 110.04775
+
+All runtime bounds constants must use south 18.37107, west 109.98464, north 18.41730, east 110.04775.
+
+## 2026-05-03: Map V2 Editor Phases 1A-1C And Phase 2 Complete
+
+The admin map editor at `/tools/map-v2-editor.html` now has:
+
+- **Phase 1A**: game-engine-style road drawing (click-drag), 4 road types, point simplification, property panel
+- **Phase 1B**: automatic junction detection (endpoint snap, segment snap, crossing), road splitting, junction rendering and management
+- **Phase 1C**: Chaikin curve smoothing preview, bend angle classification, shuttle route `routeRef`, curve hint export
+- **Phase 2**: asset placement mode with image upload (Cloudinary), click-to-place, drag-to-reposition, full property panel, `assets[]` data model
+
+Data model additions to `data/map-v2-layers.json`: `roads[]`, `junctions[]`, `assets[]`. Server normalization in `map-v2-service.js` handles all three.
+
+Remaining editor work: Phase 3 (building group hierarchy). This should not block Publish V2, feed work, or audience enforcement.
+
+Handoffs: `docs/agent/handoffs/road-draw-mvp.md`, `docs/agent/handoffs/road-junctions-phase1b.md`, `docs/agent/handoffs/curves-route-semantics-phase1c.md`, `docs/agent/handoffs/asset-placement-phase2.md`
+
+## 2026-05-02: API Contract Is Frozen For Repo Split
+
+Phase 0 of the P0 repo split produced a frozen API contract at `docs/agent/contracts/api-contract.md`.
+
+48 endpoints inventoried: 29 frontend-required, 11 admin-only, 2 backend-only, 6 deprecated (no frontend caller). Frontend uses 32 call sites across 13 files. All calls use `api()` helper or direct `fetch()`.
+
+The contract is the source of truth for the API surface between frontend and backend repos. Any endpoint shape change must update the contract first.
 
 ## 2026-05-01: NodeBB Remains The Content Backend
 

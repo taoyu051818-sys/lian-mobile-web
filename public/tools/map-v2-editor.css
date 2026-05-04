@@ -486,6 +486,7 @@ input:focus, select:focus, textarea:focus {
 
 /* Road drawing */
 .map-stage.road-draw-mode { cursor: crosshair; }
+.map-stage.place-mode { cursor: copy; }
 .road-draw-preview {
   pointer-events: none;
 }
@@ -502,8 +503,60 @@ input:focus, select:focus, textarea:focus {
   border-radius: 7px;
 }
 
+/* Asset markers */
+.map-v2-asset-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.map-v2-asset-icon.is-hidden {
+  opacity: 0.45;
+  filter: grayscale(0.8);
+}
+
+.map-v2-asset-image,
+.map-v2-asset-icon img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  transform-origin: center center;
+  filter: drop-shadow(0 2px 6px rgba(0,0,0,0.25));
+  user-select: none;
+}
+
+/* Curve smoothing toggle */
+.action-row button.is-active {
+  background: var(--accent);
+  color: #fff;
+}
+
+/* Junction markers */
+.map-v2-junction-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 @media (max-width: 900px) {
   .editor-shell { grid-template-columns: 1fr; }
   .map-panel { min-height: 50vh; }
   .side-panel { max-height: none; border-left: 0; border-top: 1px solid var(--line); }
 }
+
+/* Road network preview */
+.road-preview-section { margin-top: 8px; }
+.road-preview-section .layer-row { display: flex; align-items: center; gap: 6px; margin: 3px 0; }
+.road-preview-section .layer-row label { display: flex; align-items: center; gap: 4px; font-size: 12px; cursor: pointer; }
+.road-preview-controls { margin-top: 6px; display: flex; flex-direction: column; gap: 4px; }
+.road-preview-controls label { display: flex; align-items: center; gap: 6px; font-size: 12px; }
+.road-preview-controls input[type="range"] { flex: 1; }
+.road-preview-controls input[type="number"] { width: 72px; }
+.transform-row { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; }
+.transform-row label { display: flex; align-items: center; gap: 4px; font-size: 12px; }
+.transform-row input { width: 100%; }
+.lane-toggle-row { display: flex; gap: 8px; margin: 4px 0; }
+.lane-toggle-row label { display: flex; align-items: center; gap: 3px; font-size: 12px; cursor: pointer; }
+.lane-color { display: inline-block; width: 10px; height: 10px; border-radius: 2px; }
+.road-preview-section button.is-active { background: var(--accent); color: #fff; }

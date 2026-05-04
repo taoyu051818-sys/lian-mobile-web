@@ -76,3 +76,81 @@ node --check public/app.js
 - Remove the smoke script and any package/runtime assumptions it introduced.
 - Do not roll back app behavior unless a smoke-driven bug fix caused a regression.
 
+---
+
+## Review Blocker Added 2026-05-03
+
+Current status: smoke result is not reliable.
+
+Review finding:
+
+- `node scripts/smoke-frontend.js` currently reports 13 pass / 8 fail.
+- The failures are all in the frontend `node --check` section.
+- Running `node --check` directly against individual frontend files passes, so the smoke harness likely has a Windows path or command execution issue.
+- The smoke script itself still contains mojibake in output labels.
+
+Impact:
+
+- Handoffs claiming `node scripts/smoke-frontend.js` passed 21/21 should not be treated as verified until this script is fixed or the failure is explained.
+
+Required fix:
+
+1. Make `checkSyntax()` invoke `node --check` without shell quoting ambiguity on Windows.
+2. Clean mojibake from smoke output labels.
+3. Re-run:
+
+```bash
+node --check scripts/smoke-frontend.js
+node scripts/smoke-frontend.js http://localhost:4100
+```
+
+Acceptance addition:
+
+- [ ] Smoke script and direct `node --check public/*.js` agree on frontend syntax status.
+
+---
+
+## Fix Pass Result Added 2026-05-03
+
+Status: fixed by implementation handoff.
+
+Recorded implementation result:
+
+- `scripts/smoke-frontend.js` was fixed.
+- Frontend smoke now reports 21/21 pass.
+- The broader fix pass reports 143/143 tests passing.
+
+Reviewer validation:
+
+```bash
+node --check scripts/smoke-frontend.js
+node scripts/smoke-frontend.js http://localhost:4100
+```
+
+If this fails again on Windows, compare the smoke script's syntax check command path handling against direct `node --check public/*.js` runs before treating app code as broken.
+
+---
+
+## P0 Rerun Requirement Added 2026-05-03
+
+Current Pro decision: this is the first task in the next execution order.
+
+If reviewer rerun still reports 13/21 while direct frontend syntax checks pass, the next implementation thread should change the harness to avoid shell-dependent syntax checks.
+
+Preferred implementation:
+
+```js
+spawnSync(process.execPath, ["--check", fullPath], { shell: false })
+```
+
+Avoid:
+
+```js
+execSync("node --check ...")
+```
+
+Scope limit:
+
+- Fix only `scripts/smoke-frontend.js` and its handoff unless the smoke exposes a real frontend bug.
+- Do not edit `public/*.js` just to satisfy a broken harness.
+- Do not mark Lane F, Publish V2, or NodeBB detail/profile accepted until this smoke status is reproducible or the reviewer records an explicit environment waiver.

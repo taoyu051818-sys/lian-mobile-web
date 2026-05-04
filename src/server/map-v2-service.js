@@ -9,10 +9,10 @@ import { readJsonBody } from "./request-utils.js";
 
 const DEFAULT_CENTER = { lat: 18.3935, lng: 110.0159 };
 const MAP_V2_BOUNDS = {
-  south: 18.3700734,
-  west: 109.9940365,
-  north: 18.4149043,
-  east: 110.0503482
+  south: 18.37107,
+  west: 109.98464,
+  north: 18.41730,
+  east: 110.04775
 };
 
 function numberOrNull(value) {
@@ -113,7 +113,8 @@ function normalizeRoute(item = {}) {
     name: compactText(item.name, 80),
     type: compactText(item.type || "route", 40),
     points: Array.isArray(item.points) ? item.points.map(point).filter((p) => p.lat !== null && p.lng !== null) : [],
-    style: normalizeStyle(item.style, { color: "#2563eb", weight: 4 })
+    style: normalizeStyle(item.style, { color: "#2563eb", weight: 4 }),
+    routeRef: compactText(item.routeRef || "", 80)
   };
 }
 
@@ -180,6 +181,28 @@ function normalizeBuildingGroup(item = {}) {
   };
 }
 
+const VALID_ASSET_KINDS = new Set(["building_icon", "environment", "poi_marker", "label", "other"]);
+
+function normalizeAsset(item = {}) {
+  const pos = point(item.position);
+  return {
+    id: compactText(item.id, 80),
+    url: compactText(item.url || "", 500),
+    kind: VALID_ASSET_KINDS.has(item.kind) ? item.kind : "other",
+    position: { lat: pos.lat, lng: pos.lng },
+    size: normalizeSize(item.size, [64, 64]),
+    anchor: normalizeSize(item.anchor, [32, 64]),
+    rotation: Math.max(-180, Math.min(180, Number(item.rotation || 0))),
+    opacity: Math.max(0, Math.min(1, Number(item.opacity ?? 1))),
+    zIndex: Math.max(0, Math.min(999, Math.floor(Number(item.zIndex || 40)))),
+    boundObjectType: compactText(item.boundObjectType || "", 40),
+    boundObjectId: compactText(item.boundObjectId || "", 80),
+    clickBehavior: compactText(item.clickBehavior || "none", 40),
+    alwaysShowCard: Boolean(item.alwaysShowCard),
+    status: item.status === "hidden" ? "hidden" : "active"
+  };
+}
+
 const VALID_ROAD_TYPES = new Set(["main_road", "pedestrian_path", "shuttle_route", "service_path"]);
 const ROAD_TYPE_STYLES = {
   main_road: { color: "#6b7280", weight: 6, dashArray: "" },
@@ -211,7 +234,26 @@ function normalizeRoad(item = {}) {
     interactive: item.interactive !== false,
     status: item.status === "hidden" ? "hidden" : "active",
     source: compactText(item.source || "admin_drawn", 40),
-    updatedAt: compactText(item.updatedAt || "", 40)
+    updatedAt: compactText(item.updatedAt || "", 40),
+    noSnap: Boolean(item.noSnap),
+    routeRef: compactText(item.routeRef || "", 80)
+  };
+}
+
+const VALID_JUNCTION_TYPES = new Set(["endpoint", "T", "cross", "multi"]);
+
+function normalizeJunction(item = {}) {
+  const pos = point(item.position);
+  return {
+    id: compactText(item.id, 80),
+    type: VALID_JUNCTION_TYPES.has(item.type) ? item.type : "cross",
+    position: { lat: pos.lat, lng: pos.lng },
+    connectedRoadIds: Array.isArray(item.connectedRoadIds) ? item.connectedRoadIds.map((id) => compactText(id, 80)).filter(Boolean).slice(0, 20) : [],
+    connectionRefs: Array.isArray(item.connectionRefs) ? item.connectionRefs.map((ref) => ({
+      roadId: compactText(ref.roadId, 80),
+      pointIndex: Math.max(0, Math.floor(Number(ref.pointIndex) || 0))
+    })).filter((ref) => ref.roadId).slice(0, 20) : [],
+    status: item.status === "hidden" ? "hidden" : "active"
   };
 }
 
@@ -233,9 +275,11 @@ async function loadMapV2Data() {
     areas: [],
     routes: [],
     roads: [],
+    junctions: [],
     buildings: [],
     environmentElements: [],
-    buildingGroups: []
+    buildingGroups: [],
+    assets: []
   });
   const locations = Array.isArray(locationsRaw.items)
     ? locationsRaw.items.map(normalizeLocation).filter((item) => item.id && item.name && item.lat !== null && item.lng !== null)
@@ -255,9 +299,11 @@ async function loadMapV2Data() {
       areas: Array.isArray(layersRaw.areas) ? layersRaw.areas.map(normalizeArea).filter((item) => item.id && item.points.length >= 3) : [],
       routes: Array.isArray(layersRaw.routes) ? layersRaw.routes.map(normalizeRoute).filter((item) => item.id && item.points.length >= 2) : [],
       roads: Array.isArray(layersRaw.roads) ? layersRaw.roads.map(normalizeRoad).filter((item) => item.id && item.points.length >= 2) : [],
+      junctions: Array.isArray(layersRaw.junctions) ? layersRaw.junctions.map(normalizeJunction).filter((item) => item.id && item.position.lat !== null) : [],
       buildings: Array.isArray(layersRaw.buildings) ? layersRaw.buildings.map(normalizeBuilding).filter((item) => item.id && item.polygon.length >= 3) : [],
       environmentElements: Array.isArray(layersRaw.environmentElements) ? layersRaw.environmentElements.map(normalizeEnvironmentElement).filter((item) => item.id) : [],
-      buildingGroups: Array.isArray(layersRaw.buildingGroups) ? layersRaw.buildingGroups.map(normalizeBuildingGroup).filter((item) => item.id) : []
+      buildingGroups: Array.isArray(layersRaw.buildingGroups) ? layersRaw.buildingGroups.map(normalizeBuildingGroup).filter((item) => item.id) : [],
+      assets: Array.isArray(layersRaw.assets) ? layersRaw.assets.map(normalizeAsset).filter((item) => item.id && item.url) : []
     }
   };
 }
@@ -302,9 +348,11 @@ async function handleMapV2Items(req, res) {
       areas: layers.areas,
       routes: layers.routes,
       roads: layers.roads.filter((r) => r.status === "active"),
+      junctions: layers.junctions.filter((j) => j.status === "active"),
       buildings: layers.buildings.filter((b) => b.status === "active"),
       environmentElements: layers.environmentElements,
-      buildingGroups: layers.buildingGroups
+      buildingGroups: layers.buildingGroups,
+      assets: (layers.assets || []).filter((a) => a.status === "active")
     },
     posts: mapPostsFromMetadata(metadata, locations.items, auth.user)
   });
@@ -361,6 +409,12 @@ async function handleAdminMapV2(req, res) {
         assertPointInBounds(roadPoint, `layers.roads[${roadIndex}].points[${pointIndex}]`);
       }
     }
+    for (const [jxIndex, jx] of (payload.layers?.junctions || []).entries()) {
+      if (jx.position) assertPointInBounds(jx.position, `layers.junctions[${jxIndex}].position`);
+    }
+    for (const [assetIndex, asset] of (payload.layers?.assets || []).entries()) {
+      if (asset.position) assertPointInBounds(asset.position, `layers.assets[${assetIndex}].position`);
+    }
     const layers = {
       version: 1,
       coordSystem: "gcj02",
@@ -369,9 +423,11 @@ async function handleAdminMapV2(req, res) {
       areas: Array.isArray(payload.layers?.areas) ? payload.layers.areas.map(normalizeArea).filter((item) => item.id && item.points.length >= 3) : [],
       routes: Array.isArray(payload.layers?.routes) ? payload.layers.routes.map(normalizeRoute).filter((item) => item.id && item.points.length >= 2) : [],
       roads: Array.isArray(payload.layers?.roads) ? payload.layers.roads.map(normalizeRoad).filter((item) => item.id && item.points.length >= 2) : [],
+      junctions: Array.isArray(payload.layers?.junctions) ? payload.layers.junctions.map(normalizeJunction).filter((item) => item.id && item.position.lat !== null) : [],
       buildings: Array.isArray(payload.layers?.buildings) ? payload.layers.buildings.map(normalizeBuilding).filter((item) => item.id && item.polygon.length >= 3) : [],
       environmentElements: Array.isArray(payload.layers?.environmentElements) ? payload.layers.environmentElements.map(normalizeEnvironmentElement).filter((item) => item.id) : [],
-      buildingGroups: Array.isArray(payload.layers?.buildingGroups) ? payload.layers.buildingGroups.map(normalizeBuildingGroup).filter((item) => item.id) : []
+      buildingGroups: Array.isArray(payload.layers?.buildingGroups) ? payload.layers.buildingGroups.map(normalizeBuildingGroup).filter((item) => item.id) : [],
+      assets: Array.isArray(payload.layers?.assets) ? payload.layers.assets.map(normalizeAsset).filter((item) => item.id && item.url) : []
     };
     await writeJsonFile(locationsPath, locations);
     await writeJsonFile(mapV2LayersPath, layers);

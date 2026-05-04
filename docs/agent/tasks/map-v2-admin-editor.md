@@ -2,6 +2,31 @@
 
 Date: 2026-05-02
 
+## Human Assistance Requirement
+
+Status: **Human-assisted only**.
+
+Claude Code threads must not independently continue Map v2 editor development.
+
+This includes:
+
+- road network changes;
+- junction/curve/route semantics;
+- asset placement changes;
+- building group hierarchy;
+- render workflow;
+- data redraw after loss;
+- any implementation touching `data/map-v2-layers.json`, `data/locations.json`, `public/map-v2.js`, `public/tools/map-v2-editor.*`, or `src/server/map-v2-service.js`.
+
+Claude Code may still perform documentation, read-only audits, validation reruns, and review findings.
+
+Before implementation:
+
+1. A human must provide concrete map/design input or approve the exact implementation cut.
+2. The task doc must record the approved scope.
+3. Intermediate editor/map output must be shown to a human before acceptance.
+4. Claude Code must not invent campus geometry, road layout, building hierarchy, or asset placement independently.
+
 ## Goal
 
 Build the management-facing map editor into a campus spatial asset editor. The editor is for administrators/operators, not normal student users.
@@ -355,7 +380,7 @@ Phase 1A does **not** need automatic snapping, segment splitting, or full juncti
 
 Handoff: `docs/agent/handoffs/road-draw-mvp.md`
 
-#### Phase 1B: Road Editing And Junctions
+#### Phase 1B: Road Editing And Junctions ✅
 
 - Select existing road → show vertices → drag to adjust
 - Delete road
@@ -363,27 +388,36 @@ Handoff: `docs/agent/handoffs/road-draw-mvp.md`
 - Automatically detect road crossings
 - Automatically create/update `junctions[]`
 - Automatically split roads into optional `segments[]` at generated junctions
-- Allow manual cleanup only for false positives: delete junction, merge junctions, or disable snapping for one road
+- Allow manual cleanup only for false positives: delete junction, merge junctions, or disable snapping for one road (noSnap per-road flag)
 
-#### Phase 1C: Curves And Route Semantics
+Handoff: `docs/agent/handoffs/road-junctions-phase1b.md`
 
-- Add automatic curve smoothing preview while keeping `points[]` as source of truth
-- Auto-fill `curveType` / `renderHint.curveStyle` from bend geometry
-- Allow shuttle routes to reference existing road segments instead of duplicating geometry
-- Export roads, junctions, and route hints to render spec
+#### Phase 1C: Curves And Route Semantics ✅
 
-### Phase 2: Asset Placement Mode
+- Chaikin curve smoothing preview (toggle button, display only, `points[]` stays source of truth)
+- Bend angle calculation with sharp/smooth classification (threshold: 30° deflection)
+- Auto-classify button: fills `renderHint.curveStyle` for roads without existing classification
+- Shuttle route `routeRef` field: references existing road ID, editor resolves and renders referenced geometry
+- Road properties panel: curveHint display, routeRef input (shown only for shuttle routes)
+- Export render spec includes `curveHint` and `routeRef` per road
+- Server `normalizeRoad()` accepts `routeRef`, `normalizeRoute()` accepts `routeRef`
 
-Replace manual polygon drawing with asset placement:
+Handoff: `docs/agent/handoffs/curves-route-semantics-phase1c.md`
 
-- Upload or paste asset URL
-- Click map to place
-- Drag to reposition
-- Set anchor, size, click behavior
-- Buildings: place icon, optionally draw bounding polygon by clicking corners (quick 4-click)
-- Environment: place image overlay at position with scale
+### Phase 2: Asset Placement Mode ✅
 
-Building polygons in this phase are **hit areas / bounds / alignment guides**, not hand-drawn visual building art. The visible building graphic should come from an imported asset or a rendered base map.
+- "放置" mode with asset kind selector (建筑/环境/标记/标签/其他)
+- Asset URL input + image upload via existing `/api/upload/image` (Cloudinary)
+- Click map to place asset at position
+- Drag to reposition (with bounds validation)
+- Asset properties panel: URL, kind, width/height, anchor X/Y, rotation, opacity, clickBehavior, boundObjectType/boundObjectId, status
+- Asset rendering as image markers with rotation/opacity support
+- Assets layer toggle in layer panel
+- `assets[]` data model: id, url, kind, position, size, anchor, rotation, opacity, zIndex, boundObjectType, boundObjectId, clickBehavior, alwaysShowCard, status
+- Server `normalizeAsset()` with bounds validation
+- Assets included in render spec export
+
+Handoff: `docs/agent/handoffs/asset-placement-phase2.md`
 
 ### Phase 3: Building Group Hierarchy
 
@@ -414,6 +448,10 @@ Building polygons in this phase are **hit areas / bounds / alignment guides**, n
 - No feed ranking changes.
 - No NodeBB publish changes.
 - No manual polygon-by-polygon illustration (external tools do this).
+
+## Data Incident (2026-05-03)
+
+`map-v2-layers.json` data (roads, buildings, junctions, areas, environment elements) was lost. Root cause: bounds mismatch between editor (wider) and server (tighter). Bounds now unified to south 18.3700734 / west 109.9940365 / north 18.4149043 / east 110.0503482. Data needs to be redrawn.
 
 ## Validation
 

@@ -86,6 +86,38 @@ Current behavior:
 | Find NodeBB user | `findNodebbUserByUsername()` | `GET /api/users?query=...`, fallback `GET /api/search/users?query=...` |
 | Create NodeBB user | `createNodebbUserForLian()` | `POST /api/v3/users` |
 
+## Smoke Test Findings (2026-05-02)
+
+Run: `node scripts/smoke-nodebb-contracts.js`
+
+### Notifications
+
+- Endpoint: `GET /api/notifications?_uid=<uid>`
+- Auth: **requires `Authorization: Bearer`** (x-api-token returns 401)
+- Response shape: `{ notifications: [...], pagination: {...}, filters: [...], selectedFilter: {...} }`
+- Notification object keys: `from`, `bodyShort`, `nid`, `path`, `bodyLong`, `type`, `bodyEmail`, `mergeId`, `datetime`, `importance`, `datetimeISO`, `user`, `image`, `read`, `readClass`
+- `type` values include: `notification-type-name` (e.g. `upvote`, `reply`, `new-chat`)
+
+### Topic Detail
+
+- Endpoint: `GET /api/topic/:tid`
+- Auth: `x-api-token` works
+- First post includes: `pid`, `upvotes`, `downvotes`, `votes`, `bookmarked`, `upvoted`, `downvoted`, `selfPost`, `topicOwnerPost`, `display_edit_tools`, `display_delete_tools`, `display_moderator_tools`, `display_move_tools`, `display_post_menu`
+- `bookmarked` and `upvoted` are boolean, reflecting current `_uid` user state
+- `votes` is net vote count (upvotes - downvotes)
+
+### User Bookmarks List
+
+- Endpoint: `GET /api/user/:slug/bookmarks`
+- Auth: **requires `Authorization: Bearer`** (x-api-token returns 401)
+- Response shape: user profile object (bookmarks may be empty or in a sub-property)
+
+### User Upvoted List
+
+- Endpoint: `GET /api/user/:slug/upvoted`
+- Auth: **requires `Authorization: Bearer`** (x-api-token returns 401)
+- Response shape: user profile object (upvoted posts may be empty or in a sub-property)
+
 ## Native Capability Inventory
 
 This is a planning inventory. Do not implement all items at once. Pick one integration cut, write a task doc, and validate the NodeBB endpoint shape before touching product UI.
@@ -133,7 +165,7 @@ Each capability below is audited against the 8-point checklist from the task doc
 | 7 | Source of truth | NodeBB is source of truth for like state and count. LIAN does not cache. [code] |
 | 8 | Failure mode | Connection fail → 502. Non-2xx → error propagated. Feed cache cleared on toggle. [code] |
 
-Status: **First feed-card cut implemented.** Needs detail-page surface and validation.
+Status: **Implemented** (feed card + detail page + profile). Early return guard removed; always calls NodeBB. Local cache fallback in `data/user-cache.json`. See TD-1 for mitigation details.
 
 ### Save / Bookmark
 
@@ -148,7 +180,7 @@ Status: **First feed-card cut implemented.** Needs detail-page surface and valid
 | 7 | Source of truth | NodeBB is source of truth. LIAN should NOT duplicate bookmark state. |
 | 8 | Failure mode | Connection fail → 502. Saved list needs audience filter (saved post may become inaccessible). |
 
-Status: **Not integrated.** Needs: endpoint smoke test, saved-list UI, audience enforcement on saved list.
+Status: **Implemented** (detail page + profile list). Early return guard removed; always calls NodeBB. Bearer auth required. See TD-2 for endpoint verification status.
 
 Product placement:
 
@@ -441,6 +473,26 @@ Messages:
 - reads NodeBB `/api/notifications`;
 - LIAN currently returns a simplified notification list.
 
+Confirmed product direction:
+
+- LIAN's messages page is a real-time discussion/activity surface, not private chat.
+- NodeBB replies/comments should enter the messages page when they create notifications or discussion updates for the current user.
+- The visible UI should distinguish:
+  - `频道`: public/channel timeline, currently backed by `/api/channel`;
+  - `讨论` / `回复` / `通知`: personal, user-scoped NodeBB notification stream, backed by `/api/messages`.
+- A reply notification may be shown only when the current LIAN user can view the related post through `canViewPost(user, post, "detail")`.
+- Notification links should open LIAN's post detail view, not raw NodeBB topic URLs, unless explicitly exposed as a secondary original-source link.
+- This work must not introduce private messages/chat.
+
+Required correction for `/api/messages`:
+
+1. Require or resolve the current LIAN user.
+2. Resolve the user's NodeBB uid with `ensureNodebbUid(auth)`.
+3. Call NodeBB notifications with `_uid=<current user's nodebbUid>`.
+4. Normalize reply/comment notifications into LIAN objects with topic/reply identifiers.
+5. Apply LIAN audience filtering before returning items.
+6. Do not mark notifications as read on fetch.
+
 ## What NodeBB Should Own Long Term
 
 NodeBB is a good fit for:
@@ -542,13 +594,22 @@ First implement LIAN-side audience checks and NodeBB restricted categories. Only
 
 ### Auth behavior
 
-| Scenario | Auth header |
-|---|---|
-| Read operations (feed, tags, notifications, user lookup) | `x-api-token: NODEBB_API_TOKEN` (auto-added by `nodebbFetch`) |
-| Topic/reply creation | Explicit `Authorization: Bearer NODEBB_API_TOKEN` (overrides auto-add) |
-| User creation | Explicit `Authorization: Bearer NODEBB_API_TOKEN` |
+Smoke-tested 2026-05-02 against NodeBB at `149.104.21.74:4567`.
+
+| Scenario | Auth header | Notes |
+|---|---|---|
+| Feed / recent topics | `x-api-token` (auto-added) | Works |
+| Topic detail | `x-api-token` (auto-added) | Works. Returns `bookmarked`, `upvoted`, `votes` per post. |
+| Tags | `x-api-token` (auto-added) | Works |
+| Notifications | `Authorization: Bearer` required | `x-api-token` returns 401 |
+| User bookmarks list | `Authorization: Bearer` required | `x-api-token` returns 401 |
+| User upvoted list | `Authorization: Bearer` required | `x-api-token` returns 401 |
+| Topic/reply creation | `Authorization: Bearer` (explicit) | |
+| User creation | `Authorization: Bearer` (explicit) | |
 
 When `NODEBB_API_TOKEN` is missing, all write operations return 500 ("LIAN API token is missing"). Read operations may still work if NodeBB allows anonymous access.
+
+**Auth correction**: `nodebbFetch` auto-adds `x-api-token` which works for feed/topic reads. But notifications, bookmarks, and upvoted endpoints require `Authorization: Bearer`. LIAN code calling these endpoints must pass explicit `authorization: Bearer` header (see `handleMessages` in post-service.js).
 
 ### Topic creation failure
 
@@ -652,3 +713,78 @@ Deliverable:
 - Writing a NodeBB plugin before LIAN-side audience checks exist.
 - Adding payments, task markets, errands, or drone workflows.
 - Adding all native NodeBB features at once without a product cut.
+
+---
+
+## Technical Debt
+
+### TD-1: Like state reading relies on fragile field detection — MITIGATED
+
+**Location**: `src/server/post-service.js` — `firstPostVoteState()`
+
+**Current behavior**: Reads vote state from `posts[0].upvoted`, `posts[0].voted`, or `posts[0].vote`. If all three fields are absent, returns `liked: null`.
+
+**Problem**:
+- `!null === true` defaults missing vote state to "like"
+- Early return guard (`before.liked === shouldLike`) fails when `liked` is `false` (field present but stale): `false === false` → guard triggers → DELETE never sent → unlike silently fails
+
+**Mitigation applied (2026-05-03)**:
+1. Removed early return guard entirely — always call NodeBB vote/bookmark endpoint
+2. After successful vote, return `shouldLike` (frontend's desired state) instead of re-reading from NodeBB
+3. Refetch is only used for like count, wrapped in try-catch
+4. Local `data/user-cache.json` stores liked/saved tids as fallback
+
+**Trade-off**: Extra NodeBB API call on every toggle (idempotent, low-frequency, user-initiated). Acceptable.
+
+**Needs architect review**: The early return guard was a performance optimization. Removing it means every like/unlike call hits NodeBB even if state hasn't changed. If this becomes a concern, the guard can be re-added once NodeBB's vote state response is verified as reliable.
+
+**Owner**: Architect / NodeBB integration review.
+
+### TD-2: Profile saved/liked lists depend on unverified endpoint shapes — MITIGATED
+
+**Location**: `src/server/post-service.js` — `fetchUserPosts()`, `handleGetSavedPosts()`, `handleGetLikedPosts()`
+
+**Current behavior**: Tries three endpoint patterns for bookmarks/upvoted with Bearer auth and debug logging.
+
+**Mitigation applied (2026-05-03)**:
+1. Added Bearer auth (required for bookmarks/upvoted endpoints per smoke test)
+2. Multi-endpoint fallback: `/api/user/:slug/:endpoint`, `/api/v3/users/:uid/:endpoint`
+3. Debug logging to identify which endpoint returns data
+4. Cache sync: successful NodeBB fetch overwrites `data/user-cache.json`
+5. Cache fallback: when NodeBB returns empty, build items from cached tids + metadata
+
+**Needs architect review**: Which endpoint pattern is the canonical one? Debug logging should reveal this on next live run.
+
+**Owner**: Architect / NodeBB integration review.
+
+### TD-3: Notification actor identity requires post content fetch — MITIGATED
+
+**Location**: `src/server/notification-service.js` — `fetchPostAuthors()`, `normalizeNotification()`
+
+**Current behavior**: NodeBB notifications return `fromUsers[0].username` as the actor name. LIAN fetches post content to extract `<!-- lian-user-meta -->` for system/default usernames.
+
+**Mitigation applied (2026-05-03)**:
+1. Actor metadata cached in `data/user-cache.json` (`actors` section, keyed by `nodebbUid`)
+2. `recordActorMeta()` called when LIAN user meta is extracted from post content
+3. `getActorMeta()` checked before fetching post content — avoids redundant API calls
+4. Cache has 15s TTL in memory, atomic file writes
+
+**Needs architect review**: Long-term, actor display name should be stored at reply time (in notification metadata or post meta) to avoid the fetch-from-post-content pattern entirely.
+
+**Owner**: Architect / notification system review.
+
+### TD-4: Local user cache is a prototype (NEW)
+
+**Location**: `data/user-cache.json`, `src/server/data-store.js` (cache functions), `src/server/post-service.js`, `src/server/notification-service.js`
+
+**Current behavior**: `data/user-cache.json` stores per-user liked/saved tids and per-actor metadata. Written on toggle, overwritten on list fetch, read as fallback for unreliable NodeBB responses.
+
+**Problem**:
+- JSON file storage is not suitable for multi-user production
+- No TTL/expiry for stale entries
+- Bidirectional sync (LIAN ↔ NodeBB) is incomplete — cache can drift from source of truth
+- Actor metadata only populated when notifications are fetched, not at reply time
+
+**Proposed fix**: Replace with proper database table or Redis cache. Alternatively, verify NodeBB endpoint reliability and remove the cache layer entirely.
+
+**Owner**: Architect / data layer review.
