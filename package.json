@@ -5,9 +5,21 @@
   "type": "module",
   "scripts": {
     "start": "node scripts/serve-frontend-static-rehearsal.js",
+    "dev": "vite --host 0.0.0.0",
+    "build": "vue-tsc --noEmit && vite build",
+    "preview": "vite preview --host 0.0.0.0",
     "check": "node scripts/validate-project-structure.js && node scripts/check-encoding-contamination.js",
     "check:encoding": "node scripts/check-encoding-contamination.js",
     "test": "node scripts/smoke-frontend.js http://127.0.0.1:4300",
     "start:frontend-static": "node scripts/serve-frontend-static-rehearsal.js"
+  },
+  "dependencies": {
+    "vue": "^3.5.13"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.2.1",
+    "typescript": "^5.7.2",
+    "vite": "^6.0.5",
+    "vue-tsc": "^2.2.0"
   }
 }

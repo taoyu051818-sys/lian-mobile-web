@@ -1,12 +1,13 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { execSync } from "node:child_process";
+import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
 const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
 const requiredFiles = [
   "public/index.html",
+  "public/lian-tokens.css",
   "public/styles.css",
   "public/glass-ui.css",
   "public/app.js",
@@ -21,10 +22,24 @@ const requiredFiles = [
   "public/map-v2.js",
   "public/reply-form-click-guard.js",
   "public/explore-preload.js",
+  "index.html",
+  "src/main.ts",
+  "src/App.vue",
+  "src/styles/main.css",
+  "src/vite-env.d.ts",
+  "vite.config.ts",
+  "tsconfig.json",
+  "docs/design/LIAN-Campus-UI-UX-Guidelines-V0.1.md",
+  "docs/architecture/0001-vue3-vite-typescript-ui-entry.md",
   "scripts/smoke-frontend.js",
   "scripts/serve-frontend-static-rehearsal.js",
   "package.json",
   "README.md"
+];
+
+const jsonFiles = [
+  "package.json",
+  "tsconfig.json"
 ];
 
 const frontendJsFiles = [
@@ -75,6 +90,17 @@ async function checkFileExists(file) {
   }
 }
 
+async function checkJsonValid(file) {
+  const fullPath = path.join(rootDir, file);
+  try {
+    const raw = await fs.readFile(fullPath, "utf8");
+    JSON.parse(raw);
+    ok(`${file} (JSON valid)`);
+  } catch (error) {
+    fail(`${file} (JSON)`, error.message);
+  }
+}
+
 async function checkPathExcluded(file) {
   const fullPath = path.join(rootDir, file);
   try {
@@ -88,7 +114,7 @@ async function checkPathExcluded(file) {
 function checkSyntax(file) {
   const fullPath = path.join(rootDir, file);
   try {
-    execSync(`node --check "${fullPath}"`, { stdio: "pipe" });
+    execFileSync(process.execPath, ["--check", fullPath], { stdio: "pipe" });
     ok(`${file} (语法正确)`);
   } catch {
     fail(`${file} (语法检查)`, "node --check 失败");
@@ -105,11 +131,26 @@ async function checkPublicDir() {
   }
 }
 
+async function checkSrcDir() {
+  const srcDir = path.join(rootDir, "src");
+  try {
+    const entries = await fs.readdir(srcDir);
+    console.log(`  ℹ src/ 目录包含 ${entries.length} 个条目`);
+  } catch {
+    fail("src/ 目录", "目录不存在");
+  }
+}
+
 console.log("\n═══ LIAN frontend repo structure check ═══\n");
 
 console.log("▶ Frontend required files");
 for (const file of requiredFiles) {
   await checkFileExists(file);
+}
+
+console.log("\n▶ JSON config check");
+for (const file of jsonFiles) {
+  await checkJsonValid(file);
 }
 
 console.log("\n▶ Frontend JS syntax check");
@@ -124,6 +165,7 @@ for (const file of backendOnlyPaths) {
 
 console.log("\n▶ Directory structure");
 await checkPublicDir();
+await checkSrcDir();
 
 console.log(`\n═══ Result: ${passed} passed, ${failed} failed ═══\n`);
 

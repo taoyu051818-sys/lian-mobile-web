@@ -1,0 +1,89 @@
+@import "../../public/lian-tokens.css";
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#vue-root {
+  min-height: 100%;
+  margin: 0;
+}
+
+body {
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at 12% 10%, rgba(31, 167, 160, 0.16), transparent 28%),
+    radial-gradient(circle at 88% 0%, rgba(91, 184, 214, 0.14), transparent 30%),
+    var(--lian-bg);
+  color: var(--lian-ink);
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+.vue-shell {
+  display: grid;
+  min-height: 100vh;
+  place-items: center;
+  padding: var(--space-6);
+}
+
+.vue-shell__panel {
+  width: min(100%, 520px);
+  padding: var(--space-6);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-sheet);
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.88), rgba(255, 255, 255, 0.54)),
+    var(--glass-bg-strong);
+  box-shadow: var(--shadow-glass);
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+}
+
+.vue-shell__eyebrow {
+  margin: 0 0 var(--space-2);
+  color: var(--lian-primary-deep);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.vue-shell h1 {
+  margin: 0;
+  font-size: clamp(28px, 8vw, 44px);
+  line-height: 1.05;
+}
+
+.vue-shell__summary {
+  margin: var(--space-4) 0 0;
+  color: var(--lian-muted);
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.vue-shell__steps {
+  display: grid;
+  gap: var(--space-3);
+  margin: var(--space-6) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.vue-shell__steps li {
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--lian-line);
+  border-radius: var(--radius-card);
+  background: var(--lian-card);
+  box-shadow: var(--shadow-card);
+  color: var(--lian-ink);
+  font-size: 14px;
+  line-height: 1.5;
+}
