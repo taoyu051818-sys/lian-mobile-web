@@ -6,7 +6,7 @@ on:
       app_base_url:
         description: "Fallback app URL if STAGING_APP_BASE_URL secret/variable is not available"
         required: false
-        default: ""
+        default: "http://149.104.21.74:4100"
         type: string
       allow_mutations:
         description: "Run safe mutation checks such as admin reload/logout"
