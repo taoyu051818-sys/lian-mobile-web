@@ -9,6 +9,7 @@
   </head>
   <body>
     <main class="app-shell">
+      <div class="app-main" data-main-view-shell>
       <section class="view view-feed is-active" data-view="feed">
         <div class="pull-indicator" id="pullIndicator">松开刷新</div>
         <nav class="chips" id="feedTabs" aria-label="信息分类"></nav>
@@ -18,7 +19,7 @@
 
       <section class="view view-map" data-view="map">
         <div class="map-v2-shell">
-          <div class="map-v2-stage" id="mapV2Stage" aria-label="LIAN Map v2"></div>
+          <div class="map-v2-stage" id="mapV2Stage" aria-label="LIAN 地图"></div>
         </div>
         <div class="campus-map-stage is-legacy-hidden" id="campusMapStage">
           <img class="campus-map-image" id="campusMapImage" src="/assets/lian-illustrated-map.webp" alt="">
@@ -41,12 +42,16 @@
         </header>
         <section class="message-list" id="messageList"></section>
         <section class="notification-list" id="notificationList" style="display:none"></section>
-        <form class="channel-composer" id="channelForm">
-          <span class="composer-avatar" id="channelComposerAvatar">同</span>
-          <span class="composer-name" id="channelComposerName"></span>
-          <select name="identityTag" aria-label="身份标签"></select>
-          <input name="content" maxlength="800" autocomplete="off" placeholder="说点什么">
-          <button type="submit">发送</button>
+        <form class="channel-composer channel-composer-large" id="channelForm">
+          <div class="channel-composer-meta">
+            <span class="composer-avatar" id="channelComposerAvatar">同</span>
+            <span class="composer-name" id="channelComposerName"></span>
+            <select name="identityTag" aria-label="身份标签"></select>
+          </div>
+          <div class="channel-composer-inputrow">
+            <textarea name="content" maxlength="800" autocomplete="off" rows="3" placeholder="说点什么"></textarea>
+            <button type="submit">发送</button>
+          </div>
         </form>
       </section>
 
@@ -61,9 +66,6 @@
       </section>
 
       <section class="view detail-view" data-view="detail">
-        <header class="detail-nav">
-          <button class="back-button" type="button" data-back-feed aria-label="返回">‹</button>
-        </header>
         <article id="detailBody"></article>
       </section>
 
@@ -75,6 +77,7 @@
         </header>
         <div id="publishPageContent"></div>
       </section>
+      </div>
 
       <nav class="tabbar" aria-label="主导航">
         <button class="tab is-active" type="button" data-tab="feed">首页</button>

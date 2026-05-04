@@ -1,3 +1,156 @@
+const mainViewTransition = (() => {
+  const VIEW_SELECTOR = "[data-view]";
+  const TRANSITION_MS = 220;
+  const REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
+  const NAV_ORDER = ["feed", "map", "messages", "profile"];
+  const originalSwitchView = typeof window.switchView === "function" ? window.switchView : null;
+  let locked = false;
+  let transitionSerial = 0;
+
+  function viewFor(name) {
+    if (!name) return null;
+    const escapedName = window.CSS?.escape ? CSS.escape(name) : name;
+    return document.querySelector(`[data-view="${escapedName}"]`);
+  }
+
+  function activeView() {
+    return document.querySelector(`${VIEW_SELECTOR}.is-active`);
+  }
+
+  function prefersReducedMotion() {
+    return window.matchMedia?.(REDUCED_MOTION_QUERY).matches;
+  }
+
+  function resolveDirection(fromName, toName, explicitDirection) {
+    if (explicitDirection === "forward" || explicitDirection === "back") return explicitDirection;
+    if (!fromName || !toName || fromName === toName) return "forward";
+    if (toName === "detail" || toName === "publish") return "forward";
+    if (fromName === "detail" || fromName === "publish") return "back";
+    const fromIndex = NAV_ORDER.indexOf(fromName);
+    const toIndex = NAV_ORDER.indexOf(toName);
+    if (fromIndex === -1 || toIndex === -1) return "forward";
+    return toIndex >= fromIndex ? "forward" : "back";
+  }
+
+  function setViewImmediately(viewName) {
+    document.querySelectorAll(VIEW_SELECTOR).forEach((view) => {
+      view.classList.toggle("is-active", view.dataset.view === viewName);
+    });
+    document.querySelectorAll("[data-tab]").forEach((tab) => {
+      tab.classList.toggle("is-active", tab.dataset.tab === viewName);
+    });
+    if (viewName === "map") window.MapV2?.init?.();
+  }
+
+  function clearTransitionClasses(view) {
+    if (!view) return;
+    view.classList.remove(
+      "is-entering",
+      "is-leaving",
+      "is-animating",
+      "entering-forward",
+      "entering-back",
+      "leaving-forward",
+      "leaving-back"
+    );
+  }
+
+  function cleanupTransition(fromView, toView) {
+    clearTransitionClasses(fromView);
+    clearTransitionClasses(toView);
+    document
+      .querySelectorAll(`${VIEW_SELECTOR}.is-entering, ${VIEW_SELECTOR}.is-leaving, ${VIEW_SELECTOR}.is-animating`)
+      .forEach(clearTransitionClasses);
+    locked = false;
+  }
+
+  function invalidateMapIfNeeded(viewName) {
+    if (viewName !== "map") return;
+    requestAnimationFrame(() => {
+      window.MapV2?.invalidateSize?.();
+      if (!window.MapV2?.invalidateSize && window.MapV2?.init) window.MapV2.init();
+      if (typeof renderCampusMap === "function") renderCampusMap();
+    });
+  }
+
+  function finishWithoutAnimation(viewName) {
+    cleanupTransition();
+    invalidateMapIfNeeded(viewName);
+  }
+
+  function animateViews(fromView, toView, direction) {
+    if (!fromView || !toView || fromView === toView || prefersReducedMotion()) {
+      finishWithoutAnimation(toView?.dataset.view);
+      return;
+    }
+
+    locked = true;
+    transitionSerial += 1;
+    const serial = transitionSerial;
+    const enteringClass = `entering-${direction}`;
+    const leavingClass = `leaving-${direction}`;
+    let done = false;
+
+    clearTransitionClasses(fromView);
+    clearTransitionClasses(toView);
+    fromView.classList.add("is-leaving");
+    toView.classList.add("is-entering", enteringClass);
+
+    const finish = () => {
+      if (done || serial !== transitionSerial) return;
+      done = true;
+      cleanupTransition(fromView, toView);
+      invalidateMapIfNeeded(toView.dataset.view);
+    };
+
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        fromView.classList.add("is-animating", leavingClass);
+        toView.classList.add("is-animating");
+        toView.classList.remove(enteringClass);
+      });
+    });
+
+    toView.addEventListener("transitionend", (event) => {
+      if (event.target === toView && event.propertyName === "transform") finish();
+    }, { once: true });
+    window.setTimeout(finish, TRANSITION_MS + 120);
+  }
+
+  function navigateTo(viewName, { direction } = {}) {
+    if (!viewName || locked) return false;
+    const fromView = activeView();
+    if (fromView?.dataset.view === viewName) return false;
+    const fromName = fromView?.dataset.view;
+    const resolvedDirection = resolveDirection(fromName, viewName, direction);
+    if (originalSwitchView) originalSwitchView(viewName);
+    else setViewImmediately(viewName);
+    const toView = viewFor(viewName);
+    animateViews(fromView, toView, resolvedDirection);
+    return true;
+  }
+
+  return {
+    navigateTo,
+    isLocked: () => locked,
+    originalSwitchView
+  };
+})();
+
+function navigateTo(viewName, options = {}) {
+  return mainViewTransition.navigateTo(viewName, options);
+}
+
+if (mainViewTransition.originalSwitchView) {
+  window.switchView = navigateTo;
+  try {
+    switchView = navigateTo;
+  } catch (error) {
+    console.warn("[view-transition] switchView binding was not reassigned", error);
+  }
+}
+window.navigateTo = navigateTo;
+
 document.addEventListener("click", (event) => {
   const lightboxClose = event.target.closest("[data-close-lightbox]");
   if (lightboxClose) {
@@ -80,6 +233,16 @@ document.addEventListener("click", (event) => {
     event.preventDefault();
     event.stopPropagation();
     handleReportPost(reportButton.dataset.reportTid);
+    return;
+  }
+
+  const focusReplyButton = event.target.closest("[data-focus-reply]");
+  if (focusReplyButton) {
+    event.preventDefault();
+    const form = $("[data-reply-form]");
+    const input = form?.elements?.content;
+    form?.scrollIntoView({ behavior: "smooth", block: "center" });
+    setTimeout(() => input?.focus(), 120);
     return;
   }
 

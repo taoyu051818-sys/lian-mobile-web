@@ -287,7 +287,7 @@ function openImageLightbox(src = "", alt = "") {
   const lightbox = ensureImageLightbox();
   const image = lightbox.querySelector(".image-lightbox-image");
   image.src = src;
-  image.alt = alt || "image";
+  image.alt = alt || "图片";
   lightbox.classList.add("is-visible");
   requestAnimationFrame(() => lightbox.classList.add("is-active"));
 }
@@ -313,11 +313,53 @@ function originalLinkTemplate(post) {
   `;
 }
 
+function detailStatusTemplate(message = "加载中") {
+  return `
+    <article class="detail-page-shell detail-page-status">
+      <header class="detail-fixed-header detail-fixed-header-minimal">
+        <button class="back-button" type="button" data-back-feed aria-label="返回">‹</button>
+        <h1>${escapeHtml(message)}</h1>
+      </header>
+      <main class="detail-scroll-body">
+        <div class="empty-state">${escapeHtml(message)}</div>
+      </main>
+    </article>
+  `;
+}
+
+function detailBottomActionsTemplate(post) {
+  const tid = escapeHtml(String(post.tid));
+  return `
+    <footer class="detail-bottom-actions" aria-label="帖子操作">
+      <button class="detail-action-btn${post.liked ? " is-liked" : ""}" type="button" data-like-tid="${tid}" aria-label="喜欢">
+        <span data-like-icon>${post.liked ? "♥" : "♡"}</span>
+        <span>喜欢</span>
+        <span data-like-count>${Math.max(0, Number(post.likeCount || 0))}</span>
+      </button>
+      <button class="detail-action-btn${post.bookmarked ? " is-saved" : ""}" type="button" data-save-tid="${tid}" aria-label="收藏">
+        <span data-save-icon>${post.bookmarked ? "★" : "☆"}</span>
+        <span>收藏</span>
+      </button>
+      <button class="detail-action-btn detail-action-report" type="button" data-report-tid="${tid}" aria-label="举报">
+        <span>⚠</span>
+        <span>举报</span>
+      </button>
+      <button class="detail-action-btn detail-action-reply" type="button" data-focus-reply aria-label="回复">
+        <span>↩</span>
+        <span>回复</span>
+      </button>
+    </footer>
+  `;
+}
+
 function repliesTemplate(post) {
   const replies = Array.isArray(post.replies) ? post.replies : [];
   return `
-    <section class="reply-panel">
-      <h3>回复</h3>
+    <section class="reply-panel" data-reply-panel>
+      <div class="reply-panel-header">
+        <h3>回复</h3>
+        <span>${replies.length ? `${replies.length} 条` : "暂无"}</span>
+      </div>
       <div class="reply-list">
         ${replies.length ? replies.map((reply) => `
           <article class="reply-item">
@@ -327,7 +369,7 @@ function repliesTemplate(post) {
             </div>
             <div class="lian-html">${reply.contentHtml || ""}</div>
           </article>
-        `).join("") : `<p class="reply-empty">还没有回复</p>`}
+        `).join("") : `<p class="reply-empty">还没有回复，来写第一条。</p>`}
       </div>
       <form class="reply-form" data-reply-form data-tid="${escapeHtml(post.tid)}">
         <textarea name="content" rows="3" maxlength="2000" placeholder="写一条回复" required></textarea>
@@ -361,7 +403,7 @@ async function loadFeed(reset = false) {
     console.info(`[feed] response request=${requestId} items=${data.items?.length || 0}`);
     renderTabs(data.tabs || ["此刻", "精选"]);
     if (!data.items.length && reset) {
-      $("#feedList").innerHTML = `<div class="empty-state">LIAN 没有返回帖子（tab=${escapeHtml(tab)}，page=${page}，items=0）</div>`;
+      $("#feedList").innerHTML = `<div class="empty-state">暂时没有内容</div>`;
       state.feed.status = "ready";
       return;
     }
@@ -399,7 +441,8 @@ function maybeLoadOlderMessages() {
   if (window.scrollY < 120) loadMessages({ older: true });
 }
 
-async function openDetail(tid) {
+async function openDetail(tid, options = {}) {
+  const { refresh = false, preserveScroll = false, skipHistory = false } = options;
   const tidNum = Number(tid);
   const now = new Date().toISOString();
   const readHistory = state.feed.readHistory;
@@ -407,11 +450,13 @@ async function openDetail(tid) {
   if (existing >= 0) readHistory.splice(existing, 1);
   readHistory.push({ tid: tidNum, lastViewedAt: now });
   saveReadHistory();
-  state.feedScrollY = window.scrollY;
-  $("#detailBody").innerHTML = `<div class="empty-state">加载中</div>`;
+  const detailView = $('[data-view="detail"]');
+  const alreadyInDetail = detailView?.classList.contains("is-active");
+  if (!refresh && !alreadyInDetail) state.feedScrollY = window.scrollY;
+  $("#detailBody").innerHTML = detailStatusTemplate("加载中");
   switchView("detail");
-  if (location.hash !== `#/post/${tid}`) history.pushState({ view: "detail", tid }, "", `#/post/${tid}`);
-  window.scrollTo({ top: 0 });
+  if (!skipHistory && location.hash !== `#/post/${tid}`) history.pushState({ view: "detail", tid }, "", `#/post/${tid}`);
+  if (!preserveScroll) window.scrollTo({ top: 0 });
   try {
     const post = await api(`/api/posts/${tid}`);
     // Sync localStorage liked state with backend
@@ -434,41 +479,33 @@ async function openDetail(tid) {
       ? `<div class="detail-body lian-html">${strippedHtml}</div>`
       : "";
     $("#detailBody").innerHTML = `
-      ${gallery}
-      <section class="detail-content">
-        <div class="detail-meta-card">
-          <div class="detail-author-row">
-            <div class="detail-author-avatar">${authorAvatar}</div>
-            <div class="detail-author-info">
-              <div class="detail-author-name">${escapeHtml(authorName)}</div>
-              ${identityTag}
+      <article class="detail-page-shell">
+        <header class="detail-fixed-header">
+          <button class="back-button" type="button" data-back-feed aria-label="返回">‹</button>
+          <div class="detail-fixed-avatar">${authorAvatar}</div>
+          <div class="detail-fixed-meta">
+            <div class="detail-fixed-row">
+              <strong>${escapeHtml(authorName)}</strong>
+              <time>${escapeHtml(timeLabel)}</time>
             </div>
-            <div class="detail-time">${escapeHtml(timeLabel)}</div>
+            ${identityTag}
           </div>
-          <h2>${escapeHtml(post.title)}</h2>
-        </div>
-        <div class="detail-actions">
-          <button class="detail-action-btn${post.bookmarked ? " is-saved" : ""}" type="button" data-save-tid="${escapeHtml(String(post.tid))}" aria-label="收藏">
-            <span data-save-icon>${post.bookmarked ? "★" : "☆"}</span>
-            <span>收藏</span>
-          </button>
-          <button class="detail-action-btn${post.liked ? " is-liked" : ""}" type="button" data-like-tid="${escapeHtml(String(post.tid))}" aria-label="点赞">
-            <span data-like-icon>${post.liked ? "♥" : "♡"}</span>
-            <span data-like-count>${Math.max(0, Number(post.likeCount || 0))}</span>
-          </button>
-          <button class="detail-action-btn detail-action-report" type="button" data-report-tid="${escapeHtml(String(post.tid))}" aria-label="举报">
-            <span>⚠</span>
-            <span>举报</span>
-          </button>
-        </div>
-        ${bodyHtml}
-        ${originalLinkTemplate(post)}
-        ${repliesTemplate(post)}
-      </section>
+          <h1>${escapeHtml(post.title)}</h1>
+        </header>
+        <main class="detail-scroll-body">
+          ${gallery}
+          <section class="detail-content">
+            ${bodyHtml || `<div class="detail-body detail-body-empty">暂无正文</div>`}
+            ${originalLinkTemplate(post)}
+            ${repliesTemplate(post)}
+          </section>
+        </main>
+        ${detailBottomActionsTemplate(post)}
+      </article>
     `;
     setupDetailGallery($("#detailBody"));
   } catch (error) {
-    $("#detailBody").innerHTML = `<div class="empty-state">${escapeHtml(error.message)}</div>`;
+    $("#detailBody").innerHTML = detailStatusTemplate(error.message || "详情加载失败");
   }
 }
 

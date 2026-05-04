@@ -38,7 +38,7 @@
       ...options
     });
     const data = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(data.error || `HTTP ${response.status}`);
+    if (!response.ok) throw new Error(data.error || `请求失败（状态码 ${response.status}）`);
     return data;
   }
 
@@ -150,9 +150,9 @@
   function popupHtml(item) {
     return `
       <div class="map-v2-popup">
-        <strong>${escapeHtml(item.name || item.title || "Location")}</strong>
-        <p>${escapeHtml(item.type || item.locationArea || "LIAN map item")}</p>
-        ${item.tid ? `<button type="button" data-map-v2-popup-tid="${escapeHtml(item.tid)}">Open post</button>` : ""}
+        <strong>${escapeHtml(item.name || item.title || "地点")}</strong>
+        <p>${escapeHtml(item.type || item.locationArea || "LIAN 地图条目")}</p>
+        ${item.tid ? `<button type="button" data-map-v2-popup-tid="${escapeHtml(item.tid)}">查看帖子</button>` : ""}
       </div>
     `;
   }
@@ -404,7 +404,7 @@
   }
 
   function locationDraftFrom({ latlng, location = null, note = "" }) {
-    const name = location?.name || "Map pick";
+    const name = location?.name || "地图选点";
     return {
       source: "map_v2",
       locationId: location?.id || "",
@@ -436,7 +436,7 @@
         iconAnchor: [14, 28],
         html: "<span></span>"
       })
-    }).addTo(state.layers.pick).bindTooltip(draft.displayName || "Map pick", { permanent: false });
+    }).addTo(state.layers.pick).bindTooltip(draft.displayName || "地图选点", { permanent: false });
     state.pickCallback?.(draft);
   }
 
@@ -463,6 +463,12 @@
     state.data = null;
     await loadData();
     renderAll();
+  }
+
+  function invalidateSize() {
+    if (!state.map) return;
+    state.map.invalidateSize();
+    renderRoadPreview();
   }
 
   document.addEventListener("click", (event) => {
@@ -511,7 +517,7 @@
           iconAnchor: [14, 28],
           html: "<span></span>"
         })
-      }).addTo(pickLayer).bindTooltip(draft.displayName || "Map pick", { permanent: false });
+      }).addTo(pickLayer).bindTooltip(draft.displayName || "地图选点", { permanent: false });
       if (typeof callback === "function") callback(draft);
     });
     setTimeout(() => miniMap.invalidateSize(), 80);
@@ -522,6 +528,7 @@
     init,
     loadData,
     reload: reloadEditor,
+    invalidateSize,
     startPick,
     startPickInContainer,
     stopPick,

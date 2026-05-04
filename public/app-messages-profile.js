@@ -110,8 +110,9 @@ async function submitChannelMessage(event) {
   const content = String(input.value || "").trim();
   const identityTag = String(form.elements.identityTag?.value || "").trim();
   if (!content) return;
-  const button = form.querySelector("button");
+  const button = form.querySelector('button[type="submit"]');
   button.disabled = true;
+  input.disabled = true;
   try {
     await api("/api/channel/messages", {
       method: "POST",
@@ -124,6 +125,19 @@ async function submitChannelMessage(event) {
     alert(error.message);
   } finally {
     button.disabled = false;
+    input.disabled = false;
+  }
+}
+
+function setReplyFormBusy(form, busy) {
+  form.classList.toggle("is-submitting", Boolean(busy));
+  form.setAttribute("aria-busy", busy ? "true" : "false");
+  const input = form.elements.content;
+  const button = form.querySelector('button[type="submit"]');
+  if (input) input.disabled = busy;
+  if (button) {
+    button.disabled = busy;
+    button.textContent = busy ? "发送中" : "发送回复";
   }
 }
 
@@ -133,10 +147,13 @@ async function submitReply(event) {
   event.preventDefault();
   if (!requireLoginUi()) return;
   const tid = form.dataset.tid;
-  const content = String(form.elements.content.value || "").trim();
-  if (!tid || !content) return;
-  const button = form.querySelector("button");
-  button.disabled = true;
+  const input = form.elements.content;
+  const content = String(input.value || "").trim();
+  if (!tid || !content) {
+    input?.focus();
+    return;
+  }
+  setReplyFormBusy(form, true);
   try {
     await api(`/api/posts/${tid}/replies`, {
       method: "POST",
@@ -144,11 +161,13 @@ async function submitReply(event) {
       body: JSON.stringify({ content })
     });
     form.reset();
-    await openDetail(tid);
+    await openDetail(tid, { refresh: true, preserveScroll: true, skipHistory: true });
+    const panel = $("[data-reply-panel]");
+    panel?.scrollIntoView({ behavior: "smooth", block: "end" });
   } catch (error) {
     alert(error.message);
   } finally {
-    button.disabled = false;
+    setReplyFormBusy(form, false);
   }
 }
 
