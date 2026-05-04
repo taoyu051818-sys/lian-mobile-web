@@ -11,6 +11,7 @@ const publicDir = path.join(rootDir, "public");
 const port = Number(process.env.FRONTEND_PORT || 4300);
 const backendBaseUrl = String(process.env.LIAN_BACKEND_BASE_URL || "http://127.0.0.1:4200").replace(/\/$/, "");
 const imageProxyBaseUrl = String(process.env.LIAN_IMAGE_PROXY_BASE_URL || "http://127.0.0.1:4201").replace(/\/$/, "");
+const publicProto = String(process.env.LIAN_PUBLIC_PROTO || "").trim().toLowerCase();
 
 const MIME_TYPES = {
   ".html": "text/html; charset=utf-8",
@@ -65,8 +66,33 @@ function safePublicPath(pathname) {
   return fullPath;
 }
 
+function firstHeaderValue(value = "") {
+  return String(value || "").split(",")[0].trim();
+}
+
+function forwardedProto(req) {
+  const explicit = firstHeaderValue(req.headers["x-forwarded-proto"] || "").toLowerCase();
+  if (explicit) return explicit;
+  if (publicProto === "http" || publicProto === "https") return publicProto;
+  const host = firstHeaderValue(req.headers["x-forwarded-host"] || req.headers.host || "").toLowerCase();
+  if (host && !host.startsWith("localhost") && !host.startsWith("127.0.0.1") && !host.startsWith("[::1]")) {
+    return "https";
+  }
+  return "http";
+}
+
 function requestOrigin(req) {
-  return `http://${req.headers.host || `127.0.0.1:${port}`}`.replace(/\/$/, "");
+  const host = firstHeaderValue(req.headers["x-forwarded-host"] || req.headers.host || `127.0.0.1:${port}`);
+  return `${forwardedProto(req)}://${host}`.replace(/\/$/, "");
+}
+
+function addForwardedRequestHeaders(req, headers) {
+  const host = firstHeaderValue(req.headers["x-forwarded-host"] || req.headers.host || "");
+  if (host) headers["x-forwarded-host"] = host;
+  headers["x-forwarded-proto"] = forwardedProto(req);
+  const existingFor = firstHeaderValue(req.headers["x-forwarded-for"] || "");
+  const remoteAddress = req.socket?.remoteAddress || "";
+  headers["x-forwarded-for"] = [existingFor, remoteAddress].filter(Boolean).join(", ");
 }
 
 function sanitizeProxyResponseHeaders(headers = {}) {
@@ -95,6 +121,7 @@ async function proxyRequest(req, res, targetBaseUrl, { rewriteText = false } = {
   const targetUrl = new URL(req.url || "/", targetBaseUrl);
   const headers = { ...req.headers };
   headers.host = targetUrl.host;
+  addForwardedRequestHeaders(req, headers);
   delete headers["accept-encoding"];
 
   const proxyReq = http.request(targetUrl, {
