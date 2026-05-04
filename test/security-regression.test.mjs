@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 import { canViewPost } from "../src/server/audience-service.js";
 import { escapeHtml, buildTextPostHtml, renderPostContent, sanitizeHtml } from "../src/server/content-utils.js";
 import { isAllowedImageUrl } from "../src/server/image-proxy.js";
+import { assertRateLimit, checkRateLimit, clearRateLimits } from "../src/server/rate-limit.js";
 import { detectImageType, validateImageFile, MAX_UPLOAD_IMAGE_BYTES } from "../src/server/upload.js";
 
 const SCHOOL_NAME = "中国传媒大学海南国际学院";
@@ -99,6 +100,26 @@ test("renderPostContent sanitizes existing HTML blocks", () => {
   assert.doesNotMatch(html, /javascript:/i);
   assert.doesNotMatch(html, /onerror/i);
   assert.match(html, /<p>safe<\/p>/);
+});
+
+test("rate limiter blocks repeated attempts within a window", () => {
+  clearRateLimits();
+  assert.equal(assertRateLimit("login:test", { max: 2, windowMs: 1000, now: 100 }).remaining, 1);
+  assert.equal(assertRateLimit("login:test", { max: 2, windowMs: 1000, now: 200 }).remaining, 0);
+  assert.throws(() => assertRateLimit("login:test", { max: 2, windowMs: 1000, now: 300 }), (error) => {
+    assert.equal(error.status, 429);
+    assert.equal(error.retryAfterSeconds, 1);
+    return true;
+  });
+  assert.equal(assertRateLimit("login:test", { max: 2, windowMs: 1000, now: 1200 }).remaining, 1);
+});
+
+test("rate limiter keys include client ip and subject", () => {
+  clearRateLimits();
+  const req = { headers: { "x-forwarded-for": "203.0.113.1, 10.0.0.1" } };
+  checkRateLimit(req, "email-code", "student@example.edu", { max: 1, windowMs: 1000 });
+  assert.throws(() => checkRateLimit(req, "email-code", "student@example.edu", { max: 1, windowMs: 1000 }), /too many requests/);
+  assert.doesNotThrow(() => checkRateLimit(req, "email-code", "other@example.edu", { max: 1, windowMs: 1000 }));
 });
 
 test("upload validation accepts only matching image signatures", () => {
