@@ -35,9 +35,19 @@ function requireAdmin(req) {
   }
 }
 
-async function readBodyBuffer(req) {
+async function readBodyBuffer(req, maxBytes = 0) {
   const chunks = [];
-  for await (const chunk of req) chunks.push(Buffer.from(chunk));
+  let bytes = 0;
+  for await (const chunk of req) {
+    const buffer = Buffer.from(chunk);
+    bytes += buffer.byteLength;
+    if (maxBytes && bytes > maxBytes) {
+      const error = new Error("request body is too large");
+      error.status = 413;
+      throw error;
+    }
+    chunks.push(buffer);
+  }
   return Buffer.concat(chunks);
 }
 
