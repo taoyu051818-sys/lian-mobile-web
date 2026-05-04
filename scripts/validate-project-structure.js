@@ -1,6 +1,6 @@
 import fs from "node:fs/promises";
 import path from "node:path";
-import { execSync } from "node:child_process";
+import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
 const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
@@ -20,7 +20,17 @@ const requiredFiles = [
   "src/server/paths.js",
   "public/app.js",
   "public/index.html",
+  "public/lian-tokens.css",
   "public/styles.css",
+  "index.html",
+  "src/main.ts",
+  "src/App.vue",
+  "src/styles/main.css",
+  "src/vite-env.d.ts",
+  "vite.config.ts",
+  "tsconfig.json",
+  "docs/design/LIAN-Campus-UI-UX-Guidelines-V0.1.md",
+  "docs/architecture/0001-vue3-vite-typescript-ui-entry.md",
   "data/feed-rules.json",
   "data/post-metadata.json",
   "package.json",
@@ -29,7 +39,9 @@ const requiredFiles = [
 
 const jsonFiles = [
   "data/feed-rules.json",
-  "data/post-metadata.json"
+  "data/post-metadata.json",
+  "package.json",
+  "tsconfig.json"
 ];
 
 const jsFilesToSyntaxCheck = [
@@ -98,7 +110,7 @@ async function checkJsonValid(file) {
 function checkSyntax(file) {
   const fullPath = path.join(rootDir, file);
   try {
-    execSync(`node --check "${fullPath}"`, { stdio: "pipe" });
+    execFileSync(process.execPath, ["--check", fullPath], { stdio: "pipe" });
     ok(`${file} (语法正确)`);
   } catch {
     fail(`${file} (语法检查)`, "node --check 失败");
@@ -117,17 +129,23 @@ async function checkDataDir() {
 }
 
 async function checkDocsDir() {
-  const docsDir = path.join(rootDir, "docs", "agent");
-  try {
-    await fs.access(docsDir);
-    const entries = await fs.readdir(docsDir);
-    console.log(`  ℹ docs/agent/ 目录包含 ${entries.length} 个条目`);
-  } catch {
-    fail("docs/agent/ 目录", "目录不存在");
+  const docsDirs = [
+    path.join(rootDir, "docs", "agent"),
+    path.join(rootDir, "docs", "design"),
+    path.join(rootDir, "docs", "architecture")
+  ];
+  for (const docsDir of docsDirs) {
+    const label = path.relative(rootDir, docsDir);
+    try {
+      await fs.access(docsDir);
+      const entries = await fs.readdir(docsDir);
+      console.log(`  ℹ ${label}/ 目录包含 ${entries.length} 个条目`);
+    } catch {
+      fail(`${label}/ 目录`, "目录不存在");
+    }
   }
 }
 
-// Main
 console.log("\n═══ LIAN 项目结构校验 ═══\n");
 
 console.log("▶ 关键文件检查");
