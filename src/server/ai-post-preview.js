@@ -74,6 +74,26 @@ function compactStringArray(value, maxItems = 5, maxLength = 16) {
   return [...new Set(value.map((item) => truncateText(item, maxLength)).filter(Boolean))].slice(0, maxItems);
 }
 
+function normalizeHashtag(value = "") {
+  const body = Array.from(String(value || "")
+    .trim()
+    .replace(/^#+/, ""))
+    .filter((char) => /[\p{L}\p{N}_-]/u.test(char))
+    .join("")
+    .slice(0, 15);
+  return body ? `#${body}` : "";
+}
+
+function normalizeHashtags(value, maxItems = 5) {
+  const source = Array.isArray(value) ? value.join(" ") : String(value || "");
+  return [...new Set(source
+    .replace(/#/g, " #")
+    .split(/[\s,，]+/)
+    .map(normalizeHashtag)
+    .filter(Boolean))]
+    .slice(0, maxItems);
+}
+
 function safeParseModelJson(text = "") {
   const raw = String(text || "").trim();
   if (!raw) return null;
@@ -185,12 +205,12 @@ function normalizePostPreviewDraft(value = {}, request = {}) {
   return {
     title: truncateText(value?.title || "校园里的这一刻", 40),
     body: truncateText(value?.body || request.userText || "这是一条可编辑的校园轻投稿草稿，请发布前补充细节并确认图片隐私。", 300),
-    tags: compactStringArray(value?.tags, 5, 16),
+    tags: normalizeHashtags(value?.tags, 5),
     metadata: {
       ...AI_DEFAULT_METADATA,
       contentType,
-      vibeTags: compactStringArray(metadataInput.vibeTags, 5, 16),
-      sceneTags: compactStringArray(metadataInput.sceneTags, 5, 16),
+      vibeTags: normalizeHashtags(metadataInput.vibeTags, 5),
+      sceneTags: normalizeHashtags(metadataInput.sceneTags, 5),
       locationId: knownLocationId(metadataInput.locationId),
       locationArea: truncateText(metadataInput.locationArea || request.locationHint || "", 40),
       qualityScore: clampNumber(metadataInput.qualityScore),
@@ -216,7 +236,7 @@ function normalizePostPreviewResult(value = {}, request = {}, fallback = {}) {
   return {
     draft: {
       ...draft,
-      tags: draft.tags.length ? draft.tags : ["校园随手拍"]
+      tags: draft.tags.length ? draft.tags : ["#校园随手拍"]
     },
     locationDraft,
     locationSuggestions: normalizeLocationSuggestions(value?.locationSuggestions),
@@ -235,7 +255,7 @@ function buildPostPreviewPrompt(payload = {}) {
     "JSON 字段必须包含 title, body, tags, metadata, locationSuggestions, riskFlags, confidence, needsHumanReview。",
     "AI 只能生成可编辑草稿，不能表示已经发布，不能替用户确认隐私或审核。",
     "locationId 只能在已有地点 ID 明确匹配时填写；不确定时必须输出空字符串。",
-    "title 不超过 40 字，body 不超过 300 字，tags 最多 5 个。",
+    "title 不超过 40 字，body 不超过 300 字，tags 最多 5 个，tags 必须使用 # 前缀，只能包含文字、数字、下划线或连字符。",
     "scores 必须是 0 到 1 的数字。",
     "风险提示只做提醒：如可能有人脸、电话号码、车牌、宿舍门牌、私人聊天截图、敏感地点或未授权人物特写，请加入 riskFlags。",
     `template: ${template}`,
@@ -283,10 +303,10 @@ function mockPostPreview(request = {}) {
     body: request.userText
       ? `${request.userText}。这是一条可编辑的校园轻投稿草稿，发布前可以继续补充时间、地点和细节。`
       : "这张内容适合整理成一条校园轻投稿。发布前请补充具体时间、地点和你想表达的重点。",
-    tags: contentType === "food" ? ["校园美食", "饭点", "真实上桌"] : ["校园随手拍", "黎安记忆", "生活感"],
+    tags: contentType === "food" ? ["#校园美食", "#饭点", "#真实上桌"] : ["#校园随手拍", "#黎安记忆", "#生活感"],
     metadata: {
       contentType,
-      vibeTags: contentType === "food" ? ["真实", "饭点"] : ["真实", "在地", "生活感"],
+      vibeTags: contentType === "food" ? ["#真实", "#饭点"] : ["#真实", "#在地", "#生活感"],
       sceneTags: locationArea ? [locationArea] : [],
       locationId: "",
       locationArea,
@@ -427,6 +447,7 @@ export {
   clampNumber,
   compactStringArray,
   handleAiPostPreview,
+  normalizeHashtags,
   normalizeLocationDraft,
   normalizeRiskFlags,
   truncateText
