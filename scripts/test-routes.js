@@ -30,7 +30,6 @@ console.log("▶ 精确匹配");
 
 assert(matchRoute("GET", "/api/setup/status"), { routeId: "setup-status", params: {} }, "GET /api/setup/status");
 assert(matchRoute("POST", "/api/setup"), { routeId: "setup", params: {} }, "POST /api/setup");
-assert(matchRoute("GET", "/api/image-proxy"), { routeId: "image-proxy", params: {} }, "GET /api/image-proxy");
 assert(matchRoute("GET", "/api/alias-pool"), { routeId: "alias-pool", params: {} }, "GET /api/alias-pool");
 assert(matchRoute("POST", "/api/ai/post-preview"), { routeId: "ai-post-preview", params: {} }, "POST /api/ai/post-preview");
 assert(matchRoute("POST", "/api/ai/post-drafts"), { routeId: "ai-post-drafts", params: {} }, "POST /api/ai/post-drafts");
@@ -92,6 +91,7 @@ console.log("");
 console.log("▶ 404 未匹配");
 
 assertNull(matchRoute("GET", "/api/nonexistent"), "GET /api/nonexistent → null");
+assertNull(matchRoute("GET", "/api/image-proxy"), "GET /api/image-proxy → null (handled only by image proxy server on 4101)");
 assertNull(matchRoute("GET", "/api"), "GET /api → null");
 assertNull(matchRoute("GET", "/"), "GET / → null");
 assertNull(matchRoute("POST", "/api/feed"), "POST /api/feed → null (method mismatch)");

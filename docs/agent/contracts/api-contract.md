@@ -501,14 +501,16 @@ Status: **Frozen** — Phase 0 of repo split. This document is the source of tru
 - **Request:** `FormData` with `image` field (File)
 - **Response:** `{ "url": "string" }`
 
-### GET /api/image-proxy
+### GET :4101/api/image-proxy
 
 - **Class:** frontend-required
 - **Auth:** none
-- **Frontend:** `app-utils.js:33` (via `displayImageUrl()`)
+- **Frontend:** `app-utils.js`, `map-v2.js`, and `public/tools/map-v2-editor.js` (via `displayImageUrl()`)
+- **Port:** standalone image proxy server on `IMAGE_PROXY_PORT` (default `4101`)
 - **Backend:** `image-proxy.js` → `handleImageProxy`
 - **Query params:** `url` (string — Cloudinary URL)
 - **Response:** proxied image binary (image/*)
+- **Boundary:** the main app server on `PORT=4100` must not serve `/api/image-proxy`; that path should 404 on 4100.
 
 ---
 

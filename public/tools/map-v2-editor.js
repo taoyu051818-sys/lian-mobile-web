@@ -2,6 +2,20 @@
   const GAODE_TILE_URL = "https://webrd0{s}.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=8&x={x}&y={y}&z={z}";
   const NODEBB_URL = (window.LIAN_NODEBB_URL || "http://149.104.21.74:4567").replace(/\/$/, "");
   const LIAN_API_BASE = (typeof window !== "undefined" && window.LIAN_API_BASE_URL) || "";
+  const LIAN_IMAGE_PROXY_BASE = (() => {
+    const configured = (typeof window !== "undefined" && window.LIAN_IMAGE_PROXY_BASE_URL) || "";
+    if (configured) return configured.replace(/\/$/, "");
+    try {
+      const url = new URL(LIAN_API_BASE || window.location.origin, window.location.origin);
+      url.port = "4101";
+      url.pathname = "";
+      url.search = "";
+      url.hash = "";
+      return url.toString().replace(/\/$/, "");
+    } catch {
+      return "";
+    }
+  })();
   const DEFAULT_CENTER = [18.3935, 110.0159];
   const BOUNDS = {
     south: 18.37107,
@@ -444,7 +458,7 @@
   function displayImageUrl(url = "") {
     const value = String(url || "");
     if (/^https:\/\/res\.cloudinary\.com\/[^/]+\/image\/upload\//.test(value)) {
-      return `${LIAN_API_BASE}/api/image-proxy?url=${encodeURIComponent(value)}`;
+      return `${LIAN_IMAGE_PROXY_BASE}/api/image-proxy?url=${encodeURIComponent(value)}`;
     }
     return value;
   }

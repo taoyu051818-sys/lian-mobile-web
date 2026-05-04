@@ -4,7 +4,6 @@
 const EXACT_ROUTES = [
   { method: "GET", path: "/api/setup/status", id: "setup-status" },
   { method: "POST", path: "/api/setup", id: "setup" },
-  { method: "GET", path: "/api/image-proxy", id: "image-proxy" },
   { method: "GET", path: "/api/alias-pool", id: "alias-pool" },
   { method: "POST", path: "/api/ai/post-preview", id: "ai-post-preview" },
   // admin prefix handled separately

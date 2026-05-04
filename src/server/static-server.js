@@ -7,6 +7,20 @@ import { publicDir } from "./paths.js";
 import { responseHeaders } from "./security-headers.js";
 import { MIME } from "./static-data.js";
 
+function runtimeConfigScript(pathname) {
+  const values = [
+    `window.LIAN_IMAGE_PROXY_BASE_URL=${JSON.stringify(config.imageProxyPublicBaseUrl)};`
+  ];
+  if (pathname === "/tools/map-v2-editor.html") {
+    values.push(`window.LIAN_NODEBB_URL=${JSON.stringify(config.nodebbPublicBaseUrl)};`);
+  }
+  return `<script>${values.join("")}</script>`;
+}
+
+function injectRuntimeConfig(html, pathname) {
+  return String(html).replace("</head>", `${runtimeConfigScript(pathname)}</head>`);
+}
+
 async function serveStatic(reqUrl, res) {
   let pathname;
   try {
@@ -27,16 +41,11 @@ async function serveStatic(reqUrl, res) {
     const type = MIME[ext] || "application/octet-stream";
     const isHtml = ext === ".html" || ext === ".htm";
     let data = await fs.readFile(filePath, isHtml ? "utf8" : undefined);
-    if (isHtml && pathname === "/tools/map-v2-editor.html") {
-      data = data.replace(
-        "</head>",
-        `<script>window.LIAN_NODEBB_URL=${JSON.stringify(config.nodebbPublicBaseUrl)};</script></head>`
-      );
-    }
+    if (isHtml) data = injectRuntimeConfig(data, pathname);
     res.writeHead(200, responseHeaders(type, { "content-type": type, "cache-control": "no-cache" }));
     res.end(data);
   } catch {
-    const index = await fs.readFile(path.join(publicDir, "index.html"));
+    const index = injectRuntimeConfig(await fs.readFile(path.join(publicDir, "index.html"), "utf8"), "/index.html");
     const type = MIME[".html"];
     res.writeHead(200, responseHeaders(type, { "content-type": type, "cache-control": "no-cache" }));
     res.end(index);

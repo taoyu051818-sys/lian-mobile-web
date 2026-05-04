@@ -5,6 +5,10 @@ This is the current task board. Each task has a goal, affected files, risk level
 Baseline reference: `docs/agent/01_PROJECT_FACT_BASELINE.md`
 Docs index: `docs/agent/README.md`
 
+Recent GitHub update summary: `docs/agent/references/GITHUB_RECENT_UPDATES_2026-05-04.md`
+
+Latest long-thread handoff: `docs/agent/references/RECENT_WORK_HANDOFF_2026-05-04.md`
+
 ## Status Legend
 
 - **Done** - implementation complete, accepted by reviewer

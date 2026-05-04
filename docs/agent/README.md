@@ -55,6 +55,8 @@ Read `handoffs/README.md` for the normalized handoff list.
 ## References
 
 - `references/HIGH_RISK_AREAS.md` - 6 high-risk area audits (frontend load order, feed scoring, NodeBB integration, auth, metadata format, route structure)
+- `references/GITHUB_RECENT_UPDATES_2026-05-04.md` - recent GitHub commit summary and deployment implications
+- `references/RECENT_WORK_HANDOFF_2026-05-04.md` - latest long-thread handoff, accepted behavior, image proxy 4101 split, and deployment notes
 
 ## Historical References
 

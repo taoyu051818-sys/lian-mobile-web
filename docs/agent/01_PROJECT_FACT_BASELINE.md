@@ -18,7 +18,7 @@
 | Manual post | `app.js` form | `POST /api/posts` | `post-service.js:129` | Done |
 | Reply | Detail page | `POST /api/posts/:tid/replies` | `channel-service.js:120` | Done |
 | Image upload | Post/AI flow | `POST /api/upload/image` | `upload.js:56` | Done |
-| Image proxy | `<img>` src | `GET /api/image-proxy?url=` | `image-proxy.js:15` | Done |
+| Image proxy | `<img>` src | `GET :4101/api/image-proxy?url=` | `image-proxy.js:15` | Done |
 | AI draft preview | AI flow | `POST /api/ai/post-preview` | `ai-post-preview.js:388` | Done |
 | AI draft save | AI flow | `POST /api/ai/post-drafts` | `ai-light-publish.js:116` | Done |
 | AI confirmed publish | "发布到 LIAN" | `POST /api/ai/post-publish` | `ai-light-publish.js:142` | Done (rough) |
