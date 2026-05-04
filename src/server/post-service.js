@@ -1,4 +1,4 @@
-import { canViewPost, normalizeAudience, deriveSchoolId } from "./audience-service.js";
+import { canCreatePostWithAudience, canViewPost, normalizeAudienceForCreate } from "./audience-service.js";
 import { getCurrentUser } from "./auth-service.js";
 import { config } from "./config.js";
 import { memory } from "./cache.js";
@@ -110,6 +110,10 @@ function buildMapMetadataPatch(mapLocation = {}) {
       note: ""
     }
   };
+}
+
+function metadataVisibilityFromAudience(audience = {}) {
+  return audience.linkOnly ? "linkOnly" : (audience.visibility || "public");
 }
 
 function extractCreatedTid(data = {}) {
@@ -575,15 +579,15 @@ async function handleCreatePost(req, res) {
     sendJson(res, 400, { error: "title is required" });
     return;
   }
+  const audience = normalizeAudienceForCreate(auth.user, payload.audience, payload.visibility || "public");
+  if (!canCreatePostWithAudience(auth.user, audience)) {
+    return sendJson(res, 403, { error: "audience is not allowed" });
+  }
+  const visibility = metadataVisibilityFromAudience(audience);
   const { data, tid, imageUrls } = await createNodebbTopicFromPayload(auth, {
     ...payload,
     title
   });
-  const visibility = payload.visibility || "public";
-  const audience = normalizeAudience(payload.audience, visibility);
-  if (audience.visibility === "school" && !audience.schoolIds.length && auth.user.institution) {
-    audience.schoolIds = [deriveSchoolId(auth.user.institution) || auth.user.institution];
-  }
   if (tid) {
     await patchPostMetadata(tid, {
       title,

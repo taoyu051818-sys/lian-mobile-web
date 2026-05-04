@@ -1,6 +1,6 @@
 import crypto from "node:crypto";
 
-import { normalizeAudience, deriveSchoolId } from "./audience-service.js";
+import { canCreatePostWithAudience, normalizeAudience, normalizeAudienceForCreate } from "./audience-service.js";
 import { memory } from "./cache.js";
 import { warmupPostImages, normalizePostImageUrl } from "./content-utils.js";
 import { appendJsonLine, patchPostMetadata } from "./data-store.js";
@@ -27,6 +27,10 @@ const AI_POST_PREVIEW_MAX_BODY_BYTES = 1_750_000;
 function metadataArray(value, fallback = []) {
   if (!Array.isArray(value)) return [...fallback];
   return value.map((item) => String(item || "").trim()).filter(Boolean);
+}
+
+function metadataVisibilityFromAudience(audience = {}) {
+  return audience.linkOnly ? "linkOnly" : (audience.visibility || "public");
 }
 
 function normalizeAiPublishMetadata(value = {}, locationDraft = {}, request = {}) {
@@ -160,8 +164,10 @@ async function handleAiPostPublish(req, res) {
 
   const payload = await readJsonBody(req, AI_POST_PREVIEW_MAX_BODY_BYTES);
   const normalized = normalizeAiPostPayload(payload, { requireImage: true });
-  if (normalized.metadata.audience.visibility === "school" && !normalized.metadata.audience.schoolIds.length && auth.user.institution) {
-    normalized.metadata.audience.schoolIds = [deriveSchoolId(auth.user.institution) || auth.user.institution];
+  normalized.metadata.audience = normalizeAudienceForCreate(auth.user, normalized.metadata.audience, normalized.metadata.visibility || "public");
+  normalized.metadata.visibility = metadataVisibilityFromAudience(normalized.metadata.audience);
+  if (!canCreatePostWithAudience(auth.user, normalized.metadata.audience)) {
+    return sendJson(res, 403, { error: "audience is not allowed" });
   }
   const aliasId = String(payload.aliasId || "").trim();
   const recordId = crypto.randomUUID();
