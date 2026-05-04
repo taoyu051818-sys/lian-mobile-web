@@ -1,3 +1,5 @@
+import { isProductionMode } from "./security-mode.js";
+
 const buckets = new Map();
 
 function nowMs() {
@@ -13,7 +15,10 @@ function getClientIp(req = {}) {
   return forwarded || req.socket?.remoteAddress || req.connection?.remoteAddress || "unknown";
 }
 
-function assertRateLimit(key, { max = 5, windowMs = 60_000, now = nowMs() } = {}) {
+function assertRateLimit(key, { max = 5, windowMs = 60_000, now = nowMs(), force = false } = {}) {
+  if (!force && !isProductionMode()) {
+    return { allowed: true, remaining: Number.POSITIVE_INFINITY, resetAt: now, disabled: true };
+  }
   const normalizedKey = normalizeRateLimitKey(key);
   const current = buckets.get(normalizedKey);
   if (!current || current.resetAt <= now) {
