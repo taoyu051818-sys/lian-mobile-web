@@ -8,6 +8,7 @@ const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..")
 const requiredFiles = [
   "server.js",
   "src/server/api-router.js",
+  "src/server/route-matcher.js",
   "src/server/post-service.js",
   "src/server/nodebb-client.js",
   "src/server/feed-service.js",
@@ -34,6 +35,7 @@ const jsonFiles = [
 const jsFilesToSyntaxCheck = [
   "server.js",
   "src/server/api-router.js",
+  "src/server/route-matcher.js",
   "src/server/post-service.js",
   "src/server/nodebb-client.js",
   "src/server/feed-service.js",
