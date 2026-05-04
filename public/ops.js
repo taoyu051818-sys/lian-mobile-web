@@ -10,7 +10,8 @@ const raw = document.querySelector("#raw");
 const TOKEN_KEY = "lian.ops.adminToken";
 const BASE_KEY = "lian.ops.publicBase";
 
-tokenInput.value = localStorage.getItem(TOKEN_KEY) || "";
+localStorage.removeItem(TOKEN_KEY);
+tokenInput.value = sessionStorage.getItem(TOKEN_KEY) || "";
 publicBaseInput.value = localStorage.getItem(BASE_KEY) || publicBaseInput.value;
 
 function authToken() {
@@ -18,7 +19,7 @@ function authToken() {
 }
 
 function saveInputs() {
-  localStorage.setItem(TOKEN_KEY, authToken());
+  sessionStorage.setItem(TOKEN_KEY, authToken());
   localStorage.setItem(BASE_KEY, publicBaseInput.value.trim() || "https://lian.nat100.top");
 }
 
