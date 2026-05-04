@@ -6,10 +6,12 @@ import { escapeHtml, buildTextPostHtml, renderPostContent, sanitizeHtml } from "
 import { isAllowedImageUrl } from "../src/server/image-proxy.js";
 import { detectImageType, validateImageFile, MAX_UPLOAD_IMAGE_BYTES } from "../src/server/upload.js";
 
+const SCHOOL_NAME = "中国传媒大学海南国际学院";
+const SCHOOL_ID = "中国传媒大学";
 const campusUser = {
   id: "user-1",
-  institution: "海南比勒费尔德应用科学大学",
-  tags: ["海南比勒费尔德应用科学大学", "高校认证"],
+  institution: SCHOOL_NAME,
+  tags: [SCHOOL_ID, "高校认证"],
   status: "active"
 };
 
@@ -25,7 +27,7 @@ test("school visibility denies guests and allows matching school users", () => {
     visibility: "school",
     audience: {
       visibility: "school",
-      schoolIds: ["海南比勒费尔德应用科学大学"],
+      schoolIds: [SCHOOL_ID],
       orgIds: [],
       roleIds: [],
       userIds: [],
