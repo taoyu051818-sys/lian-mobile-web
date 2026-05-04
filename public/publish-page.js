@@ -44,6 +44,30 @@ function publishPageBack() {
   }
 }
 
+function normalizePublishTag(value = "") {
+  const body = Array.from(String(value || "")
+    .trim()
+    .replace(/^#+/, ""))
+    .filter((char) => /[\p{L}\p{N}_-]/u.test(char))
+    .join("")
+    .slice(0, 15);
+  return body ? `#${body}` : "";
+}
+
+function normalizePublishTags(value = "") {
+  const source = Array.isArray(value) ? value.join(" ") : String(value || "");
+  return [...new Set(source
+    .replace(/#/g, " #")
+    .split(/[\s,，]+/)
+    .map(normalizePublishTag)
+    .filter(Boolean))]
+    .slice(0, 5);
+}
+
+function formatPublishTags(tags = []) {
+  return normalizePublishTags(tags).join(" ");
+}
+
 function publishPageRender() {
   const content = $("#publishPageContent");
   const label = $("#publishStepLabel");
@@ -67,9 +91,9 @@ function publishPageRenderImageSelect(container) {
   const hasImages = state.publish.selectedFiles.length > 0 || state.publish.imageUrls.length > 0;
   const thumbUrls = state.publish.localImageUrls.length > 0 ? state.publish.localImageUrls : state.publish.imageUrls;
   container.innerHTML = `
-    <div class="publish-page-section">
+    <div class="publish-page-section publish-glass-section glass-panel">
       ${!hasImages ? `
-        <label class="publish-upload-zone">
+        <label class="publish-upload-zone glass-panel">
           <h3>选择图片</h3>
           <p>选择图片，LIAN 会帮你生成内容</p>
           <input id="publishPageImageInput" type="file" accept="image/*" multiple style="display:none">
@@ -77,18 +101,18 @@ function publishPageRenderImageSelect(container) {
       ` : `
         <div class="publish-image-grid">
           ${thumbUrls.map((url, i) => `
-            <div class="publish-image-thumb">
+            <div class="publish-image-thumb glass-panel">
               <img src="${escapeHtml(state.publish.imageUrls[i] ? displayImageUrl(state.publish.imageUrls[i]) : url)}" alt="">
-              <button type="button" data-publish-remove-image="${i}" class="publish-image-remove" aria-label="移除">×</button>
+              <button type="button" data-publish-remove-image="${i}" class="publish-image-remove glass-orb" aria-label="移除">×</button>
             </div>
           `).join("")}
         </div>
-        <label class="publish-upload-zone" style="padding:16px">
+        <label class="publish-upload-zone glass-panel" style="padding:16px">
           <p>+ 继续添加</p>
           <input id="publishPageImageInput" type="file" accept="image/*" multiple style="display:none">
         </label>
       `}
-      ${state.publish.uploadLoading ? '<p class="publish-status">图片上传中，可先选择地点...</p>' : ""}
+      ${state.publish.uploadLoading ? '<p class="publish-status glass-pill">图片上传中，可先选择地点...</p>' : ""}
     </div>
   `;
 }
@@ -148,42 +172,48 @@ function publishPageRenderDraftReview(container) {
     { value: "private", label: "仅自己" }
   ];
   const currentAudience = p.audience || p.metadata?.visibility || "public";
+  const statusText = p.previewLoading ? "AI 正在生成草稿..."
+    : p.draftSaving ? "草稿自动保存中..."
+    : (p.draftSaveStatus || "发布前请确认图片、地点和文字不包含隐私信息。");
   container.innerHTML = `
-    <div class="publish-page-section">
-      <p class="publish-status">${
-        p.previewLoading ? "AI 正在生成草稿..."
-        : p.draftSaving ? "草稿自动保存中..."
-        : (p.draftSaveStatus || "")
-      }</p>
-      <label>
-        标题
+    <div class="publish-page-section publish-review-section glass-panel">
+      <div class="publish-review-tip glass-panel">
+        <span class="publish-location-dotline" aria-hidden="true"><span></span><span></span><span></span></span>
+        <div>
+          <strong>发布前提示</strong>
+          <p>${escapeHtml(statusText)}</p>
+        </div>
+      </div>
+      <label class="publish-glass-field glass-panel">
+        <span>标题</span>
         <input id="publishTitleInput" maxlength="40" required value="${escapeHtml(p.title || "")}">
       </label>
-      <label>
-        正文
+      <label class="publish-glass-field glass-panel">
+        <span>正文</span>
         <textarea id="publishBodyInput" rows="6" maxlength="300" required>${escapeHtml(p.body || "")}</textarea>
       </label>
-      <label>
-        标签
-        <input id="publishTagsInput" maxlength="80" value="${escapeHtml((p.tags || []).join(" "))}" placeholder="最多 5 个，用空格分隔">
+      <label class="publish-glass-field glass-panel">
+        <span>标签</span>
+        <input id="publishTagsInput" maxlength="96" value="${escapeHtml(formatPublishTags(p.tags || []))}" placeholder="最多 5 个，例如 #校园 #晚霞">
+        <small>标签会自动规范成 # 前缀，只保留文字、数字、下划线和连字符。</small>
       </label>
-      <p>地点：${escapeHtml(locationLabel)}</p>
+      <div class="publish-review-location glass-pill">地点：${escapeHtml(locationLabel)}</div>
       <h4>可见范围</h4>
       <div class="publish-audience-picker">
         ${audienceOptions.map((opt) => `
-          <button type="button" class="publish-audience-option${currentAudience === opt.value ? " is-active" : ""}" data-publish-audience="${opt.value}">${opt.label}</button>
+          <button type="button" class="publish-audience-option glass-pill${currentAudience === opt.value ? " is-active" : ""}" data-publish-audience="${opt.value}">${opt.label}</button>
         `).join("")}
       </div>
       ${p.riskFlags?.length ? `
-        <div class="ai-risk-list">
+        <div class="ai-risk-list glass-panel">
           ${p.riskFlags.map((flag) => `<p>${escapeHtml(flag.message || "")}</p>`).join("")}
         </div>
       ` : ""}
     </div>
-    <div class="publish-actions">
-      <button type="button" data-publish-save-draft>保存草稿</button>
-      <button class="primary" type="button" data-publish-submit>发布到 LIAN</button>
-      <button type="button" data-publish-regenerate>重新生成</button>
+    <div class="publish-actions publish-actions-glass glass-panel">
+      <button class="glass-pill" type="button" data-publish-save-draft>保存草稿</button>
+      <button class="glass-pill publish-location-primary" type="button" data-publish-submit>发布到 LIAN</button>
+      <button class="glass-pill" type="button" data-publish-regenerate>重新生成</button>
     </div>
   `;
 }
@@ -340,7 +370,7 @@ function publishPageApplyPreview(data) {
   state.publish.aiMode = data.mode || "";
   if (!state.publish.title) state.publish.title = draft.title || "";
   if (!state.publish.body) state.publish.body = draft.body || "";
-  if (!state.publish.tags?.length) state.publish.tags = Array.isArray(draft.tags) ? draft.tags : [];
+  if (!state.publish.tags?.length) state.publish.tags = normalizePublishTags(draft.tags || []);
   state.publish.metadata = draft.metadata || {};
   state.publish.riskFlags = Array.isArray(data.riskFlags) ? data.riskFlags : [];
   state.publish.confidence = Number(data.confidence || 0);
@@ -359,7 +389,10 @@ function publishPageSyncFromInputs() {
   const tags = $("#publishTagsInput");
   if (title) state.publish.title = title.value;
   if (body) state.publish.body = body.value;
-  if (tags) state.publish.tags = [...new Set(String(tags.value || "").split(/[\s,，#]+/).map((t) => t.trim()).filter(Boolean))].slice(0, 5);
+  if (tags) {
+    state.publish.tags = normalizePublishTags(tags.value);
+    tags.value = formatPublishTags(state.publish.tags);
+  }
 }
 
 function publishPageBuildPayload() {
@@ -376,7 +409,7 @@ function publishPageBuildPayload() {
     imageUrls: p.imageUrls,
     title: p.title,
     body: p.body,
-    tags: p.tags,
+    tags: normalizePublishTags(p.tags),
     metadata,
     locationDraft,
     riskFlags: p.riskFlags,
