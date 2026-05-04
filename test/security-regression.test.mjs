@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import { canViewPost } from "../src/server/audience-service.js";
-import { escapeHtml, buildTextPostHtml } from "../src/server/content-utils.js";
+import { escapeHtml, buildTextPostHtml, renderPostContent, sanitizeHtml } from "../src/server/content-utils.js";
 import { isAllowedImageUrl } from "../src/server/image-proxy.js";
 import { detectImageType, validateImageFile, MAX_UPLOAD_IMAGE_BYTES } from "../src/server/upload.js";
 
@@ -68,6 +68,35 @@ test("text post helpers escape HTML before rendering", () => {
   assert.match(html, /&lt;script/);
   assert.doesNotMatch(html, /<script>/);
   assert.equal(escapeHtml('"<&>'), "&quot;&lt;&amp;&gt;");
+});
+
+test("html sanitizer removes dangerous tags, handlers, and unsafe urls", () => {
+  const input = `
+    <p onclick="alert(1)" style="color:red">hello <strong>world</strong></p>
+    <script>alert(1)</script>
+    <img src="javascript:alert(1)" onerror="alert(2)" alt="x">
+    <img src="/api/image-proxy?url=safe" loading="lazy" alt="ok">
+    <a href="javascript:alert(1)" target="_blank">bad</a>
+    <a href="https://example.com/x" target="_blank">good</a>
+    <iframe src="https://evil.example"></iframe>
+  `;
+  const html = sanitizeHtml(input);
+  assert.doesNotMatch(html, /<script/i);
+  assert.doesNotMatch(html, /onclick/i);
+  assert.doesNotMatch(html, /onerror/i);
+  assert.doesNotMatch(html, /style=/i);
+  assert.doesNotMatch(html, /javascript:/i);
+  assert.doesNotMatch(html, /iframe/i);
+  assert.match(html, /<strong>world<\/strong>/);
+  assert.match(html, /<img src="\/api\/image-proxy\?url=safe" loading="lazy" alt="ok">/);
+  assert.match(html, /<a href="https:\/\/example\.com\/x" target="_blank" rel="noopener noreferrer">good<\/a>/);
+});
+
+test("renderPostContent sanitizes existing HTML blocks", () => {
+  const html = renderPostContent('<div><img src="javascript:alert(1)" onerror="x"><p>safe</p></div>');
+  assert.doesNotMatch(html, /javascript:/i);
+  assert.doesNotMatch(html, /onerror/i);
+  assert.match(html, /<p>safe<\/p>/);
 });
 
 test("upload validation accepts only matching image signatures", () => {
