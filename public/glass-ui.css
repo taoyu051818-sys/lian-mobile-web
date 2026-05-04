@@ -236,6 +236,141 @@
     inset 0 1px 0 rgba(255, 255, 255, 0.5);
 }
 
+.publish-glass-section,
+.publish-review-section {
+  margin: 12px;
+  padding: 14px;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.82), rgba(255, 255, 255, 0.48)),
+    rgba(255, 255, 255, 0.52);
+}
+
+.publish-review-section {
+  display: grid;
+  gap: 12px;
+}
+
+.publish-review-tip {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+  padding: 12px;
+}
+
+.publish-review-tip strong {
+  display: block;
+  font-size: 14px;
+}
+
+.publish-review-tip p {
+  margin: 3px 0 0;
+  color: rgba(79, 87, 83, 0.78);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.publish-glass-field {
+  display: grid;
+  gap: 7px;
+  padding: 12px;
+}
+
+.publish-glass-field > span {
+  color: rgba(58, 66, 61, 0.76);
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.publish-glass-field input,
+.publish-glass-field textarea {
+  width: 100%;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: rgba(18, 25, 21, 0.95);
+  font-weight: 700;
+}
+
+.publish-glass-field textarea {
+  resize: vertical;
+  line-height: 1.55;
+}
+
+.publish-glass-field small {
+  color: rgba(79, 87, 83, 0.68);
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.publish-review-location {
+  width: 100%;
+  justify-content: flex-start;
+  color: rgba(36, 45, 40, 0.84);
+}
+
+.publish-audience-picker {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 9px;
+}
+
+.publish-audience-option {
+  width: 100%;
+  min-height: 44px;
+}
+
+.publish-audience-option.is-active {
+  background:
+    linear-gradient(135deg, rgba(27, 30, 27, 0.94), rgba(27, 30, 27, 0.76)),
+    rgba(27, 30, 27, 0.86);
+  color: #fff;
+}
+
+.ai-risk-list {
+  display: grid;
+  gap: 6px;
+  padding: 12px;
+}
+
+.ai-risk-list p {
+  margin: 0;
+  color: rgba(95, 52, 35, 0.9);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.publish-actions-glass {
+  position: sticky;
+  bottom: calc(12px + env(safe-area-inset-bottom));
+  z-index: 12;
+  display: grid;
+  gap: 9px;
+  margin: 12px;
+  padding: 12px;
+}
+
+.publish-actions-glass button {
+  width: 100%;
+  min-height: 48px;
+}
+
+.publish-upload-zone,
+.publish-image-thumb,
+.publish-status,
+.publish-actions,
+.channel-composer,
+.map-v2-toolbar,
+.map-filterbar,
+.detail-bottom-actions,
+.reply-form,
+.auth-sheet::backdrop,
+.publish-sheet::backdrop,
+.avatar-crop-sheet::backdrop {
+  -webkit-backdrop-filter: blur(14px) saturate(1.15);
+  backdrop-filter: blur(14px) saturate(1.15);
+}
+
 .back-button,
 .icon-button,
 .publish-image-remove,
@@ -243,9 +378,32 @@
 .map-chip,
 .message-tab,
 .profile-tab,
-.publish-audience-option {
-  -webkit-backdrop-filter: blur(14px) saturate(1.15);
-  backdrop-filter: blur(14px) saturate(1.15);
+.publish-audience-option,
+.publish-actions button,
+.publish-tools button,
+.auth-tab,
+.auth-code-row button,
+.avatar-crop-actions button,
+.sheet-close {
+  border: 1px solid rgba(255, 255, 255, 0.52);
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.78), rgba(255, 255, 255, 0.42)),
+    rgba(255, 255, 255, 0.48);
+  color: rgba(20, 27, 24, 0.9);
+  box-shadow:
+    0 10px 24px rgba(22, 32, 27, 0.13),
+    inset 0 1px 0 rgba(255, 255, 255, 0.62);
+  -webkit-backdrop-filter: blur(14px) saturate(1.18);
+  backdrop-filter: blur(14px) saturate(1.18);
+}
+
+.primary,
+.publish-actions button.primary {
+  background:
+    linear-gradient(135deg, rgba(27, 30, 27, 0.94), rgba(27, 30, 27, 0.78)),
+    rgba(27, 30, 27, 0.86);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.25);
 }
 
 @supports not selector(:has(*)) {
