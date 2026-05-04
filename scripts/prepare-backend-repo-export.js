@@ -31,7 +31,7 @@ const FRONTEND_ONLY_PATHS = new Set([
 
 const SECRET_FILE_PATTERNS = [
   /^\.env$/,
-  /^\.env\./,
+  /^\.env\.(?!example$).+/,
   /(^|\/)auth-users\.json$/,
   /(^|\/)sessions\.json$/,
   /(^|\/)email-codes\.json$/,
@@ -113,7 +113,50 @@ async function copyPath(sourcePath, destPath, relativePath, manifest) {
 }
 
 async function writeBackendReadme(manifest) {
-  const content = `# lian-platform-server bootstrap export\n\nThis directory was generated from \`lian-mobile-web-full\` by:\n\n\`\`\`bash\nnode scripts/prepare-backend-repo-export.js ${targetArg}\n\`\`\`\n\n## Purpose\n\nThis is the non-destructive Phase 1 backend repo bootstrap workspace for LIAN. It preserves the current backend runtime behavior first; it does not migrate framework, database, feed ranking, auth, or publish behavior.\n\n## Expected first validation\n\nRun from this export directory after installing any dependencies needed by the deployment environment:\n\n\`\`\`bash\nnode --check server.js\nfind src/server -name '*.js' -maxdepth 2 -print0 | xargs -0 -n1 node --check\nnpm test\nnpm run check\nnpm run test:routes\nnode --test test/audience-regression.test.mjs\n\`\`\`\n\n## Split boundary\n\n- Backend owns: \`server.js\`, \`src/server/*\`, \`data/*\`, backend validators/tests, NodeBB integration, AI adapters, auth/session, upload/image proxy, feed, map data/admin APIs, and metadata writes.\n- Frontend repo keeps: \`public/*\`, \`scripts/smoke-frontend.js\`, and \`docs/agent/contracts/api-contract.md\`.\n\n## Deliberately excluded\n\nThis export deliberately excludes frontend static files and local secrets/runtime-only files such as \`.env\`, auth users, sessions, email codes, and user cache.\n\n## Manifest\n\nSee \`repo-split-manifest.json\` for copied and skipped paths.\n\nGenerated at: ${manifest.generatedAt}\nSource root: ${rootDir}\n`;\n  await fs.writeFile(path.join(targetDir, "BACKEND_BOOTSTRAP.md"), content, "utf8");
+  const content = [
+    "# lian-platform-server bootstrap export",
+    "",
+    "This directory was generated from `lian-mobile-web-full` by:",
+    "",
+    "```bash",
+    `node scripts/prepare-backend-repo-export.js ${targetArg}`,
+    "```",
+    "",
+    "## Purpose",
+    "",
+    "This is the non-destructive Phase 1 backend repo bootstrap workspace for LIAN. It preserves the current backend runtime behavior first; it does not migrate framework, database, feed ranking, auth, or publish behavior.",
+    "",
+    "## Expected first validation",
+    "",
+    "Run from this export directory after installing any dependencies needed by the deployment environment:",
+    "",
+    "```bash",
+    "node --check server.js",
+    "find src/server -name '*.js' -maxdepth 2 -print0 | xargs -0 -n1 node --check",
+    "npm test",
+    "npm run check",
+    "npm run test:routes",
+    "node --test test/audience-regression.test.mjs",
+    "```",
+    "",
+    "## Split boundary",
+    "",
+    "- Backend owns: `server.js`, `src/server/*`, `data/*`, backend validators/tests, NodeBB integration, AI adapters, auth/session, upload/image proxy, feed, map data/admin APIs, and metadata writes.",
+    "- Frontend repo keeps: `public/*`, `scripts/smoke-frontend.js`, and `docs/agent/contracts/api-contract.md`.",
+    "",
+    "## Deliberately excluded",
+    "",
+    "This export deliberately excludes frontend static files and local secrets/runtime-only files such as `.env`, auth users, sessions, email codes, and user cache.",
+    "",
+    "## Manifest",
+    "",
+    "See `repo-split-manifest.json` for copied and skipped paths.",
+    "",
+    `Generated at: ${manifest.generatedAt}`,
+    `Source root: ${rootDir}`,
+    ""
+  ].join("\n");
+  await fs.writeFile(path.join(targetDir, "BACKEND_BOOTSTRAP.md"), content, "utf8");
 }
 
 async function writeManifest(manifest) {
