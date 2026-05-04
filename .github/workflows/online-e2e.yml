@@ -44,7 +44,10 @@ jobs:
           find src/server -name "*.js" -print0 | xargs -0 -n1 node --check
 
       - name: Project structure check
-        run: node scripts/validate-project-structure.js
+        run: npm run check
+
+      - name: Unit regression tests
+        run: npm test
 
       - name: Check online E2E configuration
         env:
