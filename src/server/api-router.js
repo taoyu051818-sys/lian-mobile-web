@@ -37,24 +37,41 @@ import {
   handleTogglePostSave
 } from "./post-service.js";
 import { requireSameOrigin } from "./request-security.js";
+import { isProductionMode, securityModeName } from "./security-mode.js";
 import { readJsonBody, requireAdmin } from "./request-utils.js";
 import { mapItems } from "./static-data.js";
 import { handleUploadImage } from "./upload.js";
+
+function setupStatusPayload() {
+  const base = {
+    required: isSetupRequired(),
+    configured: !isSetupRequired(),
+    securityMode: securityModeName(),
+    cloudinaryConfigured: Boolean(config.cloudinaryUrl),
+    mailConfigured: Boolean(config.resendApiKey || config.smtpHost)
+  };
+  if (isProductionMode()) return base;
+  return {
+    ...base,
+    nodebbBaseUrl: config.nodebbBaseUrl,
+    nodebbPublicBaseUrl: config.nodebbPublicBaseUrl,
+    nodebbUid: config.nodebbUid,
+    nodebbCid: config.nodebbCid,
+    nodebbChannelCid: config.nodebbChannelCid,
+    dataSource: "api",
+    remoteAuthBaseUrl: config.remoteAuthBaseUrl
+  };
+}
 
 async function handleApi(req, reqUrl, res) {
   try {
     requireSameOrigin(req);
 
     if (req.method === "GET" && reqUrl.pathname === "/api/setup/status") {
-      return sendJson(res, 200, {
-        required: isSetupRequired(),
-        configured: !isSetupRequired(),
-        cloudinaryConfigured: Boolean(config.cloudinaryUrl),
-        mailConfigured: Boolean(config.resendApiKey || config.smtpHost)
-      });
+      return sendJson(res, 200, setupStatusPayload());
     }
     if (req.method === "POST" && reqUrl.pathname === "/api/setup") {
-      if (!isSetupRequired()) requireAdmin(req);
+      if (!isSetupRequired() && isProductionMode()) requireAdmin(req);
       const payload = await readJsonBody(req);
       await saveSetupConfig(payload, () => {
         memory.feedPages.clear();
@@ -64,7 +81,7 @@ async function handleApi(req, reqUrl, res) {
     }
     if (req.method === "GET" && reqUrl.pathname === "/api/image-proxy") return await handleImageProxy(reqUrl, res);
     if (req.method === "GET" && reqUrl.pathname === "/api/internal/task-board") {
-      requireAdmin(req);
+      if (isProductionMode()) requireAdmin(req);
       return await handleTaskBoard(req, res);
     }
     if (req.method === "GET" && reqUrl.pathname === "/api/alias-pool") return await handleGetAliasPool(req, res);
@@ -133,4 +150,4 @@ async function handleApi(req, reqUrl, res) {
   }
 }
 
-export { handleApi };
+export { handleApi, setupStatusPayload };
