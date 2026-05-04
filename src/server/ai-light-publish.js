@@ -16,6 +16,7 @@ import {
   AI_DEFAULT_METADATA,
   clampNumber,
   compactStringArray,
+  normalizeHashtags,
   normalizeLocationDraft,
   normalizeRiskFlags,
   truncateText
@@ -49,8 +50,8 @@ function normalizeAiPublishMetadata(value = {}, locationDraft = {}, request = {}
   return {
     ...AI_DEFAULT_METADATA,
     contentType,
-    vibeTags: compactStringArray(input.vibeTags, 5, 16),
-    sceneTags: compactStringArray(input.sceneTags, 5, 16),
+    vibeTags: normalizeHashtags(input.vibeTags, 5),
+    sceneTags: normalizeHashtags(input.sceneTags, 5),
     locationId: "",
     locationArea,
     qualityScore: clampNumber(input.qualityScore),
@@ -111,7 +112,7 @@ function normalizeAiPostPayload(payload = {}, { requireImage = false } = {}) {
     imageUrls,
     title,
     body,
-    tags: compactStringArray(payload.tags, 5, 16),
+    tags: normalizeHashtags(payload.tags, 5),
     metadata,
     locationDraft,
     riskFlags: normalizeRiskFlags(payload.riskFlags),
