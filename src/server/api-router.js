@@ -65,7 +65,10 @@ async function handleApi(req, reqUrl, res) {
       return sendJson(res, 200, { ok: true, configured: true });
     }
     if (req.method === "GET" && reqUrl.pathname === "/api/image-proxy") return await handleImageProxy(reqUrl, res);
-    if (req.method === "GET" && reqUrl.pathname === "/api/internal/task-board") return await handleTaskBoard(req, res);
+    if (req.method === "GET" && reqUrl.pathname === "/api/internal/task-board") {
+      requireAdmin(req);
+      return await handleTaskBoard(req, res);
+    }
     if (req.method === "GET" && reqUrl.pathname === "/api/alias-pool") return await handleGetAliasPool(req, res);
     if (req.method === "POST" && reqUrl.pathname === "/api/ai/post-preview") return await handleAiPostPreview(req, res);
     if (reqUrl.pathname.startsWith("/api/admin/")) return await handleAdmin(req, reqUrl, res);
