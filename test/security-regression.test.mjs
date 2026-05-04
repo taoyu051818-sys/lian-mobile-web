@@ -6,6 +6,7 @@ import { escapeHtml, buildTextPostHtml, renderPostContent, sanitizeHtml } from "
 import { isAllowedImageUrl } from "../src/server/image-proxy.js";
 import { assertRateLimit, checkRateLimit, clearRateLimits } from "../src/server/rate-limit.js";
 import { getRequestOrigin, isSameOriginRequest, requireSameOrigin } from "../src/server/request-security.js";
+import { isProductionMode } from "../src/server/security-mode.js";
 import { detectImageType, validateImageFile, MAX_UPLOAD_IMAGE_BYTES } from "../src/server/upload.js";
 
 const SCHOOL_NAME = "中国传媒大学海南国际学院";
@@ -16,6 +17,18 @@ const campusUser = {
   tags: [SCHOOL_ID, "高校认证"],
   status: "active"
 };
+
+function withSecurityMode(mode, fn) {
+  const previous = process.env.LIAN_SECURITY_MODE;
+  if (mode === undefined) delete process.env.LIAN_SECURITY_MODE;
+  else process.env.LIAN_SECURITY_MODE = mode;
+  try {
+    return fn();
+  } finally {
+    if (previous === undefined) delete process.env.LIAN_SECURITY_MODE;
+    else process.env.LIAN_SECURITY_MODE = previous;
+  }
+}
 
 test("linkOnly posts are hidden from feed and map but visible on detail when public", () => {
   const post = { visibility: "public", audience: { visibility: "public", linkOnly: true } };
@@ -103,27 +116,42 @@ test("renderPostContent sanitizes existing HTML blocks", () => {
   assert.match(html, /<p>safe<\/p>/);
 });
 
-test("rate limiter blocks repeated attempts within a window", () => {
+test("security mode is development by default and production when explicitly enabled", () => {
+  withSecurityMode("development", () => assert.equal(isProductionMode(), false));
+  withSecurityMode("production", () => assert.equal(isProductionMode(), true));
+});
+
+test("rate limiter is disabled in development and enforceable in production", () => {
   clearRateLimits();
-  assert.equal(assertRateLimit("login:test", { max: 2, windowMs: 1000, now: 100 }).remaining, 1);
-  assert.equal(assertRateLimit("login:test", { max: 2, windowMs: 1000, now: 200 }).remaining, 0);
-  assert.throws(() => assertRateLimit("login:test", { max: 2, windowMs: 1000, now: 300 }), (error) => {
-    assert.equal(error.status, 429);
-    assert.equal(error.retryAfterSeconds, 1);
-    return true;
+  withSecurityMode("development", () => {
+    const result = assertRateLimit("login:test", { max: 1, windowMs: 1000, now: 100 });
+    assert.equal(result.disabled, true);
+    assert.doesNotThrow(() => assertRateLimit("login:test", { max: 1, windowMs: 1000, now: 200 }));
   });
-  assert.equal(assertRateLimit("login:test", { max: 2, windowMs: 1000, now: 1200 }).remaining, 1);
+  withSecurityMode("production", () => {
+    clearRateLimits();
+    assert.equal(assertRateLimit("login:test", { max: 2, windowMs: 1000, now: 100 }).remaining, 1);
+    assert.equal(assertRateLimit("login:test", { max: 2, windowMs: 1000, now: 200 }).remaining, 0);
+    assert.throws(() => assertRateLimit("login:test", { max: 2, windowMs: 1000, now: 300 }), (error) => {
+      assert.equal(error.status, 429);
+      assert.equal(error.retryAfterSeconds, 1);
+      return true;
+    });
+    assert.equal(assertRateLimit("login:test", { max: 2, windowMs: 1000, now: 1200 }).remaining, 1);
+  });
 });
 
-test("rate limiter keys include client ip and subject", () => {
-  clearRateLimits();
-  const req = { headers: { "x-forwarded-for": "203.0.113.1, 10.0.0.1" } };
-  checkRateLimit(req, "email-code", "student@example.edu", { max: 1, windowMs: 1000 });
-  assert.throws(() => checkRateLimit(req, "email-code", "student@example.edu", { max: 1, windowMs: 1000 }), /too many requests/);
-  assert.doesNotThrow(() => checkRateLimit(req, "email-code", "other@example.edu", { max: 1, windowMs: 1000 }));
+test("rate limiter keys include client ip and subject in production", () => {
+  withSecurityMode("production", () => {
+    clearRateLimits();
+    const req = { headers: { "x-forwarded-for": "203.0.113.1, 10.0.0.1" } };
+    checkRateLimit(req, "email-code", "student@example.edu", { max: 1, windowMs: 1000 });
+    assert.throws(() => checkRateLimit(req, "email-code", "student@example.edu", { max: 1, windowMs: 1000 }), /too many requests/);
+    assert.doesNotThrow(() => checkRateLimit(req, "email-code", "other@example.edu", { max: 1, windowMs: 1000 }));
+  });
 });
 
-test("same-origin guard blocks cross-site state-changing requests", () => {
+test("same-origin guard is disabled in development and blocks cross-site mutations in production", () => {
   const baseReq = {
     method: "POST",
     headers: {
@@ -133,9 +161,14 @@ test("same-origin guard blocks cross-site state-changing requests", () => {
   };
   assert.equal(getRequestOrigin(baseReq), "http://149.104.21.74:4100");
   assert.equal(isSameOriginRequest(baseReq), true);
-  assert.doesNotThrow(() => requireSameOrigin(baseReq));
-  assert.doesNotThrow(() => requireSameOrigin({ ...baseReq, method: "GET", headers: { ...baseReq.headers, origin: "https://evil.example" } }));
-  assert.throws(() => requireSameOrigin({ ...baseReq, headers: { ...baseReq.headers, origin: "https://evil.example" } }), /cross-origin/);
+  withSecurityMode("development", () => {
+    assert.doesNotThrow(() => requireSameOrigin({ ...baseReq, headers: { ...baseReq.headers, origin: "https://evil.example" } }));
+  });
+  withSecurityMode("production", () => {
+    assert.doesNotThrow(() => requireSameOrigin(baseReq));
+    assert.doesNotThrow(() => requireSameOrigin({ ...baseReq, method: "GET", headers: { ...baseReq.headers, origin: "https://evil.example" } }));
+    assert.throws(() => requireSameOrigin({ ...baseReq, headers: { ...baseReq.headers, origin: "https://evil.example" } }), /cross-origin/);
+  });
 });
 
 test("same-origin guard respects forwarded proto and host", () => {
