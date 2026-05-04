@@ -260,6 +260,40 @@
   background: rgba(255, 255, 255, 0.56);
 }
 
+.toast-host {
+  position: fixed;
+  top: calc(12px + env(safe-area-inset-top));
+  right: 12px;
+  left: 12px;
+  z-index: 200;
+  display: grid;
+  gap: var(--space-2);
+  pointer-events: none;
+}
+
+.toast-host__item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  width: min(100%, 520px);
+  margin: 0 auto;
+  pointer-events: auto;
+}
+
+.toast-host__item button {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  min-width: 28px;
+  place-items: center;
+  border: 0;
+  border-radius: var(--radius-orb);
+  background: rgba(255, 255, 255, 0.42);
+  color: currentColor;
+  font-weight: 900;
+}
+
 .lian-toast {
   padding: var(--space-3) var(--space-4);
   border-radius: var(--radius-card);
