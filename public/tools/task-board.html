@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>LIAN Task Board</title>
+    <link rel="stylesheet" href="/tools/task-board.css">
+  </head>
+  <body>
+    <div class="shell">
+      <header class="topbar">
+        <h1>LIAN Task Board</h1>
+        <div class="counts">
+          <span>Total: <span class="count-val" id="countTotal">0</span></span>
+          <span>Blocked: <span class="count-val" id="countBlocked">0</span></span>
+          <span>Human: <span class="count-val" id="countHuman">0</span></span>
+        </div>
+        <div class="queue-summary" id="queueSummary"></div>
+      </header>
+
+      <aside class="sidebar" id="sidebar"></aside>
+
+      <section class="main">
+        <table class="task-table">
+          <thead>
+            <tr>
+              <th data-sort="title">Title <span class="sort-arrow">&#x25B4;</span></th>
+              <th data-sort="status">Status <span class="sort-arrow">&#x25B4;</span></th>
+              <th data-sort="priority">Priority <span class="sort-arrow">&#x25B4;</span></th>
+              <th data-sort="category">Category <span class="sort-arrow">&#x25B4;</span></th>
+              <th data-sort="humanAssisted">Human <span class="sort-arrow">&#x25B4;</span></th>
+            </tr>
+          </thead>
+          <tbody id="taskBody"></tbody>
+        </table>
+      </section>
+
+      <aside class="detail" id="detailPanel">
+        <div class="detail-empty">Select a task to view details</div>
+      </aside>
+    </div>
+
+    <script src="/tools/task-board.js"></script>
+  </body>
+</html>

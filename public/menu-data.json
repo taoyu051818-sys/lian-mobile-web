@@ -1,0 +1,1092 @@
+{
+  "store": "贝可Bakell轻食店",
+  "generatedFrom": "C:/Users/LENOVO/Downloads/full_menu_with_image_urls.md",
+  "categoryCount": 16,
+  "itemCount": 125,
+  "priceRange": [
+    0,
+    198
+  ],
+  "categories": [
+    {
+      "name": "必选品",
+      "items": [
+        {
+          "index": 1,
+          "spuId": "1137480620553",
+          "name": "午餐11:50-12:10",
+          "price": 0,
+          "soldOut": false,
+          "imageUrl": "https://s.koubei.com/ZS2A7HFWp7cSfAKCmyPmyjBZaAKkDGR7.jpg"
+        },
+        {
+          "index": 2,
+          "spuId": "1223606840553",
+          "name": "下午茶 16:00-16:30",
+          "price": 0,
+          "soldOut": false,
+          "imageUrl": "https://s.koubei.com/kX7sDPAtxZpndYntiHsSzHy2Nk2kxXmt.jpeg"
+        },
+        {
+          "index": 3,
+          "spuId": "1128610710553",
+          "name": "晚餐18:10-18:30",
+          "price": 0,
+          "soldOut": false,
+          "imageUrl": "https://s.koubei.com/R4DA5Nkzfr7G2WsKSnjSTM3pENkn6nnh.jpg"
+        },
+        {
+          "index": 4,
+          "spuId": "1141712060553",
+          "name": "宵夜21:00-21:30",
+          "price": 0,
+          "soldOut": false,
+          "imageUrl": "https://s.koubei.com/afFckTTfm4x2br8NpihtW8n2tEMP6yWB.jpeg"
+        },
+        {
+          "index": 5,
+          "spuId": "1140924480553",
+          "name": "满58大学城随时配送",
+          "price": 0,
+          "soldOut": false,
+          "imageUrl": "https://s.koubei.com/yA7QWtKG5DnW7bKhwdR2we5GrcTFjh6k.jpeg"
+        },
+        {
+          "index": 6,
+          "spuId": "1132134780553",
+          "name": "堂食（10:00-22:00)",
+          "price": 0,
+          "soldOut": false,
+          "imageUrl": "https://s.koubei.com/jjsHz4BdadSXZi6Y8sFJyHcfcDH8Dcx4.jpeg"
+        },
+        {
+          "index": 7,
+          "spuId": "1715252610553",
+          "name": "自提（10:00-22:00)",
+          "price": 0,
+          "soldOut": false,
+          "imageUrl": "https://s.koubei.com/P5BSSNWmwMsS7Bnip2tTHTiAdBizmF3Z.jpeg"
+        }
+      ]
+    },
+    {
+      "name": "超值套餐",
+      "items": [
+        {
+          "index": 1,
+          "spuId": "1076677650553",
+          "name": "双人欢享套餐",
+          "price": 98,
+          "soldOut": false,
+          "imageUrl": "https://s.koubei.com/CiPEpjfBFGkk8dGkx723BrRDyjZnhbKB.png"
+        },
+        {
+          "index": 2,
+          "spuId": "1079776690553",
+          "name": "炸炸套餐",
+          "price": 30.8,
+          "soldOut": false,
+          "imageUrl": "https://s.koubei.com/K7mabCsp3H4kCB7XHctxy3iEy8wH2EeJ.jpg"
+        },
+        {
+          "index": 3,
+          "spuId": "1944708840553",
+          "name": "单人意面沙拉套餐",
+          "price": 43,
+          "soldOut": false,
+          "imageUrl": "https://s.koubei.com/ykAjMBd7KKyZ5GXHZpSyNxrbnERyTPkr.png"
+        },
+        {
+          "index": 4,
+          "spuId": "2016855050553",
+          "name": "单人披萨套餐",
+          "price": 69,
+          "soldOut": false,
+          "imageUrl": "https://s.koubei.com/2HNC4aJyWzjpY8GDzQTTfApwJHTmQbBF.jpeg"
+        }
+      ]
+    },
+    {
+      "name": "披萨",
+      "items": [
+        {
+          "index": 1,
+          "spuId": "1960162540553",
+          "name": "金沙南瓜培根披萨",
+          "price": 58,
+          "soldOut": false,
+          "imageUrl": "https://s.koubei.com/d4CyD82HHXANBWhrrXrxHdS4ndKciZkj.jpeg"
+        },
+        {
+          "index": 2,
+          "spuId": "1954277870553",
+          "name": "欢辣肉丸土豆披萨",
+          "price": 58,
+          "soldOut": false,
+          "imageUrl": "https://s.koubei.com/55h5JN7GZiEPEfieCxEEzGKaBjbHMPnX.jpeg"
+        },
+        {
+          "index": 3,
+          "spuId": "1954277850553",
+          "name": "夏威夷披萨",
+          "price": 58,
+          "soldOut": false,
+          "imageUrl": "https://s.koubei.com/rhPenhnwQEr7yzQHFjETWGfhEEP6NSth.jpeg"
+        },
+        {
+          "index": 4,
+          "spuId": "1936819000553",
+          "name": "墨西哥辣鸡肉披萨",
+          "price": 58,
+          "soldOut": false,
+          "imageUrl": "https://s.koubei.com/pzix6Mzz2rSkNKxpkKEsZphkZDeCn6ce.jpeg"
+        },
+        {
+          "index": 5,
+          "spuId": "1960044390553",
+          "name": "布法罗鸡肉披萨",
+          "price": 58,
+          "soldOut": false,
+          "imageUrl": "https://s.koubei.com/eiK8X4TT8yAFzTa4cnkaDHBf6bBzax4r.jpeg"
+        },
+        {
+          "index": 6,
+          "spuId": "1954632400553",
+          "name": "流沙芋泥披萨",
+          "price": 58,
+          "soldOut": false,
+          "imageUrl": "https://s.koubei.com/WGKt3xa5knn446zZHZtXX7cy5bRYCNnc.jpeg"
+        },
+        {
+          "index": 7,
+          "spuId": "1027739820553",
+          "name": "黑松露牛肝菌披萨",
+          "price": 66,
+          "soldOut": false,
+          "imageUrl": "https://s.koubei.com/FF2NSCA8sSFYmdsiesZBysFyabfZm6RW.jpg"
+        },
+        {
+          "index": 8,
+          "spuId": "1041559930553",
+          "name": "玛格丽特披萨",
+          "price": 66,
+          "soldOut": false,
+          "imageUrl": "https://s.koubei.com/tB2MBWHAQA2FStHJNsysymnMwBYw3zQk.jpeg"
+        },
+        {
+          "index": 9,
+          "spuId": "1034749180553",
+          "name": "萨拉米披萨",
+          "price": 68,
+          "soldOut": false,
+          "imageUrl": "https://s.koubei.com/EdSYdCDrMxw2y3TbcCNTADnPJ6MJiEkB.jpg"
+        },
+        {
+          "index": 10,
+          "spuId": "1035288800553",
+          "name": "榴莲披萨",
+          "price": 68,
+          "soldOut": false,
+          "imageUrl": "https://s.koubei.com/hGEWddjN3DrzRRcd8PAAm7b2f5AFH7sb.jpg"
+        },
+        {
+          "index": 11,
+          "spuId": "1027699980553",
+          "name": "青酱火腿披萨",
+          "price": 68,
+          "soldOut": false,
+          "imageUrl": "https://s.koubei.com/NtQFXDZPPKrBDs3HmrCx2aswsE8SWBKw.jpeg"
+        },
+        {
+          "index": 12,
+          "spuId": "1041679770553",
+          "name": "奥尔良鸡肉披萨",
+          "price": 68,
+          "soldOut": false,
+          "imageUrl": "https://s.koubei.com/MAjQ5pj2M5ACp78z4JrCfdxaJp8ywi83.jpg"
+        },
+        {
+          "index": 13,
+          "spuId": "1260661000553",
+          "name": "一人食底特律披萨",
+          "price": 37,
+          "soldOut": false,
+          "imageUrl": "https://s.koubei.com/bXDa7ABJCpwamfpa2iQWaR56xiNGrPzF.jpeg"
+        },
+        {
+          "index": 14,
+          "spuId": "1268608590553",
+          "name": "底特律方形披萨",
+          "price": 56,
+          "soldOut": false,
+          "imageUrl": "https://s.koubei.com/jGmKYWywNHzPAEEzdYkDK7H7fRXRyhFE.jpeg"
+        }
+      ]
+    },
+    {
+      "name": "轻食",
+      "items": [
+        {
+          "index": 1,
+          "spuId": "1398350970553",
+          "name": "瑞典小肉丸沙拉碗",
+          "price": 23.8,
+          "soldOut": false,
+          "imageUrl": "https://s.koubei.com/W83YMBt6w4Gmc6Ac8f2p4FnRW44NHH6M.png"
+        },
+        {
+          "index": 2,
+          "spuId": "1882181010553",
+          "name": "芒果蟹柳滑蛋沙拉碗",
+          "price": 25.8,
+          "soldOut": false,
+          "imageUrl": "https://s.koubei.com/ZDecKWA8ajW2tE2pfPZykkjssb4D36Sc.png"
+        },
+        {
+          "index": 3,
+          "spuId": "1092882000553",
+          "name": "牛肉沙拉碗",
+          "price": 26.8,
+          "soldOut": false,
+          "imageUrl": "https://s.koubei.com/YMHmmbpnwzGXXmtskMKTwfJDHcrrcZJ6.png"
+        },
+        {
+          "index": 4,
+          "spuId": "1215791670553",
+          "name": "鸡不可失沙拉碗",
+          "price": 25.8,
+          "soldOut": false,
+          "imageUrl": "https://s.koubei.com/mMRhzSE8Hh8iMW3473a7N83NPwwKcAtF.png"
+        },
+        {
+          "index": 5,
+          "spuId": "1729341310553",
+          "name": "鸡腿排沙拉碗",
+          "price": 24.8,
+          "soldOut": false,
+          "imageUrl": "https://s.koubei.com/wxGXHsw67j67e5Bf8BS82rAcFsJzkNyS.jpeg"
+        },
+        {
+          "index": 6,
+          "spuId": "1056824870553",
+          "name": "元气蔬菜沙拉碗",
+          "price": 18.8,
+          "soldOut": false,
+          "imageUrl": "https://s.koubei.com/MS8YCknSd5eX6YPKd32NpzRfBe2JH4hf.png"
+        },
+        {
+          "index": 7,
+          "spuId": "1889577480553",
+          "name": "烤南瓜/红薯虾仁沙拉碗",
+          "price": 26.9,
+          "soldOut": false,
+          "imageUrl": "https://s.koubei.com/T54HfrmrHyEKmyJtwT3GehPipQ7MSGGt.jpeg"
+        },
+        {
+          "index": 8,
+          "spuId": "1474133190553",
+          "name": "水果酸奶碗",
+          "price": 30.9,
+          "soldOut": false,
+          "imageUrl": "https://s.koubei.com/GAW2Ez5rsxdEjRFA7kGEpRFhRtfkrcab.jpeg"
+        },
+        {
+          "index": 9,
+          "spuId": "1762737010553",
+          "name": "荞麦面自选沙拉盒子",
+          "price": 16.8,
+          "soldOut": false,
+          "imageUrl": "https://s.koubei.com/KxjemjdF24ckAdNWQrKTYFjdQBNEBQPS.png"
+        },
+        {
+          "index": 10,
+          "spuId": "1762813710553",
+          "name": "土豆泥自选沙拉盒子",
+          "price": 19.8,
+          "soldOut": false,
+          "imageUrl": "https://s.koubei.com/xhdaWRtdz4zDeWnE5j2JRcS3jeeHE7yz.png"
+        },
+        {
+          "index": 11,
+          "spuId": "1766949850553",
+          "name": "可颂自选沙拉盒子",
+          "price": 21.8,
+          "soldOut": false,
+          "imageUrl": "https://s.koubei.com/Cy3jxY8jWhknH7K34b3R5QPtp74eEscp.png"
+        },
+        {
+          "index": 12,
+          "spuId": "1778196790553",
+          "name": "法棍自选沙拉盒子",
+          "price": 19.8,
+          "soldOut": false,
+          "imageUrl": "https://s.koubei.com/5r6He27E68bS77YdxC75mY3H3NBXdbry.jpeg"
+        },
+        {
+          "index": 13,
+          "spuId": "1987856920553",
+          "name": "菠萝虾仁饭（不含菠萝外壳）",
+          "price": 28,
+          "soldOut": false,
+          "imageUrl": "https://s.koubei.com/DrsKcxTwizfZd7CZDmdyGydp3szKTrAG.jpeg"
+        }
+      ]
+    },
+    {
+      "name": "小食",
+      "items": [
+        {
+          "index": 1,
+          "spuId": "1459119830553",
+          "name": "招牌美式乡村烤鸡（整鸡+薯角）",
+          "price": 48,
+          "soldOut": false,
+          "imageUrl": "https://s.koubei.com/rzBdRPSJ8a6NNx57SbhP6TBfsdACMQp7.jpeg"
+        },
+        {
+          "index": 2,
+          "spuId": "1076954300553",
+          "name": "香肠薯条拼盘",
+          "price": 31.8,
+          "soldOut": false,
+          "imageUrl": "https://s.koubei.com/7sKRpQbz7Br4ncMj6pRSTWGKXDRkStd2.jpeg"
+        },
+        {
+          "index": 3,
+          "spuId": "1882147540553",
+          "name": "番茄肉酱薯条",
+          "price": 25.8,
+          "soldOut": false,
+          "imageUrl": "https://s.koubei.com/XBirCYDATjxBKtweE36ADbxdBJJQafA6.png"
+        },
+        {
+          "index": 4,
+          "spuId": "1055543470553",
+          "name": "薯你好吃拼盘",
+          "price": 21.8,
+          "soldOut": false,
+          "imageUrl": "https://s.koubei.com/HTx8RFt2hwMrTnFC8XRibiTcp5XBcA8d.jpeg"
+        },
+        {
+          "index": 5,
+          "spuId": "1420843460553",
+          "name": "鸡排薯条拼盘",
+          "price": 28.8,
+          "soldOut": false,
+          "imageUrl": "https://s.koubei.com/AQFP8JbWN5Zz7enbQbxTfXEp5C2FXxwM.jpeg"
+        },
+        {
+          "index": 6,
+          "spuId": "1435533630553",
+          "name": "双鸡脆脆盒子（鸡翅+鸡薯片）",
+          "price": 29.8,
+          "soldOut": false,
+          "imageUrl": "https://s.koubei.com/6T7tR83KHrXwFKdHbKtEMHSYFyZGGC7b.jpeg"
+        },
+        {
+          "index": 7,
+          "spuId": "1766908770553",
+          "name": "香脆鸡薯拼盘（薯格&鸡肉薯片）",
+          "price": 23.8,
+          "soldOut": false,
+          "imageUrl": "https://s.koubei.com/j2J7FeP23QPft76rbjAXnfCJZX8GazEp.jpeg"
+        }
+      ]
+    },
+    {
+      "name": "三明治&意面",
+      "items": [
+        {
+          "index": 1,
+          "spuId": "1394230510553",
+          "name": "招牌番茄肉酱意面",
+          "price": 23.9,
+          "soldOut": false,
+          "imageUrl": "https://s.koubei.com/crN8BkSXzke6GGnfnNZnC2dsX4KyPksE.jpeg"
+        },
+        {
+          "index": 2,
+          "spuId": "1418474210553",
+          "name": "黑椒牛肉意面",
+          "price": 15.9,
+          "soldOut": false,
+          "imageUrl": "https://s.koubei.com/W2D2WRJZr2ePABf5WcfXQaF3pyDJWpNK.jpeg"
+        },
+        {
+          "index": 3,
+          "spuId": "1443447230553",
+          "name": "奶油蘑菇培根意面",
+          "price": 23.9,
+          "soldOut": false,
+          "imageUrl": "https://s.koubei.com/7zpyZwjZCHNXPAFB67xJNpn3FjtW2kpQ.jpeg"
+        },
+        {
+          "index": 4,
+          "spuId": "1687239880553",
+          "name": "韩式辣金枪鱼意面",
+          "price": 26.9,
+          "soldOut": false,
+          "imageUrl": "https://s.koubei.com/D7yRSQeFFYRZBFaH8zGbxW5HpcM8Sf36.png"
+        },
+        {
+          "index": 5,
+          "spuId": "1019934460553",
+          "name": "招牌培根可颂三明治",
+          "price": 21.8,
+          "soldOut": false,
+          "imageUrl": "https://s.koubei.com/wBCdkExJCx8JQNihXzwj22nMxEahjRkJ.jpeg"
+        },
+        {
+          "index": 6,
+          "spuId": "1075431150553",
+          "name": "双重芝士黑椒徳式肠三明治",
+          "price": 22.8,
+          "soldOut": false,
+          "imageUrl": "https://s.koubei.com/yxmjaHKytCd7CMAxMWHMerkiFB4Eaakd.jpeg"
+        },
+        {
+          "index": 7,
+          "spuId": "1170373310553",
+          "name": "蟹柳滑蛋贝果三明治",
+          "price": 24.8,
+          "soldOut": false,
+          "imageUrl": "https://s.koubei.com/dKjKy4JYGtEBb3mMYz4wBnQpSW6ww4pM.jpeg"
+        }
+      ]
+    },
+    {
+      "name": "面包&贝果",
+      "items": [
+        {
+          "index": 1,
+          "spuId": "1028007100553",
+          "name": "蒜香法棍",
+          "price": 18,
+          "soldOut": false,
+          "imageUrl": "https://s.koubei.com/wAywE5KDRRy6drazMCWhFHeMPkaH383h.jpg"
+        },
+        {
+          "index": 2,
+          "spuId": "1042872810553",
+          "name": "法棍 （约28cm）",
+          "price": 13,
+          "soldOut": false,
+          "imageUrl": "https://s.koubei.com/ApwJX5KRMEtQHJ8kHK4Jy8QAhwhCerDw.jpeg"
+        },
+        {
+          "index": 3,
+          "spuId": "1021772670553",
+          "name": "蛋黄牛角包",
+          "price": 7,
+          "soldOut": false,
+          "imageUrl": "https://s.koubei.com/SGYFin6Qhc2HT6SP4hdAMyaZZTBsiNre.jpeg"
+        },
+        {
+          "index": 4,
+          "spuId": "1053947960553",
+          "name": "咸蛋黄芋泥碱水球",
+          "price": 8,
+          "soldOut": false,
+          "imageUrl": "https://s.koubei.com/WZ6fZpF83acGenPTrxTNhGJFn7dpfFjD.jpeg"
+        },
+        {
+          "index": 5,
+          "spuId": "1492240970553",
+          "name": "肉桂核桃卷",
+          "price": 14,
+          "soldOut": false,
+          "imageUrl": "https://s.koubei.com/c88AT3eQ8Yi8TJGF74tkdFtjpQKeHGXK.jpeg"
+        },
+        {
+          "index": 6,
+          "spuId": "1015099850553",
+          "name": "青柠乳酪贝果",
+          "price": 12,
+          "soldOut": false,
+          "imageUrl": "https://s.koubei.com/eEk5zahex7xAz6PMefSFGPWWcG3DJHXh.jpeg"
+        },
+        {
+          "index": 7,
+          "spuId": "1070161460553",
+          "name": "原味贝果",
+          "price": 8,
+          "soldOut": false,
+          "imageUrl": "https://s.koubei.com/tYi2n688W563XHkpdprsPBYy4kC7nzaG.jpeg"
+        },
+        {
+          "index": 8,
+          "spuId": "1281292610553",
+          "name": "黑金蓝莓乳酪贝果",
+          "price": 10,
+          "soldOut": false,
+          "imageUrl": "https://s.koubei.com/yb8D3k3MiN5mefjTCjXNGtEN7ihHMwhf.png"
+        },
+        {
+          "index": 9,
+          "spuId": "1873992540553",
+          "name": "海苔辣肉松贝果",
+          "price": 11,
+          "soldOut": false,
+          "imageUrl": "https://s.koubei.com/7RMBpNczC7Hn762EiJHdpRT2MkXk5aQe.png"
+        },
+        {
+          "index": 10,
+          "spuId": "1874031660553",
+          "name": "开心果奶酪贝果",
+          "price": 11,
+          "soldOut": false,
+          "imageUrl": "https://s.koubei.com/dK6WCTWRM4nQtzCiGjAmPPZcYApNFMpW.png"
+        },
+        {
+          "index": 11,
+          "spuId": "1861055500553",
+          "name": "花生碎碱水结",
+          "price": 10,
+          "soldOut": false,
+          "imageUrl": "https://s.koubei.com/sBKKk3hwYJycrah4Tj3xicjnF5paDzMw.png"
+        },
+        {
+          "index": 12,
+          "spuId": "2144042740553",
+          "name": "芋泥贝果",
+          "price": 11,
+          "soldOut": false,
+          "imageUrl": "https://s.koubei.com/cNQbQmxz3aKMPrktEm4BbdJBHeKwDsG7.jpeg"
+        },
+        {
+          "index": 13,
+          "spuId": "2149381130553",
+          "name": "杨枝甘露欧包",
+          "price": 14,
+          "soldOut": false,
+          "imageUrl": "https://s.koubei.com/p4fCz3ZA4BtZ5aNJ4CrZxksC7EzpeCnE.png"
+        }
+      ]
+    },
+    {
+      "name": "甜品",
+      "items": [
+        {
+          "index": 1,
+          "spuId": "1042018310553",
+          "name": "提拉米苏",
+          "price": 19,
+          "soldOut": false,
+          "imageUrl": "https://s.koubei.com/JsXxdPQpeNccKN3GKHrX5ZsEGf4FDGGa.png"
+        },
+        {
+          "index": 2,
+          "spuId": "1200325280553",
+          "name": "海盐奥利奥慕斯蛋糕",
+          "price": 21,
+          "soldOut": false,
+          "imageUrl": "https://s.koubei.com/KsEba4cZsf7i45wSyDZCJ4kWwPKjkcH4.png"
+        },
+        {
+          "index": 3,
+          "spuId": "1102191840553",
+          "name": "巴斯克",
+          "price": 21,
+          "soldOut": false,
+          "imageUrl": "https://s.koubei.com/zPQ6aGjE8kkffMMZRYfK6EcmTfPrAtzG.jpeg"
+        },
+        {
+          "index": 4,
+          "spuId": "1237939420553",
+          "name": "青柠芝士蛋糕",
+          "price": 19,
+          "soldOut": false,
+          "imageUrl": "https://s.koubei.com/Dy8yN3NZiKnwJF7DnECaPEcNk7KaNs8X.jpeg"
+        },
+        {
+          "index": 5,
+          "spuId": "1466429420553",
+          "name": "巧克力瑞士卷",
+          "price": 10.9,
+          "soldOut": false,
+          "imageUrl": "https://s.koubei.com/ykdQ5Pz3B6JYmCxRbSTWGY4eFijmxY5x.png"
+        },
+        {
+          "index": 6,
+          "spuId": "1889188860553",
+          "name": "黑松露抹茶双重芝士",
+          "price": 25,
+          "soldOut": false,
+          "imageUrl": "https://s.koubei.com/JQiKnbx3NjnypRsbHiwsfW8Bd3PJdkxM.jpeg"
+        },
+        {
+          "index": 7,
+          "spuId": "1926418850553",
+          "name": "香橙慕斯",
+          "price": 23,
+          "soldOut": false,
+          "imageUrl": "https://s.koubei.com/2A7m8riNkdZXRGcP6k8Ftdb5YekxT73K.png"
+        },
+        {
+          "index": 8,
+          "spuId": "2097611240553",
+          "name": "朗姆栗子",
+          "price": 19,
+          "soldOut": false,
+          "imageUrl": "https://s.koubei.com/BM7xT5TS7QwfKPsy56TMEBnsxAbG886P.jpeg"
+        },
+        {
+          "index": 9,
+          "spuId": "2097650820553",
+          "name": "惊奇巧克力蛋糕",
+          "price": 19,
+          "soldOut": false,
+          "imageUrl": "https://s.koubei.com/arJGmbNBnK4RQd4DdH3MxS8P8Zc7rYib.jpeg"
+        },
+        {
+          "index": 10,
+          "spuId": "2129421800553",
+          "name": "开心果巴斯克",
+          "price": 21,
+          "soldOut": false,
+          "imageUrl": "https://s.koubei.com/4dp2SjS5yrdGA53jxWAczajJSKhHeQkF.png"
+        }
+      ]
+    },
+    {
+      "name": "山姆零食",
+      "items": [
+        {
+          "index": 1,
+          "spuId": "1418248400553",
+          "name": "MM 芝士夹心饼干",
+          "price": 9.9,
+          "soldOut": false,
+          "imageUrl": "https://s.koubei.com/fhRTtiXEKFkzTP8fe7QrEiwGaaacrwx7.jpeg"
+        },
+        {
+          "index": 2,
+          "spuId": "1418920610553",
+          "name": "Tafe 黑松露火腿苏打饼干(4小包）",
+          "price": 9.9,
+          "soldOut": false,
+          "imageUrl": "https://s.koubei.com/BarChKxHpEe3jXpSzanYM6m22CdKRmJb.jpeg"
+        },
+        {
+          "index": 3,
+          "spuId": "1550010830553",
+          "name": "海盐苏打饼（10包分装）",
+          "price": 9.9,
+          "soldOut": false,
+          "imageUrl": "https://s.koubei.com/Smm3ye4t8Rtin4MTTxFpsZEXf7TxeGJy.jpeg"
+        }
+      ]
+    },
+    {
+      "name": "生日蛋糕",
+      "items": [
+        {
+          "index": 1,
+          "spuId": "1296983100553",
+          "name": "多拼蛋糕礼盒（口味随机不可选）",
+          "price": 198,
+          "soldOut": false,
+          "imageUrl": "https://s.koubei.com/QMeTijyRfRFiXmhiGxQaSHajaM3Xkrar.jpeg"
+        }
+      ]
+    },
+    {
+      "name": "咖啡、气泡水、果茶",
+      "items": [
+        {
+          "index": 1,
+          "spuId": "1031020740553",
+          "name": "美式 (350ml）",
+          "price": 15.8,
+          "soldOut": false,
+          "imageUrl": "https://s.koubei.com/EZZ6tSxm5ArNFGDEQfEKX7z5E328RApN.jpeg"
+        },
+        {
+          "index": 2,
+          "spuId": "1172442420553",
+          "name": "接骨木气泡冰美",
+          "price": 23.8,
+          "soldOut": false,
+          "imageUrl": "https://s.koubei.com/DmPnkMXfxZAMsRMNxtRs77NGa3X3sxBH.jpeg"
+        },
+        {
+          "index": 3,
+          "spuId": "1030583970553",
+          "name": "拿铁(350ml）",
+          "price": 18.8,
+          "soldOut": false,
+          "imageUrl": "https://s.koubei.com/zxiQsbFyyzxC48GrMdRztd4PiTZk4fp2.jpeg"
+        },
+        {
+          "index": 4,
+          "spuId": "1175193820553",
+          "name": "青山粉黛（抹茶&草莓）",
+          "price": 21.8,
+          "soldOut": false,
+          "imageUrl": "https://s.koubei.com/nThDAppMJKmf6aEiet5KT5YiDCFyhJpr.jpeg"
+        },
+        {
+          "index": 5,
+          "spuId": "1312593630553",
+          "name": "路易波士气泡茶（无咖啡因）",
+          "price": 15.8,
+          "soldOut": false,
+          "imageUrl": "https://s.koubei.com/MryaMiwH8AbZyQJT7T8MThberGN652GG.jpeg"
+        },
+        {
+          "index": 6,
+          "spuId": "1477529450553",
+          "name": "话梅茉莉绿茶",
+          "price": 9.9,
+          "soldOut": false,
+          "imageUrl": "https://s.koubei.com/T3MzX6PH7xKwkp8G3Z5YDsTWpFHSiATR.jpeg"
+        },
+        {
+          "index": 7,
+          "spuId": "1049203960553",
+          "name": "热红酒",
+          "price": 18.8,
+          "soldOut": false,
+          "imageUrl": "https://s.koubei.com/HXFCxHKCpm7BWXe55sYNpdGNmpsKdSPD.jpeg"
+        },
+        {
+          "index": 8,
+          "spuId": "1666731220553",
+          "name": "菠萝话梅气泡水",
+          "price": 18.8,
+          "soldOut": false,
+          "imageUrl": "https://s.koubei.com/j6NsdS85ECaDGksAdDr5crTkMkmY8MCk.jpeg"
+        }
+      ]
+    },
+    {
+      "name": "软饮",
+      "items": [
+        {
+          "index": 1,
+          "spuId": "1420539840553",
+          "name": "芭乐茉莉气泡茶",
+          "price": 9.9,
+          "soldOut": false,
+          "imageUrl": "https://s.koubei.com/jE3yxW5hC7k7Q37Q54KP8bwt8RpYJTDt.png"
+        },
+        {
+          "index": 2,
+          "spuId": "1431989740553",
+          "name": "梅子多多气泡水",
+          "price": 9.9,
+          "soldOut": false,
+          "imageUrl": "https://s.koubei.com/kMafxix58as3SdHhDCcPMPWGDxKTnwaA.png"
+        },
+        {
+          "index": 3,
+          "spuId": "1042398650553",
+          "name": "Capri-Sun 果汁",
+          "price": 6,
+          "soldOut": false,
+          "imageUrl": "https://s.koubei.com/ip7FdP8jKnXJkGFkCrN3f66C8PBcNRjp.png"
+        },
+        {
+          "index": 4,
+          "spuId": "1438535560553",
+          "name": "M&M西班牙苹果汁",
+          "price": 6,
+          "soldOut": false,
+          "imageUrl": "https://s.koubei.com/2Z7MK7K52ww2K8efa2KeX5yzPKzMmJ4t.png"
+        },
+        {
+          "index": 5,
+          "spuId": "1035621080553",
+          "name": "屈臣氏",
+          "price": 6,
+          "soldOut": false,
+          "imageUrl": "https://s.koubei.com/nPfJhZsBS85Cw2r2awGN5ypda2WF7iER.jpg"
+        },
+        {
+          "index": 6,
+          "spuId": "1600634070553",
+          "name": "无糖可乐",
+          "price": 3,
+          "soldOut": false,
+          "imageUrl": "https://s.koubei.com/BJJyd5GBMAGkbdyPN3Q5iGCNwTya3Xij.jpeg"
+        },
+        {
+          "index": 7,
+          "spuId": "1874071100553",
+          "name": "港式黑松沙士",
+          "price": 10,
+          "soldOut": false,
+          "imageUrl": "https://s.koubei.com/6rQMiPkwiQWJ7zM2YhsjBePpmhhYXYy5.jpeg"
+        },
+        {
+          "index": 8,
+          "spuId": "2143928070553",
+          "name": "越南西梅汁气泡饮",
+          "price": 8,
+          "soldOut": false,
+          "imageUrl": "https://s.koubei.com/SRD6TtekEyZt8BGZy7JX65sPARCym4mb.jpeg"
+        },
+        {
+          "index": 9,
+          "spuId": "2129460360553",
+          "name": "生姜青柠苹果shot",
+          "price": 8,
+          "soldOut": false,
+          "imageUrl": "https://s.koubei.com/4ijfp3xj8xEmKhzhzcY7eGZAGWXnwHD8.jpeg"
+        },
+        {
+          "index": 10,
+          "spuId": "2143928090553",
+          "name": "越南荔枝气泡饮",
+          "price": 8,
+          "soldOut": false,
+          "imageUrl": "https://s.koubei.com/wihpGEwyCnKMStzXS3ePT34prCTJQzeJ.jpeg"
+        }
+      ]
+    },
+    {
+      "name": "酒水",
+      "items": [
+        {
+          "index": 1,
+          "spuId": "1074601290553",
+          "name": "莫吉托",
+          "price": 29.8,
+          "soldOut": false,
+          "imageUrl": "https://s.koubei.com/wJBHcjzkr4XxkHhHBXfzWACEsQRpYtWN.jpeg"
+        },
+        {
+          "index": 2,
+          "spuId": "1071469840553",
+          "name": "自由古巴",
+          "price": 29.8,
+          "soldOut": false,
+          "imageUrl": "https://s.koubei.com/FQdMrQaA4DX8MdZaEK4yzQK6NsexJWdw.jpeg"
+        },
+        {
+          "index": 3,
+          "spuId": "1074162700553",
+          "name": "金汤力",
+          "price": 29.8,
+          "soldOut": false,
+          "imageUrl": "https://s.koubei.com/pmdra7AJ657pB7WfMTjsEtyctTD3Wiae.png"
+        },
+        {
+          "index": 4,
+          "spuId": "1191608700553",
+          "name": "浅草",
+          "price": 29.8,
+          "soldOut": false,
+          "imageUrl": "https://s.koubei.com/fHN3kNER5pp6DCEMyxpxjHJJPAKGcTaR.jpeg"
+        },
+        {
+          "index": 5,
+          "spuId": "1180536840553",
+          "name": "蓝色眼泪",
+          "price": 29.8,
+          "soldOut": false,
+          "imageUrl": "https://s.koubei.com/J48CHZseKDS7cAkpw5hw4NpSSj8KHRjW.jpeg"
+        },
+        {
+          "index": 6,
+          "spuId": "1067709760553",
+          "name": "科罗娜",
+          "price": 10,
+          "soldOut": false,
+          "imageUrl": "https://s.koubei.com/EHETSjN7pBk2CdwPGPiHeWhRte37tyH5.jpg"
+        },
+        {
+          "index": 7,
+          "spuId": "1057456570553",
+          "name": "喜力啤酒",
+          "price": 12,
+          "soldOut": false,
+          "imageUrl": "https://s.koubei.com/Qky8SieP7NsWpA8syjxZKxk4YwSYcEMG.jpg"
+        },
+        {
+          "index": 8,
+          "spuId": "1063096320553",
+          "name": "鹅岛IPA",
+          "price": 15,
+          "soldOut": false,
+          "imageUrl": "https://s.koubei.com/Pcftxnf2zMadmAFKdA2AkpnydiFNzN84.jpg"
+        },
+        {
+          "index": 9,
+          "spuId": "1082685840553",
+          "name": "健力士世涛啤酒",
+          "price": 19,
+          "soldOut": false,
+          "imageUrl": "https://s.koubei.com/ATH3nCwmPBs2QCkf7sSDGprKNfHCF4ms.jpg"
+        },
+        {
+          "index": 10,
+          "spuId": "1210440270553",
+          "name": "香槟，红葡，白葡",
+          "price": 119,
+          "soldOut": false,
+          "imageUrl": "https://s.koubei.com/4af56W46EGtXJxSH7yT6kaxhnFYfEka8.jpeg"
+        },
+        {
+          "index": 11,
+          "spuId": "1316190860553",
+          "name": "传教士",
+          "price": 16,
+          "soldOut": false,
+          "imageUrl": "https://s.koubei.com/hBJYMrzRpWxabZhFBwSCbDXriNSh32GB.jpg"
+        },
+        {
+          "index": 12,
+          "spuId": "1443235650553",
+          "name": "海盐番石榴科罗娜",
+          "price": 10,
+          "soldOut": false,
+          "imageUrl": "https://s.koubei.com/fxJDX45ND6yySHj87BBRwYY7AW5jkMPw.jpg"
+        }
+      ]
+    },
+    {
+      "name": "包间预约",
+      "items": [
+        {
+          "index": 1,
+          "spuId": "1386863560553",
+          "name": "国粹4小时纯玩",
+          "price": 80,
+          "soldOut": false,
+          "imageUrl": "https://s.koubei.com/PY3JBMQZ7TAn2EWNEfswkR36JH7eTzpK.jpeg"
+        }
+      ]
+    },
+    {
+      "name": "用餐必选",
+      "items": [
+        {
+          "index": 1,
+          "spuId": "1137480620553",
+          "name": "午餐11:50-12:10",
+          "price": 0,
+          "soldOut": false,
+          "imageUrl": "https://s.koubei.com/ZS2A7HFWp7cSfAKCmyPmyjBZaAKkDGR7.jpg"
+        },
+        {
+          "index": 2,
+          "spuId": "1223606840553",
+          "name": "下午茶 16:00-16:30",
+          "price": 0,
+          "soldOut": false,
+          "imageUrl": "https://s.koubei.com/kX7sDPAtxZpndYntiHsSzHy2Nk2kxXmt.jpeg"
+        },
+        {
+          "index": 3,
+          "spuId": "1128610710553",
+          "name": "晚餐18:10-18:30",
+          "price": 0,
+          "soldOut": false,
+          "imageUrl": "https://s.koubei.com/R4DA5Nkzfr7G2WsKSnjSTM3pENkn6nnh.jpg"
+        },
+        {
+          "index": 4,
+          "spuId": "1141712060553",
+          "name": "宵夜21:00-21:30",
+          "price": 0,
+          "soldOut": false,
+          "imageUrl": "https://s.koubei.com/afFckTTfm4x2br8NpihtW8n2tEMP6yWB.jpeg"
+        },
+        {
+          "index": 5,
+          "spuId": "1140924480553",
+          "name": "满58大学城随时配送",
+          "price": 0,
+          "soldOut": false,
+          "imageUrl": "https://s.koubei.com/yA7QWtKG5DnW7bKhwdR2we5GrcTFjh6k.jpeg"
+        },
+        {
+          "index": 6,
+          "spuId": "1132134780553",
+          "name": "堂食（10:00-22:00)",
+          "price": 0,
+          "soldOut": false,
+          "imageUrl": "https://s.koubei.com/jjsHz4BdadSXZi6Y8sFJyHcfcDH8Dcx4.jpeg"
+        },
+        {
+          "index": 7,
+          "spuId": "1715252610553",
+          "name": "自提（10:00-22:00)",
+          "price": 0,
+          "soldOut": false,
+          "imageUrl": "https://s.koubei.com/P5BSSNWmwMsS7Bnip2tTHTiAdBizmF3Z.jpeg"
+        }
+      ]
+    },
+    {
+      "name": "贝可的礼物",
+      "items": [
+        {
+          "index": 1,
+          "spuId": "1581608130553",
+          "name": "碱水纽结挂件",
+          "price": 9.9,
+          "soldOut": false,
+          "imageUrl": "https://s.koubei.com/e2kpiHTkfpAcchZF3djdjp5edEcmhTax.jpeg"
+        },
+        {
+          "index": 2,
+          "spuId": "1595243230553",
+          "name": "咖啡豆天然石手串",
+          "price": 18.9,
+          "soldOut": false,
+          "imageUrl": "https://s.koubei.com/kyp6D2MaSDWPdQJFxcBtdiEsHwizT8St.jpeg"
+        },
+        {
+          "index": 3,
+          "spuId": "1595282870553",
+          "name": "椰子手工香薰",
+          "price": 26.9,
+          "soldOut": false,
+          "imageUrl": "https://s.koubei.com/WDhr2J5ABzHiijTQxFyZT4NiJSfcjmEy.jpeg"
+        },
+        {
+          "index": 4,
+          "spuId": "1715743250553",
+          "name": "海南的礼物-鹧鸪茶",
+          "price": 9.9,
+          "soldOut": false,
+          "imageUrl": "https://s.koubei.com/EQkS3zpb6cbQ2z3ihWbXT88CnAcRBTMX.jpeg"
+        },
+        {
+          "index": 5,
+          "spuId": "1724672840553",
+          "name": "粉粉晶晶",
+          "price": 39,
+          "soldOut": false,
+          "imageUrl": "https://s.koubei.com/R3jz2szT6tikPpGsPpWwpnrDCED4T8SK.jpeg"
+        },
+        {
+          "index": 6,
+          "spuId": "1724791840553",
+          "name": "蓝水晶&紫水晶",
+          "price": 79,
+          "soldOut": false,
+          "imageUrl": "https://s.koubei.com/bphhjZyJ4saxASYcQtC5iQMCdsHKy2Q4.jpeg"
+        },
+        {
+          "index": 7,
+          "spuId": "1724984590553",
+          "name": "绿幽灵&银耀",
+          "price": 59,
+          "soldOut": false,
+          "imageUrl": "https://s.koubei.com/cEEtb8edxa6jJE5QifQBhzJezSkahR7d.jpeg"
+        },
+        {
+          "index": 8,
+          "spuId": "1733830160553",
+          "name": "彩虹碧玺&青晶石",
+          "price": 49,
+          "soldOut": false,
+          "imageUrl": "https://s.koubei.com/T7JptHBzrGRjskcDCARYkfh3ZnheptYY.jpeg"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <title>菜单原型 V2</title>
+    <link rel="stylesheet" href="/menu-prototype-v2.css">
+  </head>
+  <body>
+    <main class="menu-app">
+      <header class="shop-head">
+        <button class="back-button" id="backButton" type="button" aria-label="返回上一页">‹</button>
+        <div>
+          <p class="eyebrow">轻食 · 披萨 · 咖啡</p>
+          <h1>贝可Bakell轻食店</h1>
+          <p class="address">大墩村民主大道四横巷11号</p>
+          <p class="subline" id="menuSummary">正在整理菜单</p>
+        </div>
+      </header>
+
+      <section class="notice-card" id="orderNotice"></section>
+
+      <section class="category-list" id="categoryList" aria-live="polite"></section>
+
+      <nav class="category-tabs" id="categoryTabs" aria-label="菜单品类"></nav>
+    </main>
+
+    <script src="/menu-prototype-v2.js"></script>
+  </body>
+</html>
