@@ -17,7 +17,7 @@ function escapeHtml(value = "") {
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
+    .replace(/\"/g, "&quot;");
 }
 
 function avatarHtml({ url = "", text = "同" } = {}) {
@@ -42,6 +42,13 @@ const LIAN_IMAGE_PROXY_BASE = (() => {
     return "";
   }
 })();
+
+function withDefaultCredentials(options = {}) {
+  return {
+    credentials: "include",
+    ...options
+  };
+}
 
 function displayImageUrl(url = "") {
   const value = String(url || "");
@@ -80,11 +87,11 @@ function fmtMinute(value) {
   return `${date.getMonth() + 1}月${date.getDate()}日 ${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
-async function api(path, options) {
+async function api(path, options = {}) {
   const url = path.startsWith("/") ? `${LIAN_API_BASE}${path}` : path;
-  const response = await fetch(url, options);
+  const response = await fetch(url, withDefaultCredentials(options));
   const data = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(data.error || "请求失败");
+  if (!response.ok) throw new Error(data.error || `请求失败（状态码 ${response.status}）`);
   return data;
 }
 
@@ -92,10 +99,10 @@ async function uploadImage(file, purpose = "") {
   const form = new FormData();
   form.append("image", file, file.name || "image.jpg");
   const query = purpose ? `?purpose=${encodeURIComponent(purpose)}` : "";
-  const response = await fetch(`${LIAN_API_BASE}/api/upload/image${query}`, {
+  const response = await fetch(`${LIAN_API_BASE}/api/upload/image${query}`, withDefaultCredentials({
     method: "POST",
     body: form
-  });
+  }));
   const data = await response.json().catch(() => ({}));
   if (!response.ok) throw new Error(data.error || "图片上传失败");
   return data.url;
@@ -217,4 +224,24 @@ function setPublishProgress({ visible = true, label = "", percent = 0 } = {}) {
 
 function resetPublishProgress() {
   setPublishProgress({ visible: false, label: "准备上传", percent: 0 });
+}
+
+if (typeof window !== "undefined") {
+  Object.assign(window, {
+    $,
+    $$,
+    LIAN_API_BASE,
+    avatarHtml,
+    displayImageUrl,
+    escapeHtml,
+    formatRelativeTime,
+    fixFmtDate,
+    fmtMinute,
+    api,
+    uploadImage,
+    compressImageForUpload,
+    uploadPostImages,
+    setPublishProgress,
+    resetPublishProgress
+  });
 }

@@ -11,6 +11,19 @@ let passed = 0;
 let failed = 0;
 let skipped = 0;
 
+const expectedScriptOrder = [
+  "/map-v2.js",
+  "/app-state.js",
+  "/app-utils.js",
+  "/app-auth-avatar.js",
+  "/app-feed.js",
+  "/app-legacy-map.js",
+  "/app-ai-publish.js",
+  "/publish-page.js",
+  "/app-messages-profile.js",
+  "/app.js"
+];
+
 function ok(label) {
   passed += 1;
   console.log(`  ✓ ${label}`);
@@ -33,6 +46,21 @@ async function fetchUrl(url) {
   } catch (error) {
     return { status: 0, text: "", ok: false, error: error.message };
   }
+}
+
+function extractLocalScripts(html) {
+  return Array.from(html.matchAll(/<script\s+[^>]*src="([^"]+)"[^>]*><\/script>/g))
+    .map((match) => match[1])
+    .filter((src) => src.startsWith("/"));
+}
+
+function hasScriptsInOrder(html, expectedScripts) {
+  const actual = extractLocalScripts(html);
+  let cursor = 0;
+  for (const script of actual) {
+    if (script === expectedScripts[cursor]) cursor += 1;
+  }
+  return cursor === expectedScripts.length;
 }
 
 async function checkPage(url, label, validators) {
@@ -102,6 +130,25 @@ function checkSyntax(file) {
   }
 }
 
+function checkFileContains(file, label, validators) {
+  const fullPath = path.join(rootDir, file);
+  let text = "";
+  try {
+    text = fs.readFileSync(fullPath, "utf8");
+  } catch (error) {
+    fail(label, error.message || "文件读取失败");
+    return;
+  }
+  let allPassed = true;
+  for (const [checkName, checkFn] of validators) {
+    if (!checkFn(text)) {
+      fail(`${label} → ${checkName}`, "校验失败");
+      allPassed = false;
+    }
+  }
+  if (allPassed) ok(label);
+}
+
 function runNodeSyntaxCheck(filePath) {
   const result = spawnSync(process.execPath, ["--check", filePath], {
     cwd: process.cwd(),
@@ -143,11 +190,8 @@ if (serverUp) {
     ["<title> 存在", (html) => /<title>[^<]+<\/title>/.test(html)],
     ["<main class=\"app-shell\"> 存在", (html) => html.includes('class="app-shell"')],
     ["index.html 包含 map-v2.js", (html) => html.includes('src="/map-v2.js"')],
-    ["index.html 包含 split scripts", (html) =>
-      html.includes('src="/app-state.js"') &&
-      html.includes('src="/app-utils.js"') &&
-      html.includes('src="/app.js"')
-    ],
+    ["index.html 包含 split scripts", (html) => expectedScriptOrder.every((script) => html.includes(`src="${script}"`))],
+    ["index.html 保持 split script 加载顺序", (html) => hasScriptsInOrder(html, expectedScriptOrder)],
   ]);
 } else {
   skip("首页 HTML 检查", "服务器不可达");
@@ -156,18 +200,7 @@ if (serverUp) {
 // 2. Static JS files — HTTP reachable
 if (serverUp) {
   console.log("\n▶ 静态 JS 文件可达性");
-  const staticScripts = [
-    "/map-v2.js",
-    "/app-state.js",
-    "/app-utils.js",
-    "/app-auth-avatar.js",
-    "/app-feed.js",
-    "/app-legacy-map.js",
-    "/app-ai-publish.js",
-    "/app-messages-profile.js",
-    "/app.js",
-  ];
-  for (const script of staticScripts) {
+  for (const script of expectedScriptOrder) {
     await checkEndpoint(`${baseUrl}${script}`, `GET ${script}`);
   }
 } else {
@@ -186,12 +219,14 @@ if (serverUp) {
 // 4. Syntax check split frontend files (always runs — no server needed)
 console.log("\n▶ 前端文件语法检查 (node --check)");
 const frontendFiles = [
+  "public/map-v2.js",
   "public/app-state.js",
   "public/app-utils.js",
   "public/app-auth-avatar.js",
   "public/app-feed.js",
   "public/app-legacy-map.js",
   "public/app-ai-publish.js",
+  "public/publish-page.js",
   "public/app-messages-profile.js",
   "public/app.js",
 ];
@@ -199,7 +234,15 @@ for (const file of frontendFiles) {
   checkSyntax(file);
 }
 
-// 5. CSS reachable
+// 5. Shared frontend helper contract (always runs — no server needed)
+console.log("\n▶ 前端公共 helper 约束");
+checkFileContains("public/app-utils.js", "public/app-utils.js 公共 helper", [
+  ["api 默认带 credentials", (text) => text.includes('credentials: "include"')],
+  ["uploadImage 使用统一 credentials 策略", (text) => text.includes("withDefaultCredentials({") && text.includes("/api/upload/image")],
+  ["公共 helper 显式暴露到 window", (text) => text.includes("Object.assign(window") && text.includes("api,") && text.includes("displayImageUrl,")],
+]);
+
+// 6. CSS reachable
 if (serverUp) {
   console.log("\n▶ CSS 可达性");
   await checkEndpoint(`${baseUrl}/styles.css`, "GET /styles.css");
