@@ -27,11 +27,26 @@ const IGNORE_DIRS = new Set([
   "coverage"
 ]);
 
+const textDecoderPattern = String.raw`\b(?:iconv|iconv-lite|TextDecoder)\s*\([^)]*["'](?:gbk|gb2312|gb18030|latin1|binary)["']`;
+const mojibakeTokens = [
+  0x00c3,
+  0x00c2,
+  [0x00e2, 0x20ac],
+  [0x00e2, 0x20ac, 0x2122],
+  [0x00e2, 0x20ac, 0x0153],
+  0x00e5,
+  [0x00e4, 0x00b8],
+  0x00e6,
+  0x00e7
+].map((item) => Array.isArray(item)
+  ? item.map((code) => String.fromCharCode(code)).join("")
+  : String.fromCharCode(item));
+
 const PATTERNS = [
-  { name: "unicode replacement character", regex: /\uFFFD/ },
-  { name: "common mojibake lead bytes", regex: /(?:Ã|Â|â€|â€™|â€œ|â€\u009d|å|ä¸|æ|ç)/ },
+  { name: "unicode replacement character", regex: new RegExp(String.fromCharCode(0xfffd)) },
+  { name: "common mojibake lead bytes", regex: new RegExp(`(?:${mojibakeTokens.join("|")})`) },
   { name: "legacy GBK/GB2312/GB18030 charset", regex: /charset\s*=\s*["']?(?:gbk|gb2312|gb18030)/i },
-  { name: "legacy non-UTF-8 decoder", regex: /\b(?:iconv|iconv-lite|TextDecoder)\s*\([^)]*["'](?:gbk|gb2312|gb18030|latin1|binary)["']/i },
+  { name: "legacy non-UTF-8 decoder", regex: new RegExp(textDecoderPattern, "i") },
   { name: "binary string conversion", regex: /\.toString\(\s*["']binary["']\s*\)/i }
 ];
 
@@ -53,8 +68,9 @@ function lineNumberAt(text, index) {
   return text.slice(0, index).split(/\r?\n/).length;
 }
 
+const files = walk(ROOT);
 const findings = [];
-for (const file of walk(ROOT)) {
+for (const file of files) {
   const relative = path.relative(ROOT, file).replace(/\\/g, "/");
   const text = fs.readFileSync(file, "utf8");
   for (const pattern of PATTERNS) {
@@ -77,4 +93,4 @@ if (findings.length) {
   process.exit(1);
 }
 
-console.log(`Encoding contamination scan passed (${walk(ROOT).length} text files checked).`);
+console.log(`Encoding contamination scan passed (${files.length} text files checked).`);
