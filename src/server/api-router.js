@@ -36,7 +36,7 @@ import {
   handleTogglePostLike,
   handleTogglePostSave
 } from "./post-service.js";
-import { readJsonBody } from "./request-utils.js";
+import { readJsonBody, requireAdmin } from "./request-utils.js";
 import { mapItems } from "./static-data.js";
 import { handleUploadImage } from "./upload.js";
 
@@ -56,6 +56,7 @@ async function handleApi(req, reqUrl, res) {
       });
     }
     if (req.method === "POST" && reqUrl.pathname === "/api/setup") {
+      if (!isSetupRequired()) requireAdmin(req);
       const payload = await readJsonBody(req);
       await saveSetupConfig(payload, () => {
         memory.feedPages.clear();
