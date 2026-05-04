@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 import { canViewPost } from "../src/server/audience-service.js";
 import { escapeHtml, buildTextPostHtml } from "../src/server/content-utils.js";
 import { isAllowedImageUrl } from "../src/server/image-proxy.js";
+import { detectImageType, validateImageFile, MAX_UPLOAD_IMAGE_BYTES } from "../src/server/upload.js";
 
 const campusUser = {
   id: "user-1",
@@ -67,4 +68,20 @@ test("text post helpers escape HTML before rendering", () => {
   assert.match(html, /&lt;script/);
   assert.doesNotMatch(html, /<script>/);
   assert.equal(escapeHtml('"<&>'), "&quot;&lt;&amp;&gt;");
+});
+
+test("upload validation accepts only matching image signatures", () => {
+  const jpeg = Buffer.from([0xff, 0xd8, 0xff, 0xdb, 0x00]);
+  const png = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00]);
+  const webp = Buffer.from("RIFF0000WEBP", "ascii");
+  const gif = Buffer.from("GIF89a", "ascii");
+  assert.equal(detectImageType(jpeg), "image/jpeg");
+  assert.equal(detectImageType(png), "image/png");
+  assert.equal(detectImageType(webp), "image/webp");
+  assert.equal(detectImageType(gif), "image/gif");
+  assert.equal(detectImageType(Buffer.from("<svg></svg>")), "");
+  assert.equal(validateImageFile({ type: "image/jpeg", body: jpeg }).type, "image/jpeg");
+  assert.throws(() => validateImageFile({ type: "image/png", body: jpeg }), /does not match/);
+  assert.throws(() => validateImageFile({ type: "image/svg+xml", body: Buffer.from("<svg></svg>") }), /only jpeg/);
+  assert.throws(() => validateImageFile({ type: "image/jpeg", body: Buffer.alloc(MAX_UPLOAD_IMAGE_BYTES + 1, 0xff) }), /too large/);
 });
