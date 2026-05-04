@@ -1,32 +1,13 @@
 (function () {
-  const LIAN_API_BASE = (typeof window !== "undefined" && window.LIAN_API_BASE_URL) || "";
-  const LIAN_IMAGE_PROXY_BASE = (() => {
-    const configured = (typeof window !== "undefined" && window.LIAN_IMAGE_PROXY_BASE_URL) || "";
-    if (configured) return configured.replace(/\/$/, "");
-    try {
-      const url = new URL(LIAN_API_BASE || window.location.origin, window.location.origin);
-      url.port = "4101";
-      url.pathname = "";
-      url.search = "";
-      url.hash = "";
-      return url.toString().replace(/\/$/, "");
-    } catch {
-      return "";
-    }
-  })();
-
   let started = false;
 
-  function displayImageUrl(url = "") {
-    const value = String(url || "");
-    if (/^https:\/\/res\.cloudinary\.com\/[^/]+\/image\/upload\//.test(value)) {
-      return `${LIAN_IMAGE_PROXY_BASE}/api/image-proxy?url=${encodeURIComponent(value)}`;
-    }
-    return value;
+  function resolveImageUrl(value) {
+    if (typeof window.displayImageUrl === "function") return window.displayImageUrl(value || "");
+    return String(value || "");
   }
 
   function addUrl(urls, value) {
-    const url = displayImageUrl(value || "");
+    const url = resolveImageUrl(value || "");
     if (!url) return;
     urls.add(url);
   }
@@ -74,9 +55,9 @@
     if (started) return;
     started = true;
     try {
-      const response = await fetch(`${LIAN_API_BASE}/api/map/v2/items`, { credentials: "include" });
-      if (!response.ok) return;
-      const data = await response.json().catch(() => ({}));
+      const data = typeof window.api === "function"
+        ? await window.api("/api/map/v2/items")
+        : await fetch("/api/map/v2/items", { credentials: "include" }).then((response) => response.ok ? response.json() : {});
       const urls = collectExploreImageUrls(data);
       await preloadInBatches(urls);
     } catch (error) {

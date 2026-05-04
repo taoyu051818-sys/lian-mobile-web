@@ -56,7 +56,9 @@ const jsFilesToSyntaxCheck = [
   "src/server/request-utils.js",
   "src/server/static-data.js",
   "src/server/static-server.js",
-  "src/server/setup-page.js"
+  "src/server/setup-page.js",
+  "public/reply-form-click-guard.js",
+  "public/explore-preload.js"
 ];
 
 let passed = 0;

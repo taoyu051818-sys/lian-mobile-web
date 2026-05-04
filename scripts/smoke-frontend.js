@@ -21,6 +21,8 @@ const expectedScriptOrder = [
   "/app-ai-publish.js",
   "/publish-page.js",
   "/app-messages-profile.js",
+  "/reply-form-click-guard.js",
+  "/explore-preload.js",
   "/app.js"
 ];
 
@@ -228,6 +230,8 @@ const frontendFiles = [
   "public/app-ai-publish.js",
   "public/publish-page.js",
   "public/app-messages-profile.js",
+  "public/reply-form-click-guard.js",
+  "public/explore-preload.js",
   "public/app.js",
 ];
 for (const file of frontendFiles) {
@@ -240,6 +244,11 @@ checkFileContains("public/app-utils.js", "public/app-utils.js 公共 helper", [
   ["api 默认带 credentials", (text) => text.includes('credentials: "include"')],
   ["uploadImage 使用统一 credentials 策略", (text) => text.includes("withDefaultCredentials({") && text.includes("/api/upload/image")],
   ["公共 helper 显式暴露到 window", (text) => text.includes("Object.assign(window") && text.includes("api,") && text.includes("displayImageUrl,")],
+]);
+checkFileContains("public/explore-preload.js", "public/explore-preload.js 公共 helper", [
+  ["使用共享 api helper", (text) => text.includes("window.api")],
+  ["使用共享图片 URL helper", (text) => text.includes("window.displayImageUrl")],
+  ["不复制 image proxy base 逻辑", (text) => !text.includes("LIAN_IMAGE_PROXY_BASE")],
 ]);
 
 // 6. CSS reachable
