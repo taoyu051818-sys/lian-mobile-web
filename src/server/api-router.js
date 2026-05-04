@@ -36,21 +36,19 @@ import {
   handleTogglePostLike,
   handleTogglePostSave
 } from "./post-service.js";
+import { requireSameOrigin } from "./request-security.js";
 import { readJsonBody, requireAdmin } from "./request-utils.js";
 import { mapItems } from "./static-data.js";
 import { handleUploadImage } from "./upload.js";
 
 async function handleApi(req, reqUrl, res) {
   try {
+    requireSameOrigin(req);
+
     if (req.method === "GET" && reqUrl.pathname === "/api/setup/status") {
       return sendJson(res, 200, {
         required: isSetupRequired(),
         configured: !isSetupRequired(),
-        nodebbBaseUrl: config.nodebbBaseUrl,
-        nodebbPublicBaseUrl: config.nodebbPublicBaseUrl,
-        nodebbUid: config.nodebbUid,
-        nodebbCid: config.nodebbCid,
-        dataSource: "api",
         cloudinaryConfigured: Boolean(config.cloudinaryUrl),
         mailConfigured: Boolean(config.resendApiKey || config.smtpHost)
       });
