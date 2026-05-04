@@ -4,6 +4,7 @@ import { config } from "./config.js";
 import { escapeHtml } from "./content-utils.js";
 import { loadAuthStore, saveAuthStore } from "./data-store.js";
 import { nodebbFetch } from "./nodebb-client.js";
+import { isProductionMode } from "./security-mode.js";
 import { authInstitutions } from "./static-data.js";
 
 function allowedIdentityTags(user = {}) {
@@ -270,7 +271,8 @@ function parseCookies(req) {
 }
 
 function sessionCookie(token, maxAge = 60 * 60 * 24 * 30) {
-  return `lian_session=${encodeURIComponent(token)}; Path=/; Max-Age=${maxAge}; HttpOnly; SameSite=Lax`;
+  const secure = isProductionMode() ? "; Secure" : "";
+  return `lian_session=${encodeURIComponent(token)}; Path=/; Max-Age=${maxAge}; HttpOnly; SameSite=Lax${secure}`;
 }
 
 async function getCurrentUser(req, store = null) {
