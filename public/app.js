@@ -117,13 +117,13 @@ const mainViewTransition = (() => {
     window.setTimeout(finish, TRANSITION_MS + 120);
   }
 
-  function navigateTo(viewName, { direction } = {}) {
+  function navigateTo(viewName, options = {}) {
     if (!viewName || locked) return false;
     const fromView = activeView();
     if (fromView?.dataset.view === viewName) return false;
     const fromName = fromView?.dataset.view;
-    const resolvedDirection = resolveDirection(fromName, viewName, direction);
-    if (originalSwitchView) originalSwitchView(viewName);
+    const resolvedDirection = resolveDirection(fromName, viewName, options.direction);
+    if (originalSwitchView) originalSwitchView(viewName, options);
     else setViewImmediately(viewName);
     const toView = viewFor(viewName);
     animateViews(fromView, toView, resolvedDirection);
