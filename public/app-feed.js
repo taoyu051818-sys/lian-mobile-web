@@ -454,7 +454,7 @@ async function openDetail(tid, options = {}) {
   const alreadyInDetail = detailView?.classList.contains("is-active");
   if (!refresh && !alreadyInDetail) state.feedScrollY = window.scrollY;
   $("#detailBody").innerHTML = detailStatusTemplate("加载中");
-  switchView("detail");
+  switchView("detail", { scroll: false });
   if (!skipHistory && location.hash !== `#/post/${tid}`) history.pushState({ view: "detail", tid }, "", `#/post/${tid}`);
   if (!preserveScroll) window.scrollTo({ top: 0 });
   try {
@@ -511,7 +511,19 @@ async function openDetail(tid, options = {}) {
 
 window.openDetail = openDetail;
 
-function switchView(name) {
+function scrollToViewStart(name, options = {}) {
+  if (options.scroll === false) return;
+  const behavior = options.behavior || "auto";
+  requestAnimationFrame(() => {
+    if (name === "messages") {
+      window.scrollTo({ top: document.documentElement.scrollHeight, behavior });
+      return;
+    }
+    window.scrollTo({ top: 0, behavior });
+  });
+}
+
+function switchView(name, options = {}) {
   if (name !== "detail") state.previousView = name;
   $$(".view").forEach((view) => view.classList.toggle("is-active", view.dataset.view === name));
   $$(".tab").forEach((tab) => tab.classList.toggle("is-active", tab.dataset.tab === name));
@@ -519,10 +531,11 @@ function switchView(name) {
   if (name === "map") window.MapV2?.init?.();
   if (name === "messages") switchMessageTab("channel");
   if (name === "profile") loadProfile();
+  scrollToViewStart(name, options);
 }
 
 function backToFeed() {
-  switchView(state.previousView || "feed");
+  switchView(state.previousView || "feed", { scroll: false });
   requestAnimationFrame(() => window.scrollTo({ top: state.feedScrollY || 0 }));
   if (location.hash.startsWith("#/post/")) history.pushState({ view: state.previousView || "feed" }, "", location.pathname);
 }
