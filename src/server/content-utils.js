@@ -8,6 +8,10 @@ function escapeHtml(value = "") {
     .replace(/"/g, "&quot;");
 }
 
+function escapeAttr(value = "") {
+  return escapeHtml(value).replace(/'/g, "&#39;");
+}
+
 function parseEscapedJsonComment(content = "", marker = "") {
   const raw = String(content).match(new RegExp(`<!--\\s*${marker}\\s+([\\s\\S]*?)\\s*-->`))?.[1];
   if (!raw) return {};
@@ -54,6 +58,72 @@ function stripHtml(html = "") {
     .replace(/&#x([0-9a-fA-F]+);/g, safeDecodeHexEntity)
     .replace(/\n{3,}/g, "\n\n")
     .trim();
+}
+
+const SAFE_HTML_TAGS = new Set([
+  "a", "b", "blockquote", "br", "code", "div", "em", "h1", "h2", "h3", "h4", "h5", "h6",
+  "hr", "i", "img", "li", "ol", "p", "pre", "span", "strong", "u", "ul"
+]);
+const SELF_CLOSING_TAGS = new Set(["br", "hr", "img"]);
+const URL_ATTRS = new Set(["href", "src"]);
+
+function isSafeHtmlUrl(value = "") {
+  const raw = String(value || "").trim().replace(/&amp;/g, "&");
+  if (!raw) return false;
+  if (raw.startsWith("/") && !raw.startsWith("//")) return true;
+  try {
+    const parsed = new URL(raw);
+    return parsed.protocol === "http:" || parsed.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
+function allowedAttrsForTag(tag) {
+  if (tag === "a") return new Set(["href", "title", "target", "rel"]);
+  if (tag === "img") return new Set(["src", "alt", "loading", "width", "height"]);
+  if (tag === "code" || tag === "pre" || tag === "span" || tag === "div") return new Set(["class"]);
+  return new Set([]);
+}
+
+function sanitizeAttributes(tag, rawAttrs = "") {
+  const allowed = allowedAttrsForTag(tag);
+  const attrs = [];
+  const attrPattern = /([^\s"'<>\/=]+)(?:\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s"'=<>`]+)))?/g;
+  let match;
+  while ((match = attrPattern.exec(rawAttrs))) {
+    const name = String(match[1] || "").toLowerCase();
+    if (!allowed.has(name)) continue;
+    if (name.startsWith("on") || name === "style") continue;
+    const value = match[2] ?? match[3] ?? match[4] ?? "";
+    if (URL_ATTRS.has(name) && !isSafeHtmlUrl(value)) continue;
+    if (name === "target" && !["_blank", "_self"].includes(value)) continue;
+    if (name === "loading" && !["lazy", "eager"].includes(value)) continue;
+    if ((name === "width" || name === "height") && !/^\d{1,4}$/.test(value)) continue;
+    attrs.push(`${name}="${escapeAttr(value)}"`);
+  }
+  if (tag === "a" && attrs.some((attr) => attr.startsWith("href=")) && !attrs.some((attr) => attr.startsWith("rel="))) {
+    attrs.push('rel="noopener noreferrer"');
+  }
+  if (tag === "a" && attrs.some((attr) => attr === 'target="_blank"') && !attrs.some((attr) => attr.startsWith("rel="))) {
+    attrs.push('rel="noopener noreferrer"');
+  }
+  return attrs.length ? ` ${attrs.join(" ")}` : "";
+}
+
+function sanitizeHtml(html = "") {
+  return String(html || "")
+    .replace(/<!--[\s\S]*?-->/g, "")
+    .replace(/<script[\s\S]*?<\/script>/gi, "")
+    .replace(/<style[\s\S]*?<\/style>/gi, "")
+    .replace(/<\/?([a-zA-Z][\w:-]*)([^>]*)>/g, (match, rawTag, rawAttrs = "") => {
+      const tag = String(rawTag || "").toLowerCase();
+      if (!SAFE_HTML_TAGS.has(tag)) return "";
+      const isClosing = /^<\s*\//.test(match);
+      if (isClosing) return SELF_CLOSING_TAGS.has(tag) ? "" : `</${tag}>`;
+      const attrs = sanitizeAttributes(tag, rawAttrs);
+      return SELF_CLOSING_TAGS.has(tag) ? `<${tag}${attrs}>` : `<${tag}${attrs}>`;
+    });
 }
 
 function extractCover(html = "") {
@@ -184,7 +254,7 @@ function renderInlineMarkdown(value = "") {
 
 function renderPostContent(content = "") {
   const cleaned = removeOriginalLinkBlocks(content);
-  if (/<(p|img|h[1-6]|ul|ol|blockquote|div)\b/i.test(cleaned)) return optimizePostImages(cleaned, 900);
+  if (/<(p|img|h[1-6]|ul|ol|blockquote|div)\b/i.test(cleaned)) return sanitizeHtml(optimizePostImages(cleaned, 900));
   return cleaned
     .split(/\n{2,}/)
     .map((block) => block.trim())
@@ -246,6 +316,7 @@ export {
   removeOriginalLinkBlocks,
   renderInlineMarkdown,
   renderPostContent,
+  sanitizeHtml,
   stripHtml,
   warmupImageUrl,
   warmupPostImages
