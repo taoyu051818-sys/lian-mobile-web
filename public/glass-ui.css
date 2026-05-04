@@ -236,6 +236,141 @@
     inset 0 1px 0 rgba(255, 255, 255, 0.5);
 }
 
+.publish-glass-section,
+.publish-review-section {
+  margin: 12px;
+  padding: 14px;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.82), rgba(255, 255, 255, 0.48)),
+    rgba(255, 255, 255, 0.52);
+}
+
+.publish-review-section {
+  display: grid;
+  gap: 12px;
+}
+
+.publish-review-tip {
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+  padding: 12px;
+}
+
+.publish-review-tip strong {
+  display: block;
+  font-size: 14px;
+}
+
+.publish-review-tip p {
+  margin: 3px 0 0;
+  color: rgba(79, 87, 83, 0.78);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.publish-glass-field {
+  display: grid;
+  gap: 7px;
+  padding: 12px;
+}
+
+.publish-glass-field > span {
+  color: rgba(58, 66, 61, 0.76);
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.publish-glass-field input,
+.publish-glass-field textarea {
+  width: 100%;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: rgba(18, 25, 21, 0.95);
+  font-weight: 700;
+}
+
+.publish-glass-field textarea {
+  resize: vertical;
+  line-height: 1.55;
+}
+
+.publish-glass-field small {
+  color: rgba(79, 87, 83, 0.68);
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.publish-review-location {
+  width: 100%;
+  justify-content: flex-start;
+  color: rgba(36, 45, 40, 0.84);
+}
+
+.publish-audience-picker {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 9px;
+}
+
+.publish-audience-option {
+  width: 100%;
+  min-height: 44px;
+}
+
+.publish-audience-option.is-active {
+  background:
+    linear-gradient(135deg, rgba(27, 30, 27, 0.94), rgba(27, 30, 27, 0.76)),
+    rgba(27, 30, 27, 0.86);
+  color: #fff;
+}
+
+.ai-risk-list {
+  display: grid;
+  gap: 6px;
+  padding: 12px;
+}
+
+.ai-risk-list p {
+  margin: 0;
+  color: rgba(95, 52, 35, 0.9);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.publish-actions-glass {
+  position: sticky;
+  bottom: calc(12px + env(safe-area-inset-bottom));
+  z-index: 12;
+  display: grid;
+  gap: 9px;
+  margin: 12px;
+  padding: 12px;
+}
+
+.publish-actions-glass button {
+  width: 100%;
+  min-height: 48px;
+}
+
+.publish-upload-zone,
+.publish-image-thumb,
+.publish-status,
+.publish-actions,
+.channel-composer,
+.map-v2-toolbar,
+.map-filterbar,
+.detail-bottom-actions,
+.reply-form,
+.auth-sheet::backdrop,
+.publish-sheet::backdrop,
+.avatar-crop-sheet::backdrop {
+  -webkit-backdrop-filter: blur(14px) saturate(1.15);
+  backdrop-filter: blur(14px) saturate(1.15);
+}
+
 .back-button,
 .icon-button,
 .publish-image-remove,
@@ -243,9 +378,336 @@
 .map-chip,
 .message-tab,
 .profile-tab,
-.publish-audience-option {
+.publish-audience-option,
+.publish-actions button,
+.publish-tools button,
+.auth-tab,
+.auth-code-row button,
+.avatar-crop-actions button,
+.sheet-close {
+  border: 1px solid rgba(255, 255, 255, 0.52);
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.78), rgba(255, 255, 255, 0.42)),
+    rgba(255, 255, 255, 0.48);
+  color: rgba(20, 27, 24, 0.9);
+  box-shadow:
+    0 10px 24px rgba(22, 32, 27, 0.13),
+    inset 0 1px 0 rgba(255, 255, 255, 0.62);
+  -webkit-backdrop-filter: blur(14px) saturate(1.18);
+  backdrop-filter: blur(14px) saturate(1.18);
+}
+
+.primary,
+.publish-actions button.primary {
+  background:
+    linear-gradient(135deg, rgba(27, 30, 27, 0.94), rgba(27, 30, 27, 0.78)),
+    rgba(27, 30, 27, 0.86);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+/* Unified floating UI surfaces */
+.tabbar,
+.chips,
+.view[data-view="messages"] > .topbar.compact,
+.view[data-view="profile"] > .topbar.compact,
+.detail-fixed-header,
+.detail-bottom-actions,
+.channel-composer,
+.map-v2-toolbar,
+.map-v2-editor,
+.map-filterbar,
+.reply-form,
+.image-lightbox-close,
+.publish-sheet,
+.auth-sheet,
+.avatar-crop-sheet,
+.leaflet-control-zoom,
+.leaflet-control-layers,
+.leaflet-popup-content-wrapper,
+.leaflet-popup-tip {
+  border: 1px solid rgba(255, 255, 255, 0.58);
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.84), rgba(255, 255, 255, 0.46)),
+    rgba(255, 255, 255, 0.54);
+  box-shadow:
+    0 16px 36px rgba(22, 32, 27, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.68),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.24);
+  -webkit-backdrop-filter: blur(18px) saturate(1.28);
+  backdrop-filter: blur(18px) saturate(1.28);
+}
+
+.tabbar {
+  left: 50%;
+  bottom: 8px;
+  width: min(calc(100% - 20px), 520px);
+  padding: 8px 10px calc(8px + env(safe-area-inset-bottom));
+  border-radius: 28px;
+  overflow: visible;
+}
+
+.tabbar .tab {
+  min-height: 42px;
+  border-radius: 999px;
+  color: rgba(67, 75, 70, 0.72);
+  font-weight: 760;
+}
+
+.tabbar .tab.is-active {
+  background: rgba(255, 255, 255, 0.54);
+  color: rgba(17, 24, 21, 0.94);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.64);
+}
+
+.publish-fab {
+  width: 52px;
+  height: 52px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.38);
+  background:
+    radial-gradient(circle at 30% 20%, rgba(255, 255, 255, 0.55), transparent 42%),
+    linear-gradient(135deg, rgba(224, 59, 59, 0.96), rgba(188, 48, 48, 0.9));
+  box-shadow:
+    0 14px 28px rgba(201, 58, 52, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.52);
+  -webkit-backdrop-filter: blur(14px) saturate(1.22);
+  backdrop-filter: blur(14px) saturate(1.22);
+}
+
+.chips {
+  top: 8px;
+  width: min(calc(100% - 20px), 520px);
+  padding: calc(8px + env(safe-area-inset-top)) 10px 10px;
+  border-radius: 0 0 24px 24px;
+  border-top: 0;
+}
+
+.chip,
+.map-chip,
+.message-tab,
+.auth-tab,
+.profile-tab,
+.detail-action-btn,
+.card-like,
+.detail-dot,
+.leaflet-control-zoom a,
+.leaflet-control-layers-toggle,
+.leaflet-popup button {
+  border: 1px solid rgba(255, 255, 255, 0.52);
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.76), rgba(255, 255, 255, 0.38)),
+    rgba(255, 255, 255, 0.44);
+  color: rgba(35, 43, 39, 0.86);
+  box-shadow:
+    0 8px 18px rgba(22, 32, 27, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  -webkit-backdrop-filter: blur(12px) saturate(1.15);
+  backdrop-filter: blur(12px) saturate(1.15);
+}
+
+.chip.is-active,
+.map-chip.is-active,
+.message-tab.is-active,
+.auth-tab.is-active,
+.profile-tab.is-active,
+.detail-action-btn.is-liked,
+.detail-action-btn.is-saved,
+.card-like.is-liked {
+  background:
+    linear-gradient(135deg, rgba(27, 30, 27, 0.94), rgba(27, 30, 27, 0.78)),
+    rgba(27, 30, 27, 0.86);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+.view-feed .masonry {
+  padding-top: calc(68px + env(safe-area-inset-top));
+}
+
+.view[data-view="messages"] > .topbar.compact,
+.view[data-view="profile"] > .topbar.compact {
+  top: 8px;
+  width: min(calc(100% - 20px), 520px);
+  border-radius: 0 0 24px 24px;
+  border-top: 0;
+}
+
+.detail-fixed-header {
+  border-radius: 0 0 28px 28px;
+  border-top: 0;
+}
+
+.detail-fixed-avatar,
+.composer-avatar,
+.message-avatar,
+.card-avatar,
+.profile-avatar,
+.publish-location-dotline,
+.image-lightbox-close,
+.back-button,
+.icon-button,
+.sheet-close {
+  border-radius: 999px;
+}
+
+.detail-bottom-actions {
+  left: 50%;
+  bottom: 8px;
+  width: min(calc(100% - 20px), 520px);
+  transform: translateX(-50%);
+  border-radius: 28px;
+  padding: 8px;
+}
+
+.detail-action-btn {
+  border-radius: 999px;
+}
+
+.detail-gallery-dots {
+  padding: 6px 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.44);
+  box-shadow: 0 8px 20px rgba(22, 32, 27, 0.12);
+  -webkit-backdrop-filter: blur(12px) saturate(1.18);
+  backdrop-filter: blur(12px) saturate(1.18);
+}
+
+.detail-dot {
+  width: 8px;
+  height: 8px;
+  min-width: 8px;
+  min-height: 8px;
+  padding: 0;
+  border-radius: 999px;
+}
+
+.detail-dot.is-active {
+  width: 18px;
+  background: rgba(27, 30, 27, 0.86);
+}
+
+.image-lightbox {
+  background: rgba(10, 13, 12, 0.56);
+  -webkit-backdrop-filter: blur(18px) saturate(1.08);
+  backdrop-filter: blur(18px) saturate(1.08);
+}
+
+.image-lightbox-close {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  color: rgba(20, 27, 24, 0.94);
+}
+
+.publish-sheet,
+.auth-sheet,
+.avatar-crop-sheet {
+  border-radius: 32px 32px 0 0;
+  overflow: hidden;
+}
+
+.publish-sheet form,
+.auth-sheet form,
+.avatar-crop-sheet form {
+  background: transparent;
+}
+
+.publish-sheet label,
+.auth-sheet label,
+.avatar-crop-sheet label,
+.publish-grid label {
+  border-radius: 20px;
+}
+
+.channel-composer {
+  bottom: calc(76px + env(safe-area-inset-bottom));
+  border-radius: 28px;
+}
+
+.channel-composer input,
+.channel-composer select,
+.channel-composer textarea,
+.reply-form textarea {
+  border-color: rgba(255, 255, 255, 0.5);
+  background: rgba(255, 255, 255, 0.44);
+  -webkit-backdrop-filter: blur(10px) saturate(1.12);
+  backdrop-filter: blur(10px) saturate(1.12);
+}
+
+.channel-composer button,
+.reply-form button {
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.42);
+  background:
+    linear-gradient(135deg, rgba(27, 30, 27, 0.94), rgba(27, 30, 27, 0.78)),
+    rgba(27, 30, 27, 0.86);
+  color: #fff;
+  box-shadow: 0 10px 24px rgba(22, 32, 27, 0.18);
+}
+
+.map-v2-toolbar,
+.map-filterbar,
+.map-v2-editor {
+  border-radius: 28px;
+}
+
+.map-v2-toolbar button,
+.map-v2-editor-actions button,
+.map-v2-popup button,
+.map-v2-post-card,
+.campus-post-pin,
+.campus-place-label,
+.campus-picked-pin,
+.map-v2-location-card,
+.leaflet-popup button {
+  border-radius: 18px;
+}
+
+.map-v2-toolbar button,
+.map-v2-editor-actions button {
+  border: 1px solid rgba(255, 255, 255, 0.48);
+  background: rgba(255, 255, 255, 0.42);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.54);
+}
+
+.map-v2-toolbar button.is-active,
+.is-map-v2-picking .map-v2-toolbar [data-map-v2-mode="pick"],
+.map-v2-editor-actions .primary,
+.map-v2-popup button {
+  background:
+    linear-gradient(135deg, rgba(27, 30, 27, 0.94), rgba(27, 30, 27, 0.78)),
+    rgba(27, 30, 27, 0.86);
+  color: #fff;
+}
+
+.map-v2-post-card,
+.campus-post-pin,
+.campus-place-label,
+.map-v2-location-card {
+  border: 1px solid rgba(255, 255, 255, 0.58);
+  background: rgba(255, 255, 255, 0.56);
+  box-shadow: 0 14px 30px rgba(20, 33, 27, 0.2);
   -webkit-backdrop-filter: blur(14px) saturate(1.15);
   backdrop-filter: blur(14px) saturate(1.15);
+}
+
+.leaflet-control-zoom {
+  overflow: hidden;
+  border-radius: 18px;
+}
+
+.leaflet-control-zoom a {
+  border: 0;
+}
+
+.leaflet-popup-content-wrapper {
+  border-radius: 22px;
+}
+
+.leaflet-popup-tip {
+  box-shadow: 0 8px 18px rgba(22, 32, 27, 0.14);
 }
 
 @supports not selector(:has(*)) {
