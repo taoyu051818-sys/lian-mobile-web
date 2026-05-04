@@ -710,6 +710,62 @@
   box-shadow: 0 8px 18px rgba(22, 32, 27, 0.14);
 }
 
+/* Animation performance */
+.view.is-entering,
+.view.is-leaving {
+  contain: paint;
+  backface-visibility: hidden;
+  will-change: transform;
+}
+
+.view.is-animating .glass-orb,
+.view.is-animating .glass-pill,
+.view.is-animating .glass-panel,
+.view.is-animating .detail-fixed-header,
+.view.is-animating .detail-bottom-actions,
+.view.is-animating .channel-composer,
+.view.is-animating .map-v2-toolbar,
+.view.is-animating .map-v2-editor,
+.view.is-animating .map-filterbar,
+.view.is-animating .reply-form,
+.view.is-animating .leaflet-control-zoom,
+.view.is-animating .leaflet-control-layers,
+.view.is-animating .leaflet-popup-content-wrapper,
+.view.is-animating .leaflet-popup-tip {
+  -webkit-backdrop-filter: blur(8px) saturate(1.08);
+  backdrop-filter: blur(8px) saturate(1.08);
+}
+
+.feed-card,
+.profile-list-item,
+.notification-item,
+.message-item {
+  content-visibility: auto;
+  contain-intrinsic-size: 220px;
+}
+
+.detail-gallery,
+.image-lightbox-image,
+.publish-location-fullscreen,
+.map-v2-shell,
+.campus-map-stage {
+  backface-visibility: hidden;
+  transform: translateZ(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .view.is-entering,
+  .view.is-leaving,
+  .feed-card,
+  .profile-list-item,
+  .notification-item,
+  .message-item {
+    content-visibility: visible;
+    contain: none;
+    will-change: auto;
+  }
+}
+
 @supports not selector(:has(*)) {
   .publish-location-fullscreen {
     position: fixed;
