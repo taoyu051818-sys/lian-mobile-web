@@ -1,3 +1,5 @@
+import { isProductionMode } from "./security-mode.js";
+
 const SAFE_METHODS = new Set(["GET", "HEAD", "OPTIONS"]);
 
 function firstHeaderValue(value = "") {
@@ -35,6 +37,7 @@ function isSameOriginRequest(req = {}) {
 }
 
 function requireSameOrigin(req = {}) {
+  if (!isProductionMode()) return;
   if (SAFE_METHODS.has(String(req.method || "GET").toUpperCase())) return;
   if (isSameOriginRequest(req)) return;
   const error = new Error("cross-origin state-changing request blocked");
