@@ -6,6 +6,7 @@
   "scripts": {
     "start": "node server.js",
     "check": "node scripts/validate-project-structure.js",
-    "test": "node --test"
+    "test": "node --test test/*.test.mjs",
+    "test:routes": "node scripts/test-routes.js"
   }
 }
