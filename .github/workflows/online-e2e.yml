@@ -3,6 +3,11 @@ name: online-e2e
 on:
   workflow_dispatch:
     inputs:
+      app_base_url:
+        description: "Fallback app URL if STAGING_APP_BASE_URL secret/variable is not available"
+        required: false
+        default: ""
+        type: string
       allow_mutations:
         description: "Run safe mutation checks such as admin reload/logout"
         required: false
@@ -23,6 +28,7 @@ on:
 jobs:
   smoke:
     runs-on: ubuntu-latest
+    environment: staging
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -40,9 +46,19 @@ jobs:
       - name: Project structure check
         run: node scripts/validate-project-structure.js
 
+      - name: Check online E2E configuration
+        env:
+          APP_BASE_URL: ${{ secrets.STAGING_APP_BASE_URL || vars.STAGING_APP_BASE_URL || inputs.app_base_url }}
+        run: |
+          if [ -z "$APP_BASE_URL" ]; then
+            echo "::error::APP_BASE_URL is empty. Set STAGING_APP_BASE_URL in repository secrets, staging environment secrets, repository variables, or fill the app_base_url input when running the workflow."
+            exit 1
+          fi
+          echo "APP_BASE_URL is configured."
+
       - name: Online E2E smoke
         env:
-          APP_BASE_URL: ${{ secrets.STAGING_APP_BASE_URL }}
+          APP_BASE_URL: ${{ secrets.STAGING_APP_BASE_URL || vars.STAGING_APP_BASE_URL || inputs.app_base_url }}
           ADMIN_TOKEN: ${{ secrets.STAGING_ADMIN_TOKEN }}
           TEST_LOGIN: ${{ secrets.STAGING_TEST_LOGIN }}
           TEST_PASSWORD: ${{ secrets.STAGING_TEST_PASSWORD }}
