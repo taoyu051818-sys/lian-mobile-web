@@ -1,4 +1,5 @@
 @import "../../public/lian-tokens.css";
+@import "../ui/primitives.css";
 
 * {
   box-sizing: border-box;
@@ -29,22 +30,20 @@ select {
 }
 
 .vue-shell {
-  display: grid;
   min-height: 100vh;
-  place-items: center;
   padding: var(--space-6);
 }
 
-.vue-shell__panel {
-  width: min(100%, 520px);
-  padding: var(--space-6);
-  border: 1px solid var(--glass-border);
-  border-radius: var(--radius-sheet);
-  background:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.88), rgba(255, 255, 255, 0.54)),
-    var(--glass-bg-strong);
-  box-shadow: var(--shadow-glass);
-  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+.vue-shell__grid {
+  display: grid;
+  width: min(100%, 960px);
+  gap: var(--space-6);
+  margin: 0 auto;
+}
+
+.vue-shell__hero {
+  display: grid;
+  gap: var(--space-4);
 }
 
 .vue-shell__eyebrow {
@@ -63,27 +62,45 @@ select {
 }
 
 .vue-shell__summary {
-  margin: var(--space-4) 0 0;
+  margin: 0;
   color: var(--lian-muted);
   font-size: 15px;
   line-height: 1.6;
 }
 
-.vue-shell__steps {
+.vue-shell__section {
   display: grid;
   gap: var(--space-3);
-  margin: var(--space-6) 0 0;
-  padding: 0;
-  list-style: none;
 }
 
-.vue-shell__steps li {
-  padding: var(--space-3) var(--space-4);
-  border: 1px solid var(--lian-line);
-  border-radius: var(--radius-card);
-  background: var(--lian-card);
-  box-shadow: var(--shadow-card);
-  color: var(--lian-ink);
-  font-size: 14px;
-  line-height: 1.5;
+.vue-shell__section h2 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.vue-shell__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+.vue-shell__sample-card {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.vue-shell__sample-title {
+  margin: 0;
+  font-size: 18px;
+  line-height: 1.35;
+}
+
+.vue-shell__sample-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: center;
+  color: var(--lian-muted);
+  font-size: 12px;
 }
