@@ -6,59 +6,52 @@ import { fileURLToPath } from "node:url";
 const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
 const requiredFiles = [
-  "server.js",
-  "src/server/api-router.js",
-  "src/server/route-matcher.js",
-  "src/server/post-service.js",
-  "src/server/nodebb-client.js",
-  "src/server/feed-service.js",
-  "src/server/auth-service.js",
-  "src/server/config.js",
-  "src/server/data-store.js",
-  "src/server/content-utils.js",
-  "src/server/cache.js",
-  "src/server/paths.js",
-  "public/app.js",
   "public/index.html",
   "public/styles.css",
-  "data/feed-rules.json",
-  "data/post-metadata.json",
+  "public/glass-ui.css",
+  "public/app.js",
+  "public/app-state.js",
+  "public/app-utils.js",
+  "public/app-auth-avatar.js",
+  "public/app-feed.js",
+  "public/app-legacy-map.js",
+  "public/app-ai-publish.js",
+  "public/publish-page.js",
+  "public/app-messages-profile.js",
+  "public/map-v2.js",
+  "public/reply-form-click-guard.js",
+  "public/explore-preload.js",
+  "scripts/smoke-frontend.js",
+  "scripts/serve-frontend-static-rehearsal.js",
   "package.json",
-  "CLAUDE.md"
+  "README.md"
 ];
 
-const jsonFiles = [
-  "data/feed-rules.json",
-  "data/post-metadata.json"
+const forbiddenPaths = [
+  "server.js",
+  "src/server",
+  "scripts/test-routes.js",
+  "scripts/prepare-backend-repo-export.js",
+  "test/audience-regression.test.mjs",
+  "test/remote-auth-regression.test.mjs",
+  "test/security-regression.test.mjs"
 ];
 
 const jsFilesToSyntaxCheck = [
-  "server.js",
-  "src/server/api-router.js",
-  "src/server/route-matcher.js",
-  "src/server/post-service.js",
-  "src/server/nodebb-client.js",
-  "src/server/feed-service.js",
-  "src/server/auth-service.js",
-  "src/server/auth-routes.js",
-  "src/server/ai-post-preview.js",
-  "src/server/ai-light-publish.js",
-  "src/server/channel-service.js",
-  "src/server/admin-routes.js",
-  "src/server/config.js",
-  "src/server/data-store.js",
-  "src/server/content-utils.js",
-  "src/server/image-proxy.js",
-  "src/server/upload.js",
-  "src/server/cache.js",
-  "src/server/paths.js",
-  "src/server/http-response.js",
-  "src/server/request-utils.js",
-  "src/server/static-data.js",
-  "src/server/static-server.js",
-  "src/server/setup-page.js",
+  "public/app.js",
+  "public/app-state.js",
+  "public/app-utils.js",
+  "public/app-auth-avatar.js",
+  "public/app-feed.js",
+  "public/app-legacy-map.js",
+  "public/app-ai-publish.js",
+  "public/publish-page.js",
+  "public/app-messages-profile.js",
+  "public/map-v2.js",
   "public/reply-form-click-guard.js",
-  "public/explore-preload.js"
+  "public/explore-preload.js",
+  "scripts/smoke-frontend.js",
+  "scripts/serve-frontend-static-rehearsal.js"
 ];
 
 let passed = 0;
@@ -66,12 +59,12 @@ let failed = 0;
 
 function ok(label) {
   passed += 1;
-  console.log(`  ✓ ${label}`);
+  console.log(`  ok ${label}`);
 }
 
 function fail(label, reason) {
   failed += 1;
-  console.log(`  ✗ ${label} — ${reason}`);
+  console.log(`  fail ${label} - ${reason}`);
 }
 
 async function checkFileExists(file) {
@@ -80,18 +73,17 @@ async function checkFileExists(file) {
     await fs.access(fullPath);
     ok(file);
   } catch {
-    fail(file, "文件不存在");
+    fail(file, "file does not exist");
   }
 }
 
-async function checkJsonValid(file) {
+async function checkPathAbsent(file) {
   const fullPath = path.join(rootDir, file);
   try {
-    const raw = await fs.readFile(fullPath, "utf8");
-    JSON.parse(raw);
-    ok(`${file} (JSON 合法)`);
-  } catch (error) {
-    fail(`${file} (JSON)`, error.message);
+    await fs.access(fullPath);
+    fail(file, "backend-owned path still exists");
+  } catch {
+    ok(`${file} absent`);
   }
 }
 
@@ -99,57 +91,30 @@ function checkSyntax(file) {
   const fullPath = path.join(rootDir, file);
   try {
     execSync(`node --check "${fullPath}"`, { stdio: "pipe" });
-    ok(`${file} (语法正确)`);
+    ok(`${file} syntax`);
   } catch {
-    fail(`${file} (语法检查)`, "node --check 失败");
+    fail(`${file} syntax`, "node --check failed");
   }
 }
 
-async function checkDataDir() {
-  const dataDir = path.join(rootDir, "data");
-  try {
-    const entries = await fs.readdir(dataDir);
-    const jsonCount = entries.filter((e) => e.endsWith(".json")).length;
-    console.log(`  ℹ data/ 目录包含 ${entries.length} 个文件，其中 ${jsonCount} 个 JSON 文件`);
-  } catch {
-    fail("data/ 目录", "目录不存在");
-  }
-}
+console.log("\nLIAN frontend-only project structure check\n");
 
-async function checkDocsDir() {
-  const docsDir = path.join(rootDir, "docs", "agent");
-  try {
-    await fs.access(docsDir);
-    const entries = await fs.readdir(docsDir);
-    console.log(`  ℹ docs/agent/ 目录包含 ${entries.length} 个条目`);
-  } catch {
-    fail("docs/agent/ 目录", "目录不存在");
-  }
-}
-
-// Main
-console.log("\n═══ LIAN 项目结构校验 ═══\n");
-
-console.log("▶ 关键文件检查");
+console.log("Required frontend files");
 for (const file of requiredFiles) {
   await checkFileExists(file);
 }
 
-console.log("\n▶ JSON 数据文件校验");
-for (const file of jsonFiles) {
-  await checkJsonValid(file);
+console.log("\nForbidden backend-owned paths");
+for (const file of forbiddenPaths) {
+  await checkPathAbsent(file);
 }
 
-console.log("\n▶ JS 语法检查 (node --check)");
+console.log("\nJavaScript syntax check");
 for (const file of jsFilesToSyntaxCheck) {
   checkSyntax(file);
 }
 
-console.log("\n▶ 目录结构");
-await checkDataDir();
-await checkDocsDir();
-
-console.log(`\n═══ 结果：${passed} 通过，${failed} 失败 ═══\n`);
+console.log(`\nResult: ${passed} passed, ${failed} failed\n`);
 
 if (failed > 0) {
   process.exit(1);

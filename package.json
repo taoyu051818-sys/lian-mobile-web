@@ -4,10 +4,10 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "start": "node server.js",
+    "start": "node scripts/serve-frontend-static-rehearsal.js",
     "check": "node scripts/validate-project-structure.js && node scripts/check-encoding-contamination.js",
     "check:encoding": "node scripts/check-encoding-contamination.js",
-    "test": "node --test test/*.test.mjs",
-    "test:routes": "node scripts/test-routes.js"
+    "test": "node scripts/smoke-frontend.js http://127.0.0.1:4300",
+    "start:frontend-static": "node scripts/serve-frontend-static-rehearsal.js"
   }
 }
