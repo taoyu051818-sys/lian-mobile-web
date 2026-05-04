@@ -1,6 +1,7 @@
 const $ = (selector, root = document) => root.querySelector(selector);
 const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
 const MAX_UPLOAD_IMAGE_BYTES = Math.floor(2.5 * 1024 * 1024);
+const JSON_CONTENT_TYPE = "application/json; charset=utf-8";
 
 function ensureClientId() {
   const key = "lian.clientId";
@@ -87,9 +88,19 @@ function fmtMinute(value) {
   return `${date.getMonth() + 1}月${date.getDate()}日 ${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
+function normalizeJsonRequestOptions(options = {}) {
+  if (!options?.body) return options;
+  const headers = new Headers(options.headers || {});
+  const contentType = headers.get("content-type");
+  if (contentType && contentType.toLowerCase() === "application/json") {
+    headers.set("content-type", JSON_CONTENT_TYPE);
+  }
+  return { ...options, headers };
+}
+
 async function api(path, options = {}) {
   const url = path.startsWith("/") ? `${LIAN_API_BASE}${path}` : path;
-  const response = await fetch(url, withDefaultCredentials(options));
+  const response = await fetch(url, normalizeJsonRequestOptions(withDefaultCredentials(options)));
   const data = await response.json().catch(() => ({}));
   if (!response.ok) throw new Error(data.error || `请求失败（状态码 ${response.status}）`);
   return data;

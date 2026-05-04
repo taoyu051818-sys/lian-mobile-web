@@ -3,12 +3,24 @@ const fs = require("fs");
 const https = require("https");
 const path = require("path");
 
+const ROOT = path.resolve(__dirname, "..", "..");
+
+function readCloudinaryUrlFromEnvFile() {
+  const envFile = process.env.LIAN_ENV_FILE || path.join(ROOT, ".env.local");
+  try {
+    const line = fs.readFileSync(envFile, "utf8")
+      .split(/\r?\n/)
+      .find((item) => item.startsWith("CLOUDINARY_URL="));
+    return line ? line.slice("CLOUDINARY_URL=".length).trim() : "";
+  } catch {
+    return "";
+  }
+}
+
 function getCloudinaryUrl() {
-  if (process.env.CLOUDINARY_URL) return process.env.CLOUDINARY_URL;
-  const envFile = "F:\\26.3.13\\NodeBB-frontend\\.env.local";
-  const line = fs.readFileSync(envFile, "utf8").split(/\r?\n/).find((item) => item.startsWith("CLOUDINARY_URL="));
-  if (!line) throw new Error("CLOUDINARY_URL not found");
-  return line.slice("CLOUDINARY_URL=".length).trim();
+  const value = process.env.CLOUDINARY_URL || readCloudinaryUrlFromEnvFile();
+  if (!value) throw new Error("CLOUDINARY_URL not found");
+  return value;
 }
 
 function parseCloudinaryUrl(value) {
@@ -72,7 +84,7 @@ function uploadImage(file, config) {
 
 async function main() {
   const config = parseCloudinaryUrl(getCloudinaryUrl());
-  const imageDir = "F:\\26.3.13\\lian-mobile-web\\outputs\\club-posts\\images";
+  const imageDir = process.env.CLUB_POST_IMAGE_DIR || path.join(ROOT, "outputs", "club-posts", "images");
   const files = {
     clubListA: path.join(imageDir, "clubs-04.jpg"),
     clubListB: path.join(imageDir, "clubs-05.jpg"),
