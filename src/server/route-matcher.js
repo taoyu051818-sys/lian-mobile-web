@@ -1,9 +1,10 @@
 // Pure route matcher — maps (method, pathname) to { routeId, params } or null.
-// Extracted from api-router.js to freeze matching behavior as a safety net.
+// Keep route matching data here so api-router.js can remain a thin dispatcher.
 
 const EXACT_ROUTES = [
   { method: "GET", path: "/api/setup/status", id: "setup-status" },
   { method: "POST", path: "/api/setup", id: "setup" },
+  { method: "GET", path: "/api/internal/task-board", id: "internal-task-board" },
   { method: "GET", path: "/api/alias-pool", id: "alias-pool" },
   { method: "POST", path: "/api/ai/post-preview", id: "ai-post-preview" },
   // admin prefix handled separately
@@ -39,6 +40,10 @@ const EXACT_ROUTES = [
   { method: "POST", path: "/api/posts", id: "create-post" }
 ];
 
+const PREFIX_ROUTES = [
+  { prefix: "/api/admin/", id: "admin" }
+];
+
 const REGEX_ROUTES = [
   { method: "GET", pattern: /^\/api\/posts\/(\d+)$/, id: "post-detail", keys: ["tid"] },
   { method: "POST", pattern: /^\/api\/posts\/(\d+)\/replies$/, id: "post-replies", keys: ["tid"] },
@@ -48,25 +53,25 @@ const REGEX_ROUTES = [
 ];
 
 function matchRoute(method, pathname) {
-  // 1. Admin prefix (any method)
-  if (pathname.startsWith("/api/admin/")) {
-    return { routeId: "admin", params: {} };
+  // 1. Prefix routes keep their historic highest priority.
+  for (const route of PREFIX_ROUTES) {
+    if (pathname.startsWith(route.prefix)) return { routeId: route.id, params: {} };
   }
 
-  // 2. Exact routes (in priority order)
+  // 2. Exact routes (in priority order).
   for (const route of EXACT_ROUTES) {
     if (route.method === method && pathname === route.path) {
       return { routeId: route.id, params: {} };
     }
   }
 
-  // 3. Regex routes (after exact routes)
+  // 3. Regex routes (after exact routes).
   for (const route of REGEX_ROUTES) {
     if (route.method !== method) continue;
     const match = pathname.match(route.pattern);
     if (match) {
       const params = {};
-      for (let i = 0; i < route.keys.length; i++) {
+      for (let i = 0; i < route.keys.length; i += 1) {
         params[route.keys[i]] = match[i + 1];
       }
       return { routeId: route.id, params };
@@ -76,4 +81,4 @@ function matchRoute(method, pathname) {
   return null;
 }
 
-export { matchRoute };
+export { EXACT_ROUTES, PREFIX_ROUTES, REGEX_ROUTES, matchRoute };
