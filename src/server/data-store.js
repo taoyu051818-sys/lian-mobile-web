@@ -51,6 +51,7 @@ async function loadMetadata() {
 }
 
 let metadataWriteQueue = Promise.resolve();
+let authWriteQueue = Promise.resolve();
 
 async function backupMetadata() {
   try {
@@ -101,25 +102,39 @@ async function saveChannelReads(data) {
   memory.channelReadsLoadedAt = Date.now();
 }
 
+function normalizeAuthStore(data = {}) {
+  return {
+    version: 1,
+    users: Array.isArray(data.users) ? data.users : [],
+    sessions: data.sessions && typeof data.sessions === "object" ? data.sessions : {},
+    invites: data.invites && typeof data.invites === "object" ? data.invites : {},
+    verifications: data.verifications && typeof data.verifications === "object" ? data.verifications : {}
+  };
+}
+
 async function loadAuthStore() {
   try {
     const raw = await fs.readFile(authUsersPath, "utf8");
-    const data = JSON.parse(raw);
-    return {
-      version: 1,
-      users: Array.isArray(data.users) ? data.users : [],
-      sessions: data.sessions && typeof data.sessions === "object" ? data.sessions : {},
-      invites: data.invites && typeof data.invites === "object" ? data.invites : {},
-      verifications: data.verifications && typeof data.verifications === "object" ? data.verifications : {}
-    };
+    return normalizeAuthStore(JSON.parse(raw));
   } catch {
-    return { version: 1, users: [], sessions: {}, invites: {}, verifications: {} };
+    return normalizeAuthStore();
   }
 }
 
 async function saveAuthStore(data) {
-  await fs.mkdir(path.dirname(authUsersPath), { recursive: true });
-  await fs.writeFile(authUsersPath, `${JSON.stringify(data, null, 2)}\n`, "utf8");
+  const normalized = normalizeAuthStore(data);
+  authWriteQueue = authWriteQueue.then(() => writeJsonFile(authUsersPath, normalized));
+  return authWriteQueue;
+}
+
+async function updateAuthStore(mutator) {
+  authWriteQueue = authWriteQueue.then(async () => {
+    const store = await loadAuthStore();
+    const result = await mutator(store);
+    await writeJsonFile(authUsersPath, store);
+    return result;
+  });
+  return authWriteQueue;
 }
 
 async function loadUserCache() {
@@ -215,6 +230,7 @@ export {
   loadMetadata,
   loadRules,
   loadUserCache,
+  normalizeAuthStore,
   patchPostMetadata,
   recordActorMeta,
   recordUserLike,
@@ -222,5 +238,6 @@ export {
   saveAuthStore,
   saveChannelReads,
   saveUserCache,
+  updateAuthStore,
   writeJsonFile
 };
