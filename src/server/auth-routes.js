@@ -4,6 +4,7 @@ import { config } from "./config.js";
 import { loadAuthStore, saveAuthStore } from "./data-store.js";
 import { sendJson } from "./http-response.js";
 import { nodebbFetch } from "./nodebb-client.js";
+import { checkRateLimit } from "./rate-limit.js";
 import { readJsonBody } from "./request-utils.js";
 import { authInstitutions } from "./static-data.js";
 import {
@@ -54,6 +55,12 @@ async function handleAuthAvatar(req, res) {
 async function handleSendEmailCode(req, res) {
   const payload = await readJsonBody(req);
   const email = String(payload.email || "").trim().toLowerCase();
+  try {
+    checkRateLimit(req, "email-code-ip", "global", { max: 12, windowMs: 10 * 60_000 });
+    checkRateLimit(req, "email-code-target", email || "missing", { max: 3, windowMs: 10 * 60_000 });
+  } catch (error) {
+    return sendJson(res, error.status || 429, { error: error.message, retryAfterSeconds: error.retryAfterSeconds });
+  }
   if (!email || !email.includes("@")) return sendJson(res, 400, { error: "valid email is required" });
   const institution = findInstitutionByEmail(email);
   if (!institution) return sendJson(res, 400, { error: "该邮箱后缀不在高校认证名单内；邀请码注册可以不填邮箱" });
@@ -73,7 +80,8 @@ async function handleSendEmailCode(req, res) {
     hash: hashEmailCode(email, code),
     sentAt: new Date().toISOString(),
     expiresAt: new Date(Date.now() + 10 * 60_000).toISOString(),
-    usedAt: null
+    usedAt: null,
+    attempts: 0
   };
   await sendMail({
     to: email,
@@ -92,6 +100,12 @@ async function handleAuthRegister(req, res) {
   const password = String(payload.password || "");
   const inviteCode = String(payload.inviteCode || "").trim().toUpperCase();
   const emailCode = String(payload.emailCode || "").trim();
+  try {
+    checkRateLimit(req, "register-ip", "global", { max: 8, windowMs: 10 * 60_000 });
+    checkRateLimit(req, "register-target", email || username || inviteCode || "missing", { max: 6, windowMs: 10 * 60_000 });
+  } catch (error) {
+    return sendJson(res, error.status || 429, { error: error.message, retryAfterSeconds: error.retryAfterSeconds });
+  }
   if (!username) return sendJson(res, 400, { error: "username is required" });
   if (password.length < 8) return sendJson(res, 400, { error: "password must be at least 8 characters" });
 
@@ -215,6 +229,12 @@ async function handleAuthLogin(req, res) {
   const payload = await readJsonBody(req);
   const login = String(payload.login || payload.email || "").trim();
   const password = String(payload.password || "");
+  try {
+    checkRateLimit(req, "login-ip", "global", { max: 20, windowMs: 10 * 60_000 });
+    checkRateLimit(req, "login-target", login || "missing", { max: 8, windowMs: 10 * 60_000 });
+  } catch (error) {
+    return sendJson(res, error.status || 429, { error: error.message, retryAfterSeconds: error.retryAfterSeconds });
+  }
   const store = await loadAuthStore();
   const user = findUserByLogin(store, login);
   if (!user || !verifyPassword(password, user)) {
