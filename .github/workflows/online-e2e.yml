@@ -1,0 +1,52 @@
+name: online-e2e
+
+on:
+  workflow_dispatch:
+    inputs:
+      allow_mutations:
+        description: "Run safe mutation checks such as admin reload/logout"
+        required: false
+        default: "false"
+        type: choice
+        options:
+          - "false"
+          - "true"
+      test_ai_preview:
+        description: "Call /api/ai/post-preview during the smoke test"
+        required: false
+        default: "false"
+        type: choice
+        options:
+          - "false"
+          - "true"
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    environment: staging
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Syntax check
+        run: |
+          node --check server.js
+          find src/server -name "*.js" -print0 | xargs -0 -n1 node --check
+
+      - name: Project structure check
+        run: node scripts/validate-project-structure.js
+
+      - name: Online E2E smoke
+        env:
+          APP_BASE_URL: ${{ secrets.STAGING_APP_BASE_URL }}
+          ADMIN_TOKEN: ${{ secrets.STAGING_ADMIN_TOKEN }}
+          TEST_LOGIN: ${{ secrets.STAGING_TEST_LOGIN }}
+          TEST_PASSWORD: ${{ secrets.STAGING_TEST_PASSWORD }}
+          ONLINE_E2E_ALLOW_MUTATIONS: ${{ inputs.allow_mutations }}
+          ONLINE_E2E_TEST_AI_PREVIEW: ${{ inputs.test_ai_preview }}
+        run: node scripts/e2e-online-smoke.mjs
