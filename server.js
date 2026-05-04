@@ -4,7 +4,10 @@ import { isSetupRequired, config } from "./src/server/config.js";
 import { handleApi } from "./src/server/api-router.js";
 import { sendText } from "./src/server/http-response.js";
 import { setupPageHtml } from "./src/server/setup-page.js";
+import { warnDevelopmentSecurityMode } from "./src/server/security-mode.js";
 import { proxyLianAsset, serveStatic } from "./src/server/static-server.js";
+
+warnDevelopmentSecurityMode();
 
 const server = http.createServer(async (req, res) => {
   const reqUrl = new URL(req.url || "/", `http://${req.headers.host || "localhost"}`);
