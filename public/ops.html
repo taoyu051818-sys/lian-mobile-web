@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LIAN Ops</title>
+  <link rel="stylesheet" href="/styles.css">
+  <style>
+    body { max-width: 920px; margin: 0 auto; padding: 24px; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #f7f7f4; color: #1f2823; }
+    .ops-card { background: #fff; border: 1px solid #dde3dc; border-radius: 18px; padding: 20px; box-shadow: 0 10px 30px rgba(20, 32, 25, .08); margin-bottom: 16px; }
+    .ops-row { display: grid; gap: 10px; margin: 14px 0; }
+    label { font-weight: 700; }
+    input { width: 100%; box-sizing: border-box; border: 1px solid #cdd7cf; border-radius: 12px; padding: 12px; font-size: 15px; }
+    button { border: 0; border-radius: 999px; padding: 12px 18px; font-weight: 800; background: #234936; color: #fff; cursor: pointer; }
+    button:disabled { opacity: .55; cursor: wait; }
+    .status { font-weight: 800; }
+    .ok { color: #197446; }
+    .bad { color: #b42b2b; }
+    .muted { color: #6b746d; }
+    pre { white-space: pre-wrap; overflow-wrap: anywhere; background: #101914; color: #e8f2ea; padding: 16px; border-radius: 14px; }
+    .checks { display: grid; gap: 10px; }
+    .check { border: 1px solid #dde3dc; border-radius: 14px; padding: 12px; background: #fbfcfa; }
+  </style>
+</head>
+<body>
+  <main>
+    <section class="ops-card">
+      <h1>LIAN Ops</h1>
+      <p class="muted">受 ADMIN_TOKEN 保护的只读运维检查台。当前版本只做健康检查，不执行服务器命令。</p>
+      <div class="ops-row">
+        <label for="adminToken">ADMIN_TOKEN</label>
+        <input id="adminToken" type="password" autocomplete="current-password" placeholder="输入后仅保存在当前浏览器 localStorage">
+      </div>
+      <div class="ops-row">
+        <label for="publicBase">公网入口</label>
+        <input id="publicBase" type="url" value="https://lian.nat100.top">
+      </div>
+      <button id="runHealth">运行健康检查</button>
+      <p id="summary" class="status muted">未运行</p>
+    </section>
+
+    <section class="ops-card">
+      <h2>检查项</h2>
+      <div id="checks" class="checks"></div>
+    </section>
+
+    <section class="ops-card">
+      <h2>原始响应</h2>
+      <pre id="raw">{}</pre>
+    </section>
+  </main>
+  <script src="/ops.js"></script>
+</body>
+</html>
