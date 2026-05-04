@@ -2,10 +2,12 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import { canViewPost } from "../src/server/audience-service.js";
+import { sessionCookie } from "../src/server/auth-service.js";
 import { escapeHtml, buildTextPostHtml, renderPostContent, sanitizeHtml } from "../src/server/content-utils.js";
 import { isAllowedImageUrl } from "../src/server/image-proxy.js";
 import { assertRateLimit, checkRateLimit, clearRateLimits } from "../src/server/rate-limit.js";
 import { getRequestOrigin, isSameOriginRequest, requireSameOrigin } from "../src/server/request-security.js";
+import { responseHeaders } from "../src/server/security-headers.js";
 import { isProductionMode } from "../src/server/security-mode.js";
 import { detectImageType, validateImageFile, MAX_UPLOAD_IMAGE_BYTES } from "../src/server/upload.js";
 
@@ -183,6 +185,32 @@ test("same-origin guard respects forwarded proto and host", () => {
   };
   assert.equal(getRequestOrigin(req), "https://lian.example.com");
   assert.equal(isSameOriginRequest(req), true);
+});
+
+test("production headers are strict while development headers stay minimal", () => {
+  withSecurityMode("development", () => {
+    const headers = responseHeaders("text/html; charset=utf-8", { "content-type": "text/html; charset=utf-8" });
+    assert.equal(headers["x-lian-security-mode"], "development");
+    assert.equal(headers["content-security-policy"], undefined);
+    assert.equal(headers["x-content-type-options"], undefined);
+  });
+  withSecurityMode("production", () => {
+    const headers = responseHeaders("text/html; charset=utf-8", { "content-type": "text/html; charset=utf-8" });
+    assert.equal(headers["x-lian-security-mode"], "production");
+    assert.equal(headers["x-content-type-options"], "nosniff");
+    assert.equal(headers["referrer-policy"], "no-referrer");
+    assert.equal(headers["x-frame-options"], "SAMEORIGIN");
+    assert.match(headers["content-security-policy"], /default-src 'self'/);
+  });
+});
+
+test("session cookies are Secure only in production", () => {
+  withSecurityMode("development", () => {
+    assert.doesNotMatch(sessionCookie("token"), /; Secure/);
+  });
+  withSecurityMode("production", () => {
+    assert.match(sessionCookie("token"), /; Secure/);
+  });
 });
 
 test("upload validation accepts only matching image signatures", () => {
