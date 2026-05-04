@@ -63,13 +63,13 @@ button {
   min-height: 100vh;
   padding: 8px 12px 24px;
   background: #ffffff;
-  transform: translateX(0);
   visibility: hidden;
   pointer-events: none;
 }
 
 .view.is-active {
   display: block;
+  transform: none;
   visibility: visible;
   pointer-events: auto;
 }
