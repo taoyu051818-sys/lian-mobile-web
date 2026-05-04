@@ -36,6 +36,7 @@ import {
   handleTogglePostSave
 } from "./post-service.js";
 import { requireSameOrigin } from "./request-security.js";
+import { matchRoute } from "./route-matcher.js";
 import { isProductionMode, securityModeName } from "./security-mode.js";
 import { readJsonBody, requireAdmin } from "./request-utils.js";
 import { mapItems } from "./static-data.js";
@@ -62,14 +63,18 @@ function setupStatusPayload() {
   };
 }
 
-async function handleApi(req, reqUrl, res) {
-  try {
-    requireSameOrigin(req);
+function mapItemsPayload() {
+  return {
+    bounds: { southWest: { lat: 18.37305, lng: 109.99538 }, northEast: { lat: 18.413856, lng: 110.036262 } },
+    items: mapItems
+  };
+}
 
-    if (req.method === "GET" && reqUrl.pathname === "/api/setup/status") {
+async function dispatchRoute(route, req, reqUrl, res) {
+  switch (route.routeId) {
+    case "setup-status":
       return sendJson(res, 200, setupStatusPayload());
-    }
-    if (req.method === "POST" && reqUrl.pathname === "/api/setup") {
+    case "setup": {
       if (!isSetupRequired() && isProductionMode()) requireAdmin(req);
       const payload = await readJsonBody(req);
       await saveSetupConfig(payload, () => {
@@ -78,71 +83,109 @@ async function handleApi(req, reqUrl, res) {
       });
       return sendJson(res, 200, { ok: true, configured: true });
     }
-    if (req.method === "GET" && reqUrl.pathname === "/api/internal/task-board") {
+    case "internal-task-board":
       if (isProductionMode()) requireAdmin(req);
       return await handleTaskBoard(req, res);
-    }
-    if (req.method === "GET" && reqUrl.pathname === "/api/alias-pool") return await handleGetAliasPool(req, res);
-    if (req.method === "POST" && reqUrl.pathname === "/api/ai/post-preview") return await handleAiPostPreview(req, res);
-    if (reqUrl.pathname.startsWith("/api/admin/")) return await handleAdmin(req, reqUrl, res);
-    if (isSetupRequired()) {
+    case "alias-pool":
+      return await handleGetAliasPool(req, res);
+    case "ai-post-preview":
+      return await handleAiPostPreview(req, res);
+    case "admin":
+      return await handleAdmin(req, reqUrl, res);
+    case "ai-post-drafts":
+      return await handleAiPostDraft(req, res);
+    case "ai-post-publish":
+      return await handleAiPostPublish(req, res);
+    case "auth-rules":
+      return await handleAuthRules(res);
+    case "auth-me":
+      return await handleAuthMe(req, res);
+    case "auth-avatar":
+      return await handleAuthAvatar(req, res);
+    case "auth-email-code":
+      return await handleSendEmailCode(req, res);
+    case "auth-register":
+      return await handleAuthRegister(req, res);
+    case "auth-login":
+      return await handleAuthLogin(req, res);
+    case "auth-logout":
+      return await handleAuthLogout(req, res);
+    case "auth-invites":
+      return await handleCreateInvite(req, res);
+    case "auth-aliases-get":
+      return await handleGetAliases(req, res);
+    case "auth-aliases-post":
+      return await handleCreateAlias(req, res);
+    case "auth-alias-deactivate":
+      return await handleDeactivateAlias(req, res);
+    case "auth-alias-activate":
+      return await handleActivateAlias(req, res);
+    case "feed":
+      return await handleFeed(req, reqUrl, res);
+    case "feed-debug":
+      return await handleFeedDebug(req, reqUrl, res);
+    case "tags":
+      return sendJson(res, 200, await nodebbFetch("/api/tags"));
+    case "map-v2-items":
+      return await handleMapV2Items(req, res);
+    case "map-items":
+      return sendJson(res, 200, mapItemsPayload());
+    case "channel":
+      return await handleChannel(reqUrl, req, res);
+    case "channel-read":
+      return await handleChannelRead(req, res);
+    case "channel-messages":
+      return await handleChannelMessage(req, res);
+    case "messages":
+      return await handleMessages(req, res);
+    case "me":
+      return await handleMe(req, res);
+    case "me-saved":
+      return await handleGetSavedPosts(req, res);
+    case "me-liked":
+      return await handleGetLikedPosts(req, res);
+    case "me-history":
+      return await handleGetHistory(req, res);
+    case "post-detail":
+      return await handlePostDetail(req, Number(route.params.tid), res);
+    case "post-replies":
+      return await handleCreateReply(Number(route.params.tid), req, res);
+    case "post-like":
+      return await handleTogglePostLike(Number(route.params.tid), req, res);
+    case "post-save":
+      return await handleTogglePostSave(Number(route.params.tid), req, res);
+    case "post-report":
+      return await handleReportPost(Number(route.params.tid), req, res);
+    case "upload-image":
+      return await handleUploadImage(req, res, reqUrl);
+    case "create-post":
+      return await handleCreatePost(req, res);
+    default:
+      return sendJson(res, 404, { error: "not found" });
+  }
+}
+
+const PRE_SETUP_ROUTE_IDS = new Set([
+  "setup-status",
+  "setup",
+  "internal-task-board",
+  "alias-pool",
+  "ai-post-preview",
+  "admin"
+]);
+
+async function handleApi(req, reqUrl, res) {
+  try {
+    requireSameOrigin(req);
+
+    const route = matchRoute(req.method, reqUrl.pathname);
+    if (!route) return sendJson(res, 404, { error: "not found" });
+
+    if (isSetupRequired() && !PRE_SETUP_ROUTE_IDS.has(route.routeId)) {
       return sendJson(res, 428, { error: "setup required" });
     }
-    if (req.method === "POST" && reqUrl.pathname === "/api/ai/post-drafts") return await handleAiPostDraft(req, res);
-    if (req.method === "POST" && reqUrl.pathname === "/api/ai/post-publish") return await handleAiPostPublish(req, res);
-    if (req.method === "GET" && reqUrl.pathname === "/api/auth/rules") return await handleAuthRules(res);
-    if (req.method === "GET" && reqUrl.pathname === "/api/auth/me") return await handleAuthMe(req, res);
-    if (req.method === "POST" && reqUrl.pathname === "/api/auth/avatar") return await handleAuthAvatar(req, res);
-    if (req.method === "POST" && reqUrl.pathname === "/api/auth/email-code") return await handleSendEmailCode(req, res);
-    if (req.method === "POST" && reqUrl.pathname === "/api/auth/register") return await handleAuthRegister(req, res);
-    if (req.method === "POST" && reqUrl.pathname === "/api/auth/login") return await handleAuthLogin(req, res);
-    if (req.method === "POST" && reqUrl.pathname === "/api/auth/logout") return await handleAuthLogout(req, res);
-    if (req.method === "POST" && reqUrl.pathname === "/api/auth/invites") return await handleCreateInvite(req, res);
-    if (req.method === "GET" && reqUrl.pathname === "/api/auth/aliases") return await handleGetAliases(req, res);
-    if (req.method === "POST" && reqUrl.pathname === "/api/auth/aliases") return await handleCreateAlias(req, res);
-    if (req.method === "POST" && reqUrl.pathname === "/api/auth/aliases/deactivate") return await handleDeactivateAlias(req, res);
-    if (req.method === "POST" && reqUrl.pathname === "/api/auth/aliases/activate") return await handleActivateAlias(req, res);
-    if (req.method === "GET" && reqUrl.pathname === "/api/feed") return await handleFeed(req, reqUrl, res);
-    if (req.method === "GET" && reqUrl.pathname === "/api/feed-debug") return await handleFeedDebug(req, reqUrl, res);
-    if (req.method === "GET" && reqUrl.pathname === "/api/tags") return sendJson(res, 200, await nodebbFetch("/api/tags"));
-    if (req.method === "GET" && reqUrl.pathname === "/api/map/v2/items") return await handleMapV2Items(req, res);
-    if (req.method === "GET" && reqUrl.pathname === "/api/map/items") {
-      return sendJson(res, 200, {
-        bounds: { southWest: { lat: 18.37305, lng: 109.99538 }, northEast: { lat: 18.413856, lng: 110.036262 } },
-        items: mapItems
-      });
-    }
-    if (req.method === "GET" && reqUrl.pathname === "/api/channel") return await handleChannel(reqUrl, req, res);
-    if (req.method === "POST" && reqUrl.pathname === "/api/channel/read") return await handleChannelRead(req, res);
-    if (req.method === "POST" && reqUrl.pathname === "/api/channel/messages") return await handleChannelMessage(req, res);
-    if (req.method === "GET" && reqUrl.pathname === "/api/messages") return await handleMessages(req, res);
-    if (req.method === "GET" && reqUrl.pathname === "/api/me") return await handleMe(req, res);
-    if (req.method === "GET" && reqUrl.pathname === "/api/me/saved") return await handleGetSavedPosts(req, res);
-    if (req.method === "GET" && reqUrl.pathname === "/api/me/liked") return await handleGetLikedPosts(req, res);
-    if (req.method === "POST" && reqUrl.pathname === "/api/me/history") return await handleGetHistory(req, res);
-    if (req.method === "GET" && /^\/api\/posts\/\d+$/.test(reqUrl.pathname)) {
-      const tid = Number(reqUrl.pathname.split("/").pop());
-      return await handlePostDetail(req, tid, res);
-    }
-    if (req.method === "POST" && /^\/api\/posts\/\d+\/replies$/.test(reqUrl.pathname)) {
-      const tid = Number(reqUrl.pathname.split("/").at(-2));
-      return await handleCreateReply(tid, req, res);
-    }
-    if (req.method === "POST" && /^\/api\/posts\/\d+\/like$/.test(reqUrl.pathname)) {
-      const tid = Number(reqUrl.pathname.split("/").at(-2));
-      return await handleTogglePostLike(tid, req, res);
-    }
-    if (req.method === "POST" && /^\/api\/posts\/\d+\/save$/.test(reqUrl.pathname)) {
-      const tid = Number(reqUrl.pathname.split("/").at(-2));
-      return await handleTogglePostSave(tid, req, res);
-    }
-    if (req.method === "POST" && /^\/api\/posts\/\d+\/report$/.test(reqUrl.pathname)) {
-      const tid = Number(reqUrl.pathname.split("/").at(-2));
-      return await handleReportPost(tid, req, res);
-    }
-    if (req.method === "POST" && reqUrl.pathname === "/api/upload/image") return await handleUploadImage(req, res, reqUrl);
-    if (req.method === "POST" && reqUrl.pathname === "/api/posts") return await handleCreatePost(req, res);
-    sendJson(res, 404, { error: "not found" });
+
+    return await dispatchRoute(route, req, reqUrl, res);
   } catch (error) {
     sendJson(res, error.status || 500, { error: error.message || "server error" });
   }
