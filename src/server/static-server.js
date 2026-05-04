@@ -7,6 +7,18 @@ import { publicDir } from "./paths.js";
 import { responseHeaders } from "./security-headers.js";
 import { MIME } from "./static-data.js";
 
+const LONG_LIVED_STATIC_EXTENSIONS = new Set([
+  ".avif",
+  ".gif",
+  ".ico",
+  ".jpeg",
+  ".jpg",
+  ".json",
+  ".png",
+  ".svg",
+  ".webp"
+]);
+
 function runtimeConfigScript(pathname) {
   const values = [
     `window.LIAN_IMAGE_PROXY_BASE_URL=${JSON.stringify(config.imageProxyPublicBaseUrl)};`
@@ -19,6 +31,13 @@ function runtimeConfigScript(pathname) {
 
 function injectRuntimeConfig(html, pathname) {
   return String(html).replace("</head>", `${runtimeConfigScript(pathname)}</head>`);
+}
+
+function cacheControlForStatic(pathname, ext) {
+  if (pathname.startsWith("/assets/") || LONG_LIVED_STATIC_EXTENSIONS.has(ext)) {
+    return "public, max-age=2592000, immutable";
+  }
+  return "no-cache";
 }
 
 async function serveStatic(reqUrl, res) {
@@ -42,7 +61,10 @@ async function serveStatic(reqUrl, res) {
     const isHtml = ext === ".html" || ext === ".htm";
     let data = await fs.readFile(filePath, isHtml ? "utf8" : undefined);
     if (isHtml) data = injectRuntimeConfig(data, pathname);
-    res.writeHead(200, responseHeaders(type, { "content-type": type, "cache-control": "no-cache" }));
+    res.writeHead(200, responseHeaders(type, {
+      "content-type": type,
+      "cache-control": cacheControlForStatic(pathname, ext)
+    }));
     res.end(data);
   } catch {
     const index = injectRuntimeConfig(await fs.readFile(path.join(publicDir, "index.html"), "utf8"), "/index.html");
@@ -69,7 +91,7 @@ async function proxyLianAsset(reqUrl, res) {
     const type = response.headers.get("content-type") || MIME[path.extname(assetPath).toLowerCase()] || "application/octet-stream";
     res.writeHead(200, responseHeaders(type, {
       "content-type": type,
-      "cache-control": "public, max-age=3600"
+      "cache-control": "public, max-age=2592000, immutable"
     }));
     res.end(bytes);
   } catch (error) {
