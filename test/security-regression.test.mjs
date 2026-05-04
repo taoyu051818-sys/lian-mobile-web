@@ -5,6 +5,7 @@ import { canViewPost } from "../src/server/audience-service.js";
 import { escapeHtml, buildTextPostHtml, renderPostContent, sanitizeHtml } from "../src/server/content-utils.js";
 import { isAllowedImageUrl } from "../src/server/image-proxy.js";
 import { assertRateLimit, checkRateLimit, clearRateLimits } from "../src/server/rate-limit.js";
+import { getRequestOrigin, isSameOriginRequest, requireSameOrigin } from "../src/server/request-security.js";
 import { detectImageType, validateImageFile, MAX_UPLOAD_IMAGE_BYTES } from "../src/server/upload.js";
 
 const SCHOOL_NAME = "中国传媒大学海南国际学院";
@@ -120,6 +121,35 @@ test("rate limiter keys include client ip and subject", () => {
   checkRateLimit(req, "email-code", "student@example.edu", { max: 1, windowMs: 1000 });
   assert.throws(() => checkRateLimit(req, "email-code", "student@example.edu", { max: 1, windowMs: 1000 }), /too many requests/);
   assert.doesNotThrow(() => checkRateLimit(req, "email-code", "other@example.edu", { max: 1, windowMs: 1000 }));
+});
+
+test("same-origin guard blocks cross-site state-changing requests", () => {
+  const baseReq = {
+    method: "POST",
+    headers: {
+      host: "149.104.21.74:4100",
+      origin: "http://149.104.21.74:4100"
+    }
+  };
+  assert.equal(getRequestOrigin(baseReq), "http://149.104.21.74:4100");
+  assert.equal(isSameOriginRequest(baseReq), true);
+  assert.doesNotThrow(() => requireSameOrigin(baseReq));
+  assert.doesNotThrow(() => requireSameOrigin({ ...baseReq, method: "GET", headers: { ...baseReq.headers, origin: "https://evil.example" } }));
+  assert.throws(() => requireSameOrigin({ ...baseReq, headers: { ...baseReq.headers, origin: "https://evil.example" } }), /cross-origin/);
+});
+
+test("same-origin guard respects forwarded proto and host", () => {
+  const req = {
+    method: "POST",
+    headers: {
+      host: "127.0.0.1:4100",
+      "x-forwarded-host": "lian.example.com",
+      "x-forwarded-proto": "https",
+      referer: "https://lian.example.com/app"
+    }
+  };
+  assert.equal(getRequestOrigin(req), "https://lian.example.com");
+  assert.equal(isSameOriginRequest(req), true);
 });
 
 test("upload validation accepts only matching image signatures", () => {
