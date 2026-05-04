@@ -102,19 +102,35 @@ function publishPageRenderLocationPick(container) {
   const totalCount = state.publish.selectedFiles.length;
   const uploadDone = !state.publish.uploadLoading && uploadedCount >= totalCount;
   container.innerHTML = `
-    <div class="publish-page-section">
-      <h3>这些照片在哪里？</h3>
-      ${!uploadDone ? `<p class="publish-status">图片上传中 (${uploadedCount}/${totalCount})，可先选择地点</p>` : ""}
-      <div class="publish-location-embed" id="publishMapEmbed"></div>
-      <label>
-        地点
-        <input id="publishLocationInput" autocomplete="off" value="${escapeHtml(draft?.skipped ? "" : locationLabel)}" placeholder="输入地点，或在地图上选择">
-      </label>
-      <div class="publish-actions">
-        <button type="button" data-publish-skip-location>跳过定位</button>
-        <button class="primary" type="button" data-publish-confirm-location>下一步</button>
+    <section class="publish-location-fullscreen" aria-label="选择发布地点">
+      <div class="publish-location-map" id="publishMapEmbed"></div>
+      <div class="publish-location-topbar">
+        <button class="glass-orb publish-location-back" type="button" data-publish-back aria-label="返回">‹</button>
+        <div class="glass-pill publish-location-step">2/3 选择地点</div>
       </div>
-    </div>
+      ${!uploadDone ? `
+        <div class="glass-pill publish-location-upload-status">图片上传中 ${uploadedCount}/${totalCount}</div>
+      ` : ""}
+      <div class="publish-location-bottom glass-panel">
+        <div class="publish-location-title-row">
+          <span class="publish-location-dotline" aria-hidden="true">
+            <span></span><span></span><span></span>
+          </span>
+          <div>
+            <strong>匹配显示的地点</strong>
+            <small>可直接点地图，也可以手动修正名称</small>
+          </div>
+        </div>
+        <label class="glass-pill publish-location-input-wrap">
+          <span>地点</span>
+          <input id="publishLocationInput" autocomplete="off" value="${escapeHtml(draft?.skipped ? "" : locationLabel)}" placeholder="输入地点，或在地图上选择">
+        </label>
+        <div class="publish-location-actions">
+          <button class="glass-pill publish-location-secondary" type="button" data-publish-skip-location>跳过定位</button>
+          <button class="glass-pill publish-location-primary" type="button" data-publish-confirm-location>下一步</button>
+        </div>
+      </div>
+    </section>
   `;
   publishPageInitMapPick();
 }
