@@ -5,6 +5,7 @@ import { loadAuthStore, saveAuthStore } from "./data-store.js";
 import { sendJson } from "./http-response.js";
 import { nodebbFetch } from "./nodebb-client.js";
 import { checkRateLimit } from "./rate-limit.js";
+import { getRequestOrigin, normalizeOrigin } from "./request-security.js";
 import { readJsonBody } from "./request-utils.js";
 import { authInstitutions } from "./static-data.js";
 import {
@@ -160,11 +161,54 @@ async function handleAuthRegister(req, res) {
   sendJson(res, 200, { user: publicAuthUser(user) });
 }
 
-async function remoteAuthLogin(payload = {}) {
-  if (!config.remoteAuthBaseUrl) return null;
+function getConfiguredRemoteAuthBaseUrl() {
+  const explicit = process.env.REMOTE_AUTH_BASE_URL;
+  return explicit ? config.remoteAuthBaseUrl : "";
+}
+
+function originParts(value = "") {
+  try {
+    const url = new URL(value);
+    const defaultPort = url.protocol === "https:" ? "443" : "80";
+    return {
+      origin: `${url.protocol}//${url.host}`.toLowerCase(),
+      hostname: url.hostname.toLowerCase(),
+      port: url.port || defaultPort
+    };
+  } catch {
+    return null;
+  }
+}
+
+function isLoopbackHostname(hostname = "") {
+  return ["localhost", "127.0.0.1", "::1", "[::1]"].includes(String(hostname || "").toLowerCase());
+}
+
+function isRemoteAuthPointingToSelf(req = {}) {
+  const remote = originParts(getConfiguredRemoteAuthBaseUrl());
+  if (!remote) return false;
+
+  const requestOrigin = normalizeOrigin(getRequestOrigin(req));
+  if (requestOrigin && remote.origin === requestOrigin) return true;
+
+  const request = originParts(requestOrigin);
+  if (request && remote.hostname === request.hostname && remote.port === request.port) return true;
+
+  return isLoopbackHostname(remote.hostname) && Number(remote.port) === Number(config.port);
+}
+
+async function remoteAuthLogin(payload = {}, req = {}) {
+  const remoteAuthBaseUrl = getConfiguredRemoteAuthBaseUrl();
+  if (!remoteAuthBaseUrl) return null;
+  if (isRemoteAuthPointingToSelf(req)) {
+    const error = new Error("remote auth base URL points to the current service");
+    error.status = 503;
+    throw error;
+  }
+
   let response;
   try {
-    response = await fetch(`${config.remoteAuthBaseUrl}/api/auth/login`, {
+    response = await fetch(`${remoteAuthBaseUrl}/api/auth/login`, {
       method: "POST",
       headers: { "content-type": "application/json; charset=utf-8" },
       body: JSON.stringify(payload)
@@ -212,7 +256,7 @@ function upsertRemoteAuthUser(store, remoteUser = {}, login = "") {
   }
 
   user.remoteAuthId = remoteId || user.remoteAuthId || "";
-  user.remoteAuthBaseUrl = config.remoteAuthBaseUrl;
+  user.remoteAuthBaseUrl = getConfiguredRemoteAuthBaseUrl();
   user.email = email || user.email || "";
   user.username = username || user.username;
   user.avatarUrl = remoteUser.avatarUrl || remoteUser.picture || user.avatarUrl || "";
@@ -239,7 +283,8 @@ async function handleAuthLogin(req, res) {
   const user = findUserByLogin(store, login);
   if (!user || !verifyPassword(password, user)) {
     try {
-      const remoteUser = await remoteAuthLogin(payload);
+      const remoteUser = await remoteAuthLogin(payload, req);
+      if (!remoteUser) return sendJson(res, 401, { error: "email or password is incorrect" });
       const localUser = upsertRemoteAuthUser(store, remoteUser, login);
       if (localUser.status === "banned") return sendJson(res, 403, { error: "account banned" });
       const token = crypto.randomBytes(32).toString("base64url");
@@ -252,7 +297,8 @@ async function handleAuthLogin(req, res) {
       res.setHeader("set-cookie", sessionCookie(token));
       return sendJson(res, 200, { user: publicAuthUser(localUser), remoteAuth: true });
     } catch (error) {
-      return sendJson(res, error.status === 502 ? 502 : 401, { error: error.status === 502 ? error.message : "email or password is incorrect" });
+      const expose = error.status === 502 || error.status === 503;
+      return sendJson(res, expose ? error.status : 401, { error: expose ? error.message : "email or password is incorrect" });
     }
   }
   if (user.status === "banned") return sendJson(res, 403, { error: "account banned" });
@@ -321,6 +367,7 @@ async function handleMe(req, res) {
 }
 
 export {
+  getConfiguredRemoteAuthBaseUrl,
   handleAuthAvatar,
   handleAuthLogin,
   handleAuthLogout,
@@ -329,7 +376,9 @@ export {
   handleAuthRules,
   handleCreateInvite,
   handleMe,
-  handleSendEmailCode
+  handleSendEmailCode,
+  isRemoteAuthPointingToSelf,
+  remoteAuthLogin
 };
 
 export {
