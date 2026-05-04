@@ -7,30 +7,29 @@ import { publicDir } from "./paths.js";
 import { MIME } from "./static-data.js";
 
 async function serveStatic(reqUrl, res) {
-  let pathname = decodeURIComponent(reqUrl.pathname);
+  let pathname;
+  try {
+    pathname = decodeURIComponent(reqUrl.pathname);
+  } catch {
+    sendText(res, 400, "Bad Request");
+    return;
+  }
   if (pathname === "/") pathname = "/index.html";
   const filePath = path.normalize(path.join(publicDir, pathname));
-  if (!filePath.startsWith(publicDir)) {
+  const relativePath = path.relative(publicDir, filePath);
+  if (relativePath.startsWith("..") || path.isAbsolute(relativePath)) {
     sendText(res, 403, "Forbidden");
     return;
   }
   try {
     const ext = path.extname(filePath).toLowerCase();
     const type = MIME[ext] || "application/octet-stream";
-    // Only read as UTF-8 for HTML files (need injection), everything else as Buffer
     const isHtml = ext === ".html" || ext === ".htm";
     let data = await fs.readFile(filePath, isHtml ? "utf8" : undefined);
-    // Inject config into editor page
     if (isHtml && pathname === "/tools/map-v2-editor.html") {
-      if (config.adminToken) {
-        data = data.replace(
-          'id="adminToken"',
-          `id="adminToken" value="${config.adminToken}"`
-        );
-      }
       data = data.replace(
         "</head>",
-        `<script>window.LIAN_NODEBB_URL="${config.nodebbPublicBaseUrl}";</script></head>`
+        `<script>window.LIAN_NODEBB_URL=${JSON.stringify(config.nodebbPublicBaseUrl)};</script></head>`
       );
     }
     res.writeHead(200, { "content-type": type, "cache-control": "no-cache" });
