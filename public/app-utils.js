@@ -52,11 +52,7 @@ function withDefaultCredentials(options = {}) {
 }
 
 function displayImageUrl(url = "") {
-  const value = String(url || "");
-  if (/^https:\/\/res\.cloudinary\.com\/[^/]+\/image\/upload\//.test(value)) {
-    return `${LIAN_IMAGE_PROXY_BASE}/api/image-proxy?url=${encodeURIComponent(value)}`;
-  }
-  return value;
+  return String(url || "");
 }
 
 function formatRelativeTime(value) {
