@@ -5,7 +5,7 @@ defineProps<{
 }>();
 
 const emit = defineEmits<{
-  select: [key: string];
+  change: [key: string];
 }>();
 </script>
 
@@ -17,7 +17,8 @@ const emit = defineEmits<{
       class="bottom-tab-bar__item"
       :class="{ 'is-active': item.key === activeKey }"
       type="button"
-      @click="emit('select', item.key)"
+      :aria-current="item.key === activeKey ? 'page' : undefined"
+      @click="emit('change', item.key)"
     >
       <span v-if="item.icon" aria-hidden="true">{{ item.icon }}</span>
       <span>{{ item.label }}</span>
