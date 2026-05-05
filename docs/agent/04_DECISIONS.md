@@ -1,5 +1,8 @@
 # Architecture And Product Decisions
 
+> [!WARNING]
+> Historical / superseded decision context as of 2026-05-05. Do not use this file as the current decision source. Start from `docs/agent/README.md`, `docs/agent/references/PR_DERIVED_STATUS_2026-05-05.md`, and `docs/agent/references/DECISIONS_OVERRIDE_2026-05-05.md` before using the material below.
+
 This numbered file is the current decision log for future Codex threads. Older root docs under `docs/agent/` are historical context and should not override this file unless a newer dated decision is added.
 
 ## Active Supersessions
