@@ -5,6 +5,7 @@ import { GlassPanel, IdentityBadge, InlineError, LianButton, TagChip, TrustBadge
 import type { FeedItemId } from "../types/feed";
 import type { ProfileListItem, ProfileTabKey, ProfileUser } from "../types/profile";
 import AuthPanel from "./auth/AuthPanel.vue";
+import ProfileEditorPanel from "./profile/ProfileEditorPanel.vue";
 
 const user = ref<ProfileUser | null>(null);
 const loading = ref(false);
@@ -13,6 +14,7 @@ const errorMessage = ref("");
 const listError = ref("");
 const activeTab = ref<ProfileTabKey>("history");
 const profileItems = ref<ProfileListItem[]>([]);
+const editorOpen = ref(false);
 
 const tabs: Array<{ key: ProfileTabKey; label: string; empty: string }> = [
   { key: "history", label: "浏览记录", empty: "暂无浏览记录" },
@@ -78,6 +80,7 @@ async function logout() {
     await logoutAuth();
     user.value = null;
     profileItems.value = [];
+    editorOpen.value = false;
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : "退出登录没有成功，可以稍后再试。";
   } finally {
@@ -89,6 +92,10 @@ async function handleAuthenticated(authenticatedUser: ProfileUser | null) {
   if (authenticatedUser) {
     user.value = authenticatedUser;
   }
+  await loadProfile();
+}
+
+async function handleProfileUpdated() {
   await loadProfile();
 }
 
@@ -146,7 +153,7 @@ onMounted(() => {
           <div>
             <dt>邀请权限</dt>
             <dd>{{ user.invitePermission ? "可用" : "—" }}</dd>
-            <span>生成邀请码稍后迁移</span>
+            <span>{{ user.invitePermission ? "可生成邀请码" : "暂无权限" }}</span>
           </div>
           <div>
             <dt>状态</dt>
@@ -154,6 +161,15 @@ onMounted(() => {
             <span>账号状态</span>
           </div>
         </dl>
+
+        <div class="profile-view__actions">
+          <LianButton variant="tonal" @click="editorOpen = !editorOpen">
+            {{ editorOpen ? "收起编辑" : "编辑资料" }}
+          </LianButton>
+          <LianButton variant="ghost" @click="logout">退出登录</LianButton>
+        </div>
+
+        <ProfileEditorPanel v-if="editorOpen" :user="user" @updated="handleProfileUpdated" />
 
         <nav class="profile-view__tabs" aria-label="个人内容分类">
           <button
@@ -184,11 +200,6 @@ onMounted(() => {
               <p>{{ formatRelativeTime(item.lastViewedAt || item.timestampISO) || "时间未知" }}</p>
             </div>
           </article>
-        </div>
-
-        <div class="profile-view__actions">
-          <LianButton variant="tonal" disabled>编辑资料稍后迁移</LianButton>
-          <LianButton variant="ghost" @click="logout">退出登录</LianButton>
         </div>
       </template>
 
