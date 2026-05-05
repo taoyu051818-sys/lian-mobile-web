@@ -1,6 +1,20 @@
 # Agent Docs Index
 
-This directory is the working memory for Codex threads. Treat newer task and handoff files as more specific than older baseline documents.
+This directory is the working memory for Codex threads. Treat merged GitHub PRs and current code as more authoritative than older task-board or handoff text.
+
+## Current Source-Of-Truth Rule
+
+When docs disagree, prefer this order:
+
+1. Current code on `main`.
+2. Merged GitHub PRs, especially newest PRs.
+3. `references/PR_DERIVED_STATUS_2026-05-05.md`.
+4. Latest handoff for the task area.
+5. Current task doc.
+6. `PROJECT_FILE_INDEX.md`.
+7. Domain docs.
+8. `ARCHITECTURE_WORKPLAN.md` and `04_DECISIONS.md`.
+9. Historical baseline/planning docs.
 
 ## Thread Workflow
 
@@ -9,21 +23,33 @@ Default division of labor:
 - Codex / code thread: project management, planning, architecture decisions, review, acceptance, and docs status.
 - Claude Code thread: implementation inside the approved task boundary.
 
-Do not treat executor handoffs as acceptance. A lane becomes accepted only when the Codex / code review records the validation result in `05_TASK_BOARD.md` or the corresponding task doc.
+Do not treat executor handoffs as acceptance. A lane becomes accepted only when the Codex / code review records the validation result in `05_TASK_BOARD.md`, the corresponding task doc, or a newer PR-derived status file.
 
 ## Start Here
 
 Read these in order before starting implementation work:
 
-1. `00_AGENT_RULES.md` - operating rules, validation, high-conflict files
-2. `ARCHITECTURE_WORKPLAN.md` - current architecture direction and work organization
-3. `05_TASK_BOARD.md` - current done/ready/risky items
-4. `03_FILE_OWNERSHIP.md` - ownership and conflict boundaries
-5. `PROJECT_FILE_INDEX.md` - canonical file index with status, owner, repo split destination
-6. `04_DECISIONS.md` - recorded architecture/product decisions
-7. `domains/<area>.md` - domain context for the task area
-8. `tasks/<task>.md` - current task specification, if present
-9. `handoffs/<task>.md` - latest thread handoff, if present
+1. `references/PR_DERIVED_STATUS_2026-05-05.md` - newest PR-derived frontend/runtime status
+2. `00_AGENT_RULES.md` - operating rules, validation, high-conflict files
+3. `ARCHITECTURE_WORKPLAN.md` - architecture direction and work organization; verify stale points against PRs
+4. `05_TASK_BOARD.md` - task context; may contain older status and must be checked against PRs
+5. `03_FILE_OWNERSHIP.md` - ownership and conflict boundaries
+6. `PROJECT_FILE_INDEX.md` - file index with status, owner, repo split destination
+7. `04_DECISIONS.md` - recorded architecture/product decisions
+8. `domains/<area>.md` - domain context for the task area
+9. `tasks/<task>.md` - current task specification, if present
+10. `handoffs/<task>.md` - latest thread handoff, if present
+
+## Current Frontend Runtime Snapshot
+
+Current merged PRs and code establish this frontend model:
+
+- `npm start` runs both frontend lanes through `scripts/serve-frontend-runtimes.js`.
+- legacy/static rehearsal lane uses port 4300.
+- Vue canary lane uses port 4301.
+- `npm run test` targets 4300.
+- `npm run test:vue-canary` targets 4301.
+- `npm run verify` runs check, ops guard, and build.
 
 ## Current Domain Docs
 
@@ -35,16 +61,7 @@ Read these in order before starting implementation work:
 
 ## Current Task Docs
 
-Use `tasks/` for active or ready-to-resume implementation specs. A task doc should describe scope, allowed files, acceptance criteria, validation, and rollback notes.
-
-Notable ready/resumable work:
-
-- `tasks/project-file-index-and-doc-cleanup.md`
-- `tasks/map-v2-data-assets.md`
-- `tasks/map-v2-restore-legacy-geo.md`
-- `tasks/audience-permission-design.md`
-- `tasks/nodebb-integration-audit.md`
-- `tasks/feed-ops-snapshot-diff.md`
+Use `tasks/` for active or ready-to-resume implementation specs. A task doc should describe scope, allowed files, acceptance criteria, validation, and rollback notes. Before starting, compare the task with merged PRs because several older tasks were partially or fully superseded by the Vue canary PR burst.
 
 ## Handoffs
 
@@ -54,28 +71,18 @@ Read `handoffs/README.md` for the normalized handoff list.
 
 ## References
 
-- `../design/LIAN-Campus-UI-UX-Guidelines-V0.1.md` - LIAN Campus UI / UX Guidelines V0.1: product principles, card system, identity, place sedimentation, glass hierarchy, motion, state, feedback, accessibility, and data trust
-- `references/GITHUB_RECENT_UPDATES_2026-05-05.md` - latest GitHub PR/repo-split alignment: backend `lian-platform-server`, frontend `lian-mobile-web`, full-stack retired
-- `references/RECENT_WORK_HANDOFF_2026-05-05.md` - latest repo-split and docs handoff, superseding 2026-05-04 for GitHub orientation
-- `references/HIGH_RISK_AREAS.md` - 6 high-risk area audits (frontend load order, feed scoring, NodeBB integration, auth, metadata format, route structure)
-- `references/GITHUB_RECENT_UPDATES_2026-05-04.md` - historical GitHub commit summary and deployment implications; superseded for repo ownership
-- `references/RECENT_WORK_HANDOFF_2026-05-04.md` - historical long-thread handoff; superseded for repo ownership
+- `references/PR_DERIVED_STATUS_2026-05-05.md` - newest PR-derived status for the frontend repo
+- `../design/LIAN-Campus-UI-UX-Guidelines-V0.1.md` - LIAN Campus UI / UX Guidelines V0.1
+- `references/GITHUB_RECENT_UPDATES_2026-05-05.md` - repo-split and GitHub orientation note
+- `references/RECENT_WORK_HANDOFF_2026-05-05.md` - repo-split and docs handoff
+- `references/HIGH_RISK_AREAS.md` - high-risk area audits
+- `references/GITHUB_RECENT_UPDATES_2026-05-04.md` - historical GitHub commit summary; superseded for repo ownership and recent PR state
+- `references/RECENT_WORK_HANDOFF_2026-05-04.md` - historical long-thread handoff; superseded for repo ownership and recent PR state
 
 ## Historical References
 
-These files are useful for history but should not override newer docs or code:
+These files are useful for history but should not override newer PRs or code:
 
-- `01_PROJECT_FACT_BASELINE.md` - early fact baseline; some facts are superseded by Map v2 and frontend split work
-- `MAP_V2_TECH_PLAN.md` - early Map v2 implementation plan; MVP implementation and editor work have since landed
+- `01_PROJECT_FACT_BASELINE.md` - early fact baseline
+- `MAP_V2_TECH_PLAN.md` - early Map v2 implementation plan
 - `domains/FEED_REFACTOR_PLAN.md` - feed refactor planning reference
-
-When docs disagree, prefer this order:
-
-1. Current code
-2. Latest handoff for the task area
-3. Current task doc
-4. `PROJECT_FILE_INDEX.md` - canonical file index
-5. `domains/<area>.md` - domain documentation
-6. `ARCHITECTURE_WORKPLAN.md`
-7. `04_DECISIONS.md`
-8. Historical baseline/planning docs
