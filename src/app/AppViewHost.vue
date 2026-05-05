@@ -1,16 +1,16 @@
 <script setup lang="ts">
-import { AppViewKey, appViews } from "../app/view-types";
-import { defineComponent, h, PropType } from "vue";
-import FeedPlaceholder from "../views/FeedPlaceholder.vue";
-import MapPlaceholder from "../views/MapPlaceholder.vue";
-import MessagesPlaceholder from "../views/MessagesPlaceholder.vue";
-import ProfilePlaceholder from "../views/ProfilePlaceholder.vue";
+import type { AppViewKey } from "./view-types";
+import type { PropType } from "vue";
+import FeedView from "../views/FeedView.vue";
+import MapView from "../views/MapView.vue";
+import MessagesView from "../views/MessagesView.vue";
+import ProfileView from "../views/ProfileView.vue";
 
 const viewComponents = {
-  feed: FeedPlaceholder,
-  map: MapPlaceholder,
-  messages: MessagesPlaceholder,
-  profile: ProfilePlaceholder,
+  feed: FeedView,
+  map: MapView,
+  messages: MessagesView,
+  profile: ProfileView,
 };
 
 const props = defineProps({
