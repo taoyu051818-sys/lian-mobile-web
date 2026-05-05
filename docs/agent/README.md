@@ -1,6 +1,6 @@
 # Agent Docs Index
 
-This directory is the working memory for Codex threads. Treat merged GitHub PRs and current code as more authoritative than older task-board, decision, domain, or handoff text.
+This directory is the working memory for Codex threads. Treat merged GitHub PRs and current code as more authoritative than older task-board, decision, domain, task, or handoff text.
 
 ## Current Source-Of-Truth Rule
 
@@ -15,13 +15,14 @@ When docs disagree, prefer this order:
 7. `references/FILE_OWNERSHIP_OVERRIDE_2026-05-05.md` for ownership conflict handling.
 8. `references/PROJECT_FILE_INDEX_OVERRIDE_2026-05-05.md` for file-index conflict handling.
 9. `references/DOMAIN_DOCS_OVERRIDE_2026-05-05.md` for domain-doc conflict handling.
-10. `references/DOC_REVIEW_FINDINGS_2026-05-05.md` for known stale-doc warnings.
-11. Latest handoff for the task area.
-12. Current task doc.
-13. `PROJECT_FILE_INDEX.md` as historical/structural context.
-14. Domain docs as business intent and historical context.
-15. `ARCHITECTURE_WORKPLAN.md`, `03_FILE_OWNERSHIP.md`, and `04_DECISIONS.md` as historical/planning context.
-16. Historical baseline/planning docs.
+10. `references/TASK_DOCS_OVERRIDE_2026-05-05.md` for task-doc conflict handling.
+11. `references/DOC_REVIEW_FINDINGS_2026-05-05.md` for known stale-doc warnings.
+12. Latest handoff for the task area.
+13. Current task doc as scope/history, after override checks.
+14. `PROJECT_FILE_INDEX.md` as historical/structural context.
+15. Domain docs as business intent and historical context.
+16. `ARCHITECTURE_WORKPLAN.md`, `03_FILE_OWNERSHIP.md`, and `04_DECISIONS.md` as historical/planning context.
+17. Historical baseline/planning docs.
 
 ## Thread Workflow
 
@@ -43,16 +44,17 @@ Read these in order before starting implementation work:
 5. `references/FILE_OWNERSHIP_OVERRIDE_2026-05-05.md` - current ownership conflict handling
 6. `references/PROJECT_FILE_INDEX_OVERRIDE_2026-05-05.md` - current file-index conflict handling
 7. `references/DOMAIN_DOCS_OVERRIDE_2026-05-05.md` - current domain-doc conflict handling
-8. `references/DOC_REVIEW_FINDINGS_2026-05-05.md` - known stale-doc risks and cleanup recommendations
-9. `00_AGENT_RULES.md` - operating rules, validation, high-conflict files
-10. `ARCHITECTURE_WORKPLAN.md` - historical architecture direction; verify stale points against overrides and PRs
-11. `05_TASK_BOARD.md` - long task context; may contain older status and must be checked against PRs and override files
-12. `03_FILE_OWNERSHIP.md` - historical ownership/conflict context; check against ownership override before use
-13. `PROJECT_FILE_INDEX.md` - historical file index; check against override before use
-14. `04_DECISIONS.md` - historical decision context; check against decisions override before use
-15. `domains/<area>.md` - domain intent and historical context; check against domain override before use
-16. `tasks/<task>.md` - current task specification, if present
-17. `handoffs/<task>.md` - latest thread handoff, if present
+8. `references/TASK_DOCS_OVERRIDE_2026-05-05.md` - current task-doc conflict handling
+9. `references/DOC_REVIEW_FINDINGS_2026-05-05.md` - known stale-doc risks and cleanup recommendations
+10. `00_AGENT_RULES.md` - operating rules, validation, high-conflict files
+11. `ARCHITECTURE_WORKPLAN.md` - historical architecture direction; verify stale points against overrides and PRs
+12. `05_TASK_BOARD.md` - long task context; may contain older status and must be checked against PRs and override files
+13. `03_FILE_OWNERSHIP.md` - historical ownership/conflict context; check against ownership override before use
+14. `PROJECT_FILE_INDEX.md` - historical file index; check against override before use
+15. `04_DECISIONS.md` - historical decision context; check against decisions override before use
+16. `domains/<area>.md` - domain intent and historical context; check against domain override before use
+17. `tasks/<task>.md` - task scope/history; check against task override before use
+18. `handoffs/<task>.md` - latest thread handoff, if present
 
 ## Current Frontend Runtime Snapshot
 
@@ -77,7 +79,7 @@ Use these for business/domain intent only after reading `references/DOMAIN_DOCS_
 
 ## Current Task Docs
 
-Use `tasks/` for active or ready-to-resume implementation specs. A task doc should describe scope, allowed files, acceptance criteria, validation, and rollback notes. Before starting, compare the task with merged PRs because several older tasks were partially or fully superseded by the Vue canary PR burst.
+Use `tasks/` for task scope/history only after reading `references/TASK_DOCS_OVERRIDE_2026-05-05.md`. Before starting, compare the task with current code and merged PRs because several older tasks were partially or fully superseded by the Vue canary PR burst and repo split completion.
 
 ## Handoffs
 
@@ -94,6 +96,7 @@ Read `handoffs/README.md` for the normalized handoff list.
 - `references/FILE_OWNERSHIP_OVERRIDE_2026-05-05.md` - current file ownership override and conflict list
 - `references/PROJECT_FILE_INDEX_OVERRIDE_2026-05-05.md` - current file-index override and conflict list
 - `references/DOMAIN_DOCS_OVERRIDE_2026-05-05.md` - current domain-doc override and conflict list
+- `references/TASK_DOCS_OVERRIDE_2026-05-05.md` - current task-doc override and conflict list
 - `references/DOC_REVIEW_FINDINGS_2026-05-05.md` - documentation review findings and stale-doc warning list
 - `../design/LIAN-Campus-UI-UX-Guidelines-V0.1.md` - LIAN Campus UI / UX Guidelines V0.1
 - `references/GITHUB_RECENT_UPDATES_2026-05-05.md` - repo-split and GitHub orientation note
