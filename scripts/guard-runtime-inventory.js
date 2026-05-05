@@ -7,6 +7,7 @@ import { fileURLToPath } from "node:url";
 
 const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const selfPath = "scripts/guard-runtime-inventory.js";
+const isCi = process.env.CI === "true" || process.env.GITHUB_ACTIONS === "true";
 
 const requiredFiles = [
   ".github/pull_request_template.md",
@@ -25,6 +26,7 @@ const runtimeSensitiveFiles = [
   "index.html",
   "public/index.html",
   "vite.config.ts",
+  "scripts/serve-frontend-runtimes.js",
   "scripts/serve-frontend-static-rehearsal.js",
   "scripts/smoke-frontend.js",
   "scripts/validate-project-structure.js"
@@ -106,7 +108,12 @@ function changedFiles() {
       return git(["diff", "--name-only", mergeBase, headRef]).split("\n").filter(Boolean);
     }
   } catch {
-    note("remote base ref unavailable; using last commit for diff guard");
+    note("remote base ref unavailable; using CI fallback diff guard if possible");
+  }
+
+  if (!isCi) {
+    note("no base ref outside CI; skipping runtime inventory diff guard for deployed main checkout");
+    return [];
   }
 
   try {
