@@ -3,16 +3,19 @@ import { computed, onMounted, ref } from "vue";
 import { fetchFeed } from "../api/feed";
 import { fetchPostDetail } from "../api/posts";
 import { InlineError, LianButton } from "../ui";
-import type { FeedItem, FeedItemId } from "../types/feed";
+import type { FeedItem, FeedItemId, FeedTab } from "../types/feed";
 import type { PostDetail } from "../types/post";
 import FeedItemCard from "./feed/FeedItemCard.vue";
 import PostDetailPanel from "./detail/PostDetailPanel.vue";
 
-const DEFAULT_TABS = ["此刻", "精选"];
+const DEFAULT_TABS: FeedTab[] = [
+  { id: "此刻", label: "此刻" },
+  { id: "精选", label: "精选" },
+];
 const PAGE_SIZE = 12;
 
-const tabs = ref<string[]>(DEFAULT_TABS);
-const activeTab = ref(DEFAULT_TABS[0]);
+const tabs = ref<FeedTab[]>(DEFAULT_TABS);
+const activeTab = ref(DEFAULT_TABS[0].id);
 const items = ref<FeedItem[]>([]);
 const page = ref(1);
 const hasMore = ref(true);
@@ -38,7 +41,7 @@ function readHistoryQuery() {
 function rememberReadItem(id: FeedItemId) {
   try {
     const history = JSON.parse(localStorage.getItem("lian.readHistory") || "[]") as Array<{ tid: FeedItemId; lastViewedAt: string }>;
-    const nextHistory = history.filter((entry) => String(entry.tid) !== String(id));
+    const nextHistory = history.filter((entry) => Number(entry.tid) !== Number(id));
     nextHistory.push({ tid: id, lastViewedAt: new Date().toISOString() });
     localStorage.setItem("lian.readHistory", JSON.stringify(nextHistory.slice(-500)));
   } catch {
@@ -68,7 +71,7 @@ async function loadFeed(reset = false) {
       read: readHistoryQuery(),
     });
 
-    tabs.value = response.tabs?.length ? response.tabs : DEFAULT_TABS;
+    tabs.value = response.tabs.length ? response.tabs : DEFAULT_TABS;
     const nextItems = response.items || [];
     items.value = reset ? nextItems : [...items.value, ...nextItems];
     hasMore.value = Boolean(response.hasMore);
@@ -84,12 +87,12 @@ async function loadFeed(reset = false) {
   }
 }
 
-function switchTab(tab: string) {
-  if (activeTab.value === tab) {
+function switchTab(tabId: string) {
+  if (activeTab.value === tabId) {
     void loadFeed(true);
     return;
   }
-  activeTab.value = tab;
+  activeTab.value = tabId;
   void loadFeed(true);
 }
 
@@ -102,7 +105,7 @@ async function openItem(id: FeedItemId) {
 
   try {
     const detail = await fetchPostDetail(id);
-    if (String(selectedPostId.value) === String(id)) {
+    if (Number(selectedPostId.value) === Number(id)) {
       selectedPost.value = detail;
     }
   } catch (error) {
@@ -110,7 +113,7 @@ async function openItem(id: FeedItemId) {
       ? error.message
       : "详情暂时没加载出来，可以稍后再试。";
   } finally {
-    if (String(selectedPostId.value) === String(id)) {
+    if (Number(selectedPostId.value) === Number(id)) {
       detailLoading.value = false;
     }
   }
@@ -140,14 +143,14 @@ onMounted(() => {
     <nav class="feed-view__tabs" aria-label="信息分类">
       <button
         v-for="tab in tabs"
-        :key="tab"
+        :key="tab.id"
         type="button"
         class="feed-view__tab"
-        :class="{ 'is-active': tab === activeTab }"
-        :aria-pressed="tab === activeTab"
-        @click="switchTab(tab)"
+        :class="{ 'is-active': tab.id === activeTab }"
+        :aria-pressed="tab.id === activeTab"
+        @click="switchTab(tab.id)"
       >
-        {{ tab }}
+        {{ tab.label }}
       </button>
     </nav>
 
