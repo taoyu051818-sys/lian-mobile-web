@@ -14,9 +14,14 @@ const tabs = appViews.map((view) => ({
 </script>
 
 <template>
-  <main class="vue-shell" aria-labelledby="vue-shell-title">
+  <main
+    class="vue-shell"
+    :aria-labelledby="activeViewKey === 'feed' ? undefined : 'vue-shell-title'"
+    :aria-label="activeViewKey === 'feed' ? '首页' : undefined"
+  >
     <div class="vue-shell__grid">
       <TopBar
+        v-if="activeViewKey !== 'feed'"
         title-id="vue-shell-title"
         :title="activeView.title"
         :subtitle="activeView.subtitle"
