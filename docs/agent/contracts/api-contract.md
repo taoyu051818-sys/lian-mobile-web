@@ -1,5 +1,8 @@
 # API Contract: LIAN Frontend ↔ Backend
 
+> [!WARNING]
+> Historical / superseded split-era API inventory as of 2026-05-05. Do not use this file as the current API source of truth. Start from `docs/agent/README.md`, `docs/agent/references/PR_DERIVED_STATUS_2026-05-05.md`, and `docs/agent/references/CONTRACTS_OVERRIDE_2026-05-05.md`; then verify current frontend callers and backend routes before using any endpoint status, port, or response shape below.
+
 Date: 2026-05-02
 Status: **Frozen** — Phase 0 of repo split. This document is the source of truth for the API surface between the frontend repo and the backend repo.
 
