@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 
 const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const baseUrl = process.argv[2] || "http://localhost:4100";
+const requireApiSmoke = ["1", "true", "yes"].includes(String(process.env.LIAN_SMOKE_REQUIRE_API || "").trim().toLowerCase());
 
 let passed = 0;
 let failed = 0;
@@ -92,9 +93,18 @@ async function checkEndpoint(url, label) {
   return result;
 }
 
-async function checkJsonEndpoint(url, label) {
+function shouldSkipUnavailableApi(result) {
+  if (requireApiSmoke) return false;
+  return result.status === 0 || result.status === 502 || result.status === 503 || result.status === 504;
+}
+
+async function checkJsonEndpoint(url, label, { optionalWhenUnavailable = false } = {}) {
   const result = await fetchUrl(url);
   if (!result.ok) {
+    if (optionalWhenUnavailable && shouldSkipUnavailableApi(result)) {
+      skip(label, `backend unavailable${result.status ? `, HTTP ${result.status}` : ""}${result.error ? ` — ${result.error}` : ""}`);
+      return result;
+    }
     fail(label, `HTTP ${result.status}${result.error ? ` — ${result.error}` : ""}`);
     return null;
   }
@@ -178,7 +188,11 @@ async function serverReachable() {
 // --- Main ---
 
 console.log(`\n═══ LIAN 前端冒烟测试 ═══`);
-console.log(`目标: ${baseUrl}\n`);
+console.log(`目标: ${baseUrl}`);
+if (!requireApiSmoke) {
+  console.log("API 端点: backend unavailable 时跳过；设置 LIAN_SMOKE_REQUIRE_API=1 可强制校验");
+}
+console.log("");
 
 const serverUp = await serverReachable();
 if (!serverUp) {
@@ -212,8 +226,8 @@ if (serverUp) {
 // 3. API endpoints
 if (serverUp) {
   console.log("\n▶ API 端点");
-  await checkJsonEndpoint(`${baseUrl}/api/feed`, "GET /api/feed");
-  await checkJsonEndpoint(`${baseUrl}/api/map/v2/items`, "GET /api/map/v2/items");
+  await checkJsonEndpoint(`${baseUrl}/api/feed`, "GET /api/feed", { optionalWhenUnavailable: true });
+  await checkJsonEndpoint(`${baseUrl}/api/map/v2/items`, "GET /api/map/v2/items", { optionalWhenUnavailable: true });
 } else {
   skip("API 端点", "服务器不可达");
 }
