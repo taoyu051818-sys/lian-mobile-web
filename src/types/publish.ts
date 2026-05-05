@@ -22,11 +22,14 @@ export interface PublishPayload {
   imageUrls: string[];
   title: string;
   body: string;
-  tags: string[];
+  tag: string;
+  identityTag: string;
   metadata: {
     locationArea?: string;
     visibility: PublishVisibility;
     distribution: string[];
+    primaryTag?: string;
+    identityTag?: string;
   };
   locationDraft: PublishLocationDraft;
   riskFlags: Array<{ message?: string }>;
