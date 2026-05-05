@@ -4,6 +4,7 @@ import { fetchAuthMe, fetchProfileTab, logoutAuth } from "../api/profile";
 import { GlassPanel, IdentityBadge, InlineError, LianButton, TagChip, TrustBadge, TypeChip } from "../ui";
 import type { FeedItemId } from "../types/feed";
 import type { ProfileListItem, ProfileTabKey, ProfileUser } from "../types/profile";
+import AuthPanel from "./auth/AuthPanel.vue";
 
 const user = ref<ProfileUser | null>(null);
 const loading = ref(false);
@@ -82,6 +83,13 @@ async function logout() {
   } finally {
     loading.value = false;
   }
+}
+
+async function handleAuthenticated(authenticatedUser: ProfileUser | null) {
+  if (authenticatedUser) {
+    user.value = authenticatedUser;
+  }
+  await loadProfile();
 }
 
 function formatRelativeTime(value?: string) {
@@ -187,10 +195,7 @@ onMounted(() => {
       <section v-else class="profile-view__guest">
         <h3>还没有登录</h3>
         <p>登录后可以发布、回复、发送频道消息，也能查看浏览记录、收藏和赞过的内容。</p>
-        <div class="profile-view__actions">
-          <LianButton variant="tonal" disabled>登录表单稍后迁移</LianButton>
-          <LianButton variant="ghost" disabled>注册稍后迁移</LianButton>
-        </div>
+        <AuthPanel @authenticated="handleAuthenticated" />
       </section>
     </GlassPanel>
   </section>
