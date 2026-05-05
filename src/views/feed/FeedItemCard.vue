@@ -116,6 +116,7 @@ function openCard() {
 <template>
   <article
     class="feed-item-card"
+    :class="{ 'feed-item-card--with-cover': coverUrl }"
     role="button"
     tabindex="0"
     :aria-label="`${title}，${placeLabel}，${trustLabel}`"
@@ -237,13 +238,9 @@ function openCard() {
 }
 
 @media (min-width: 560px) {
-  .feed-item-card {
+  .feed-item-card--with-cover {
     grid-template-columns: 156px 1fr;
     align-items: stretch;
-  }
-
-  .feed-item-card:not(:has(.feed-item-card__cover)) {
-    grid-template-columns: 1fr;
   }
 
   .feed-item-card__cover {
