@@ -1,9 +1,12 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue";
 import { fetchFeed } from "../api/feed";
+import { fetchPostDetail } from "../api/posts";
 import { GlassPanel, InlineError, LianButton, TrustBadge, TypeChip } from "../ui";
 import type { FeedItem, FeedItemId } from "../types/feed";
+import type { PostDetail } from "../types/post";
 import FeedItemCard from "./feed/FeedItemCard.vue";
+import PostDetailPanel from "./detail/PostDetailPanel.vue";
 
 const DEFAULT_TABS = ["此刻", "精选"];
 const PAGE_SIZE = 12;
@@ -16,7 +19,10 @@ const hasMore = ref(true);
 const loading = ref(false);
 const loadingMore = ref(false);
 const errorMessage = ref("");
-const selectedItem = ref<FeedItem | null>(null);
+const selectedPostId = ref<FeedItemId | null>(null);
+const selectedPost = ref<PostDetail | null>(null);
+const detailLoading = ref(false);
+const detailError = ref("");
 
 const isEmpty = computed(() => !loading.value && !errorMessage.value && items.value.length === 0);
 
@@ -49,7 +55,7 @@ async function loadFeed(reset = false) {
     loading.value = true;
     page.value = 1;
     hasMore.value = true;
-    selectedItem.value = null;
+    closeDetail();
   } else {
     loadingMore.value = true;
   }
@@ -84,13 +90,39 @@ function switchTab(tab: string) {
   void loadFeed(true);
 }
 
-function openItem(id: FeedItemId) {
+async function openItem(id: FeedItemId) {
   rememberReadItem(id);
-  selectedItem.value = items.value.find((item) => String(item.tid) === String(id)) || null;
+  selectedPostId.value = id;
+  selectedPost.value = null;
+  detailError.value = "";
+  detailLoading.value = true;
+
+  try {
+    const detail = await fetchPostDetail(id);
+    if (String(selectedPostId.value) === String(id)) {
+      selectedPost.value = detail;
+    }
+  } catch (error) {
+    detailError.value = error instanceof Error
+      ? error.message
+      : "详情暂时没加载出来，可以稍后再试。";
+  } finally {
+    if (String(selectedPostId.value) === String(id)) {
+      detailLoading.value = false;
+    }
+  }
 }
 
-function closePreview() {
-  selectedItem.value = null;
+function retryDetail() {
+  if (selectedPostId.value == null) return;
+  void openItem(selectedPostId.value);
+}
+
+function closeDetail() {
+  selectedPostId.value = null;
+  selectedPost.value = null;
+  detailLoading.value = false;
+  detailError.value = "";
 }
 
 onMounted(() => {
@@ -107,7 +139,7 @@ onMounted(() => {
       </div>
       <div class="feed-view__hero-copy">
         <h2 id="feed-view-title">今天校园里发生什么</h2>
-        <p>先迁移真实 Feed 浏览路径：内容、身份、地点和状态优先展示；互动和完整详情随后补齐。</p>
+        <p>先迁移真实 Feed 浏览路径：内容、身份、地点和状态优先展示；互动和发布随后补齐。</p>
       </div>
       <div class="feed-view__hero-actions">
         <LianButton size="sm" :loading="loading" @click="loadFeed(true)">刷新</LianButton>
@@ -163,17 +195,15 @@ onMounted(() => {
       <span v-else>已经看到这里啦</span>
     </div>
 
-    <GlassPanel v-if="selectedItem" class="feed-view__preview" as="aside" aria-live="polite">
-      <div class="feed-view__preview-header">
-        <div>
-          <TypeChip type="experience">详情预览</TypeChip>
-          <h3>{{ selectedItem.title || "未命名内容" }}</h3>
-        </div>
-        <button type="button" aria-label="关闭详情预览" @click="closePreview">×</button>
-      </div>
-      <p>{{ selectedItem.summary || selectedItem.content || "完整详情页正在迁移，当前先展示 Feed 内容摘要。" }}</p>
-      <small>下一步会把 legacy 的图片画廊、回复、喜欢、收藏、举报迁移到 Vue Detail。</small>
-    </GlassPanel>
+    <PostDetailPanel
+      v-if="selectedPostId !== null"
+      class="feed-view__detail"
+      :post="selectedPost"
+      :loading="detailLoading"
+      :error="detailError"
+      @close="closeDetail"
+      @retry="retryDetail"
+    />
   </section>
 </template>
 
@@ -189,8 +219,7 @@ onMounted(() => {
 }
 
 .feed-view__hero-row,
-.feed-view__hero-actions,
-.feed-view__preview-header {
+.feed-view__hero-actions {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-2);
@@ -209,9 +238,7 @@ onMounted(() => {
   margin: 0;
 }
 
-.feed-view__hero-copy p,
-.feed-view__preview p,
-.feed-view__preview small {
+.feed-view__hero-copy p {
   color: var(--lian-muted);
   line-height: 1.6;
 }
@@ -261,26 +288,10 @@ onMounted(() => {
   font-size: 13px;
 }
 
-.feed-view__preview {
+.feed-view__detail {
   position: sticky;
   bottom: calc(92px + env(safe-area-inset-bottom));
   z-index: 20;
-  display: grid;
-  gap: var(--space-3);
-}
-
-.feed-view__preview-header button {
-  display: grid;
-  width: 40px;
-  height: 40px;
-  min-width: 40px;
-  place-items: center;
-  border: 1px solid var(--glass-border);
-  border-radius: var(--radius-orb);
-  background: rgba(255, 255, 255, 0.62);
-  color: var(--lian-ink);
-  font-size: 24px;
-  line-height: 1;
 }
 
 .inline-error button {
