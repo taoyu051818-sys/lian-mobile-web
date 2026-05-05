@@ -1,94 +1,103 @@
 # Handoff: Repo Split Frontend Backend
 
-## Date
+## Current status
 
-2026-05-02
+Updated: 2026-05-05
 
-## Thread scope
+Status: **Done / split executed**.
 
-Phase 0 complete: frontend API call inventory, backend route inventory, and API contract freeze. No runtime files were moved.
+The original 2026-05-02 handoff recorded Phase 0 and Phase 0.5 before the physical repo split. That historical state is now superseded.
 
-Phase 0.5 complete: `LIAN_API_BASE_URL` configuration so frontend can point to a backend on a different origin.
+Current source of truth:
 
-## Decision
-
-Repo split is now a P0 task. Phase 0 contract inventory is complete.
-
-Target ownership:
-
-- current repo `lian-mobile-web`: ALL local files — backend runtime, data, scripts, docs. This becomes the backend repo.
-- new frontend repo: only `public/`, `scripts/smoke-frontend.js`, `docs/agent/contracts/api-contract.md`, `.gitignore`, `README.md`.
-
-## Files changed
-
-- `docs/agent/contracts/api-contract.md` (**NEW** — frozen API contract, 48 endpoints documented)
-- `docs/agent/tasks/repo-split-frontend-backend.md` (Phase 0 marked done)
-- `docs/agent/handoffs/repo-split-frontend-backend.md` (this file)
-- `docs/agent/05_TASK_BOARD.md`
-- `docs/agent/ARCHITECTURE_WORKPLAN.md`
-
-## Phase 0 Results
-
-**Frontend inventory:** 32 call sites across 13 `.js` files, hitting 29 distinct API endpoints. All use `api()` helper (app-utils.js:53) or direct `fetch()`. No HTTP libraries.
-
-**Backend inventory:** 48 total endpoints in api-router.js + admin-routes.js + server.js.
-
-| Classification | Count |
+| Repository | Role |
 |---|---|
-| frontend-required | 29 |
-| admin-only | 11 |
-| backend-only | 2 (setup) |
-| deprecated | 6 |
+| `lian-mobile-web` | Frontend/static mobile web workspace |
+| `lian-platform-server` | Backend/API/runtime/storage workspace |
+| `lian-mobile-web-full` | Retired historical full-stack transition repo; do not use for active deployment |
 
-**Deprecated endpoints** (no frontend caller): `GET /api/auth/rules`, `GET /api/alias-pool`, `GET /api/auth/aliases`, `POST /api/auth/aliases`, `GET /api/messages`, `GET /api/map/items`, `GET /api/tags`.
+Current ownership:
 
-**Key contract details:**
-- Auth: `lian_session` cookie or `x-session-token` header
-- Admin: `x-admin-token` or `Bearer <ADMIN_TOKEN>`
-- Frontend API helper needs `LIAN_API_BASE_URL` config for split (default: empty = same-origin)
-- Image upload uses `FormData` with `image` field + `?purpose=` query param
-- Image proxy rewrites Cloudinary URLs to `/api/image-proxy?url=...`
+- `lian-mobile-web` owns the frontend app, static assets, Vue/Vite frontend shell, legacy static frontend rehearsal, frontend smoke/rehearsal scripts, frontend README, and the stable API contract reference.
+- `lian-platform-server` owns `server.js`, backend services, NodeBB integration, auth/session, media upload/image proxy, AI backend adapters, feed/ranking services, messages/notifications backend, Audience enforcement, Map v2 data/admin APIs, runtime data/storage, deployment, ops, validators, and backend README.
+- The API contract remains the cross-repo boundary. Frontend code must call backend APIs through the configured API base URL instead of assuming same-repo backend files.
 
-## What was intentionally not done
+## Corrected decision
 
-- No code moved.
-- No backend repo created.
-- No package/build/deployment files changed.
-- No runtime APIs changed.
-- Deprecated endpoints not removed (backward compatibility during staged split).
+Repo split is no longer a future P0 bootstrap task. The backend repository already exists and is the active backend source of truth.
 
-## Required next steps
+Do not follow the old wording that said:
 
-1. ~~Inventory frontend API calls.~~ Done
-2. ~~Inventory backend routes.~~ Done
-3. ~~Freeze API contract docs.~~ Done
-4. Bootstrap backend repo without changing runtime behavior.
-5. ~~Add frontend API base URL configuration.~~ Done (Phase 0.5)
-6. Stage reverse proxy deployment.
-7. Only then remove backend ownership from current repo.
+- `lian-mobile-web` would become the backend repo;
+- a new frontend repo would be created;
+- no backend repo existed;
+- backend files must remain in the current repo until future staging.
 
-## Phase 0.5: LIAN_API_BASE_URL
+Those statements described an earlier pre-split plan and are now historical only.
 
-All frontend `/api/*` calls now go through `LIAN_API_BASE` prefix. Set `window.LIAN_API_BASE_URL` before scripts load to point at a remote backend (default: empty = same-origin).
+## Phase history
 
-**Files modified:**
-- `public/app-utils.js` — `LIAN_API_BASE` constant, `api()`, `displayImageUrl()`, `uploadImage()` all prepend base
-- `public/map-v2.js` — `LIAN_API_BASE` constant, local `api()`, `displayImageUrl()` all prepend base
-- `public/tools/map-v2-editor.js` — `LIAN_API_BASE` constant, local `api()`, `displayImageUrl()`, direct `/api/upload/image` fetch all prepend base
+### Phase 0: API inventory and contract freeze
 
-**Usage:** In `index.html` before any `<script>` tag:
+Completed before the split.
+
+Results from the original handoff:
+
+- Frontend inventory: 32 call sites across 13 JavaScript files.
+- Frontend-required API endpoints: 29.
+- Backend route inventory: 48 total endpoints.
+- API contract reference: `docs/agent/contracts/api-contract.md`.
+
+### Phase 0.5: Frontend API base URL
+
+Completed before the split.
+
+Frontend `/api/*` calls were made configurable through `LIAN_API_BASE_URL` / `LIAN_API_BASE` so the frontend can point at a backend on another origin.
+
+Representative frontend files from the original implementation:
+
+- `public/app-utils.js`
+- `public/map-v2.js`
+- `public/tools/map-v2-editor.js`
+
+Use pattern:
+
 ```html
 <script>window.LIAN_API_BASE_URL = "https://api.example.com";</script>
 ```
 
-Default (empty string) preserves same-origin behavior — no change needed for existing deployments.
+Default empty value preserves same-origin behavior for local/static rehearsal when a proxy is used.
 
-## Risks
+## Current follow-up scope
 
-- Splitting before contract freeze can break Publish, Messages, Map v2, and auth flows. **Mitigated: contract now frozen.**
-- Moving backend secrets or `.env` assumptions into frontend would be a security bug.
-- Backend behavior changes during repo bootstrap would make debugging impossible.
+Remaining work should be tracked as validation/docs/cleanup work, not as backend bootstrap planning:
 
-## Rollback
+1. Keep the API contract synchronized when backend endpoints change.
+2. Validate frontend static/Vue paths against the backend service URL.
+3. Keep backend runtime/storage docs in `lian-platform-server`.
+4. Keep frontend-only docs in `lian-mobile-web`.
+5. Remove or clearly mark stale historical docs that still describe the pre-split repo plan as current.
+6. Treat any leftover `data/*` or generated/local artifacts in the frontend workspace as cleanup/ownership follow-up, not as evidence that the frontend repo owns backend runtime state.
 
-Keep the current monorepo deployment path active until the backend repo has a validated staging release.
+## Validation expectations
+
+Frontend repo:
+
+```bash
+npm run check
+npm test
+npm run build
+```
+
+Backend repo:
+
+```bash
+npm run check
+npm test
+npm run test:routes
+npm run test:object-native
+npm run verify:redis
+npm run verify:redis:auth
+```
+
+Use the backend README as the current runtime/storage reference. Use the frontend README as the current frontend development reference.
