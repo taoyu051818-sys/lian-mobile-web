@@ -2,7 +2,26 @@
 
 Use this directory for thread handoff notes when a Codex thread changes behavior, performs validation, or leaves follow-up decisions for another thread.
 
-Normalized handoffs live here:
+Handoffs are context-transfer notes. They are not acceptance records and must not override current code, merged GitHub PRs, `../references/PR_DERIVED_STATUS_2026-05-05.md`, or the dated override files.
+
+## Current Entry Point
+
+Before reading individual handoffs, start here:
+
+1. `../references/PR_DERIVED_STATUS_2026-05-05.md`
+2. `../references/DECISIONS_OVERRIDE_2026-05-05.md`
+3. `../references/ARCHITECTURE_WORKPLAN_OVERRIDE_2026-05-05.md`
+4. `../references/TASK_BOARD_OVERRIDE_2026-05-05.md`
+5. `../references/FILE_OWNERSHIP_OVERRIDE_2026-05-05.md`
+6. `../references/PROJECT_FILE_INDEX_OVERRIDE_2026-05-05.md`
+7. `../references/DOMAIN_DOCS_OVERRIDE_2026-05-05.md`
+8. `../references/TASK_DOCS_OVERRIDE_2026-05-05.md`
+9. `../references/HANDOFFS_OVERRIDE_2026-05-05.md`
+10. `../references/DOC_REVIEW_FINDINGS_2026-05-05.md`
+
+Only then read `../ARCHITECTURE_WORKPLAN.md`, `../05_TASK_BOARD.md`, `../04_DECISIONS.md`, or individual handoffs as historical/context material.
+
+## Normalized Handoffs
 
 - `admin-editor-v1.md`
 - `ai-light-publish-flow.md`
@@ -35,7 +54,7 @@ Normalized handoffs live here:
 
 ## Relationship To Numbered Docs
 
-Numbered docs such as `../04_DECISIONS.md` and `../05_TASK_BOARD.md` are the current workspace entry points. Handoff files in this directory record thread context for the next thread.
+Numbered docs such as `../04_DECISIONS.md` and `../05_TASK_BOARD.md` are historical/planning context unless current PRs and overrides confirm they are still accurate.
 
 ## Recommended Handoff Sections
 
@@ -50,8 +69,4 @@ Numbered docs such as `../04_DECISIONS.md` and `../05_TASK_BOARD.md` are the cur
 
 ## Rule
 
-A handoff transfers context. It should not silently introduce new product scope.
-
-## Current Architect Entry Point
-
-Read `../ARCHITECTURE_WORKPLAN.md` before starting a new implementation thread.
+A handoff transfers context. It should not silently introduce new product scope, claim durable acceptance, or replace current PR/code-derived status.
