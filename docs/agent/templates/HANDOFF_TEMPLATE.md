@@ -72,7 +72,7 @@ npm run verify
 - Follow-up items for the next task
 
 ## Acceptance note
-n
+
 This handoff is not durable acceptance. Reviewer validation must be recorded separately in the task board, task doc, PR, or a newer PR-derived status file.
 
 ## Next suggested task
