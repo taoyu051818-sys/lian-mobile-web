@@ -1,4 +1,4 @@
-import type { FeedItem, FeedItemId } from "./feed";
+import type { FeedItemId } from "./feed";
 
 export interface PostReply {
   id: FeedItemId;
@@ -8,7 +8,18 @@ export interface PostReply {
   timestampISO: string;
 }
 
-export interface PostDetail extends Omit<FeedItem, "bodyPreview" | "contentType"> {
+export interface PostDetail {
+  tid: FeedItemId;
+  title: string;
+  cover: string;
+  author: string;
+  authorAvatarUrl: string;
+  authorIdentityTag: string;
+  timeLabel: string;
+  timestampISO: string;
+  likeCount: number;
+  liked: boolean;
+  locationArea: string;
   contentHtml: string;
   imageUrls: string[];
   sourceUrl: string;
