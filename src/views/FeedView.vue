@@ -105,7 +105,10 @@ async function loadFeed(reset = false) {
 }
 
 function switchTab(tab: string) {
-  if (activeTab.value === tab) return;
+  if (activeTab.value === tab) {
+    void loadFeed(true);
+    return;
+  }
   activeTab.value = tab;
   void loadFeed(true);
 }
@@ -165,14 +168,6 @@ onMounted(() => {
         @click="switchTab(tab)"
       >
         {{ tab }}
-      </button>
-      <button
-        type="button"
-        class="feed-view__tab feed-view__tab--refresh"
-        :disabled="loading"
-        @click="loadFeed(true)"
-      >
-        {{ loading ? "刷新中" : "刷新" }}
       </button>
     </nav>
 
@@ -270,13 +265,6 @@ onMounted(() => {
   color: #fff;
 }
 
-.feed-view__tab--refresh {
-  grid-column: 1 / -1;
-  min-height: 36px;
-  background: rgba(255, 255, 255, 0.54);
-  color: var(--lian-primary-deep);
-}
-
 .feed-view__tab:disabled {
   cursor: wait;
   opacity: 0.6;
@@ -333,17 +321,12 @@ onMounted(() => {
 
 @media (min-width: 720px) {
   .feed-view__tabs {
-    grid-template-columns: repeat(6, max-content) minmax(80px, 1fr);
+    grid-template-columns: repeat(6, max-content);
     justify-content: start;
   }
 
   .feed-view__tab {
     padding: 0 var(--space-3);
-  }
-
-  .feed-view__tab--refresh {
-    grid-column: auto;
-    justify-self: end;
   }
 }
 </style>
