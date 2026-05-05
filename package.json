@@ -16,6 +16,7 @@
     "serve:legacy": "node scripts/serve-frontend-static-rehearsal.js",
     "test": "node scripts/smoke-frontend.js http://127.0.0.1:4300",
     "test:vue-canary": "node scripts/smoke-frontend.js http://127.0.0.1:4301",
+    "verify": "npm run check && npm run ops:guard && npm run build",
     "start:frontend-static": "node scripts/serve-frontend-runtimes.js"
   },
   "dependencies": {
