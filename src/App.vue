@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { BottomTabBar, TopBar, ToastHost, useToast, AppViewHost } from "./ui";
+import { BottomTabBar, TopBar, ToastHost, useToast } from "./ui";
+import AppViewHost from "./app/AppViewHost.vue";
 import { appViews } from "./app/view-types";
 import { useActiveView } from "./app/useActiveView";
 

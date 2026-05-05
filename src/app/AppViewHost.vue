@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { AppViewKey, appViews } from "../app/view-types";
-import { defineComponent, h } from "vue";
-import { FeedPlaceholder } from "../views/FeedPlaceholder.vue";
-import { MapPlaceholder } from "../views/MapPlaceholder.vue";
-import { MessagesPlaceholder } from "../views/MessagesPlaceholder.vue";
-import { ProfilePlaceholder } from "../views/ProfilePlaceholder.vue";
+import { defineComponent, h, PropType } from "vue";
+import FeedPlaceholder from "../views/FeedPlaceholder.vue";
+import MapPlaceholder from "../views/MapPlaceholder.vue";
+import MessagesPlaceholder from "../views/MessagesPlaceholder.vue";
+import ProfilePlaceholder from "../views/ProfilePlaceholder.vue";
 
 const viewComponents = {
   feed: FeedPlaceholder,
