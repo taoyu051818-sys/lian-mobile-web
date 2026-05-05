@@ -30,14 +30,8 @@ export function normalizePublishTag(value = "") {
   return body ? `#${body}` : "";
 }
 
-export function normalizePublishTags(value: string | string[] = "") {
-  const source = Array.isArray(value) ? value.join(" ") : String(value || "");
-  return [...new Set(source
-    .replace(/#/g, " #")
-    .split(/[\s,，]+/)
-    .map(normalizePublishTag)
-    .filter(Boolean))]
-    .slice(0, 5);
+export function normalizeIdentityTag(value = "") {
+  return String(value || "").trim().slice(0, 16);
 }
 
 export function createManualLocationDraft(placeName: string): PublishLocationDraft {
@@ -78,7 +72,7 @@ export function createMapV2LocationDraft(input: {
     mapVersion: "gaode_v2",
     confidence: 0.86,
     skipped: false,
-    note: input.note || "Vue canary MapV2 location selection",
+    note: "Vue MapV2 location selection",
   };
 }
 
@@ -86,7 +80,8 @@ export function buildPublishPayload(input: {
   imageUrls: string[];
   title: string;
   body: string;
-  tags: string | string[];
+  tag: string;
+  identityTag?: string;
   placeName: string;
   visibility: PublishVisibility;
   aliasId?: string;
@@ -94,10 +89,14 @@ export function buildPublishPayload(input: {
 }): PublishPayload {
   const locationDraft = input.locationDraft || createManualLocationDraft(input.placeName);
   const locationArea = locationDraft.skipped ? "" : locationDraft.locationArea;
+  const tag = normalizePublishTag(input.tag);
+  const identityTag = normalizeIdentityTag(input.identityTag || "");
   const metadata = {
     locationArea,
     visibility: input.visibility,
     distribution: locationArea ? ["home", "map", "search", "detail"] : ["home", "search", "detail"],
+    primaryTag: tag,
+    identityTag,
   };
 
   return {
@@ -105,13 +104,14 @@ export function buildPublishPayload(input: {
     imageUrls: input.imageUrls,
     title: input.title.trim(),
     body: input.body.trim(),
-    tags: normalizePublishTags(input.tags),
+    tag,
+    identityTag,
     metadata,
     locationDraft,
     riskFlags: [],
     confidence: locationDraft.confidence,
     needsHumanReview: false,
-    aiMode: locationDraft.source === "map_v2" ? "manual-vue-canary-map-v2" : "manual-vue-canary",
+    aiMode: locationDraft.source === "map_v2" ? "manual-vue-map-v2" : "manual-vue",
     aliasId: input.aliasId,
   };
 }
