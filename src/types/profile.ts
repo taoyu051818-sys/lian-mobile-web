@@ -4,8 +4,14 @@ export type ProfileTabKey = "history" | "saved" | "liked";
 
 export interface ProfileAlias {
   id: string;
+  poolId?: string;
   name: string;
   avatarUrl?: string;
+  avatarSeed?: string;
+  category?: string;
+  categoryLabel?: string;
+  status?: string;
+  createdAt?: string;
 }
 
 export interface ProfileUser {
@@ -15,6 +21,7 @@ export interface ProfileUser {
   avatarUrl?: string;
   tags?: string[];
   identityTags?: string[];
+  interests?: string[];
   aliases?: ProfileAlias[];
   activeAliasId?: string | null;
   invitePermission?: boolean;
