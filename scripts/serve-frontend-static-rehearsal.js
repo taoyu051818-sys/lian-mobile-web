@@ -6,7 +6,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const publicDir = path.join(rootDir, "public");
+const staticDir = path.resolve(rootDir, process.env.FRONTEND_STATIC_DIR || "dist");
 
 const port = Number(process.env.FRONTEND_PORT || 4300);
 const backendBaseUrl = String(process.env.LIAN_BACKEND_BASE_URL || "http://127.0.0.1:4200").replace(/\/$/, "");
@@ -16,6 +16,7 @@ const publicProto = String(process.env.LIAN_PUBLIC_PROTO || "").trim().toLowerCa
 const MIME_TYPES = {
   ".html": "text/html; charset=utf-8",
   ".js": "text/javascript; charset=utf-8",
+  ".mjs": "text/javascript; charset=utf-8",
   ".css": "text/css; charset=utf-8",
   ".json": "application/json; charset=utf-8",
   ".svg": "image/svg+xml",
@@ -49,7 +50,7 @@ function runtimeConfigScript() {
   return `<script>
 window.LIAN_API_BASE_URL = "";
 window.LIAN_IMAGE_PROXY_BASE_URL = window.location.origin;
-window.LIAN_STATIC_REHEARSAL = { backendBaseUrl: ${JSON.stringify(backendBaseUrl)}, imageProxyBaseUrl: ${JSON.stringify(imageProxyBaseUrl)} };
+window.LIAN_STATIC_REHEARSAL = { backendBaseUrl: ${JSON.stringify(backendBaseUrl)}, imageProxyBaseUrl: ${JSON.stringify(imageProxyBaseUrl)}, staticDir: ${JSON.stringify(path.relative(rootDir, staticDir) || ".")} };
 </script>`;
 }
 
@@ -58,11 +59,11 @@ function injectRuntimeConfig(html) {
   return html.replace("</head>", `${runtimeConfigScript()}\n  </head>`);
 }
 
-function safePublicPath(pathname) {
+function safeStaticPath(pathname) {
   const normalized = path.normalize(decodeURIComponent(pathname)).replace(/^([.][.][/\\])+/, "");
   const relative = normalized === "/" || normalized === "." ? "index.html" : normalized.replace(/^[/\\]+/, "");
-  const fullPath = path.resolve(publicDir, relative);
-  if (!fullPath.startsWith(publicDir + path.sep) && fullPath !== publicDir) return null;
+  const fullPath = path.resolve(staticDir, relative);
+  if (!fullPath.startsWith(staticDir + path.sep) && fullPath !== staticDir) return null;
   return fullPath;
 }
 
@@ -157,7 +158,7 @@ async function proxyRequest(req, res, targetBaseUrl, { rewriteText = false } = {
 }
 
 async function serveStatic(req, res, reqUrl) {
-  const fullPath = safePublicPath(reqUrl.pathname);
+  const fullPath = safeStaticPath(reqUrl.pathname);
   if (!fullPath) return send(res, 403, "forbidden", { "content-type": "text/plain; charset=utf-8" });
 
   try {
@@ -170,7 +171,7 @@ async function serveStatic(req, res, reqUrl) {
     return send(res, 200, body, headers);
   } catch (error) {
     if (error.code === "ENOENT" && !path.extname(reqUrl.pathname)) {
-      const indexPath = path.join(publicDir, "index.html");
+      const indexPath = path.join(staticDir, "index.html");
       const html = injectRuntimeConfig(await fs.readFile(indexPath, "utf8"));
       return send(res, 200, html, { "content-type": MIME_TYPES[".html"] });
     }
@@ -190,7 +191,8 @@ const server = http.createServer(async (req, res) => {
 });
 
 server.listen(port, () => {
-  console.log(`LIAN static frontend rehearsal server running at http://127.0.0.1:${port}`);
+  console.log(`LIAN Vue dist static server running at http://127.0.0.1:${port}`);
+  console.log(`Serving static files from ${staticDir}`);
   console.log(`Proxy /api/* -> ${backendBaseUrl}`);
   console.log(`Proxy /api/image-proxy -> ${imageProxyBaseUrl}`);
 });
