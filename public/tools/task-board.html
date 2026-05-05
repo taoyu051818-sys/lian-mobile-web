@@ -50,6 +50,48 @@
             </div>
             <div class="lane-board" id="laneBoard"></div>
           </article>
+          <article class="panel">
+            <div class="panel-head">
+              <h2>项目结构地图</h2>
+              <span class="panel-note">当前文件夹结构、功能架构、页面结构；以 npm run check 的结构校验为事实来源</span>
+            </div>
+            <div class="structure-map">
+              <section class="structure-column">
+                <h3>当前文件夹结构</h3>
+                <ul class="structure-tree">
+                  <li><strong>/</strong><span>Vite 入口、配置、脚本和文档</span></li>
+                  <li><strong>public/</strong><span>Legacy 静态移动端运行时</span></li>
+                  <li><strong>public/tools/</strong><span>内部工具页面：开发进度看板</span></li>
+                  <li><strong>src/</strong><span>Vue 3 + Vite + TypeScript 新 UI 壳</span></li>
+                  <li><strong>src/app/</strong><span>视图注册、激活状态、页面挂载</span></li>
+                  <li><strong>src/views/</strong><span>Feed / Map / Messages / Profile 页面</span></li>
+                  <li><strong>src/ui/</strong><span>可复用 UI 组件和 Toast 反馈</span></li>
+                  <li><strong>scripts/</strong><span>结构校验、静态演练、smoke、运行时守卫</span></li>
+                </ul>
+              </section>
+              <section class="structure-column">
+                <h3>功能架构</h3>
+                <div class="architecture-flow">
+                  <div><strong>入口层</strong><span>index.html → src/main.ts → App.vue</span></div>
+                  <div><strong>Shell 层</strong><span>TopBar / AppViewHost / BottomTabBar / ToastHost</span></div>
+                  <div><strong>页面层</strong><span>FeedView、MapView、MessagesView、ProfileView</span></div>
+                  <div><strong>组件层</strong><span>Button、Chip、Panel、Sheet、Badge、Toast</span></div>
+                  <div><strong>Legacy 层</strong><span>public/app*.js、map-v2、publish、messages-profile</span></div>
+                  <div><strong>工具层</strong><span>task-board 从现有任务板 Markdown 推导进度</span></div>
+                </div>
+              </section>
+              <section class="structure-column">
+                <h3>页面结构</h3>
+                <div class="page-map">
+                  <div><span class="page-key">feed</span><strong>首页</strong><small>校园信息流和内容分发</small></div>
+                  <div><span class="page-key">map</span><strong>探索</strong><small>地点、位置组织和地图探索</small></div>
+                  <div><span class="page-key">messages</span><strong>消息</strong><small>频道、通知、后续私信入口</small></div>
+                  <div><span class="page-key">profile</span><strong>我的</strong><small>身份、贡献、发布记录</small></div>
+                  <div><span class="page-key">tools</span><strong>开发看板</strong><small>进度、速度、排期、结构地图</small></div>
+                </div>
+              </section>
+            </div>
+          </article>
         </section>
 
         <table class="task-table">
