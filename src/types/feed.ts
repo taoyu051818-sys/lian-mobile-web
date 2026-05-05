@@ -5,14 +5,20 @@ export interface FeedTab {
   label: string;
 }
 
+export interface FeedAuthor {
+  nodebbUid: number;
+  displayName: string;
+  avatarUrl: string;
+  identityTag: string;
+  source: string;
+}
+
 export interface FeedItem {
   tid: FeedItemId;
   title: string;
   bodyPreview: string;
   cover: string;
-  author: string;
-  authorAvatarUrl: string;
-  authorIdentityTag: string;
+  author: FeedAuthor;
   timeLabel: string;
   timestampISO: string;
   likeCount: number;
