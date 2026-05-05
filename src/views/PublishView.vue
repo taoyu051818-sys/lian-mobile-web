@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue";
 import { fetchMapV2Items } from "../api/map";
-import { buildPublishPayload, createMapV2LocationDraft, normalizePublishTags, publishPost, uploadPublishImage } from "../api/publish";
+import { buildPublishPayload, createMapV2LocationDraft, normalizeIdentityTag, normalizePublishTag, publishPost, uploadPublishImage } from "../api/publish";
 import { fetchAuthMe } from "../api/profile";
 import { GlassPanel, IdentityBadge, InlineError, LianButton, LocationChip, TagChip } from "../ui";
 import type { MapLocation } from "../types/map";
@@ -12,6 +12,8 @@ const MAX_IMAGE_COUNT = 9;
 const title = ref("");
 const body = ref("");
 const tagInput = ref("");
+const identityTag = ref("");
+const identityTagOptions = ref<string[]>([]);
 const placeName = ref("");
 const visibility = ref<PublishVisibility>("public");
 const selectedFiles = ref<File[]>([]);
@@ -31,7 +33,8 @@ const mapLocationLoading = ref(false);
 const mapLocationError = ref("");
 const locationSearch = ref("");
 
-const normalizedTags = computed(() => normalizePublishTags(tagInput.value));
+const normalizedTag = computed(() => normalizePublishTag(tagInput.value));
+const normalizedIdentityTag = computed(() => normalizeIdentityTag(identityTag.value));
 const avatarText = computed(() => identityName.value.slice(0, 2) || "同");
 const canSubmit = computed(() => title.value.trim().length > 0 && body.value.trim().length > 0 && !uploading.value && !publishing.value);
 const imageStatus = computed(() => {
@@ -70,11 +73,15 @@ async function loadIdentity() {
     const user = await fetchAuthMe();
     identityName.value = user?.username || "同学";
     aliasId.value = user?.activeAliasId || undefined;
+    identityTagOptions.value = user?.identityTags || [];
+    identityTag.value = "";
     const activeAlias = aliasId.value ? user?.aliases?.find((alias) => alias.id === aliasId.value) : null;
-    identityMeta.value = activeAlias?.name || user?.identityTags?.[0] || user?.institution || "当前身份";
+    identityMeta.value = activeAlias?.name || user?.institution || "当前身份";
   } catch {
     identityName.value = "同学";
     identityMeta.value = "未确认身份";
+    identityTagOptions.value = [];
+    identityTag.value = "";
   }
 }
 
@@ -173,7 +180,8 @@ async function submitPublish() {
       imageUrls: uploadedImageUrls.value,
       title: title.value,
       body: body.value,
-      tags: normalizedTags.value,
+      tag: normalizedTag.value,
+      identityTag: normalizedIdentityTag.value,
       placeName: placeName.value,
       visibility: visibility.value,
       aliasId: aliasId.value,
@@ -196,6 +204,7 @@ function resetForm() {
   title.value = "";
   body.value = "";
   tagInput.value = "";
+  identityTag.value = "";
   placeName.value = "";
   visibility.value = "public";
   selectedFiles.value = [];
@@ -297,13 +306,21 @@ onMounted(() => {
         </div>
 
         <label class="publish-view__field">
-          <span>标签</span>
-          <input v-model="tagInput" maxlength="96" placeholder="最多 5 个，例如 #校园 #晚霞" />
+          <span>帖子标签</span>
+          <input v-model="tagInput" maxlength="18" placeholder="一个标签，例如 #晚霞" />
         </label>
 
-        <div v-if="normalizedTags.length" class="publish-view__tags" aria-label="标签预览">
-          <TagChip v-for="tag in normalizedTags" :key="tag" :tag="tag" />
+        <div v-if="normalizedTag" class="publish-view__tags" aria-label="帖子标签预览">
+          <TagChip :tag="normalizedTag" />
         </div>
+
+        <label v-if="identityTagOptions.length" class="publish-view__field">
+          <span>身份标签</span>
+          <select v-model="identityTag">
+            <option value="">不使用身份标签</option>
+            <option v-for="tag in identityTagOptions" :key="tag" :value="tag">{{ tag }}</option>
+          </select>
+        </label>
 
         <section class="publish-view__section" aria-labelledby="publish-visibility-title">
           <div class="publish-view__section-title">
@@ -389,7 +406,8 @@ onMounted(() => {
 }
 
 .publish-view__field input,
-.publish-view__field textarea {
+.publish-view__field textarea,
+.publish-view__field select {
   width: 100%;
   min-height: 44px;
   box-sizing: border-box;
@@ -400,7 +418,8 @@ onMounted(() => {
   font: inherit;
 }
 
-.publish-view__field input {
+.publish-view__field input,
+.publish-view__field select {
   padding: 0 var(--space-3);
 }
 
