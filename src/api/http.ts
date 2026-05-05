@@ -32,12 +32,32 @@ function normalizeJsonOptions(options: RequestInit = {}) {
   return { ...options, headers };
 }
 
+async function readJsonResponse(response: Response): Promise<JsonRecord> {
+  const contentType = response.headers.get("content-type") || "";
+  if (!contentType.toLowerCase().includes("application/json")) {
+    const text = await response.text().catch(() => "");
+    const preview = text.trim().slice(0, 80);
+    throw new LianApiError(
+      preview
+        ? `接口返回的不是 JSON：${preview}`
+        : `接口返回的不是 JSON（状态码 ${response.status}）`,
+      response.status,
+    );
+  }
+
+  try {
+    return await response.json() as JsonRecord;
+  } catch {
+    throw new LianApiError(`接口返回 JSON 解析失败（状态码 ${response.status}）`, response.status);
+  }
+}
+
 export async function apiGet<T>(path: string, options: RequestInit = {}): Promise<T> {
   const response = await fetch(withApiBase(path), {
     credentials: "include",
     ...normalizeJsonOptions(options),
   });
-  const data = await response.json().catch(() => ({} as JsonRecord));
+  const data = await readJsonResponse(response);
   if (!response.ok) {
     const message = typeof data.error === "string" ? data.error : `请求失败（状态码 ${response.status}）`;
     throw new LianApiError(message, response.status);
