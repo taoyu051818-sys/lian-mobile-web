@@ -1,7 +1,9 @@
 export type PublishVisibility = "public" | "campus" | "school" | "private";
+export type PublishLocationSource = "manual" | "skipped" | "map_v2";
+export type PublishMapVersion = "legacy" | "gaode_v2";
 
 export interface PublishLocationDraft {
-  source: "manual" | "skipped";
+  source: PublishLocationSource;
   locationId: string;
   locationArea: string;
   displayName: string;
@@ -9,7 +11,7 @@ export interface PublishLocationDraft {
   lng: number | null;
   legacyPoint: { x: number | null; y: number | null };
   imagePoint: { x: number | null; y: number | null };
-  mapVersion: "legacy";
+  mapVersion: PublishMapVersion;
   confidence: number;
   skipped: boolean;
   note: string;

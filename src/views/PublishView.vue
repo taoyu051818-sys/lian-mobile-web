@@ -1,9 +1,11 @@
 <script setup lang="ts">
-import { computed, ref } from "vue";
-import { buildPublishPayload, normalizePublishTags, publishPost, uploadPublishImage } from "../api/publish";
+import { computed, onMounted, ref } from "vue";
+import { fetchMapV2Items } from "../api/map";
+import { buildPublishPayload, createMapV2LocationDraft, normalizePublishTags, publishPost, uploadPublishImage } from "../api/publish";
 import { fetchAuthMe } from "../api/profile";
 import { GlassPanel, IdentityBadge, InlineError, LianButton, LocationChip, TagChip, TrustBadge, TypeChip } from "../ui";
-import type { PublishVisibility } from "../types/publish";
+import type { MapLocation } from "../types/map";
+import type { PublishLocationDraft, PublishVisibility } from "../types/publish";
 
 const MAX_IMAGE_COUNT = 9;
 
@@ -23,6 +25,11 @@ const publishing = ref(false);
 const errorMessage = ref("");
 const successMessage = ref("");
 const lastTid = ref<string | number | null>(null);
+const mapLocations = ref<MapLocation[]>([]);
+const selectedMapLocation = ref<MapLocation | null>(null);
+const mapLocationLoading = ref(false);
+const mapLocationError = ref("");
+const locationSearch = ref("");
 
 const normalizedTags = computed(() => normalizePublishTags(tagInput.value));
 const avatarText = computed(() => identityName.value.slice(0, 2) || "同");
@@ -31,6 +38,29 @@ const imageStatus = computed(() => {
   if (!selectedFiles.value.length) return "可不传图片";
   if (uploading.value) return `图片上传中 ${uploadedImageUrls.value.length}/${selectedFiles.value.length}`;
   return `已准备 ${uploadedImageUrls.value.length}/${selectedFiles.value.length} 张图片`;
+});
+const filteredMapLocations = computed(() => {
+  const keyword = locationSearch.value.trim().toLowerCase();
+  const list = keyword
+    ? mapLocations.value.filter((location) => `${location.name} ${location.type || ""}`.toLowerCase().includes(keyword))
+    : mapLocations.value;
+  return list.slice(0, 18);
+});
+const selectedLocationDraft = computed<PublishLocationDraft | null>(() => {
+  const location = selectedMapLocation.value;
+  if (!location) return null;
+  return createMapV2LocationDraft({
+    locationId: location.id,
+    name: location.name,
+    lat: location.lat,
+    lng: location.lng,
+  });
+});
+const locationPreviewLabel = computed(() => selectedMapLocation.value?.name || placeName.value.trim() || "未绑定地点");
+const locationPreviewHelp = computed(() => {
+  if (selectedMapLocation.value) return "已绑定 MapV2 地点，会携带 locationId 和经纬度进入地图/地点沉淀";
+  if (placeName.value.trim()) return "使用手填地点，会进入地图/地点沉淀但没有经纬度";
+  return "不绑定地点，只进入首页/搜索/详情";
 });
 
 const visibilityOptions: Array<{ value: PublishVisibility; label: string; helper: string }> = [
@@ -51,6 +81,34 @@ async function loadIdentity() {
     identityName.value = "同学";
     identityMeta.value = "未确认身份";
   }
+}
+
+async function loadMapLocations() {
+  mapLocationLoading.value = true;
+  mapLocationError.value = "";
+  try {
+    const data = await fetchMapV2Items();
+    mapLocations.value = data.locations || [];
+  } catch (error) {
+    mapLocationError.value = error instanceof Error ? error.message : "地图地点暂时没加载出来，可以手填地点发布。";
+  } finally {
+    mapLocationLoading.value = false;
+  }
+}
+
+function selectMapLocation(location: MapLocation) {
+  selectedMapLocation.value = location;
+  placeName.value = location.name;
+  locationSearch.value = location.name;
+  mapLocationError.value = "";
+}
+
+function clearMapLocation() {
+  selectedMapLocation.value = null;
+}
+
+function isSelectedMapLocation(location: MapLocation) {
+  return selectedMapLocation.value?.id === location.id;
 }
 
 function revokePreviewUrls() {
@@ -124,6 +182,7 @@ async function submitPublish() {
       placeName: placeName.value,
       visibility: visibility.value,
       aliasId: aliasId.value,
+      locationDraft: selectedLocationDraft.value,
     });
     const response = await publishPost(payload);
     lastTid.value = response.tid || null;
@@ -146,10 +205,15 @@ function resetForm() {
   visibility.value = "public";
   selectedFiles.value = [];
   uploadedImageUrls.value = [];
+  selectedMapLocation.value = null;
+  locationSearch.value = "";
   revokePreviewUrls();
 }
 
-loadIdentity();
+onMounted(() => {
+  void loadIdentity();
+  void loadMapLocations();
+});
 </script>
 
 <template>
@@ -163,7 +227,7 @@ loadIdentity();
         <TrustBadge tone="pending">Vue canary</TrustBadge>
       </header>
 
-      <p class="publish-view__intro">先迁移快速手动发布闭环。图片 AI 草稿和地图选点后续补齐，当前可以手动填写地点。</p>
+      <p class="publish-view__intro">快速发布闭环继续增强：当前支持手动发布、图片上传和 MapV2 地点绑定；AI 草稿后续补齐。</p>
 
       <section class="publish-view__identity" aria-label="当前发布身份">
         <IdentityBadge :avatar-text="avatarText" :label="identityName" :meta="identityMeta" />
@@ -200,14 +264,53 @@ loadIdentity();
           <textarea v-model="body" rows="6" maxlength="300" placeholder="写清楚内容、时间、限制或下一步。" />
         </label>
 
+        <section class="publish-view__section publish-view__map-picker" aria-labelledby="publish-map-title">
+          <div class="publish-view__section-title">
+            <strong id="publish-map-title">地图地点</strong>
+            <span>{{ selectedMapLocation ? '已绑定 MapV2' : '可选' }}</span>
+          </div>
+
+          <label class="publish-view__field publish-view__map-search">
+            <span>搜索地点</span>
+            <input v-model="locationSearch" maxlength="40" placeholder="搜索图书馆、食堂、教学楼…" />
+          </label>
+
+          <InlineError v-if="mapLocationError">
+            {{ mapLocationError }}
+            <button type="button" @click="loadMapLocations">重新加载</button>
+          </InlineError>
+
+          <div v-if="mapLocationLoading" class="publish-view__mini-state" role="status">正在加载 MapV2 地点…</div>
+          <div v-else-if="filteredMapLocations.length" class="publish-view__map-locations" aria-label="MapV2 地点列表">
+            <button
+              v-for="location in filteredMapLocations"
+              :key="location.id"
+              type="button"
+              class="publish-view__map-location"
+              :class="{ 'is-active': isSelectedMapLocation(location) }"
+              @click="selectMapLocation(location)"
+            >
+              <strong>{{ location.name }}</strong>
+              <span>{{ location.type || '校园地点' }}</span>
+            </button>
+          </div>
+          <div v-else class="publish-view__mini-state">没有匹配地点，可以手填地点发布。</div>
+
+          <div v-if="selectedMapLocation" class="publish-view__map-selected">
+            <LocationChip>{{ selectedMapLocation.name }}</LocationChip>
+            <span>{{ selectedMapLocation.lat.toFixed(5) }}, {{ selectedMapLocation.lng.toFixed(5) }}</span>
+            <LianButton type="button" size="sm" variant="ghost" @click="clearMapLocation">改用手填</LianButton>
+          </div>
+        </section>
+
         <label class="publish-view__field">
-          <span>地点</span>
+          <span>手填地点</span>
           <input v-model="placeName" maxlength="40" placeholder="例如 图书馆、食堂、教学楼，也可以留空" />
         </label>
 
         <div class="publish-view__location-preview">
-          <LocationChip>{{ placeName.trim() || "未绑定地点" }}</LocationChip>
-          <span>{{ placeName.trim() ? "会进入地图/地点沉淀" : "不绑定地点，只进入首页/搜索/详情" }}</span>
+          <LocationChip>{{ locationPreviewLabel }}</LocationChip>
+          <span>{{ locationPreviewHelp }}</span>
         </div>
 
         <label class="publish-view__field">
@@ -261,7 +364,8 @@ loadIdentity();
 .publish-view__section-title,
 .publish-view__actions,
 .publish-view__location-preview,
-.publish-view__tags {
+.publish-view__tags,
+.publish-view__map-selected {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-2);
@@ -276,7 +380,8 @@ loadIdentity();
 
 .publish-view__intro,
 .publish-view__section-title span,
-.publish-view__location-preview span {
+.publish-view__location-preview span,
+.publish-view__map-selected span {
   color: var(--lian-muted);
   line-height: 1.6;
 }
@@ -380,6 +485,62 @@ loadIdentity();
   font-weight: 900;
 }
 
+.publish-view__map-picker {
+  background: rgba(31, 167, 160, 0.07);
+}
+
+.publish-view__map-search {
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.publish-view__map-locations {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(132px, 1fr));
+  gap: var(--space-2);
+  max-height: 240px;
+  overflow: auto;
+}
+
+.publish-view__map-location {
+  display: grid;
+  gap: 4px;
+  min-height: 62px;
+  padding: var(--space-3);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-card);
+  background: rgba(255, 255, 255, 0.62);
+  color: var(--lian-ink);
+  text-align: left;
+}
+
+.publish-view__map-location span {
+  color: var(--lian-muted);
+  font-size: 12px;
+}
+
+.publish-view__map-location.is-active {
+  border-color: rgba(31, 167, 160, 0.34);
+  background: rgba(31, 167, 160, 0.16);
+}
+
+.publish-view__map-selected {
+  justify-content: flex-start;
+  padding: var(--space-3);
+  border: 1px solid rgba(31, 167, 160, 0.2);
+  border-radius: var(--radius-card);
+  background: rgba(255, 255, 255, 0.58);
+}
+
+.publish-view__mini-state {
+  display: grid;
+  min-height: 72px;
+  place-items: center;
+  color: var(--lian-muted);
+  text-align: center;
+}
+
 .publish-view__tags,
 .publish-view__actions {
   justify-content: flex-start;
@@ -412,6 +573,16 @@ loadIdentity();
 .publish-view__visibility.is-active {
   border-color: rgba(31, 167, 160, 0.34);
   background: rgba(31, 167, 160, 0.12);
+}
+
+.inline-error button {
+  min-height: 32px;
+  margin-left: var(--space-2);
+  border: 0;
+  border-radius: var(--radius-chip);
+  background: rgba(255, 255, 255, 0.72);
+  color: currentColor;
+  font-weight: 900;
 }
 
 @media (max-width: 640px) {
