@@ -2,7 +2,7 @@
 import { computed, onMounted, ref } from "vue";
 import { fetchAuthMe } from "../api/profile";
 import { fetchChannelMessages, fetchNotifications, sendChannelMessage } from "../api/messages";
-import { GlassPanel, IdentityBadge, InlineError, LianButton, TrustBadge, TypeChip } from "../ui";
+import { GlassPanel, IdentityBadge, InlineError, LianButton, TrustBadge } from "../ui";
 import type { ChannelMessage, MessageTabKey, NotificationItem } from "../types/messages";
 
 const activeTab = ref<MessageTabKey>("channel");
@@ -27,10 +27,6 @@ const tabs: Array<{ key: MessageTabKey; label: string }> = [
 
 const composerName = computed(() => composerIdentityTag.value || identityTags.value[0] || "同学");
 const composerAvatarText = computed(() => composerName.value.slice(0, 2) || "同");
-const channelSummary = computed(() => {
-  const totalReads = channelItems.value.reduce((sum, item) => sum + Number(item.readCount || 0), 0);
-  return `${channelItems.value.length} 条动态${totalReads ? ` · 累计 ${totalReads} 次已读` : ""}`;
-});
 
 function stripHtml(html?: string) {
   if (!html) return "";
@@ -152,18 +148,8 @@ onMounted(async () => {
 </script>
 
 <template>
-  <section class="messages-view" aria-labelledby="messages-view-title">
+  <section class="messages-view" aria-label="消息">
     <GlassPanel class="messages-view__card">
-      <header class="messages-view__header">
-        <div>
-          <TypeChip type="discussion">消息中心</TypeChip>
-          <h2 id="messages-view-title">消息中心</h2>
-        </div>
-        <TrustBadge tone="pending">Vue canary</TrustBadge>
-      </header>
-
-      <p class="messages-view__intro">先迁移频道和通知的真实读写路径，归档和详情联动后续补齐。</p>
-
       <nav class="messages-view__tabs" aria-label="消息分类">
         <button
           v-for="tab in tabs"
@@ -194,11 +180,6 @@ onMounted(async () => {
           <LianButton type="submit" :loading="sending">发送</LianButton>
         </form>
 
-        <div class="messages-view__pane-header">
-          <strong>{{ channelSummary }}</strong>
-          <LianButton size="sm" variant="ghost" :loading="channelLoading" @click="loadChannel(true)">刷新</LianButton>
-        </div>
-
         <InlineError v-if="channelError">
           {{ channelError }}
           <button type="button" @click="loadChannel(true)">重新加载</button>
@@ -223,11 +204,6 @@ onMounted(async () => {
       </section>
 
       <section v-else class="messages-view__pane" aria-label="通知">
-        <div class="messages-view__pane-header">
-          <strong>{{ notificationItems.length }} 条通知</strong>
-          <LianButton size="sm" variant="ghost" :loading="notificationLoading" @click="loadNotifications">刷新</LianButton>
-        </div>
-
         <InlineError v-if="notificationError">
           {{ notificationError }}
           <button type="button" @click="loadNotifications">重新加载</button>
@@ -266,9 +242,7 @@ onMounted(async () => {
   gap: var(--space-4);
 }
 
-.messages-view__header,
 .messages-view__tabs,
-.messages-view__pane-header,
 .messages-view__message footer,
 .messages-view__notification header,
 .messages-view__load-more {
@@ -279,13 +253,11 @@ onMounted(async () => {
   justify-content: space-between;
 }
 
-.messages-view h2,
 .messages-view h3,
 .messages-view p {
   margin: 0;
 }
 
-.messages-view__intro,
 .messages-view__message p,
 .messages-view__notification p,
 .messages-view__message footer,
