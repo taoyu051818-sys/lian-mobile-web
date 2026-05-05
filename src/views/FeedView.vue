@@ -14,6 +14,10 @@ const DEFAULT_TABS: FeedTab[] = [
 ];
 const PAGE_SIZE = 12;
 
+const emit = defineEmits<{
+  chrome: [hidden: boolean];
+}>();
+
 const tabs = ref<FeedTab[]>(DEFAULT_TABS);
 const activeTab = ref(DEFAULT_TABS[0].id);
 const items = ref<FeedItem[]>([]);
@@ -27,6 +31,7 @@ const selectedPost = ref<PostDetail | null>(null);
 const detailLoading = ref(false);
 const detailError = ref("");
 
+const detailOpen = computed(() => selectedPostId.value !== null);
 const isEmpty = computed(() => !loading.value && !errorMessage.value && items.value.length === 0);
 const masonryColumns = computed(() => splitIntoMasonryColumns(items.value));
 
@@ -122,6 +127,7 @@ async function openItem(id: FeedItemId) {
   selectedPost.value = null;
   detailError.value = "";
   detailLoading.value = true;
+  emit("chrome", true);
 
   try {
     const detail = await fetchPostDetail(id);
@@ -149,30 +155,34 @@ function closeDetail() {
   selectedPost.value = null;
   detailLoading.value = false;
   detailError.value = "";
+  emit("chrome", false);
 }
 
 onMounted(() => {
+  emit("chrome", false);
   void loadFeed(true);
 });
 </script>
 
 <template>
-  <section class="feed-view" aria-labelledby="feed-view-title">
+  <section class="feed-view" :class="{ 'is-detail-open': detailOpen }" aria-labelledby="feed-view-title">
     <h1 id="feed-view-title" class="feed-view__sr-title">首页</h1>
 
-    <nav class="feed-view__tabs" aria-label="信息分类">
-      <button
-        v-for="tab in tabs"
-        :key="tab.id"
-        type="button"
-        class="feed-view__tab"
-        :class="{ 'is-active': tab.id === activeTab }"
-        :aria-pressed="tab.id === activeTab"
-        @click="switchTab(tab.id)"
-      >
-        {{ tab.label }}
-      </button>
-    </nav>
+    <Transition name="feed-tabs-motion">
+      <nav v-if="!detailOpen" class="feed-view__tabs" aria-label="信息分类">
+        <button
+          v-for="tab in tabs"
+          :key="tab.id"
+          type="button"
+          class="feed-view__tab"
+          :class="{ 'is-active': tab.id === activeTab }"
+          :aria-pressed="tab.id === activeTab"
+          @click="switchTab(tab.id)"
+        >
+          {{ tab.label }}
+        </button>
+      </nav>
+    </Transition>
 
     <InlineError v-if="errorMessage">
       {{ errorMessage }}
@@ -188,42 +198,47 @@ onMounted(() => {
       <span>可以换个分类，或稍后再来看看。</span>
     </div>
 
-    <div v-else class="feed-view__masonry" aria-live="polite">
-      <div
-        v-for="(column, columnIndex) in masonryColumns"
-        :key="columnIndex"
-        class="feed-view__masonry-column"
-      >
-        <FeedItemCard
-          v-for="item in column"
-          :key="String(item.tid)"
-          :item="item"
-          @open="openItem"
-        />
+    <Transition name="feed-content-motion" mode="out-in">
+      <div v-if="!detailOpen" class="feed-view__content" key="feed-list">
+        <div v-if="!loading && !isEmpty" class="feed-view__masonry" aria-live="polite">
+          <div
+            v-for="(column, columnIndex) in masonryColumns"
+            :key="columnIndex"
+            class="feed-view__masonry-column"
+          >
+            <FeedItemCard
+              v-for="item in column"
+              :key="String(item.tid)"
+              :item="item"
+              @open="openItem"
+            />
+          </div>
+        </div>
+
+        <div v-if="items.length" class="feed-view__load-more">
+          <LianButton
+            v-if="hasMore"
+            :loading="loadingMore"
+            variant="ghost"
+            @click="loadFeed(false)"
+          >
+            加载更多
+          </LianButton>
+          <span v-else>已经看到这里啦</span>
+        </div>
       </div>
-    </div>
 
-    <div v-if="items.length" class="feed-view__load-more">
-      <LianButton
-        v-if="hasMore"
-        :loading="loadingMore"
-        variant="ghost"
-        @click="loadFeed(false)"
-      >
-        加载更多
-      </LianButton>
-      <span v-else>已经看到这里啦</span>
-    </div>
-
-    <PostDetailPanel
-      v-if="selectedPostId !== null"
-      class="feed-view__detail"
-      :post="selectedPost"
-      :loading="detailLoading"
-      :error="detailError"
-      @close="closeDetail"
-      @retry="retryDetail"
-    />
+      <PostDetailPanel
+        v-else
+        key="feed-detail"
+        class="feed-view__detail"
+        :post="selectedPost"
+        :loading="detailLoading"
+        :error="detailError"
+        @close="closeDetail"
+        @retry="retryDetail"
+      />
+    </Transition>
   </section>
 </template>
 
@@ -232,6 +247,10 @@ onMounted(() => {
   display: grid;
   gap: var(--space-3);
   padding-top: calc(58px + env(safe-area-inset-top));
+}
+
+.feed-view.is-detail-open {
+  padding-top: 0;
 }
 
 .feed-view__sr-title {
@@ -278,11 +297,13 @@ onMounted(() => {
   font-size: 13px;
   font-weight: 850;
   white-space: nowrap;
+  transition: background 160ms ease, color 160ms ease, transform 160ms ease;
 }
 
 .feed-view__tab.is-active {
   background: var(--lian-ink);
   color: #fff;
+  transform: translateY(-1px);
 }
 
 .feed-view__tab:disabled {
@@ -293,6 +314,11 @@ onMounted(() => {
 .feed-view__tab:focus-visible {
   outline: 3px solid rgba(31, 167, 160, 0.32);
   outline-offset: 2px;
+}
+
+.feed-view__content {
+  display: grid;
+  gap: var(--space-3);
 }
 
 .feed-view__masonry {
@@ -332,9 +358,28 @@ onMounted(() => {
 }
 
 .feed-view__detail {
-  position: sticky;
-  bottom: calc(92px + env(safe-area-inset-bottom));
-  z-index: 20;
+  min-height: calc(100vh - var(--space-6));
+}
+
+.feed-tabs-motion-enter-active,
+.feed-tabs-motion-leave-active,
+.feed-content-motion-enter-active,
+.feed-content-motion-leave-active {
+  transition: opacity 180ms ease, transform 180ms ease, filter 180ms ease;
+}
+
+.feed-tabs-motion-enter-from,
+.feed-tabs-motion-leave-to {
+  opacity: 0;
+  transform: translateY(-16px) scale(0.98);
+  filter: blur(6px);
+}
+
+.feed-content-motion-enter-from,
+.feed-content-motion-leave-to {
+  opacity: 0;
+  transform: translateY(10px) scale(0.992);
+  filter: blur(5px);
 }
 
 .inline-error button {
@@ -345,5 +390,24 @@ onMounted(() => {
   background: rgba(255, 255, 255, 0.72);
   color: currentColor;
   font-weight: 900;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .feed-view__tab,
+  .feed-tabs-motion-enter-active,
+  .feed-tabs-motion-leave-active,
+  .feed-content-motion-enter-active,
+  .feed-content-motion-leave-active {
+    transition: none;
+  }
+
+  .feed-tabs-motion-enter-from,
+  .feed-tabs-motion-leave-to,
+  .feed-content-motion-enter-from,
+  .feed-content-motion-leave-to {
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
 }
 </style>
