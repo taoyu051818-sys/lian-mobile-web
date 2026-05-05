@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { computed, ref } from "vue";
-import { loginAuth, registerAuth, sendEmailCode } from "../../api/auth";
+import { computed, onMounted, ref } from "vue";
+import { fetchAuthRules, loginAuth, registerAuth, sendEmailCode } from "../../api/auth";
 import { InlineError, TrustBadge, TypeChip } from "../../ui";
-import type { AuthMode } from "../../api/auth";
+import type { AuthInterestOption, AuthMode } from "../../api/auth";
 import type { ProfileUser } from "../../types/profile";
 
 const emit = defineEmits<{
@@ -16,6 +16,8 @@ const email = ref("");
 const emailCode = ref("");
 const password = ref("");
 const inviteCode = ref("");
+const interestOptions = ref<AuthInterestOption[]>([]);
+const selectedInterests = ref<string[]>([]);
 const submitting = ref(false);
 const sendingCode = ref(false);
 const errorMessage = ref("");
@@ -25,7 +27,7 @@ const codeMessage = ref("");
 const primaryLabel = computed(() => mode.value === "login" ? "登录" : "注册并登录");
 const note = computed(() => mode.value === "login"
   ? "使用邮箱或昵称登录。"
-  : "高校邮箱注册需要验证码；邀请码注册可以不填邮箱。"
+  : "选择兴趣后，会用于首页推荐和第一个马甲。"
 );
 
 function switchMode(nextMode: AuthMode) {
@@ -33,6 +35,15 @@ function switchMode(nextMode: AuthMode) {
   errorMessage.value = "";
   successMessage.value = "";
   codeMessage.value = "";
+}
+
+function toggleInterest(id: string) {
+  if (selectedInterests.value.includes(id)) {
+    selectedInterests.value = selectedInterests.value.filter((item) => item !== id);
+    return;
+  }
+  if (selectedInterests.value.length >= 5) return;
+  selectedInterests.value = [...selectedInterests.value, id];
 }
 
 function validate() {
@@ -44,6 +55,7 @@ function validate() {
   if (!username.value.trim()) return "请填写昵称。";
   if (!email.value.trim() && !inviteCode.value.trim()) return "请填写高校邮箱，或填写邀请码。";
   if (email.value.trim() && !emailCode.value.trim()) return "高校邮箱注册需要填写验证码。";
+  if (!selectedInterests.value.length) return "至少选择一个兴趣，用来初始化推荐流。";
   return "";
 }
 
@@ -63,6 +75,7 @@ async function submitAuth() {
         emailCode: emailCode.value.trim() || undefined,
         password: password.value,
         inviteCode: inviteCode.value.trim() || undefined,
+        interests: selectedInterests.value,
       });
     successMessage.value = "已登录，正在刷新个人资料。";
     emit("authenticated", user);
@@ -94,6 +107,15 @@ async function requestEmailCode() {
     sendingCode.value = false;
   }
 }
+
+onMounted(async () => {
+  try {
+    const rules = await fetchAuthRules();
+    interestOptions.value = rules.interests || [];
+  } catch {
+    interestOptions.value = [];
+  }
+});
 </script>
 
 <template>
@@ -137,6 +159,26 @@ async function requestEmailCode() {
             </button>
           </div>
         </label>
+
+        <section v-if="interestOptions.length" class="auth-panel__interests" aria-label="兴趣选择">
+          <div class="auth-panel__section-title">
+            <strong>兴趣</strong>
+            <span>{{ selectedInterests.length }}/5</span>
+          </div>
+          <div class="auth-panel__interest-grid">
+            <button
+              v-for="interest in interestOptions"
+              :key="interest.id"
+              type="button"
+              class="auth-panel__interest"
+              :class="{ 'is-active': selectedInterests.includes(interest.id) }"
+              @click="toggleInterest(interest.id)"
+            >
+              <strong>{{ interest.label }}</strong>
+              <span>{{ interest.description }}</span>
+            </button>
+          </div>
+        </section>
       </template>
 
       <label>
@@ -169,7 +211,8 @@ async function requestEmailCode() {
 
 <style scoped>
 .auth-panel,
-.auth-panel__form {
+.auth-panel__form,
+.auth-panel__interests {
   display: grid;
   gap: var(--space-4);
 }
@@ -183,7 +226,8 @@ async function requestEmailCode() {
 
 .auth-panel__header,
 .auth-panel__tabs,
-.auth-panel__code-row {
+.auth-panel__code-row,
+.auth-panel__section-title {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-2);
@@ -197,7 +241,8 @@ async function requestEmailCode() {
 }
 
 .auth-panel > p,
-.auth-panel label span {
+.auth-panel label span,
+.auth-panel__section-title span {
   color: var(--lian-muted);
   line-height: 1.6;
 }
@@ -206,14 +251,18 @@ async function requestEmailCode() {
   justify-content: flex-start;
 }
 
-.auth-panel__tabs button {
-  min-height: 36px;
-  padding: 0 var(--space-3);
+.auth-panel__tabs button,
+.auth-panel__interest {
   border: 1px solid var(--glass-border);
-  border-radius: var(--radius-chip);
   background: rgba(255, 255, 255, 0.54);
   color: var(--lian-muted);
   font-weight: 850;
+}
+
+.auth-panel__tabs button {
+  min-height: 36px;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-chip);
 }
 
 .auth-panel__tabs button.is-active {
@@ -259,6 +308,36 @@ async function requestEmailCode() {
 .auth-panel__code-row button {
   padding: 0 var(--space-3);
   background: rgba(255, 255, 255, 0.72);
+  color: var(--lian-ink);
+}
+
+.auth-panel__interest-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(132px, 1fr));
+  gap: var(--space-2);
+}
+
+.auth-panel__interest {
+  display: grid;
+  gap: 4px;
+  min-height: 76px;
+  padding: var(--space-3);
+  border-radius: var(--radius-card);
+  text-align: left;
+}
+
+.auth-panel__interest strong {
+  color: var(--lian-ink);
+}
+
+.auth-panel__interest span {
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.auth-panel__interest.is-active {
+  border-color: rgba(31, 167, 160, 0.34);
+  background: rgba(31, 167, 160, 0.14);
   color: var(--lian-ink);
 }
 
