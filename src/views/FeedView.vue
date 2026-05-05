@@ -13,6 +13,8 @@ const DEFAULT_TABS: FeedTab[] = [
   { id: "精选", label: "精选" },
 ];
 const PAGE_SIZE = 12;
+const HOME_UPDATE_PROBE_VERSION = "home-ui-main-2026-05-05-01";
+const HOME_UPDATE_PROBE_KEY = `lian.homeUpdateProbe.${HOME_UPDATE_PROBE_VERSION}`;
 
 const emit = defineEmits<{
   chrome: [hidden: boolean];
@@ -30,6 +32,7 @@ const selectedPostId = ref<FeedItemId | null>(null);
 const selectedPost = ref<PostDetail | null>(null);
 const detailLoading = ref(false);
 const detailError = ref("");
+const showUpdateProbe = ref(false);
 
 const detailOpen = computed(() => selectedPostId.value !== null);
 const isEmpty = computed(() => !loading.value && !errorMessage.value && items.value.length === 0);
@@ -71,6 +74,23 @@ function rememberReadItem(id: FeedItemId) {
     localStorage.setItem("lian.readHistory", JSON.stringify(nextHistory.slice(-500)));
   } catch {
     // Reading history should never block opening a card.
+  }
+}
+
+function openUpdateProbe() {
+  try {
+    showUpdateProbe.value = localStorage.getItem(HOME_UPDATE_PROBE_KEY) !== "seen";
+  } catch {
+    showUpdateProbe.value = true;
+  }
+}
+
+function dismissUpdateProbe() {
+  showUpdateProbe.value = false;
+  try {
+    localStorage.setItem(HOME_UPDATE_PROBE_KEY, "seen");
+  } catch {
+    // The deploy probe should never block homepage browsing.
   }
 }
 
@@ -160,6 +180,7 @@ function closeDetail() {
 
 onMounted(() => {
   emit("chrome", false);
+  openUpdateProbe();
   void loadFeed(true);
 });
 </script>
@@ -167,6 +188,18 @@ onMounted(() => {
 <template>
   <section class="feed-view" :class="{ 'is-detail-open': detailOpen }" aria-labelledby="feed-view-title">
     <h1 id="feed-view-title" class="feed-view__sr-title">首页</h1>
+
+    <Transition name="feed-update-probe-motion">
+      <div v-if="showUpdateProbe && !detailOpen" class="feed-view__update-probe" role="dialog" aria-modal="true" aria-labelledby="feed-update-probe-title">
+        <div class="feed-view__update-probe-panel">
+          <p class="feed-view__update-probe-kicker">更新验证</p>
+          <h2 id="feed-update-probe-title">首页 UI 已进入当前构建</h2>
+          <p>版本标记：{{ HOME_UPDATE_PROBE_VERSION }}</p>
+          <p>看到这个弹窗，说明你当前打开的是这次 main 的首页版本。</p>
+          <LianButton size="sm" variant="tonal" @click="dismissUpdateProbe">知道了</LianButton>
+        </div>
+      </div>
+    </Transition>
 
     <Transition name="feed-tabs-motion">
       <nav v-if="!detailOpen" class="feed-view__tabs" aria-label="信息分类">
@@ -260,6 +293,53 @@ onMounted(() => {
   overflow: hidden;
   clip: rect(0 0 0 0);
   white-space: nowrap;
+}
+
+.feed-view__update-probe {
+  position: fixed;
+  inset: 0;
+  z-index: 180;
+  display: grid;
+  place-items: center;
+  padding: var(--space-4);
+  background: rgba(15, 23, 20, 0.32);
+  backdrop-filter: blur(10px);
+}
+
+.feed-view__update-probe-panel {
+  display: grid;
+  gap: var(--space-3);
+  width: min(100%, 360px);
+  padding: var(--space-4);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-sheet);
+  background: var(--glass-bg-strong);
+  box-shadow: var(--shadow-floating);
+}
+
+.feed-view__update-probe-kicker,
+.feed-view__update-probe-panel h2,
+.feed-view__update-probe-panel p {
+  margin: 0;
+}
+
+.feed-view__update-probe-kicker {
+  color: var(--lian-primary-deep);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.feed-view__update-probe-panel h2 {
+  color: var(--lian-ink);
+  font-size: 18px;
+  line-height: 1.35;
+}
+
+.feed-view__update-probe-panel p {
+  color: var(--lian-muted);
+  font-size: 13px;
+  line-height: 1.55;
+  word-break: break-all;
 }
 
 .feed-view__tabs {
@@ -361,11 +441,20 @@ onMounted(() => {
   min-height: calc(100vh - var(--space-6));
 }
 
+.feed-update-probe-motion-enter-active,
+.feed-update-probe-motion-leave-active,
 .feed-tabs-motion-enter-active,
 .feed-tabs-motion-leave-active,
 .feed-content-motion-enter-active,
 .feed-content-motion-leave-active {
   transition: opacity 180ms ease, transform 180ms ease, filter 180ms ease;
+}
+
+.feed-update-probe-motion-enter-from,
+.feed-update-probe-motion-leave-to {
+  opacity: 0;
+  transform: scale(0.98);
+  filter: blur(6px);
 }
 
 .feed-tabs-motion-enter-from,
@@ -394,6 +483,8 @@ onMounted(() => {
 
 @media (prefers-reduced-motion: reduce) {
   .feed-view__tab,
+  .feed-update-probe-motion-enter-active,
+  .feed-update-probe-motion-leave-active,
   .feed-tabs-motion-enter-active,
   .feed-tabs-motion-leave-active,
   .feed-content-motion-enter-active,
@@ -401,6 +492,8 @@ onMounted(() => {
     transition: none;
   }
 
+  .feed-update-probe-motion-enter-from,
+  .feed-update-probe-motion-leave-to,
   .feed-tabs-motion-enter-from,
   .feed-tabs-motion-leave-to,
   .feed-content-motion-enter-from,
