@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue";
 import { fetchAuthMe, fetchProfileTab, logoutAuth } from "../api/profile";
-import { GlassPanel, IdentityBadge, InlineError, LianButton, TagChip, TrustBadge, TypeChip } from "../ui";
+import { GlassPanel, IdentityBadge, InlineError, LianButton, TagChip } from "../ui";
 import type { FeedItemId } from "../types/feed";
 import type { ProfileListItem, ProfileTabKey, ProfileUser } from "../types/profile";
 import AuthPanel from "./auth/AuthPanel.vue";
@@ -118,16 +118,8 @@ onMounted(() => {
 </script>
 
 <template>
-  <section class="profile-view" aria-labelledby="profile-view-title">
+  <section class="profile-view" aria-label="我的">
     <GlassPanel class="profile-view__card">
-      <header class="profile-view__header">
-        <div>
-          <TypeChip type="contribution">我的 LIAN</TypeChip>
-          <h2 id="profile-view-title">个人中心</h2>
-        </div>
-        <TrustBadge :tone="user ? 'confirmed' : 'pending'">{{ user ? "已登录" : "未登录" }}</TrustBadge>
-      </header>
-
       <InlineError v-if="errorMessage">
         {{ errorMessage }}
         <button type="button" @click="loadProfile">重新加载</button>
@@ -143,24 +135,6 @@ onMounted(() => {
             <TagChip v-for="tag in userTags" :key="tag" :tag="tag" />
           </div>
         </section>
-
-        <dl class="profile-view__metrics" aria-label="资料概览">
-          <div>
-            <dt>发布身份</dt>
-            <dd>{{ user.aliases?.length || 1 }}</dd>
-            <span>{{ user.activeAliasId ? "已启用马甲" : "真实身份" }}</span>
-          </div>
-          <div>
-            <dt>邀请权限</dt>
-            <dd>{{ user.invitePermission ? "可用" : "—" }}</dd>
-            <span>{{ user.invitePermission ? "可生成邀请码" : "暂无权限" }}</span>
-          </div>
-          <div>
-            <dt>状态</dt>
-            <dd>{{ user.status || "正常" }}</dd>
-            <span>账号状态</span>
-          </div>
-        </dl>
 
         <div class="profile-view__actions">
           <LianButton variant="tonal" @click="editorOpen = !editorOpen">
@@ -204,8 +178,6 @@ onMounted(() => {
       </template>
 
       <section v-else class="profile-view__guest">
-        <h3>还没有登录</h3>
-        <p>登录后可以发布、回复、发送频道消息，也能查看浏览记录、收藏和赞过的内容。</p>
         <AuthPanel @authenticated="handleAuthenticated" />
       </section>
     </GlassPanel>
@@ -222,7 +194,6 @@ onMounted(() => {
   gap: var(--space-4);
 }
 
-.profile-view__header,
 .profile-view__chips,
 .profile-view__tabs,
 .profile-view__actions {
@@ -233,15 +204,12 @@ onMounted(() => {
   justify-content: space-between;
 }
 
-.profile-view h2,
 .profile-view h3,
-.profile-view p,
-.profile-view dl {
+.profile-view p {
   margin: 0;
 }
 
 .profile-view__identity p,
-.profile-view__guest p,
 .profile-view__item p {
   color: var(--lian-muted);
   line-height: 1.6;
@@ -251,33 +219,6 @@ onMounted(() => {
 .profile-view__tabs,
 .profile-view__actions {
   justify-content: flex-start;
-}
-
-.profile-view__metrics {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: var(--space-2);
-}
-
-.profile-view__metrics > div {
-  display: grid;
-  gap: 2px;
-  padding: var(--space-3);
-  border: 1px solid var(--lian-border);
-  border-radius: var(--radius-3);
-  background: rgba(255, 255, 255, 0.52);
-}
-
-.profile-view__metrics dt,
-.profile-view__metrics span {
-  color: var(--lian-muted);
-  font-size: 12px;
-}
-
-.profile-view__metrics dd {
-  margin: 0;
-  font-size: 20px;
-  font-weight: 900;
 }
 
 .profile-view__tab {
@@ -343,11 +284,5 @@ onMounted(() => {
   background: rgba(255, 255, 255, 0.72);
   color: currentColor;
   font-weight: 900;
-}
-
-@media (max-width: 640px) {
-  .profile-view__metrics {
-    grid-template-columns: 1fr;
-  }
 }
 </style>
