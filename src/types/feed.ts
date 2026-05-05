@@ -18,6 +18,7 @@ export interface FeedItem {
   title: string;
   bodyPreview: string;
   cover: string;
+  primaryTag: string;
   author: FeedAuthor;
   timeLabel: string;
   timestampISO: string;
