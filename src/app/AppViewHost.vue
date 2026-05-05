@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { AppViewKey, appViews } from "../app/view-types";
-import { defineComponent, h, PropType } from "vue";
+import type { AppViewKey } from "./view-types";
+import type { PropType } from "vue";
 import FeedPlaceholder from "../views/FeedPlaceholder.vue";
 import MapPlaceholder from "../views/MapPlaceholder.vue";
 import MessagesPlaceholder from "../views/MessagesPlaceholder.vue";
