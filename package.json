@@ -4,14 +4,15 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "start": "node scripts/serve-frontend-static-rehearsal.js",
+    "start": "npm run build && npm run serve:dist",
     "dev": "vite --host 0.0.0.0",
     "build": "vue-tsc --noEmit && vite build",
     "preview": "vite preview --host 0.0.0.0",
     "check": "node scripts/validate-project-structure.js && node scripts/check-encoding-contamination.js",
     "check:encoding": "node scripts/check-encoding-contamination.js",
+    "serve:dist": "node scripts/serve-frontend-static-rehearsal.js",
     "test": "node scripts/smoke-frontend.js http://127.0.0.1:4300",
-    "start:frontend-static": "node scripts/serve-frontend-static-rehearsal.js"
+    "start:frontend-static": "npm run build && npm run serve:dist"
   },
   "dependencies": {
     "vue": "^3.5.13"
