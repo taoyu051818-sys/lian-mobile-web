@@ -1,10 +1,9 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import { LocationChip, TagChip, TrustBadge, TypeChip } from "../../ui";
+import { LocationChip, TypeChip } from "../../ui";
 import type { FeedItem, FeedItemId } from "../../types/feed";
 
 type TypeChipTone = "experience" | "discussion" | "hot" | "food" | "place" | "ai" | "official" | "trade" | "contribution" | "default";
-type TrustTone = "confirmed" | "pending" | "disputed" | "expired" | "ai" | "official";
 
 const props = defineProps<{
   item: FeedItem;
@@ -15,39 +14,26 @@ const emit = defineEmits<{
 }>();
 
 const title = computed(() => props.item.title || "未命名内容");
-const coverUrl = computed(() => props.item.cover || props.item.imageUrl || "");
-const placeLabel = computed(() => props.item.placeName || props.item.locationName || "校园");
+const coverUrl = computed(() => props.item.cover || "");
+const placeLabel = computed(() => props.item.locationArea || "校园");
 const authorLabel = computed(() => props.item.author || "同学");
-const identityMeta = computed(() => props.item.authorIdentityTag || props.item.contributionTag || "校园身份");
+const identityMeta = computed(() => props.item.authorIdentityTag || "校园身份");
 const timeLabel = computed(() => props.item.timeLabel || formatRelativeTime(props.item.timestampISO) || "刚刚");
-const tags = computed(() => {
-  const rawTags = Array.isArray(props.item.tags) ? props.item.tags : [];
-  const merged = [props.item.tag, ...rawTags]
-    .filter(Boolean)
-    .map((tag) => String(tag))
-    .filter((tag) => tag !== typeLabel.value);
-  return Array.from(new Set(merged)).slice(0, 2);
-});
-
-const summary = computed(() => {
-  const value = props.item.summary || props.item.content || stripHtml(props.item.contentHtml || "");
-  return value.trim();
-});
+const summary = computed(() => props.item.bodyPreview.trim());
 
 const typeTone = computed<TypeChipTone>(() => {
-  const raw = String(props.item.type || props.item.tag || "").toLowerCase();
-  if (raw.includes("食") || raw.includes("food") || raw.includes("饭堂")) return "food";
-  if (raw.includes("地图") || raw.includes("地点") || raw.includes("place") || raw.includes("附近")) return "place";
+  const raw = props.item.contentType.toLowerCase();
+  if (raw.includes("food") || raw.includes("食") || raw.includes("饭")) return "food";
+  if (raw.includes("place") || raw.includes("map") || raw.includes("地点")) return "place";
   if (raw.includes("ai")) return "ai";
   if (raw.includes("official") || raw.includes("官方")) return "official";
   if (raw.includes("trade") || raw.includes("二手")) return "trade";
   if (raw.includes("hot") || raw.includes("热")) return "hot";
-  if (raw.includes("问") || raw.includes("discussion") || raw.includes("讨论")) return "discussion";
+  if (raw.includes("discussion") || raw.includes("问") || raw.includes("讨论")) return "discussion";
   return "experience";
 });
 
 const typeLabel = computed(() => {
-  if (props.item.tag) return props.item.tag;
   const labels: Record<TypeChipTone, string> = {
     experience: "经验",
     discussion: "讨论",
@@ -63,39 +49,10 @@ const typeLabel = computed(() => {
   return labels[typeTone.value] || "内容";
 });
 
-const trustTone = computed<TrustTone>(() => {
-  if (props.item.expired) return "expired";
-  if (props.item.aiGenerated) return "ai";
-  if (props.item.confirmed) return "confirmed";
-  return "pending";
-});
-
-const trustLabel = computed(() => {
-  if (props.item.expired) return "已过期";
-  if (props.item.aiGenerated) return "AI辅助";
-  if (props.item.confirmed) return "已确认";
-  return "待确认";
-});
-
-const shouldShowTrust = computed(() => trustTone.value !== "pending");
-
-const metaLine = computed(() => {
-  const replies = Number(props.item.replyCount ?? props.item.commentCount ?? 0);
-  const likes = Number(props.item.likeCount ?? 0);
-  return `${timeLabel.value} · ${replies} 回复${likes ? ` · ${likes} 喜欢` : ""}`;
-});
-
+const metaLine = computed(() => `${timeLabel.value} · ${props.item.likeCount} 喜欢`);
 const sourceLine = computed(() => `${authorLabel.value} · ${identityMeta.value}`);
 
-function stripHtml(html: string) {
-  if (!html) return "";
-  if (typeof document === "undefined") return html.replace(/<[^>]+>/g, " ");
-  const container = document.createElement("div");
-  container.innerHTML = html;
-  return container.textContent || container.innerText || "";
-}
-
-function formatRelativeTime(value?: string) {
+function formatRelativeTime(value: string) {
   if (!value) return "";
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "";
@@ -119,7 +76,7 @@ function openCard() {
     :class="{ 'feed-item-card--with-cover': coverUrl }"
     role="button"
     tabindex="0"
-    :aria-label="`${title}，${placeLabel}，${trustLabel}`"
+    :aria-label="`${title}，${placeLabel}`"
     @click="openCard"
     @keydown.enter.prevent="openCard"
     @keydown.space.prevent="openCard"
@@ -130,7 +87,6 @@ function openCard() {
       <div class="feed-item-card__chips" aria-label="内容状态">
         <TypeChip :type="typeTone">{{ typeLabel }}</TypeChip>
         <LocationChip>{{ placeLabel }}</LocationChip>
-        <TrustBadge v-if="shouldShowTrust" :tone="trustTone">{{ trustLabel }}</TrustBadge>
       </div>
 
       <h3>{{ title }}</h3>
@@ -139,10 +95,6 @@ function openCard() {
       <div class="feed-item-card__meta">
         <span>{{ sourceLine }}</span>
         <span>{{ metaLine }}</span>
-      </div>
-
-      <div v-if="tags.length" class="feed-item-card__tags" aria-label="标签">
-        <TagChip v-for="tag in tags" :key="tag" :tag="tag" />
       </div>
     </div>
   </article>
@@ -188,7 +140,6 @@ function openCard() {
 }
 
 .feed-item-card__chips,
-.feed-item-card__tags,
 .feed-item-card__meta {
   display: flex;
   flex-wrap: wrap;
@@ -231,10 +182,6 @@ function openCard() {
   color: var(--lian-faint);
   content: "·";
   margin-right: var(--space-2);
-}
-
-.feed-item-card__tags {
-  gap: var(--space-1);
 }
 
 @media (min-width: 560px) {
