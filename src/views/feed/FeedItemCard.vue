@@ -16,10 +16,17 @@ const emit = defineEmits<{
 const title = computed(() => props.item.title || "未命名内容");
 const coverUrl = computed(() => props.item.cover || "");
 const placeLabel = computed(() => props.item.locationArea || "校园");
-const authorLabel = computed(() => props.item.author || "同学");
-const identityMeta = computed(() => props.item.authorIdentityTag || "校园身份");
+const author = computed(() => props.item.author || {
+  nodebbUid: 0,
+  displayName: "同学",
+  avatarUrl: "",
+  identityTag: "校园身份",
+  source: "fallback",
+});
+const authorName = computed(() => author.value.displayName || "同学");
+const authorAvatarUrl = computed(() => author.value.avatarUrl || "");
+const authorInitial = computed(() => authorName.value.slice(0, 1) || "同");
 const timeLabel = computed(() => props.item.timeLabel || formatRelativeTime(props.item.timestampISO) || "刚刚");
-const summary = computed(() => props.item.bodyPreview.trim());
 
 const typeTone = computed<TypeChipTone>(() => {
   const raw = props.item.contentType.toLowerCase();
@@ -49,9 +56,6 @@ const typeLabel = computed(() => {
   return labels[typeTone.value] || "内容";
 });
 
-const metaLine = computed(() => `${timeLabel.value} · ${props.item.likeCount} 喜欢`);
-const sourceLine = computed(() => `${authorLabel.value} · ${identityMeta.value}`);
-
 function formatRelativeTime(value: string) {
   if (!value) return "";
   const date = new Date(value);
@@ -76,7 +80,7 @@ function openCard() {
     :class="{ 'feed-item-card--with-cover': coverUrl }"
     role="button"
     tabindex="0"
-    :aria-label="`${title}，${placeLabel}`"
+    :aria-label="`${title}，${authorName}，${placeLabel}`"
     @click="openCard"
     @keydown.enter.prevent="openCard"
     @keydown.space.prevent="openCard"
@@ -91,12 +95,14 @@ function openCard() {
       </div>
 
       <h3>{{ title }}</h3>
-      <p v-if="summary">{{ summary }}</p>
 
-      <div class="feed-item-card__meta">
-        <span>{{ sourceLine }}</span>
-        <span>{{ metaLine }}</span>
-      </div>
+      <footer class="feed-item-card__author">
+        <img v-if="authorAvatarUrl" :src="authorAvatarUrl" :alt="authorName" loading="lazy" />
+        <span v-else class="feed-item-card__avatar-text" aria-hidden="true">{{ authorInitial }}</span>
+        <span class="feed-item-card__author-name">{{ authorName }}</span>
+        <span class="feed-item-card__dot" aria-hidden="true">·</span>
+        <span>{{ timeLabel }}</span>
+      </footer>
     </div>
   </article>
 </template>
@@ -136,7 +142,7 @@ function openCard() {
 
 .feed-item-card__placeholder {
   display: grid;
-  min-height: 132px;
+  min-height: 116px;
   place-items: center;
   color: var(--lian-primary-deep);
   font-size: 13px;
@@ -151,21 +157,17 @@ function openCard() {
 }
 
 .feed-item-card__chips,
-.feed-item-card__meta {
+.feed-item-card__author {
   display: flex;
-  flex-wrap: wrap;
+  min-width: 0;
   gap: var(--space-1);
   align-items: center;
-}
-
-.feed-item-card h3,
-.feed-item-card p {
-  margin: 0;
 }
 
 .feed-item-card h3 {
   display: -webkit-box;
   overflow: hidden;
+  margin: 0;
   color: var(--lian-ink);
   font-size: 15px;
   line-height: 1.34;
@@ -173,26 +175,38 @@ function openCard() {
   -webkit-line-clamp: 2;
 }
 
-.feed-item-card p {
-  display: -webkit-box;
-  overflow: hidden;
-  color: var(--lian-muted);
-  font-size: 13px;
-  line-height: 1.46;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 3;
-}
-
-.feed-item-card__meta {
+.feed-item-card__author {
   color: var(--lian-muted);
   font-size: 11px;
-  line-height: 1.35;
+  line-height: 1.2;
 }
 
-.feed-item-card__meta span + span::before {
+.feed-item-card__author img,
+.feed-item-card__avatar-text {
+  display: grid;
+  width: 20px;
+  min-width: 20px;
+  height: 20px;
+  place-items: center;
+  border-radius: var(--radius-orb);
+  object-fit: cover;
+  background: var(--lian-primary-soft);
+  color: var(--lian-primary-deep);
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.feed-item-card__author-name {
+  overflow: hidden;
+  max-width: 6.5em;
+  color: var(--lian-ink);
+  font-weight: 850;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.feed-item-card__dot {
   color: var(--lian-faint);
-  content: "·";
-  margin-right: var(--space-1);
 }
 
 @media (prefers-reduced-motion: reduce) {
