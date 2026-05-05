@@ -19,7 +19,7 @@ body {
     radial-gradient(circle at 88% 0%, rgba(91, 184, 214, 0.14), transparent 30%),
     var(--lian-bg);
   color: var(--lian-ink);
-  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", "Noto Sans CJK SC", "SF Pro Text", "Segoe UI", sans-serif;
 }
 
 button,
@@ -29,15 +29,19 @@ select {
   font: inherit;
 }
 
+button {
+  cursor: pointer;
+}
+
 .vue-shell {
   min-height: 100vh;
-  padding: var(--space-6);
+  padding: calc(var(--space-2) + env(safe-area-inset-top)) var(--space-3) calc(92px + env(safe-area-inset-bottom));
 }
 
 .vue-shell__grid {
   display: grid;
-  width: min(100%, 960px);
-  gap: var(--space-6);
+  width: min(100%, 760px);
+  gap: var(--space-3);
   margin: 0 auto;
 }
 
@@ -103,4 +107,11 @@ select {
   align-items: center;
   color: var(--lian-muted);
   font-size: 12px;
+}
+
+@media (min-width: 720px) {
+  .vue-shell {
+    padding-right: var(--space-6);
+    padding-left: var(--space-6);
+  }
 }
