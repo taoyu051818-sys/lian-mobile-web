@@ -82,6 +82,7 @@ function openCard() {
     @keydown.space.prevent="openCard"
   >
     <img v-if="coverUrl" class="feed-item-card__cover" :src="coverUrl" :alt="title" loading="lazy" />
+    <div v-else class="feed-item-card__placeholder" aria-hidden="true">{{ typeLabel }}</div>
 
     <div class="feed-item-card__body">
       <div class="feed-item-card__chips" aria-label="内容状态">
@@ -103,10 +104,7 @@ function openCard() {
 <style scoped>
 .feed-item-card {
   display: grid;
-  grid-template-columns: 1fr;
-  gap: var(--space-3);
   overflow: hidden;
-  padding: var(--space-3);
   border: 1px solid var(--lian-line);
   border-radius: var(--radius-card);
   background: var(--lian-card-strong);
@@ -125,25 +123,38 @@ function openCard() {
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
 }
 
-.feed-item-card__cover {
+.feed-item-card__cover,
+.feed-item-card__placeholder {
   width: 100%;
-  aspect-ratio: 1.78;
-  border-radius: calc(var(--radius-card) - 4px);
-  object-fit: cover;
   background: rgba(31, 41, 51, 0.06);
+}
+
+.feed-item-card__cover {
+  aspect-ratio: 0.76;
+  object-fit: cover;
+}
+
+.feed-item-card__placeholder {
+  display: grid;
+  min-height: 132px;
+  place-items: center;
+  color: var(--lian-primary-deep);
+  font-size: 13px;
+  font-weight: 900;
 }
 
 .feed-item-card__body {
   display: grid;
   gap: var(--space-2);
   min-width: 0;
+  padding: var(--space-3);
 }
 
 .feed-item-card__chips,
 .feed-item-card__meta {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-2);
+  gap: var(--space-1);
   align-items: center;
 }
 
@@ -156,8 +167,8 @@ function openCard() {
   display: -webkit-box;
   overflow: hidden;
   color: var(--lian-ink);
-  font-size: 16px;
-  line-height: 1.35;
+  font-size: 15px;
+  line-height: 1.34;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
 }
@@ -166,35 +177,22 @@ function openCard() {
   display: -webkit-box;
   overflow: hidden;
   color: var(--lian-muted);
-  font-size: 14px;
-  line-height: 1.48;
+  font-size: 13px;
+  line-height: 1.46;
   -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
+  -webkit-line-clamp: 3;
 }
 
 .feed-item-card__meta {
   color: var(--lian-muted);
-  font-size: 12px;
+  font-size: 11px;
   line-height: 1.35;
 }
 
 .feed-item-card__meta span + span::before {
   color: var(--lian-faint);
   content: "·";
-  margin-right: var(--space-2);
-}
-
-@media (min-width: 560px) {
-  .feed-item-card--with-cover {
-    grid-template-columns: 156px 1fr;
-    align-items: stretch;
-  }
-
-  .feed-item-card__cover {
-    height: 100%;
-    min-height: 126px;
-    aspect-ratio: auto;
-  }
+  margin-right: var(--space-1);
 }
 
 @media (prefers-reduced-motion: reduce) {
