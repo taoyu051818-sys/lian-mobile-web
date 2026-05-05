@@ -58,6 +58,30 @@ export function createManualLocationDraft(placeName: string): PublishLocationDra
   };
 }
 
+export function createMapV2LocationDraft(input: {
+  locationId: string;
+  name: string;
+  lat: number;
+  lng: number;
+  note?: string;
+}): PublishLocationDraft {
+  const name = input.name.trim();
+  return {
+    source: "map_v2",
+    locationId: input.locationId,
+    locationArea: name,
+    displayName: name,
+    lat: Number(input.lat.toFixed(7)),
+    lng: Number(input.lng.toFixed(7)),
+    legacyPoint: { x: null, y: null },
+    imagePoint: { x: null, y: null },
+    mapVersion: "gaode_v2",
+    confidence: 0.86,
+    skipped: false,
+    note: input.note || "Vue canary MapV2 location selection",
+  };
+}
+
 export function buildPublishPayload(input: {
   imageUrls: string[];
   title: string;
@@ -66,8 +90,9 @@ export function buildPublishPayload(input: {
   placeName: string;
   visibility: PublishVisibility;
   aliasId?: string;
+  locationDraft?: PublishLocationDraft | null;
 }): PublishPayload {
-  const locationDraft = createManualLocationDraft(input.placeName);
+  const locationDraft = input.locationDraft || createManualLocationDraft(input.placeName);
   const locationArea = locationDraft.skipped ? "" : locationDraft.locationArea;
   const metadata = {
     locationArea,
@@ -84,9 +109,9 @@ export function buildPublishPayload(input: {
     metadata,
     locationDraft,
     riskFlags: [],
-    confidence: locationArea ? 0.65 : 0,
+    confidence: locationDraft.confidence,
     needsHumanReview: false,
-    aiMode: "manual-vue-canary",
+    aiMode: locationDraft.source === "map_v2" ? "manual-vue-canary-map-v2" : "manual-vue-canary",
     aliasId: input.aliasId,
   };
 }
