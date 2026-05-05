@@ -1,5 +1,8 @@
 # Project File Index
 
+> [!WARNING]
+> Historical / superseded file-index context as of 2026-05-05. Do not use this file as the current file index or repo ownership source. Start from `docs/agent/README.md`, `docs/agent/references/PR_DERIVED_STATUS_2026-05-05.md`, and `docs/agent/references/PROJECT_FILE_INDEX_OVERRIDE_2026-05-05.md` before using the material below.
+
 Canonical index of every important file group in `lian-mobile-web`. Use this as the starting point for understanding project structure.
 
 Source-of-truth order: current code > latest handoff > current task > this index > domain docs > architecture workplan > decisions > historical baseline.
