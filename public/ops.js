@@ -97,7 +97,7 @@ async function runHealthCheck() {
     if (!response.ok) {
       setSummary(data.error || `检查失败，HTTP ${response.status}`, false);
     } else {
-      setSummary(data.ok ? "健康检查通过：公网/API/地图/图片直链正常" : "健康检查未通过，请查看检查项", Boolean(data.ok));
+      setSummary(data.ok ? "健康检查通过：单公网入口、Ops、API、地图正常" : "健康检查未通过，请查看检查项", Boolean(data.ok));
     }
   } catch (error) {
     setSummary(error?.message || "检查失败", false);
