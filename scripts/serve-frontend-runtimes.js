@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
-import { spawn } from "node:child_process";
+import { execFileSync, spawn } from "node:child_process";
+import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -10,6 +11,23 @@ const viteBin = path.join(rootDir, "node_modules", ".bin", process.platform === 
 
 const children = new Map();
 let shuttingDown = false;
+
+function ensureRuntimeDependencies() {
+  if (fs.existsSync(viteBin)) return;
+
+  console.error(`[runtime] missing Vite binary: ${viteBin}`);
+  console.error("[runtime] installing frontend dependencies before starting runtimes");
+  const installCommand = fs.existsSync(path.join(rootDir, "package-lock.json")) ? "npm install" : "npm install";
+  execFileSync("/bin/sh", ["-lc", installCommand], {
+    cwd: rootDir,
+    stdio: "inherit",
+    env: process.env
+  });
+
+  if (!fs.existsSync(viteBin)) {
+    throw new Error(`Vite binary still missing after dependency install: ${viteBin}`);
+  }
+}
 
 function startProcess(name, command, args, env = {}) {
   const child = spawn(command, args, {
@@ -29,6 +47,19 @@ function startProcess(name, command, args, env = {}) {
 
   child.stderr.on("data", (chunk) => {
     process.stderr.write(`[${name}] ${chunk}`);
+  });
+
+  child.on("error", (error) => {
+    children.delete(name);
+    console.error(`[${name}] failed to start: ${error.message}`);
+    if (!shuttingDown && name === "legacy") {
+      console.error("[runtime] legacy frontend failed to start; stopping supervisor so systemd can restart the service");
+      shutdown(1);
+      return;
+    }
+    if (!shuttingDown && name === "vue-canary") {
+      console.error("[runtime] Vue canary failed to start; legacy frontend remains available on its port");
+    }
   });
 
   child.on("exit", (code, signal) => {
@@ -66,6 +97,13 @@ process.on("SIGTERM", () => shutdown(0));
 console.log("[runtime] starting LIAN frontend runtimes");
 console.log("[runtime] legacy frontend -> port 4300");
 console.log("[runtime] Vue canary -> port 4301");
+
+try {
+  ensureRuntimeDependencies();
+} catch (error) {
+  console.error(`[runtime] dependency preflight failed: ${error.message}`);
+  process.exit(1);
+}
 
 startProcess("legacy", nodeBin, ["scripts/serve-frontend-static-rehearsal.js"], {
   FRONTEND_PORT: process.env.FRONTEND_PORT || "4300"
