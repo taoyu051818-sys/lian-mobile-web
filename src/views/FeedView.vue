@@ -1,39 +1,295 @@
 <script setup lang="ts">
-import { GlassPanel, LianButton, LocationChip, TrustBadge, TypeChip } from "../ui";
+import { computed, onMounted, ref } from "vue";
+import { fetchFeed } from "../api/feed";
+import { GlassPanel, InlineError, LianButton, TrustBadge, TypeChip } from "../ui";
+import type { FeedItem, FeedItemId } from "../types/feed";
+import FeedItemCard from "./feed/FeedItemCard.vue";
+
+const DEFAULT_TABS = ["此刻", "精选"];
+const PAGE_SIZE = 12;
+
+const tabs = ref<string[]>(DEFAULT_TABS);
+const activeTab = ref(DEFAULT_TABS[0]);
+const items = ref<FeedItem[]>([]);
+const page = ref(1);
+const hasMore = ref(true);
+const loading = ref(false);
+const loadingMore = ref(false);
+const errorMessage = ref("");
+const selectedItem = ref<FeedItem | null>(null);
+
+const isEmpty = computed(() => !loading.value && !errorMessage.value && items.value.length === 0);
+
+function readHistoryQuery() {
+  try {
+    const history = JSON.parse(localStorage.getItem("lian.readHistory") || "[]") as Array<{ tid: FeedItemId }>;
+    return history.map((entry) => entry.tid).join(",");
+  } catch {
+    return "";
+  }
+}
+
+function rememberReadItem(id: FeedItemId) {
+  try {
+    const history = JSON.parse(localStorage.getItem("lian.readHistory") || "[]") as Array<{ tid: FeedItemId; lastViewedAt: string }>;
+    const nextHistory = history.filter((entry) => String(entry.tid) !== String(id));
+    nextHistory.push({ tid: id, lastViewedAt: new Date().toISOString() });
+    localStorage.setItem("lian.readHistory", JSON.stringify(nextHistory.slice(-500)));
+  } catch {
+    // Reading history should never block opening a card.
+  }
+}
+
+async function loadFeed(reset = false) {
+  if (loading.value || loadingMore.value) return;
+  if (!reset && !hasMore.value) return;
+
+  errorMessage.value = "";
+  if (reset) {
+    loading.value = true;
+    page.value = 1;
+    hasMore.value = true;
+    selectedItem.value = null;
+  } else {
+    loadingMore.value = true;
+  }
+
+  try {
+    const response = await fetchFeed({
+      tab: activeTab.value,
+      page: reset ? 1 : page.value,
+      limit: PAGE_SIZE,
+      read: readHistoryQuery(),
+    });
+
+    tabs.value = response.tabs?.length ? response.tabs : DEFAULT_TABS;
+    const nextItems = response.items || [];
+    items.value = reset ? nextItems : [...items.value, ...nextItems];
+    hasMore.value = Boolean(response.hasMore);
+    page.value = response.nextPage || (reset ? 2 : page.value + 1);
+  } catch (error) {
+    errorMessage.value = error instanceof Error
+      ? error.message
+      : "内容暂时没加载出来，可以稍后再试。";
+    if (reset) items.value = [];
+  } finally {
+    loading.value = false;
+    loadingMore.value = false;
+  }
+}
+
+function switchTab(tab: string) {
+  if (activeTab.value === tab) return;
+  activeTab.value = tab;
+  void loadFeed(true);
+}
+
+function openItem(id: FeedItemId) {
+  rememberReadItem(id);
+  selectedItem.value = items.value.find((item) => String(item.tid) === String(id)) || null;
+}
+
+function closePreview() {
+  selectedItem.value = null;
+}
+
+onMounted(() => {
+  void loadFeed(true);
+});
 </script>
 
 <template>
   <section class="feed-view" aria-labelledby="feed-view-title">
-    <GlassPanel class="feed-view__card">
-      <div class="vue-shell__row">
+    <GlassPanel class="feed-view__hero">
+      <div class="feed-view__hero-row">
         <TypeChip type="hot">校园信息流</TypeChip>
-        <TrustBadge tone="confirmed">Vue View</TrustBadge>
+        <TrustBadge tone="pending">Vue canary</TrustBadge>
       </div>
-      <h2 id="feed-view-title">今天校园里发生什么</h2>
-      <p>Feed 已切到 Vue View。下一步接入真实 feed API、互动状态和分页。</p>
-      <LocationChip>校园</LocationChip>
-      <div class="vue-shell__row">
-        <LianButton variant="primary">新建内容</LianButton>
-        <LianButton variant="ghost">筛选地点</LianButton>
+      <div class="feed-view__hero-copy">
+        <h2 id="feed-view-title">今天校园里发生什么</h2>
+        <p>先迁移真实 Feed 浏览路径：内容、身份、地点和状态优先展示；互动和完整详情随后补齐。</p>
       </div>
+      <div class="feed-view__hero-actions">
+        <LianButton size="sm" :loading="loading" @click="loadFeed(true)">刷新</LianButton>
+        <LianButton size="sm" variant="ghost">发布稍后迁移</LianButton>
+      </div>
+    </GlassPanel>
+
+    <nav class="feed-view__tabs" aria-label="Feed 分类">
+      <button
+        v-for="tab in tabs"
+        :key="tab"
+        type="button"
+        class="feed-view__tab"
+        :class="{ 'is-active': tab === activeTab }"
+        @click="switchTab(tab)"
+      >
+        {{ tab }}
+      </button>
+    </nav>
+
+    <InlineError v-if="errorMessage">
+      {{ errorMessage }}
+      <button type="button" @click="loadFeed(true)">重新加载</button>
+    </InlineError>
+
+    <div v-if="loading" class="feed-view__state" role="status">
+      正在加载校园内容…
+    </div>
+
+    <GlassPanel v-else-if="isEmpty" class="feed-view__state">
+      <strong>暂时没有内容</strong>
+      <span>可以换个分类，或稍后再来看看。</span>
+    </GlassPanel>
+
+    <div v-else class="feed-view__grid" aria-live="polite">
+      <FeedItemCard
+        v-for="item in items"
+        :key="String(item.tid)"
+        :item="item"
+        @open="openItem"
+      />
+    </div>
+
+    <div v-if="items.length" class="feed-view__load-more">
+      <LianButton
+        v-if="hasMore"
+        :loading="loadingMore"
+        variant="ghost"
+        @click="loadFeed(false)"
+      >
+        加载更多
+      </LianButton>
+      <span v-else>已经看到这里啦</span>
+    </div>
+
+    <GlassPanel v-if="selectedItem" class="feed-view__preview" as="aside" aria-live="polite">
+      <div class="feed-view__preview-header">
+        <div>
+          <TypeChip type="experience">详情预览</TypeChip>
+          <h3>{{ selectedItem.title || "未命名内容" }}</h3>
+        </div>
+        <button type="button" aria-label="关闭详情预览" @click="closePreview">×</button>
+      </div>
+      <p>{{ selectedItem.summary || selectedItem.content || "完整详情页正在迁移，当前先展示 Feed 内容摘要。" }}</p>
+      <small>下一步会把 legacy 的图片画廊、回复、喜欢、收藏、举报迁移到 Vue Detail。</small>
     </GlassPanel>
   </section>
 </template>
 
 <style scoped>
-.feed-view,
-.feed-view__card {
+.feed-view {
   display: grid;
   gap: var(--space-4);
 }
 
-.feed-view__card h2,
-.feed-view__card p {
+.feed-view__hero {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.feed-view__hero-row,
+.feed-view__hero-actions,
+.feed-view__preview-header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: center;
+  justify-content: space-between;
+}
+
+.feed-view__hero-copy {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.feed-view h2,
+.feed-view h3,
+.feed-view p {
   margin: 0;
 }
 
-.feed-view__card p {
+.feed-view__hero-copy p,
+.feed-view__preview p,
+.feed-view__preview small {
   color: var(--lian-muted);
   line-height: 1.6;
+}
+
+.feed-view__tabs {
+  display: flex;
+  gap: var(--space-2);
+  overflow-x: auto;
+  padding: 2px 0;
+}
+
+.feed-view__tab {
+  min-height: 36px;
+  padding: 0 var(--space-3);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-chip);
+  background: rgba(255, 255, 255, 0.54);
+  color: var(--lian-muted);
+  font-weight: 850;
+  white-space: nowrap;
+}
+
+.feed-view__tab.is-active {
+  background: var(--lian-ink);
+  color: #fff;
+}
+
+.feed-view__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: var(--space-4);
+}
+
+.feed-view__state {
+  display: grid;
+  gap: var(--space-2);
+  min-height: 132px;
+  place-items: center;
+  color: var(--lian-muted);
+  text-align: center;
+}
+
+.feed-view__load-more {
+  display: grid;
+  place-items: center;
+  color: var(--lian-muted);
+  font-size: 13px;
+}
+
+.feed-view__preview {
+  position: sticky;
+  bottom: calc(92px + env(safe-area-inset-bottom));
+  z-index: 20;
+  display: grid;
+  gap: var(--space-3);
+}
+
+.feed-view__preview-header button {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  place-items: center;
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-orb);
+  background: rgba(255, 255, 255, 0.62);
+  color: var(--lian-ink);
+  font-size: 24px;
+  line-height: 1;
+}
+
+.inline-error button {
+  min-height: 32px;
+  margin-left: var(--space-2);
+  border: 0;
+  border-radius: var(--radius-chip);
+  background: rgba(255, 255, 255, 0.72);
+  color: currentColor;
+  font-weight: 900;
 }
 </style>
