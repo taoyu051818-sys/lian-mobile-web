@@ -5,10 +5,12 @@ import FeedView from "../views/FeedView.vue";
 import MapView from "../views/MapView.vue";
 import MessagesView from "../views/MessagesView.vue";
 import ProfileView from "../views/ProfileView.vue";
+import PublishView from "../views/PublishView.vue";
 
 const viewComponents = {
   feed: FeedView,
   map: MapView,
+  publish: PublishView,
   messages: MessagesView,
   profile: ProfileView,
 };
