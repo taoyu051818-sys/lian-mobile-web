@@ -6,7 +6,7 @@
   <title>LIAN Ops</title>
   <link rel="stylesheet" href="/styles.css">
   <style>
-    body { max-width: 920px; margin: 0 auto; padding: 24px; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #f7f7f4; color: #1f2823; }
+    body { max-width: 1040px; margin: 0 auto; padding: 24px; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #f7f7f4; color: #1f2823; }
     .ops-card { background: #fff; border: 1px solid #dde3dc; border-radius: 18px; padding: 20px; box-shadow: 0 10px 30px rgba(20, 32, 25, .08); margin-bottom: 16px; }
     .ops-row { display: grid; gap: 10px; margin: 14px 0; }
     .ops-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; }
@@ -21,8 +21,16 @@
     .bad { color: #b42b2b; }
     .muted { color: #6b746d; }
     pre { white-space: pre-wrap; overflow-wrap: anywhere; background: #101914; color: #e8f2ea; padding: 16px; border-radius: 14px; }
-    .checks { display: grid; gap: 10px; }
-    .check { border: 1px solid #dde3dc; border-radius: 14px; padding: 12px; background: #fbfcfa; }
+    .checks, .observability { display: grid; gap: 10px; }
+    .check, .obs-card { border: 1px solid #dde3dc; border-radius: 14px; padding: 12px; background: #fbfcfa; }
+    .obs-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px; }
+    .obs-card h3 { margin: 0 0 8px; }
+    .obs-kv { display: grid; grid-template-columns: 110px 1fr; gap: 6px 10px; font-size: 14px; }
+    .obs-kv strong { color: #48534b; }
+    .badge { display: inline-block; border-radius: 999px; padding: 3px 9px; font-size: 12px; font-weight: 800; background: #edf4ef; color: #197446; }
+    .badge.bad { background: #f8e8e8; color: #b42b2b; }
+    .badge.muted { background: #eef0ed; color: #6b746d; }
+    ul.compact { margin: 8px 0 0; padding-left: 18px; }
   </style>
 </head>
 <body>
@@ -36,12 +44,18 @@
       </div>
       <div class="ops-row">
         <label for="publicBase">公网入口</label>
-        <input id="publicBase" type="url" value="https://lian.nat100.top">
+        <input id="publicBase" type="url" placeholder="默认使用当前页面域名">
       </div>
       <div class="ops-actions">
         <button id="runHealth">运行健康检查</button>
       </div>
       <p id="summary" class="status muted">未运行</p>
+    </section>
+
+    <section class="ops-card">
+      <h2>运行时状态</h2>
+      <p class="muted">自动从后端观测接口读取仓库 commit、工作区 dirty 状态、PM2 / systemd 服务状态。</p>
+      <div id="observability" class="observability"><p class="muted">未运行</p></div>
     </section>
 
     <section class="ops-card">
