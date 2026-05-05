@@ -54,53 +54,57 @@
           <article class="panel architecture-panel">
             <div class="panel-head">
               <h2>项目架构图</h2>
-              <span class="panel-note">Mermaid flowchart，任务接口 401 时仍可显示</span>
+              <span class="panel-note">Mermaid 风格 flowchart；不依赖外部 CDN，任务接口 401 时仍可显示</span>
             </div>
-            <div class="mermaid-shell" aria-label="LIAN frontend architecture Mermaid diagram">
-              <pre class="mermaid">
-flowchart TB
-  Product([LIAN Mobile Web<br/>Campus Experience Layer])
-
-  Product --> Runtime{Frontend Runtime}
-  Runtime --> Legacy[Legacy Static Runtime<br/>public/index.html<br/>public/app*.js]
-  Runtime --> Vue[Vue 3 + Vite Shell<br/>src/main.ts → App.vue]
-  Runtime --> Tools[Internal Tools<br/>public/tools/task-board.html]
-
-  Vue --> Shell[App Shell<br/>TopBar · AppViewHost<br/>BottomTabBar · ToastHost]
-  Shell --> Views{Primary Views}
-  Views --> Feed[feed / 首页<br/>校园信息流]
-  Views --> Map[map / 探索<br/>地点与地图探索]
-  Views --> Messages[messages / 消息<br/>频道与通知]
-  Views --> Profile[profile / 我的<br/>身份与发布记录]
-
-  Vue --> UI[src/ui<br/>Button · Chip · Panel<br/>Sheet · Badge · Toast]
-
-  Legacy --> ActiveFlows[Active Legacy Flows<br/>feed · publish · auth<br/>map-v2 · messages-profile]
-  Tools --> Board[Development Board<br/>进度 · 速度 · 排期 · 架构]
-
-  Board -. admin only in production .-> TaskAPI[/api/internal/task-board/]
+            <div class="mermaid-visual" aria-label="LIAN frontend architecture Mermaid style flowchart">
+              <div class="mmd-row mmd-row-root">
+                <div class="mmd-node mmd-root">LIAN Mobile Web<span>Campus Experience Layer</span></div>
+              </div>
+              <div class="mmd-edge-row"><span></span></div>
+              <div class="mmd-row">
+                <div class="mmd-node mmd-decision">Frontend Runtime<span>Legacy + Vue + Tools</span></div>
+              </div>
+              <div class="mmd-split-row"><span></span><span></span><span></span></div>
+              <div class="mmd-row mmd-row-three">
+                <div class="mmd-node mmd-runtime">Legacy Static Runtime<span>public/app*.js<br>feed · publish · map-v2</span></div>
+                <div class="mmd-node mmd-runtime">Vue 3 + Vite Shell<span>src/main.ts → App.vue</span></div>
+                <div class="mmd-node mmd-runtime">Internal Tools<span>public/tools/task-board.html</span></div>
+              </div>
+              <div class="mmd-row mmd-row-three mmd-subrow">
+                <div class="mmd-node mmd-api">/api/* proxy<span>127.0.0.1:4200</span></div>
+                <div class="mmd-node mmd-page">App Shell<span>TopBar · AppViewHost<br>BottomTabBar · ToastHost</span></div>
+                <div class="mmd-node mmd-tool">Development Board<span>进度 · 速度 · 排期 · 架构</span></div>
+              </div>
+              <div class="mmd-row mmd-row-three mmd-subrow">
+                <div class="mmd-node mmd-guard">Automation Guards<span>npm run check<br>structure · smoke · encoding</span></div>
+                <div class="mmd-node mmd-page">Primary Views<span>Feed · Map · Messages · Profile</span></div>
+                <div class="mmd-node mmd-api">Internal Task API<span>production: admin only</span></div>
+              </div>
+              <div class="mmd-row mmd-row-three mmd-subrow">
+                <div class="mmd-node mmd-api">NodeBB<span>community backend</span></div>
+                <div class="mmd-node mmd-api">lian-platform-server<span>metadata · feed · auth · ops</span></div>
+                <div class="mmd-node mmd-api">Redis object-native<span>runtime data store</span></div>
+              </div>
+            </div>
+            <details class="mermaid-source-block">
+              <summary>查看 Mermaid 源码</summary>
+              <pre>flowchart TB
+  Product([LIAN Mobile Web]) --> Runtime{Frontend Runtime}
+  Runtime --> Legacy[Legacy Static Runtime]
+  Runtime --> Vue[Vue 3 + Vite Shell]
+  Runtime --> Tools[Internal Tools]
+  Vue --> Shell[App Shell]
+  Shell --> Views[Feed / Map / Messages / Profile]
+  Tools --> Board[Development Board]
+  Board -. admin only .-> TaskAPI[/api/internal/task-board/]
   Legacy --> Api[/api/* proxy/]
   Vue --> Api
-  Api --> Backend[(lian-platform-server<br/>127.0.0.1:4200)]
+  Api --> Backend[(lian-platform-server)]
   Backend --> NodeBB[(NodeBB)]
   Backend --> Redis[(Redis object-native)]
-
-  Scripts[Automation Guards<br/>npm run check<br/>structure · smoke · encoding] --> Runtime
-  Scripts --> Board
-
-  classDef root fill:#eff6ff,stroke:#2563eb,color:#0f172a,stroke-width:2px;
-  classDef runtime fill:#f5f3ff,stroke:#7c3aed,color:#1e1b4b,stroke-width:1.5px;
-  classDef page fill:#ecfdf5,stroke:#16a34a,color:#052e16,stroke-width:1.5px;
-  classDef api fill:#fff7ed,stroke:#ea580c,color:#431407,stroke-width:1.5px;
-  classDef guard fill:#f8fafc,stroke:#64748b,color:#0f172a,stroke-width:1.5px;
-
-  class Product root;
-  class Runtime,Legacy,Vue,Tools,Shell,UI,ActiveFlows,Board runtime;
-  class Views,Feed,Map,Messages,Profile page;
-  class Api,Backend,NodeBB,Redis,TaskAPI api;
-  class Scripts guard;
-              </pre>
-            </div>
+  Scripts[Automation Guards] --> Runtime
+  Scripts --> Board</pre>
+            </details>
             <div class="architecture-grid">
               <section class="architecture-card">
                 <h3>文件夹结构</h3>
@@ -112,7 +116,7 @@ flowchart TB
               </section>
               <section class="architecture-card">
                 <h3>运行关系</h3>
-                <p>4300 是 Legacy 静态运行时，4301 是 Vue canary。工具页可独立展示 Mermaid 架构图；任务指标依赖后端内部 task-board API。</p>
+                <p>4300 是 Legacy 静态运行时，4301 是 Vue canary。工具页可独立展示架构图；任务指标依赖后端内部 task-board API。</p>
               </section>
             </div>
           </article>
@@ -139,31 +143,5 @@ flowchart TB
     </div>
 
     <script src="/tools/task-board.js"></script>
-    <script type="module">
-      import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs";
-      mermaid.initialize({
-        startOnLoad: true,
-        securityLevel: "strict",
-        theme: "base",
-        themeVariables: {
-          fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', system-ui, sans-serif",
-          primaryColor: "#eff6ff",
-          primaryBorderColor: "#2563eb",
-          primaryTextColor: "#0f172a",
-          lineColor: "#64748b",
-          secondaryColor: "#f5f3ff",
-          tertiaryColor: "#ecfdf5",
-          clusterBkg: "#f8fafc",
-          clusterBorder: "#cbd5e1"
-        },
-        flowchart: {
-          curve: "basis",
-          htmlLabels: true,
-          nodeSpacing: 54,
-          rankSpacing: 72,
-          padding: 18
-        }
-      });
-    </script>
   </body>
 </html>
