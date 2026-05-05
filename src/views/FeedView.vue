@@ -28,6 +28,26 @@ const detailLoading = ref(false);
 const detailError = ref("");
 
 const isEmpty = computed(() => !loading.value && !errorMessage.value && items.value.length === 0);
+const masonryColumns = computed(() => splitIntoMasonryColumns(items.value));
+
+function estimateCardWeight(item: FeedItem) {
+  const coverWeight = item.cover ? 1.32 : 0.72;
+  const titleWeight = Math.min(0.44, Math.max(0.18, item.title.length / 80));
+  const bodyWeight = item.bodyPreview ? Math.min(0.62, Math.max(0.22, item.bodyPreview.length / 120)) : 0;
+  const metaWeight = 0.34;
+  return coverWeight + titleWeight + bodyWeight + metaWeight;
+}
+
+function splitIntoMasonryColumns(sourceItems: FeedItem[]) {
+  const columns: FeedItem[][] = [[], []];
+  const weights = [0, 0];
+  sourceItems.forEach((item) => {
+    const columnIndex = weights[0] <= weights[1] ? 0 : 1;
+    columns[columnIndex].push(item);
+    weights[columnIndex] += estimateCardWeight(item);
+  });
+  return columns;
+}
 
 function readHistoryQuery() {
   try {
@@ -168,13 +188,19 @@ onMounted(() => {
       <span>可以换个分类，或稍后再来看看。</span>
     </div>
 
-    <div v-else class="feed-view__list" aria-live="polite">
-      <FeedItemCard
-        v-for="item in items"
-        :key="String(item.tid)"
-        :item="item"
-        @open="openItem"
-      />
+    <div v-else class="feed-view__masonry" aria-live="polite">
+      <div
+        v-for="(column, columnIndex) in masonryColumns"
+        :key="columnIndex"
+        class="feed-view__masonry-column"
+      >
+        <FeedItemCard
+          v-for="item in column"
+          :key="String(item.tid)"
+          :item="item"
+          @open="openItem"
+        />
+      </div>
     </div>
 
     <div v-if="items.length" class="feed-view__load-more">
@@ -269,9 +295,17 @@ onMounted(() => {
   outline-offset: 2px;
 }
 
-.feed-view__list {
+.feed-view__masonry {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+  align-items: start;
+}
+
+.feed-view__masonry-column {
   display: grid;
   gap: var(--space-3);
+  min-width: 0;
 }
 
 .feed-view__state {
