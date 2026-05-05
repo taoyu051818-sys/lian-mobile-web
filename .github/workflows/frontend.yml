@@ -22,7 +22,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
 
       - name: Install dependencies
         run: npm install
@@ -41,6 +40,9 @@ jobs:
 
       - name: Run legacy static smoke test
         run: npm test
+
+      - name: Run static proxy forwarded header regression
+        run: node scripts/test-static-proxy-forwarded-headers.js
 
       - name: Print static server log on failure
         if: failure()
