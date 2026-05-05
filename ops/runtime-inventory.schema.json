@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "LIAN runtime inventory",
+  "type": "object",
+  "required": ["version", "runtimes", "forbiddenAliases", "changeRule"],
+  "properties": {
+    "version": { "type": "integer", "minimum": 1 },
+    "runtimes": {
+      "type": "object",
+      "required": ["frontend", "backend"],
+      "properties": {
+        "frontend": { "$ref": "#/$defs/runtime" },
+        "backend": { "$ref": "#/$defs/runtime" }
+      },
+      "additionalProperties": { "$ref": "#/$defs/runtime" }
+    },
+    "forbiddenAliases": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "uniqueItems": true
+    },
+    "changeRule": { "type": "string", "minLength": 1 }
+  },
+  "$defs": {
+    "runtime": {
+      "type": "object",
+      "required": ["repository", "workingDirectory", "manager", "runtimeName"],
+      "properties": {
+        "repository": { "type": "string", "minLength": 1 },
+        "workingDirectory": { "type": "string", "minLength": 1 },
+        "manager": { "enum": ["systemd", "pm2", "other"] },
+        "runtimeName": { "type": "string", "minLength": 1 },
+        "httpPort": { "type": "integer", "minimum": 1, "maximum": 65535 },
+        "healthCheckPath": { "type": "string" }
+      },
+      "additionalProperties": false
+    }
+  }
+}
