@@ -1,10 +1,9 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
 import { reportPost, sendPostReply, togglePostLike, togglePostSave } from "../../api/posts";
-import { GlassPanel, IdentityBadge, InlineError, LianButton, LocationChip, TrustBadge, TypeChip } from "../../ui";
+import { GlassPanel, IdentityBadge, InlineError, LianButton, LocationChip, TypeChip } from "../../ui";
 import type { PostDetail } from "../../types/post";
 
-type TrustTone = "confirmed" | "pending" | "disputed" | "expired" | "ai" | "official";
 type TypeTone = "experience" | "discussion" | "hot" | "food" | "place" | "ai" | "official" | "trade" | "contribution" | "default";
 
 const props = withDefaults(defineProps<{
@@ -45,59 +44,43 @@ const replyContent = ref("");
 const postId = computed(() => props.post?.tid ?? null);
 const title = computed(() => props.post?.title || "帖子详情");
 const authorLabel = computed(() => props.post?.author || "同学");
-const avatarText = computed(() => props.post?.authorAvatarText || authorLabel.value.slice(0, 2) || "同");
-const identityMeta = computed(() => props.post?.authorIdentityTag || props.post?.contributionTag || "校园身份");
-const placeLabel = computed(() => props.post?.placeName || props.post?.locationName || "校园");
+const identityMeta = computed(() => props.post?.authorIdentityTag || "校园身份");
+const placeLabel = computed(() => props.post?.locationArea || "校园");
 const bodyHtml = computed(() => props.post?.contentHtml || "");
-const plainBody = computed(() => props.post?.content || props.post?.summary || stripHtml(bodyHtml.value) || "暂无正文");
-const replies = computed(() => Array.isArray(props.post?.replies) ? props.post?.replies || [] : []);
-
+const replies = computed(() => props.post?.replies || []);
 const images = computed(() => {
-  const urls: string[] = [];
-  if (props.post?.cover) urls.push(props.post.cover);
-  if (props.post?.imageUrl) urls.push(props.post.imageUrl);
-  if (bodyHtml.value && typeof document !== "undefined") {
-    const container = document.createElement("div");
-    container.innerHTML = bodyHtml.value;
-    container.querySelectorAll("img").forEach((img) => {
-      const src = img.getAttribute("src");
-      if (src) urls.push(src);
-    });
-  }
+  const urls = [props.post?.cover || "", ...(props.post?.imageUrls || [])].filter(Boolean);
   return Array.from(new Set(urls)).slice(0, 8);
 });
 
 const typeTone = computed<TypeTone>(() => {
-  const raw = String(props.post?.type || props.post?.tag || "").toLowerCase();
-  if (raw.includes("食") || raw.includes("food")) return "food";
-  if (raw.includes("地点") || raw.includes("place")) return "place";
+  const raw = String(props.post?.contentType || "").toLowerCase();
+  if (raw.includes("food") || raw.includes("食") || raw.includes("饭")) return "food";
+  if (raw.includes("place") || raw.includes("map") || raw.includes("地点")) return "place";
   if (raw.includes("ai")) return "ai";
   if (raw.includes("official") || raw.includes("官方")) return "official";
   if (raw.includes("trade") || raw.includes("二手")) return "trade";
-  if (raw.includes("问") || raw.includes("discussion")) return "discussion";
+  if (raw.includes("discussion") || raw.includes("问") || raw.includes("讨论")) return "discussion";
   return "experience";
 });
 
-const typeLabel = computed(() => props.post?.tag || "校园内容");
-
-const trustTone = computed<TrustTone>(() => {
-  if (props.post?.expired) return "expired";
-  if (props.post?.aiGenerated) return "ai";
-  if (props.post?.confirmed) return "confirmed";
-  return "pending";
+const typeLabel = computed(() => {
+  const labels: Record<TypeTone, string> = {
+    experience: "经验",
+    discussion: "讨论",
+    hot: "热帖",
+    food: "饭堂",
+    place: "地点",
+    ai: "AI整理",
+    official: "官方",
+    trade: "互助",
+    contribution: "贡献",
+    default: "内容",
+  };
+  return labels[typeTone.value] || "内容";
 });
 
-const trustLabel = computed(() => {
-  if (props.post?.expired) return "已过期";
-  if (props.post?.aiGenerated) return "AI辅助";
-  if (props.post?.confirmed) return "已确认";
-  return "待确认";
-});
-
-const statLine = computed(() => {
-  const replyCount = replies.value.length || Number(props.post?.replyCount || props.post?.commentCount || 0);
-  return `${formatRelativeTime(props.post?.timestampISO) || props.post?.timeLabel || "刚刚"} · ${replyCount} 回复 · ${likeCount.value} 喜欢`;
-});
+const statLine = computed(() => `${formatRelativeTime(props.post?.timestampISO || "") || props.post?.timeLabel || "刚刚"} · ${replies.value.length} 回复 · ${likeCount.value} 喜欢`);
 
 watch(() => props.post, (post) => {
   liked.value = Boolean(post?.liked);
@@ -108,15 +91,7 @@ watch(() => props.post, (post) => {
   replyContent.value = "";
 }, { immediate: true });
 
-function stripHtml(html: string) {
-  if (!html) return "";
-  if (typeof document === "undefined") return html.replace(/<[^>]+>/g, " ");
-  const container = document.createElement("div");
-  container.innerHTML = html;
-  return container.textContent || container.innerText || "";
-}
-
-function formatRelativeTime(value?: string) {
+function formatRelativeTime(value: string) {
   if (!value) return "";
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "";
@@ -173,7 +148,7 @@ async function handleSave() {
   actionMessage.value = "";
   try {
     const response = await togglePostSave(postId.value, nextSaved);
-    saved.value = Boolean(response.saved ?? response.bookmarked ?? nextSaved);
+    saved.value = Boolean(response.saved);
     showActionMessage(saved.value ? "已收藏" : "已取消收藏");
   } catch (error) {
     saved.value = previousSaved;
@@ -244,7 +219,6 @@ async function submitReply() {
     <template v-else-if="post">
       <div class="post-detail-panel__chips">
         <LocationChip>{{ placeLabel }}</LocationChip>
-        <TrustBadge :tone="trustTone">{{ trustLabel }}</TrustBadge>
       </div>
 
       <section v-if="images.length" class="post-detail-panel__gallery" aria-label="图片">
@@ -253,11 +227,11 @@ async function submitReply() {
 
       <section class="post-detail-panel__body">
         <div v-if="bodyHtml" class="lian-html" v-html="bodyHtml"></div>
-        <p v-else>{{ plainBody }}</p>
+        <p v-else>暂无正文</p>
       </section>
 
       <footer class="post-detail-panel__meta">
-        <IdentityBadge :avatar-text="avatarText" :label="authorLabel" :meta="identityMeta" />
+        <IdentityBadge :avatar-text="authorLabel.slice(0, 2)" :label="authorLabel" :meta="identityMeta" />
         <span>{{ statLine }}</span>
       </footer>
 
@@ -289,13 +263,13 @@ async function submitReply() {
           <h3 id="post-detail-replies-title">回复</h3>
           <span>{{ replies.length ? `${replies.length} 条` : "暂无" }}</span>
         </div>
-        <article v-for="reply in replies" :key="String(reply.id || reply.timestampISO || reply.content || reply.contentHtml)" class="post-detail-panel__reply">
+        <article v-for="reply in replies" :key="String(reply.id)" class="post-detail-panel__reply">
           <div class="post-detail-panel__reply-meta">
-            <strong>{{ reply.username || "同学" }}</strong>
+            <strong>{{ reply.author || "同学" }}</strong>
             <span>{{ formatRelativeTime(reply.timestampISO) }}</span>
           </div>
-          <div v-if="reply.contentHtml" class="lian-html" v-html="reply.contentHtml"></div>
-          <p v-else>{{ reply.content || "这条回复暂时没有内容。" }}</p>
+          <div v-if="reply.content" class="lian-html" v-html="reply.content"></div>
+          <p v-else>这条回复暂时没有内容。</p>
         </article>
         <p v-if="!replies.length" class="post-detail-panel__empty">还没有回复，来写第一条。</p>
 
