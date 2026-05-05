@@ -57,3 +57,59 @@ jobs:
           if [ -f /tmp/lian-frontend.pid ]; then
             kill "$(cat /tmp/lian-frontend.pid)" || true
           fi
+
+  publish-legacy-status:
+    name: Publish legacy commit status
+    runs-on: ubuntu-latest
+    needs: frontend
+    if: always()
+    permissions:
+      contents: read
+      statuses: write
+
+    steps:
+      - name: Publish ci/frontend-validation status
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          FRONTEND_RESULT: ${{ needs.frontend.result }}
+        run: |
+          state="failure"
+          description="Frontend validation failed"
+
+          case "${FRONTEND_RESULT}" in
+            success)
+              state="success"
+              description="Frontend validation passed"
+              ;;
+            cancelled)
+              state="error"
+              description="Frontend validation cancelled"
+              ;;
+            skipped)
+              state="error"
+              description="Frontend validation skipped"
+              ;;
+          esac
+
+          export STATUS_STATE="${state}"
+          export STATUS_DESCRIPTION="${description}"
+          payload="$(python3 - <<'PY'
+          import json
+          import os
+
+          print(json.dumps({
+              "state": os.environ["STATUS_STATE"],
+              "context": "ci/frontend-validation",
+              "description": os.environ["STATUS_DESCRIPTION"],
+              "target_url": f"{os.environ['GITHUB_SERVER_URL']}/{os.environ['GITHUB_REPOSITORY']}/actions/runs/{os.environ['GITHUB_RUN_ID']}",
+          }))
+          PY
+          )"
+
+          curl --fail-with-body --show-error --silent \
+            --request POST \
+            --header "Authorization: Bearer ${GH_TOKEN}" \
+            --header "Accept: application/vnd.github+json" \
+            --header "X-GitHub-Api-Version: 2022-11-28" \
+            --data "${payload}" \
+            "${GITHUB_API_URL}/repos/${GITHUB_REPOSITORY}/statuses/${GITHUB_SHA}"
