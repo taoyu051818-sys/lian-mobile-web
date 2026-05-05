@@ -1,5 +1,8 @@
 # Architecture Workplan
 
+> [!WARNING]
+> Historical / superseded planning context as of 2026-05-05. Do not use this file as the current implementation entry point. Start from `docs/agent/README.md`, `docs/agent/references/PR_DERIVED_STATUS_2026-05-05.md`, and `docs/agent/references/ARCHITECTURE_WORKPLAN_OVERRIDE_2026-05-05.md` before using the material below.
+
 Date: 2026-05-02
 
 This document is the current architect-level work assignment for the next LIAN threads. It replaces ad hoc continuation in the current chat. Future coding threads should start from this file, then read the specific task doc assigned to them.
