@@ -2,7 +2,7 @@
 import { computed, onMounted, ref } from "vue";
 import { fetchMapV2Items } from "../api/map";
 import { fetchPostDetail } from "../api/posts";
-import { GlassPanel, InlineError, LianButton, LocationChip, TrustBadge, TypeChip } from "../ui";
+import { GlassPanel, InlineError, LianButton, LocationChip, TrustBadge } from "../ui";
 import type { FeedItemId } from "../types/feed";
 import type { MapBounds, MapLocation, MapPost, MapV2ItemsResponse } from "../types/map";
 import type { PostDetail } from "../types/post";
@@ -27,10 +27,8 @@ const locations = computed(() => mapData.value?.locations || []);
 const posts = computed(() => mapData.value?.posts || []);
 const areas = computed(() => mapData.value?.layers?.areas || []);
 const routes = computed(() => mapData.value?.layers?.routes || []);
-const assets = computed(() => mapData.value?.layers?.assets || []);
 const filteredLocations = computed(() => activeFilter.value === "posts" ? [] : locations.value);
 const filteredPosts = computed(() => activeFilter.value === "locations" ? [] : posts.value);
-const summaryLine = computed(() => `${locations.value.length} 个地点 · ${posts.value.length} 条地图内容 · ${areas.value.length + routes.value.length + assets.value.length} 个图层元素`);
 
 function projectPoint(lat?: number, lng?: number) {
   const safeLat = Number(lat || bounds.value.south);
@@ -119,18 +117,8 @@ onMounted(() => {
 </script>
 
 <template>
-  <section class="map-view" aria-labelledby="map-view-title">
+  <section class="map-view" aria-label="探索">
     <GlassPanel class="map-view__card">
-      <header class="map-view__header">
-        <div>
-          <TypeChip type="place">校园地图</TypeChip>
-          <h2 id="map-view-title">按地点探索校园信息</h2>
-        </div>
-        <TrustBadge tone="pending">Vue canary</TrustBadge>
-      </header>
-
-      <p class="map-view__intro">读取 MapV2 真实数据，用 Vue 轻量 overlay 展示地点和地图帖子。Leaflet 交互后续再补完整 parity。</p>
-
       <div class="map-view__toolbar" aria-label="地图筛选">
         <button type="button" :class="{ 'is-active': activeFilter === 'all' }" @click="activeFilter = 'all'">全部</button>
         <button type="button" :class="{ 'is-active': activeFilter === 'locations' }" @click="activeFilter = 'locations'">地点</button>
@@ -146,7 +134,7 @@ onMounted(() => {
       <div v-if="loading" class="map-view__state" role="status">正在加载校园地图…</div>
 
       <template v-else>
-        <section class="map-view__stage" aria-label="校园地图概览">
+        <section class="map-view__stage" aria-label="校园地图">
           <img class="map-view__base" src="/assets/campus-base-map.png" alt="校园底图" loading="lazy" />
           <svg class="map-view__shape-layer" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
             <polygon
@@ -189,17 +177,12 @@ onMounted(() => {
           </button>
         </section>
 
-        <section class="map-view__summary">
-          <strong>{{ summaryLine }}</strong>
-          <span>当前以 MapV2 bounds 做经纬度投影，优先保证真实数据可见和可点。</span>
-        </section>
-
         <section v-if="selectedTarget" class="map-view__detail" aria-label="选中地点或内容">
           <template v-if="selectedTarget.kind === 'location'">
             <div>
               <LocationChip>{{ selectedTarget.item.name }}</LocationChip>
               <h3>{{ selectedTarget.item.name }}</h3>
-              <p>{{ selectedTarget.item.type || '校园地点' }} · {{ selectedTarget.item.lat.toFixed(5) }}, {{ selectedTarget.item.lng.toFixed(5) }}</p>
+              <p>{{ selectedTarget.item.type || '校园地点' }}</p>
             </div>
             <LianButton size="sm" variant="ghost" @click="selectNearestPostForLocation(selectedTarget.item)">查看附近内容</LianButton>
           </template>
@@ -242,11 +225,9 @@ onMounted(() => {
   gap: var(--space-4);
 }
 
-.map-view__header,
 .map-view__toolbar,
 .map-view__detail,
-.map-view__place,
-.map-view__summary {
+.map-view__place {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-2);
@@ -254,14 +235,11 @@ onMounted(() => {
   justify-content: space-between;
 }
 
-.map-view h2,
 .map-view h3,
 .map-view p {
   margin: 0;
 }
 
-.map-view__intro,
-.map-view__summary span,
 .map-view__detail p {
   color: var(--lian-muted);
   line-height: 1.6;
@@ -376,7 +354,6 @@ onMounted(() => {
   z-index: 5;
 }
 
-.map-view__summary,
 .map-view__detail,
 .map-view__place {
   padding: var(--space-3);
@@ -385,7 +362,6 @@ onMounted(() => {
   background: rgba(255, 255, 255, 0.52);
 }
 
-.map-view__summary,
 .map-view__detail {
   align-items: flex-start;
 }
