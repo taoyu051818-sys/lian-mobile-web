@@ -1,17 +1,21 @@
 # LIAN Mobile Web
 
-Static mobile web frontend for LIAN.
+Frontend/mobile web workspace for LIAN.
 
-This repository contains only the frontend static app and local frontend rehearsal scripts. Backend APIs, runtime data, authentication, uploads, image proxy, and NodeBB integration live in the backend server repository.
+This repository owns the frontend runtime lanes, Vue canary migration, static rehearsal server, frontend assets, task-board UI, and frontend documentation. Backend APIs, runtime data, authentication, uploads, image proxy, Redis state, and NodeBB integration live in the backend server repository: `taoyu051818-sys/lian-platform-server`.
 
-## Frontend modes
+## Current runtime model
 
-This repo currently has two frontend entry modes during migration:
+The current merged code runs two frontend lanes during migration:
 
-- Legacy static mobile frontend under `public/`, served by `npm run start:frontend-static`.
-- Vue 3 + Vite + TypeScript shell from root `index.html`, served by `npm run dev`.
+| Lane | Port | Purpose |
+|---|---:|---|
+| legacy/static rehearsal | 4300 | Stable compatibility lane and default frontend smoke target. |
+| Vue canary | 4301 | Vue 3 + Vite migration lane for Feed, Detail, Profile, Messages, Auth, Publish, Map V2, and Profile Editor parity. |
 
-The Vue entry is the long-term UI architecture direction. Legacy pages remain active until each feature is migrated and validated.
+`npm start` starts both lanes through `scripts/serve-frontend-runtimes.js`.
+
+Do not treat older docs that describe a single `npm run dev` / Vite 5173 workflow as the current operational entry. `npm run dev` is still a Vite development helper, but the project runtime entry for current review is the dual-lane supervisor.
 
 ## Install dependencies
 
@@ -19,15 +23,40 @@ The Vue entry is the long-term UI architecture direction. Legacy pages remain ac
 npm install
 ```
 
-The repository does not yet include a committed lockfile. After the first successful local install and build validation, commit `package-lock.json` so CI can switch from `npm install` to `npm ci`.
-
-## Run Vue development server
+## Start both frontend lanes
 
 ```bash
-npm run dev
+npm start
 ```
 
-Default Vite port: 5173.
+Expected local lanes:
+
+```txt
+legacy/static rehearsal: http://127.0.0.1:4300
+Vue canary:              http://127.0.0.1:4301
+backend API:             http://127.0.0.1:4200
+image proxy:             http://127.0.0.1:4201
+```
+
+Start the backend separately from `lian-platform-server` when smoke tests need live `/api/*` responses.
+
+## Vue canary helpers
+
+```bash
+npm run dev:vue-canary
+npm run preview:vue-canary
+npm run test:vue-canary
+```
+
+The Vue canary port is fixed at 4301.
+
+## Legacy/static rehearsal helper
+
+```bash
+npm run serve:legacy
+```
+
+The legacy/static rehearsal port defaults to 4300.
 
 ## Build Vue entry
 
@@ -37,29 +66,37 @@ npm run build
 
 This runs `vue-tsc --noEmit` and `vite build`.
 
-## Run legacy frontend static rehearsal
-
-Start the backend server separately, then run:
-
-```bash
-npm run start:frontend-static
-```
-
-Default ports:
-
-```txt
-frontend static rehearsal: 4300
-backend API: 4200
-image proxy: 4201
-```
-
 ## Validate
 
 ```bash
 npm run check
-npm test
+npm run ops:guard
+npm run build
+npm run test
+npm run test:vue-canary
 ```
 
-`npm run check` validates required project files and checks for encoding contamination.
+Or run the frontend verification bundle:
 
-`npm test` runs the legacy static smoke test against `http://127.0.0.1:4300`, so start `npm run start:frontend-static` first.
+```bash
+npm run verify
+```
+
+Current meanings:
+
+- `npm run check` validates required project files and encoding contamination.
+- `npm run ops:guard` checks runtime inventory guardrails.
+- `npm run test` runs the smoke test against `http://127.0.0.1:4300`.
+- `npm run test:vue-canary` runs the smoke test against `http://127.0.0.1:4301`.
+- `npm run verify` runs check, ops guard, and build.
+
+## Agent documentation
+
+Before starting implementation, read:
+
+1. `docs/agent/references/PR_DERIVED_STATUS_2026-05-05.md`
+2. `docs/agent/references/TASK_BOARD_OVERRIDE_2026-05-05.md`
+3. `docs/agent/references/DOC_REVIEW_FINDINGS_2026-05-05.md`
+4. `docs/agent/README.md`
+
+These files override older task-board and handoff text when they conflict with current merged PRs and code.
