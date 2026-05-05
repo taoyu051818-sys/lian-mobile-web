@@ -1,4 +1,4 @@
-export type AppViewKey = "feed" | "map" | "messages" | "profile";
+export type AppViewKey = "feed" | "map" | "publish" | "messages" | "profile";
 
 export interface AppViewDefinition {
   key: AppViewKey;
@@ -22,6 +22,13 @@ export const appViews: AppViewDefinition[] = [
     title: "探索",
     subtitle: "地点组织沉淀，地图负责定位",
     icon: "⌖"
+  },
+  {
+    key: "publish",
+    label: "发布",
+    title: "发布",
+    subtitle: "快速发布图片、地点和校园内容",
+    icon: "+"
   },
   {
     key: "messages",
