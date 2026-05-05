@@ -40,9 +40,19 @@ function setBusy(isBusy) {
   });
 }
 
+function isCheckPassed(item = {}) {
+  return Boolean(
+    item.ok &&
+    (!item.status || (item.status >= 200 && item.status < 300)) &&
+    item.jsonValid !== false &&
+    item.hasHtml !== false &&
+    item.hasOpsHtml !== false
+  );
+}
+
 function renderChecks(items = []) {
   checks.innerHTML = items.map((item) => {
-    const ok = item.ok && (!item.status || (item.status >= 200 && item.status < 300));
+    const ok = isCheckPassed(item);
     const details = Object.entries(item)
       .filter(([key]) => !["name", "ok"].includes(key))
       .map(([key, value]) => `<div><strong>${escapeHtml(key)}:</strong> ${escapeHtml(formatValue(value))}</div>`)
