@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, ref, watch } from "vue";
+import { reportPost, sendPostReply, togglePostLike, togglePostSave } from "../../api/posts";
 import { GlassPanel, IdentityBadge, InlineError, LianButton, LocationChip, TrustBadge, TypeChip } from "../../ui";
 import type { PostDetail } from "../../types/post";
 
@@ -20,6 +21,28 @@ const emit = defineEmits<{
   retry: [];
 }>();
 
+const reportCategories = [
+  { value: "privacy", label: "隐私问题" },
+  { value: "false_info", label: "虚假信息" },
+  { value: "abuse", label: "违规内容" },
+  { value: "wrong_location", label: "位置错误" },
+  { value: "expired", label: "过期内容" },
+  { value: "other", label: "其他" },
+];
+
+const liked = ref(false);
+const saved = ref(false);
+const likeCount = ref(0);
+const likeBusy = ref(false);
+const saveBusy = ref(false);
+const reportBusy = ref(false);
+const replyBusy = ref(false);
+const actionError = ref("");
+const actionMessage = ref("");
+const reportCategory = ref(reportCategories[reportCategories.length - 1].value);
+const replyContent = ref("");
+
+const postId = computed(() => props.post?.tid ?? null);
 const title = computed(() => props.post?.title || "帖子详情");
 const authorLabel = computed(() => props.post?.author || "同学");
 const avatarText = computed(() => props.post?.authorAvatarText || authorLabel.value.slice(0, 2) || "同");
@@ -72,10 +95,18 @@ const trustLabel = computed(() => {
 });
 
 const statLine = computed(() => {
-  const likes = Number(props.post?.likeCount || 0);
   const replyCount = replies.value.length || Number(props.post?.replyCount || props.post?.commentCount || 0);
-  return `${formatRelativeTime(props.post?.timestampISO) || props.post?.timeLabel || "刚刚"} · ${replyCount} 回复 · ${likes} 喜欢`;
+  return `${formatRelativeTime(props.post?.timestampISO) || props.post?.timeLabel || "刚刚"} · ${replyCount} 回复 · ${likeCount.value} 喜欢`;
 });
+
+watch(() => props.post, (post) => {
+  liked.value = Boolean(post?.liked);
+  saved.value = Boolean(post?.bookmarked);
+  likeCount.value = Math.max(0, Number(post?.likeCount || 0));
+  actionError.value = "";
+  actionMessage.value = "";
+  replyContent.value = "";
+}, { immediate: true });
 
 function stripHtml(html: string) {
   if (!html) return "";
@@ -96,6 +127,98 @@ function formatRelativeTime(value?: string) {
   if (diff < 172_800_000) return "昨天";
   if (diff < 604_800_000) return `${Math.floor(diff / 86_400_000)}天前`;
   return `${date.getMonth() + 1}月${date.getDate()}日`;
+}
+
+function showActionMessage(message: string) {
+  actionError.value = "";
+  actionMessage.value = message;
+}
+
+function showActionError(error: unknown, fallback: string) {
+  actionMessage.value = "";
+  actionError.value = error instanceof Error ? error.message : fallback;
+}
+
+async function handleLike() {
+  if (postId.value == null || likeBusy.value) return;
+  const previousLiked = liked.value;
+  const previousCount = likeCount.value;
+  const nextLiked = !previousLiked;
+  liked.value = nextLiked;
+  likeCount.value = Math.max(0, previousCount + (nextLiked ? 1 : -1));
+  likeBusy.value = true;
+  actionError.value = "";
+  actionMessage.value = "";
+  try {
+    const response = await togglePostLike(postId.value, nextLiked);
+    liked.value = Boolean(response.liked);
+    likeCount.value = Math.max(0, Number(response.likeCount || 0));
+    showActionMessage(liked.value ? "已喜欢" : "已取消喜欢");
+  } catch (error) {
+    liked.value = previousLiked;
+    likeCount.value = previousCount;
+    showActionError(error, "喜欢操作没有成功，可以稍后再试。");
+  } finally {
+    likeBusy.value = false;
+  }
+}
+
+async function handleSave() {
+  if (postId.value == null || saveBusy.value) return;
+  const previousSaved = saved.value;
+  const nextSaved = !previousSaved;
+  saved.value = nextSaved;
+  saveBusy.value = true;
+  actionError.value = "";
+  actionMessage.value = "";
+  try {
+    const response = await togglePostSave(postId.value, nextSaved);
+    saved.value = Boolean(response.saved ?? response.bookmarked ?? nextSaved);
+    showActionMessage(saved.value ? "已收藏" : "已取消收藏");
+  } catch (error) {
+    saved.value = previousSaved;
+    showActionError(error, "收藏操作没有成功，可以稍后再试。");
+  } finally {
+    saveBusy.value = false;
+  }
+}
+
+async function handleReport() {
+  if (postId.value == null || reportBusy.value) return;
+  const category = reportCategories.find((item) => item.value === reportCategory.value) || reportCategories[reportCategories.length - 1];
+  reportBusy.value = true;
+  actionError.value = "";
+  actionMessage.value = "";
+  try {
+    await reportPost(postId.value, { category: category.value, reason: category.label });
+    showActionMessage("举报已提交，感谢反馈。");
+  } catch (error) {
+    showActionError(error, "举报没有提交成功，可以稍后再试。");
+  } finally {
+    reportBusy.value = false;
+  }
+}
+
+async function submitReply() {
+  if (postId.value == null || replyBusy.value) return;
+  const content = replyContent.value.trim();
+  if (!content) {
+    actionError.value = "请先填写回复内容。";
+    return;
+  }
+  replyBusy.value = true;
+  actionError.value = "";
+  actionMessage.value = "";
+  try {
+    await sendPostReply(postId.value, content);
+    replyContent.value = "";
+    showActionMessage("回复已发送，正在刷新详情。");
+    emit("retry");
+  } catch (error) {
+    showActionError(error, "回复没有发送成功，可以稍后再试。");
+  } finally {
+    replyBusy.value = false;
+  }
 }
 </script>
 
@@ -139,10 +262,27 @@ function formatRelativeTime(value?: string) {
       </footer>
 
       <section class="post-detail-panel__actions" aria-label="帖子操作">
-        <LianButton size="sm" variant="ghost" disabled>喜欢稍后迁移</LianButton>
-        <LianButton size="sm" variant="ghost" disabled>收藏稍后迁移</LianButton>
-        <LianButton size="sm" variant="ghost" disabled>举报稍后迁移</LianButton>
+        <LianButton size="sm" variant="ghost" :loading="likeBusy" @click="handleLike">
+          {{ liked ? "♥ 已喜欢" : "♡ 喜欢" }} · {{ likeCount }}
+        </LianButton>
+        <LianButton size="sm" variant="ghost" :loading="saveBusy" @click="handleSave">
+          {{ saved ? "★ 已收藏" : "☆ 收藏" }}
+        </LianButton>
+        <div class="post-detail-panel__report">
+          <label>
+            <span>举报原因</span>
+            <select v-model="reportCategory" :disabled="reportBusy">
+              <option v-for="category in reportCategories" :key="category.value" :value="category.value">
+                {{ category.label }}
+              </option>
+            </select>
+          </label>
+          <LianButton size="sm" variant="ghost" :loading="reportBusy" @click="handleReport">举报</LianButton>
+        </div>
       </section>
+
+      <InlineError v-if="actionError">{{ actionError }}</InlineError>
+      <p v-if="actionMessage" class="post-detail-panel__success">{{ actionMessage }}</p>
 
       <section class="post-detail-panel__replies" aria-labelledby="post-detail-replies-title">
         <div class="post-detail-panel__section-title">
@@ -157,7 +297,15 @@ function formatRelativeTime(value?: string) {
           <div v-if="reply.contentHtml" class="lian-html" v-html="reply.contentHtml"></div>
           <p v-else>{{ reply.content || "这条回复暂时没有内容。" }}</p>
         </article>
-        <p v-if="!replies.length" class="post-detail-panel__empty">还没有回复，回复功能稍后迁移。</p>
+        <p v-if="!replies.length" class="post-detail-panel__empty">还没有回复，来写第一条。</p>
+
+        <form class="post-detail-panel__reply-form" @submit.prevent="submitReply">
+          <label>
+            <span>写回复</span>
+            <textarea v-model="replyContent" rows="3" maxlength="2000" placeholder="写一条回复" />
+          </label>
+          <LianButton type="submit" size="sm" :loading="replyBusy" :disabled="!replyContent.trim()">发送回复</LianButton>
+        </form>
       </section>
     </template>
   </GlassPanel>
@@ -235,7 +383,8 @@ function formatRelativeTime(value?: string) {
 }
 
 .post-detail-panel__body,
-.post-detail-panel__reply {
+.post-detail-panel__reply,
+.post-detail-panel__reply-form {
   display: grid;
   gap: var(--space-2);
   color: var(--lian-ink);
@@ -254,6 +403,54 @@ function formatRelativeTime(value?: string) {
   font-size: 12px;
 }
 
+.post-detail-panel__report {
+  display: flex;
+  flex: 1 1 240px;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: end;
+  justify-content: flex-end;
+}
+
+.post-detail-panel__report label,
+.post-detail-panel__reply-form label {
+  display: grid;
+  flex: 1 1 160px;
+  gap: var(--space-2);
+  color: var(--lian-muted);
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.post-detail-panel__report select,
+.post-detail-panel__reply-form textarea {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid var(--lian-border);
+  border-radius: var(--radius-3);
+  background: rgba(255, 255, 255, 0.72);
+  color: var(--lian-ink);
+  font: inherit;
+}
+
+.post-detail-panel__report select {
+  min-height: 36px;
+  padding: 0 var(--space-2);
+}
+
+.post-detail-panel__reply-form textarea {
+  min-height: 92px;
+  resize: vertical;
+  padding: var(--space-3);
+  line-height: 1.5;
+}
+
+.post-detail-panel__success {
+  color: var(--lian-primary);
+  font-size: 13px;
+  font-weight: 850;
+}
+
 .post-detail-panel__replies {
   display: grid;
   gap: var(--space-3);
@@ -265,7 +462,8 @@ function formatRelativeTime(value?: string) {
   font-size: 12px;
 }
 
-.post-detail-panel__reply {
+.post-detail-panel__reply,
+.post-detail-panel__reply-form {
   padding: var(--space-3);
   border: 1px solid rgba(31, 41, 51, 0.08);
   border-radius: var(--radius-card);
