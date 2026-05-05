@@ -2,13 +2,24 @@
 import { computed, onMounted, ref } from "vue";
 import { fetchFeed } from "../api/feed";
 import { fetchPostDetail } from "../api/posts";
-import { GlassPanel, InlineError, LianButton, TrustBadge, TypeChip } from "../ui";
+import { InlineError, LianButton } from "../ui";
 import type { FeedItem, FeedItemId } from "../types/feed";
 import type { PostDetail } from "../types/post";
 import FeedItemCard from "./feed/FeedItemCard.vue";
 import PostDetailPanel from "./detail/PostDetailPanel.vue";
 
-const DEFAULT_TABS = ["此刻", "精选"];
+const DEFAULT_TABS = ["推荐", "热帖", "经验", "讨论", "饭堂", "附近"];
+const LEGACY_TAB_LABELS: Record<string, string> = {
+  此刻: "推荐",
+  精选: "热帖",
+  校园活动: "经验",
+  报名机会: "讨论",
+  图书馆学习: "附近",
+  周边玩乐: "附近",
+  安全通知: "讨论",
+  试验区社团: "经验",
+  美食菜单: "饭堂",
+};
 const PAGE_SIZE = 12;
 
 const tabs = ref<string[]>(DEFAULT_TABS);
@@ -25,6 +36,15 @@ const detailLoading = ref(false);
 const detailError = ref("");
 
 const isEmpty = computed(() => !loading.value && !errorMessage.value && items.value.length === 0);
+
+function normalizeTabs(rawTabs?: string[]) {
+  const labels = (rawTabs?.length ? rawTabs : DEFAULT_TABS)
+    .map((tab) => LEGACY_TAB_LABELS[tab] || tab)
+    .filter((tab) => DEFAULT_TABS.includes(tab));
+  return Array.from(new Set(labels)).slice(0, DEFAULT_TABS.length).concat(
+    DEFAULT_TABS.filter((tab) => !labels.includes(tab)),
+  ).slice(0, DEFAULT_TABS.length);
+}
 
 function readHistoryQuery() {
   try {
@@ -68,7 +88,7 @@ async function loadFeed(reset = false) {
       read: readHistoryQuery(),
     });
 
-    tabs.value = response.tabs?.length ? response.tabs : DEFAULT_TABS;
+    tabs.value = normalizeTabs(response.tabs);
     const nextItems = response.items || [];
     items.value = reset ? nextItems : [...items.value, ...nextItems];
     hasMore.value = Boolean(response.hasMore);
@@ -132,20 +152,7 @@ onMounted(() => {
 
 <template>
   <section class="feed-view" aria-labelledby="feed-view-title">
-    <GlassPanel class="feed-view__hero">
-      <div class="feed-view__hero-row">
-        <TypeChip type="hot">校园信息流</TypeChip>
-        <TrustBadge tone="pending">Vue canary</TrustBadge>
-      </div>
-      <div class="feed-view__hero-copy">
-        <h2 id="feed-view-title">今天校园里发生什么</h2>
-        <p>先迁移真实 Feed 浏览路径：内容、身份、地点和状态优先展示；互动和发布随后补齐。</p>
-      </div>
-      <div class="feed-view__hero-actions">
-        <LianButton size="sm" :loading="loading" @click="loadFeed(true)">刷新</LianButton>
-        <LianButton size="sm" variant="ghost">发布稍后迁移</LianButton>
-      </div>
-    </GlassPanel>
+    <h1 id="feed-view-title" class="feed-view__sr-title">首页</h1>
 
     <nav class="feed-view__tabs" aria-label="Feed 分类">
       <button
@@ -154,9 +161,18 @@ onMounted(() => {
         type="button"
         class="feed-view__tab"
         :class="{ 'is-active': tab === activeTab }"
+        :aria-pressed="tab === activeTab"
         @click="switchTab(tab)"
       >
         {{ tab }}
+      </button>
+      <button
+        type="button"
+        class="feed-view__tab feed-view__tab--refresh"
+        :disabled="loading"
+        @click="loadFeed(true)"
+      >
+        {{ loading ? "刷新中" : "刷新" }}
       </button>
     </nav>
 
@@ -169,12 +185,12 @@ onMounted(() => {
       正在加载校园内容…
     </div>
 
-    <GlassPanel v-else-if="isEmpty" class="feed-view__state">
+    <div v-else-if="isEmpty" class="feed-view__state feed-view__state--empty">
       <strong>暂时没有内容</strong>
       <span>可以换个分类，或稍后再来看看。</span>
-    </GlassPanel>
+    </div>
 
-    <div v-else class="feed-view__grid" aria-live="polite">
+    <div v-else class="feed-view__list" aria-live="polite">
       <FeedItemCard
         v-for="item in items"
         :key="String(item.tid)"
@@ -210,53 +226,41 @@ onMounted(() => {
 <style scoped>
 .feed-view {
   display: grid;
-  gap: var(--space-4);
-}
-
-.feed-view__hero {
-  display: grid;
   gap: var(--space-3);
 }
 
-.feed-view__hero-row,
-.feed-view__hero-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
-  align-items: center;
-  justify-content: space-between;
-}
-
-.feed-view__hero-copy {
-  display: grid;
-  gap: var(--space-2);
-}
-
-.feed-view h2,
-.feed-view h3,
-.feed-view p {
-  margin: 0;
-}
-
-.feed-view__hero-copy p {
-  color: var(--lian-muted);
-  line-height: 1.6;
+.feed-view__sr-title {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
 }
 
 .feed-view__tabs {
-  display: flex;
-  gap: var(--space-2);
-  overflow-x: auto;
-  padding: 2px 0;
+  position: sticky;
+  top: calc(var(--space-2) + env(safe-area-inset-top));
+  z-index: 40;
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: var(--space-1);
+  padding: var(--space-2);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-sheet);
+  background: var(--glass-bg-strong);
+  box-shadow: var(--shadow-floating);
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
 }
 
 .feed-view__tab {
-  min-height: 36px;
-  padding: 0 var(--space-3);
-  border: 1px solid var(--glass-border);
+  min-height: 40px;
+  padding: 0 var(--space-2);
+  border: 0;
   border-radius: var(--radius-chip);
-  background: rgba(255, 255, 255, 0.54);
+  background: transparent;
   color: var(--lian-muted);
+  font-size: 13px;
   font-weight: 850;
   white-space: nowrap;
 }
@@ -266,10 +270,26 @@ onMounted(() => {
   color: #fff;
 }
 
-.feed-view__grid {
+.feed-view__tab--refresh {
+  grid-column: 1 / -1;
+  min-height: 36px;
+  background: rgba(255, 255, 255, 0.54);
+  color: var(--lian-primary-deep);
+}
+
+.feed-view__tab:disabled {
+  cursor: wait;
+  opacity: 0.6;
+}
+
+.feed-view__tab:focus-visible {
+  outline: 3px solid rgba(31, 167, 160, 0.32);
+  outline-offset: 2px;
+}
+
+.feed-view__list {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
-  gap: var(--space-4);
+  gap: var(--space-3);
 }
 
 .feed-view__state {
@@ -281,9 +301,16 @@ onMounted(() => {
   text-align: center;
 }
 
+.feed-view__state--empty {
+  border: 1px solid var(--lian-line);
+  border-radius: var(--radius-card);
+  background: var(--lian-card);
+}
+
 .feed-view__load-more {
   display: grid;
   place-items: center;
+  padding-bottom: var(--space-2);
   color: var(--lian-muted);
   font-size: 13px;
 }
@@ -302,5 +329,21 @@ onMounted(() => {
   background: rgba(255, 255, 255, 0.72);
   color: currentColor;
   font-weight: 900;
+}
+
+@media (min-width: 720px) {
+  .feed-view__tabs {
+    grid-template-columns: repeat(6, max-content) minmax(80px, 1fr);
+    justify-content: start;
+  }
+
+  .feed-view__tab {
+    padding: 0 var(--space-3);
+  }
+
+  .feed-view__tab--refresh {
+    grid-column: auto;
+    justify-self: end;
+  }
 }
 </style>
