@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue";
 import { fetchAuthRules, loginAuth, registerAuth, sendEmailCode } from "../../api/auth";
-import { InlineError, TrustBadge, TypeChip } from "../../ui";
+import { InlineError, TypeChip } from "../../ui";
 import type { AuthInterestOption, AuthMode } from "../../api/auth";
 import type { ProfileUser } from "../../types/profile";
 
@@ -125,7 +125,6 @@ onMounted(async () => {
         <TypeChip type="official">账号</TypeChip>
         <h3 id="auth-panel-title">登录 / 注册</h3>
       </div>
-      <TrustBadge tone="pending">Vue canary</TrustBadge>
     </div>
 
     <p>{{ note }}</p>
