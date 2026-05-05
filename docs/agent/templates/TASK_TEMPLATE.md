@@ -1,5 +1,22 @@
 # Task: <task-name>
 
+## Current source check
+
+Record the current sources checked before defining this task:
+
+- Current code on `main`:
+- Recent merged PRs checked:
+- Root `README.md` / `package.json` checked:
+- Relevant override files checked:
+  - `docs/agent/references/PR_DERIVED_STATUS_2026-05-05.md`
+  - `docs/agent/references/DECISIONS_OVERRIDE_2026-05-05.md`
+  - `docs/agent/references/ARCHITECTURE_WORKPLAN_OVERRIDE_2026-05-05.md`
+  - `docs/agent/references/TASK_BOARD_OVERRIDE_2026-05-05.md`
+  - `docs/agent/references/FILE_OWNERSHIP_OVERRIDE_2026-05-05.md`
+  - other relevant override files:
+
+If this task resumes an old task/handoff/contract, explain what was revalidated and what is stale.
+
 ## Goal
 
 One-sentence description of what this task achieves.
@@ -8,34 +25,43 @@ One-sentence description of what this task achieves.
 
 Which user or system flow does this task complete? What can the user do after this task that they cannot do before?
 
+## Repository and ownership scope
+
+- Repository: `lian-mobile-web`
+- Owned area: frontend runtime lanes / Vue canary / legacy-static rehearsal / task-board UI / frontend docs / other:
+- Backend/API/runtime changes required? If yes, create or reference a backend task in `lian-platform-server` instead of editing backend code here.
+
 ## Allowed files
 
-List every file this task may modify or create:
+List every file this task may modify or create. Use current repo ownership, not old split-era docs.
 
-- `src/server/example-service.js`
-- `scripts/example-script.js`
+- `src/...` or `public/...`
+- `scripts/...`
 - `docs/agent/tasks/<task-name>.md`
 
 ## Forbidden files
 
-List files this task must NOT touch, even if it seems convenient:
+List files this task must NOT touch, even if it seems convenient.
 
-- `public/app.js` (unless explicitly allowed)
-- `src/server/feed-service.js` (unless explicitly allowed)
+- Backend/API/runtime files in `lian-platform-server`
+- Runtime data files unless explicitly scoped and approved
+- Any file outside this task's allowed list
 
-## Data schema changes
+## Data or state changes
 
-Describe any changes to JSON data structures. If none, write "None."
+Describe frontend state, API payload, or persisted data implications. If none, write "None."
 
-- New fields added to `post-metadata.json`: ...
-- New JSONL file: `data/example.jsonl`
+Do not assume file-backed JSON is the current backend data model. If backend data changes are needed, reference the backend task.
 
-## API changes
+## API or contract changes
 
-Describe any new or modified endpoints. If none, write "None."
+Describe any new or modified API needs. If none, write "None."
 
-- `GET /api/example` — returns ...
-- `POST /api/example` — accepts ..., returns ...
+Before changing API assumptions, check:
+
+- current frontend callers;
+- current backend route registry/code;
+- `docs/agent/references/CONTRACTS_OVERRIDE_2026-05-05.md`.
 
 ## Acceptance criteria
 
@@ -45,21 +71,20 @@ Describe any new or modified endpoints. If none, write "None."
 
 ## Validation commands
 
-```bash
-node --check server.js
-node --check src/server/*.js
-```
-
-```powershell
-Get-ChildItem src/server/*.js | ForEach-Object { node --check $_.FullName }
-```
-
-If validation scripts exist:
+Use current `package.json` first. Example frontend checks:
 
 ```bash
-node scripts/validate-post-metadata.js
-node scripts/validate-locations.js
+npm run check
+npm run ops:guard
+npm run build
+npm run test
+npm run test:vue-canary
+npm run verify
 ```
+
+Add targeted browser/manual checks when UI behavior changes.
+
+If a referenced script does not exist, say so in the handoff and check current `package.json` before inventing replacements.
 
 ## Risks
 
@@ -72,4 +97,4 @@ How to undo this task if something goes wrong:
 
 - Revert commit ...
 - Remove file ...
-- Restore `data/...` from backup
+- Restore previous UI/runtime behavior ...
