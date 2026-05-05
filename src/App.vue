@@ -2,7 +2,7 @@
 import { ref } from "vue";
 import { BottomTabBar, ToastHost } from "./ui";
 import AppViewHost from "./app/AppViewHost.vue";
-import { appViews } from "./app/view-types";
+import { appViews, type AppViewKey } from "./app/view-types";
 import { useActiveView } from "./app/useActiveView";
 
 const { activeViewKey, setActiveView } = useActiveView();
@@ -14,9 +14,15 @@ const tabs = appViews.map((view) => ({
   icon: view.icon,
 }));
 
+function isAppViewKey(key: string): key is AppViewKey {
+  return appViews.some((view) => view.key === key);
+}
+
 function handleViewChange(key: string) {
   chromeHidden.value = false;
-  setActiveView(key);
+  if (isAppViewKey(key)) {
+    setActiveView(key);
+  }
 }
 </script>
 
