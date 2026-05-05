@@ -1,6 +1,6 @@
 # Agent Docs Index
 
-This directory is the working memory for Codex threads. Treat merged GitHub PRs and current code as more authoritative than older task-board or handoff text.
+This directory is the working memory for Codex threads. Treat merged GitHub PRs and current code as more authoritative than older task-board, decision, or handoff text.
 
 ## Current Source-Of-Truth Rule
 
@@ -9,17 +9,18 @@ When docs disagree, prefer this order:
 1. Current code on `main`.
 2. Merged GitHub PRs, especially newest PRs.
 3. `references/PR_DERIVED_STATUS_2026-05-05.md`.
-4. `references/ARCHITECTURE_WORKPLAN_OVERRIDE_2026-05-05.md` for architecture-planning conflict handling.
-5. `references/TASK_BOARD_OVERRIDE_2026-05-05.md` for active task-board interpretation.
-6. `references/FILE_OWNERSHIP_OVERRIDE_2026-05-05.md` for ownership conflict handling.
-7. `references/PROJECT_FILE_INDEX_OVERRIDE_2026-05-05.md` for file-index conflict handling.
-8. `references/DOC_REVIEW_FINDINGS_2026-05-05.md` for known stale-doc warnings.
-9. Latest handoff for the task area.
-10. Current task doc.
-11. `PROJECT_FILE_INDEX.md` as historical/structural context.
-12. Domain docs.
-13. `ARCHITECTURE_WORKPLAN.md`, `03_FILE_OWNERSHIP.md`, and `04_DECISIONS.md` as historical/planning context.
-14. Historical baseline/planning docs.
+4. `references/DECISIONS_OVERRIDE_2026-05-05.md` for decision-log conflict handling.
+5. `references/ARCHITECTURE_WORKPLAN_OVERRIDE_2026-05-05.md` for architecture-planning conflict handling.
+6. `references/TASK_BOARD_OVERRIDE_2026-05-05.md` for active task-board interpretation.
+7. `references/FILE_OWNERSHIP_OVERRIDE_2026-05-05.md` for ownership conflict handling.
+8. `references/PROJECT_FILE_INDEX_OVERRIDE_2026-05-05.md` for file-index conflict handling.
+9. `references/DOC_REVIEW_FINDINGS_2026-05-05.md` for known stale-doc warnings.
+10. Latest handoff for the task area.
+11. Current task doc.
+12. `PROJECT_FILE_INDEX.md` as historical/structural context.
+13. Domain docs.
+14. `ARCHITECTURE_WORKPLAN.md`, `03_FILE_OWNERSHIP.md`, and `04_DECISIONS.md` as historical/planning context.
+15. Historical baseline/planning docs.
 
 ## Thread Workflow
 
@@ -35,20 +36,21 @@ Do not treat executor handoffs as acceptance. A lane becomes accepted only when 
 Read these in order before starting implementation work:
 
 1. `references/PR_DERIVED_STATUS_2026-05-05.md` - newest PR-derived frontend/runtime status
-2. `references/ARCHITECTURE_WORKPLAN_OVERRIDE_2026-05-05.md` - current architecture-planning override
-3. `references/TASK_BOARD_OVERRIDE_2026-05-05.md` - current active task-board interpretation
-4. `references/FILE_OWNERSHIP_OVERRIDE_2026-05-05.md` - current ownership conflict handling
-5. `references/PROJECT_FILE_INDEX_OVERRIDE_2026-05-05.md` - current file-index conflict handling
-6. `references/DOC_REVIEW_FINDINGS_2026-05-05.md` - known stale-doc risks and cleanup recommendations
-7. `00_AGENT_RULES.md` - operating rules, validation, high-conflict files
-8. `ARCHITECTURE_WORKPLAN.md` - historical architecture direction; verify stale points against overrides and PRs
-9. `05_TASK_BOARD.md` - long task context; may contain older status and must be checked against PRs and override files
-10. `03_FILE_OWNERSHIP.md` - historical ownership/conflict context; check against ownership override before use
-11. `PROJECT_FILE_INDEX.md` - historical file index; check against override before use
-12. `04_DECISIONS.md` - recorded architecture/product decisions
-13. `domains/<area>.md` - domain context for the task area
-14. `tasks/<task>.md` - current task specification, if present
-15. `handoffs/<task>.md` - latest thread handoff, if present
+2. `references/DECISIONS_OVERRIDE_2026-05-05.md` - current decision-log override
+3. `references/ARCHITECTURE_WORKPLAN_OVERRIDE_2026-05-05.md` - current architecture-planning override
+4. `references/TASK_BOARD_OVERRIDE_2026-05-05.md` - current active task-board interpretation
+5. `references/FILE_OWNERSHIP_OVERRIDE_2026-05-05.md` - current ownership conflict handling
+6. `references/PROJECT_FILE_INDEX_OVERRIDE_2026-05-05.md` - current file-index conflict handling
+7. `references/DOC_REVIEW_FINDINGS_2026-05-05.md` - known stale-doc risks and cleanup recommendations
+8. `00_AGENT_RULES.md` - operating rules, validation, high-conflict files
+9. `ARCHITECTURE_WORKPLAN.md` - historical architecture direction; verify stale points against overrides and PRs
+10. `05_TASK_BOARD.md` - long task context; may contain older status and must be checked against PRs and override files
+11. `03_FILE_OWNERSHIP.md` - historical ownership/conflict context; check against ownership override before use
+12. `PROJECT_FILE_INDEX.md` - historical file index; check against override before use
+13. `04_DECISIONS.md` - historical decision context; check against decisions override before use
+14. `domains/<area>.md` - domain context for the task area
+15. `tasks/<task>.md` - current task specification, if present
+16. `handoffs/<task>.md` - latest thread handoff, if present
 
 ## Current Frontend Runtime Snapshot
 
@@ -82,6 +84,7 @@ Read `handoffs/README.md` for the normalized handoff list.
 ## References
 
 - `references/PR_DERIVED_STATUS_2026-05-05.md` - newest PR-derived status for the frontend repo
+- `references/DECISIONS_OVERRIDE_2026-05-05.md` - current decision override and conflict list
 - `references/ARCHITECTURE_WORKPLAN_OVERRIDE_2026-05-05.md` - current architecture override and conflict list
 - `references/TASK_BOARD_OVERRIDE_2026-05-05.md` - current active task-board override
 - `references/FILE_OWNERSHIP_OVERRIDE_2026-05-05.md` - current file ownership override and conflict list
