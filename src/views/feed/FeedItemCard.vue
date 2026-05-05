@@ -15,12 +15,13 @@ const emit = defineEmits<{
 
 const title = computed(() => props.item.title || "未命名内容");
 const coverUrl = computed(() => props.item.cover || "");
+const primaryTag = computed(() => props.item.primaryTag || "");
 const placeLabel = computed(() => props.item.locationArea || "校园");
 const author = computed(() => props.item.author || {
   nodebbUid: 0,
   displayName: "同学",
   avatarUrl: "",
-  identityTag: "校园身份",
+  identityTag: "",
   source: "fallback",
 });
 const authorName = computed(() => author.value.displayName || "同学");
@@ -85,8 +86,11 @@ function openCard() {
     @keydown.enter.prevent="openCard"
     @keydown.space.prevent="openCard"
   >
-    <img v-if="coverUrl" class="feed-item-card__cover" :src="coverUrl" :alt="title" loading="lazy" />
-    <div v-else class="feed-item-card__placeholder" aria-hidden="true">{{ typeLabel }}</div>
+    <div class="feed-item-card__media">
+      <img v-if="coverUrl" class="feed-item-card__cover" :src="coverUrl" :alt="title" loading="lazy" />
+      <div v-else class="feed-item-card__placeholder" aria-hidden="true">{{ typeLabel }}</div>
+      <span v-if="primaryTag" class="feed-item-card__floating-tag">{{ primaryTag }}</span>
+    </div>
 
     <div class="feed-item-card__body">
       <div class="feed-item-card__chips" aria-label="内容状态">
@@ -129,6 +133,11 @@ function openCard() {
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
 }
 
+.feed-item-card__media {
+  position: relative;
+  overflow: hidden;
+}
+
 .feed-item-card__cover,
 .feed-item-card__placeholder {
   width: 100%;
@@ -136,6 +145,7 @@ function openCard() {
 }
 
 .feed-item-card__cover {
+  display: block;
   aspect-ratio: 0.76;
   object-fit: cover;
 }
@@ -147,6 +157,25 @@ function openCard() {
   color: var(--lian-primary-deep);
   font-size: 13px;
   font-weight: 900;
+}
+
+.feed-item-card__floating-tag {
+  position: absolute;
+  top: var(--space-2);
+  left: var(--space-2);
+  max-width: calc(100% - var(--space-4));
+  overflow: hidden;
+  padding: 5px 8px;
+  border: 1px solid rgba(255, 255, 255, 0.54);
+  border-radius: var(--radius-chip);
+  background: rgba(17, 24, 39, 0.64);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 900;
+  line-height: 1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  backdrop-filter: blur(8px);
 }
 
 .feed-item-card__body {
