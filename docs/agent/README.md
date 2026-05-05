@@ -10,13 +10,14 @@ When docs disagree, prefer this order:
 2. Merged GitHub PRs, especially newest PRs.
 3. `references/PR_DERIVED_STATUS_2026-05-05.md`.
 4. `references/TASK_BOARD_OVERRIDE_2026-05-05.md` for active task-board interpretation.
-5. `references/DOC_REVIEW_FINDINGS_2026-05-05.md` for known stale-doc warnings.
-6. Latest handoff for the task area.
-7. Current task doc.
-8. `PROJECT_FILE_INDEX.md`.
-9. Domain docs.
-10. `ARCHITECTURE_WORKPLAN.md` and `04_DECISIONS.md`.
-11. Historical baseline/planning docs.
+5. `references/PROJECT_FILE_INDEX_OVERRIDE_2026-05-05.md` for file-index conflict handling.
+6. `references/DOC_REVIEW_FINDINGS_2026-05-05.md` for known stale-doc warnings.
+7. Latest handoff for the task area.
+8. Current task doc.
+9. `PROJECT_FILE_INDEX.md` as historical/structural context.
+10. Domain docs.
+11. `ARCHITECTURE_WORKPLAN.md` and `04_DECISIONS.md`.
+12. Historical baseline/planning docs.
 
 ## Thread Workflow
 
@@ -33,16 +34,17 @@ Read these in order before starting implementation work:
 
 1. `references/PR_DERIVED_STATUS_2026-05-05.md` - newest PR-derived frontend/runtime status
 2. `references/TASK_BOARD_OVERRIDE_2026-05-05.md` - current active task-board interpretation
-3. `references/DOC_REVIEW_FINDINGS_2026-05-05.md` - known stale-doc risks and cleanup recommendations
-4. `00_AGENT_RULES.md` - operating rules, validation, high-conflict files
-5. `ARCHITECTURE_WORKPLAN.md` - architecture direction and work organization; verify stale points against PRs
-6. `05_TASK_BOARD.md` - long task context; may contain older status and must be checked against PRs and override files
-7. `03_FILE_OWNERSHIP.md` - ownership and conflict boundaries
-8. `PROJECT_FILE_INDEX.md` - file index with status, owner, repo split destination
-9. `04_DECISIONS.md` - recorded architecture/product decisions
-10. `domains/<area>.md` - domain context for the task area
-11. `tasks/<task>.md` - current task specification, if present
-12. `handoffs/<task>.md` - latest thread handoff, if present
+3. `references/PROJECT_FILE_INDEX_OVERRIDE_2026-05-05.md` - current file-index conflict handling
+4. `references/DOC_REVIEW_FINDINGS_2026-05-05.md` - known stale-doc risks and cleanup recommendations
+5. `00_AGENT_RULES.md` - operating rules, validation, high-conflict files
+6. `ARCHITECTURE_WORKPLAN.md` - architecture direction and work organization; verify stale points against PRs
+7. `05_TASK_BOARD.md` - long task context; may contain older status and must be checked against PRs and override files
+8. `03_FILE_OWNERSHIP.md` - ownership and conflict boundaries
+9. `PROJECT_FILE_INDEX.md` - historical file index; check against override before use
+10. `04_DECISIONS.md` - recorded architecture/product decisions
+11. `domains/<area>.md` - domain context for the task area
+12. `tasks/<task>.md` - current task specification, if present
+13. `handoffs/<task>.md` - latest thread handoff, if present
 
 ## Current Frontend Runtime Snapshot
 
@@ -77,6 +79,7 @@ Read `handoffs/README.md` for the normalized handoff list.
 
 - `references/PR_DERIVED_STATUS_2026-05-05.md` - newest PR-derived status for the frontend repo
 - `references/TASK_BOARD_OVERRIDE_2026-05-05.md` - current active task-board override
+- `references/PROJECT_FILE_INDEX_OVERRIDE_2026-05-05.md` - current file-index override and conflict list
 - `references/DOC_REVIEW_FINDINGS_2026-05-05.md` - documentation review findings and stale-doc warning list
 - `../design/LIAN-Campus-UI-UX-Guidelines-V0.1.md` - LIAN Campus UI / UX Guidelines V0.1
 - `references/GITHUB_RECENT_UPDATES_2026-05-05.md` - repo-split and GitHub orientation note
