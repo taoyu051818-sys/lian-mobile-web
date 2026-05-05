@@ -3,7 +3,7 @@ import { computed, onMounted, ref } from "vue";
 import { fetchMapV2Items } from "../api/map";
 import { buildPublishPayload, createMapV2LocationDraft, normalizePublishTags, publishPost, uploadPublishImage } from "../api/publish";
 import { fetchAuthMe } from "../api/profile";
-import { GlassPanel, IdentityBadge, InlineError, LianButton, LocationChip, TagChip, TrustBadge, TypeChip } from "../ui";
+import { GlassPanel, IdentityBadge, InlineError, LianButton, LocationChip, TagChip } from "../ui";
 import type { MapLocation } from "../types/map";
 import type { PublishLocationDraft, PublishVisibility } from "../types/publish";
 
@@ -57,17 +57,12 @@ const selectedLocationDraft = computed<PublishLocationDraft | null>(() => {
   });
 });
 const locationPreviewLabel = computed(() => selectedMapLocation.value?.name || placeName.value.trim() || "未绑定地点");
-const locationPreviewHelp = computed(() => {
-  if (selectedMapLocation.value) return "已绑定 MapV2 地点，会携带 locationId 和经纬度进入地图/地点沉淀";
-  if (placeName.value.trim()) return "使用手填地点，会进入地图/地点沉淀但没有经纬度";
-  return "不绑定地点，只进入首页/搜索/详情";
-});
 
-const visibilityOptions: Array<{ value: PublishVisibility; label: string; helper: string }> = [
-  { value: "public", label: "公开", helper: "进入首页、搜索和详情" },
-  { value: "campus", label: "校园", helper: "校园范围可见" },
-  { value: "school", label: "本校", helper: "本校范围可见" },
-  { value: "private", label: "仅自己", helper: "先作为个人记录" },
+const visibilityOptions: Array<{ value: PublishVisibility; label: string }> = [
+  { value: "public", label: "公开" },
+  { value: "campus", label: "校园" },
+  { value: "school", label: "本校" },
+  { value: "private", label: "仅自己" },
 ];
 
 async function loadIdentity() {
@@ -217,18 +212,8 @@ onMounted(() => {
 </script>
 
 <template>
-  <section class="publish-view" aria-labelledby="publish-view-title">
+  <section class="publish-view" aria-label="发布">
     <GlassPanel class="publish-view__card">
-      <header class="publish-view__header">
-        <div>
-          <TypeChip type="contribution">发布</TypeChip>
-          <h2 id="publish-view-title">发布到 LIAN</h2>
-        </div>
-        <TrustBadge tone="pending">Vue canary</TrustBadge>
-      </header>
-
-      <p class="publish-view__intro">快速发布闭环继续增强：当前支持手动发布、图片上传和 MapV2 地点绑定；AI 草稿后续补齐。</p>
-
       <section class="publish-view__identity" aria-label="当前发布身份">
         <IdentityBadge :avatar-text="avatarText" :label="identityName" :meta="identityMeta" />
       </section>
@@ -267,7 +252,7 @@ onMounted(() => {
         <section class="publish-view__section publish-view__map-picker" aria-labelledby="publish-map-title">
           <div class="publish-view__section-title">
             <strong id="publish-map-title">地图地点</strong>
-            <span>{{ selectedMapLocation ? '已绑定 MapV2' : '可选' }}</span>
+            <span>{{ selectedMapLocation ? '已绑定' : '可选' }}</span>
           </div>
 
           <label class="publish-view__field publish-view__map-search">
@@ -280,8 +265,8 @@ onMounted(() => {
             <button type="button" @click="loadMapLocations">重新加载</button>
           </InlineError>
 
-          <div v-if="mapLocationLoading" class="publish-view__mini-state" role="status">正在加载 MapV2 地点…</div>
-          <div v-else-if="filteredMapLocations.length" class="publish-view__map-locations" aria-label="MapV2 地点列表">
+          <div v-if="mapLocationLoading" class="publish-view__mini-state" role="status">正在加载地点…</div>
+          <div v-else-if="filteredMapLocations.length" class="publish-view__map-locations" aria-label="地点列表">
             <button
               v-for="location in filteredMapLocations"
               :key="location.id"
@@ -298,7 +283,6 @@ onMounted(() => {
 
           <div v-if="selectedMapLocation" class="publish-view__map-selected">
             <LocationChip>{{ selectedMapLocation.name }}</LocationChip>
-            <span>{{ selectedMapLocation.lat.toFixed(5) }}, {{ selectedMapLocation.lng.toFixed(5) }}</span>
             <LianButton type="button" size="sm" variant="ghost" @click="clearMapLocation">改用手填</LianButton>
           </div>
         </section>
@@ -310,7 +294,6 @@ onMounted(() => {
 
         <div class="publish-view__location-preview">
           <LocationChip>{{ locationPreviewLabel }}</LocationChip>
-          <span>{{ locationPreviewHelp }}</span>
         </div>
 
         <label class="publish-view__field">
@@ -325,7 +308,7 @@ onMounted(() => {
         <section class="publish-view__section" aria-labelledby="publish-visibility-title">
           <div class="publish-view__section-title">
             <strong id="publish-visibility-title">可见范围</strong>
-            <span>{{ visibility }}</span>
+            <span>{{ visibilityOptions.find((item) => item.value === visibility)?.label }}</span>
           </div>
           <div class="publish-view__visibility-grid">
             <button
@@ -337,7 +320,6 @@ onMounted(() => {
               @click="visibility = option.value"
             >
               <strong>{{ option.label }}</strong>
-              <span>{{ option.helper }}</span>
             </button>
           </div>
         </section>
@@ -360,7 +342,6 @@ onMounted(() => {
   gap: var(--space-4);
 }
 
-.publish-view__header,
 .publish-view__section-title,
 .publish-view__actions,
 .publish-view__location-preview,
@@ -373,14 +354,11 @@ onMounted(() => {
   justify-content: space-between;
 }
 
-.publish-view h2,
 .publish-view p {
   margin: 0;
 }
 
-.publish-view__intro,
 .publish-view__section-title span,
-.publish-view__location-preview span,
 .publish-view__map-selected span {
   color: var(--lian-muted);
   line-height: 1.6;
@@ -542,32 +520,27 @@ onMounted(() => {
 }
 
 .publish-view__tags,
-.publish-view__actions {
+.publish-view__actions,
+.publish-view__location-preview {
   justify-content: flex-start;
 }
 
 .publish-view__visibility-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: var(--space-2);
 }
 
 .publish-view__visibility {
   display: grid;
-  gap: 4px;
-  min-height: 72px;
-  padding: var(--space-3);
+  min-height: 48px;
+  place-items: center;
+  padding: var(--space-2);
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-card);
   background: rgba(255, 255, 255, 0.54);
   color: var(--lian-ink);
-  text-align: left;
-}
-
-.publish-view__visibility span {
-  color: var(--lian-muted);
-  font-size: 12px;
-  line-height: 1.4;
+  text-align: center;
 }
 
 .publish-view__visibility.is-active {
@@ -587,7 +560,7 @@ onMounted(() => {
 
 @media (max-width: 640px) {
   .publish-view__visibility-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 </style>
