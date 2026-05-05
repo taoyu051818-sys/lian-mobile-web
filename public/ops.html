@@ -32,7 +32,7 @@
       <p class="muted">受 ADMIN_TOKEN 保护的运维台。操作按钮只触发固定白名单动作，不支持输入任意命令。</p>
       <div class="ops-row">
         <label for="adminToken">ADMIN_TOKEN</label>
-        <input id="adminToken" type="password" autocomplete="current-password" placeholder="输入后仅保存在当前浏览器 localStorage">
+        <input id="adminToken" type="password" autocomplete="current-password" placeholder="输入后仅保存在当前浏览器会话">
       </div>
       <div class="ops-row">
         <label for="publicBase">公网入口</label>
@@ -54,6 +54,8 @@
         <button data-action="update-frontend">更新并重启前端</button>
         <button data-action="update-backend">更新并重启后端</button>
         <button class="danger" data-action="update-all">更新并重启全部</button>
+        <button class="secondary" data-action="set-security-development">切换开发模式</button>
+        <button class="danger" data-action="set-security-production">切换生产模式</button>
       </div>
       <p id="actionStatus" class="status muted">未触发动作</p>
     </section>
