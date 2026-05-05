@@ -8,18 +8,7 @@ import type { PostDetail } from "../types/post";
 import FeedItemCard from "./feed/FeedItemCard.vue";
 import PostDetailPanel from "./detail/PostDetailPanel.vue";
 
-const DEFAULT_TABS = ["推荐", "热帖", "经验", "讨论", "饭堂", "附近"];
-const LEGACY_TAB_LABELS: Record<string, string> = {
-  此刻: "推荐",
-  精选: "热帖",
-  校园活动: "经验",
-  报名机会: "讨论",
-  图书馆学习: "附近",
-  周边玩乐: "附近",
-  安全通知: "讨论",
-  试验区社团: "经验",
-  美食菜单: "饭堂",
-};
+const DEFAULT_TABS = ["此刻", "精选"];
 const PAGE_SIZE = 12;
 
 const tabs = ref<string[]>(DEFAULT_TABS);
@@ -36,15 +25,6 @@ const detailLoading = ref(false);
 const detailError = ref("");
 
 const isEmpty = computed(() => !loading.value && !errorMessage.value && items.value.length === 0);
-
-function normalizeTabs(rawTabs?: string[]) {
-  const labels = (rawTabs?.length ? rawTabs : DEFAULT_TABS)
-    .map((tab) => LEGACY_TAB_LABELS[tab] || tab)
-    .filter((tab) => DEFAULT_TABS.includes(tab));
-  return Array.from(new Set(labels)).slice(0, DEFAULT_TABS.length).concat(
-    DEFAULT_TABS.filter((tab) => !labels.includes(tab)),
-  ).slice(0, DEFAULT_TABS.length);
-}
 
 function readHistoryQuery() {
   try {
@@ -88,7 +68,7 @@ async function loadFeed(reset = false) {
       read: readHistoryQuery(),
     });
 
-    tabs.value = normalizeTabs(response.tabs);
+    tabs.value = response.tabs?.length ? response.tabs : DEFAULT_TABS;
     const nextItems = response.items || [];
     items.value = reset ? nextItems : [...items.value, ...nextItems];
     hasMore.value = Boolean(response.hasMore);
@@ -157,7 +137,7 @@ onMounted(() => {
   <section class="feed-view" aria-labelledby="feed-view-title">
     <h1 id="feed-view-title" class="feed-view__sr-title">首页</h1>
 
-    <nav class="feed-view__tabs" aria-label="Feed 分类">
+    <nav class="feed-view__tabs" aria-label="信息分类">
       <button
         v-for="tab in tabs"
         :key="tab"
@@ -222,6 +202,7 @@ onMounted(() => {
 .feed-view {
   display: grid;
   gap: var(--space-3);
+  padding-top: calc(58px + env(safe-area-inset-top));
 }
 
 .feed-view__sr-title {
@@ -234,23 +215,33 @@ onMounted(() => {
 }
 
 .feed-view__tabs {
-  position: sticky;
+  position: fixed;
   top: calc(var(--space-2) + env(safe-area-inset-top));
-  z-index: 40;
-  display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
+  right: max(var(--space-3), env(safe-area-inset-right));
+  left: max(var(--space-3), env(safe-area-inset-left));
+  z-index: 70;
+  display: flex;
   gap: var(--space-1);
+  width: min(calc(100vw - var(--space-6)), 760px);
+  margin: 0 auto;
   padding: var(--space-2);
+  overflow-x: auto;
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-sheet);
   background: var(--glass-bg-strong);
   box-shadow: var(--shadow-floating);
   backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  scrollbar-width: none;
+}
+
+.feed-view__tabs::-webkit-scrollbar {
+  display: none;
 }
 
 .feed-view__tab {
+  flex: 0 0 auto;
   min-height: 40px;
-  padding: 0 var(--space-2);
+  padding: 0 var(--space-3);
   border: 0;
   border-radius: var(--radius-chip);
   background: transparent;
@@ -317,16 +308,5 @@ onMounted(() => {
   background: rgba(255, 255, 255, 0.72);
   color: currentColor;
   font-weight: 900;
-}
-
-@media (min-width: 720px) {
-  .feed-view__tabs {
-    grid-template-columns: repeat(6, max-content);
-    justify-content: start;
-  }
-
-  .feed-view__tab {
-    padding: 0 var(--space-3);
-  }
 }
 </style>
