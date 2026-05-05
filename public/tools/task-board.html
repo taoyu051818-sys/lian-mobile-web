@@ -3,17 +3,21 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>LIAN Task Board</title>
+    <title>LIAN Development Progress</title>
     <link rel="stylesheet" href="/tools/task-board.css">
   </head>
   <body>
     <div class="shell">
       <header class="topbar">
-        <h1>LIAN Task Board</h1>
+        <div>
+          <h1>LIAN Development Progress</h1>
+          <div class="subtitle">自动从项目任务板识别开发分组、近期速度、进度和排期</div>
+        </div>
         <div class="counts">
           <span>Total: <span class="count-val" id="countTotal">0</span></span>
           <span>Blocked: <span class="count-val" id="countBlocked">0</span></span>
           <span>Human: <span class="count-val" id="countHuman">0</span></span>
+          <span>Ready: <span class="count-val" id="countReady">0</span></span>
         </div>
         <div class="queue-summary" id="queueSummary"></div>
       </header>
@@ -21,13 +25,41 @@
       <aside class="sidebar" id="sidebar"></aside>
 
       <section class="main">
+        <section class="dashboard" aria-label="Development dashboard">
+          <div class="metric-grid" id="metricGrid"></div>
+          <div class="dashboard-grid">
+            <article class="panel panel-wide">
+              <div class="panel-head">
+                <h2>自动工作流分组</h2>
+                <span class="panel-note">按任务标题、文档路径和正文关键词自动归类</span>
+              </div>
+              <div class="workstream-grid" id="workstreamGrid"></div>
+            </article>
+            <article class="panel">
+              <div class="panel-head">
+                <h2>最近开发速度</h2>
+                <span class="panel-note" id="recentWindowLabel">最近窗口</span>
+              </div>
+              <div class="recent-list" id="recentList"></div>
+            </article>
+          </div>
+          <article class="panel">
+            <div class="panel-head">
+              <h2>排期 / 等待开发 / 复核队列</h2>
+              <span class="panel-note">用于判断下一步应该推进哪里</span>
+            </div>
+            <div class="lane-board" id="laneBoard"></div>
+          </article>
+        </section>
+
         <table class="task-table">
           <thead>
             <tr>
               <th data-sort="title">Title <span class="sort-arrow">&#x25B4;</span></th>
+              <th data-sort="workstream">Workstream <span class="sort-arrow">&#x25B4;</span></th>
               <th data-sort="status">Status <span class="sort-arrow">&#x25B4;</span></th>
               <th data-sort="priority">Priority <span class="sort-arrow">&#x25B4;</span></th>
-              <th data-sort="category">Category <span class="sort-arrow">&#x25B4;</span></th>
+              <th data-sort="latestDate">Latest <span class="sort-arrow">&#x25B4;</span></th>
               <th data-sort="humanAssisted">Human <span class="sort-arrow">&#x25B4;</span></th>
             </tr>
           </thead>
