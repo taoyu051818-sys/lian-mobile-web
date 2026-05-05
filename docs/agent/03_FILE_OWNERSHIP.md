@@ -1,5 +1,8 @@
 # File Ownership and Conflict Levels
 
+> [!WARNING]
+> Historical / superseded ownership context as of 2026-05-05. Do not use this file as the current file ownership source. Start from `docs/agent/README.md`, `docs/agent/references/PR_DERIVED_STATUS_2026-05-05.md`, and `docs/agent/references/FILE_OWNERSHIP_OVERRIDE_2026-05-05.md` before using the material below.
+
 ## Conflict level definitions
 
 - **hard-lock**: only the designated owner should modify. Other contributors must get owner review before merge.
