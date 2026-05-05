@@ -1,10 +1,8 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
 import { reportPost, sendPostReply, togglePostLike, togglePostSave } from "../../api/posts";
-import { GlassPanel, IdentityBadge, InlineError, LianButton, LocationChip, TypeChip } from "../../ui";
+import { GlassPanel, IdentityBadge, InlineError, LianButton, LocationChip } from "../../ui";
 import type { PostDetail } from "../../types/post";
-
-type TypeTone = "experience" | "discussion" | "hot" | "food" | "place" | "ai" | "official" | "trade" | "contribution" | "default";
 
 const props = withDefaults(defineProps<{
   post: PostDetail | null;
@@ -51,33 +49,6 @@ const replies = computed(() => props.post?.replies || []);
 const images = computed(() => {
   const urls = [props.post?.cover || "", ...(props.post?.imageUrls || [])].filter(Boolean);
   return Array.from(new Set(urls)).slice(0, 8);
-});
-
-const typeTone = computed<TypeTone>(() => {
-  const raw = String(props.post?.contentType || "").toLowerCase();
-  if (raw.includes("food") || raw.includes("食") || raw.includes("饭")) return "food";
-  if (raw.includes("place") || raw.includes("map") || raw.includes("地点")) return "place";
-  if (raw.includes("ai")) return "ai";
-  if (raw.includes("official") || raw.includes("官方")) return "official";
-  if (raw.includes("trade") || raw.includes("二手")) return "trade";
-  if (raw.includes("discussion") || raw.includes("问") || raw.includes("讨论")) return "discussion";
-  return "experience";
-});
-
-const typeLabel = computed(() => {
-  const labels: Record<TypeTone, string> = {
-    experience: "经验",
-    discussion: "讨论",
-    hot: "热帖",
-    food: "饭堂",
-    place: "地点",
-    ai: "AI整理",
-    official: "官方",
-    trade: "互助",
-    contribution: "贡献",
-    default: "内容",
-  };
-  return labels[typeTone.value] || "内容";
 });
 
 const statLine = computed(() => `${formatRelativeTime(props.post?.timestampISO || "") || props.post?.timeLabel || "刚刚"} · ${replies.value.length} 回复 · ${likeCount.value} 喜欢`);
@@ -201,7 +172,7 @@ async function submitReply() {
   <GlassPanel class="post-detail-panel" as="aside" aria-labelledby="post-detail-title">
     <header class="post-detail-panel__header">
       <div class="post-detail-panel__title">
-        <TypeChip :type="typeTone">{{ typeLabel }}</TypeChip>
+        <LocationChip>{{ placeLabel }}</LocationChip>
         <h2 id="post-detail-title">{{ title }}</h2>
       </div>
       <button class="post-detail-panel__close" type="button" aria-label="关闭详情" @click="emit('close')">×</button>
@@ -217,10 +188,6 @@ async function submitReply() {
     </InlineError>
 
     <template v-else-if="post">
-      <div class="post-detail-panel__chips">
-        <LocationChip>{{ placeLabel }}</LocationChip>
-      </div>
-
       <section v-if="images.length" class="post-detail-panel__gallery" aria-label="图片">
         <img v-for="url in images" :key="url" :src="url" :alt="title" loading="lazy" />
       </section>
@@ -268,8 +235,7 @@ async function submitReply() {
             <strong>{{ reply.author || "同学" }}</strong>
             <span>{{ formatRelativeTime(reply.timestampISO) }}</span>
           </div>
-          <div v-if="reply.content" class="lian-html" v-html="reply.content"></div>
-          <p v-else>这条回复暂时没有内容。</p>
+          <p>{{ reply.content || "这条回复暂时没有内容。" }}</p>
         </article>
         <p v-if="!replies.length" class="post-detail-panel__empty">还没有回复，来写第一条。</p>
 
@@ -292,7 +258,6 @@ async function submitReply() {
 }
 
 .post-detail-panel__header,
-.post-detail-panel__chips,
 .post-detail-panel__actions,
 .post-detail-panel__section-title,
 .post-detail-panel__reply-meta {
