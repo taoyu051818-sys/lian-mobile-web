@@ -140,14 +140,16 @@ function showActionError(error: unknown, fallback: string) {
 
 async function handleShare() {
   const shareUrl = typeof window !== "undefined" ? window.location.href : "";
+  const browserNavigator = typeof navigator !== "undefined" ? navigator : null;
   const data = { title: title.value, text: title.value, url: shareUrl };
   try {
-    if (typeof navigator !== "undefined" && "share" in navigator) {
-      await navigator.share(data);
+    if (browserNavigator && "share" in browserNavigator && typeof browserNavigator.share === "function") {
+      await browserNavigator.share(data);
       return;
     }
-    if (navigator.clipboard && shareUrl) {
-      await navigator.clipboard.writeText(shareUrl);
+    const clipboard = browserNavigator?.clipboard;
+    if (clipboard && shareUrl) {
+      await clipboard.writeText(shareUrl);
       showActionMessage("链接已复制");
     }
   } catch {
