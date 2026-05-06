@@ -2,7 +2,8 @@
 import { computed, ref, watch } from "vue";
 import { reportPost, sendPostReply, togglePostLike, togglePostSave } from "../../api/posts";
 import { InlineError, LianButton } from "../../ui";
-import type { PostDetail } from "../../types/post";
+import type { DisplayActor } from "../../types/feed";
+import type { PostDetail, PostReply } from "../../types/post";
 
 const props = withDefaults(defineProps<{
   post: PostDetail | null;
@@ -44,9 +45,9 @@ const replyContent = ref("");
 
 const postId = computed(() => props.post?.tid ?? null);
 const title = computed(() => props.post?.title || "帖子详情");
-const authorLabel = computed(() => props.post?.author || "同学");
-const authorAvatarUrl = computed(() => props.post?.authorAvatarUrl || "");
-const authorInitial = computed(() => authorLabel.value.slice(0, 1) || "同");
+const authorLabel = computed(() => actorDisplayName(props.post?.actor, props.post?.author));
+const authorAvatarUrl = computed(() => actorAvatarUrl(props.post?.actor, props.post?.authorAvatarUrl));
+const authorInitial = computed(() => actorAvatarText(props.post?.actor, authorLabel.value));
 const placeLabel = computed(() => props.post?.locationArea || "");
 const primaryTag = computed(() => normalizePostTag(props.post?.primaryTag || ""));
 const rawBodyHtml = computed(() => props.post?.contentHtml || "");
@@ -72,6 +73,22 @@ watch(() => props.post, (post) => {
 watch(fullResolutionImages, (urls) => {
   preloadImages(urls);
 }, { immediate: true });
+
+function actorDisplayName(actor?: DisplayActor | null, fallback = "") {
+  return actor?.displayName || actor?.username || actor?.name || fallback || "同学";
+}
+
+function actorAvatarUrl(actor?: DisplayActor | null, fallback = "") {
+  return actor?.avatarUrl || fallback || "";
+}
+
+function actorAvatarText(actor?: DisplayActor | null, labelFallback = "") {
+  return actor?.avatarText || actorDisplayName(actor, labelFallback).slice(0, 1) || "同";
+}
+
+function replyAuthorLabel(reply: PostReply) {
+  return actorDisplayName(reply.actor, reply.author);
+}
 
 function normalizePostTag(value: string) {
   const text = String(value || "").trim().replace(/^#+/, "");
@@ -355,7 +372,7 @@ async function submitReply() {
           </div>
           <article v-for="reply in replies" :key="String(reply.id)" class="post-detail-panel__reply">
             <div class="post-detail-panel__reply-meta">
-              <strong>{{ reply.author || "同学" }}</strong>
+              <strong>{{ replyAuthorLabel(reply) }}</strong>
               <span>{{ formatRelativeTime(reply.timestampISO) }}</span>
             </div>
             <div class="post-detail-panel__reply-content" v-html="stripDecorativeContentFromHtml(reply.content || '这条回复暂时没有内容。')"></div>
