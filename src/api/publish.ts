@@ -63,11 +63,11 @@ export function createMapV2LocationDraft(input: {
   note?: string;
 }): PublishLocationDraft {
   const name = input.name.trim();
-  const placeId = input.place?.id || input.placeId || input.locationId;
+  const placeId = input.place?.id || input.placeId || "";
   return {
     source: "map_v2",
     locationId: input.locationId,
-    placeId,
+    placeId: placeId || undefined,
     place: input.place || (placeId ? { id: placeId, name, type: undefined } : undefined),
     locationArea: name,
     displayName: name,
