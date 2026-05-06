@@ -54,8 +54,8 @@ const placeSheetError = ref("");
 
 const postId = computed(() => props.post?.tid ?? null);
 const title = computed(() => props.post?.title || "帖子详情");
-const authorLabel = computed(() => actorDisplayName(props.post?.actor, props.post?.author));
-const authorAvatarUrl = computed(() => actorAvatarUrl(props.post?.actor, props.post?.authorAvatarUrl));
+const authorLabel = computed(() => actorDisplayName(props.post?.actor));
+const authorAvatarUrl = computed(() => actorAvatarUrl(props.post?.actor));
 const authorInitial = computed(() => actorAvatarText(props.post?.actor, authorLabel.value));
 const structuredPlace = computed(() => props.post?.place || null);
 const placeLabel = computed(() => structuredPlace.value?.name || props.post?.locationArea || "");
@@ -90,20 +90,20 @@ watch(fullResolutionImages, (urls) => {
   preloadImages(urls);
 }, { immediate: true });
 
-function actorDisplayName(actor?: DisplayActor | null, fallback = "") {
-  return actor?.displayName || actor?.username || actor?.name || fallback || "同学";
+function actorDisplayName(actor?: DisplayActor | null) {
+  return actor?.displayName || actor?.username || actor?.name || "同学";
 }
 
-function actorAvatarUrl(actor?: DisplayActor | null, fallback = "") {
-  return actor?.avatarUrl || fallback || "";
+function actorAvatarUrl(actor?: DisplayActor | null) {
+  return actor?.avatarUrl || "";
 }
 
 function actorAvatarText(actor?: DisplayActor | null, labelFallback = "") {
-  return actor?.avatarText || actorDisplayName(actor, labelFallback).slice(0, 1) || "同";
+  return actor?.avatarText || labelFallback.slice(0, 1) || actorDisplayName(actor).slice(0, 1) || "同";
 }
 
 function replyAuthorLabel(reply: PostReply) {
-  return actorDisplayName(reply.actor, reply.author);
+  return actorDisplayName(reply.actor);
 }
 
 function normalizePostTag(value: string) {
@@ -202,7 +202,7 @@ function placeStatusLabel(status?: PlaceStatus) {
 }
 
 function placeRecentPostActorLabel(actor?: DisplayActor) {
-  return actorDisplayName(actor, "同学");
+  return actorDisplayName(actor);
 }
 
 function showActionMessage(message: string) {

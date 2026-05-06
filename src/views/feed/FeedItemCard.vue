@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, watch } from "vue";
 import { togglePostLike } from "../../api/posts";
-import type { DisplayActor, FeedItem, FeedItemId } from "../../types/feed";
+import type { FeedItem, FeedItemId } from "../../types/feed";
 
 type CardTemplate = "image" | "text" | "activity" | "place" | "merchant" | "help";
 
@@ -34,7 +34,7 @@ const coverUrl = computed(() => props.item.cover || "");
 const primaryTag = computed(() => props.item.primaryTag || "");
 const placeLabel = computed(() => props.item.locationArea || "校园");
 const timeLabel = computed(() => props.item.timeLabel || "刚刚");
-const actor = computed<DisplayActor>(() => props.item.actor || props.item.author || {});
+const actor = computed(() => props.item.actor || {});
 const authorName = computed(() => actor.value.displayName || actor.value.username || actor.value.name || "同学");
 const authorAvatarUrl = computed(() => actor.value.avatarUrl || "");
 const authorInitial = computed(() => actor.value.avatarText || authorName.value.slice(0, 1) || "同");
