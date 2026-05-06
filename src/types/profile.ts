@@ -6,6 +6,12 @@ export interface ProfileAlias {
   id: string;
   name: string;
   avatarUrl?: string;
+  category?: string;
+  categoryLabel?: string;
+  description?: string;
+  persona?: string;
+  identitySignal?: string;
+  status?: string;
 }
 
 export interface ProfileUser {
