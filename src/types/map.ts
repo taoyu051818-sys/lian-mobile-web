@@ -1,4 +1,5 @@
 import type { FeedItemId } from "./feed";
+import type { PlaceRef } from "./place";
 
 export interface MapBounds {
   south: number;
@@ -63,6 +64,8 @@ export interface MapLocation {
   id: string;
   name: string;
   type?: string;
+  placeId?: string;
+  place?: PlaceRef;
   lat: number;
   lng: number;
   icon?: MapLocationIcon;
