@@ -37,6 +37,58 @@
     opacity 120ms ease !important;
 }
 
+.feed-view__card-transition::before,
+.feed-view__card-transition::after {
+  position: absolute;
+  z-index: 4;
+  border: 1px solid rgba(255, 255, 255, 0.58);
+  box-shadow: 0 8px 24px rgba(15, 23, 20, 0.12);
+  opacity: 0;
+  pointer-events: none;
+  backdrop-filter: blur(12px);
+  transition:
+    transform 280ms var(--card-camera-ease),
+    opacity 180ms ease,
+    width 280ms var(--card-camera-ease),
+    height 280ms var(--card-camera-ease),
+    border-radius 280ms var(--card-camera-ease);
+}
+
+.feed-view__card-transition::before {
+  content: "刚刚 · 校园";
+  right: var(--space-4);
+  bottom: calc(var(--space-4) + 104px);
+  display: grid;
+  min-width: 88px;
+  min-height: 30px;
+  place-items: center;
+  padding: 0 10px;
+  border-radius: var(--radius-chip);
+  background: rgba(255, 255, 255, 0.78);
+  color: var(--lian-muted);
+  font-size: 11px;
+  font-weight: 900;
+  transform: translate3d(0, -42px, 0) scale(0.92);
+}
+
+.feed-view__card-transition::after {
+  content: "写回复";
+  right: var(--space-4);
+  bottom: var(--space-4);
+  left: var(--space-4);
+  display: flex;
+  height: 40px;
+  align-items: center;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-chip);
+  background: rgba(255, 255, 255, 0.82);
+  color: var(--lian-muted);
+  font-size: 13px;
+  font-weight: 850;
+  transform: translate3d(0, 28px, 0) scaleX(0.82);
+  transform-origin: center bottom;
+}
+
 .feed-view__card-transition.is-active {
   top: 50svh !important;
   left: 50vw !important;
@@ -47,6 +99,18 @@
   opacity: 1 !important;
   filter: none !important;
   transform: translate3d(-50%, -50%, 0) scale(1) !important;
+}
+
+.feed-view__card-transition.is-active::before {
+  opacity: 1;
+  transform: translate3d(0, 0, 0) scale(1);
+}
+
+.feed-view__card-transition.is-active::after {
+  height: 46px;
+  opacity: 1;
+  transform: translate3d(0, 0, 0) scaleX(1);
+  transition-delay: 110ms;
 }
 
 .feed-view__card-transition img {
@@ -69,15 +133,15 @@
   z-index: 2 !important;
   grid-row: 2 / 3 !important;
   align-self: auto !important;
-  min-height: 92px !important;
-  padding: var(--space-4) var(--space-4) calc(var(--space-4) + 4px) !important;
+  min-height: 146px !important;
+  padding: var(--space-4) var(--space-4) calc(var(--space-8) + 24px) !important;
   color: var(--lian-ink) !important;
   font-size: clamp(18px, 5vw, 24px) !important;
   line-height: 1.28 !important;
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.72), rgba(255, 255, 255, 0.96)) !important;
   transform: translate3d(0, 8px, 0) !important;
   opacity: 0.82 !important;
-  transition: transform 300ms var(--card-camera-ease), opacity 220ms ease !important;
+  transition: transform 300ms var(--card-camera-ease), opacity 220ms ease, min-height 280ms var(--card-camera-ease), padding 280ms var(--card-camera-ease) !important;
 }
 
 .feed-view__card-transition.is-active strong {
@@ -88,7 +152,7 @@
 .feed-view__card-transition-tag {
   position: absolute !important;
   top: auto !important;
-  bottom: calc(var(--space-4) + 92px) !important;
+  bottom: calc(var(--space-4) + 146px) !important;
   left: var(--space-4) !important;
   z-index: 3 !important;
   max-width: calc(100% - var(--space-8)) !important;
@@ -102,7 +166,7 @@
   opacity: 0 !important;
   transform: translate3d(0, 18px, 0) scale(0.96) !important;
   backdrop-filter: blur(10px) !important;
-  transition: transform 260ms var(--card-camera-ease) 70ms, opacity 180ms ease 70ms !important;
+  transition: transform 260ms var(--card-camera-ease) 70ms, opacity 180ms ease 70ms, bottom 280ms var(--card-camera-ease) !important;
 }
 
 .feed-view__card-transition.is-active .feed-view__card-transition-tag {
@@ -129,7 +193,9 @@
   .feed-view__card-transition.is-active,
   .feed-view__card-transition img,
   .feed-view__card-transition strong,
-  .feed-view__card-transition-tag {
+  .feed-view__card-transition-tag,
+  .feed-view__card-transition::before,
+  .feed-view__card-transition::after {
     transition: none !important;
     transform: none !important;
     filter: none !important;
