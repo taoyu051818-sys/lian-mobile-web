@@ -24,11 +24,26 @@ const tabs: Array<{ key: ProfileTabKey; label: string; empty: string }> = [
 
 const displayName = computed(() => user.value?.username || "未登录同学");
 const avatarText = computed(() => displayName.value.slice(0, 2) || "同");
-const identityMeta = computed(() => {
-  const activeAlias = user.value?.activeAliasId
-    ? user.value.aliases?.find((alias) => alias.id === user.value?.activeAliasId)
-    : null;
-  return activeAlias?.name || user.value?.identityTags?.[0] || user.value?.institution || "校园身份";
+const activeAlias = computed(() => {
+  if (!user.value?.activeAliasId) return null;
+  return user.value.aliases?.find((alias) => alias.id === user.value?.activeAliasId) || null;
+});
+const identityMeta = computed(() => activeAlias.value?.name || user.value?.identityTags?.[0] || user.value?.institution || "校园身份");
+const activeAliasSummary = computed(() => {
+  const alias = activeAlias.value;
+  if (!alias) return [];
+  return [
+    alias.categoryLabel ? { label: "类型", value: alias.categoryLabel } : null,
+    alias.identitySignal ? { label: "信号", value: alias.identitySignal } : null,
+    alias.persona ? { label: "人格", value: alias.persona } : null,
+    alias.description ? { label: "说明", value: alias.description } : null,
+  ].filter(Boolean) as Array<{ label: string; value: string }>;
+});
+const activeAliasHint = computed(() => {
+  if (!activeAlias.value) return "当前使用真实身份。";
+  return activeAliasSummary.value.length
+    ? "这个马甲会作为你在 LIAN 中出现的默认身份。"
+    : "这个马甲会作为你在 LIAN 中出现的默认身份，更多身份说明会在后续补齐。";
 });
 const userTags = computed(() => {
   const tags = user.value?.tags || user.value?.identityTags || [];
@@ -136,6 +151,19 @@ onMounted(() => {
           </div>
         </section>
 
+        <section class="profile-view__alias-card" aria-label="马甲身份说明">
+          <div>
+            <strong>{{ activeAlias ? activeAlias.name : "真实身份" }}</strong>
+            <p>{{ activeAliasHint }}</p>
+          </div>
+          <dl v-if="activeAliasSummary.length" class="profile-view__alias-grid">
+            <div v-for="item in activeAliasSummary" :key="item.label">
+              <dt>{{ item.label }}</dt>
+              <dd>{{ item.value }}</dd>
+            </div>
+          </dl>
+        </section>
+
         <div class="profile-view__actions">
           <LianButton variant="tonal" @click="editorOpen = !editorOpen">
             {{ editorOpen ? "收起编辑" : "编辑资料" }}
@@ -210,7 +238,8 @@ onMounted(() => {
 }
 
 .profile-view__identity p,
-.profile-view__item p {
+.profile-view__item p,
+.profile-view__alias-card p {
   color: var(--lian-muted);
   line-height: 1.6;
 }
@@ -219,6 +248,49 @@ onMounted(() => {
 .profile-view__tabs,
 .profile-view__actions {
   justify-content: flex-start;
+}
+
+.profile-view__alias-card {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border: 1px solid rgba(31, 167, 160, 0.16);
+  border-radius: var(--radius-card);
+  background: rgba(31, 167, 160, 0.08);
+}
+
+.profile-view__alias-card strong {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--lian-ink);
+}
+
+.profile-view__alias-grid {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+}
+
+.profile-view__alias-grid div {
+  display: grid;
+  gap: 4px;
+  padding: var(--space-2);
+  border: 1px solid rgba(31, 41, 51, 0.08);
+  border-radius: var(--radius-3);
+  background: rgba(255, 255, 255, 0.52);
+}
+
+.profile-view__alias-grid dt {
+  color: var(--lian-muted);
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.profile-view__alias-grid dd {
+  margin: 0;
+  color: var(--lian-ink);
+  font-size: 13px;
+  line-height: 1.5;
 }
 
 .profile-view__tab {
