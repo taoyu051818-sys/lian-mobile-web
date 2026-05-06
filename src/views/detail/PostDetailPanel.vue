@@ -7,13 +7,17 @@ import type { DisplayActor } from "../../types/feed";
 import type { PlaceSheet, PlaceStatus } from "../../types/place";
 import type { PostDetail, PostReply } from "../../types/post";
 
+type FloatingChromePhase = "visible" | "exiting" | "hidden" | "entering";
+
 const props = withDefaults(defineProps<{
   post: PostDetail | null;
   loading?: boolean;
   error?: string;
+  chromePhase?: FloatingChromePhase;
 }>(), {
   loading: false,
   error: "",
+  chromePhase: "visible",
 });
 
 const emit = defineEmits<{
@@ -372,6 +376,7 @@ async function submitReply() {
     <header
       class="post-detail-panel__topbar lian-floating-chrome lian-floating-chrome--top"
       data-floating-chrome="top"
+      :data-floating-state="chromePhase"
     >
       <button class="post-detail-panel__close" type="button" aria-label="关闭详情" @click="emit('close')">‹</button>
       <div class="post-detail-panel__author-chip">
@@ -504,6 +509,7 @@ async function submitReply() {
       class="post-detail-panel__dock lian-floating-chrome lian-floating-chrome--bottom"
       :class="{ 'is-expanded': replyExpanded }"
       data-floating-chrome="bottom"
+      :data-floating-state="chromePhase"
       @submit.prevent="submitReply"
       @click.stop
     >

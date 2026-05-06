@@ -1,18 +1,25 @@
 <script setup lang="ts">
-import { computed, ref } from "vue";
+import { computed, onBeforeUnmount, ref } from "vue";
 import { BottomTabBar, ToastHost } from "./ui";
 import AppViewHost from "./app/AppViewHost.vue";
 import { appViews, type AppViewKey } from "./app/view-types";
 import { useActiveView } from "./app/useActiveView";
 
+type FloatingChromePhase = "visible" | "exiting" | "hidden" | "entering" | "progress";
+
 type ChromeStatePayload = boolean | {
   hidden?: boolean;
   progress?: number;
+  phase?: FloatingChromePhase;
+  reason?: string;
 };
 
+const FLOATING_CHROME_PHASE_MS = 260;
+
 const { activeViewKey, setActiveView } = useActiveView();
-const chromeHidden = ref(false);
+const chromePhase = ref<FloatingChromePhase>("visible");
 const chromeProgress = ref(1);
+let chromePhaseTimer: number | undefined;
 
 const tabs = appViews.map((view) => ({
   key: view.key,
@@ -20,15 +27,19 @@ const tabs = appViews.map((view) => ({
   icon: view.icon,
 }));
 
-const bottomChromeState = computed(() => {
-  if (chromeHidden.value && chromeProgress.value <= 0.001) return "hidden";
-  if (chromeHidden.value && chromeProgress.value < 0.999) return "progress";
-  return "visible";
-});
+const bottomChromeState = computed(() => chromePhase.value);
 
-const bottomChromeStyle = computed(() => ({
-  "--bottom-chrome-visibility-progress": String(chromeHidden.value ? chromeProgress.value : 1),
-}));
+const bottomChromeStyle = computed(() => {
+  const progress = chromePhase.value === "progress"
+    ? chromeProgress.value
+    : chromePhase.value === "hidden" || chromePhase.value === "exiting"
+      ? 0
+      : 1;
+
+  return {
+    "--bottom-chrome-visibility-progress": String(progress),
+  };
+});
 
 function isAppViewKey(key: string): key is AppViewKey {
   return appViews.some((view) => view.key === key);
@@ -40,25 +51,80 @@ function normalizeProgress(value: unknown) {
   return Math.min(1, Math.max(0, numberValue));
 }
 
+function clearChromePhaseTimer() {
+  if (chromePhaseTimer == null) return;
+  window.clearTimeout(chromePhaseTimer);
+  chromePhaseTimer = undefined;
+}
+
+function settleChromePhase(nextPhase: FloatingChromePhase) {
+  clearChromePhaseTimer();
+  chromePhase.value = nextPhase;
+  chromeProgress.value = nextPhase === "hidden" || nextPhase === "exiting" ? 0 : 1;
+}
+
+function transitionChrome(hidden: boolean) {
+  clearChromePhaseTimer();
+
+  if (hidden) {
+    if (chromePhase.value === "hidden" || chromePhase.value === "exiting") {
+      settleChromePhase("hidden");
+      return;
+    }
+
+    chromePhase.value = "exiting";
+    chromeProgress.value = 0;
+    chromePhaseTimer = window.setTimeout(() => {
+      settleChromePhase("hidden");
+    }, FLOATING_CHROME_PHASE_MS);
+    return;
+  }
+
+  if (chromePhase.value === "visible" || chromePhase.value === "entering") {
+    settleChromePhase("visible");
+    return;
+  }
+
+  chromePhase.value = "entering";
+  chromeProgress.value = 1;
+  chromePhaseTimer = window.setTimeout(() => {
+    settleChromePhase("visible");
+  }, FLOATING_CHROME_PHASE_MS);
+}
+
 function handleChromeChange(payload: ChromeStatePayload) {
   if (typeof payload === "boolean") {
-    chromeHidden.value = payload;
-    chromeProgress.value = payload ? 0 : 1;
+    transitionChrome(payload);
+    return;
+  }
+
+  if (payload.phase) {
+    settleChromePhase(payload.phase);
     return;
   }
 
   const hidden = Boolean(payload.hidden);
-  chromeHidden.value = hidden;
-  chromeProgress.value = hidden ? normalizeProgress(payload.progress) : 1;
+  const progress = normalizeProgress(payload.progress);
+  if (hidden && progress > 0 && progress < 1) {
+    clearChromePhaseTimer();
+    chromePhase.value = "progress";
+    chromeProgress.value = progress;
+    return;
+  }
+
+  transitionChrome(hidden);
 }
 
 function handleViewChange(key: string) {
-  chromeHidden.value = false;
-  chromeProgress.value = 1;
+  transitionChrome(false);
   if (isAppViewKey(key)) {
     setActiveView(key);
   }
 }
+
+onBeforeUnmount(() => {
+  clearChromePhaseTimer();
+});
 </script>
 
 <template>
