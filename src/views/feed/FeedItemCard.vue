@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
 import { togglePostLike } from "../../api/posts";
+import { collectMotionSnapshot } from "../../motion/cardMorph";
+import type { CardMorphSnapshot } from "../../motion/cardMorph";
 import type { DisplayActor, FeedItem, FeedItemId } from "../../types/feed";
 
 type CardTemplate = "image" | "text" | "activity" | "place" | "merchant" | "help";
@@ -15,6 +17,7 @@ const emit = defineEmits<{
   open: [id: FeedItemId, payload?: {
     item: FeedItem;
     rect: { top: number; left: number; width: number; height: number };
+    motionSnapshot?: CardMorphSnapshot;
   }];
 }>();
 
@@ -79,6 +82,7 @@ function emitOpen(target: HTMLElement | null) {
       width: bounds.width,
       height: bounds.height,
     },
+    motionSnapshot: target ? collectMotionSnapshot(target) : undefined,
   } : undefined);
 }
 
@@ -203,6 +207,7 @@ async function handleLike() {
         </div>
 
         <span class="feed-item-card__motion-time" data-motion-role="time" aria-hidden="true">{{ timeLabel }}</span>
+        <span class="feed-item-card__motion-place" data-motion-role="place" aria-hidden="true">{{ placeLabel }}</span>
 
         <button
           class="feed-item-card__like"
@@ -424,7 +429,8 @@ async function handleLike() {
   white-space: nowrap;
 }
 
-.feed-item-card__motion-time {
+.feed-item-card__motion-time,
+.feed-item-card__motion-place {
   position: absolute;
   width: 1px;
   height: 1px;
