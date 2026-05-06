@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
 import { togglePostLike } from "../../api/posts";
-import { collectMotionSnapshot } from "../../motion/cardMorph";
+import { collectMotionSnapshot, playFeedCardToDetailMorph } from "../../motion/cardMorph";
 import type { CardMorphSnapshot } from "../../motion/cardMorph";
 import type { DisplayActor, FeedItem, FeedItemId } from "../../types/feed";
 
@@ -18,6 +18,7 @@ const emit = defineEmits<{
     item: FeedItem;
     rect: { top: number; left: number; width: number; height: number };
     motionSnapshot?: CardMorphSnapshot;
+    skipLegacyTransition?: boolean;
   }];
 }>();
 
@@ -72,7 +73,7 @@ watch(() => props.item, (item) => {
   likeCount.value = Math.max(0, Number(item.likeCount || 0));
 }, { immediate: true });
 
-function emitOpen(target: HTMLElement | null) {
+function emitOpen(target: HTMLElement | null, options: { skipLegacyTransition?: boolean } = {}) {
   const bounds = target?.getBoundingClientRect();
   emit("open", props.item.tid, bounds ? {
     item: props.item,
@@ -83,6 +84,7 @@ function emitOpen(target: HTMLElement | null) {
       height: bounds.height,
     },
     motionSnapshot: target ? collectMotionSnapshot(target) : undefined,
+    skipLegacyTransition: options.skipLegacyTransition,
   } : undefined);
 }
 
@@ -128,20 +130,38 @@ function handlePointerCancel(event: PointerEvent) {
   if (pointerCandidateId.value === event.pointerId) resetPointerIntent();
 }
 
+function openWithDomMorph(target: HTMLElement | null) {
+  if (!target) {
+    emitOpen(target);
+    return;
+  }
+
+  let opened = false;
+  const openOnce = () => {
+    if (opened) return;
+    opened = true;
+    emitOpen(target, { skipLegacyTransition: true });
+  };
+
+  void playFeedCardToDetailMorph(target, { onReady: openOnce }).catch(() => {
+    openOnce();
+  });
+}
+
 function openCard(event?: MouseEvent) {
   if (isControlTarget(event?.target || null)) return;
   const shouldSuppress = pointerMoved.value || pointerWasLongPress.value;
   const target = event?.currentTarget instanceof HTMLElement ? event.currentTarget : null;
   resetPointerIntent();
   if (shouldSuppress) return;
-  emitOpen(target);
+  openWithDomMorph(target);
 }
 
 function openCardFromKeyboard(event: KeyboardEvent) {
   if (isControlTarget(event.target)) return;
   const target = event.currentTarget instanceof HTMLElement ? event.currentTarget : null;
   resetPointerIntent();
-  emitOpen(target);
+  openWithDomMorph(target);
 }
 
 async function handleLike() {
