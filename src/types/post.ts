@@ -6,9 +6,6 @@ export interface PostReply {
   content: string;
   actor?: DisplayActor;
   source?: SourceSignal;
-  author?: string;
-  authorAvatarUrl?: string;
-  authorIdentityTag?: string;
   timestampISO: string;
 }
 
@@ -19,9 +16,6 @@ export interface PostDetail {
   primaryTag: string;
   actor?: DisplayActor;
   source?: SourceSignal;
-  author?: string;
-  authorAvatarUrl?: string;
-  authorIdentityTag?: string;
   place?: PlaceRef;
   timeLabel: string;
   timestampISO: string;
