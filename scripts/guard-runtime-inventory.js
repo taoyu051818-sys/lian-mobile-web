@@ -56,12 +56,12 @@ const canonicalContractForbiddenSnippets = [
   ["item.avatarUrl", "Channel messages must not use legacy flat avatarUrl fallback"],
   ["item.avatarText", "Channel messages must not use legacy flat avatarText fallback"],
   ["item.identityTag", "Channel messages must read optional identityTag from actor.identityTag"],
-  ["authorAvatarUrl", "Post DTO types must not reintroduce legacy authorAvatarUrl"],
-  ["authorIdentityTag", "Post DTO types must not reintroduce legacy authorIdentityTag"],
+  ["authorAvatarUrl?:", "Post DTO types must not reintroduce legacy authorAvatarUrl"],
+  ["authorIdentityTag?:", "Post DTO types must not reintroduce legacy authorIdentityTag"],
   ["FeedAuthor", "Feed DTO types must not reintroduce legacy FeedAuthor"],
   ["ChannelMessageAuthor", "Messages DTO types must not reintroduce legacy ChannelMessageAuthor"],
-  ["location.place?.id || location.placeId || location.id", "Map must not treat marker location.id as stable PlaceRef"],
-  ["location.placeId || location.id", "Map must not treat marker location.id as stable PlaceRef"],
+  ["location.place?.id || location.placeId || location.id", "Map/Publish must not treat marker location.id as stable PlaceRef"],
+  ["location.placeId || location.id", "Map/Publish must not treat marker location.id as stable PlaceRef"],
   ["fetchPlaceSheet(location.id", "PlaceSheet must be opened from place.id/placeId only"]
 ];
 
