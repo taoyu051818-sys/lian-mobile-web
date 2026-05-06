@@ -25,6 +25,7 @@
     life: "#059669",
     post: "#111827"
   };
+  const SCALED_ICON_SELECTOR = "[data-map-v2-scaled-icon]";
 
   const state = {
     map: null,
@@ -64,6 +65,44 @@
     return TYPE_COLORS[type] || "#2563eb";
   }
 
+  function iconScaleForZoom(map = state.map, zoom = map?.getZoom?.()) {
+    if (!map) return 1;
+    const maxZoom = map.getMaxZoom?.() || Number(zoom) || 16;
+    const nextZoom = Number.isFinite(Number(zoom)) ? Number(zoom) : maxZoom;
+    return Math.pow(2, nextZoom - maxZoom);
+  }
+
+  function scaledIconHtml(html, anchor = [0, 0]) {
+    const x = Number(anchor?.[0] ?? 0);
+    const y = Number(anchor?.[1] ?? 0);
+    return `
+      <div
+        class="map-v2-scaled-icon-inner"
+        data-map-v2-scaled-icon
+        style="width:100%;height:100%;transform-origin:${escapeHtml(x)}px ${escapeHtml(y)}px;will-change:transform"
+      >${html}</div>
+    `;
+  }
+
+  function applyMapIconScale(map = state.map, zoom = map?.getZoom?.()) {
+    const pane = map?.getPane?.("markerPane");
+    if (!pane) return;
+    const scale = iconScaleForZoom(map, zoom);
+    pane.querySelectorAll(SCALED_ICON_SELECTOR).forEach((element) => {
+      element.style.transform = `scale(${scale})`;
+    });
+  }
+
+  function bindMapIconScale(map) {
+    if (!map || map._mapV2IconScaleBound) return;
+    const update = () => applyMapIconScale(map);
+    map.on("zoom zoomend viewreset moveend", update);
+    if (map.options.zoomAnimation && L.Browser.any3d) {
+      map.on("zoomanim", (event) => applyMapIconScale(map, event.zoom));
+    }
+    map._mapV2IconScaleBound = true;
+  }
+
   function iconSvg(type = "") {
     if (type === "food") return '<path d="M4 3v8a4 4 0 0 0 8 0V3"/><path d="M4 7h8"/><path d="M18 3v18"/><path d="M15 3h6"/>';
     if (type === "transport") return '<path d="M8 6h8"/><path d="M6 10h12"/><path d="M6 14h12"/><path d="M8 18h.01"/><path d="M16 18h.01"/><rect x="5" y="4" width="14" height="16" rx="2"/>';
@@ -82,7 +121,7 @@
         iconSize: size,
         iconAnchor: anchor,
         popupAnchor: [0, -Math.round(size[1] * 0.85)],
-        html: `<img class="map-v2-place-asset" src="${escapeHtml(displayImageUrl(icon.url))}" alt="">`
+        html: scaledIconHtml(`<img class="map-v2-place-asset" src="${escapeHtml(displayImageUrl(icon.url))}" alt="">`, anchor)
       });
     }
     return L.divIcon({
@@ -90,11 +129,11 @@
       iconSize: [34, 34],
       iconAnchor: [17, 34],
       popupAnchor: [0, -30],
-      html: `
+      html: scaledIconHtml(`
         <div class="map-v2-place-glyph" style="--marker-color:${escapeHtml(colorFor(item.type))}">
           <svg viewBox="0 0 24 24" aria-hidden="true">${iconSvg(item.type)}</svg>
         </div>
-      `
+      `, [17, 34])
     });
   }
 
@@ -105,12 +144,12 @@
       iconSize: [132, 118],
       iconAnchor: [66, 124],
       popupAnchor: [0, -118],
-      html: `
+      html: scaledIconHtml(`
         <button class="map-v2-post-card" type="button" data-map-v2-tid="${escapeHtml(post.tid)}">
           ${image}
           <span>${escapeHtml(post.title || post.locationArea || "LIAN")}</span>
         </button>
-      `
+      `, [66, 124])
     });
   }
 
@@ -122,11 +161,11 @@
       iconSize: [160, 50],
       iconAnchor: [80, 50],
       popupAnchor: [0, -50],
-      html: `
+      html: scaledIconHtml(`
         <button class="map-v2-location-card" type="button" data-map-v2-location-id="${escapeHtml(item.id)}" title="${escapeHtml(item.name)}">
           ${image ? `<img src="${escapeHtml(displayImageUrl(image))}" alt="${escapeHtml(item.name)}">` : ""}
         </button>
-      `
+      `, [80, 50])
     });
   }
 
@@ -140,14 +179,14 @@
       iconSize: size,
       iconAnchor: anchor,
       popupAnchor: [0, -Math.round(size[1] * 0.65)],
-      html: `
+      html: scaledIconHtml(`
         <img
           class="map-v2-asset-image"
           src="${escapeHtml(displayImageUrl(asset.url))}"
           alt=""
           style="opacity:${opacity};transform:rotate(${rotation}deg)"
         >
-      `
+      `, anchor)
     });
   }
 
@@ -420,6 +459,7 @@
     renderAssets(state.data.layers?.assets || []);
     renderLocations(state.data.locations || []);
     renderPosts(state.data.posts || []);
+    applyMapIconScale();
   }
 
   async function loadData() {
@@ -455,6 +495,7 @@
         attribution: "&copy; Gaode Map"
       }).addTo(state.map);
       initLayerGroups();
+      bindMapIconScale(state.map);
       state.map.on("click", handleMapClick);
       state.map.on("popupopen", bindPopupActions);
 
@@ -529,9 +570,10 @@
         className: "map-v2-picked-icon",
         iconSize: [28, 28],
         iconAnchor: [14, 28],
-        html: "<span></span>"
+        html: scaledIconHtml("<span></span>", [14, 28])
       })
     }).addTo(state.layers.pick).bindTooltip(draft.displayName || "地图选点", { permanent: false });
+    applyMapIconScale();
     state.pickCallback?.(draft);
   }
 
@@ -564,6 +606,7 @@
     if (!state.map) return;
     state.map.invalidateSize();
     renderRoadPreview();
+    applyMapIconScale();
   }
 
   document.addEventListener("click", (event) => {
@@ -600,6 +643,7 @@
       minZoom: 3,
       opacity: 0
     }).addTo(miniMap);
+    bindMapIconScale(miniMap);
     const pickLayer = L.layerGroup().addTo(miniMap);
     miniMap.on("click", (event) => {
       const location = nearestLocation(event.latlng, miniMap);
@@ -610,12 +654,16 @@
           className: "map-v2-picked-icon",
           iconSize: [28, 28],
           iconAnchor: [14, 28],
-          html: "<span></span>"
+          html: scaledIconHtml("<span></span>", [14, 28])
         })
       }).addTo(pickLayer).bindTooltip(draft.displayName || "地图选点", { permanent: false });
+      applyMapIconScale(miniMap);
       if (typeof callback === "function") callback(draft);
     });
-    setTimeout(() => miniMap.invalidateSize(), 80);
+    setTimeout(() => {
+      miniMap.invalidateSize();
+      applyMapIconScale(miniMap);
+    }, 80);
     container._miniMap = miniMap;
   }
 
