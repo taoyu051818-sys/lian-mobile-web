@@ -6,6 +6,12 @@ export interface PostReply {
   content: string;
   actor?: DisplayActor;
   source?: SourceSignal;
+  /** @deprecated legacy migration fallback; use actor.displayName / actor.username / actor.name. */
+  author?: string;
+  /** @deprecated legacy migration fallback; use actor.avatarUrl. */
+  authorAvatarUrl?: string;
+  /** @deprecated legacy migration fallback; use actor.identityTag. */
+  authorIdentityTag?: string;
   timestampISO: string;
 }
 
@@ -16,6 +22,12 @@ export interface PostDetail {
   primaryTag: string;
   actor?: DisplayActor;
   source?: SourceSignal;
+  /** @deprecated legacy migration fallback; use actor.displayName / actor.username / actor.name. */
+  author?: string;
+  /** @deprecated legacy migration fallback; use actor.avatarUrl. */
+  authorAvatarUrl?: string;
+  /** @deprecated legacy migration fallback; use actor.identityTag. */
+  authorIdentityTag?: string;
   place?: PlaceRef;
   timeLabel: string;
   timestampISO: string;
