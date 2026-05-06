@@ -48,16 +48,16 @@ const authorLabel = computed(() => props.post?.author || "同学");
 const authorAvatarUrl = computed(() => props.post?.authorAvatarUrl || "");
 const authorInitial = computed(() => authorLabel.value.slice(0, 1) || "同");
 const placeLabel = computed(() => props.post?.locationArea || "");
-const primaryTag = computed(() => props.post?.primaryTag || "");
+const primaryTag = computed(() => normalizePostTag(props.post?.primaryTag || ""));
 const rawBodyHtml = computed(() => props.post?.contentHtml || "");
-const bodyHtml = computed(() => stripImagesFromHtml(rawBodyHtml.value));
+const bodyHtml = computed(() => stripDecorativeContentFromHtml(rawBodyHtml.value));
 const replies = computed(() => props.post?.replies || []);
 const images = computed(() => {
   const urls = [props.post?.cover || "", ...(props.post?.imageUrls || [])].filter(Boolean);
   return Array.from(new Set(urls)).slice(0, 8);
 });
 const timeLabel = computed(() => formatRelativeTime(props.post?.timestampISO || "") || props.post?.timeLabel || "刚刚");
-const replyIdentityLabel = computed(() => `以 ${authorLabel.value ? "当前身份" : "身份"} 回复`);
+const replyIdentityLabel = computed(() => `以当前身份回复`);
 
 watch(() => props.post, (post) => {
   liked.value = Boolean(post?.liked);
@@ -71,8 +71,17 @@ watch(() => props.post, (post) => {
   fullscreenImage.value = "";
 }, { immediate: true });
 
-function stripImagesFromHtml(value: string) {
-  return String(value || "").replace(/<img\b[^>]*>/gi, "").trim();
+function normalizePostTag(value: string) {
+  const text = String(value || "").trim().replace(/^#+/, "");
+  return text ? `#${text}` : "";
+}
+
+function stripDecorativeContentFromHtml(value: string) {
+  return String(value || "")
+    .replace(/<img\b[^>]*>/gi, "")
+    .replace(/<p>\s*<strong>\s*#+[^<]+\s*<\/strong>\s*<\/p>/gi, "")
+    .replace(/<p>\s*#+[^<]+\s*<\/p>/gi, "")
+    .trim();
 }
 
 function formatRelativeTime(value: string) {
@@ -214,7 +223,7 @@ async function submitReply() {
         <span v-else class="post-detail-panel__avatar-text" aria-hidden="true">{{ authorInitial }}</span>
         <strong>{{ authorLabel }}</strong>
       </div>
-      <button class="post-detail-panel__share" type="button" aria-label="分享" @click="handleShare">↗</button>
+      <button class="post-detail-panel__share" type="button" aria-label="分享" @click="handleShare">分享</button>
     </header>
 
     <div v-if="loading" class="post-detail-panel__state" role="status">正在加载详情…</div>
@@ -239,9 +248,9 @@ async function submitReply() {
 
       <section class="post-detail-panel__info-strip" aria-label="帖子属性">
         <div class="post-detail-panel__info-left">
-          <span v-if="primaryTag" class="post-detail-panel__tag">{{ primaryTag }}</span>
-          <span>{{ timeLabel }}</span>
-          <span v-if="placeLabel">{{ placeLabel }}</span>
+          <span v-if="primaryTag" class="post-detail-panel__pill post-detail-panel__pill--tag">{{ primaryTag }}</span>
+          <span class="post-detail-panel__pill">{{ timeLabel }}</span>
+          <span v-if="placeLabel" class="post-detail-panel__pill">{{ placeLabel }}</span>
         </div>
         <button class="post-detail-panel__report-entry" type="button" :disabled="reportBusy" @click="toggleReport">
           {{ reportOpen ? "收起" : "举报" }}
@@ -271,7 +280,7 @@ async function submitReply() {
             <strong>{{ reply.author || "同学" }}</strong>
             <span>{{ formatRelativeTime(reply.timestampISO) }}</span>
           </div>
-          <div class="post-detail-panel__reply-content" v-html="stripImagesFromHtml(reply.content || '这条回复暂时没有内容。')"></div>
+          <div class="post-detail-panel__reply-content" v-html="stripDecorativeContentFromHtml(reply.content || '这条回复暂时没有内容。')"></div>
         </article>
         <p v-if="!replies.length" class="post-detail-panel__empty">还没有回复，来写第一条。</p>
       </section>
@@ -313,22 +322,24 @@ async function submitReply() {
   position: fixed;
   right: max(var(--space-3), env(safe-area-inset-right));
   left: max(var(--space-3), env(safe-area-inset-left));
-  z-index: 30;
-  display: flex;
-  align-items: center;
+  z-index: 70;
+  width: min(calc(100vw - var(--space-6)), 760px);
+  margin: 0 auto;
   border: 1px solid var(--glass-border);
-  border-radius: var(--radius-card);
-  background: rgba(255, 255, 255, 0.82);
-  box-shadow: var(--shadow-card);
-  backdrop-filter: blur(18px);
+  border-radius: var(--radius-sheet);
+  background: var(--glass-bg-strong);
+  box-shadow: var(--shadow-floating);
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
 }
 
 .post-detail-panel__topbar {
-  top: max(var(--space-3), env(safe-area-inset-top));
-  gap: var(--space-2);
-  justify-content: space-between;
-  min-height: 50px;
-  padding: 0 var(--space-2);
+  top: calc(var(--space-2) + env(safe-area-inset-top));
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) 64px;
+  gap: var(--space-1);
+  align-items: center;
+  min-height: 58px;
+  padding: var(--space-2);
 }
 
 .post-detail-panel__close,
@@ -346,13 +357,23 @@ async function submitReply() {
 .post-detail-panel__close,
 .post-detail-panel__share {
   display: grid;
-  width: 38px;
-  height: 38px;
-  min-width: 38px;
+  height: 40px;
   place-items: center;
-  border-radius: var(--radius-orb);
-  font-size: 24px;
+  border-radius: var(--radius-chip);
   font-weight: 900;
+}
+
+.post-detail-panel__close {
+  width: 40px;
+  font-size: 24px;
+}
+
+.post-detail-panel__share {
+  min-width: 56px;
+  padding: 0 var(--space-3);
+  background: var(--lian-ink);
+  color: #fff;
+  font-size: 13px;
 }
 
 .post-detail-panel__author-chip {
@@ -360,6 +381,7 @@ async function submitReply() {
   min-width: 0;
   gap: var(--space-2);
   align-items: center;
+  justify-self: center;
 }
 
 .post-detail-panel__author-chip img,
@@ -379,7 +401,7 @@ async function submitReply() {
 
 .post-detail-panel__author-chip strong {
   overflow: hidden;
-  max-width: 46vw;
+  max-width: 38vw;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -438,35 +460,46 @@ async function submitReply() {
 
 .post-detail-panel__info-strip {
   display: flex;
-  gap: var(--space-3);
+  gap: var(--space-2);
   align-items: center;
   justify-content: space-between;
-  padding: var(--space-3) 0;
-  border-top: 1px solid rgba(31, 41, 51, 0.07);
-  border-bottom: 1px solid rgba(31, 41, 51, 0.07);
+  padding: var(--space-2);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-sheet);
+  background: var(--glass-bg);
 }
 
 .post-detail-panel__info-left {
   display: flex;
+  min-width: 0;
   flex-wrap: wrap;
-  gap: var(--space-2);
+  gap: var(--space-1);
   align-items: center;
-  color: var(--lian-muted);
-  font-size: 12px;
 }
 
-.post-detail-panel__tag {
-  padding: 5px 8px;
+.post-detail-panel__pill,
+.post-detail-panel__report-entry {
+  min-height: 32px;
+  padding: 0 var(--space-3);
   border-radius: var(--radius-chip);
-  background: rgba(31, 167, 160, 0.11);
+  color: var(--lian-muted);
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.post-detail-panel__pill {
+  display: inline-flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.58);
+}
+
+.post-detail-panel__pill--tag {
   color: var(--lian-primary-deep);
   font-weight: 900;
 }
 
 .post-detail-panel__report-entry {
-  color: var(--lian-muted);
-  font-size: 12px;
-  font-weight: 850;
+  background: transparent;
 }
 
 .post-detail-panel__report {
@@ -538,7 +571,9 @@ async function submitReply() {
 
 .post-detail-panel__dock {
   bottom: max(var(--space-3), env(safe-area-inset-bottom));
+  display: flex;
   gap: var(--space-2);
+  align-items: center;
   min-height: 58px;
   padding: var(--space-2);
   transition: min-height 180ms ease, align-items 180ms ease;
