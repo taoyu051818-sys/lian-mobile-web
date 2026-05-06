@@ -7,7 +7,7 @@ import {
   updateProfileAvatar,
   uploadProfileAvatar,
 } from "../../api/profile";
-import { IdentityBadge, InlineError, LianButton, TrustBadge, TypeChip } from "../../ui";
+import { IdentityBadge, InlineError, LianButton, TypeChip } from "../../ui";
 import type { ProfileUser } from "../../types/profile";
 
 const props = defineProps<{
@@ -149,7 +149,6 @@ async function generateInviteCode() {
         <TypeChip type="official">资料管理</TypeChip>
         <h3 id="profile-editor-title">编辑资料</h3>
       </div>
-      <TrustBadge tone="pending">Vue canary</TrustBadge>
     </header>
 
     <InlineError v-if="errorMessage">{{ errorMessage }}</InlineError>
