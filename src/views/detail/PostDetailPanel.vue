@@ -53,6 +53,7 @@ const rawBodyHtml = computed(() => props.post?.contentHtml || "");
 const bodyHtml = computed(() => stripDecorativeContentFromHtml(rawBodyHtml.value));
 const replies = computed(() => props.post?.replies || []);
 const images = computed(() => uniqueGalleryImages([props.post?.cover || "", ...(props.post?.imageUrls || [])]).slice(0, 8));
+const fullResolutionImages = computed(() => images.value.map(toFullResolutionImageUrl));
 const timeLabel = computed(() => formatRelativeTime(props.post?.timestampISO || "") || props.post?.timeLabel || "刚刚");
 const replyIdentityLabel = computed(() => `以当前身份回复`);
 
@@ -66,6 +67,10 @@ watch(() => props.post, (post) => {
   replyExpanded.value = false;
   replyContent.value = "";
   fullscreenImage.value = "";
+}, { immediate: true });
+
+watch(fullResolutionImages, (urls) => {
+  preloadImages(urls);
 }, { immediate: true });
 
 function normalizePostTag(value: string) {
@@ -105,6 +110,29 @@ function uniqueGalleryImages(urls: string[]) {
     result.push(value);
   }
   return result;
+}
+
+function toFullResolutionImageUrl(value: string) {
+  const raw = String(value || "").trim();
+  if (!raw) return "";
+  try {
+    const url = new URL(raw, typeof window !== "undefined" ? window.location.origin : "https://lian.invalid");
+    if (!url.hostname.includes("cloudinary.com") || !url.pathname.includes("/upload/")) return raw;
+    url.pathname = url.pathname.replace(/\/upload\/[^/]+\//, "/upload/f_auto,q_auto/");
+    return url.toString();
+  } catch {
+    return raw;
+  }
+}
+
+function preloadImages(urls: string[]) {
+  if (typeof window === "undefined") return;
+  for (const url of urls) {
+    if (!url) continue;
+    const image = new Image();
+    image.decoding = "async";
+    image.src = url;
+  }
 }
 
 function stripDecorativeContentFromHtml(value: string) {
@@ -273,9 +301,20 @@ async function submitReply() {
       </InlineError>
 
       <template v-else-if="post">
-        <section v-if="images.length" class="post-detail-panel__gallery" aria-label="图片">
-          <button v-for="url in images" :key="url" class="post-detail-panel__gallery-item" type="button" @click="fullscreenImage = url">
-            <img :src="url" :alt="title" loading="lazy" />
+        <section
+          v-if="images.length"
+          class="post-detail-panel__gallery"
+          :class="{ 'is-single': images.length === 1 }"
+          aria-label="图片"
+        >
+          <button
+            v-for="(url, index) in images"
+            :key="url"
+            class="post-detail-panel__gallery-item"
+            type="button"
+            @click="fullscreenImage = fullResolutionImages[index] || url"
+          >
+            <img :src="url" :alt="title" loading="eager" decoding="async" />
           </button>
         </section>
 
@@ -367,6 +406,10 @@ async function submitReply() {
   transition: transform var(--motion-standard) var(--motion-ease-standard), border-radius var(--motion-standard) var(--motion-ease-standard), opacity var(--motion-standard) var(--motion-ease-standard), filter var(--motion-standard) var(--motion-ease-standard);
 }
 
+.post-detail-panel.is-dragging .post-detail-panel__stage {
+  transition: none;
+}
+
 .post-detail-panel__topbar,
 .post-detail-panel__dock {
   position: fixed;
@@ -379,10 +422,15 @@ async function submitReply() {
   border-radius: var(--floating-bar-radius);
   background: var(--glass-bg-strong);
   box-shadow: var(--shadow-floating);
-  opacity: var(--detail-bar-opacity, 1);
-  transform: translateX(var(--detail-bar-drag-x, 0px)) scale(var(--detail-bar-scale, 1));
+  opacity: var(--detail-chrome-opacity, 1);
+  transform: translateY(var(--detail-chrome-translate-y, 0px));
   transition: transform var(--motion-standard) var(--motion-ease-standard), opacity var(--motion-standard) var(--motion-ease-standard), min-height 180ms ease, align-items 180ms ease;
   backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+}
+
+.post-detail-panel.is-dragging .post-detail-panel__topbar,
+.post-detail-panel.is-dragging .post-detail-panel__dock {
+  transition: opacity 120ms ease, transform 120ms ease;
 }
 
 .post-detail-panel__topbar {
@@ -393,7 +441,6 @@ async function submitReply() {
   align-items: center;
   min-height: var(--floating-bar-height);
   padding: var(--floating-bar-padding);
-  transform-origin: top center;
 }
 
 .post-detail-panel__dock {
@@ -403,7 +450,6 @@ async function submitReply() {
   align-items: center;
   min-height: var(--floating-bar-height);
   padding: var(--floating-bar-padding);
-  transform-origin: bottom center;
 }
 
 .post-detail-panel__close,
@@ -471,17 +517,26 @@ async function submitReply() {
 }
 
 .post-detail-panel__gallery {
-  display: grid;
-  grid-auto-columns: minmax(260px, 88%);
-  grid-auto-flow: column;
+  display: flex;
   gap: var(--space-3);
   overflow-x: auto;
   margin-inline: calc(var(--space-3) * -1);
-  padding-inline: var(--space-3);
+  padding-inline: max(var(--space-3), 6vw);
+  scroll-padding-inline: max(var(--space-3), 6vw);
   scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+}
+
+.post-detail-panel__gallery::-webkit-scrollbar {
+  display: none;
+}
+
+.post-detail-panel__gallery.is-single {
+  justify-content: center;
 }
 
 .post-detail-panel__gallery-item {
+  flex: 0 0 min(88vw, 420px);
   overflow: hidden;
   padding: 0;
   border-radius: var(--radius-card);
@@ -491,7 +546,7 @@ async function submitReply() {
 .post-detail-panel__gallery img {
   display: block;
   width: 100%;
-  max-height: 420px;
+  height: min(62vh, 460px);
   aspect-ratio: 0.9;
   object-fit: cover;
 }
