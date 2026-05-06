@@ -1,5 +1,6 @@
 @import "../../public/lian-tokens.css";
 @import "../ui/primitives.css";
+@import "./floating-chrome.css";
 
 * {
   box-sizing: border-box;
