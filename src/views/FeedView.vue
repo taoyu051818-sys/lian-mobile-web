@@ -33,7 +33,7 @@ const SWIPE_VERTICAL_GUARD = 52;
 const DETAIL_DRAG_EDGE_GUARD = 28;
 const CARDIFY_DISTANCE = 320;
 const DRAG_STAGE_MIN_SCALE = 0.9;
-const CHROME_EXIT_DISTANCE = 24;
+const CHROME_EXIT_DISTANCE = 0;
 const RETURN_ANIMATION_MS = 380;
 
 const emit = defineEmits<{
@@ -104,9 +104,9 @@ const detailDragStyle = computed(() => {
   const translateY = returning ? detailTargetY.value * progress : 0;
   const feedOpacity = detailOpen.value ? Math.max(0.1, progress * 0.9) : 1;
   const feedScale = detailOpen.value ? 0.985 + progress * 0.015 : 1;
-  const chromeOpacity = detailOpen.value ? Math.max(0, 1 - progress * 1.18) : 1;
-  const topChromeTranslateY = detailOpen.value ? -CHROME_EXIT_DISTANCE * progress : 0;
-  const bottomChromeTranslateY = detailOpen.value ? CHROME_EXIT_DISTANCE * progress : 0;
+  const chromeOpacity = 1;
+  const topChromeTranslateY = 0;
+  const bottomChromeTranslateY = 0;
   return {
     "--detail-card-progress": String(progress),
     "--detail-card-scale": String(scale),
@@ -271,7 +271,13 @@ function closeDetailWithCardify(options: { syncHistory?: boolean; direction?: nu
   detailReturning.value = true;
   detailPointerId.value = null;
   detailGestureLocked.value = null;
+
+  // Chrome handoff is immediate and has no motion:
+  // detail chrome hidden, feed tabs and app bottom bar visible in the same user action.
   detailChrome.hide();
+  feedTabsChrome.show();
+  emit("chrome", false);
+
   detailDragX.value = Math.sign(direction || 1) * CARDIFY_DISTANCE;
   window.setTimeout(() => {
     resetDetailState();
@@ -341,7 +347,12 @@ function switchTab(tabId: string) {
 
 async function openItem(id: FeedItemId, payload?: CardOpenPayload) {
   updateViewport();
+
+  // Chrome handoff is immediate and has no motion:
+  // feed tabs and app bottom bar hidden, detail chrome visible.
   feedTabsChrome.hide();
+  emit("chrome", true);
+
   startCardTransition(payload);
   rememberReadItem(id);
   selectedPostId.value = id;
@@ -353,7 +364,6 @@ async function openItem(id: FeedItemId, payload?: CardOpenPayload) {
   detailDragging.value = false;
   detailReturning.value = false;
   pushDetailHistory(id);
-  emit("chrome", true);
 
   try {
     const detail = await fetchPostDetail(id);

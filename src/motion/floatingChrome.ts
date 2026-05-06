@@ -7,9 +7,8 @@ export type FloatingChromeCommand = boolean | {
   progress?: number;
   phase?: FloatingChromePhase;
   reason?: string;
+  bump?: boolean;
 };
-
-const DEFAULT_FLOATING_CHROME_PHASE_MS = 260;
 
 export function normalizeChromeProgress(value: unknown) {
   const numberValue = Number(value);
@@ -21,80 +20,59 @@ export function useFloatingChromeController(options: {
   initialPhase?: FloatingChromePhase;
   phaseMs?: number;
 } = {}) {
-  const phaseMs = options.phaseMs ?? DEFAULT_FLOATING_CHROME_PHASE_MS;
   const phaseState = ref<FloatingChromePhase>(options.initialPhase ?? "visible");
   const progress = ref(
     phaseState.value === "hidden" || phaseState.value === "exiting" ? 0 : 1,
   );
 
-  let phaseTimer: number | undefined;
-
-  function clearTimer() {
-    if (phaseTimer == null) return;
-    window.clearTimeout(phaseTimer);
-    phaseTimer = undefined;
+  function setVisible() {
+    phaseState.value = "visible";
+    progress.value = 1;
   }
 
-  function settle(nextPhase: FloatingChromePhase) {
-    clearTimer();
-    phaseState.value = nextPhase;
-    progress.value = nextPhase === "hidden" || nextPhase === "exiting" ? 0 : 1;
+  function setHidden() {
+    phaseState.value = "hidden";
+    progress.value = 0;
+  }
+
+  function activate() {
+    setVisible();
+  }
+
+  function deactivate() {
+    setHidden();
+  }
+
+  function show() {
+    setVisible();
+  }
+
+  function hide() {
+    setHidden();
   }
 
   function transitionTo(nextPhase: FloatingChromePhase) {
-    clearTimer();
+    if (nextPhase === "hidden" || nextPhase === "exiting") {
+      setHidden();
+      return;
+    }
 
     if (nextPhase === "progress") {
       phaseState.value = "progress";
       return;
     }
 
-    if (nextPhase === "hidden" || nextPhase === "exiting") {
-      if (phaseState.value === "hidden") {
-        settle("hidden");
-        return;
-      }
-
-      phaseState.value = "exiting";
-      progress.value = 0;
-      phaseTimer = window.setTimeout(() => settle("hidden"), phaseMs);
-      return;
-    }
-
-    if (nextPhase === "visible" || nextPhase === "entering") {
-      if (phaseState.value === "visible") {
-        settle("visible");
-        return;
-      }
-
-      phaseState.value = "entering";
-      progress.value = 1;
-      phaseTimer = window.setTimeout(() => settle("visible"), phaseMs);
-    }
-  }
-
-  function show() {
-    transitionTo("visible");
-  }
-
-  function hide() {
-    transitionTo("hidden");
+    setVisible();
   }
 
   function setProgress(value: unknown) {
-    clearTimer();
     phaseState.value = "progress";
     progress.value = normalizeChromeProgress(value);
   }
 
   function apply(command: FloatingChromeCommand) {
     if (typeof command === "boolean") {
-      command ? hide() : show();
-      return;
-    }
-
-    if (command.phase && command.phase !== "progress") {
-      transitionTo(command.phase);
+      command ? setHidden() : setVisible();
       return;
     }
 
@@ -103,34 +81,34 @@ export function useFloatingChromeController(options: {
       return;
     }
 
-    const hidden = Boolean(command.hidden);
-    const progressValue = normalizeChromeProgress(command.progress);
-
-    if (hidden && progressValue > 0 && progressValue < 1) {
-      setProgress(progressValue);
+    if (command.phase === "hidden" || command.phase === "exiting" || command.hidden) {
+      setHidden();
       return;
     }
 
-    hidden ? hide() : show();
+    setVisible();
   }
 
   const phase = computed(() => phaseState.value);
 
   const style = computed(() => {
-    const visibilityProgress = phaseState.value === "progress"
-      ? progress.value
-      : phaseState.value === "hidden" || phaseState.value === "exiting"
-        ? 0
-        : 1;
+    const isHidden = phaseState.value === "hidden" || phaseState.value === "exiting";
+    const visibilityProgress = isHidden ? 0 : 1;
 
     return {
       "--floating-chrome-visibility-progress": String(visibilityProgress),
       "--bottom-chrome-visibility-progress": String(visibilityProgress),
+      "--floating-chrome-drag-progress": String(progress.value),
+      "--floating-chrome-progress-y": "0px",
     };
   });
 
+  function settle(nextPhase: FloatingChromePhase) {
+    transitionTo(nextPhase);
+  }
+
   function dispose() {
-    clearTimer();
+    // No timers, frames, or listeners.
   }
 
   return {
@@ -141,6 +119,8 @@ export function useFloatingChromeController(options: {
     transitionTo,
     show,
     hide,
+    activate,
+    deactivate,
     setProgress,
     settle,
     dispose,
