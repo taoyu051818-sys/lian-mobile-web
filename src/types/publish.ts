@@ -1,3 +1,5 @@
+import type { PlaceRef } from "./place";
+
 export type PublishVisibility = "public" | "campus" | "school" | "private";
 export type PublishLocationSource = "manual" | "skipped" | "map_v2";
 export type PublishMapVersion = "legacy" | "gaode_v2";
@@ -5,6 +7,8 @@ export type PublishMapVersion = "legacy" | "gaode_v2";
 export interface PublishLocationDraft {
   source: PublishLocationSource;
   locationId: string;
+  placeId?: string;
+  place?: PlaceRef;
   locationArea: string;
   displayName: string;
   lat: number | null;
@@ -41,6 +45,7 @@ export interface PublishPayload {
 
 export interface PublishResponse {
   tid?: string | number;
+  place?: PlaceRef;
 }
 
 export interface UploadImageResponse {
