@@ -9,7 +9,12 @@ const MAX_VISIBLE_TITLE_CHARS = 42;
 const MAX_VISIBLE_AUTHOR_CHARS = 10;
 
 const props = defineProps<{ item: FeedItem }>();
-const emit = defineEmits<{ open: [id: FeedItemId] }>();
+const emit = defineEmits<{
+  open: [id: FeedItemId, payload?: {
+    item: FeedItem;
+    rect: { top: number; left: number; width: number; height: number };
+  }];
+}>();
 
 const liked = ref(false);
 const likeCount = ref(0);
@@ -61,8 +66,18 @@ watch(() => props.item, (item) => {
   likeCount.value = Math.max(0, Number(item.likeCount || 0));
 }, { immediate: true });
 
-function openCard() {
-  emit("open", props.item.tid);
+function openCard(event?: Event) {
+  const target = event?.currentTarget instanceof HTMLElement ? event.currentTarget : null;
+  const bounds = target?.getBoundingClientRect();
+  emit("open", props.item.tid, bounds ? {
+    item: props.item,
+    rect: {
+      top: bounds.top,
+      left: bounds.left,
+      width: bounds.width,
+      height: bounds.height,
+    },
+  } : undefined);
 }
 
 async function handleLike() {
