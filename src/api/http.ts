@@ -1,10 +1,12 @@
 export class LianApiError extends Error {
   status: number;
+  code: string;
 
-  constructor(message: string, status = 0) {
+  constructor(message: string, status = 0, code = "") {
     super(message);
     this.name = "LianApiError";
     this.status = status;
+    this.code = code;
   }
 }
 
@@ -32,6 +34,28 @@ function normalizeJsonOptions(options: RequestInit = {}) {
   return { ...options, headers };
 }
 
+function asRecord(value: unknown): JsonRecord {
+  return value && typeof value === "object" && !Array.isArray(value) ? value as JsonRecord : {};
+}
+
+function extractApiError(data: unknown, status: number) {
+  const record = asRecord(data);
+  if (typeof record.error === "string" && record.error.trim()) {
+    return { message: record.error.trim(), code: "" };
+  }
+  if (typeof record.message === "string" && record.message.trim()) {
+    return { message: record.message.trim(), code: "" };
+  }
+
+  const statusRecord = asRecord(record.status);
+  const code = typeof statusRecord.code === "string" ? statusRecord.code : "";
+  if (typeof statusRecord.message === "string" && statusRecord.message.trim()) {
+    return { message: statusRecord.message.trim(), code };
+  }
+
+  return { message: `请求失败（状态码 ${status}）`, code };
+}
+
 export async function apiGet<T>(path: string, options: RequestInit = {}): Promise<T> {
   const response = await fetch(withApiBase(path), {
     credentials: "include",
@@ -39,8 +63,8 @@ export async function apiGet<T>(path: string, options: RequestInit = {}): Promis
   });
   const data = await response.json().catch(() => ({} as JsonRecord));
   if (!response.ok) {
-    const message = typeof data.error === "string" ? data.error : `请求失败（状态码 ${response.status}）`;
-    throw new LianApiError(message, response.status);
+    const error = extractApiError(data, response.status);
+    throw new LianApiError(error.message, response.status, error.code);
   }
   return data as T;
 }
