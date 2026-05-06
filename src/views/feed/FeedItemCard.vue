@@ -7,6 +7,8 @@ type CardTemplate = "image" | "text" | "activity" | "place" | "merchant" | "help
 
 const MAX_VISIBLE_TITLE_CHARS = 42;
 const MAX_VISIBLE_AUTHOR_CHARS = 10;
+const CARD_CLICK_MAX_DURATION_MS = 360;
+const CARD_CLICK_MOVE_TOLERANCE_PX = 8;
 
 const props = defineProps<{ item: FeedItem }>();
 const emit = defineEmits<{
@@ -19,6 +21,12 @@ const emit = defineEmits<{
 const liked = ref(false);
 const likeCount = ref(0);
 const likeBusy = ref(false);
+const pointerDownAt = ref(0);
+const pointerDownX = ref(0);
+const pointerDownY = ref(0);
+const pointerMoved = ref(false);
+const pointerWasLongPress = ref(false);
+const pointerCandidateId = ref<number | null>(null);
 
 const title = computed(() => props.item.title || "未命名内容");
 const coverUrl = computed(() => props.item.cover || "");
@@ -61,8 +69,7 @@ watch(() => props.item, (item) => {
   likeCount.value = Math.max(0, Number(item.likeCount || 0));
 }, { immediate: true });
 
-function openCard(event?: Event) {
-  const target = event?.currentTarget instanceof HTMLElement ? event.currentTarget : null;
+function emitOpen(target: HTMLElement | null) {
   const bounds = target?.getBoundingClientRect();
   emit("open", props.item.tid, bounds ? {
     item: props.item,
@@ -73,6 +80,64 @@ function openCard(event?: Event) {
       height: bounds.height,
     },
   } : undefined);
+}
+
+function isControlTarget(target: EventTarget | null) {
+  return target instanceof HTMLElement && Boolean(target.closest("button, a, input, textarea, select, [data-card-control]"));
+}
+
+function resetPointerIntent() {
+  pointerCandidateId.value = null;
+  pointerDownAt.value = 0;
+  pointerDownX.value = 0;
+  pointerDownY.value = 0;
+  pointerMoved.value = false;
+  pointerWasLongPress.value = false;
+}
+
+function handlePointerDown(event: PointerEvent) {
+  if (isControlTarget(event.target)) return;
+  if (event.pointerType === "mouse" && event.button !== 0) return;
+  pointerCandidateId.value = event.pointerId;
+  pointerDownAt.value = performance.now();
+  pointerDownX.value = event.clientX;
+  pointerDownY.value = event.clientY;
+  pointerMoved.value = false;
+  pointerWasLongPress.value = false;
+}
+
+function handlePointerMove(event: PointerEvent) {
+  if (pointerCandidateId.value !== event.pointerId) return;
+  const deltaX = Math.abs(event.clientX - pointerDownX.value);
+  const deltaY = Math.abs(event.clientY - pointerDownY.value);
+  if (deltaX > CARD_CLICK_MOVE_TOLERANCE_PX || deltaY > CARD_CLICK_MOVE_TOLERANCE_PX) {
+    pointerMoved.value = true;
+  }
+}
+
+function handlePointerUp(event: PointerEvent) {
+  if (pointerCandidateId.value !== event.pointerId) return;
+  pointerWasLongPress.value = performance.now() - pointerDownAt.value > CARD_CLICK_MAX_DURATION_MS;
+}
+
+function handlePointerCancel(event: PointerEvent) {
+  if (pointerCandidateId.value === event.pointerId) resetPointerIntent();
+}
+
+function openCard(event?: MouseEvent) {
+  if (isControlTarget(event?.target || null)) return;
+  const shouldSuppress = pointerMoved.value || pointerWasLongPress.value;
+  const target = event?.currentTarget instanceof HTMLElement ? event.currentTarget : null;
+  resetPointerIntent();
+  if (shouldSuppress) return;
+  emitOpen(target);
+}
+
+function openCardFromKeyboard(event: KeyboardEvent) {
+  if (isControlTarget(event.target)) return;
+  const target = event.currentTarget instanceof HTMLElement ? event.currentTarget : null;
+  resetPointerIntent();
+  emitOpen(target);
 }
 
 async function handleLike() {
@@ -109,12 +174,16 @@ async function handleLike() {
     role="button"
     tabindex="0"
     :aria-label="`${title}，${authorName}`"
+    @pointerdown="handlePointerDown"
+    @pointermove="handlePointerMove"
+    @pointerup="handlePointerUp"
+    @pointercancel="handlePointerCancel"
     @click="openCard"
-    @keydown.enter.prevent="openCard"
-    @keydown.space.prevent="openCard"
+    @keydown.enter.prevent="openCardFromKeyboard"
+    @keydown.space.prevent="openCardFromKeyboard"
   >
     <div v-if="cardTemplate !== 'text' || coverUrl" class="feed-item-card__media" data-motion-role="image-frame">
-      <img v-if="coverUrl" class="feed-item-card__cover" :src="coverUrl" :alt="title" loading="lazy" data-motion-role="image" />
+      <img v-if="coverUrl" class="feed-item-card__cover" :src="coverUrl" :alt="title" loading="lazy" data-motion-role="image" draggable="false" />
       <div v-else class="feed-item-card__placeholder" aria-hidden="true" data-motion-role="image-placeholder">
         <span>{{ templateMark }}</span>
       </div>
@@ -128,7 +197,7 @@ async function handleLike() {
 
       <footer class="feed-item-card__footer" data-motion-role="meta-row">
         <div class="feed-item-card__author" data-motion-role="author">
-          <img v-if="authorAvatarUrl" :src="authorAvatarUrl" :alt="authorName" loading="lazy" data-motion-role="avatar" />
+          <img v-if="authorAvatarUrl" :src="authorAvatarUrl" :alt="authorName" loading="lazy" data-motion-role="avatar" draggable="false" />
           <span v-else class="feed-item-card__avatar-text" aria-hidden="true" data-motion-role="avatar">{{ authorInitial }}</span>
           <span class="feed-item-card__author-name" :title="authorName">{{ authorName }}</span>
         </div>
@@ -142,8 +211,11 @@ async function handleLike() {
           :aria-label="likeLabel"
           :aria-pressed="liked"
           :disabled="likeBusy"
+          data-card-control="like"
           data-motion-role="like"
           @click.stop="handleLike"
+          @pointerdown.stop
+          @pointerup.stop
           @keydown.enter.stop
           @keydown.space.stop
         >
@@ -164,6 +236,8 @@ async function handleLike() {
   background: var(--lian-card-strong);
   box-shadow: var(--shadow-card);
   cursor: pointer;
+  touch-action: manipulation;
+  user-select: none;
   transition: transform 160ms ease, box-shadow 160ms ease;
 }
 
@@ -212,6 +286,8 @@ async function handleLike() {
   display: block;
   aspect-ratio: 0.76;
   object-fit: cover;
+  pointer-events: none;
+  -webkit-user-drag: none;
 }
 
 .feed-item-card--activity .feed-item-card__cover,
@@ -331,6 +407,11 @@ async function handleLike() {
   color: var(--lian-primary-deep);
   font-size: 10px;
   font-weight: 900;
+}
+
+.feed-item-card__author img {
+  pointer-events: none;
+  -webkit-user-drag: none;
 }
 
 .feed-item-card__author-name {

@@ -7,6 +7,11 @@ import MessagesView from "../views/MessagesView.vue";
 import ProfileView from "../views/ProfileView.vue";
 import PublishView from "../views/PublishView.vue";
 
+export type ChromeStatePayload = boolean | {
+  hidden?: boolean;
+  progress?: number;
+};
+
 const viewComponents = {
   feed: FeedView,
   map: MapView,
@@ -20,7 +25,7 @@ const props = defineProps({
 });
 
 const emit = defineEmits<{
-  chrome: [hidden: boolean];
+  chrome: [payload: ChromeStatePayload];
 }>();
 </script>
 
