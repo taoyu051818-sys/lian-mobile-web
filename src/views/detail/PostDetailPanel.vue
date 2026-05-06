@@ -469,7 +469,7 @@ async function submitReply() {
             </div>
             <div v-if="placeSheet?.recentPosts?.length" class="post-detail-panel__place-posts">
               <article v-for="recent in placeSheet.recentPosts.slice(0, 3)" :key="String(recent.tid)">
-                <strong>{{ recent.title || "相关内容" }}</strong>
+                <strong>{{ recent.title || "" }}</strong>
                 <p v-if="recent.excerpt">{{ recent.excerpt }}</p>
                 <small>{{ placeRecentPostActorLabel(recent.actor) }} · {{ formatRelativeTime(recent.timestampISO || "") || "刚刚" }}</small>
               </article>
@@ -500,7 +500,7 @@ async function submitReply() {
               <strong>{{ replyAuthorLabel(reply) }}</strong>
               <span>{{ formatRelativeTime(reply.timestampISO) }}</span>
             </div>
-            <div class="post-detail-panel__reply-content" v-html="stripDecorativeContentFromHtml(reply.content || '这条回复暂时没有内容。')"></div>
+            <div class="post-detail-panel__reply-content" v-html="stripDecorativeContentFromHtml(reply.content || '。')"></div>
           </article>
           <p v-if="!replies.length" class="post-detail-panel__empty">还没有回复，来写第一条。</p>
         </section>
