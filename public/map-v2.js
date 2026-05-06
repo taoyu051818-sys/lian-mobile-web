@@ -131,14 +131,8 @@
   }
 
   function assetIcon(asset) {
-    const baseSize = Array.isArray(asset.size) ? asset.size : [64, 64];
-    const baseAnchor = Array.isArray(asset.anchor) ? asset.anchor : [baseSize[0] / 2, baseSize[1]];
-    const shouldScaleWithZoom = asset.kind === "building_icon" || asset.scaleWithZoom === true;
-    const maxZoom = state.map?.getMaxZoom?.() || 16;
-    const currentZoom = state.map?.getZoom?.() || maxZoom;
-    const zoomScale = shouldScaleWithZoom ? Math.pow(2, currentZoom - maxZoom) : 1;
-    const size = baseSize.map((value) => Math.max(1, Math.round(Number(value || 0) * zoomScale)));
-    const anchor = baseAnchor.map((value) => Math.round(Number(value || 0) * zoomScale));
+    const size = Array.isArray(asset.size) ? asset.size : [64, 64];
+    const anchor = Array.isArray(asset.anchor) ? asset.anchor : [size[0] / 2, size[1]];
     const rotation = Number(asset.rotation || 0);
     const opacity = Math.max(0, Math.min(1, Number(asset.opacity ?? 1)));
     return L.divIcon({
@@ -170,6 +164,7 @@
   // Road network preview
   const ROAD_PREVIEW = {
     data: null,
+    layer: null,
     canvas: null,
     ctx: null,
     tx: 442,
@@ -179,26 +174,23 @@
     opacity: 0.7
   };
 
-  function renderRoadPreview() {
-    const { canvas, ctx, data } = ROAD_PREVIEW;
-    if (!canvas || !ctx || !data || !state.map) return;
+  function drawRoadPreviewCanvas({ map, canvas, ctx, data, topLeft, size }) {
+    if (!canvas || !ctx || !data || !map || !topLeft || !size) return;
 
-    const map = state.map;
-    const bounds = map.getBounds();
-    const topLeft = map.latLngToLayerPoint(bounds.getNorthWest());
-    const size = map.getSize();
     const dpr = window.devicePixelRatio || 1;
+    const displayWidth = Math.max(1, Math.round(size.x));
+    const displayHeight = Math.max(1, Math.round(size.y));
+    const pixelWidth = Math.max(1, Math.round(displayWidth * dpr));
+    const pixelHeight = Math.max(1, Math.round(displayHeight * dpr));
 
-    canvas.style.left = topLeft.x + 'px';
-    canvas.style.top = topLeft.y + 'px';
-    canvas.width = size.x * dpr;
-    canvas.height = size.y * dpr;
-    canvas.style.width = size.x + 'px';
-    canvas.style.height = size.y + 'px';
+    if (canvas.width !== pixelWidth) canvas.width = pixelWidth;
+    if (canvas.height !== pixelHeight) canvas.height = pixelHeight;
+    canvas.style.width = displayWidth + "px";
+    canvas.style.height = displayHeight + "px";
+
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    ctx.clearRect(0, 0, size.x, size.y);
+    ctx.clearRect(0, 0, displayWidth, displayHeight);
 
-    const zoom = map.getZoom();
     const center = map.getCenter();
     const cosLat = Math.cos(center.lat * Math.PI / 180);
 
@@ -209,15 +201,15 @@
       const py = yMeters * ROAD_PREVIEW.scale + ROAD_PREVIEW.ty;
       const lng2 = px / (111320 * cosLat) + 110.015821;
       const lat2 = py / 111320 + 18.393453;
-      const ppt = map.latLngToLayerPoint([lat2, lng2]);
-      return { x: ppt.x - topLeft.x, y: ppt.y - topLeft.y };
+      const point = map.latLngToLayerPoint([lat2, lng2]);
+      return { x: point.x - topLeft.x, y: point.y - topLeft.y };
     }
 
     ctx.globalAlpha = ROAD_PREVIEW.opacity;
-    ctx.strokeStyle = '#888';
+    ctx.strokeStyle = "#888";
     ctx.lineWidth = 1;
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
 
     for (const lane of data.lanes) {
       if (!lane.points || lane.points.length < 2) continue;
@@ -231,6 +223,83 @@
       ctx.stroke();
     }
     ctx.globalAlpha = 1;
+  }
+
+  function createRoadPreviewLayer() {
+    const RoadPreviewLayer = L.Layer.extend({
+      onAdd(map) {
+        this._map = map;
+        this._canvas = L.DomUtil.create("canvas", "map-v2-road-preview-canvas");
+        this._canvas.style.position = "absolute";
+        this._canvas.style.pointerEvents = "none";
+        this._canvas.style.zIndex = "350";
+        map.getPane("overlayPane").appendChild(this._canvas);
+
+        this._ctx = this._canvas.getContext("2d");
+        ROAD_PREVIEW.canvas = this._canvas;
+        ROAD_PREVIEW.ctx = this._ctx;
+
+        map.on("moveend zoomend resize viewreset", this._reset, this);
+        if (map.options.zoomAnimation && L.Browser.any3d) {
+          map.on("zoomanim", this._animateZoom, this);
+        }
+        this._reset();
+      },
+
+      onRemove(map) {
+        map.off("moveend zoomend resize viewreset", this._reset, this);
+        if (map.options.zoomAnimation && L.Browser.any3d) {
+          map.off("zoomanim", this._animateZoom, this);
+        }
+        L.DomUtil.remove(this._canvas);
+        if (ROAD_PREVIEW.canvas === this._canvas) {
+          ROAD_PREVIEW.canvas = null;
+          ROAD_PREVIEW.ctx = null;
+        }
+        this._canvas = null;
+        this._ctx = null;
+        this._map = null;
+      },
+
+      redraw() {
+        this._reset();
+        return this;
+      },
+
+      _reset() {
+        if (!this._map || !this._canvas || !this._ctx) return;
+        const map = this._map;
+        this._latLngBounds = map.getBounds();
+        this._zoom = map.getZoom();
+        this._topLeft = map.latLngToLayerPoint(this._latLngBounds.getNorthWest()).round();
+        this._size = map.getSize();
+
+        L.DomUtil.setPosition(this._canvas, this._topLeft);
+        drawRoadPreviewCanvas({
+          map,
+          canvas: this._canvas,
+          ctx: this._ctx,
+          data: ROAD_PREVIEW.data,
+          topLeft: this._topLeft,
+          size: this._size
+        });
+      },
+
+      _animateZoom(event) {
+        if (!this._map || !this._canvas || !this._latLngBounds) return;
+        const scale = this._map.getZoomScale(event.zoom, this._zoom || this._map.getZoom());
+        const topLeft = this._map
+          ._latLngToNewLayerPoint(this._latLngBounds.getNorthWest(), event.zoom, event.center)
+          .round();
+        L.DomUtil.setTransform(this._canvas, topLeft, scale);
+      }
+    });
+
+    return new RoadPreviewLayer();
+  }
+
+  function renderRoadPreview() {
+    ROAD_PREVIEW.layer?.redraw();
   }
 
   function initLayerGroups() {
@@ -363,18 +432,8 @@
       initLayerGroups();
       state.map.on("click", handleMapClick);
       state.map.on("popupopen", bindPopupActions);
-      state.map.on("zoomend", () => renderAssets(state.data?.layers?.assets || []));
 
-      // Road network canvas overlay
-      const pane = state.map.getPane('overlayPane');
-      const canvas = document.createElement('canvas');
-      canvas.style.position = 'absolute';
-      canvas.style.pointerEvents = 'none';
-      canvas.style.zIndex = '350';
-      pane.appendChild(canvas);
-      ROAD_PREVIEW.canvas = canvas;
-      ROAD_PREVIEW.ctx = canvas.getContext('2d');
-      state.map.on('moveend zoomend move', renderRoadPreview);
+      ROAD_PREVIEW.layer = createRoadPreviewLayer().addTo(state.map);
 
       // Load road network data
       fetch('/assets/road-network-preview.json')
