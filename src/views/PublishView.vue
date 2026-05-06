@@ -5,6 +5,7 @@ import { buildPublishPayload, createMapV2LocationDraft, normalizeIdentityTag, no
 import { fetchAuthMe } from "../api/profile";
 import { GlassPanel, IdentityBadge, InlineError, LianButton, LocationChip, TagChip } from "../ui";
 import type { MapLocation } from "../types/map";
+import type { PlaceRef } from "../types/place";
 import type { PublishLocationDraft, PublishVisibility } from "../types/publish";
 
 const MAX_IMAGE_COUNT = 9;
@@ -46,7 +47,7 @@ const imageStatus = computed(() => {
 const filteredMapLocations = computed(() => {
   const keyword = locationSearch.value.trim().toLowerCase();
   const list = keyword
-    ? mapLocations.value.filter((location) => `${location.name} ${location.type || ""}`.toLowerCase().includes(keyword))
+    ? mapLocations.value.filter((location) => `${location.name} ${location.type || ""} ${location.place?.name || ""} ${location.place?.type || ""}`.toLowerCase().includes(keyword))
     : mapLocations.value;
   return list.slice(0, 18);
 });
@@ -58,9 +59,13 @@ const selectedLocationDraft = computed<PublishLocationDraft | null>(() => {
     name: location.name,
     lat: location.lat,
     lng: location.lng,
+    placeId: placeIdForLocation(location),
+    place: placeRefForLocation(location),
   });
 });
-const locationPreviewLabel = computed(() => selectedMapLocation.value?.name || placeName.value.trim() || "未绑定地点");
+const knownPlaceLabel = computed(() => selectedMapLocation.value ? placeRefForLocation(selectedMapLocation.value).name : "");
+const locationPreviewLabel = computed(() => knownPlaceLabel.value || placeName.value.trim() || "未绑定地点");
+const locationBindingMeta = computed(() => selectedMapLocation.value ? "已绑定已知地点" : "手填地点仅作为展示文本");
 
 const visibilityOptions: Array<{ value: PublishVisibility; label: string }> = [
   { value: "public", label: "公开" },
@@ -68,6 +73,19 @@ const visibilityOptions: Array<{ value: PublishVisibility; label: string }> = [
   { value: "school", label: "本校" },
   { value: "private", label: "仅自己" },
 ];
+
+function placeIdForLocation(location: MapLocation) {
+  return location.place?.id || location.placeId || location.id;
+}
+
+function placeRefForLocation(location: MapLocation): PlaceRef {
+  const id = placeIdForLocation(location);
+  return location.place || {
+    id,
+    name: location.name,
+    type: location.type,
+  };
+}
 
 async function loadIdentity() {
   try {
@@ -191,8 +209,9 @@ async function submitPublish() {
     });
     const response = await publishPost(payload);
     lastTid.value = response.tid || null;
-    successMessage.value = publishedLocationLabel && publishedLocationLabel !== "未绑定地点"
-      ? `发布成功，已关联到「${publishedLocationLabel}」。`
+    const boundPlaceName = response.place?.name || publishedLocationLabel;
+    successMessage.value = boundPlaceName && boundPlaceName !== "未绑定地点"
+      ? `发布成功，已绑定到「${boundPlaceName}」。`
       : "发布成功，稍后可以在首页看到。";
     resetForm();
   } catch (error) {
@@ -263,12 +282,12 @@ onMounted(() => {
 
         <section class="publish-view__section publish-view__map-picker" aria-labelledby="publish-map-title">
           <div class="publish-view__section-title">
-            <strong id="publish-map-title">地图地点</strong>
-            <span>{{ selectedMapLocation ? '已绑定' : '可选' }}</span>
+            <strong id="publish-map-title">绑定地点</strong>
+            <span>{{ selectedMapLocation ? '已绑定已知地点' : '可选' }}</span>
           </div>
 
           <label class="publish-view__field publish-view__map-search">
-            <span>搜索地点</span>
+            <span>搜索已知地点</span>
             <input v-model="locationSearch" maxlength="40" placeholder="搜索图书馆、食堂、教学楼…" />
           </label>
 
@@ -288,13 +307,16 @@ onMounted(() => {
               @click="selectMapLocation(location)"
             >
               <strong>{{ location.name }}</strong>
-              <span>{{ location.type || '校园地点' }}</span>
+              <span>{{ location.place?.type || location.type || '校园地点' }}</span>
             </button>
           </div>
           <div v-else class="publish-view__mini-state">没有匹配地点，可以手填地点发布。</div>
 
           <div v-if="selectedMapLocation" class="publish-view__map-selected">
-            <LocationChip>{{ selectedMapLocation.name }}</LocationChip>
+            <div>
+              <LocationChip>{{ knownPlaceLabel }}</LocationChip>
+              <span>{{ locationBindingMeta }}</span>
+            </div>
             <LianButton type="button" size="sm" variant="ghost" @click="clearMapLocation">改用手填</LianButton>
           </div>
         </section>
@@ -306,6 +328,7 @@ onMounted(() => {
 
         <div class="publish-view__location-preview">
           <LocationChip>{{ locationPreviewLabel }}</LocationChip>
+          <span>{{ locationBindingMeta }}</span>
         </div>
 
         <label class="publish-view__field">
@@ -387,7 +410,8 @@ onMounted(() => {
 }
 
 .publish-view__section-title span,
-.publish-view__map-selected span {
+.publish-view__map-selected span,
+.publish-view__location-preview span {
   color: var(--lian-muted);
   line-height: 1.6;
 }
@@ -539,6 +563,13 @@ onMounted(() => {
   border: 1px solid rgba(31, 167, 160, 0.2);
   border-radius: var(--radius-card);
   background: rgba(255, 255, 255, 0.58);
+}
+
+.publish-view__map-selected > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: center;
 }
 
 .publish-view__mini-state {
