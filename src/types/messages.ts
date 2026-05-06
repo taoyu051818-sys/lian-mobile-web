@@ -1,20 +1,21 @@
+import type { DisplayActor, SourceSignal } from "./feed";
+
 export type MessageTabKey = "channel" | "notifications";
 
-export interface ChannelMessageAuthor {
-  displayName?: string;
-  username?: string;
-  avatarUrl?: string;
-  identityTag?: string;
-}
+export interface ChannelMessageAuthor extends DisplayActor {}
 
 export interface ChannelMessage {
   id: string | number;
   content?: string;
   contentHtml?: string;
+  actor?: DisplayActor;
+  source?: SourceSignal;
   identityTag?: string;
   author?: ChannelMessageAuthor;
   username?: string;
   displayName?: string;
+  avatarUrl?: string;
+  avatarText?: string;
   time?: string;
   timestampISO?: string;
   readCount?: number;
@@ -26,11 +27,7 @@ export interface ChannelResponse {
   nextOffset?: number;
 }
 
-export interface NotificationActor {
-  displayName?: string;
-  username?: string;
-  identityTag?: string;
-}
+export interface NotificationActor extends DisplayActor {}
 
 export interface NotificationItem {
   id?: string | number;
