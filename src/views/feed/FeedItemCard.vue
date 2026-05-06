@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { computed } from "vue";
-import { LocationChip, TypeChip } from "../../ui";
+import { computed, ref, watch } from "vue";
+import { togglePostLike } from "../../api/posts";
 import type { FeedItem, FeedItemId } from "../../types/feed";
 
-type TypeChipTone = "experience" | "discussion" | "hot" | "food" | "place" | "ai" | "official" | "trade" | "contribution" | "default";
+type CardTemplate = "image" | "text" | "activity" | "place" | "merchant" | "help";
 
 const props = defineProps<{
   item: FeedItem;
@@ -12,6 +12,10 @@ const props = defineProps<{
 const emit = defineEmits<{
   open: [id: FeedItemId];
 }>();
+
+const liked = ref(false);
+const likeCount = ref(0);
+const likeBusy = ref(false);
 
 const title = computed(() => props.item.title || "未命名内容");
 const coverUrl = computed(() => props.item.cover || "");
@@ -28,34 +32,37 @@ const authorName = computed(() => author.value.displayName || "同学");
 const authorAvatarUrl = computed(() => author.value.avatarUrl || "");
 const authorInitial = computed(() => authorName.value.slice(0, 1) || "同");
 const timeLabel = computed(() => props.item.timeLabel || formatRelativeTime(props.item.timestampISO) || "刚刚");
+const searchText = computed(() => `${props.item.contentType} ${primaryTag.value} ${title.value} ${placeLabel.value}`.toLowerCase());
 
-const typeTone = computed<TypeChipTone>(() => {
-  const raw = props.item.contentType.toLowerCase();
-  if (raw.includes("food") || raw.includes("食") || raw.includes("饭")) return "food";
-  if (raw.includes("place") || raw.includes("map") || raw.includes("地点")) return "place";
-  if (raw.includes("ai")) return "ai";
-  if (raw.includes("official") || raw.includes("官方")) return "official";
-  if (raw.includes("trade") || raw.includes("二手")) return "trade";
-  if (raw.includes("hot") || raw.includes("热")) return "hot";
-  if (raw.includes("discussion") || raw.includes("问") || raw.includes("讨论")) return "discussion";
-  return "experience";
+const cardTemplate = computed<CardTemplate>(() => {
+  const raw = searchText.value;
+  if (raw.includes("报名") || raw.includes("活动") || raw.includes("社团") || raw.includes("opportunity") || raw.includes("activity")) return "activity";
+  if (raw.includes("商家") || raw.includes("优惠") || raw.includes("店") || raw.includes("merchant") || raw.includes("trade")) return "merchant";
+  if (raw.includes("食") || raw.includes("饭") || raw.includes("food")) return "merchant";
+  if (raw.includes("互助") || raw.includes("求助") || raw.includes("组队") || raw.includes("help")) return "help";
+  if (raw.includes("地点") || raw.includes("路线") || raw.includes("图书馆") || raw.includes("map") || raw.includes("place")) return "place";
+  return coverUrl.value ? "image" : "text";
 });
 
-const typeLabel = computed(() => {
-  const labels: Record<TypeChipTone, string> = {
-    experience: "经验",
-    discussion: "讨论",
-    hot: "热帖",
-    food: "饭堂",
-    place: "地点",
-    ai: "AI整理",
-    official: "官方",
-    trade: "互助",
-    contribution: "贡献",
-    default: "内容",
+const templateMark = computed(() => {
+  const marks: Record<CardTemplate, string> = {
+    image: "◐",
+    text: "✎",
+    activity: "◦",
+    place: "⌖",
+    merchant: "食",
+    help: "＋",
   };
-  return labels[typeTone.value] || "内容";
+  return marks[cardTemplate.value];
 });
+
+const titleClamp = computed(() => cardTemplate.value === "text" ? 4 : 2);
+const likeLabel = computed(() => `${liked.value ? "取消喜欢" : "喜欢"}，当前 ${likeCount.value} 个喜欢`);
+
+watch(() => props.item, (item) => {
+  liked.value = Boolean(item.liked);
+  likeCount.value = Math.max(0, Number(item.likeCount || 0));
+}, { immediate: true });
 
 function formatRelativeTime(value: string) {
   if (!value) return "";
@@ -73,12 +80,32 @@ function formatRelativeTime(value: string) {
 function openCard() {
   emit("open", props.item.tid);
 }
+
+async function handleLike() {
+  if (likeBusy.value) return;
+  const previousLiked = liked.value;
+  const previousCount = likeCount.value;
+  const nextLiked = !previousLiked;
+  liked.value = nextLiked;
+  likeCount.value = Math.max(0, previousCount + (nextLiked ? 1 : -1));
+  likeBusy.value = true;
+  try {
+    const response = await togglePostLike(props.item.tid, nextLiked);
+    liked.value = Boolean(response.liked);
+    likeCount.value = Math.max(0, Number(response.likeCount || 0));
+  } catch {
+    liked.value = previousLiked;
+    likeCount.value = previousCount;
+  } finally {
+    likeBusy.value = false;
+  }
+}
 </script>
 
 <template>
   <article
     class="feed-item-card"
-    :class="{ 'feed-item-card--with-cover': coverUrl }"
+    :class="[`feed-item-card--${cardTemplate}`, { 'feed-item-card--with-cover': coverUrl }]"
     role="button"
     tabindex="0"
     :aria-label="`${title}，${authorName}，${placeLabel}`"
@@ -86,26 +113,42 @@ function openCard() {
     @keydown.enter.prevent="openCard"
     @keydown.space.prevent="openCard"
   >
-    <div class="feed-item-card__media">
+    <div v-if="cardTemplate !== 'text' || coverUrl" class="feed-item-card__media">
       <img v-if="coverUrl" class="feed-item-card__cover" :src="coverUrl" :alt="title" loading="lazy" />
-      <div v-else class="feed-item-card__placeholder" aria-hidden="true">{{ typeLabel }}</div>
+      <div v-else class="feed-item-card__placeholder" aria-hidden="true">
+        <span>{{ templateMark }}</span>
+      </div>
       <span v-if="primaryTag" class="feed-item-card__floating-tag">{{ primaryTag }}</span>
     </div>
 
     <div class="feed-item-card__body">
-      <div class="feed-item-card__chips" aria-label="内容状态">
-        <TypeChip :type="typeTone">{{ typeLabel }}</TypeChip>
-        <LocationChip>{{ placeLabel }}</LocationChip>
-      </div>
+      <span v-if="cardTemplate === 'text' && primaryTag" class="feed-item-card__inline-tag">{{ primaryTag }}</span>
 
-      <h3>{{ title }}</h3>
+      <h3 :style="{ '--card-title-clamp': String(titleClamp) }">{{ title }}</h3>
 
-      <footer class="feed-item-card__author">
-        <img v-if="authorAvatarUrl" :src="authorAvatarUrl" :alt="authorName" loading="lazy" />
-        <span v-else class="feed-item-card__avatar-text" aria-hidden="true">{{ authorInitial }}</span>
-        <span class="feed-item-card__author-name">{{ authorName }}</span>
-        <span class="feed-item-card__dot" aria-hidden="true">·</span>
-        <span>{{ timeLabel }}</span>
+      <footer class="feed-item-card__footer">
+        <div class="feed-item-card__author">
+          <img v-if="authorAvatarUrl" :src="authorAvatarUrl" :alt="authorName" loading="lazy" />
+          <span v-else class="feed-item-card__avatar-text" aria-hidden="true">{{ authorInitial }}</span>
+          <span class="feed-item-card__author-name">{{ authorName }}</span>
+          <span class="feed-item-card__dot" aria-hidden="true">·</span>
+          <span>{{ timeLabel }}</span>
+        </div>
+
+        <button
+          class="feed-item-card__like"
+          :class="{ 'is-liked': liked }"
+          type="button"
+          :aria-label="likeLabel"
+          :aria-pressed="liked"
+          :disabled="likeBusy"
+          @click.stop="handleLike"
+          @keydown.enter.stop
+          @keydown.space.stop
+        >
+          <span aria-hidden="true">{{ liked ? "♥" : "♡" }}</span>
+          <span>{{ likeCount }}</span>
+        </button>
       </footer>
     </div>
   </article>
@@ -133,6 +176,36 @@ function openCard() {
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
 }
 
+.feed-item-card--text {
+  background:
+    radial-gradient(circle at top left, rgba(31, 167, 160, 0.12), transparent 42%),
+    var(--lian-card-strong);
+}
+
+.feed-item-card--activity {
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.92), rgba(255, 247, 237, 0.82)),
+    var(--lian-card-strong);
+}
+
+.feed-item-card--place {
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.92), rgba(236, 253, 245, 0.82)),
+    var(--lian-card-strong);
+}
+
+.feed-item-card--merchant {
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.94), rgba(255, 251, 235, 0.86)),
+    var(--lian-card-strong);
+}
+
+.feed-item-card--help {
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.92), rgba(245, 243, 255, 0.82)),
+    var(--lian-card-strong);
+}
+
 .feed-item-card__media {
   position: relative;
   overflow: hidden;
@@ -150,13 +223,41 @@ function openCard() {
   object-fit: cover;
 }
 
+.feed-item-card--activity .feed-item-card__cover,
+.feed-item-card--merchant .feed-item-card__cover,
+.feed-item-card--place .feed-item-card__cover {
+  aspect-ratio: 0.92;
+}
+
 .feed-item-card__placeholder {
   display: grid;
   min-height: 116px;
   place-items: center;
   color: var(--lian-primary-deep);
-  font-size: 13px;
+}
+
+.feed-item-card__placeholder span {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  border-radius: var(--radius-orb);
+  background: rgba(255, 255, 255, 0.72);
+  font-size: 18px;
   font-weight: 900;
+}
+
+.feed-item-card__floating-tag,
+.feed-item-card__inline-tag {
+  max-width: 100%;
+  overflow: hidden;
+  padding: 5px 8px;
+  border-radius: var(--radius-chip);
+  font-size: 11px;
+  font-weight: 900;
+  line-height: 1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .feed-item-card__floating-tag {
@@ -164,18 +265,17 @@ function openCard() {
   top: var(--space-2);
   left: var(--space-2);
   max-width: calc(100% - var(--space-4));
-  overflow: hidden;
-  padding: 5px 8px;
   border: 1px solid rgba(255, 255, 255, 0.54);
-  border-radius: var(--radius-chip);
   background: rgba(17, 24, 39, 0.64);
   color: #fff;
-  font-size: 11px;
-  font-weight: 900;
-  line-height: 1;
-  text-overflow: ellipsis;
-  white-space: nowrap;
   backdrop-filter: blur(8px);
+}
+
+.feed-item-card__inline-tag {
+  justify-self: start;
+  border: 1px solid rgba(31, 41, 51, 0.08);
+  background: rgba(255, 255, 255, 0.62);
+  color: var(--lian-primary-deep);
 }
 
 .feed-item-card__body {
@@ -185,12 +285,8 @@ function openCard() {
   padding: var(--space-3);
 }
 
-.feed-item-card__chips,
-.feed-item-card__author {
-  display: flex;
-  min-width: 0;
-  gap: var(--space-1);
-  align-items: center;
+.feed-item-card--text .feed-item-card__body {
+  padding-top: var(--space-4);
 }
 
 .feed-item-card h3 {
@@ -201,10 +297,27 @@ function openCard() {
   font-size: 15px;
   line-height: 1.34;
   -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
+  -webkit-line-clamp: var(--card-title-clamp, 2);
+}
+
+.feed-item-card--text h3 {
+  font-size: 16px;
+  line-height: 1.42;
+}
+
+.feed-item-card__footer {
+  display: flex;
+  min-width: 0;
+  gap: var(--space-2);
+  align-items: center;
+  justify-content: space-between;
 }
 
 .feed-item-card__author {
+  display: flex;
+  min-width: 0;
+  gap: var(--space-1);
+  align-items: center;
   color: var(--lian-muted);
   font-size: 11px;
   line-height: 1.2;
@@ -236,6 +349,32 @@ function openCard() {
 
 .feed-item-card__dot {
   color: var(--lian-faint);
+}
+
+.feed-item-card__like {
+  display: inline-flex;
+  flex: 0 0 auto;
+  gap: 3px;
+  align-items: center;
+  justify-content: center;
+  min-width: 42px;
+  min-height: 30px;
+  padding: 0 8px;
+  border: 1px solid rgba(31, 41, 51, 0.08);
+  border-radius: var(--radius-chip);
+  background: rgba(255, 255, 255, 0.62);
+  color: var(--lian-muted);
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.feed-item-card__like.is-liked {
+  background: rgba(255, 236, 236, 0.82);
+  color: #c2410c;
+}
+
+.feed-item-card__like:disabled {
+  opacity: 0.64;
 }
 
 @media (prefers-reduced-motion: reduce) {
