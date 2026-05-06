@@ -43,7 +43,7 @@ button {
 }
 
 .vue-shell .feed-view:not(.is-detail-open) {
-  padding-top: calc(96px + env(safe-area-inset-top)) !important;
+  padding-top: calc(var(--floating-bar-top-offset) + var(--floating-bar-height) + 6px + env(safe-area-inset-top)) !important;
 }
 
 .vue-shell__grid {
