@@ -1,4 +1,5 @@
 import { apiSend } from "./http";
+import type { PlaceRef } from "../types/place";
 import type {
   PublishLocationDraft,
   PublishPayload,
@@ -57,12 +58,17 @@ export function createMapV2LocationDraft(input: {
   name: string;
   lat: number;
   lng: number;
+  placeId?: string;
+  place?: PlaceRef;
   note?: string;
 }): PublishLocationDraft {
   const name = input.name.trim();
+  const placeId = input.place?.id || input.placeId || input.locationId;
   return {
     source: "map_v2",
     locationId: input.locationId,
+    placeId,
+    place: input.place || (placeId ? { id: placeId, name, type: undefined } : undefined),
     locationArea: name,
     displayName: name,
     lat: Number(input.lat.toFixed(7)),
@@ -72,7 +78,7 @@ export function createMapV2LocationDraft(input: {
     mapVersion: "gaode_v2",
     confidence: 0.86,
     skipped: false,
-    note: "Vue MapV2 location selection",
+    note: input.note || "Vue MapV2 location selection",
   };
 }
 
