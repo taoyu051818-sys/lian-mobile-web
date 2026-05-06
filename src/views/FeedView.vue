@@ -21,7 +21,7 @@ interface DetailHistoryState {
 }
 
 const DEFAULT_TABS: FeedTab[] = [
-  { id: "此刻", label: "此刻" }
+  { id: "此刻", label: "此刻" },
   { id: "精选", label: "精选" },
 ];
 const PAGE_SIZE = 12;
@@ -480,6 +480,7 @@ onBeforeUnmount(() => {
       </div>
     </Transition>
 
+    <Transition name="feed-tabs-motion">
       <nav v-if="!detailOpen || detailReturning || detailDragging" class="feed-view__tabs" aria-label="信息分类">
         <button
           v-for="tab in tabs"
@@ -493,6 +494,7 @@ onBeforeUnmount(() => {
           {{ tab.label }}
         </button>
       </nav>
+    </Transition>
 
     <InlineError v-if="errorMessage">
       {{ errorMessage }}
@@ -537,6 +539,7 @@ onBeforeUnmount(() => {
       </div>
     </div>
 
+    <Transition name="feed-detail-motion">
       <PostDetailPanel
         v-if="detailOpen"
         key="feed-detail"
@@ -553,6 +556,7 @@ onBeforeUnmount(() => {
         @pointerup="onDetailPointerUp"
         @pointercancel="onDetailPointerCancel"
       />
+    </Transition>
 
     <div
       v-if="cardTransition"
@@ -807,6 +811,10 @@ onBeforeUnmount(() => {
 
 .feed-update-probe-motion-enter-active,
 .feed-update-probe-motion-leave-active,
+.feed-tabs-motion-enter-active,
+.feed-tabs-motion-leave-active,
+.feed-detail-motion-enter-active,
+.feed-detail-motion-leave-active {
   transition: opacity 180ms ease, transform 180ms ease, filter 180ms ease;
 }
 
@@ -817,16 +825,20 @@ onBeforeUnmount(() => {
   filter: blur(6px);
 }
 
+.feed-tabs-motion-enter-from,
+.feed-tabs-motion-leave-to {
   opacity: 0;
   transform: translateY(-16px) scale(0.98);
   filter: blur(6px);
 }
 
+.feed-detail-motion-enter-from {
   opacity: 0;
   transform: translateY(-18px) scale(0.992);
   filter: blur(5px);
 }
 
+.feed-detail-motion-leave-to {
   opacity: 0;
   transform: translateY(-26px) scale(0.988);
   filter: blur(5px);
@@ -849,11 +861,19 @@ onBeforeUnmount(() => {
   .feed-view__card-transition,
   .feed-update-probe-motion-enter-active,
   .feed-update-probe-motion-leave-active,
+  .feed-tabs-motion-enter-active,
+  .feed-tabs-motion-leave-active,
+  .feed-detail-motion-enter-active,
+  .feed-detail-motion-leave-active {
     transition: none;
   }
 
   .feed-update-probe-motion-enter-from,
   .feed-update-probe-motion-leave-to,
+  .feed-tabs-motion-enter-from,
+  .feed-tabs-motion-leave-to,
+  .feed-detail-motion-enter-from,
+  .feed-detail-motion-leave-to {
     opacity: 1;
     transform: none;
     filter: none;

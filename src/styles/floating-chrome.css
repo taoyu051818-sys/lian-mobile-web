@@ -109,14 +109,20 @@
   display: none;
 }
 
+.feed-tabs-motion-enter-from,
+.feed-tabs-motion-leave-to {
   opacity: 0 !important;
   filter: blur(var(--floating-chrome-blur)) !important;
   transform: translate3d(0, var(--floating-chrome-top-exit-y), 0) scale(var(--floating-chrome-hidden-scale)) !important;
 }
 
+.feed-detail-motion-enter-active,
+.feed-detail-motion-leave-active {
   transition: none !important;
 }
 
+.feed-detail-motion-enter-from,
+.feed-detail-motion-leave-to {
   opacity: 1 !important;
   filter: none !important;
   transform: none !important;
