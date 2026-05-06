@@ -23,9 +23,25 @@ Use these scripts instead of ad-hoc Vite commands:
 
 | Script | Purpose |
 | --- | --- |
-| `npm run dev:vue-canary` | Run the Vue canary development server on port `4301` |
+| `npm run dev:vue-canary` | Run the Vue canary development server on port `4301` for local active development |
 | `npm run preview:vue-canary` | Preview the built Vue app on port `4301` |
 | `npm run test:vue-canary` | Run the frontend smoke check against the Vue canary port |
+
+## Production supervisor behavior
+
+The production frontend supervisor must serve Vue canary from the built `dist` output through Vite preview:
+
+```bash
+vite preview --host 0.0.0.0 --port 4301 --strictPort
+```
+
+It must not run the Vite development server in production:
+
+```bash
+vite --host 0.0.0.0 --port 4301 --strictPort
+```
+
+Running the development server in production exposes `/node_modules/.vite/deps/*` optimized dependency URLs and can trigger stale optimized dependency failures such as `Outdated Optimize Dep`.
 
 ## Migration rule
 
