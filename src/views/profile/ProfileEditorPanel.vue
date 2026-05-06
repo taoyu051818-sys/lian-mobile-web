@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from "vue";
+import { computed, onBeforeUnmount, ref } from "vue";
 import {
   activateProfileAlias,
   createInviteCode,
@@ -140,6 +140,10 @@ async function generateInviteCode() {
     inviteBusy.value = false;
   }
 }
+
+onBeforeUnmount(() => {
+  revokePreview();
+});
 </script>
 
 <template>
