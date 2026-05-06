@@ -1,8 +1,6 @@
-// Temporary compatibility mapper for legacy public feed rendering.
-// Contract direction is tracked in server #45 and frontend #46:
-// display actor = activeAlias || user; identityTag = trust/contribution; source = provider metadata.
-const TEMP_SOURCE_IDENTITY_TAGS = new Set(["nodebb", "system", "系统", "平台"]);
-
+// Actor/source DTO mapper for legacy public feed rendering.
+// Server #57 exposes canonical actor/source fields for feed, detail, and replies.
+// Keep legacy flat fields only as compatibility fallback during the migration window.
 function isPlainRecord(value) {
   return value && typeof value === "object" && !Array.isArray(value);
 }
@@ -36,30 +34,33 @@ function normalizeFeedTab(tab) {
     return { id: label, label };
   }
   if (!isPlainRecord(tab)) return { id: "", label: "" };
-  const label = recordText(tab, ["label", "name"], "");
-  const id = recordText(tab, ["id", "key", "value"], label);
+  const label = textField(tab.label, "");
+  const id = textField(tab.id, "") || textField(tab.key, "") || textField(tab.value, label);
   return { id, label: label || id };
 }
 
-function normalizeIdentityTag(value) {
-  const text = textField(value, "");
-  if (!text) return "";
-  // Temporary hotfix only: backend #45 should stop emitting source/provider labels as identity tags.
-  if (TEMP_SOURCE_IDENTITY_TAGS.has(text.toLowerCase())) return "";
-  return text;
+function legacyActorRecord(entity) {
+  return isPlainRecord(entity?.author) ? entity.author : null;
 }
 
 function normalizeDisplayActor(entity) {
-  const actor = isPlainRecord(entity?.actor)
-    ? entity.actor
-    : isPlainRecord(entity?.author)
-      ? entity.author
-      : null;
+  const actor = isPlainRecord(entity?.actor) ? entity.actor : null;
+  const legacyAuthor = legacyActorRecord(entity);
   const flatAuthor = textField(entity?.author, "");
-  const displayName = recordText(actor, ["displayName", "username", "name"], flatAuthor || "同学");
-  const avatarUrl = mediaUrlField(actor?.avatarUrl || actor?.avatar) || textField(entity?.authorAvatarUrl, "");
-  const avatarText = recordText(actor, ["avatarText", "initials"], textField(entity?.authorAvatarText, displayName || "同"));
-  const identityTag = normalizeIdentityTag(recordText(actor, ["identityTag"], textField(entity?.authorIdentityTag || entity?.identityTag, "")));
+  const displayName = textField(actor?.displayName, "")
+    || recordText(legacyAuthor, ["displayName"], "")
+    || flatAuthor
+    || textField(entity?.username, "")
+    || "同学";
+  const avatarUrl = mediaUrlField(actor?.avatarUrl)
+    || mediaUrlField(legacyAuthor?.avatarUrl)
+    || textField(entity?.authorAvatarUrl || entity?.avatarUrl, "");
+  const avatarText = textField(actor?.avatarText, "")
+    || recordText(legacyAuthor, ["avatarText"], "")
+    || textField(entity?.authorAvatarText || entity?.avatarText, displayName || "同");
+  const identityTag = textField(actor?.identityTag, "")
+    || recordText(legacyAuthor, ["identityTag"], "")
+    || textField(entity?.authorIdentityTag || entity?.identityTag, "");
   return { displayName, avatarUrl, avatarText, identityTag };
 }
 
@@ -437,7 +438,7 @@ function repliesTemplate(post) {
       </div>
       <div class="reply-list">
         ${replies.length ? replies.map((reply) => {
-          const actor = normalizeDisplayActor({ ...reply, actor: reply.actor, author: reply.author || reply.username });
+          const actor = normalizeDisplayActor(reply);
           return `
           <article class="reply-item">
             <div class="reply-meta">
