@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, ref } from "vue";
+import { computed, ref } from "vue";
 import { BottomTabBar, ToastHost } from "./ui";
 import AppViewHost from "./app/AppViewHost.vue";
 import { appViews, type AppViewKey } from "./app/view-types";
@@ -13,7 +13,6 @@ type ChromeStatePayload = boolean | {
 const { activeViewKey, setActiveView } = useActiveView();
 const chromeHidden = ref(false);
 const chromeProgress = ref(1);
-let detailChromeProgressFrame = 0;
 
 const tabs = appViews.map((view) => ({
   key: view.key,
@@ -41,75 +40,25 @@ function normalizeProgress(value: unknown) {
   return Math.min(1, Math.max(0, numberValue));
 }
 
-function stopDetailChromeProgressFollow() {
-  if (typeof window !== "undefined" && detailChromeProgressFrame) {
-    window.cancelAnimationFrame(detailChromeProgressFrame);
-  }
-  detailChromeProgressFrame = 0;
-}
-
-function readDetailCardProgress() {
-  if (typeof window === "undefined") return null;
-  const detailMotionHost = document.querySelector<HTMLElement>(".feed-view.is-detail-dragging, .feed-view.is-detail-returning");
-  if (!detailMotionHost) return null;
-  const progress = window.getComputedStyle(detailMotionHost).getPropertyValue("--detail-card-progress").trim();
-  return normalizeProgress(progress);
-}
-
-function followDetailChromeProgress() {
-  const progress = readDetailCardProgress();
-  if (progress === null) {
-    stopDetailChromeProgressFollow();
-    chromeHidden.value = false;
-    chromeProgress.value = 1;
-    return;
-  }
-
-  chromeHidden.value = true;
-  chromeProgress.value = progress;
-  if (typeof window !== "undefined") {
-    detailChromeProgressFrame = window.requestAnimationFrame(followDetailChromeProgress);
-  }
-}
-
-function startDetailChromeProgressFollow() {
-  if (typeof window === "undefined") return false;
-  if (!document.querySelector(".feed-view.is-detail-open")) return false;
-
-  stopDetailChromeProgressFollow();
-  chromeHidden.value = true;
-  chromeProgress.value = 0;
-  detailChromeProgressFrame = window.requestAnimationFrame(followDetailChromeProgress);
-  return true;
-}
-
 function handleChromeChange(payload: ChromeStatePayload) {
   if (typeof payload === "boolean") {
-    if (!payload && startDetailChromeProgressFollow()) return;
-    stopDetailChromeProgressFollow();
     chromeHidden.value = payload;
     chromeProgress.value = payload ? 0 : 1;
     return;
   }
 
-  stopDetailChromeProgressFollow();
   const hidden = Boolean(payload.hidden);
   chromeHidden.value = hidden;
   chromeProgress.value = hidden ? normalizeProgress(payload.progress) : 1;
 }
 
 function handleViewChange(key: string) {
-  stopDetailChromeProgressFollow();
   chromeHidden.value = false;
   chromeProgress.value = 1;
   if (isAppViewKey(key)) {
     setActiveView(key);
   }
 }
-
-onBeforeUnmount(() => {
-  stopDetailChromeProgressFollow();
-});
 </script>
 
 <template>
