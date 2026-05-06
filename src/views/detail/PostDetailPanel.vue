@@ -41,6 +41,9 @@ const actionError = ref("");
 const actionMessage = ref("");
 const reportCategory = ref(reportCategories[reportCategories.length - 1].value);
 const replyContent = ref("");
+const galleryPointerDownX = ref(0);
+const galleryPointerDownY = ref(0);
+const galleryPointerMoved = ref(false);
 
 const postId = computed(() => props.post?.tid ?? null);
 const title = computed(() => props.post?.title || "帖子详情");
@@ -67,6 +70,7 @@ watch(() => props.post, (post) => {
   replyExpanded.value = false;
   replyContent.value = "";
   fullscreenImage.value = "";
+  galleryPointerMoved.value = false;
 }, { immediate: true });
 
 watch(fullResolutionImages, (urls) => {
@@ -169,6 +173,28 @@ function showActionError(error: unknown, fallback: string) {
 function collapseReplyIfOpen() {
   if (!replyExpanded.value) return;
   replyExpanded.value = false;
+}
+
+function handleGalleryPointerDown(event: PointerEvent) {
+  galleryPointerDownX.value = event.clientX;
+  galleryPointerDownY.value = event.clientY;
+  galleryPointerMoved.value = false;
+}
+
+function handleGalleryPointerMove(event: PointerEvent) {
+  const deltaX = Math.abs(event.clientX - galleryPointerDownX.value);
+  const deltaY = Math.abs(event.clientY - galleryPointerDownY.value);
+  if (deltaX > 8 || deltaY > 8) {
+    galleryPointerMoved.value = true;
+  }
+}
+
+function openGalleryImage(index: number) {
+  if (galleryPointerMoved.value) {
+    galleryPointerMoved.value = false;
+    return;
+  }
+  fullscreenImage.value = fullResolutionImages.value[index] || images.value[index] || "";
 }
 
 async function handleShare() {
@@ -312,7 +338,9 @@ async function submitReply() {
             :key="url"
             class="post-detail-panel__gallery-item"
             type="button"
-            @click="fullscreenImage = fullResolutionImages[index] || url"
+            @pointerdown="handleGalleryPointerDown"
+            @pointermove="handleGalleryPointerMove"
+            @click="openGalleryImage(index)"
           >
             <img :src="url" :alt="title" loading="eager" decoding="async" />
           </button>
@@ -422,8 +450,6 @@ async function submitReply() {
   border-radius: var(--floating-bar-radius);
   background: var(--glass-bg-strong);
   box-shadow: var(--shadow-floating);
-  opacity: var(--detail-chrome-opacity, 1);
-  transform: translateY(var(--detail-chrome-translate-y, 0px));
   transition: transform var(--motion-standard) var(--motion-ease-standard), opacity var(--motion-standard) var(--motion-ease-standard), min-height 180ms ease, align-items 180ms ease;
   backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
 }
@@ -441,6 +467,8 @@ async function submitReply() {
   align-items: center;
   min-height: var(--floating-bar-height);
   padding: var(--floating-bar-padding);
+  opacity: var(--detail-top-chrome-opacity, 1);
+  transform: translateY(var(--detail-top-chrome-translate-y, 0px));
 }
 
 .post-detail-panel__dock {
@@ -450,6 +478,8 @@ async function submitReply() {
   align-items: center;
   min-height: var(--floating-bar-height);
   padding: var(--floating-bar-padding);
+  opacity: var(--detail-bottom-chrome-opacity, 1);
+  transform: translateY(var(--detail-bottom-chrome-translate-y, 0px));
 }
 
 .post-detail-panel__close,
