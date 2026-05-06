@@ -3,7 +3,9 @@ import { computed, onMounted, ref } from "vue";
 import { fetchAuthMe } from "../api/profile";
 import { fetchChannelMessages, fetchNotifications, sendChannelMessage } from "../api/messages";
 import { GlassPanel, IdentityBadge, InlineError, LianButton, TrustBadge } from "../ui";
+import type { DisplayActor } from "../types/feed";
 import type { ChannelMessage, MessageTabKey, NotificationItem } from "../types/messages";
+import type { ProfileUser } from "../types/profile";
 
 const activeTab = ref<MessageTabKey>("channel");
 const channelItems = ref<ChannelMessage[]>([]);
@@ -16,6 +18,7 @@ const channelHasMore = ref(false);
 const channelOffset = ref(0);
 const composerContent = ref("");
 const composerIdentityTag = ref("");
+const currentUser = ref<ProfileUser | null>(null);
 const identityTags = ref<string[]>([]);
 const sending = ref(false);
 const sendError = ref("");
@@ -25,8 +28,14 @@ const tabs: Array<{ key: MessageTabKey; label: string }> = [
   { key: "notifications", label: "通知" },
 ];
 
-const composerName = computed(() => composerIdentityTag.value || identityTags.value[0] || "同学");
-const composerAvatarText = computed(() => composerName.value.slice(0, 2) || "同");
+const activeAlias = computed(() => {
+  const user = currentUser.value;
+  if (!user?.aliases?.length) return null;
+  return user.aliases.find((alias) => alias.id === user.activeAliasId) || user.aliases[0] || null;
+});
+const composerActorName = computed(() => activeAlias.value?.name || currentUser.value?.username || "同学");
+const composerAvatarText = computed(() => composerActorName.value.slice(0, 2) || "同");
+const composerSignalMeta = computed(() => composerIdentityTag.value ? `身份信号：${composerIdentityTag.value}` : "未选择身份信号");
 
 function stripHtml(html?: string) {
   if (!html) return "";
@@ -36,20 +45,43 @@ function stripHtml(html?: string) {
   return container.textContent || container.innerText || "";
 }
 
+function actorDisplayName(actor?: DisplayActor | null, fallback = "") {
+  return actor?.displayName || actor?.username || actor?.name || fallback || "同学";
+}
+
+function actorAvatarText(actor?: DisplayActor | null, fallback = "") {
+  return actor?.avatarText || actorDisplayName(actor, fallback).slice(0, 2) || "同";
+}
+
 function messageText(item: ChannelMessage) {
   return item.content || stripHtml(item.contentHtml) || "这条消息暂时没有内容。";
 }
 
+function messageActor(item: ChannelMessage): DisplayActor {
+  return item.actor || item.author || {
+    displayName: item.displayName || item.username,
+    username: item.username,
+    avatarUrl: item.avatarUrl,
+    avatarText: item.avatarText,
+    identityTag: item.identityTag,
+  };
+}
+
 function messageAuthor(item: ChannelMessage) {
-  return item.author?.displayName || item.author?.username || item.displayName || item.username || "同学";
+  return actorDisplayName(messageActor(item), item.displayName || item.username);
+}
+
+function messageAvatarText(item: ChannelMessage) {
+  return actorAvatarText(messageActor(item), messageAuthor(item));
 }
 
 function messageMeta(item: ChannelMessage) {
-  return item.identityTag || item.author?.identityTag || "校园频道";
+  const actor = messageActor(item);
+  return actor.identityTag || item.identityTag || "校园频道";
 }
 
 function notificationActor(item: NotificationItem) {
-  return item.actor?.displayName || item.actor?.username || (isReplyNotification(item) ? "回复" : "通知");
+  return actorDisplayName(item.actor, isReplyNotification(item) ? "回复" : "通知");
 }
 
 function isReplyNotification(item: NotificationItem) {
@@ -72,10 +104,13 @@ function formatRelativeTime(value?: string) {
 async function loadCurrentUser() {
   try {
     const user = await fetchAuthMe();
+    currentUser.value = user || null;
     identityTags.value = user?.identityTags?.length ? user.identityTags : [];
-    composerIdentityTag.value = identityTags.value[0] || "";
+    composerIdentityTag.value = "";
   } catch {
+    currentUser.value = null;
     identityTags.value = [];
+    composerIdentityTag.value = "";
   }
 }
 
@@ -165,10 +200,11 @@ onMounted(async () => {
 
       <section v-if="activeTab === 'channel'" class="messages-view__pane" aria-label="校园频道">
         <form class="messages-view__composer" @submit.prevent="submitMessage">
-          <IdentityBadge :avatar-text="composerAvatarText" :label="composerName" meta="频道发言身份" />
+          <IdentityBadge :avatar-text="composerAvatarText" :label="composerActorName" :meta="composerSignalMeta" />
           <label v-if="identityTags.length" class="messages-view__field">
-            <span>身份</span>
+            <span>身份信号</span>
             <select v-model="composerIdentityTag">
+              <option value="">不使用身份信号</option>
               <option v-for="tag in identityTags" :key="tag" :value="tag">{{ tag }}</option>
             </select>
           </label>
@@ -189,7 +225,7 @@ onMounted(async () => {
         <div v-else-if="!channelItems.length" class="messages-view__state">还没有消息</div>
         <div v-else class="messages-view__list" aria-live="polite">
           <article v-for="item in channelItems" :key="String(item.id)" class="messages-view__message">
-            <IdentityBadge :avatar-text="messageAuthor(item).slice(0, 2)" :label="messageAuthor(item)" :meta="messageMeta(item)" />
+            <IdentityBadge :avatar-text="messageAvatarText(item)" :label="messageAuthor(item)" :meta="messageMeta(item)" />
             <p>{{ messageText(item) }}</p>
             <footer>
               <span>{{ formatRelativeTime(item.timestampISO || item.time) || "刚刚" }}</span>
