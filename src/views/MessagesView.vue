@@ -58,17 +58,11 @@ function messageText(item: ChannelMessage) {
 }
 
 function messageActor(item: ChannelMessage): DisplayActor {
-  return item.actor || item.author || {
-    displayName: item.displayName || item.username,
-    username: item.username,
-    avatarUrl: item.avatarUrl,
-    avatarText: item.avatarText,
-    identityTag: item.identityTag,
-  };
+  return item.actor || {};
 }
 
 function messageAuthor(item: ChannelMessage) {
-  return actorDisplayName(messageActor(item), item.displayName || item.username);
+  return actorDisplayName(messageActor(item));
 }
 
 function messageAvatarText(item: ChannelMessage) {
@@ -77,7 +71,7 @@ function messageAvatarText(item: ChannelMessage) {
 
 function messageMeta(item: ChannelMessage) {
   const actor = messageActor(item);
-  return actor.identityTag || item.identityTag || "校园频道";
+  return actor.identityTag || "校园频道";
 }
 
 function notificationActor(item: NotificationItem) {
