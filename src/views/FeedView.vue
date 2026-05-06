@@ -15,6 +15,11 @@ interface CardOpenPayload {
 
 interface CardTransitionSnapshot extends CardOpenPayload {}
 
+interface DetailHistoryState {
+  lianDetail?: boolean;
+  tid?: string;
+}
+
 const DEFAULT_TABS: FeedTab[] = [
   { id: "此刻", label: "此刻" },
   { id: "精选", label: "精选" },
@@ -53,6 +58,8 @@ const detailDragging = ref(false);
 const detailReturning = ref(false);
 const detailPointerId = ref<number | null>(null);
 const detailGestureLocked = ref<"horizontal" | "vertical" | null>(null);
+const detailHistoryActive = ref(false);
+const ignoreNextPopState = ref(false);
 const viewportWidth = ref(390);
 const viewportHeight = ref(844);
 
@@ -170,6 +177,34 @@ function prefersReducedMotion() {
   return typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
 }
 
+function currentHistoryState() {
+  if (typeof window === "undefined") return {} as DetailHistoryState;
+  return (window.history.state || {}) as DetailHistoryState;
+}
+
+function pushDetailHistory(id: FeedItemId) {
+  if (typeof window === "undefined" || detailHistoryActive.value) return;
+  try {
+    window.history.pushState({ ...currentHistoryState(), lianDetail: true, tid: String(id) }, "", window.location.href);
+    detailHistoryActive.value = true;
+  } catch {
+    detailHistoryActive.value = false;
+  }
+}
+
+function clearDetailHistory() {
+  if (typeof window === "undefined" || !detailHistoryActive.value) return;
+  detailHistoryActive.value = false;
+  try {
+    if (currentHistoryState().lianDetail) {
+      ignoreNextPopState.value = true;
+      window.history.back();
+    }
+  } catch {
+    ignoreNextPopState.value = false;
+  }
+}
+
 function startCardTransition(payload?: CardOpenPayload) {
   if (!payload || typeof window === "undefined" || prefersReducedMotion()) return;
   cardTransition.value = payload;
@@ -196,12 +231,19 @@ function resetDetailState() {
   detailReturning.value = false;
   detailPointerId.value = null;
   detailGestureLocked.value = null;
+  detailHistoryActive.value = false;
   emit("chrome", false);
 }
 
-function closeDetailWithCardify() {
+function closeDetailWithCardify(options: { syncHistory?: boolean } = {}) {
+  const syncHistory = options.syncHistory !== false;
+  if (syncHistory) clearDetailHistory();
   if (prefersReducedMotion()) {
-    resetDetailState();
+    if (detailOpen.value) {
+      closeDetailWithCardify();
+    } else {
+      resetDetailState();
+    }
     return;
   }
   updateViewport();
@@ -213,6 +255,16 @@ function closeDetailWithCardify() {
   window.setTimeout(() => {
     resetDetailState();
   }, 280);
+}
+
+function onWindowPopState() {
+  if (ignoreNextPopState.value) {
+    ignoreNextPopState.value = false;
+    return;
+  }
+  if (!detailOpen.value && !detailHistoryActive.value) return;
+  detailHistoryActive.value = false;
+  closeDetailWithCardify({ syncHistory: false });
 }
 
 async function loadFeed(reset = false) {
@@ -273,6 +325,7 @@ async function openItem(id: FeedItemId, payload?: CardOpenPayload) {
   detailDragX.value = 0;
   detailDragging.value = false;
   detailReturning.value = false;
+  pushDetailHistory(id);
   emit("chrome", true);
 
   try {
@@ -361,13 +414,16 @@ function onDetailPointerCancel(event: PointerEvent) {
 onMounted(() => {
   updateViewport();
   window.addEventListener("resize", updateViewport);
+  window.addEventListener("popstate", onWindowPopState);
   emit("chrome", false);
   openUpdateProbe();
   void loadFeed(true);
 });
 
 onBeforeUnmount(() => {
+  clearDetailHistory();
   window.removeEventListener("resize", updateViewport);
+  window.removeEventListener("popstate", onWindowPopState);
 });
 </script>
 
@@ -487,6 +543,7 @@ onBeforeUnmount(() => {
 .feed-view {
   display: grid;
   gap: var(--space-3);
+  overscroll-behavior-x: contain;
   padding-top: calc(var(--floating-bar-height) + env(safe-area-inset-top));
 }
 
@@ -655,6 +712,7 @@ onBeforeUnmount(() => {
 
 .feed-view__detail {
   min-height: calc(100vh - var(--space-6));
+  overscroll-behavior-x: contain;
   touch-action: pan-y;
 }
 
