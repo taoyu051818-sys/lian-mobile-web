@@ -97,15 +97,18 @@ const detailDragStyle = computed(() => {
   const feedOpacity = detailOpen.value ? Math.max(0.12, progress * 0.96) : 1;
   const feedScale = detailOpen.value ? 0.985 + progress * 0.015 : 1;
   const chromeOpacity = detailOpen.value ? Math.max(0, 1 - progress * 1.18) : 1;
-  const chromeTranslateY = detailOpen.value ? -CHROME_EXIT_DISTANCE * progress : 0;
+  const topChromeTranslateY = detailOpen.value ? -CHROME_EXIT_DISTANCE * progress : 0;
+  const bottomChromeTranslateY = detailOpen.value ? CHROME_EXIT_DISTANCE * progress : 0;
   return {
     "--detail-card-progress": String(progress),
     "--detail-card-scale": String(scale),
     "--detail-card-translate-x": `${translateX}px`,
     "--detail-card-translate-y": `${translateY}px`,
     "--detail-card-radius": `${Math.round(progress * 18)}px`,
-    "--detail-chrome-opacity": String(chromeOpacity),
-    "--detail-chrome-translate-y": `${chromeTranslateY}px`,
+    "--detail-top-chrome-opacity": String(chromeOpacity),
+    "--detail-top-chrome-translate-y": `${topChromeTranslateY}px`,
+    "--detail-bottom-chrome-opacity": String(chromeOpacity),
+    "--detail-bottom-chrome-translate-y": `${bottomChromeTranslateY}px`,
     "--feed-under-detail-opacity": String(feedOpacity),
     "--feed-under-detail-scale": String(feedScale),
   };
