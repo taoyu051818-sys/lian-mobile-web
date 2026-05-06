@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
 import { togglePostLike } from "../../api/posts";
-import { collectMotionSnapshot, playFeedCardToDetailMorph } from "../../motion/cardMorph";
+import { collectMotionSnapshot } from "../../motion/cardMorph";
 import type { CardMorphSnapshot } from "../../motion/cardMorph";
 import type { DisplayActor, FeedItem, FeedItemId } from "../../types/feed";
 
@@ -16,9 +16,9 @@ const props = defineProps<{ item: FeedItem }>();
 const emit = defineEmits<{
   open: [id: FeedItemId, payload?: {
     item: FeedItem;
+    sourceElement?: HTMLElement;
     rect: { top: number; left: number; width: number; height: number };
     motionSnapshot?: CardMorphSnapshot;
-    skipLegacyTransition?: boolean;
   }];
 }>();
 
@@ -73,10 +73,11 @@ watch(() => props.item, (item) => {
   likeCount.value = Math.max(0, Number(item.likeCount || 0));
 }, { immediate: true });
 
-function emitOpen(target: HTMLElement | null, options: { skipLegacyTransition?: boolean } = {}) {
+function emitOpen(target: HTMLElement | null) {
   const bounds = target?.getBoundingClientRect();
   emit("open", props.item.tid, bounds ? {
     item: props.item,
+    sourceElement: target || undefined,
     rect: {
       top: bounds.top,
       left: bounds.left,
@@ -84,7 +85,6 @@ function emitOpen(target: HTMLElement | null, options: { skipLegacyTransition?: 
       height: bounds.height,
     },
     motionSnapshot: target ? collectMotionSnapshot(target) : undefined,
-    skipLegacyTransition: options.skipLegacyTransition,
   } : undefined);
 }
 
@@ -130,38 +130,20 @@ function handlePointerCancel(event: PointerEvent) {
   if (pointerCandidateId.value === event.pointerId) resetPointerIntent();
 }
 
-function openWithDomMorph(target: HTMLElement | null) {
-  if (!target) {
-    emitOpen(target);
-    return;
-  }
-
-  let opened = false;
-  const openOnce = () => {
-    if (opened) return;
-    opened = true;
-    emitOpen(target, { skipLegacyTransition: true });
-  };
-
-  void playFeedCardToDetailMorph(target, { onReady: openOnce }).catch(() => {
-    openOnce();
-  });
-}
-
 function openCard(event?: MouseEvent) {
   if (isControlTarget(event?.target || null)) return;
   const shouldSuppress = pointerMoved.value || pointerWasLongPress.value;
   const target = event?.currentTarget instanceof HTMLElement ? event.currentTarget : null;
   resetPointerIntent();
   if (shouldSuppress) return;
-  openWithDomMorph(target);
+  emitOpen(target);
 }
 
 function openCardFromKeyboard(event: KeyboardEvent) {
   if (isControlTarget(event.target)) return;
   const target = event.currentTarget instanceof HTMLElement ? event.currentTarget : null;
   resetPointerIntent();
-  openWithDomMorph(target);
+  emitOpen(target);
 }
 
 async function handleLike() {
@@ -195,6 +177,7 @@ async function handleLike() {
     :data-motion-time="timeLabel"
     :data-motion-author="authorName"
     :data-motion-place="placeLabel"
+    data-motion-role="surface"
     role="button"
     tabindex="0"
     :aria-label="`${title}，${authorName}`"
@@ -206,20 +189,20 @@ async function handleLike() {
     @keydown.enter.prevent="openCardFromKeyboard"
     @keydown.space.prevent="openCardFromKeyboard"
   >
-    <div v-if="cardTemplate !== 'text' || coverUrl" class="feed-item-card__media" data-motion-role="image-frame">
+    <div v-if="cardTemplate !== 'text' || coverUrl" class="feed-item-card__media">
       <img v-if="coverUrl" class="feed-item-card__cover" :src="coverUrl" :alt="title" loading="lazy" data-motion-role="image" draggable="false" />
-      <div v-else class="feed-item-card__placeholder" aria-hidden="true" data-motion-role="image-placeholder">
+      <div v-else class="feed-item-card__placeholder" aria-hidden="true" data-motion-role="image">
         <span>{{ templateMark }}</span>
       </div>
       <span v-if="primaryTag" class="feed-item-card__floating-tag" data-motion-role="tag">{{ primaryTag }}</span>
     </div>
 
-    <div class="feed-item-card__body" data-motion-role="body">
+    <div class="feed-item-card__body">
       <span v-if="cardTemplate === 'text' && primaryTag" class="feed-item-card__inline-tag" data-motion-role="tag">{{ primaryTag }}</span>
 
       <h3 :title="title" data-motion-role="title">{{ title }}</h3>
 
-      <footer class="feed-item-card__footer" data-motion-role="meta-row">
+      <footer class="feed-item-card__footer" data-motion-role="meta">
         <div class="feed-item-card__author" data-motion-role="author">
           <img v-if="authorAvatarUrl" :src="authorAvatarUrl" :alt="authorName" loading="lazy" data-motion-role="avatar" draggable="false" />
           <span v-else class="feed-item-card__avatar-text" aria-hidden="true" data-motion-role="avatar">{{ authorInitial }}</span>
@@ -237,7 +220,7 @@ async function handleLike() {
           :aria-pressed="liked"
           :disabled="likeBusy"
           data-card-control="like"
-          data-motion-role="like"
+          data-motion-role="action"
           @click.stop="handleLike"
           @pointerdown.stop
           @pointerup.stop
