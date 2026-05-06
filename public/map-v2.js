@@ -25,6 +25,53 @@
     life: "#059669",
     post: "#111827"
   };
+  const ROAD_RENDER_STYLES = {
+    main_road: {
+      color: "#9ca3af",
+      casing: "#f8fafc",
+      weight: 7,
+      casingExtra: 5,
+      opacity: 0.96,
+      minZoom: 15,
+      dashArray: ""
+    },
+    pedestrian_path: {
+      color: "#c4b5a5",
+      casing: "#fffaf0",
+      weight: 3,
+      casingExtra: 3,
+      opacity: 0.9,
+      minZoom: 16,
+      dashArray: "6 4"
+    },
+    shuttle_route: {
+      color: "#2563eb",
+      casing: "#dbeafe",
+      weight: 4,
+      casingExtra: 4,
+      opacity: 0.92,
+      minZoom: 15,
+      dashArray: ""
+    },
+    service_path: {
+      color: "#d4d4d4",
+      casing: "#fafafa",
+      weight: 2,
+      casingExtra: 3,
+      opacity: 0.82,
+      minZoom: 16,
+      dashArray: "4 6"
+    },
+    default: {
+      color: "#a3a3a3",
+      casing: "#f8fafc",
+      weight: 4,
+      casingExtra: 4,
+      opacity: 0.9,
+      minZoom: 15,
+      dashArray: ""
+    }
+  };
   const SCALED_ICON_SELECTOR = "[data-map-v2-scaled-icon]";
 
   const state = {
@@ -200,182 +247,36 @@
     `;
   }
 
-  // Road network preview
-  const ROAD_PREVIEW = {
-    data: null,
-    layer: null,
-    canvas: null,
-    ctx: null,
-    tx: 442,
-    ty: -184,
-    scale: 1,
-    rotation: 0,
-    opacity: 0.7
-  };
-
-  function roadPreviewBounds() {
-    const bounds = state.data?.bounds || { south: 18.37107, west: 109.98464, north: 18.41730, east: 110.04775 };
-    return L.latLngBounds([bounds.south, bounds.west], [bounds.north, bounds.east]);
-  }
-
-  function roadPreviewPointLatLng(lat, lng) {
-    const referenceLat = 18.393453;
-    const referenceLng = 110.015821;
-    const cosLat = Math.cos(referenceLat * Math.PI / 180);
-    const xMeters = (lng - referenceLng) * 111320 * cosLat;
-    const yMeters = (lat - referenceLat) * 111320;
-    const px = xMeters * ROAD_PREVIEW.scale + ROAD_PREVIEW.tx;
-    const py = yMeters * ROAD_PREVIEW.scale + ROAD_PREVIEW.ty;
-    const lng2 = px / (111320 * cosLat) + referenceLng;
-    const lat2 = py / 111320 + referenceLat;
-    return L.latLng(lat2, lng2);
-  }
-
-  function drawRoadPreviewOnce(layer) {
-    const { data } = ROAD_PREVIEW;
-    if (!layer?._map || !layer._canvas || !layer._ctx || !data) return false;
-
-    const map = layer._map;
-    const canvas = layer._canvas;
-    const ctx = layer._ctx;
-    const bounds = layer._bounds || roadPreviewBounds();
-    const baseZoom = layer._baseZoom || map.getMaxZoom?.() || map.getZoom();
-    const dpr = window.devicePixelRatio || 1;
-    const origin = map.project(bounds.getNorthWest(), baseZoom);
-    const opposite = map.project(bounds.getSouthEast(), baseZoom);
-    const displayWidth = Math.max(1, Math.ceil(opposite.x - origin.x));
-    const displayHeight = Math.max(1, Math.ceil(opposite.y - origin.y));
-    const pixelWidth = Math.max(1, Math.round(displayWidth * dpr));
-    const pixelHeight = Math.max(1, Math.round(displayHeight * dpr));
-
-    canvas.width = pixelWidth;
-    canvas.height = pixelHeight;
-    canvas.style.width = displayWidth + "px";
-    canvas.style.height = displayHeight + "px";
-    canvas.style.transformOrigin = "0 0";
-
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    ctx.clearRect(0, 0, displayWidth, displayHeight);
-    ctx.globalAlpha = ROAD_PREVIEW.opacity;
-    ctx.strokeStyle = "#888";
-    ctx.lineWidth = 1;
-    ctx.lineCap = "round";
-    ctx.lineJoin = "round";
-
-    for (const lane of data.lanes) {
-      if (!lane.points || lane.points.length < 2) continue;
-      ctx.beginPath();
-      const first = roadPreviewPointLatLng(lane.points[0][0], lane.points[0][1]);
-      const p0 = map.project(first, baseZoom);
-      ctx.moveTo(p0.x - origin.x, p0.y - origin.y);
-      for (let i = 1; i < lane.points.length; i++) {
-        const pointLatLng = roadPreviewPointLatLng(lane.points[i][0], lane.points[i][1]);
-        const point = map.project(pointLatLng, baseZoom);
-        ctx.lineTo(point.x - origin.x, point.y - origin.y);
-      }
-      ctx.stroke();
-    }
-    ctx.globalAlpha = 1;
-
-    layer._bounds = bounds;
-    layer._baseZoom = baseZoom;
-    layer._baseSize = L.point(displayWidth, displayHeight);
-    layer._drawn = true;
-    return true;
-  }
-
-  function createRoadPreviewLayer() {
-    const RoadPreviewLayer = L.Layer.extend({
-      onAdd(map) {
-        this._map = map;
-        this._bounds = roadPreviewBounds();
-        this._baseZoom = map.getMaxZoom?.() || map.getZoom();
-        this._drawn = false;
-        this._canvas = L.DomUtil.create("canvas", "map-v2-road-preview-canvas");
-        this._canvas.style.position = "absolute";
-        this._canvas.style.pointerEvents = "none";
-        this._canvas.style.zIndex = "350";
-        this._canvas.style.transformOrigin = "0 0";
-        map.getPane("overlayPane").appendChild(this._canvas);
-
-        this._ctx = this._canvas.getContext("2d");
-        ROAD_PREVIEW.canvas = this._canvas;
-        ROAD_PREVIEW.ctx = this._ctx;
-
-        map.on("moveend zoomend resize viewreset", this._reset, this);
-        if (map.options.zoomAnimation && L.Browser.any3d) {
-          map.on("zoomanim", this._animateZoom, this);
-        }
-        this._reset();
-      },
-
-      onRemove(map) {
-        map.off("moveend zoomend resize viewreset", this._reset, this);
-        if (map.options.zoomAnimation && L.Browser.any3d) {
-          map.off("zoomanim", this._animateZoom, this);
-        }
-        L.DomUtil.remove(this._canvas);
-        if (ROAD_PREVIEW.canvas === this._canvas) {
-          ROAD_PREVIEW.canvas = null;
-          ROAD_PREVIEW.ctx = null;
-        }
-        this._canvas = null;
-        this._ctx = null;
-        this._map = null;
-        this._drawn = false;
-      },
-
-      redraw(force = false) {
-        if (force) this._drawn = false;
-        this._reset();
-        return this;
-      },
-
-      _reset() {
-        if (!this._map || !this._canvas) return;
-        if (!this._drawn && ROAD_PREVIEW.data) {
-          drawRoadPreviewOnce(this);
-        }
-        if (!this._bounds) return;
-
-        const map = this._map;
-        const topLeft = map.latLngToLayerPoint(this._bounds.getNorthWest()).round();
-        const bottomRight = map.latLngToLayerPoint(this._bounds.getSouthEast()).round();
-        const size = bottomRight.subtract(topLeft);
-
-        this._zoom = map.getZoom();
-        L.DomUtil.setPosition(this._canvas, topLeft);
-        this._canvas.style.width = Math.max(1, Math.round(size.x)) + "px";
-        this._canvas.style.height = Math.max(1, Math.round(size.y)) + "px";
-      },
-
-      _animateZoom(event) {
-        if (!this._map || !this._canvas || !this._bounds) return;
-        const scale = this._map.getZoomScale(event.zoom, this._zoom || this._map.getZoom());
-        const topLeft = this._map
-          ._latLngToNewLayerPoint(this._bounds.getNorthWest(), event.zoom, event.center)
-          .round();
-        L.DomUtil.setTransform(this._canvas, topLeft, scale);
-      }
-    });
-
-    return new RoadPreviewLayer();
-  }
-
-  function renderRoadPreview(force = false) {
-    ROAD_PREVIEW.layer?.redraw(force);
-  }
-
   function initLayerGroups() {
     if (state.layers) Object.values(state.layers).forEach((layer) => layer.remove());
     state.layers = {
       areas: L.layerGroup().addTo(state.map),
+      roadsCasing: L.layerGroup().addTo(state.map),
+      roads: L.layerGroup().addTo(state.map),
       routes: L.layerGroup().addTo(state.map),
       assets: L.layerGroup().addTo(state.map),
       locations: L.layerGroup().addTo(state.map),
       posts: L.layerGroup().addTo(state.map),
       pick: L.layerGroup().addTo(state.map)
     };
+  }
+
+  function roadStyleFor(road = {}) {
+    const base = ROAD_RENDER_STYLES[road.type] || ROAD_RENDER_STYLES.default;
+    const authoredStyle = road.style || {};
+    const authoredWeight = Number(authoredStyle.weight || 0);
+    return {
+      ...base,
+      color: authoredStyle.color || base.color,
+      weight: authoredWeight > 0 ? authoredWeight : base.weight,
+      dashArray: authoredStyle.dashArray ?? base.dashArray
+    };
+  }
+
+  function roadPoints(road = {}) {
+    return (road.points || [])
+      .map((point) => [Number(point.lat), Number(point.lng)])
+      .filter(([lat, lng]) => Number.isFinite(lat) && Number.isFinite(lng));
   }
 
   function renderAreas(areas = []) {
@@ -388,6 +289,46 @@
         fillOpacity: Number(area.style?.fillOpacity ?? 0.08),
         className: "map-v2-area"
       }).bindTooltip(area.name, { sticky: true }).addTo(state.layers.areas);
+    }
+  }
+
+  function renderRoads(roads = []) {
+    state.layers.roadsCasing.clearLayers();
+    state.layers.roads.clearLayers();
+    const zoom = state.map?.getZoom?.() || 16;
+    for (const road of roads) {
+      if (road.status && road.status !== "active") continue;
+      const style = roadStyleFor(road);
+      if (zoom < style.minZoom) continue;
+      const points = roadPoints(road);
+      if (points.length < 2) continue;
+
+      L.polyline(points, {
+        color: style.casing,
+        weight: style.weight + style.casingExtra,
+        opacity: 0.96,
+        lineCap: "round",
+        lineJoin: "round",
+        interactive: false,
+        bubblingMouseEvents: false,
+        className: `map-v2-road-casing map-v2-road-casing-${escapeHtml(road.type || "default")}`
+      }).addTo(state.layers.roadsCasing);
+
+      const inner = L.polyline(points, {
+        color: style.color,
+        weight: style.weight,
+        dashArray: style.dashArray || "",
+        opacity: style.opacity,
+        lineCap: "round",
+        lineJoin: "round",
+        interactive: road.interactive !== false,
+        bubblingMouseEvents: false,
+        className: `map-v2-road map-v2-road-${escapeHtml(road.type || "default")}`
+      });
+      if (road.interactive !== false) {
+        inner.bindTooltip(road.name || "道路", { sticky: true });
+      }
+      inner.addTo(state.layers.roads);
     }
   }
 
@@ -455,6 +396,7 @@
   function renderAll() {
     if (!state.map || !state.data) return;
     renderAreas(state.data.layers?.areas || []);
+    renderRoads(state.data.layers?.roads || []);
     renderRoutes(state.data.layers?.routes || []);
     renderAssets(state.data.layers?.assets || []);
     renderLocations(state.data.locations || []);
@@ -498,14 +440,7 @@
       bindMapIconScale(state.map);
       state.map.on("click", handleMapClick);
       state.map.on("popupopen", bindPopupActions);
-
-      ROAD_PREVIEW.layer = createRoadPreviewLayer().addTo(state.map);
-
-      // Load road network data
-      fetch('/assets/road-network-preview.json')
-        .then(r => r.ok ? r.json() : null)
-        .then(data => { if (data && data.lanes) { ROAD_PREVIEW.data = data; renderRoadPreview(true); } })
-        .catch(() => {});
+      state.map.on("zoomend", () => renderRoads(state.data?.layers?.roads || []));
     }
     renderAll();
     setTimeout(() => state.map.invalidateSize(), 50);
@@ -605,7 +540,7 @@
   function invalidateSize() {
     if (!state.map) return;
     state.map.invalidateSize();
-    renderRoadPreview();
+    renderRoads(state.data?.layers?.roads || []);
     applyMapIconScale();
   }
 
