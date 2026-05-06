@@ -27,11 +27,13 @@ const DEFAULT_TABS: FeedTab[] = [
 const PAGE_SIZE = 12;
 const HOME_UPDATE_PROBE_VERSION = "home-ui-main-2026-05-05-01";
 const HOME_UPDATE_PROBE_KEY = `lian.homeUpdateProbe.${HOME_UPDATE_PROBE_VERSION}`;
-const SWIPE_THRESHOLD = 86;
+const SWIPE_THRESHOLD = 96;
 const SWIPE_VERTICAL_GUARD = 52;
-const CARDIFY_DISTANCE = 220;
+const DETAIL_DRAG_EDGE_GUARD = 28;
+const CARDIFY_DISTANCE = 320;
 const DRAG_STAGE_MIN_SCALE = 0.9;
 const CHROME_EXIT_DISTANCE = 24;
+const RETURN_ANIMATION_MS = 380;
 
 const emit = defineEmits<{
   chrome: [hidden: boolean];
@@ -94,7 +96,7 @@ const detailDragStyle = computed(() => {
     : 1 - (1 - DRAG_STAGE_MIN_SCALE) * progress;
   const translateX = returning ? detailTargetX.value * progress : detailDragX.value;
   const translateY = returning ? detailTargetY.value * progress : 0;
-  const feedOpacity = detailOpen.value ? Math.max(0.12, progress * 0.96) : 1;
+  const feedOpacity = detailOpen.value ? Math.max(0.1, progress * 0.9) : 1;
   const feedScale = detailOpen.value ? 0.985 + progress * 0.015 : 1;
   const chromeOpacity = detailOpen.value ? Math.max(0, 1 - progress * 1.18) : 1;
   const topChromeTranslateY = detailOpen.value ? -CHROME_EXIT_DISTANCE * progress : 0;
@@ -261,10 +263,11 @@ function closeDetailWithCardify(options: { syncHistory?: boolean; direction?: nu
   detailReturning.value = true;
   detailPointerId.value = null;
   detailGestureLocked.value = null;
+  emit("chrome", false);
   detailDragX.value = Math.sign(direction || 1) * CARDIFY_DISTANCE;
   window.setTimeout(() => {
     resetDetailState();
-  }, 280);
+  }, RETURN_ANIMATION_MS);
 }
 
 function onWindowPopState() {
@@ -369,20 +372,35 @@ function closeDetail() {
 
 function isInteractiveTarget(target: EventTarget | null) {
   if (!(target instanceof HTMLElement)) return false;
-  if (target.closest(".post-detail-panel__gallery-item")) return false;
+  if (target.closest(".post-detail-panel__gallery, .post-detail-panel__gallery-item")) return false;
   return Boolean(target.closest(".post-detail-panel__topbar, .post-detail-panel__dock, .post-detail-panel__report, .post-detail-panel__lightbox, a, button, input, textarea, select, [role='button']"));
+}
+
+function isInsideDetailDragBand(x: number) {
+  return x >= DETAIL_DRAG_EDGE_GUARD && x <= viewportWidth.value - DETAIL_DRAG_EDGE_GUARD;
+}
+
+function abortDetailDrag(event: PointerEvent, restoreChrome = true) {
+  detailDragging.value = false;
+  detailPointerId.value = null;
+  detailGestureLocked.value = null;
+  detailDragX.value = 0;
+  if (restoreChrome && detailOpen.value) emit("chrome", true);
+  (event.currentTarget as HTMLElement | null)?.releasePointerCapture?.(event.pointerId);
 }
 
 function onDetailPointerDown(event: PointerEvent) {
   if (!detailOpen.value || detailLoading.value || detailReturning.value || isInteractiveTarget(event.target)) return;
   if (event.pointerType === "mouse" && event.button !== 0) return;
   updateViewport();
+  if (!isInsideDetailDragBand(event.clientX)) return;
   dragStartX.value = event.clientX;
   dragStartY.value = event.clientY;
   detailDragX.value = 0;
   detailDragging.value = true;
   detailPointerId.value = event.pointerId;
   detailGestureLocked.value = null;
+  emit("chrome", false);
   (event.currentTarget as HTMLElement | null)?.setPointerCapture?.(event.pointerId);
 }
 
@@ -393,7 +411,10 @@ function onDetailPointerMove(event: PointerEvent) {
   if (!detailGestureLocked.value) {
     if (Math.abs(deltaY) > SWIPE_VERTICAL_GUARD && Math.abs(deltaY) > Math.abs(deltaX)) {
       detailGestureLocked.value = "vertical";
-    } else if (Math.abs(deltaX) > 8 && Math.abs(deltaX) > Math.abs(deltaY) * 1.05) {
+      abortDetailDrag(event, true);
+      return;
+    }
+    if (Math.abs(deltaX) > 8 && Math.abs(deltaX) > Math.abs(deltaY) * 1.05) {
       detailGestureLocked.value = "horizontal";
     }
   }
@@ -414,14 +435,12 @@ function onDetailPointerUp(event: PointerEvent) {
     return;
   }
   detailDragX.value = 0;
+  emit("chrome", true);
 }
 
 function onDetailPointerCancel(event: PointerEvent) {
   if (detailPointerId.value !== event.pointerId) return;
-  detailDragging.value = false;
-  detailPointerId.value = null;
-  detailGestureLocked.value = null;
-  detailDragX.value = 0;
+  abortDetailDrag(event, true);
 }
 
 onMounted(() => {
@@ -525,7 +544,7 @@ onBeforeUnmount(() => {
         v-if="detailOpen"
         key="feed-detail"
         class="feed-view__detail"
-        :class="{ 'is-dragging': detailDragging }"
+        :class="{ 'is-dragging': detailDragging, 'is-returning': detailReturning }"
         :style="detailDragStyle"
         :post="selectedPost"
         :loading="detailLoading"
@@ -685,7 +704,7 @@ onBeforeUnmount(() => {
 }
 
 .feed-view__content.is-under-detail {
-  opacity: var(--feed-under-detail-opacity, 0.12);
+  opacity: var(--feed-under-detail-opacity, 0.1);
   transform: scale(var(--feed-under-detail-scale, 0.985));
   filter: saturate(0.96);
 }
@@ -734,6 +753,7 @@ onBeforeUnmount(() => {
 
 .feed-view__detail.is-dragging {
   cursor: grabbing;
+  touch-action: none;
 }
 
 .feed-view__card-transition {
