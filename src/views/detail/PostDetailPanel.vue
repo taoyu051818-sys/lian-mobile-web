@@ -325,7 +325,10 @@ async function submitReply() {
 
 <template>
   <aside class="post-detail-panel" aria-labelledby="post-detail-title">
-    <header class="post-detail-panel__topbar">
+    <header
+      class="post-detail-panel__topbar lian-floating-chrome lian-floating-chrome--top"
+      data-floating-chrome="top"
+    >
       <button class="post-detail-panel__close" type="button" aria-label="关闭详情" @click="emit('close')">‹</button>
       <div class="post-detail-panel__author-chip">
         <img v-if="authorAvatarUrl" :src="authorAvatarUrl" :alt="authorLabel" loading="lazy" />
@@ -410,7 +413,14 @@ async function submitReply() {
       </template>
     </div>
 
-    <form v-if="post && !loading && !error" class="post-detail-panel__dock" :class="{ 'is-expanded': replyExpanded }" @submit.prevent="submitReply" @click.stop>
+    <form
+      v-if="post && !loading && !error"
+      class="post-detail-panel__dock lian-floating-chrome lian-floating-chrome--bottom"
+      :class="{ 'is-expanded': replyExpanded }"
+      data-floating-chrome="bottom"
+      @submit.prevent="submitReply"
+      @click.stop
+    >
       <button v-if="!replyExpanded" class="post-detail-panel__dock-action" :class="{ 'is-active': liked }" type="button" :disabled="likeBusy" @click="handleLike">
         {{ liked ? "♥" : "♡" }} {{ likeCount }}
       </button>
@@ -448,11 +458,12 @@ async function submitReply() {
   border-radius: var(--detail-card-radius, 0px);
   transform: translate3d(var(--detail-card-translate-x, 0px), var(--detail-card-translate-y, 0px), 0) scale(var(--detail-card-scale, 1));
   transform-origin: center center;
-  transition: transform var(--motion-standard) var(--motion-ease-standard), border-radius var(--motion-standard) var(--motion-ease-standard), opacity var(--motion-standard) var(--motion-ease-standard), filter var(--motion-standard) var(--motion-ease-standard);
+  will-change: transform, border-radius;
+  transition: none;
 }
 
-.post-detail-panel.is-dragging .post-detail-panel__stage {
-  transition: none;
+.post-detail-panel.is-returning .post-detail-panel__stage {
+  transition: transform 380ms var(--motion-ease-standard), border-radius 380ms var(--motion-ease-standard);
 }
 
 .post-detail-panel__topbar,
@@ -467,13 +478,12 @@ async function submitReply() {
   border-radius: var(--floating-bar-radius);
   background: var(--glass-bg-strong);
   box-shadow: var(--shadow-floating);
-  transition: transform var(--motion-standard) var(--motion-ease-standard), opacity var(--motion-standard) var(--motion-ease-standard), min-height 180ms ease, align-items 180ms ease;
+  transition: transform var(--floating-chrome-motion-duration, 260ms) var(--motion-ease-standard),
+    opacity var(--floating-chrome-motion-duration, 260ms) var(--motion-ease-standard),
+    filter var(--floating-chrome-motion-duration, 260ms) var(--motion-ease-standard),
+    min-height 180ms ease,
+    align-items 180ms ease;
   backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
-}
-
-.post-detail-panel.is-dragging .post-detail-panel__topbar,
-.post-detail-panel.is-dragging .post-detail-panel__dock {
-  transition: opacity 120ms ease, transform 120ms ease;
 }
 
 .post-detail-panel__topbar {
@@ -566,11 +576,11 @@ async function submitReply() {
 .post-detail-panel__gallery {
   display: flex;
   gap: var(--space-3);
-  overflow-x: auto;
+  overflow: hidden;
   margin-inline: calc(var(--space-3) * -1);
   padding-inline: max(var(--space-3), 6vw);
-  scroll-padding-inline: max(var(--space-3), 6vw);
-  scroll-snap-type: x mandatory;
+  touch-action: pan-y;
+  overscroll-behavior-x: contain;
   scrollbar-width: none;
 }
 
@@ -587,7 +597,9 @@ async function submitReply() {
   overflow: hidden;
   padding: 0;
   border-radius: var(--radius-card);
-  scroll-snap-align: center;
+  touch-action: pan-y;
+  user-select: none;
+  -webkit-user-drag: none;
 }
 
 .post-detail-panel__gallery img {
@@ -596,6 +608,7 @@ async function submitReply() {
   height: min(62vh, 460px);
   aspect-ratio: 0.9;
   object-fit: cover;
+  pointer-events: none;
 }
 
 .post-detail-panel__content,
