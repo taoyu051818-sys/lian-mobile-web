@@ -5,12 +5,24 @@ export interface FeedTab {
   label: string;
 }
 
-export interface FeedAuthor {
-  nodebbUid: number;
-  displayName: string;
-  avatarUrl: string;
-  identityTag: string;
-  source: string;
+export interface DisplayActor {
+  displayName?: string;
+  username?: string;
+  name?: string;
+  avatarUrl?: string;
+  avatarText?: string;
+  identityTag?: string;
+}
+
+export interface SourceSignal {
+  provider?: string;
+  label?: string;
+  visible?: boolean;
+}
+
+export interface FeedAuthor extends DisplayActor {
+  nodebbUid?: number;
+  source?: string;
 }
 
 export interface FeedItem {
@@ -19,7 +31,9 @@ export interface FeedItem {
   bodyPreview: string;
   cover: string;
   primaryTag: string;
-  author: FeedAuthor;
+  actor?: DisplayActor;
+  source?: SourceSignal;
+  author?: FeedAuthor;
   timeLabel: string;
   timestampISO: string;
   likeCount: number;
