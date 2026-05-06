@@ -7,6 +7,7 @@ import type { FeedItem, FeedItemId, FeedTab } from "../types/feed";
 import type { PostDetail } from "../types/post";
 import FeedItemCard from "./feed/FeedItemCard.vue";
 import PostDetailPanel from "./detail/PostDetailPanel.vue";
+import { useFloatingChromeController } from "../motion/floatingChrome";
 
 interface CardOpenPayload {
   item: FeedItem;
@@ -19,8 +20,6 @@ interface DetailHistoryState {
   lianDetail?: boolean;
   tid?: string;
 }
-
-type FloatingChromePhase = "visible" | "exiting" | "hidden" | "entering";
 
 const DEFAULT_TABS: FeedTab[] = [
   { id: "此刻", label: "此刻" },
@@ -36,7 +35,6 @@ const CARDIFY_DISTANCE = 320;
 const DRAG_STAGE_MIN_SCALE = 0.9;
 const CHROME_EXIT_DISTANCE = 24;
 const RETURN_ANIMATION_MS = 380;
-const FLOATING_CHROME_PHASE_MS = 260;
 
 const emit = defineEmits<{
   chrome: [hidden: boolean];
@@ -65,15 +63,17 @@ const detailDragging = ref(false);
 const detailReturning = ref(false);
 const detailPointerId = ref<number | null>(null);
 const detailGestureLocked = ref<"horizontal" | "vertical" | null>(null);
-const detailChromePhase = ref<FloatingChromePhase>("hidden");
-let detailChromePhaseTimer: number | undefined;
+const feedTabsChrome = useFloatingChromeController({ initialPhase: "visible" });
+const detailChrome = useFloatingChromeController({ initialPhase: "hidden" });
+const detailChromePhase = detailChrome.phase;
+const detailChromeStyle = detailChrome.style;
 const detailHistoryActive = ref(false);
 const ignoreNextPopState = ref(false);
 const viewportWidth = ref(390);
 const viewportHeight = ref(844);
 
 const detailOpen = computed(() => selectedPostId.value !== null);
-const feedTabsChromeState = computed<FloatingChromePhase>(() => detailOpen.value ? "hidden" : "visible");
+const feedTabsChromeState = feedTabsChrome.phase;
 const isEmpty = computed(() => !loading.value && !errorMessage.value && items.value.length === 0);
 const masonryColumns = computed(() => splitIntoMasonryColumns(items.value));
 const detailCardifyProgress = computed(() => Math.min(1, Math.max(0, Math.abs(detailDragX.value) / CARDIFY_DISTANCE)));
@@ -226,29 +226,6 @@ function clearDetailHistory() {
   }
 }
 
-function clearDetailChromePhaseTimer() {
-  if (detailChromePhaseTimer == null) return;
-  window.clearTimeout(detailChromePhaseTimer);
-  detailChromePhaseTimer = undefined;
-}
-
-function setDetailChromePhase(phase: FloatingChromePhase) {
-  clearDetailChromePhaseTimer();
-  detailChromePhase.value = phase;
-  if (phase === "entering") {
-    detailChromePhaseTimer = window.setTimeout(() => {
-      detailChromePhase.value = "visible";
-      detailChromePhaseTimer = undefined;
-    }, FLOATING_CHROME_PHASE_MS);
-  }
-  if (phase === "exiting") {
-    detailChromePhaseTimer = window.setTimeout(() => {
-      detailChromePhase.value = "hidden";
-      detailChromePhaseTimer = undefined;
-    }, FLOATING_CHROME_PHASE_MS);
-  }
-}
-
 function startCardTransition(payload?: CardOpenPayload) {
   if (!payload || typeof window === "undefined" || prefersReducedMotion()) return;
   cardTransition.value = payload;
@@ -276,7 +253,8 @@ function resetDetailState() {
   detailPointerId.value = null;
   detailGestureLocked.value = null;
   detailHistoryActive.value = false;
-  setDetailChromePhase("hidden");
+  detailChrome.hide();
+  feedTabsChrome.show();
   emit("chrome", false);
 }
 
@@ -293,7 +271,7 @@ function closeDetailWithCardify(options: { syncHistory?: boolean; direction?: nu
   detailReturning.value = true;
   detailPointerId.value = null;
   detailGestureLocked.value = null;
-  setDetailChromePhase("exiting");
+  detailChrome.hide();
   detailDragX.value = Math.sign(direction || 1) * CARDIFY_DISTANCE;
   window.setTimeout(() => {
     resetDetailState();
@@ -363,13 +341,14 @@ function switchTab(tabId: string) {
 
 async function openItem(id: FeedItemId, payload?: CardOpenPayload) {
   updateViewport();
+  feedTabsChrome.hide();
   startCardTransition(payload);
   rememberReadItem(id);
   selectedPostId.value = id;
   selectedPost.value = null;
   detailError.value = "";
   detailLoading.value = true;
-  setDetailChromePhase("entering");
+  detailChrome.show();
   detailDragX.value = 0;
   detailDragging.value = false;
   detailReturning.value = false;
@@ -417,7 +396,7 @@ function abortDetailDrag(event: PointerEvent, restoreChrome = true) {
   detailGestureLocked.value = null;
   detailDragX.value = 0;
   if (restoreChrome && detailOpen.value) {
-    setDetailChromePhase("entering");
+    detailChrome.show();
     emit("chrome", true);
   }
   (event.currentTarget as HTMLElement | null)?.releasePointerCapture?.(event.pointerId);
@@ -434,7 +413,7 @@ function onDetailPointerDown(event: PointerEvent) {
   detailDragging.value = true;
   detailPointerId.value = event.pointerId;
   detailGestureLocked.value = null;
-  setDetailChromePhase("exiting");
+  detailChrome.setProgress(1);
   (event.currentTarget as HTMLElement | null)?.setPointerCapture?.(event.pointerId);
 }
 
@@ -454,7 +433,9 @@ function onDetailPointerMove(event: PointerEvent) {
   }
   if (detailGestureLocked.value !== "horizontal") return;
   event.preventDefault();
-  detailDragX.value = Math.max(-CARDIFY_DISTANCE, Math.min(CARDIFY_DISTANCE, deltaX));
+  const nextDragX = Math.max(-CARDIFY_DISTANCE, Math.min(CARDIFY_DISTANCE, deltaX));
+  detailDragX.value = nextDragX;
+  detailChrome.setProgress(1 - Math.min(1, Math.abs(nextDragX) / CARDIFY_DISTANCE));
 }
 
 function onDetailPointerUp(event: PointerEvent) {
@@ -469,7 +450,7 @@ function onDetailPointerUp(event: PointerEvent) {
     return;
   }
   detailDragX.value = 0;
-  setDetailChromePhase("entering");
+  detailChrome.show();
   emit("chrome", true);
 }
 
@@ -489,7 +470,8 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   clearDetailHistory();
-  clearDetailChromePhaseTimer();
+  feedTabsChrome.dispose();
+  detailChrome.dispose();
   window.removeEventListener("resize", updateViewport);
   window.removeEventListener("popstate", onWindowPopState);
 });
@@ -589,6 +571,7 @@ onBeforeUnmount(() => {
       :loading="detailLoading"
       :error="detailError"
       :chrome-phase="detailChromePhase"
+      :chrome-style="detailChromeStyle"
       @close="closeDetail"
       @retry="retryDetail"
       @pointerdown="onDetailPointerDown"
