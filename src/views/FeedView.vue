@@ -66,7 +66,7 @@ const viewportHeight = ref(844);
 const detailOpen = computed(() => selectedPostId.value !== null);
 const isEmpty = computed(() => !loading.value && !errorMessage.value && items.value.length === 0);
 const masonryColumns = computed(() => splitIntoMasonryColumns(items.value));
-const detailCardifyProgress = computed(() => Math.min(1, Math.max(0, -detailDragX.value / CARDIFY_DISTANCE)));
+const detailCardifyProgress = computed(() => Math.min(1, Math.max(0, Math.abs(detailDragX.value) / CARDIFY_DISTANCE)));
 const detailTargetScale = computed(() => {
   const snapshot = lastOpenSnapshot.value;
   if (!snapshot) return 0.5;
@@ -87,17 +87,21 @@ const detailTargetY = computed(() => {
 const detailDragStyle = computed(() => {
   const progress = detailCardifyProgress.value;
   const scale = 1 - (1 - detailTargetScale.value) * progress;
-  const translateX = detailTargetX.value * progress;
-  const translateY = detailTargetY.value * progress;
+  const dragTranslateX = detailReturning.value ? detailTargetX.value * progress : detailDragX.value;
+  const dragTranslateY = detailReturning.value ? detailTargetY.value * progress : 0;
+  const feedOpacity = detailOpen.value ? Math.max(0.12, progress * 0.96) : 1;
+  const feedScale = detailOpen.value ? 0.985 + progress * 0.015 : 1;
   return {
     "--detail-card-progress": String(progress),
     "--detail-card-scale": String(scale),
-    "--detail-card-translate-x": `${translateX}px`,
-    "--detail-card-translate-y": `${translateY}px`,
+    "--detail-card-translate-x": `${dragTranslateX}px`,
+    "--detail-card-translate-y": `${dragTranslateY}px`,
     "--detail-card-radius": `${Math.round(progress * 18)}px`,
     "--detail-bar-opacity": String(Math.max(0, 1 - progress * 1.12)),
     "--detail-bar-scale": String(1 - progress * 0.18),
-    "--detail-bar-drag-x": `${translateX * 0.18}px`,
+    "--detail-bar-drag-x": `${dragTranslateX * 0.18}px`,
+    "--feed-under-detail-opacity": String(feedOpacity),
+    "--feed-under-detail-scale": String(feedScale),
   };
 });
 const cardTransitionStyle = computed(() => {
@@ -235,15 +239,12 @@ function resetDetailState() {
   emit("chrome", false);
 }
 
-function closeDetailWithCardify(options: { syncHistory?: boolean } = {}) {
+function closeDetailWithCardify(options: { syncHistory?: boolean; direction?: number } = {}) {
   const syncHistory = options.syncHistory !== false;
+  const direction = options.direction ?? (detailDragX.value < 0 ? -1 : 1);
   if (syncHistory) clearDetailHistory();
   if (prefersReducedMotion()) {
-    if (detailOpen.value) {
-      closeDetailWithCardify();
-    } else {
-      resetDetailState();
-    }
+    resetDetailState();
     return;
   }
   updateViewport();
@@ -251,7 +252,7 @@ function closeDetailWithCardify(options: { syncHistory?: boolean } = {}) {
   detailReturning.value = true;
   detailPointerId.value = null;
   detailGestureLocked.value = null;
-  detailDragX.value = -CARDIFY_DISTANCE;
+  detailDragX.value = Math.sign(direction || 1) * CARDIFY_DISTANCE;
   window.setTimeout(() => {
     resetDetailState();
   }, 280);
@@ -264,7 +265,7 @@ function onWindowPopState() {
   }
   if (!detailOpen.value && !detailHistoryActive.value) return;
   detailHistoryActive.value = false;
-  closeDetailWithCardify({ syncHistory: false });
+  closeDetailWithCardify({ syncHistory: false, direction: detailDragX.value || -1 });
 }
 
 async function loadFeed(reset = false) {
@@ -276,7 +277,11 @@ async function loadFeed(reset = false) {
     loading.value = true;
     page.value = 1;
     hasMore.value = true;
-    resetDetailState();
+    if (detailOpen.value) {
+      closeDetailWithCardify();
+    } else {
+      resetDetailState();
+    }
   } else {
     loadingMore.value = true;
   }
@@ -385,8 +390,7 @@ function onDetailPointerMove(event: PointerEvent) {
   }
   if (detailGestureLocked.value !== "horizontal") return;
   event.preventDefault();
-  const constrained = deltaX > 0 ? deltaX * 0.14 : deltaX;
-  detailDragX.value = Math.max(-CARDIFY_DISTANCE, Math.min(48, constrained));
+  detailDragX.value = Math.max(-CARDIFY_DISTANCE, Math.min(CARDIFY_DISTANCE, deltaX));
 }
 
 function onDetailPointerUp(event: PointerEvent) {
@@ -396,8 +400,8 @@ function onDetailPointerUp(event: PointerEvent) {
   detailPointerId.value = null;
   detailGestureLocked.value = null;
   (event.currentTarget as HTMLElement | null)?.releasePointerCapture?.(event.pointerId);
-  if (finalX < -SWIPE_THRESHOLD) {
-    closeDetailWithCardify();
+  if (Math.abs(finalX) > SWIPE_THRESHOLD) {
+    closeDetailWithCardify({ direction: finalX < 0 ? -1 : 1 });
     return;
   }
   detailDragX.value = 0;
@@ -431,6 +435,7 @@ onBeforeUnmount(() => {
   <section
     class="feed-view"
     :class="{ 'is-detail-open': detailOpen, 'is-detail-dragging': detailDragging, 'is-detail-returning': detailReturning }"
+    :style="detailDragStyle"
     aria-labelledby="feed-view-title"
   >
     <h1 id="feed-view-title" class="feed-view__sr-title">首页</h1>
@@ -448,7 +453,7 @@ onBeforeUnmount(() => {
     </Transition>
 
     <Transition name="feed-tabs-motion">
-      <nav v-if="!detailOpen || detailReturning" class="feed-view__tabs" aria-label="信息分类">
+      <nav v-if="!detailOpen || detailReturning || detailDragging" class="feed-view__tabs" aria-label="信息分类">
         <button
           v-for="tab in tabs"
           :key="tab.id"
@@ -477,7 +482,7 @@ onBeforeUnmount(() => {
       <span>可以换个分类，或稍后再来看看。</span>
     </div>
 
-    <div v-show="!detailOpen || detailReturning" class="feed-view__content" :class="{ 'is-under-detail': detailOpen }">
+    <div v-show="!detailOpen || detailReturning || detailDragging" class="feed-view__content" :class="{ 'is-under-detail': detailOpen }">
       <div v-if="!loading && !isEmpty" class="feed-view__masonry" aria-live="polite">
         <div
           v-for="(column, columnIndex) in masonryColumns"
@@ -511,7 +516,7 @@ onBeforeUnmount(() => {
         v-if="detailOpen"
         key="feed-detail"
         class="feed-view__detail"
-        :class="{ 'is-dragging': detailDragging || detailReturning }"
+        :class="{ 'is-dragging': detailDragging }"
         :style="detailDragStyle"
         :post="selectedPost"
         :loading="detailLoading"
@@ -625,7 +630,9 @@ onBeforeUnmount(() => {
   background: var(--glass-bg-strong);
   box-shadow: var(--shadow-floating);
   backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  opacity: var(--feed-under-detail-opacity, 1);
   scrollbar-width: none;
+  transition: opacity var(--motion-standard) var(--motion-ease-standard);
 }
 
 .feed-view__tabs::-webkit-scrollbar {
@@ -669,8 +676,8 @@ onBeforeUnmount(() => {
 }
 
 .feed-view__content.is-under-detail {
-  opacity: 0.96;
-  transform: scale(0.992);
+  opacity: var(--feed-under-detail-opacity, 0.12);
+  transform: scale(var(--feed-under-detail-scale, 0.985));
   filter: saturate(0.96);
 }
 
@@ -821,6 +828,7 @@ onBeforeUnmount(() => {
 @media (prefers-reduced-motion: reduce) {
   .feed-view__tab,
   .feed-view__content,
+  .feed-view__tabs,
   .feed-view__card-transition,
   .feed-update-probe-motion-enter-active,
   .feed-update-probe-motion-leave-active,
