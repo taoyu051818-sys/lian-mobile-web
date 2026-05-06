@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
 import { togglePostLike } from "../../api/posts";
-import type { FeedItem, FeedItemId } from "../../types/feed";
+import type { DisplayActor, FeedItem, FeedItemId } from "../../types/feed";
 
 type CardTemplate = "image" | "text" | "activity" | "place" | "merchant" | "help";
 
@@ -24,16 +24,10 @@ const title = computed(() => props.item.title || "未命名内容");
 const coverUrl = computed(() => props.item.cover || "");
 const primaryTag = computed(() => props.item.primaryTag || "");
 const placeLabel = computed(() => props.item.locationArea || "校园");
-const author = computed(() => props.item.author || {
-  nodebbUid: 0,
-  displayName: "同学",
-  avatarUrl: "",
-  identityTag: "",
-  source: "fallback",
-});
-const authorName = computed(() => author.value.displayName || "同学");
-const authorAvatarUrl = computed(() => author.value.avatarUrl || "");
-const authorInitial = computed(() => authorName.value.slice(0, 1) || "同");
+const actor = computed<DisplayActor>(() => props.item.actor || props.item.author || {});
+const authorName = computed(() => actor.value.displayName || actor.value.username || actor.value.name || "同学");
+const authorAvatarUrl = computed(() => actor.value.avatarUrl || "");
+const authorInitial = computed(() => actor.value.avatarText || authorName.value.slice(0, 1) || "同");
 const searchText = computed(() => `${props.item.contentType} ${primaryTag.value} ${title.value} ${placeLabel.value}`.toLowerCase());
 const cardWarning = computed(() => [
   title.value.length > MAX_VISIBLE_TITLE_CHARS ? "title-clamped" : "",

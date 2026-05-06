@@ -1,10 +1,13 @@
-import type { FeedItemId } from "./feed";
+import type { DisplayActor, FeedItemId, SourceSignal } from "./feed";
 
 export interface PostReply {
   id: FeedItemId;
   content: string;
-  author: string;
-  authorAvatarUrl: string;
+  actor?: DisplayActor;
+  source?: SourceSignal;
+  author?: string;
+  authorAvatarUrl?: string;
+  authorIdentityTag?: string;
   timestampISO: string;
 }
 
@@ -13,9 +16,11 @@ export interface PostDetail {
   title: string;
   cover: string;
   primaryTag: string;
-  author: string;
-  authorAvatarUrl: string;
-  authorIdentityTag: string;
+  actor?: DisplayActor;
+  source?: SourceSignal;
+  author?: string;
+  authorAvatarUrl?: string;
+  authorIdentityTag?: string;
   timeLabel: string;
   timestampISO: string;
   likeCount: number;
