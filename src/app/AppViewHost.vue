@@ -2,7 +2,7 @@
 import type { AppViewKey } from "./view-types";
 import type { PropType } from "vue";
 import FeedView from "../views/FeedView.vue";
-import MapView from "../views/MapView.vue";
+import MapLeafletView from "../views/MapLeafletView.vue";
 import MessagesView from "../views/MessagesView.vue";
 import ProfileView from "../views/ProfileView.vue";
 import PublishView from "../views/PublishView.vue";
@@ -14,7 +14,7 @@ export type ChromeStatePayload = boolean | {
 
 const viewComponents = {
   feed: FeedView,
-  map: MapView,
+  map: MapLeafletView,
   publish: PublishView,
   messages: MessagesView,
   profile: ProfileView,
