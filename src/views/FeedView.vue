@@ -480,21 +480,19 @@ onBeforeUnmount(() => {
       </div>
     </Transition>
 
-    <Transition name="feed-tabs-motion">
-      <nav v-if="!detailOpen || detailReturning || detailDragging" class="feed-view__tabs" aria-label="信息分类">
-        <button
-          v-for="tab in tabs"
-          :key="tab.id"
-          type="button"
-          class="feed-view__tab"
-          :class="{ 'is-active': tab.id === activeTab }"
-          :aria-pressed="tab.id === activeTab"
-          @click="switchTab(tab.id)"
-        >
-          {{ tab.label }}
-        </button>
-      </nav>
-    </Transition>
+    <nav v-if="!detailOpen || detailReturning || detailDragging" class="feed-view__tabs" aria-label="信息分类">
+      <button
+        v-for="tab in tabs"
+        :key="tab.id"
+        type="button"
+        class="feed-view__tab"
+        :class="{ 'is-active': tab.id === activeTab }"
+        :aria-pressed="tab.id === activeTab"
+        @click="switchTab(tab.id)"
+      >
+        {{ tab.label }}
+      </button>
+    </nav>
 
     <InlineError v-if="errorMessage">
       {{ errorMessage }}
@@ -539,24 +537,22 @@ onBeforeUnmount(() => {
       </div>
     </div>
 
-    <Transition name="feed-detail-motion">
-      <PostDetailPanel
-        v-if="detailOpen"
-        key="feed-detail"
-        class="feed-view__detail"
-        :class="{ 'is-dragging': detailDragging, 'is-returning': detailReturning }"
-        :style="detailDragStyle"
-        :post="selectedPost"
-        :loading="detailLoading"
-        :error="detailError"
-        @close="closeDetail"
-        @retry="retryDetail"
-        @pointerdown="onDetailPointerDown"
-        @pointermove="onDetailPointerMove"
-        @pointerup="onDetailPointerUp"
-        @pointercancel="onDetailPointerCancel"
-      />
-    </Transition>
+    <PostDetailPanel
+      v-if="detailOpen"
+      key="feed-detail"
+      class="feed-view__detail"
+      :class="{ 'is-dragging': detailDragging, 'is-returning': detailReturning }"
+      :style="detailDragStyle"
+      :post="selectedPost"
+      :loading="detailLoading"
+      :error="detailError"
+      @close="closeDetail"
+      @retry="retryDetail"
+      @pointerdown="onDetailPointerDown"
+      @pointermove="onDetailPointerMove"
+      @pointerup="onDetailPointerUp"
+      @pointercancel="onDetailPointerCancel"
+    />
 
     <div
       v-if="cardTransition"
@@ -810,11 +806,7 @@ onBeforeUnmount(() => {
 }
 
 .feed-update-probe-motion-enter-active,
-.feed-update-probe-motion-leave-active,
-.feed-tabs-motion-enter-active,
-.feed-tabs-motion-leave-active,
-.feed-detail-motion-enter-active,
-.feed-detail-motion-leave-active {
+.feed-update-probe-motion-leave-active {
   transition: opacity 180ms ease, transform 180ms ease, filter 180ms ease;
 }
 
@@ -823,25 +815,6 @@ onBeforeUnmount(() => {
   opacity: 0;
   transform: scale(0.98);
   filter: blur(6px);
-}
-
-.feed-tabs-motion-enter-from,
-.feed-tabs-motion-leave-to {
-  opacity: 0;
-  transform: translateY(-16px) scale(0.98);
-  filter: blur(6px);
-}
-
-.feed-detail-motion-enter-from {
-  opacity: 0;
-  transform: translateY(-18px) scale(0.992);
-  filter: blur(5px);
-}
-
-.feed-detail-motion-leave-to {
-  opacity: 0;
-  transform: translateY(-26px) scale(0.988);
-  filter: blur(5px);
 }
 
 .inline-error button {
@@ -860,20 +833,12 @@ onBeforeUnmount(() => {
   .feed-view__tabs,
   .feed-view__card-transition,
   .feed-update-probe-motion-enter-active,
-  .feed-update-probe-motion-leave-active,
-  .feed-tabs-motion-enter-active,
-  .feed-tabs-motion-leave-active,
-  .feed-detail-motion-enter-active,
-  .feed-detail-motion-leave-active {
+  .feed-update-probe-motion-leave-active {
     transition: none;
   }
 
   .feed-update-probe-motion-enter-from,
-  .feed-update-probe-motion-leave-to,
-  .feed-tabs-motion-enter-from,
-  .feed-tabs-motion-leave-to,
-  .feed-detail-motion-enter-from,
-  .feed-detail-motion-leave-to {
+  .feed-update-probe-motion-leave-to {
     opacity: 1;
     transform: none;
     filter: none;
