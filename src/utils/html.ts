@@ -5,8 +5,17 @@ const ALLOWED_TAGS = new Set([
   "br",
   "code",
   "del",
+  "div",
   "em",
+  "h1",
+  "h2",
+  "h3",
+  "h4",
+  "h5",
+  "h6",
+  "hr",
   "i",
+  "img",
   "li",
   "ol",
   "p",
@@ -14,18 +23,20 @@ const ALLOWED_TAGS = new Set([
   "s",
   "span",
   "strong",
+  "u",
   "ul",
 ]);
 
 const GLOBAL_ALLOWED_ATTRIBUTES = new Set(["class"]);
 const TAG_ALLOWED_ATTRIBUTES: Record<string, Set<string>> = {
   a: new Set(["href", "title", "target", "rel"]),
+  img: new Set(["src", "alt", "loading", "width", "height"]),
 };
 
 function isSafeUrl(value: string) {
-  const trimmed = value.trim();
+  const trimmed = value.trim().replace(/&amp;/g, "&");
   if (!trimmed) return false;
-  if (trimmed.startsWith("#") || trimmed.startsWith("/")) return true;
+  if (trimmed.startsWith("#") || (trimmed.startsWith("/") && !trimmed.startsWith("//"))) return true;
 
   try {
     const url = new URL(trimmed, typeof window !== "undefined" ? window.location.origin : "https://lian.invalid");
@@ -44,7 +55,10 @@ function shouldKeepAttribute(tagName: string, attribute: Attr) {
   if (name === "style") return false;
   if (GLOBAL_ALLOWED_ATTRIBUTES.has(name)) return true;
   if (!allowedForTag?.has(name)) return false;
-  if (name === "href") return isSafeUrl(value);
+  if ((name === "href" || name === "src") && !isSafeUrl(value)) return false;
+  if (name === "target" && !["_blank", "_self"].includes(value)) return false;
+  if (name === "loading" && !["lazy", "eager"].includes(value)) return false;
+  if ((name === "width" || name === "height") && !/^\d{1,4}$/.test(value)) return false;
   return true;
 }
 
@@ -75,10 +89,13 @@ export function sanitizeHtml(value: string) {
 
   if (typeof window === "undefined" || typeof DOMParser === "undefined") {
     return raw
+      .replace(/<!--[\s\S]*?-->/g, "")
       .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, "")
       .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, "")
+      .replace(/<iframe\b[^>]*>[\s\S]*?<\/iframe>/gi, "")
       .replace(/\son[a-z]+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, "")
-      .replace(/\sstyle\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, "");
+      .replace(/\sstyle\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, "")
+      .replace(/\s(?:href|src)\s*=\s*("javascript:[^"]*"|'javascript:[^']*'|javascript:[^\s>]+)/gi, "");
   }
 
   const parser = new DOMParser();
