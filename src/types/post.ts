@@ -12,6 +12,7 @@ export interface PostDetail {
   tid: FeedItemId;
   title: string;
   cover: string;
+  primaryTag: string;
   author: string;
   authorAvatarUrl: string;
   authorIdentityTag: string;
