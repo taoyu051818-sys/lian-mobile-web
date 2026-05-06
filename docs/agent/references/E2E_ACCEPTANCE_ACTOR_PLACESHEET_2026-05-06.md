@@ -2,7 +2,27 @@
 
 This checklist is the focused QA track for #67 and the final acceptance path for #63.
 
-It verifies the accepted contracts without expanding scope into auth implementation, deployment operations, UI motion, legacy cleanup, or PlaceSheet product redesign.
+It verifies the accepted contracts without expanding scope into auth implementation, deployment operations, UI motion, PlaceSheet product redesign, or strategy work.
+
+## Current baseline after cleanup
+
+Frontend contract cleanup is now complete on `main`.
+
+Merged implementation/cleanup work:
+
+- #48 legacy feed mapper actor-first
+- #50 Vue feed/detail actor DTO
+- #53 MessagesView channel actor DTO
+- #55 PlaceSheet client contract
+- #57 Detail place pill -> PlaceSheet
+- #59 Map selected location -> PlaceSheet
+- #61 Publish structured place binding
+- #81 Detail / Reply / Feed legacy actor fallback cleanup
+- #90 MessagesView canonical actor cleanup
+- #93 Map no longer treats marker `location.id` as stable PlaceSheet identity
+- #96 Publish no longer infers PlaceRef from map `locationId`; regression guard added to `npm run ops:guard`
+
+Code-level cleanup and static regression checks are done. #67 should now record a real runtime/manual e2e pass against the deployed or local environment under test.
 
 ## Accepted contracts under test
 
@@ -16,10 +36,10 @@ source = platform / import / provider provenance metadata
 
 Rules:
 
-- UI identity uses `actor` first.
+- UI identity uses `actor`.
 - `identityTag` is only an optional signal.
 - `source`, provider labels, and NodeBB-style platform labels must not appear as identity UI.
-- Legacy flat fields are temporary fallback only and should not be treated as the accepted contract.
+- Legacy flat actor fields are not an accepted runtime fallback.
 
 ### PlaceRef / PlaceSheet / fallback location text
 
@@ -32,7 +52,7 @@ locationArea/manual text = fallback display only, not identity
 Rules:
 
 - Frontend uses structured `place?: PlaceRef` / `placeId` when available.
-- Frontend must not parse `locationArea`, place names, or manual text into stable place identity.
+- Frontend must not parse `locationArea`, place names, manual text, or map marker ids into stable place identity.
 - `status` and `source` are backend-owned structured metadata.
 - Source/provider text must not become identity or trust badge text unless a future product issue explicitly maps it.
 
@@ -43,6 +63,7 @@ Run these gates before manual product acceptance:
 - [ ] #64 profile liked/saved auth regression is fixed or not blocking this test account.
 - [ ] #65 deploy-state verification is complete for the environment under test.
 - [ ] The served frontend build marker matches the expected main commit when available.
+- [ ] The latest relevant main checks or PR checks passed, including `npm run ops:guard`.
 - [ ] Test account is logged in for authenticated publish/profile checks.
 - [ ] Test data includes at least one post with `post.place.id` and at least one post with only fallback `locationArea`.
 - [ ] If the environment cannot provide the required test data, record the gap in #67 instead of marking the item passed.
@@ -53,8 +74,7 @@ Run these gates before manual product acceptance:
 
 - [ ] Open the feed/home surface.
 - [ ] Confirm card author text never renders `[object Object]`.
-- [ ] Confirm card author uses `actor.displayName` when available.
-- [ ] Confirm fallback order remains readable when `actor.displayName` is absent.
+- [ ] Confirm card author uses `actor.displayName` / username / name / readable fallback.
 - [ ] Confirm `source`, provider, or `NodeBB` does not appear as the card author or identity badge.
 
 Evidence to record:
@@ -151,8 +171,9 @@ PlaceSheet opened from fallback text: yes/no
 ### Map selected location
 
 - [ ] Open Map.
-- [ ] Select a location that has `placeId` or `place`.
+- [ ] Select a location that has `placeId` or `place.id`.
 - [ ] Confirm selected location can open PlaceSheet.
+- [ ] Confirm a location without `placeId/place.id` does not call PlaceSheet and uses the non-stable fallback state.
 - [ ] Confirm PlaceSheet uses structured place identity.
 - [ ] Confirm source/status are not guessed from color, copy, or provider name.
 
@@ -161,7 +182,7 @@ Evidence to record:
 ```text
 Map location id:
 placeId/place.id:
-Observed PlaceSheet title:
+Observed PlaceSheet title or fallback state:
 Observed source/status interpretation issue: yes/no
 ```
 
@@ -184,15 +205,15 @@ Detail opened: yes/no
 ### Publish known place binding
 
 - [ ] Open Publish.
-- [ ] Select a known map/place result.
+- [ ] Select a known map/place result with `placeId` or `place.id`.
 - [ ] Submit or inspect the outgoing publish payload.
-- [ ] Confirm payload includes `locationDraft.placeId` and/or structured `locationDraft.place`.
+- [ ] Confirm payload includes `locationDraft.placeId` and/or structured `locationDraft.place` only when a stable place id exists.
 - [ ] Confirm fallback `locationArea` remains display/supporting text only.
 
 Expected payload shape:
 
 ```text
-locationDraft.placeId = <known place id>
+locationDraft.placeId = <known place id when available>
 locationDraft.place = <PlaceRef when available>
 locationDraft.locationArea = <display text when available>
 locationDraft.source = <structured source such as map_v2>
@@ -289,7 +310,6 @@ Open follow-ups:
 - Deploy:
 - Motion:
 - Backend contract:
-- Cleanup:
 - Product/design:
 ```
 
@@ -302,7 +322,6 @@ This checklist does not authorize:
 - UI motion changes;
 - auth implementation changes;
 - backend DTO expansion;
-- legacy fallback cleanup;
 - runtime/deploy command guessing.
 
 If any of those are needed, route them to the focused follow-up issues instead of expanding #63 or #67.
