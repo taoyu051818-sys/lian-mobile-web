@@ -43,30 +43,3 @@ function handleViewChange(key: string) {
   </main>
   <ToastHost />
 </template>
-
-<style scoped>
-.vue-shell__bottom-tab {
-  transition: opacity var(--floating-chrome-motion-duration, 260ms) var(--motion-ease-standard),
-    transform var(--floating-chrome-motion-duration, 260ms) var(--motion-ease-standard),
-    filter var(--floating-chrome-motion-duration, 260ms) var(--motion-ease-standard);
-}
-
-.vue-shell__bottom-tab.is-hidden {
-  opacity: 0;
-  pointer-events: none;
-  transform: translateY(var(--floating-chrome-bottom-exit-y, 34px)) scale(0.98);
-  filter: blur(4px);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .vue-shell__bottom-tab {
-    transition: none;
-  }
-
-  .vue-shell__bottom-tab.is-hidden {
-    opacity: 1;
-    transform: none;
-    filter: none;
-  }
-}
-</style>
