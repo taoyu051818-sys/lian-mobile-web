@@ -33,6 +33,7 @@ const likeCount = ref(0);
 const likeBusy = ref(false);
 const saveBusy = ref(false);
 const reportBusy = ref(false);
+const reportOpen = ref(false);
 const replyBusy = ref(false);
 const actionError = ref("");
 const actionMessage = ref("");
@@ -59,6 +60,7 @@ watch(() => props.post, (post) => {
   likeCount.value = Math.max(0, Number(post?.likeCount || 0));
   actionError.value = "";
   actionMessage.value = "";
+  reportOpen.value = false;
   replyContent.value = "";
 }, { immediate: true });
 
@@ -83,6 +85,10 @@ function showActionMessage(message: string) {
 function showActionError(error: unknown, fallback: string) {
   actionMessage.value = "";
   actionError.value = error instanceof Error ? error.message : fallback;
+}
+
+function handlePlaceClick() {
+  showActionMessage(`「${placeLabel.value}」会作为地点沉淀入口，完整地点页会在后续版本接入。`);
 }
 
 async function handleLike() {
@@ -129,6 +135,12 @@ async function handleSave() {
   }
 }
 
+function toggleReport() {
+  actionError.value = "";
+  actionMessage.value = "";
+  reportOpen.value = !reportOpen.value;
+}
+
 async function handleReport() {
   if (postId.value == null || reportBusy.value) return;
   const category = reportCategories.find((item) => item.value === reportCategory.value) || reportCategories[reportCategories.length - 1];
@@ -137,6 +149,7 @@ async function handleReport() {
   actionMessage.value = "";
   try {
     await reportPost(postId.value, { category: category.value, reason: category.label });
+    reportOpen.value = false;
     showActionMessage("举报已提交，感谢反馈。");
   } catch (error) {
     showActionError(error, "举报没有提交成功，可以稍后再试。");
@@ -172,7 +185,9 @@ async function submitReply() {
   <GlassPanel class="post-detail-panel" as="aside" aria-labelledby="post-detail-title">
     <header class="post-detail-panel__header">
       <div class="post-detail-panel__title">
-        <LocationChip>{{ placeLabel }}</LocationChip>
+        <button class="post-detail-panel__place" type="button" :aria-label="`查看 ${placeLabel} 的地点沉淀`" @click="handlePlaceClick">
+          <LocationChip>{{ placeLabel }}</LocationChip>
+        </button>
         <h2 id="post-detail-title">{{ title }}</h2>
       </div>
       <button class="post-detail-panel__close" type="button" aria-label="关闭详情" @click="emit('close')">×</button>
@@ -209,17 +224,21 @@ async function submitReply() {
         <LianButton size="sm" variant="ghost" :loading="saveBusy" @click="handleSave">
           {{ saved ? "★ 已收藏" : "☆ 收藏" }}
         </LianButton>
-        <div class="post-detail-panel__report">
-          <label>
-            <span>举报原因</span>
-            <select v-model="reportCategory" :disabled="reportBusy">
-              <option v-for="category in reportCategories" :key="category.value" :value="category.value">
-                {{ category.label }}
-              </option>
-            </select>
-          </label>
-          <LianButton size="sm" variant="ghost" :loading="reportBusy" @click="handleReport">举报</LianButton>
-        </div>
+        <LianButton size="sm" variant="ghost" :disabled="reportBusy" @click="toggleReport">
+          {{ reportOpen ? "收起举报" : "举报" }}
+        </LianButton>
+      </section>
+
+      <section v-if="reportOpen" class="post-detail-panel__report" aria-label="举报原因">
+        <label>
+          <span>举报原因</span>
+          <select v-model="reportCategory" :disabled="reportBusy">
+            <option v-for="category in reportCategories" :key="category.value" :value="category.value">
+              {{ category.label }}
+            </option>
+          </select>
+        </label>
+        <LianButton size="sm" variant="danger" :loading="reportBusy" @click="handleReport">提交举报</LianButton>
       </section>
 
       <InlineError v-if="actionError">{{ actionError }}</InlineError>
@@ -271,6 +290,20 @@ async function submitReply() {
 .post-detail-panel__title {
   display: grid;
   gap: var(--space-2);
+}
+
+.post-detail-panel__place {
+  justify-self: start;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.post-detail-panel__place:focus-visible {
+  outline: 2px solid var(--lian-primary);
+  outline-offset: 3px;
+  border-radius: var(--radius-chip);
 }
 
 .post-detail-panel h2,
@@ -344,11 +377,14 @@ async function submitReply() {
 
 .post-detail-panel__report {
   display: flex;
-  flex: 1 1 240px;
   flex-wrap: wrap;
   gap: var(--space-2);
   align-items: end;
   justify-content: flex-end;
+  padding: var(--space-3);
+  border: 1px solid rgba(239, 68, 68, 0.16);
+  border-radius: var(--radius-card);
+  background: rgba(239, 68, 68, 0.06);
 }
 
 .post-detail-panel__report label,

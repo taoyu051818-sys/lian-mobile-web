@@ -36,6 +36,7 @@ const locationSearch = ref("");
 const normalizedTag = computed(() => normalizePublishTag(tagInput.value));
 const normalizedIdentityTag = computed(() => normalizeIdentityTag(identityTag.value));
 const avatarText = computed(() => identityName.value.slice(0, 2) || "同");
+const publishIdentityCopy = computed(() => `你将以「${identityName.value} · ${identityMeta.value}」发布`);
 const canSubmit = computed(() => title.value.trim().length > 0 && body.value.trim().length > 0 && !uploading.value && !publishing.value);
 const imageStatus = computed(() => {
   if (!selectedFiles.value.length) return "可不传图片";
@@ -176,6 +177,7 @@ async function submitPublish() {
 
   publishing.value = true;
   try {
+    const publishedLocationLabel = locationPreviewLabel.value;
     const payload = buildPublishPayload({
       imageUrls: uploadedImageUrls.value,
       title: title.value,
@@ -189,8 +191,8 @@ async function submitPublish() {
     });
     const response = await publishPost(payload);
     lastTid.value = response.tid || null;
-    successMessage.value = response.tid
-      ? `发布成功，帖子 ID：${response.tid}`
+    successMessage.value = publishedLocationLabel && publishedLocationLabel !== "未绑定地点"
+      ? `发布成功，已关联到「${publishedLocationLabel}」。`
       : "发布成功，稍后可以在首页看到。";
     resetForm();
   } catch (error) {
@@ -225,6 +227,7 @@ onMounted(() => {
     <GlassPanel class="publish-view__card">
       <section class="publish-view__identity" aria-label="当前发布身份">
         <IdentityBadge :avatar-text="avatarText" :label="identityName" :meta="identityMeta" />
+        <p class="publish-view__identity-copy">{{ publishIdentityCopy }}</p>
       </section>
 
       <InlineError v-if="errorMessage">{{ errorMessage }}</InlineError>
@@ -343,7 +346,7 @@ onMounted(() => {
 
         <div class="publish-view__actions">
           <LianButton type="button" variant="ghost" :disabled="publishing || uploading" @click="resetForm">清空</LianButton>
-          <LianButton type="submit" variant="tonal" :loading="publishing" :disabled="!canSubmit">发布到 LIAN</LianButton>
+          <LianButton type="submit" variant="primary" :loading="publishing" :disabled="!canSubmit">发布到 LIAN</LianButton>
         </div>
       </form>
     </GlassPanel>
@@ -373,6 +376,14 @@ onMounted(() => {
 
 .publish-view p {
   margin: 0;
+}
+
+.publish-view__identity-copy {
+  margin-top: var(--space-2);
+  color: var(--lian-muted);
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.5;
 }
 
 .publish-view__section-title span,
