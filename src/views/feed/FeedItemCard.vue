@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from "vue";
+import { computed, onBeforeUnmount, ref, watch } from "vue";
 import { togglePostLike } from "../../api/posts";
 import type { DisplayActor, FeedItem, FeedItemId } from "../../types/feed";
 
@@ -27,6 +27,7 @@ const pointerDownY = ref(0);
 const pointerMoved = ref(false);
 const pointerWasLongPress = ref(false);
 const pointerCandidateId = ref<number | null>(null);
+let longPressTimer = 0;
 
 const title = computed(() => props.item.title || "未命名内容");
 const coverUrl = computed(() => props.item.cover || "");
@@ -86,7 +87,25 @@ function isControlTarget(target: EventTarget | null) {
   return target instanceof HTMLElement && Boolean(target.closest("button, a, input, textarea, select, [data-card-control]"));
 }
 
+function clearLongPressTimer() {
+  if (!longPressTimer || typeof window === "undefined") return;
+  window.clearTimeout(longPressTimer);
+  longPressTimer = 0;
+}
+
+function startLongPressTimer(pointerId: number) {
+  clearLongPressTimer();
+  if (typeof window === "undefined") return;
+  longPressTimer = window.setTimeout(() => {
+    if (pointerCandidateId.value === pointerId) {
+      pointerWasLongPress.value = true;
+    }
+    longPressTimer = 0;
+  }, CARD_CLICK_MAX_DURATION_MS);
+}
+
 function resetPointerIntent() {
+  clearLongPressTimer();
   pointerCandidateId.value = null;
   pointerDownAt.value = 0;
   pointerDownX.value = 0;
@@ -104,6 +123,7 @@ function handlePointerDown(event: PointerEvent) {
   pointerDownY.value = event.clientY;
   pointerMoved.value = false;
   pointerWasLongPress.value = false;
+  startLongPressTimer(event.pointerId);
 }
 
 function handlePointerMove(event: PointerEvent) {
@@ -112,16 +132,25 @@ function handlePointerMove(event: PointerEvent) {
   const deltaY = Math.abs(event.clientY - pointerDownY.value);
   if (deltaX > CARD_CLICK_MOVE_TOLERANCE_PX || deltaY > CARD_CLICK_MOVE_TOLERANCE_PX) {
     pointerMoved.value = true;
+    clearLongPressTimer();
   }
 }
 
 function handlePointerUp(event: PointerEvent) {
   if (pointerCandidateId.value !== event.pointerId) return;
+  clearLongPressTimer();
   pointerWasLongPress.value = performance.now() - pointerDownAt.value > CARD_CLICK_MAX_DURATION_MS;
 }
 
 function handlePointerCancel(event: PointerEvent) {
   if (pointerCandidateId.value === event.pointerId) resetPointerIntent();
+}
+
+function handleContextMenu(event: MouseEvent) {
+  if (isControlTarget(event.target)) return;
+  pointerWasLongPress.value = true;
+  clearLongPressTimer();
+  event.preventDefault();
 }
 
 function openCard(event?: MouseEvent) {
@@ -159,6 +188,10 @@ async function handleLike() {
     likeBusy.value = false;
   }
 }
+
+onBeforeUnmount(() => {
+  clearLongPressTimer();
+});
 </script>
 
 <template>
@@ -178,6 +211,7 @@ async function handleLike() {
     @pointermove="handlePointerMove"
     @pointerup="handlePointerUp"
     @pointercancel="handlePointerCancel"
+    @contextmenu="handleContextMenu"
     @click="openCard"
     @keydown.enter.prevent="openCardFromKeyboard"
     @keydown.space.prevent="openCardFromKeyboard"
