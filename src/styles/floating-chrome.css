@@ -238,3 +238,82 @@
   ) scale(calc(var(--floating-chrome-hidden-scale) + (1 - var(--floating-chrome-hidden-scale)) * var(--floating-chrome-visibility-progress, var(--bottom-chrome-visibility-progress, 1))));
   transition: none;
 }
+
+/* Final no-motion floating chrome contract.
+   Pages only switch chrome visible/hidden/progress.
+   No bump, no settle, no fade, no fly-in/fly-out.
+*/
+:root {
+  --floating-chrome-motion-duration: 0ms;
+  --floating-chrome-top-exit-y: 0px;
+  --floating-chrome-bottom-exit-y: 0px;
+  --floating-chrome-hidden-scale: 1;
+  --floating-chrome-blur: 0px;
+  --detail-drag-visible-scale-loss: 0;
+}
+
+.lian-floating-chrome,
+.feed-view__tabs.lian-floating-chrome,
+.post-detail-panel__topbar.lian-floating-chrome,
+.post-detail-panel__dock.lian-floating-chrome,
+.bottom-tab-bar.lian-floating-chrome,
+.vue-shell__bottom-tab.lian-floating-chrome {
+  filter: none !important;
+  transform: translate3d(0, 0, 0) scale(1) !important;
+  transition: none !important;
+  will-change: auto !important;
+}
+
+.lian-floating-chrome[data-floating-state="hidden"],
+.lian-floating-chrome[data-floating-state="exiting"],
+.lian-floating-chrome.is-hidden,
+.feed-view__tabs.lian-floating-chrome[data-floating-state="hidden"],
+.feed-view__tabs.lian-floating-chrome[data-floating-state="exiting"],
+.post-detail-panel__topbar.lian-floating-chrome[data-floating-state="hidden"],
+.post-detail-panel__topbar.lian-floating-chrome[data-floating-state="exiting"],
+.post-detail-panel__dock.lian-floating-chrome[data-floating-state="hidden"],
+.post-detail-panel__dock.lian-floating-chrome[data-floating-state="exiting"],
+.bottom-tab-bar.lian-floating-chrome[data-floating-state="hidden"],
+.bottom-tab-bar.lian-floating-chrome[data-floating-state="exiting"],
+.vue-shell__bottom-tab.lian-floating-chrome[data-floating-state="hidden"],
+.vue-shell__bottom-tab.lian-floating-chrome[data-floating-state="exiting"],
+.vue-shell__bottom-tab.lian-floating-chrome.is-hidden {
+  opacity: 0 !important;
+  pointer-events: none !important;
+  filter: none !important;
+  transform: translate3d(0, 0, 0) scale(1) !important;
+  transition: none !important;
+}
+
+.lian-floating-chrome[data-floating-state="visible"],
+.lian-floating-chrome[data-floating-state="entering"],
+.lian-floating-chrome[data-floating-state="progress"],
+.feed-view__tabs.lian-floating-chrome[data-floating-state="visible"],
+.feed-view__tabs.lian-floating-chrome[data-floating-state="entering"],
+.feed-view__tabs.lian-floating-chrome[data-floating-state="progress"],
+.post-detail-panel__topbar.lian-floating-chrome[data-floating-state="visible"],
+.post-detail-panel__topbar.lian-floating-chrome[data-floating-state="entering"],
+.post-detail-panel__topbar.lian-floating-chrome[data-floating-state="progress"],
+.post-detail-panel__dock.lian-floating-chrome[data-floating-state="visible"],
+.post-detail-panel__dock.lian-floating-chrome[data-floating-state="entering"],
+.post-detail-panel__dock.lian-floating-chrome[data-floating-state="progress"],
+.bottom-tab-bar.lian-floating-chrome[data-floating-state="visible"],
+.bottom-tab-bar.lian-floating-chrome[data-floating-state="entering"],
+.bottom-tab-bar.lian-floating-chrome[data-floating-state="progress"],
+.vue-shell__bottom-tab.lian-floating-chrome[data-floating-state="visible"],
+.vue-shell__bottom-tab.lian-floating-chrome[data-floating-state="entering"],
+.vue-shell__bottom-tab.lian-floating-chrome[data-floating-state="progress"] {
+  opacity: 1 !important;
+  pointer-events: auto !important;
+  filter: none !important;
+  transform: translate3d(0, 0, 0) scale(1) !important;
+  transition: none !important;
+}
+
+.feed-view__tabs.lian-floating-chrome[data-floating-state="progress"],
+.post-detail-panel__topbar.lian-floating-chrome[data-floating-state="progress"],
+.post-detail-panel__dock.lian-floating-chrome[data-floating-state="progress"],
+.bottom-tab-bar.lian-floating-chrome[data-floating-state="progress"],
+.vue-shell__bottom-tab.lian-floating-chrome[data-floating-state="progress"] {
+  pointer-events: none !important;
+}

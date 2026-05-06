@@ -59,10 +59,11 @@ const placeSheetLoading = ref(false);
 const placeSheetError = ref("");
 
 const postId = computed(() => props.post?.tid ?? null);
-const title = computed(() => props.post?.title || "帖子详情");
+const title = computed(() => props.post?.title || "");
 const authorLabel = computed(() => actorDisplayName(props.post?.actor));
 const authorAvatarUrl = computed(() => actorAvatarUrl(props.post?.actor));
 const authorInitial = computed(() => actorAvatarText(props.post?.actor, authorLabel.value));
+const hasAuthorIdentity = computed(() => Boolean(authorLabel.value || authorAvatarUrl.value || authorInitial.value));
 const structuredPlace = computed(() => props.post?.place || null);
 const placeLabel = computed(() => structuredPlace.value?.name || props.post?.locationArea || "");
 const primaryTag = computed(() => normalizePostTag(props.post?.primaryTag || ""));
@@ -71,7 +72,7 @@ const bodyHtml = computed(() => stripDecorativeContentFromHtml(rawBodyHtml.value
 const replies = computed(() => props.post?.replies || []);
 const images = computed(() => uniqueGalleryImages([props.post?.cover || "", ...(props.post?.imageUrls || [])]).slice(0, 8));
 const fullResolutionImages = computed(() => images.value.map(toFullResolutionImageUrl));
-const timeLabel = computed(() => formatRelativeTime(props.post?.timestampISO || "") || props.post?.timeLabel || "刚刚");
+const timeLabel = computed(() => formatRelativeTime(props.post?.timestampISO || "") || props.post?.timeLabel || "");
 const replyIdentityLabel = computed(() => `以当前身份回复`);
 const placeStatusText = computed(() => placeStatusLabel(placeSheet.value?.status || structuredPlace.value?.status));
 
@@ -97,7 +98,7 @@ watch(fullResolutionImages, (urls) => {
 }, { immediate: true });
 
 function actorDisplayName(actor?: DisplayActor | null) {
-  return actor?.displayName || actor?.username || actor?.name || "同学";
+  return actor?.displayName || actor?.username || actor?.name || "";
 }
 
 function actorAvatarUrl(actor?: DisplayActor | null) {
@@ -105,7 +106,7 @@ function actorAvatarUrl(actor?: DisplayActor | null) {
 }
 
 function actorAvatarText(actor?: DisplayActor | null, labelFallback = "") {
-  return actor?.avatarText || labelFallback.slice(0, 1) || actorDisplayName(actor).slice(0, 1) || "同";
+  return actor?.avatarText || labelFallback.slice(0, 1) || "";
 }
 
 function replyAuthorLabel(reply: PostReply) {
@@ -382,11 +383,12 @@ async function submitReply() {
       :style="chromeStyle"
     >
       <button class="post-detail-panel__close" type="button" aria-label="关闭详情" @click="emit('close')">‹</button>
-      <div class="post-detail-panel__author-chip">
-        <img v-if="authorAvatarUrl" :src="authorAvatarUrl" :alt="authorLabel" loading="lazy" />
-        <span v-else class="post-detail-panel__avatar-text" aria-hidden="true">{{ authorInitial }}</span>
-        <strong>{{ authorLabel }}</strong>
+      <div v-if="hasAuthorIdentity" class="post-detail-panel__author-chip">
+        <img v-if="authorAvatarUrl" :src="authorAvatarUrl" :alt="authorLabel || '作者头像'" loading="lazy" />
+        <span v-else-if="authorInitial" class="post-detail-panel__avatar-text" aria-hidden="true">{{ authorInitial }}</span>
+        <strong v-if="authorLabel">{{ authorLabel }}</strong>
       </div>
+      <div v-else class="post-detail-panel__author-chip post-detail-panel__author-chip--empty" aria-hidden="true"></div>
       <button class="post-detail-panel__share" type="button" aria-label="分享" @click="handleShare">分享</button>
     </header>
 
@@ -419,15 +421,14 @@ async function submitReply() {
         </section>
 
         <section class="post-detail-panel__content">
-          <h2 id="post-detail-title">{{ title }}</h2>
+          <h2 v-if="title" id="post-detail-title">{{ title }}</h2>
           <div v-if="bodyHtml" class="lian-html" v-html="bodyHtml"></div>
-          <p v-else class="post-detail-panel__empty-body">暂无正文</p>
         </section>
 
         <section class="post-detail-panel__info-strip" aria-label="帖子属性">
           <div class="post-detail-panel__info-left">
             <span v-if="primaryTag" class="post-detail-panel__pill post-detail-panel__pill--tag">{{ primaryTag }}</span>
-            <span class="post-detail-panel__pill">{{ timeLabel }}</span>
+            <span v-if="timeLabel" class="post-detail-panel__pill">{{ timeLabel }}</span>
             <button
               v-if="structuredPlace?.id"
               class="post-detail-panel__pill post-detail-panel__pill-button"
@@ -469,9 +470,13 @@ async function submitReply() {
             </div>
             <div v-if="placeSheet?.recentPosts?.length" class="post-detail-panel__place-posts">
               <article v-for="recent in placeSheet.recentPosts.slice(0, 3)" :key="String(recent.tid)">
-                <strong>{{ recent.title || "" }}</strong>
+                <strong v-if="recent.title">{{ recent.title }}</strong>
                 <p v-if="recent.excerpt">{{ recent.excerpt }}</p>
-                <small>{{ placeRecentPostActorLabel(recent.actor) }} · {{ formatRelativeTime(recent.timestampISO || "") || "刚刚" }}</small>
+                <small v-if="placeRecentPostActorLabel(recent.actor) || formatRelativeTime(recent.timestampISO || '')">
+                  <span v-if="placeRecentPostActorLabel(recent.actor)">{{ placeRecentPostActorLabel(recent.actor) }}</span>
+                  <span v-if="placeRecentPostActorLabel(recent.actor) && formatRelativeTime(recent.timestampISO || '')"> · </span>
+                  <span v-if="formatRelativeTime(recent.timestampISO || '')">{{ formatRelativeTime(recent.timestampISO || '') }}</span>
+                </small>
               </article>
             </div>
           </template>
@@ -497,10 +502,14 @@ async function submitReply() {
           </div>
           <article v-for="reply in replies" :key="String(reply.id)" class="post-detail-panel__reply">
             <div class="post-detail-panel__reply-meta">
-              <strong>{{ replyAuthorLabel(reply) }}</strong>
-              <span>{{ formatRelativeTime(reply.timestampISO) }}</span>
+              <strong v-if="replyAuthorLabel(reply)">{{ replyAuthorLabel(reply) }}</strong>
+              <span v-if="formatRelativeTime(reply.timestampISO)">{{ formatRelativeTime(reply.timestampISO) }}</span>
             </div>
-            <div class="post-detail-panel__reply-content" v-html="stripDecorativeContentFromHtml(reply.content || '。')"></div>
+            <div
+              v-if="stripDecorativeContentFromHtml(reply.content || '')"
+              class="post-detail-panel__reply-content"
+              v-html="stripDecorativeContentFromHtml(reply.content || '')"
+            ></div>
           </article>
           <p v-if="!replies.length" class="post-detail-panel__empty">还没有回复，来写第一条。</p>
         </section>
