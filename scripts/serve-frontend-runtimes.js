@@ -96,7 +96,7 @@ process.on("SIGTERM", () => shutdown(0));
 
 console.log("[runtime] starting LIAN frontend runtimes");
 console.log("[runtime] legacy frontend -> port 4300");
-console.log("[runtime] Vue canary -> port 4301");
+console.log("[runtime] Vue canary preview -> port 4301");
 
 try {
   ensureRuntimeDependencies();
@@ -109,6 +109,6 @@ startProcess("legacy", nodeBin, ["scripts/serve-frontend-static-rehearsal.js"], 
   FRONTEND_PORT: process.env.FRONTEND_PORT || "4300"
 });
 
-startProcess("vue-canary", viteBin, ["--host", "0.0.0.0", "--port", "4301", "--strictPort"], {
+startProcess("vue-canary", viteBin, ["preview", "--host", "0.0.0.0", "--port", "4301", "--strictPort"], {
   LIAN_VUE_CANARY: "1"
 });
