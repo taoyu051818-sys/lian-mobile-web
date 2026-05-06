@@ -1,6 +1,7 @@
 @import "../../public/lian-tokens.css";
 @import "../ui/primitives.css";
 @import "./floating-chrome.css";
+@import "./card-camera-transition.css";
 
 * {
   box-sizing: border-box;

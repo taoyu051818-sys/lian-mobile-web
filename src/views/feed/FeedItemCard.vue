@@ -24,6 +24,7 @@ const title = computed(() => props.item.title || "未命名内容");
 const coverUrl = computed(() => props.item.cover || "");
 const primaryTag = computed(() => props.item.primaryTag || "");
 const placeLabel = computed(() => props.item.locationArea || "校园");
+const timeLabel = computed(() => props.item.timeLabel || "刚刚");
 const actor = computed<DisplayActor>(() => props.item.actor || props.item.author || {});
 const authorName = computed(() => actor.value.displayName || actor.value.username || actor.value.name || "同学");
 const authorAvatarUrl = computed(() => actor.value.avatarUrl || "");
@@ -100,6 +101,11 @@ async function handleLike() {
     class="feed-item-card"
     :class="[`feed-item-card--${cardTemplate}`, { 'feed-item-card--with-cover': coverUrl }]"
     :data-card-warning="cardWarning"
+    :data-motion-title="title"
+    :data-motion-tag="primaryTag"
+    :data-motion-time="timeLabel"
+    :data-motion-author="authorName"
+    :data-motion-place="placeLabel"
     role="button"
     tabindex="0"
     :aria-label="`${title}，${authorName}`"
@@ -107,25 +113,27 @@ async function handleLike() {
     @keydown.enter.prevent="openCard"
     @keydown.space.prevent="openCard"
   >
-    <div v-if="cardTemplate !== 'text' || coverUrl" class="feed-item-card__media">
-      <img v-if="coverUrl" class="feed-item-card__cover" :src="coverUrl" :alt="title" loading="lazy" />
-      <div v-else class="feed-item-card__placeholder" aria-hidden="true">
+    <div v-if="cardTemplate !== 'text' || coverUrl" class="feed-item-card__media" data-motion-role="image-frame">
+      <img v-if="coverUrl" class="feed-item-card__cover" :src="coverUrl" :alt="title" loading="lazy" data-motion-role="image" />
+      <div v-else class="feed-item-card__placeholder" aria-hidden="true" data-motion-role="image-placeholder">
         <span>{{ templateMark }}</span>
       </div>
-      <span v-if="primaryTag" class="feed-item-card__floating-tag">{{ primaryTag }}</span>
+      <span v-if="primaryTag" class="feed-item-card__floating-tag" data-motion-role="tag">{{ primaryTag }}</span>
     </div>
 
-    <div class="feed-item-card__body">
-      <span v-if="cardTemplate === 'text' && primaryTag" class="feed-item-card__inline-tag">{{ primaryTag }}</span>
+    <div class="feed-item-card__body" data-motion-role="body">
+      <span v-if="cardTemplate === 'text' && primaryTag" class="feed-item-card__inline-tag" data-motion-role="tag">{{ primaryTag }}</span>
 
-      <h3 :title="title">{{ title }}</h3>
+      <h3 :title="title" data-motion-role="title">{{ title }}</h3>
 
-      <footer class="feed-item-card__footer">
-        <div class="feed-item-card__author">
-          <img v-if="authorAvatarUrl" :src="authorAvatarUrl" :alt="authorName" loading="lazy" />
-          <span v-else class="feed-item-card__avatar-text" aria-hidden="true">{{ authorInitial }}</span>
+      <footer class="feed-item-card__footer" data-motion-role="meta-row">
+        <div class="feed-item-card__author" data-motion-role="author">
+          <img v-if="authorAvatarUrl" :src="authorAvatarUrl" :alt="authorName" loading="lazy" data-motion-role="avatar" />
+          <span v-else class="feed-item-card__avatar-text" aria-hidden="true" data-motion-role="avatar">{{ authorInitial }}</span>
           <span class="feed-item-card__author-name" :title="authorName">{{ authorName }}</span>
         </div>
+
+        <span class="feed-item-card__motion-time" data-motion-role="time" aria-hidden="true">{{ timeLabel }}</span>
 
         <button
           class="feed-item-card__like"
@@ -134,6 +142,7 @@ async function handleLike() {
           :aria-label="likeLabel"
           :aria-pressed="liked"
           :disabled="likeBusy"
+          data-motion-role="like"
           @click.stop="handleLike"
           @keydown.enter.stop
           @keydown.space.stop
@@ -331,6 +340,17 @@ async function handleLike() {
   color: var(--lian-ink);
   font-weight: 850;
   text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.feed-item-card__motion-time {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  color: var(--lian-muted);
+  font-size: 11px;
   white-space: nowrap;
 }
 
