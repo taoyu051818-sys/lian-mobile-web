@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue";
+import { LianApiError } from "../api/http";
 import { fetchAuthMe, fetchProfileTab, logoutAuth } from "../api/profile";
 import { GlassPanel, IdentityBadge, InlineError, LianButton, TagChip } from "../ui";
 import type { FeedItemId } from "../types/feed";
@@ -60,6 +61,18 @@ function readHistoryIds() {
   }
 }
 
+function isMissingSessionError(error: unknown) {
+  return error instanceof LianApiError && (error.code === "not-authorised" || error.status === 401 || error.status === 403);
+}
+
+function enterGuestState() {
+  user.value = null;
+  profileItems.value = [];
+  editorOpen.value = false;
+  errorMessage.value = "";
+  listError.value = "";
+}
+
 async function loadProfile() {
   loading.value = true;
   errorMessage.value = "";
@@ -67,7 +80,11 @@ async function loadProfile() {
     user.value = await fetchAuthMe();
     if (user.value) await loadProfileList(activeTab.value);
   } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : "个人资料暂时没加载出来，可以稍后再试。";
+    if (isMissingSessionError(error)) {
+      enterGuestState();
+    } else {
+      errorMessage.value = error instanceof Error ? error.message : "个人资料暂时没加载出来，可以稍后再试。";
+    }
   } finally {
     loading.value = false;
   }
@@ -81,8 +98,12 @@ async function loadProfileList(tab: ProfileTabKey) {
     const response = await fetchProfileTab(tab, tab === "history" ? readHistoryIds() : []);
     profileItems.value = response.items || [];
   } catch (error) {
-    listError.value = error instanceof Error ? error.message : "列表暂时没加载出来，可以稍后再试。";
-    profileItems.value = [];
+    if (isMissingSessionError(error)) {
+      enterGuestState();
+    } else {
+      listError.value = error instanceof Error ? error.message : "列表暂时没加载出来，可以稍后再试。";
+      profileItems.value = [];
+    }
   } finally {
     listLoading.value = false;
   }
@@ -93,11 +114,10 @@ async function logout() {
   errorMessage.value = "";
   try {
     await logoutAuth();
-    user.value = null;
-    profileItems.value = [];
-    editorOpen.value = false;
+    enterGuestState();
   } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : "退出登录没有成功，可以稍后再试。";
+    if (isMissingSessionError(error)) enterGuestState();
+    else errorMessage.value = error instanceof Error ? error.message : "退出登录没有成功，可以稍后再试。";
   } finally {
     loading.value = false;
   }
