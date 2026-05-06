@@ -65,6 +65,36 @@ function isMissingSessionError(error: unknown) {
   return error instanceof LianApiError && (error.code === "not-authorised" || error.status === 401 || error.status === 403);
 }
 
+async function refreshCurrentSession() {
+  try {
+    const refreshedUser = await fetchAuthMe();
+    if (!refreshedUser) return false;
+    user.value = refreshedUser;
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function fetchProfileTabWithSessionRefresh(tab: ProfileTabKey, tids: FeedItemId[] = []) {
+  try {
+    return await fetchProfileTab(tab, tids);
+  } catch (error) {
+    if (!isMissingSessionError(error)) throw error;
+    const sessionStillValid = await refreshCurrentSession();
+    if (!sessionStillValid) throw error;
+
+    try {
+      return await fetchProfileTab(tab, tids);
+    } catch (retryError) {
+      if (isMissingSessionError(retryError)) {
+        throw new Error("登录状态已刷新，但个人列表接口仍返回未授权。请稍后重试，或重新登录后再打开赞过 / 收藏。");
+      }
+      throw retryError;
+    }
+  }
+}
+
 function enterGuestState() {
   user.value = null;
   profileItems.value = [];
@@ -95,7 +125,7 @@ async function loadProfileList(tab: ProfileTabKey) {
   listLoading.value = true;
   listError.value = "";
   try {
-    const response = await fetchProfileTab(tab, tab === "history" ? readHistoryIds() : []);
+    const response = await fetchProfileTabWithSessionRefresh(tab, tab === "history" ? readHistoryIds() : []);
     profileItems.value = response.items || [];
   } catch (error) {
     if (isMissingSessionError(error)) {
