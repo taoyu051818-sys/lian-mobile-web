@@ -1,4 +1,5 @@
 import type { DisplayActor, FeedItemId, SourceSignal } from "./feed";
+import type { PlaceRef } from "./place";
 
 export interface PostReply {
   id: FeedItemId;
@@ -21,6 +22,7 @@ export interface PostDetail {
   author?: string;
   authorAvatarUrl?: string;
   authorIdentityTag?: string;
+  place?: PlaceRef;
   timeLabel: string;
   timestampISO: string;
   likeCount: number;
