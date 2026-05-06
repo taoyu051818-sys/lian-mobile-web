@@ -5,13 +5,11 @@ import type { FeedItem, FeedItemId } from "../../types/feed";
 
 type CardTemplate = "image" | "text" | "activity" | "place" | "merchant" | "help";
 
-const props = defineProps<{
-  item: FeedItem;
-}>();
+const MAX_VISIBLE_TITLE_CHARS = 42;
+const MAX_VISIBLE_AUTHOR_CHARS = 10;
 
-const emit = defineEmits<{
-  open: [id: FeedItemId];
-}>();
+const props = defineProps<{ item: FeedItem }>();
+const emit = defineEmits<{ open: [id: FeedItemId] }>();
 
 const liked = ref(false);
 const likeCount = ref(0);
@@ -31,8 +29,11 @@ const author = computed(() => props.item.author || {
 const authorName = computed(() => author.value.displayName || "同学");
 const authorAvatarUrl = computed(() => author.value.avatarUrl || "");
 const authorInitial = computed(() => authorName.value.slice(0, 1) || "同");
-const timeLabel = computed(() => props.item.timeLabel || formatRelativeTime(props.item.timestampISO) || "刚刚");
 const searchText = computed(() => `${props.item.contentType} ${primaryTag.value} ${title.value} ${placeLabel.value}`.toLowerCase());
+const cardWarning = computed(() => [
+  title.value.length > MAX_VISIBLE_TITLE_CHARS ? "title-clamped" : "",
+  authorName.value.length > MAX_VISIBLE_AUTHOR_CHARS ? "author-ellipsized" : "",
+].filter(Boolean).join(" ") || undefined);
 
 const cardTemplate = computed<CardTemplate>(() => {
   const raw = searchText.value;
@@ -44,38 +45,21 @@ const cardTemplate = computed<CardTemplate>(() => {
   return coverUrl.value ? "image" : "text";
 });
 
-const templateMark = computed(() => {
-  const marks: Record<CardTemplate, string> = {
-    image: "◐",
-    text: "✎",
-    activity: "◦",
-    place: "⌖",
-    merchant: "食",
-    help: "＋",
-  };
-  return marks[cardTemplate.value];
-});
+const templateMark = computed(() => ({
+  image: "◐",
+  text: "✎",
+  activity: "◦",
+  place: "⌖",
+  merchant: "食",
+  help: "＋",
+})[cardTemplate.value]);
 
-const titleClamp = computed(() => cardTemplate.value === "text" ? 4 : 2);
 const likeLabel = computed(() => `${liked.value ? "取消喜欢" : "喜欢"}，当前 ${likeCount.value} 个喜欢`);
 
 watch(() => props.item, (item) => {
   liked.value = Boolean(item.liked);
   likeCount.value = Math.max(0, Number(item.likeCount || 0));
 }, { immediate: true });
-
-function formatRelativeTime(value: string) {
-  if (!value) return "";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "";
-  const diff = Date.now() - date.getTime();
-  if (diff < 60_000) return "刚刚";
-  if (diff < 3_600_000) return `${Math.floor(diff / 60_000)}分钟前`;
-  if (diff < 86_400_000) return `${Math.floor(diff / 3_600_000)}小时前`;
-  if (diff < 172_800_000) return "昨天";
-  if (diff < 604_800_000) return `${Math.floor(diff / 86_400_000)}天前`;
-  return `${date.getMonth() + 1}月${date.getDate()}日`;
-}
 
 function openCard() {
   emit("open", props.item.tid);
@@ -106,9 +90,10 @@ async function handleLike() {
   <article
     class="feed-item-card"
     :class="[`feed-item-card--${cardTemplate}`, { 'feed-item-card--with-cover': coverUrl }]"
+    :data-card-warning="cardWarning"
     role="button"
     tabindex="0"
-    :aria-label="`${title}，${authorName}，${placeLabel}`"
+    :aria-label="`${title}，${authorName}`"
     @click="openCard"
     @keydown.enter.prevent="openCard"
     @keydown.space.prevent="openCard"
@@ -124,15 +109,13 @@ async function handleLike() {
     <div class="feed-item-card__body">
       <span v-if="cardTemplate === 'text' && primaryTag" class="feed-item-card__inline-tag">{{ primaryTag }}</span>
 
-      <h3 :style="{ '--card-title-clamp': String(titleClamp) }">{{ title }}</h3>
+      <h3 :title="title">{{ title }}</h3>
 
       <footer class="feed-item-card__footer">
         <div class="feed-item-card__author">
           <img v-if="authorAvatarUrl" :src="authorAvatarUrl" :alt="authorName" loading="lazy" />
           <span v-else class="feed-item-card__avatar-text" aria-hidden="true">{{ authorInitial }}</span>
-          <span class="feed-item-card__author-name">{{ authorName }}</span>
-          <span class="feed-item-card__dot" aria-hidden="true">·</span>
-          <span>{{ timeLabel }}</span>
+          <span class="feed-item-card__author-name" :title="authorName">{{ authorName }}</span>
         </div>
 
         <button
@@ -177,33 +160,23 @@ async function handleLike() {
 }
 
 .feed-item-card--text {
-  background:
-    radial-gradient(circle at top left, rgba(31, 167, 160, 0.12), transparent 42%),
-    var(--lian-card-strong);
+  background: radial-gradient(circle at top left, rgba(31, 167, 160, 0.12), transparent 42%), var(--lian-card-strong);
 }
 
 .feed-item-card--activity {
-  background:
-    linear-gradient(145deg, rgba(255, 255, 255, 0.92), rgba(255, 247, 237, 0.82)),
-    var(--lian-card-strong);
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.92), rgba(255, 247, 237, 0.82)), var(--lian-card-strong);
 }
 
 .feed-item-card--place {
-  background:
-    linear-gradient(145deg, rgba(255, 255, 255, 0.92), rgba(236, 253, 245, 0.82)),
-    var(--lian-card-strong);
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.92), rgba(236, 253, 245, 0.82)), var(--lian-card-strong);
 }
 
 .feed-item-card--merchant {
-  background:
-    linear-gradient(145deg, rgba(255, 255, 255, 0.94), rgba(255, 251, 235, 0.86)),
-    var(--lian-card-strong);
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.94), rgba(255, 251, 235, 0.86)), var(--lian-card-strong);
 }
 
 .feed-item-card--help {
-  background:
-    linear-gradient(145deg, rgba(255, 255, 255, 0.92), rgba(245, 243, 255, 0.82)),
-    var(--lian-card-strong);
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.92), rgba(245, 243, 255, 0.82)), var(--lian-card-strong);
 }
 
 .feed-item-card__media {
@@ -292,15 +265,17 @@ async function handleLike() {
 .feed-item-card h3 {
   display: -webkit-box;
   overflow: hidden;
+  min-height: calc(15px * 1.34 * 2);
   margin: 0;
   color: var(--lian-ink);
   font-size: 15px;
   line-height: 1.34;
   -webkit-box-orient: vertical;
-  -webkit-line-clamp: var(--card-title-clamp, 2);
+  -webkit-line-clamp: 2;
 }
 
 .feed-item-card--text h3 {
+  min-height: calc(16px * 1.42 * 2);
   font-size: 16px;
   line-height: 1.42;
 }
@@ -315,7 +290,9 @@ async function handleLike() {
 
 .feed-item-card__author {
   display: flex;
+  flex: 1 1 auto;
   min-width: 0;
+  max-width: calc(100% - 50px);
   gap: var(--space-1);
   align-items: center;
   color: var(--lian-muted);
@@ -340,15 +317,12 @@ async function handleLike() {
 
 .feed-item-card__author-name {
   overflow: hidden;
-  max-width: 6.5em;
+  min-width: 0;
+  max-width: min(10ch, 100%);
   color: var(--lian-ink);
   font-weight: 850;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.feed-item-card__dot {
-  color: var(--lian-faint);
 }
 
 .feed-item-card__like {
