@@ -52,10 +52,7 @@ const primaryTag = computed(() => normalizePostTag(props.post?.primaryTag || "")
 const rawBodyHtml = computed(() => props.post?.contentHtml || "");
 const bodyHtml = computed(() => stripDecorativeContentFromHtml(rawBodyHtml.value));
 const replies = computed(() => props.post?.replies || []);
-const images = computed(() => {
-  const urls = [props.post?.cover || "", ...(props.post?.imageUrls || [])].filter(Boolean);
-  return Array.from(new Set(urls)).slice(0, 8);
-});
+const images = computed(() => uniqueGalleryImages([props.post?.cover || "", ...(props.post?.imageUrls || [])]).slice(0, 8));
 const timeLabel = computed(() => formatRelativeTime(props.post?.timestampISO || "") || props.post?.timeLabel || "刚刚");
 const replyIdentityLabel = computed(() => `以当前身份回复`);
 
@@ -74,6 +71,40 @@ watch(() => props.post, (post) => {
 function normalizePostTag(value: string) {
   const text = String(value || "").trim().replace(/^#+/, "");
   return text ? `#${text}` : "";
+}
+
+function galleryImageKey(value: string) {
+  const raw = String(value || "").trim();
+  if (!raw) return "";
+  try {
+    const url = new URL(raw, typeof window !== "undefined" ? window.location.origin : "https://lian.invalid");
+    const pathname = url.pathname.replace(/^\/+/, "");
+    const uploadIndex = pathname.indexOf("/upload/");
+    if (uploadIndex >= 0) {
+      return pathname
+        .slice(uploadIndex + "/upload/".length)
+        .replace(/^(?:[^/]+\/)*v\d+\//, "")
+        .replace(/^v\d+\//, "")
+        .replace(/\.[a-z0-9]+$/i, "");
+    }
+    return pathname.replace(/\.[a-z0-9]+$/i, "");
+  } catch {
+    return raw.replace(/\?.*$/, "").replace(/\.[a-z0-9]+$/i, "");
+  }
+}
+
+function uniqueGalleryImages(urls: string[]) {
+  const seen = new Set<string>();
+  const result: string[] = [];
+  for (const url of urls) {
+    const value = String(url || "").trim();
+    if (!value) continue;
+    const key = galleryImageKey(value);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    result.push(value);
+  }
+  return result;
 }
 
 function stripDecorativeContentFromHtml(value: string) {
@@ -381,7 +412,7 @@ async function submitReply() {
   min-width: 0;
   gap: var(--space-2);
   align-items: center;
-  justify-self: center;
+  justify-self: start;
 }
 
 .post-detail-panel__author-chip img,
