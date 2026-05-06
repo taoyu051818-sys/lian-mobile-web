@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 import { fetchMapV2Items } from "../api/map";
 import { buildPublishPayload, createMapV2LocationDraft, normalizeIdentityTag, normalizePublishTag, publishPost, uploadPublishImage } from "../api/publish";
 import { fetchAuthMe } from "../api/profile";
@@ -243,6 +243,10 @@ function resetForm() {
 onMounted(() => {
   void loadIdentity();
   void loadMapLocations();
+});
+
+onBeforeUnmount(() => {
+  revokePreviewUrls();
 });
 </script>
 
