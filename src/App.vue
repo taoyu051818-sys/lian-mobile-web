@@ -30,39 +30,35 @@ function handleViewChange(key: string) {
   <main class="vue-shell" aria-label="LIAN 主内容">
     <div class="vue-shell__grid">
       <AppViewHost :active-view-key="activeViewKey" @chrome="chromeHidden = $event" />
-      <Transition name="bottom-tab-bar-motion">
-        <BottomTabBar
-          v-if="!chromeHidden"
-          :items="tabs"
-          :active-key="activeViewKey"
-          @change="handleViewChange"
-        />
-      </Transition>
+      <BottomTabBar
+        class="vue-shell__bottom-tab"
+        :class="{ 'is-hidden': chromeHidden }"
+        :items="tabs"
+        :active-key="activeViewKey"
+        @change="handleViewChange"
+      />
     </div>
   </main>
   <ToastHost />
 </template>
 
 <style scoped>
-.bottom-tab-bar-motion-enter-active,
-.bottom-tab-bar-motion-leave-active {
+.vue-shell__bottom-tab {
   transition: opacity 180ms ease, transform 180ms ease;
 }
 
-.bottom-tab-bar-motion-enter-from,
-.bottom-tab-bar-motion-leave-to {
+.vue-shell__bottom-tab.is-hidden {
   opacity: 0;
+  pointer-events: none;
   transform: translateY(18px) scale(0.98);
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .bottom-tab-bar-motion-enter-active,
-  .bottom-tab-bar-motion-leave-active {
+  .vue-shell__bottom-tab {
     transition: none;
   }
 
-  .bottom-tab-bar-motion-enter-from,
-  .bottom-tab-bar-motion-leave-to {
+  .vue-shell__bottom-tab.is-hidden {
     opacity: 1;
     transform: none;
   }
