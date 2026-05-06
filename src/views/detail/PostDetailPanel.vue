@@ -110,8 +110,8 @@ function uniqueGalleryImages(urls: string[]) {
 function stripDecorativeContentFromHtml(value: string) {
   return String(value || "")
     .replace(/<img\b[^>]*>/gi, "")
-    .replace(/<p>\s*<strong>\s*#+[^<]+\s*<\/strong>\s*<\/p>/gi, "")
-    .replace(/<p>\s*#+[^<]+\s*<\/p>/gi, "")
+    .replace(/<p[^>]*>\s*<strong>\s*#+[^<]+\s*<\/strong>\s*<\/p>/gi, "")
+    .replace(/<p[^>]*>\s*#+[^<]+\s*<\/p>/gi, "")
     .trim();
 }
 
@@ -136,6 +136,11 @@ function showActionMessage(message: string) {
 function showActionError(error: unknown, fallback: string) {
   actionMessage.value = "";
   actionError.value = error instanceof Error ? error.message : fallback;
+}
+
+function collapseReplyIfOpen() {
+  if (!replyExpanded.value) return;
+  replyExpanded.value = false;
 }
 
 async function handleShare() {
@@ -259,7 +264,7 @@ async function submitReply() {
       <button class="post-detail-panel__share" type="button" aria-label="分享" @click="handleShare">分享</button>
     </header>
 
-    <div class="post-detail-panel__stage">
+    <div class="post-detail-panel__stage" @click="collapseReplyIfOpen">
       <div v-if="loading" class="post-detail-panel__state" role="status">正在加载详情…</div>
 
       <InlineError v-else-if="error">
@@ -286,12 +291,12 @@ async function submitReply() {
             <span class="post-detail-panel__pill">{{ timeLabel }}</span>
             <span v-if="placeLabel" class="post-detail-panel__pill">{{ placeLabel }}</span>
           </div>
-          <button class="post-detail-panel__report-entry" type="button" :disabled="reportBusy" @click="toggleReport">
+          <button class="post-detail-panel__report-entry" type="button" :disabled="reportBusy" @click.stop="toggleReport">
             {{ reportOpen ? "收起" : "举报" }}
           </button>
         </section>
 
-        <section v-if="reportOpen" class="post-detail-panel__report" aria-label="举报原因">
+        <section v-if="reportOpen" class="post-detail-panel__report" aria-label="举报原因" @click.stop>
           <label>
             <span>举报原因</span>
             <select v-model="reportCategory" :disabled="reportBusy">
@@ -321,16 +326,16 @@ async function submitReply() {
       </template>
     </div>
 
-    <form v-if="post && !loading && !error" class="post-detail-panel__dock" :class="{ 'is-expanded': replyExpanded }" @submit.prevent="submitReply">
-      <button class="post-detail-panel__dock-action" :class="{ 'is-active': liked }" type="button" :disabled="likeBusy" @click="handleLike">
+    <form v-if="post && !loading && !error" class="post-detail-panel__dock" :class="{ 'is-expanded': replyExpanded }" @submit.prevent="submitReply" @click.stop>
+      <button v-if="!replyExpanded" class="post-detail-panel__dock-action" :class="{ 'is-active': liked }" type="button" :disabled="likeBusy" @click="handleLike">
         {{ liked ? "♥" : "♡" }} {{ likeCount }}
       </button>
-      <button class="post-detail-panel__dock-action" :class="{ 'is-active': saved }" type="button" :disabled="saveBusy" @click="handleSave">
+      <button v-if="!replyExpanded" class="post-detail-panel__dock-action" :class="{ 'is-active': saved }" type="button" :disabled="saveBusy" @click="handleSave">
         {{ saved ? "★" : "☆" }}
       </button>
       <div class="post-detail-panel__reply-box" @click="replyExpanded = true">
         <span v-if="!replyExpanded" class="post-detail-panel__reply-placeholder">写回复</span>
-        <textarea v-else v-model="replyContent" rows="3" maxlength="2000" :placeholder="replyIdentityLabel" />
+        <textarea v-else v-model="replyContent" rows="3" maxlength="2000" :placeholder="replyIdentityLabel" autofocus />
       </div>
       <button class="post-detail-panel__send" type="submit" :disabled="replyBusy || (replyExpanded && !replyContent.trim())">
         {{ replyExpanded ? "发送" : "回复" }}
@@ -357,8 +362,8 @@ async function submitReply() {
   gap: var(--space-4);
   overflow: hidden;
   border-radius: var(--detail-card-radius, 0px);
-  transform: translateX(var(--detail-content-drag-x, 0px)) scale(var(--detail-card-scale, 1));
-  transform-origin: var(--detail-transform-origin, center top);
+  transform: translate3d(var(--detail-card-translate-x, 0px), var(--detail-card-translate-y, 0px), 0) scale(var(--detail-card-scale, 1));
+  transform-origin: center center;
   transition: transform var(--motion-standard) var(--motion-ease-standard), border-radius var(--motion-standard) var(--motion-ease-standard), opacity var(--motion-standard) var(--motion-ease-standard), filter var(--motion-standard) var(--motion-ease-standard);
 }
 
@@ -635,6 +640,7 @@ async function submitReply() {
 
 .post-detail-panel__dock-action,
 .post-detail-panel__send {
+  flex: 0 0 auto;
   min-width: 42px;
   min-height: 38px;
   padding: 0 var(--space-2);
@@ -652,8 +658,12 @@ async function submitReply() {
 
 .post-detail-panel__reply-box {
   display: grid;
-  flex: 1;
+  flex: 1 1 auto;
   min-width: 0;
+}
+
+.post-detail-panel__dock.is-expanded .post-detail-panel__reply-box {
+  width: 100%;
 }
 
 .post-detail-panel__reply-placeholder {
