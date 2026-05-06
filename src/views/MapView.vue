@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue";
 import { fetchMapV2Items } from "../api/map";
+import { fetchPlaceSheet } from "../api/places";
 import { fetchPostDetail } from "../api/posts";
 import { GlassPanel, InlineError, LianButton, LocationChip, TrustBadge } from "../ui";
-import type { FeedItemId } from "../types/feed";
+import type { DisplayActor, FeedItemId } from "../types/feed";
 import type { MapBounds, MapLocation, MapPost, MapV2ItemsResponse } from "../types/map";
+import type { PlaceSheet, PlaceStatus } from "../types/place";
 import type { PostDetail } from "../types/post";
 import PostDetailPanel from "./detail/PostDetailPanel.vue";
 
@@ -21,6 +23,10 @@ const selectedPostId = ref<FeedItemId | null>(null);
 const selectedPost = ref<PostDetail | null>(null);
 const detailLoading = ref(false);
 const detailError = ref("");
+const selectedPlaceSheet = ref<PlaceSheet | null>(null);
+const placeSheetLoading = ref(false);
+const placeSheetError = ref("");
+const openPlaceId = ref("");
 
 const bounds = computed(() => mapData.value?.bounds || DEFAULT_BOUNDS);
 const locations = computed(() => mapData.value?.locations || []);
@@ -52,6 +58,39 @@ function areaPoints(points: Array<{ lat: number; lng: number }> = []) {
   }).join(", ");
 }
 
+function placeIdForLocation(location: MapLocation) {
+  return location.place?.id || location.placeId || location.id;
+}
+
+function placeStatusLabel(status?: PlaceStatus) {
+  const labels: Record<PlaceStatus, string> = {
+    confirmed: "已确认",
+    pending: "待确认",
+    disputed: "有争议",
+    expired: "可能过期",
+    "ai-organized": "AI 整理",
+    official: "官方",
+  };
+  return status ? labels[status] || "地点" : "地点";
+}
+
+function actorLabel(actor?: DisplayActor) {
+  return actor?.displayName || actor?.username || actor?.name || "同学";
+}
+
+function formatRelativeTime(value?: string) {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  const diff = Date.now() - date.getTime();
+  if (diff < 60_000) return "刚刚";
+  if (diff < 3_600_000) return `${Math.floor(diff / 60_000)}分钟前`;
+  if (diff < 86_400_000) return `${Math.floor(diff / 3_600_000)}小时前`;
+  if (diff < 172_800_000) return "昨天";
+  if (diff < 604_800_000) return `${Math.floor(diff / 86_400_000)}天前`;
+  return `${date.getMonth() + 1}月${date.getDate()}日`;
+}
+
 async function loadMap() {
   loading.value = true;
   errorMessage.value = "";
@@ -69,10 +108,39 @@ async function loadMap() {
 
 function selectLocation(item: MapLocation) {
   selectedTarget.value = { kind: "location", item };
+  selectedPlaceSheet.value = null;
+  placeSheetError.value = "";
+  openPlaceId.value = "";
+}
+
+async function openPlaceSheet(location: MapLocation) {
+  const placeId = placeIdForLocation(location);
+  if (!placeId) return;
+  openPlaceId.value = placeId;
+  selectedPlaceSheet.value = null;
+  placeSheetError.value = "";
+  placeSheetLoading.value = true;
+  try {
+    const sheet = await fetchPlaceSheet(placeId);
+    if (openPlaceId.value === placeId) {
+      selectedPlaceSheet.value = sheet;
+    }
+  } catch (error) {
+    if (openPlaceId.value === placeId) {
+      placeSheetError.value = error instanceof Error ? error.message : "地点信息暂时没加载出来，可以稍后再试。";
+    }
+  } finally {
+    if (openPlaceId.value === placeId) {
+      placeSheetLoading.value = false;
+    }
+  }
 }
 
 async function openPost(item: MapPost) {
   selectedTarget.value = { kind: "post", item };
+  selectedPlaceSheet.value = null;
+  placeSheetError.value = "";
+  openPlaceId.value = "";
   selectedPostId.value = item.tid;
   selectedPost.value = null;
   detailError.value = "";
@@ -182,9 +250,12 @@ onMounted(() => {
             <div>
               <LocationChip>{{ selectedTarget.item.name }}</LocationChip>
               <h3>{{ selectedTarget.item.name }}</h3>
-              <p>{{ selectedTarget.item.type || '校园地点' }}</p>
+              <p>{{ selectedTarget.item.type || selectedTarget.item.place?.type || '校园地点' }}</p>
             </div>
-            <LianButton size="sm" variant="ghost" @click="selectNearestPostForLocation(selectedTarget.item)">查看附近内容</LianButton>
+            <div class="map-view__actions">
+              <LianButton size="sm" variant="ghost" :loading="placeSheetLoading" @click="openPlaceSheet(selectedTarget.item)">打开地点</LianButton>
+              <LianButton size="sm" variant="ghost" @click="selectNearestPostForLocation(selectedTarget.item)">查看附近内容</LianButton>
+            </div>
           </template>
           <template v-else>
             <div>
@@ -196,10 +267,50 @@ onMounted(() => {
           </template>
         </section>
 
+        <section v-if="openPlaceId" class="map-view__place-sheet" aria-label="地点信息">
+          <div class="map-view__place-sheet-header">
+            <div>
+              <LocationChip>{{ selectedPlaceSheet?.name || (selectedTarget?.kind === 'location' ? selectedTarget.item.name : '地点') }}</LocationChip>
+              <h3>{{ selectedPlaceSheet?.name || (selectedTarget?.kind === 'location' ? selectedTarget.item.name : '地点信息') }}</h3>
+            </div>
+            <button type="button" @click="openPlaceId = ''; selectedPlaceSheet = null; placeSheetError = ''">收起</button>
+          </div>
+          <p v-if="placeSheetLoading" class="map-view__state">正在加载地点信息…</p>
+          <InlineError v-else-if="placeSheetError">
+            {{ placeSheetError }}
+            <button
+              v-if="selectedTarget?.kind === 'location'"
+              type="button"
+              @click="openPlaceSheet(selectedTarget.item)"
+            >重新加载</button>
+          </InlineError>
+          <template v-else>
+            <div class="map-view__place-meta">
+              <TrustBadge tone="confirmed">{{ placeStatusLabel(selectedPlaceSheet?.status || (selectedTarget?.kind === 'location' ? selectedTarget.item.place?.status : undefined)) }}</TrustBadge>
+              <span v-if="selectedPlaceSheet?.type">{{ selectedPlaceSheet.type }}</span>
+              <span v-if="selectedPlaceSheet?.updatedAt">更新于 {{ formatRelativeTime(selectedPlaceSheet.updatedAt) || selectedPlaceSheet.updatedAt }}</span>
+            </div>
+            <p v-if="selectedPlaceSheet?.summary?.text">{{ selectedPlaceSheet.summary.text }}</p>
+            <p v-else>这个地点还在沉淀信息。</p>
+            <div v-if="selectedPlaceSheet?.stats" class="map-view__place-meta">
+              <span v-if="selectedPlaceSheet.stats.postCount != null">{{ selectedPlaceSheet.stats.postCount }} 条内容</span>
+              <span v-if="selectedPlaceSheet.stats.correctionCount != null">{{ selectedPlaceSheet.stats.correctionCount }} 条修正</span>
+              <span v-if="selectedPlaceSheet.stats.savedCount != null">{{ selectedPlaceSheet.stats.savedCount }} 次收藏</span>
+            </div>
+            <div v-if="selectedPlaceSheet?.recentPosts?.length" class="map-view__place-posts">
+              <article v-for="post in selectedPlaceSheet.recentPosts.slice(0, 3)" :key="String(post.tid)">
+                <strong>{{ post.title || '相关内容' }}</strong>
+                <p v-if="post.excerpt">{{ post.excerpt }}</p>
+                <small>{{ actorLabel(post.actor) }} · {{ formatRelativeTime(post.timestampISO) || '刚刚' }}</small>
+              </article>
+            </div>
+          </template>
+        </section>
+
         <section class="map-view__places" aria-label="地点入口">
           <article v-for="location in locations.slice(0, 12)" :key="location.id" class="map-view__place" @click="selectLocation(location)">
             <LocationChip>{{ location.name }}</LocationChip>
-            <TrustBadge tone="confirmed">{{ location.type || '地点' }}</TrustBadge>
+            <TrustBadge tone="confirmed">{{ location.type || location.place?.type || '地点' }}</TrustBadge>
           </article>
         </section>
       </template>
@@ -220,14 +331,19 @@ onMounted(() => {
 <style scoped>
 .map-view,
 .map-view__card,
-.map-view__places {
+.map-view__places,
+.map-view__place-sheet,
+.map-view__place-posts {
   display: grid;
   gap: var(--space-4);
 }
 
 .map-view__toolbar,
 .map-view__detail,
-.map-view__place {
+.map-view__place,
+.map-view__actions,
+.map-view__place-sheet-header,
+.map-view__place-meta {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-2);
@@ -240,7 +356,9 @@ onMounted(() => {
   margin: 0;
 }
 
-.map-view__detail p {
+.map-view__detail p,
+.map-view__place-sheet p,
+.map-view__place-posts small {
   color: var(--lian-muted);
   line-height: 1.6;
 }
@@ -355,7 +473,9 @@ onMounted(() => {
 }
 
 .map-view__detail,
-.map-view__place {
+.map-view__place,
+.map-view__place-sheet,
+.map-view__place-posts article {
   padding: var(--space-3);
   border: 1px solid var(--lian-border);
   border-radius: var(--radius-3);
@@ -366,13 +486,38 @@ onMounted(() => {
   align-items: flex-start;
 }
 
-.map-view__detail > div {
+.map-view__detail > div,
+.map-view__place-sheet-header > div,
+.map-view__place-posts article {
   display: grid;
   gap: var(--space-2);
 }
 
+.map-view__actions,
+.map-view__place-meta {
+  justify-content: flex-start;
+}
+
+.map-view__place-meta span {
+  padding: 5px 8px;
+  border-radius: var(--radius-chip);
+  background: rgba(255, 255, 255, 0.58);
+  color: var(--lian-muted);
+  font-size: 12px;
+  font-weight: 850;
+}
+
 .map-view__place {
   cursor: pointer;
+}
+
+.map-view__place-sheet-header button {
+  min-height: 32px;
+  border: 0;
+  border-radius: var(--radius-chip);
+  background: rgba(255, 255, 255, 0.72);
+  color: var(--lian-muted);
+  font-weight: 900;
 }
 
 .map-view__post-detail {
