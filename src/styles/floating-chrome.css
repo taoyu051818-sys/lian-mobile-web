@@ -5,6 +5,7 @@
   --floating-chrome-hidden-scale: 0.982;
   --floating-chrome-blur: 4px;
   --detail-drag-visible-scale-loss: 0.22;
+  --bottom-chrome-visibility-progress: 1;
 }
 
 .lian-floating-chrome {
@@ -61,9 +62,18 @@
   transform: translate3d(0, 0, 0) scale(1);
 }
 
+.lian-floating-chrome--bottom[data-floating-state="progress"] {
+  opacity: var(--bottom-chrome-visibility-progress, 1);
+  pointer-events: none;
+  filter: blur(calc((1 - var(--bottom-chrome-visibility-progress, 1)) * var(--floating-chrome-blur)));
+  transform: translate3d(0, calc((1 - var(--bottom-chrome-visibility-progress, 1)) * var(--floating-chrome-bottom-exit-y)), 0)
+    scale(calc(var(--floating-chrome-hidden-scale) + ((1 - var(--floating-chrome-hidden-scale)) * var(--bottom-chrome-visibility-progress, 1))));
+  transition: none;
+}
+
 .lian-floating-chrome--top[data-floating-progress],
 .lian-floating-chrome--bottom[data-floating-progress] {
-  opacity: calc(1 - var(--floating-progress, 0));
+  --floating-progress: attr(data-floating-progress number, 0);
 }
 
 .bottom-tab-bar.lian-floating-chrome {
@@ -159,6 +169,7 @@
   .lian-floating-chrome,
   .lian-floating-chrome.is-hidden,
   .lian-floating-chrome[data-floating-state="hidden"],
+  .lian-floating-chrome[data-floating-state="progress"],
   .feed-view__tabs,
   .feed-view__content.is-under-detail,
   .post-detail-panel__stage {
