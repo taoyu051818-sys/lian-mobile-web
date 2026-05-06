@@ -31,8 +31,10 @@ function handleViewChange(key: string) {
     <div class="vue-shell__grid">
       <AppViewHost :active-view-key="activeViewKey" @chrome="chromeHidden = $event" />
       <BottomTabBar
-        class="vue-shell__bottom-tab"
+        class="vue-shell__bottom-tab lian-floating-chrome lian-floating-chrome--bottom"
         :class="{ 'is-hidden': chromeHidden }"
+        data-floating-chrome="bottom"
+        :data-floating-state="chromeHidden ? 'hidden' : 'visible'"
         :items="tabs"
         :active-key="activeViewKey"
         @change="handleViewChange"
@@ -44,13 +46,16 @@ function handleViewChange(key: string) {
 
 <style scoped>
 .vue-shell__bottom-tab {
-  transition: opacity 180ms ease, transform 180ms ease;
+  transition: opacity var(--floating-chrome-motion-duration, 260ms) var(--motion-ease-standard),
+    transform var(--floating-chrome-motion-duration, 260ms) var(--motion-ease-standard),
+    filter var(--floating-chrome-motion-duration, 260ms) var(--motion-ease-standard);
 }
 
 .vue-shell__bottom-tab.is-hidden {
   opacity: 0;
   pointer-events: none;
-  transform: translateY(18px) scale(0.98);
+  transform: translateY(var(--floating-chrome-bottom-exit-y, 34px)) scale(0.98);
+  filter: blur(4px);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -61,6 +66,7 @@ function handleViewChange(key: string) {
   .vue-shell__bottom-tab.is-hidden {
     opacity: 1;
     transform: none;
+    filter: none;
   }
 }
 </style>
