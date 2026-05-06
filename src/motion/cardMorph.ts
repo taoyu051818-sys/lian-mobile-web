@@ -142,7 +142,7 @@ export function pairMotionRoles(source: MotionSnapshot, target: MotionSnapshot):
   return pairs;
 }
 
-export function createMorphLayer(ownerDocument: Document = document): HTMLElement {
+export function createMorphLayer(ownerDocument: Document): HTMLElement {
   const layer = ownerDocument.createElement("div");
   layer.className = "card-morph-layer";
   layer.setAttribute("aria-hidden", "true");
@@ -157,11 +157,18 @@ export function createMorphLayer(ownerDocument: Document = document): HTMLElemen
   return layer;
 }
 
+function escapeAttributeValue(value: string) {
+  return typeof CSS !== "undefined" && CSS.escape ? CSS.escape(value) : value.replace(/"/g, "\\\"");
+}
+
+function findElementForRole(root: HTMLElement, role: MotionRole): HTMLElement | null {
+  if (role === SURFACE_ROLE) return root;
+  const escapedRole = escapeAttributeValue(role);
+  return root.querySelector<HTMLElement>(`[data-motion-role="${escapedRole}"]`);
+}
+
 function cloneElementForRole(root: HTMLElement, role: MotionRole): HTMLElement | null {
-  const selector = role === SURFACE_ROLE
-    ? null
-    : `[data-motion-role="${role}"]`;
-  const element = selector ? root.querySelector<HTMLElement>(selector) : root;
+  const element = findElementForRole(root, role);
   return element ? cloneVisualElement(element) : null;
 }
 
@@ -199,7 +206,7 @@ function transformBetween(from: MotionRectSnapshot, to: MotionRectSnapshot) {
   return `translate3d(${dx}px, ${dy}px, 0) scale(${sx}, ${sy})`;
 }
 
-function animateClone(
+function animateSourceClone(
   clone: HTMLElement,
   from: MotionRectSnapshot,
   to: MotionRectSnapshot | undefined,
@@ -218,8 +225,25 @@ function animateClone(
   ], timing);
 }
 
+function animateTargetOnlyClone(clone: HTMLElement, timing: KeyframeAnimationOptions): Animation {
+  return clone.animate([
+    { transform: "translate3d(0, 0, 0) scale(0.98, 0.98)", opacity: 0 },
+    { transform: "translate3d(0, 0, 0) scale(1, 1)", opacity: 1 },
+  ], timing);
+}
+
 function waitForAnimations(animations: Animation[]) {
   return Promise.all(animations.map((animation) => animation.finished.catch(() => undefined)));
+}
+
+function shouldReduceMotion(sourceRoot: HTMLElement, explicitValue: boolean | undefined) {
+  if (typeof explicitValue === "boolean") return explicitValue;
+  return Boolean(sourceRoot.ownerDocument.defaultView?.matchMedia?.("(prefers-reduced-motion: reduce)").matches);
+}
+
+function addAbortCleanup(signal: AbortSignal | undefined, cleanup: () => void) {
+  if (!signal) return;
+  signal.addEventListener("abort", cleanup, { once: true });
 }
 
 export function playEnterMorph(
@@ -229,15 +253,14 @@ export function playEnterMorph(
 ): EnterMorphHandle {
   const duration = options.duration ?? DEFAULT_DURATION;
   const easing = options.easing ?? DEFAULT_EASING;
-  const reducedMotion = options.reducedMotion
-    ?? window.matchMedia?.("(prefers-reduced-motion: reduce)").matches
-    ?? false;
+  const reducedMotion = shouldReduceMotion(sourceRoot, options.reducedMotion);
 
   let cancelled = false;
   let layer: HTMLElement | null = null;
   const animations: Animation[] = [];
 
   const cleanup = () => {
+    cancelled = true;
     animations.forEach((animation) => animation.cancel());
     layer?.remove();
     layer = null;
@@ -255,6 +278,7 @@ export function playEnterMorph(
     const target = collectMotionSnapshot(targetRoot);
     const pairs = pairMotionRoles(source, target);
     layer = createMorphLayer(sourceRoot.ownerDocument);
+    addAbortCleanup(options.signal, cleanup);
 
     const timing: KeyframeAnimationOptions = {
       duration,
@@ -263,24 +287,33 @@ export function playEnterMorph(
     };
 
     for (const pair of pairs) {
-      if (!pair.source) continue;
-      const clone = cloneElementForRole(sourceRoot, pair.sourceRole);
-      if (!clone) continue;
-      clone.dataset.morphSourceRole = pair.sourceRole;
-      clone.dataset.morphTargetRole = pair.targetRole;
-      placeClone(clone, pair.source.rect);
-      layer.appendChild(clone);
-      animations.push(animateClone(clone, pair.source.rect, pair.target?.rect, timing));
-    }
+      if (pair.source) {
+        const clone = cloneElementForRole(sourceRoot, pair.sourceRole);
+        if (!clone) continue;
+        clone.dataset.morphSourceRole = pair.sourceRole;
+        clone.dataset.morphTargetRole = pair.targetRole;
+        placeClone(clone, pair.source.rect);
+        layer.appendChild(clone);
+        animations.push(animateSourceClone(clone, pair.source.rect, pair.target?.rect, timing));
+        continue;
+      }
 
-    options.signal?.addEventListener("abort", () => {
-      cancelled = true;
-      cleanup();
-    }, { once: true });
+      if (pair.target) {
+        const clone = cloneElementForRole(targetRoot, pair.targetRole);
+        if (!clone) continue;
+        clone.dataset.morphSourceRole = "missing";
+        clone.dataset.morphTargetRole = pair.targetRole;
+        placeClone(clone, pair.target.rect);
+        layer.appendChild(clone);
+        animations.push(animateTargetOnlyClone(clone, timing));
+      }
+    }
 
     await waitForAnimations(animations);
     if (cancelled) return;
-    cleanup();
+    animations.length = 0;
+    layer?.remove();
+    layer = null;
     options.onComplete?.();
   })().catch((error) => {
     cleanup();
@@ -289,9 +322,6 @@ export function playEnterMorph(
 
   return {
     finished,
-    cancel: () => {
-      cancelled = true;
-      cleanup();
-    },
+    cancel: cleanup,
   };
 }
