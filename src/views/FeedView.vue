@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from "vue";
+import { computed, nextTick, onMounted, ref } from "vue";
 import { fetchFeed } from "../api/feed";
 import { fetchPostDetail } from "../api/posts";
 import { InlineError, LianButton } from "../ui";
@@ -8,6 +8,13 @@ import type { PostDetail } from "../types/post";
 import FeedItemCard from "./feed/FeedItemCard.vue";
 import PostDetailPanel from "./detail/PostDetailPanel.vue";
 
+interface CardOpenPayload {
+  item: FeedItem;
+  rect: { top: number; left: number; width: number; height: number };
+}
+
+interface CardTransitionSnapshot extends CardOpenPayload {}
+
 const DEFAULT_TABS: FeedTab[] = [
   { id: "此刻", label: "此刻" },
   { id: "精选", label: "精选" },
@@ -15,6 +22,8 @@ const DEFAULT_TABS: FeedTab[] = [
 const PAGE_SIZE = 12;
 const HOME_UPDATE_PROBE_VERSION = "home-ui-main-2026-05-05-01";
 const HOME_UPDATE_PROBE_KEY = `lian.homeUpdateProbe.${HOME_UPDATE_PROBE_VERSION}`;
+const SWIPE_THRESHOLD = 86;
+const SWIPE_VERTICAL_GUARD = 52;
 
 const emit = defineEmits<{
   chrome: [hidden: boolean];
@@ -33,10 +42,35 @@ const selectedPost = ref<PostDetail | null>(null);
 const detailLoading = ref(false);
 const detailError = ref("");
 const showUpdateProbe = ref(false);
+const cardTransition = ref<CardTransitionSnapshot | null>(null);
+const cardTransitionActive = ref(false);
+const dragStartX = ref(0);
+const dragStartY = ref(0);
+const detailDragX = ref(0);
+const detailDragging = ref(false);
+const detailPointerId = ref<number | null>(null);
+const detailGestureLocked = ref<"horizontal" | "vertical" | null>(null);
 
 const detailOpen = computed(() => selectedPostId.value !== null);
 const isEmpty = computed(() => !loading.value && !errorMessage.value && items.value.length === 0);
 const masonryColumns = computed(() => splitIntoMasonryColumns(items.value));
+const selectedIndex = computed(() => items.value.findIndex((item) => Number(item.tid) === Number(selectedPostId.value)));
+const nextItem = computed(() => selectedIndex.value >= 0 ? items.value[selectedIndex.value + 1] || null : null);
+const previousItem = computed(() => selectedIndex.value > 0 ? items.value[selectedIndex.value - 1] || null : null);
+const detailDragStyle = computed(() => ({
+  "--detail-drag-x": `${detailDragX.value}px`,
+  "--detail-drag-progress": String(Math.min(1, Math.abs(detailDragX.value) / 180)),
+}));
+const cardTransitionStyle = computed(() => {
+  const snapshot = cardTransition.value;
+  if (!snapshot) return undefined;
+  return {
+    "--card-top": `${snapshot.rect.top}px`,
+    "--card-left": `${snapshot.rect.left}px`,
+    "--card-width": `${snapshot.rect.width}px`,
+    "--card-height": `${snapshot.rect.height}px`,
+  };
+});
 
 function estimateCardWeight(item: FeedItem) {
   const coverWeight = item.cover ? 1.32 : 0.72;
@@ -94,6 +128,21 @@ function dismissUpdateProbe() {
   }
 }
 
+function startCardTransition(payload?: CardOpenPayload) {
+  if (!payload || typeof window === "undefined" || window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
+  cardTransition.value = payload;
+  cardTransitionActive.value = false;
+  void nextTick(() => {
+    requestAnimationFrame(() => {
+      cardTransitionActive.value = true;
+      window.setTimeout(() => {
+        cardTransition.value = null;
+        cardTransitionActive.value = false;
+      }, 320);
+    });
+  });
+}
+
 async function loadFeed(reset = false) {
   if (loading.value || loadingMore.value) return;
   if (!reset && !hasMore.value) return;
@@ -141,12 +190,15 @@ function switchTab(tabId: string) {
   void loadFeed(true);
 }
 
-async function openItem(id: FeedItemId) {
+async function openItem(id: FeedItemId, payload?: CardOpenPayload) {
+  startCardTransition(payload);
   rememberReadItem(id);
   selectedPostId.value = id;
   selectedPost.value = null;
   detailError.value = "";
   detailLoading.value = true;
+  detailDragX.value = 0;
+  detailDragging.value = false;
   emit("chrome", true);
 
   try {
@@ -165,6 +217,11 @@ async function openItem(id: FeedItemId) {
   }
 }
 
+function openNextItem() {
+  if (!nextItem.value) return;
+  void openItem(nextItem.value.tid);
+}
+
 function retryDetail() {
   if (selectedPostId.value == null) return;
   void openItem(selectedPostId.value);
@@ -175,7 +232,72 @@ function closeDetail() {
   selectedPost.value = null;
   detailLoading.value = false;
   detailError.value = "";
+  detailDragX.value = 0;
+  detailDragging.value = false;
+  detailPointerId.value = null;
+  detailGestureLocked.value = null;
   emit("chrome", false);
+}
+
+function isInteractiveTarget(target: EventTarget | null) {
+  return target instanceof HTMLElement && Boolean(target.closest("button, a, input, textarea, select, [role='button']"));
+}
+
+function onDetailPointerDown(event: PointerEvent) {
+  if (!detailOpen.value || detailLoading.value || isInteractiveTarget(event.target)) return;
+  if (event.pointerType === "mouse" && event.button !== 0) return;
+  dragStartX.value = event.clientX;
+  dragStartY.value = event.clientY;
+  detailDragX.value = 0;
+  detailDragging.value = true;
+  detailPointerId.value = event.pointerId;
+  detailGestureLocked.value = null;
+  (event.currentTarget as HTMLElement | null)?.setPointerCapture?.(event.pointerId);
+}
+
+function onDetailPointerMove(event: PointerEvent) {
+  if (!detailDragging.value || detailPointerId.value !== event.pointerId) return;
+  const deltaX = event.clientX - dragStartX.value;
+  const deltaY = event.clientY - dragStartY.value;
+  if (!detailGestureLocked.value) {
+    if (Math.abs(deltaY) > SWIPE_VERTICAL_GUARD && Math.abs(deltaY) > Math.abs(deltaX)) {
+      detailGestureLocked.value = "vertical";
+    } else if (Math.abs(deltaX) > 12 && Math.abs(deltaX) > Math.abs(deltaY) * 1.15) {
+      detailGestureLocked.value = "horizontal";
+    }
+  }
+  if (detailGestureLocked.value !== "horizontal") return;
+  event.preventDefault();
+  const canSwipeLeft = Boolean(nextItem.value);
+  const constrained = deltaX < 0 && !canSwipeLeft ? deltaX * 0.18 : deltaX;
+  detailDragX.value = Math.max(-180, Math.min(220, constrained));
+}
+
+function onDetailPointerUp(event: PointerEvent) {
+  if (!detailDragging.value || detailPointerId.value !== event.pointerId) return;
+  const finalX = detailDragX.value;
+  detailDragging.value = false;
+  detailPointerId.value = null;
+  detailGestureLocked.value = null;
+  (event.currentTarget as HTMLElement | null)?.releasePointerCapture?.(event.pointerId);
+  if (finalX > SWIPE_THRESHOLD) {
+    closeDetail();
+    return;
+  }
+  if (finalX < -SWIPE_THRESHOLD && nextItem.value) {
+    detailDragX.value = 0;
+    openNextItem();
+    return;
+  }
+  detailDragX.value = 0;
+}
+
+function onDetailPointerCancel(event: PointerEvent) {
+  if (detailPointerId.value !== event.pointerId) return;
+  detailDragging.value = false;
+  detailPointerId.value = null;
+  detailGestureLocked.value = null;
+  detailDragX.value = 0;
 }
 
 onMounted(() => {
@@ -186,7 +308,11 @@ onMounted(() => {
 </script>
 
 <template>
-  <section class="feed-view" :class="{ 'is-detail-open': detailOpen }" aria-labelledby="feed-view-title">
+  <section
+    class="feed-view"
+    :class="{ 'is-detail-open': detailOpen, 'is-detail-dragging': detailDragging }"
+    aria-labelledby="feed-view-title"
+  >
     <h1 id="feed-view-title" class="feed-view__sr-title">首页</h1>
 
     <Transition name="feed-update-probe-motion">
@@ -265,13 +391,31 @@ onMounted(() => {
         v-else
         key="feed-detail"
         class="feed-view__detail"
+        :class="{ 'is-dragging': detailDragging }"
+        :style="detailDragStyle"
         :post="selectedPost"
         :loading="detailLoading"
         :error="detailError"
         @close="closeDetail"
         @retry="retryDetail"
+        @pointerdown="onDetailPointerDown"
+        @pointermove="onDetailPointerMove"
+        @pointerup="onDetailPointerUp"
+        @pointercancel="onDetailPointerCancel"
       />
     </Transition>
+
+    <div
+      v-if="cardTransition"
+      class="feed-view__card-transition"
+      :class="{ 'is-active': cardTransitionActive }"
+      :style="cardTransitionStyle"
+      aria-hidden="true"
+    >
+      <img v-if="cardTransition.item.cover" :src="cardTransition.item.cover" :alt="cardTransition.item.title" />
+      <span v-if="cardTransition.item.primaryTag" class="feed-view__card-transition-tag">{{ cardTransition.item.primaryTag }}</span>
+      <strong>{{ cardTransition.item.title }}</strong>
+    </div>
   </section>
 </template>
 
@@ -279,7 +423,7 @@ onMounted(() => {
 .feed-view {
   display: grid;
   gap: var(--space-3);
-  padding-top: calc(58px + env(safe-area-inset-top));
+  padding-top: calc(var(--floating-bar-height) + env(safe-area-inset-top));
 }
 
 .feed-view.is-detail-open {
@@ -344,18 +488,19 @@ onMounted(() => {
 
 .feed-view__tabs {
   position: fixed;
-  top: calc(var(--space-2) + env(safe-area-inset-top));
-  right: max(var(--space-3), env(safe-area-inset-right));
-  left: max(var(--space-3), env(safe-area-inset-left));
-  z-index: 70;
+  top: var(--floating-bar-top-offset);
+  right: max(var(--floating-bar-side-inset), env(safe-area-inset-right));
+  left: max(var(--floating-bar-side-inset), env(safe-area-inset-left));
+  z-index: var(--floating-bar-z);
   display: flex;
   gap: var(--space-1);
-  width: min(calc(100vw - var(--space-6)), 760px);
+  width: min(calc(100vw - var(--space-6)), var(--floating-bar-max-width));
+  min-height: var(--floating-bar-height);
   margin: 0 auto;
-  padding: var(--space-2);
+  padding: var(--floating-bar-padding);
   overflow-x: auto;
   border: 1px solid var(--glass-border);
-  border-radius: var(--radius-sheet);
+  border-radius: var(--floating-bar-radius);
   background: var(--glass-bg-strong);
   box-shadow: var(--shadow-floating);
   backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
@@ -368,7 +513,7 @@ onMounted(() => {
 
 .feed-view__tab {
   flex: 0 0 auto;
-  min-height: 40px;
+  min-height: var(--floating-bar-button-height);
   padding: 0 var(--space-3);
   border: 0;
   border-radius: var(--radius-chip);
@@ -439,11 +584,72 @@ onMounted(() => {
 
 .feed-view__detail {
   min-height: calc(100vh - var(--space-6));
+  transform: translateX(var(--detail-drag-x, 0));
+  transition: transform var(--motion-standard) var(--motion-ease-standard), opacity var(--motion-standard) var(--motion-ease-standard), filter var(--motion-standard) var(--motion-ease-standard);
+  touch-action: pan-y;
+}
+
+.feed-view__detail.is-dragging {
+  transition: none;
+  cursor: grabbing;
+}
+
+.feed-view__card-transition {
+  position: fixed;
+  top: var(--card-top);
+  left: var(--card-left);
+  z-index: 160;
+  display: grid;
+  overflow: hidden;
+  width: var(--card-width);
+  height: var(--card-height);
+  border: 1px solid var(--lian-line);
+  border-radius: var(--radius-card);
+  background: var(--lian-card-strong);
+  box-shadow: var(--shadow-floating);
+  pointer-events: none;
+  transition: top 300ms var(--motion-ease-standard), left 300ms var(--motion-ease-standard), width 300ms var(--motion-ease-standard), height 300ms var(--motion-ease-standard), border-radius 300ms var(--motion-ease-standard), opacity 220ms ease, filter 300ms ease;
+}
+
+.feed-view__card-transition.is-active {
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  border-radius: 0;
+  opacity: 0;
+  filter: blur(5px);
+}
+
+.feed-view__card-transition img {
+  width: 100%;
+  min-height: 58%;
+  object-fit: cover;
+}
+
+.feed-view__card-transition strong {
+  align-self: end;
+  padding: var(--space-4);
+  color: var(--lian-ink);
+  font-size: 18px;
+  line-height: 1.34;
+}
+
+.feed-view__card-transition-tag {
+  position: absolute;
+  top: var(--space-3);
+  left: var(--space-3);
+  padding: 5px 8px;
+  border-radius: var(--radius-chip);
+  background: rgba(17, 24, 39, 0.64);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 900;
 }
 
 .feed-update-probe-motion-enter-active,
 .feed-update-probe-motion-leave-active,
-.feed-tabs-motion-enter-active,
+feed-tabs-motion-enter-active,
 .feed-tabs-motion-leave-active,
 .feed-content-motion-enter-active,
 .feed-content-motion-leave-active {
@@ -464,10 +670,15 @@ onMounted(() => {
   filter: blur(6px);
 }
 
-.feed-content-motion-enter-from,
+.feed-content-motion-enter-from {
+  opacity: 0;
+  transform: translateY(-18px) scale(0.992);
+  filter: blur(5px);
+}
+
 .feed-content-motion-leave-to {
   opacity: 0;
-  transform: translateY(10px) scale(0.992);
+  transform: translateY(-26px) scale(0.988);
   filter: blur(5px);
 }
 
@@ -483,6 +694,8 @@ onMounted(() => {
 
 @media (prefers-reduced-motion: reduce) {
   .feed-view__tab,
+  .feed-view__detail,
+  .feed-view__card-transition,
   .feed-update-probe-motion-enter-active,
   .feed-update-probe-motion-leave-active,
   .feed-tabs-motion-enter-active,
