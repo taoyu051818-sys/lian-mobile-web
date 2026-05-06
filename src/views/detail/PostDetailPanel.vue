@@ -259,85 +259,87 @@ async function submitReply() {
       <button class="post-detail-panel__share" type="button" aria-label="分享" @click="handleShare">分享</button>
     </header>
 
-    <div v-if="loading" class="post-detail-panel__state" role="status">正在加载详情…</div>
+    <div class="post-detail-panel__stage">
+      <div v-if="loading" class="post-detail-panel__state" role="status">正在加载详情…</div>
 
-    <InlineError v-else-if="error">
-      {{ error }}
-      <button type="button" @click="emit('retry')">重新加载</button>
-    </InlineError>
+      <InlineError v-else-if="error">
+        {{ error }}
+        <button type="button" @click="emit('retry')">重新加载</button>
+      </InlineError>
 
-    <template v-else-if="post">
-      <section v-if="images.length" class="post-detail-panel__gallery" aria-label="图片">
-        <button v-for="url in images" :key="url" class="post-detail-panel__gallery-item" type="button" @click="fullscreenImage = url">
-          <img :src="url" :alt="title" loading="lazy" />
-        </button>
-      </section>
+      <template v-else-if="post">
+        <section v-if="images.length" class="post-detail-panel__gallery" aria-label="图片">
+          <button v-for="url in images" :key="url" class="post-detail-panel__gallery-item" type="button" @click="fullscreenImage = url">
+            <img :src="url" :alt="title" loading="lazy" />
+          </button>
+        </section>
 
-      <section class="post-detail-panel__content">
-        <h2 id="post-detail-title">{{ title }}</h2>
-        <div v-if="bodyHtml" class="lian-html" v-html="bodyHtml"></div>
-        <p v-else class="post-detail-panel__empty-body">暂无正文</p>
-      </section>
+        <section class="post-detail-panel__content">
+          <h2 id="post-detail-title">{{ title }}</h2>
+          <div v-if="bodyHtml" class="lian-html" v-html="bodyHtml"></div>
+          <p v-else class="post-detail-panel__empty-body">暂无正文</p>
+        </section>
 
-      <section class="post-detail-panel__info-strip" aria-label="帖子属性">
-        <div class="post-detail-panel__info-left">
-          <span v-if="primaryTag" class="post-detail-panel__pill post-detail-panel__pill--tag">{{ primaryTag }}</span>
-          <span class="post-detail-panel__pill">{{ timeLabel }}</span>
-          <span v-if="placeLabel" class="post-detail-panel__pill">{{ placeLabel }}</span>
-        </div>
-        <button class="post-detail-panel__report-entry" type="button" :disabled="reportBusy" @click="toggleReport">
-          {{ reportOpen ? "收起" : "举报" }}
-        </button>
-      </section>
-
-      <section v-if="reportOpen" class="post-detail-panel__report" aria-label="举报原因">
-        <label>
-          <span>举报原因</span>
-          <select v-model="reportCategory" :disabled="reportBusy">
-            <option v-for="category in reportCategories" :key="category.value" :value="category.value">{{ category.label }}</option>
-          </select>
-        </label>
-        <LianButton size="sm" variant="danger" :loading="reportBusy" @click="handleReport">提交举报</LianButton>
-      </section>
-
-      <InlineError v-if="actionError">{{ actionError }}</InlineError>
-      <p v-if="actionMessage" class="post-detail-panel__success">{{ actionMessage }}</p>
-
-      <section class="post-detail-panel__replies" aria-labelledby="post-detail-replies-title">
-        <div class="post-detail-panel__section-title">
-          <h3 id="post-detail-replies-title">回复</h3>
-          <span>{{ replies.length ? `${replies.length} 条` : "暂无" }}</span>
-        </div>
-        <article v-for="reply in replies" :key="String(reply.id)" class="post-detail-panel__reply">
-          <div class="post-detail-panel__reply-meta">
-            <strong>{{ reply.author || "同学" }}</strong>
-            <span>{{ formatRelativeTime(reply.timestampISO) }}</span>
+        <section class="post-detail-panel__info-strip" aria-label="帖子属性">
+          <div class="post-detail-panel__info-left">
+            <span v-if="primaryTag" class="post-detail-panel__pill post-detail-panel__pill--tag">{{ primaryTag }}</span>
+            <span class="post-detail-panel__pill">{{ timeLabel }}</span>
+            <span v-if="placeLabel" class="post-detail-panel__pill">{{ placeLabel }}</span>
           </div>
-          <div class="post-detail-panel__reply-content" v-html="stripDecorativeContentFromHtml(reply.content || '这条回复暂时没有内容。')"></div>
-        </article>
-        <p v-if="!replies.length" class="post-detail-panel__empty">还没有回复，来写第一条。</p>
-      </section>
+          <button class="post-detail-panel__report-entry" type="button" :disabled="reportBusy" @click="toggleReport">
+            {{ reportOpen ? "收起" : "举报" }}
+          </button>
+        </section>
 
-      <form class="post-detail-panel__dock" :class="{ 'is-expanded': replyExpanded }" @submit.prevent="submitReply">
-        <button class="post-detail-panel__dock-action" :class="{ 'is-active': liked }" type="button" :disabled="likeBusy" @click="handleLike">
-          {{ liked ? "♥" : "♡" }} {{ likeCount }}
-        </button>
-        <button class="post-detail-panel__dock-action" :class="{ 'is-active': saved }" type="button" :disabled="saveBusy" @click="handleSave">
-          {{ saved ? "★" : "☆" }}
-        </button>
-        <div class="post-detail-panel__reply-box" @click="replyExpanded = true">
-          <span v-if="!replyExpanded" class="post-detail-panel__reply-placeholder">写回复</span>
-          <textarea v-else v-model="replyContent" rows="3" maxlength="2000" :placeholder="replyIdentityLabel" />
-        </div>
-        <button class="post-detail-panel__send" type="submit" :disabled="replyBusy || (replyExpanded && !replyContent.trim())">
-          {{ replyExpanded ? "发送" : "回复" }}
-        </button>
-      </form>
+        <section v-if="reportOpen" class="post-detail-panel__report" aria-label="举报原因">
+          <label>
+            <span>举报原因</span>
+            <select v-model="reportCategory" :disabled="reportBusy">
+              <option v-for="category in reportCategories" :key="category.value" :value="category.value">{{ category.label }}</option>
+            </select>
+          </label>
+          <LianButton size="sm" variant="danger" :loading="reportBusy" @click="handleReport">提交举报</LianButton>
+        </section>
 
-      <div v-if="fullscreenImage" class="post-detail-panel__lightbox" role="dialog" aria-modal="true" aria-label="查看图片" @click="fullscreenImage = ''">
-        <img :src="fullscreenImage" :alt="title" />
+        <InlineError v-if="actionError">{{ actionError }}</InlineError>
+        <p v-if="actionMessage" class="post-detail-panel__success">{{ actionMessage }}</p>
+
+        <section class="post-detail-panel__replies" aria-labelledby="post-detail-replies-title">
+          <div class="post-detail-panel__section-title">
+            <h3 id="post-detail-replies-title">回复</h3>
+            <span>{{ replies.length ? `${replies.length} 条` : "暂无" }}</span>
+          </div>
+          <article v-for="reply in replies" :key="String(reply.id)" class="post-detail-panel__reply">
+            <div class="post-detail-panel__reply-meta">
+              <strong>{{ reply.author || "同学" }}</strong>
+              <span>{{ formatRelativeTime(reply.timestampISO) }}</span>
+            </div>
+            <div class="post-detail-panel__reply-content" v-html="stripDecorativeContentFromHtml(reply.content || '这条回复暂时没有内容。')"></div>
+          </article>
+          <p v-if="!replies.length" class="post-detail-panel__empty">还没有回复，来写第一条。</p>
+        </section>
+      </template>
+    </div>
+
+    <form v-if="post && !loading && !error" class="post-detail-panel__dock" :class="{ 'is-expanded': replyExpanded }" @submit.prevent="submitReply">
+      <button class="post-detail-panel__dock-action" :class="{ 'is-active': liked }" type="button" :disabled="likeBusy" @click="handleLike">
+        {{ liked ? "♥" : "♡" }} {{ likeCount }}
+      </button>
+      <button class="post-detail-panel__dock-action" :class="{ 'is-active': saved }" type="button" :disabled="saveBusy" @click="handleSave">
+        {{ saved ? "★" : "☆" }}
+      </button>
+      <div class="post-detail-panel__reply-box" @click="replyExpanded = true">
+        <span v-if="!replyExpanded" class="post-detail-panel__reply-placeholder">写回复</span>
+        <textarea v-else v-model="replyContent" rows="3" maxlength="2000" :placeholder="replyIdentityLabel" />
       </div>
-    </template>
+      <button class="post-detail-panel__send" type="submit" :disabled="replyBusy || (replyExpanded && !replyContent.trim())">
+        {{ replyExpanded ? "发送" : "回复" }}
+      </button>
+    </form>
+
+    <div v-if="fullscreenImage" class="post-detail-panel__lightbox" role="dialog" aria-modal="true" aria-label="查看图片" @click="fullscreenImage = ''">
+      <img :src="fullscreenImage" :alt="title" />
+    </div>
   </aside>
 </template>
 
@@ -348,6 +350,16 @@ async function submitReply() {
   gap: var(--space-4);
   min-height: 100%;
   padding: calc(var(--floating-bar-height) + var(--space-3)) var(--space-3) calc(var(--floating-bar-height) + var(--space-8));
+}
+
+.post-detail-panel__stage {
+  display: grid;
+  gap: var(--space-4);
+  overflow: hidden;
+  border-radius: var(--detail-card-radius, 0px);
+  transform: translateX(var(--detail-content-drag-x, 0px)) scale(var(--detail-card-scale, 1));
+  transform-origin: var(--detail-transform-origin, center top);
+  transition: transform var(--motion-standard) var(--motion-ease-standard), border-radius var(--motion-standard) var(--motion-ease-standard), opacity var(--motion-standard) var(--motion-ease-standard), filter var(--motion-standard) var(--motion-ease-standard);
 }
 
 .post-detail-panel__topbar,
@@ -362,7 +374,8 @@ async function submitReply() {
   border-radius: var(--floating-bar-radius);
   background: var(--glass-bg-strong);
   box-shadow: var(--shadow-floating);
-  transform: translateX(var(--detail-bar-drag-x, 0px));
+  opacity: var(--detail-bar-opacity, 1);
+  transform: translateX(var(--detail-bar-drag-x, 0px)) scale(var(--detail-bar-scale, 1));
   transition: transform var(--motion-standard) var(--motion-ease-standard), opacity var(--motion-standard) var(--motion-ease-standard), min-height 180ms ease, align-items 180ms ease;
   backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
 }
@@ -375,6 +388,17 @@ async function submitReply() {
   align-items: center;
   min-height: var(--floating-bar-height);
   padding: var(--floating-bar-padding);
+  transform-origin: top center;
+}
+
+.post-detail-panel__dock {
+  bottom: var(--floating-bar-bottom-offset);
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+  min-height: var(--floating-bar-height);
+  padding: var(--floating-bar-padding);
+  transform-origin: bottom center;
 }
 
 .post-detail-panel__close,
@@ -439,18 +463,6 @@ async function submitReply() {
   max-width: 38vw;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.post-detail-panel__gallery,
-.post-detail-panel__content,
-.post-detail-panel__info-strip,
-.post-detail-panel__report,
-.post-detail-panel__replies,
-.post-detail-panel__state,
-.post-detail-panel > .inline-error,
-.post-detail-panel__success {
-  transform: translateX(var(--detail-content-drag-x, 0px));
-  transition: transform var(--motion-standard) var(--motion-ease-standard), opacity var(--motion-standard) var(--motion-ease-standard), filter var(--motion-standard) var(--motion-ease-standard);
 }
 
 .post-detail-panel__gallery {
@@ -616,15 +628,6 @@ async function submitReply() {
   line-height: 1.62;
 }
 
-.post-detail-panel__dock {
-  bottom: var(--floating-bar-bottom-offset);
-  display: flex;
-  gap: var(--space-2);
-  align-items: center;
-  min-height: var(--floating-bar-height);
-  padding: var(--floating-bar-padding);
-}
-
 .post-detail-panel__dock.is-expanded {
   align-items: flex-end;
   min-height: 132px;
@@ -709,16 +712,9 @@ async function submitReply() {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .post-detail-panel__stage,
   .post-detail-panel__topbar,
-  .post-detail-panel__dock,
-  .post-detail-panel__gallery,
-  .post-detail-panel__content,
-  .post-detail-panel__info-strip,
-  .post-detail-panel__report,
-  .post-detail-panel__replies,
-  .post-detail-panel__state,
-  .post-detail-panel > .inline-error,
-  .post-detail-panel__success {
+  .post-detail-panel__dock {
     transition: none;
   }
 }
