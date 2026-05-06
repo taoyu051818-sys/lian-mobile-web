@@ -42,12 +42,33 @@ export interface MapRoute {
   style?: MapStyle;
 }
 
+export interface MapRoad {
+  id?: string;
+  name?: string;
+  type?: string;
+  points: MapLayerPoint[];
+  style?: MapStyle;
+  renderHint?: {
+    surface?: string;
+    curveStyle?: string;
+    edgeStyle?: string;
+  };
+  interactive?: boolean;
+  status?: string;
+  source?: string;
+}
+
 export interface MapAsset {
   id?: string;
   kind?: string;
   url?: string;
   position?: MapPoint;
+  size?: [number, number];
+  anchor?: [number, number];
+  rotation?: number;
   opacity?: number;
+  zIndex?: number;
+  clickBehavior?: string;
 }
 
 export interface MapLocationCard {
@@ -85,6 +106,7 @@ export interface MapPost {
 export interface MapLayerBundle {
   areas?: MapArea[];
   routes?: MapRoute[];
+  roads?: MapRoad[];
   assets?: MapAsset[];
 }
 
