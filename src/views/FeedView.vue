@@ -30,6 +30,8 @@ const HOME_UPDATE_PROBE_KEY = `lian.homeUpdateProbe.${HOME_UPDATE_PROBE_VERSION}
 const SWIPE_THRESHOLD = 86;
 const SWIPE_VERTICAL_GUARD = 52;
 const CARDIFY_DISTANCE = 220;
+const DRAG_STAGE_MIN_SCALE = 0.9;
+const CHROME_EXIT_DISTANCE = 24;
 
 const emit = defineEmits<{
   chrome: [hidden: boolean];
@@ -86,20 +88,24 @@ const detailTargetY = computed(() => {
 });
 const detailDragStyle = computed(() => {
   const progress = detailCardifyProgress.value;
-  const scale = 1 - (1 - detailTargetScale.value) * progress;
-  const dragTranslateX = detailReturning.value ? detailTargetX.value * progress : detailDragX.value;
-  const dragTranslateY = detailReturning.value ? detailTargetY.value * progress : 0;
+  const returning = detailReturning.value;
+  const scale = returning
+    ? 1 - (1 - detailTargetScale.value) * progress
+    : 1 - (1 - DRAG_STAGE_MIN_SCALE) * progress;
+  const translateX = returning ? detailTargetX.value * progress : detailDragX.value;
+  const translateY = returning ? detailTargetY.value * progress : 0;
   const feedOpacity = detailOpen.value ? Math.max(0.12, progress * 0.96) : 1;
   const feedScale = detailOpen.value ? 0.985 + progress * 0.015 : 1;
+  const chromeOpacity = detailOpen.value ? Math.max(0, 1 - progress * 1.18) : 1;
+  const chromeTranslateY = detailOpen.value ? -CHROME_EXIT_DISTANCE * progress : 0;
   return {
     "--detail-card-progress": String(progress),
     "--detail-card-scale": String(scale),
-    "--detail-card-translate-x": `${dragTranslateX}px`,
-    "--detail-card-translate-y": `${dragTranslateY}px`,
+    "--detail-card-translate-x": `${translateX}px`,
+    "--detail-card-translate-y": `${translateY}px`,
     "--detail-card-radius": `${Math.round(progress * 18)}px`,
-    "--detail-bar-opacity": String(Math.max(0, 1 - progress * 1.12)),
-    "--detail-bar-scale": String(1 - progress * 0.18),
-    "--detail-bar-drag-x": `${dragTranslateX * 0.18}px`,
+    "--detail-chrome-opacity": String(chromeOpacity),
+    "--detail-chrome-translate-y": `${chromeTranslateY}px`,
     "--feed-under-detail-opacity": String(feedOpacity),
     "--feed-under-detail-scale": String(feedScale),
   };
