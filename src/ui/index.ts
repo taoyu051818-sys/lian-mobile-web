@@ -4,6 +4,7 @@ export { default as IdentityBadge } from "./IdentityBadge.vue";
 export { default as InlineError } from "./InlineError.vue";
 export { default as LianButton } from "./LianButton.vue";
 export { default as LocationChip } from "./LocationChip.vue";
+export { default as SafeHtml } from "./SafeHtml.vue";
 export { default as Sheet } from "./Sheet.vue";
 export { default as TagChip } from "./TagChip.vue";
 export { default as Toast } from "./Toast.vue";
