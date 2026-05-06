@@ -1,6 +1,77 @@
+// Temporary compatibility mapper for legacy public feed rendering.
+// Contract direction is tracked in server #45 and frontend #46:
+// display actor = activeAlias || user; identityTag = trust/contribution; source = provider metadata.
+const TEMP_SOURCE_IDENTITY_TAGS = new Set(["nodebb", "system", "系统", "平台"]);
+
+function isPlainRecord(value) {
+  return value && typeof value === "object" && !Array.isArray(value);
+}
+
+function textField(value, fallback = "") {
+  if (typeof value === "string" || typeof value === "number") {
+    const text = String(value).trim();
+    return text || fallback;
+  }
+  return fallback;
+}
+
+function recordText(record, keys, fallback = "") {
+  if (!isPlainRecord(record)) return fallback;
+  for (const key of keys) {
+    const text = textField(record[key], "");
+    if (text) return text;
+  }
+  return fallback;
+}
+
+function mediaUrlField(value) {
+  if (typeof value === "string") return value.trim();
+  if (isPlainRecord(value)) return recordText(value, ["url", "src"], "");
+  return "";
+}
+
+function normalizeFeedTab(tab) {
+  if (typeof tab === "string" || typeof tab === "number") {
+    const label = textField(tab, "");
+    return { id: label, label };
+  }
+  if (!isPlainRecord(tab)) return { id: "", label: "" };
+  const label = recordText(tab, ["label", "name"], "");
+  const id = recordText(tab, ["id", "key", "value"], label);
+  return { id, label: label || id };
+}
+
+function normalizeIdentityTag(value) {
+  const text = textField(value, "");
+  if (!text) return "";
+  // Temporary hotfix only: backend #45 should stop emitting source/provider labels as identity tags.
+  if (TEMP_SOURCE_IDENTITY_TAGS.has(text.toLowerCase())) return "";
+  return text;
+}
+
+function normalizeDisplayActor(entity) {
+  const actor = isPlainRecord(entity?.actor)
+    ? entity.actor
+    : isPlainRecord(entity?.author)
+      ? entity.author
+      : null;
+  const flatAuthor = textField(entity?.author, "");
+  const displayName = recordText(actor, ["displayName", "username", "name"], flatAuthor || "同学");
+  const avatarUrl = mediaUrlField(actor?.avatarUrl || actor?.avatar) || textField(entity?.authorAvatarUrl, "");
+  const avatarText = recordText(actor, ["avatarText", "initials"], textField(entity?.authorAvatarText, displayName || "同"));
+  const identityTag = normalizeIdentityTag(recordText(actor, ["identityTag"], textField(entity?.authorIdentityTag || entity?.identityTag, "")));
+  return { displayName, avatarUrl, avatarText, identityTag };
+}
+
 function renderTabs(tabs) {
   const el = $("#feedTabs");
-  el.innerHTML = tabs.map((tab) => `<button class="chip ${tab === state.tab ? "is-active" : ""}" type="button" data-feed-tab="${escapeHtml(tab)}">${escapeHtml(tab)}</button>`).join("");
+  const currentTab = normalizeFeedTab(state.tab || "此刻");
+  el.innerHTML = tabs.map((tab) => {
+    const item = normalizeFeedTab(tab);
+    if (!item.id || !item.label) return "";
+    const active = item.id === currentTab.id || item.label === currentTab.label;
+    return `<button class="chip ${active ? "is-active" : ""}" type="button" data-feed-tab="${escapeHtml(item.id)}">${escapeHtml(item.label)}</button>`;
+  }).join("");
 }
 
 function saveReadHistory() {
@@ -27,7 +98,8 @@ function ensureMasonryColumns(reset = false) {
 function estimateCardHeight(item) {
   const listWidth = $("#feedList")?.clientWidth || 340;
   const columnWidth = Math.max(140, (listWidth - 12) / 2);
-  const imageHeight = item.cover ? columnWidth * 1.32 : Math.max(160, columnWidth * 1.05);
+  const cover = mediaUrlField(item.cover || item.coverUrl || item.imageUrl);
+  const imageHeight = cover ? columnWidth * 1.32 : Math.max(160, columnWidth * 1.05);
   return imageHeight + 12;
 }
 
@@ -65,30 +137,33 @@ function appendFeedItems(items) {
 function cardTemplate(item, revealIndex = 0) {
   const revealDelay = Math.min(12, Math.max(0, Number(revealIndex) || 0)) * 40;
   const likedTids = readLikedTids();
-  const thumb = item.cover
-    ? `<img src="${escapeHtml(displayImageUrl(item.cover))}" alt="${escapeHtml(item.title)}" loading="lazy">`
-    : `<div class="thumb-empty">${escapeHtml(item.tag || "黎安")}</div>`;
-  const authorName = item.author || "同学";
+  const title = textField(item.title, "未命名内容");
+  const tag = textField(item.primaryTag || item.tag, "黎安");
+  const cover = mediaUrlField(item.cover || item.coverUrl || item.imageUrl);
+  const thumb = cover
+    ? `<img src="${escapeHtml(displayImageUrl(cover))}" alt="${escapeHtml(title)}" loading="lazy">`
+    : `<div class="thumb-empty">${escapeHtml(tag)}</div>`;
+  const actor = normalizeDisplayActor(item);
   const authorAvatar = avatarHtml({
-    url: item.authorAvatarUrl || "",
-    text: item.authorAvatarText || authorName || "同"
+    url: actor.avatarUrl,
+    text: actor.avatarText || actor.displayName || "同"
   });
   const likeCount = Math.max(0, Number(item.likeCount || 0));
   const isLiked = likedTids.has(String(item.tid));
   const likedClass = isLiked ? " is-liked" : "";
   const heart = isLiked ? "♥" : "♡";
   return `
-    <article class="feed-card" role="button" tabindex="0" data-tid="${item.tid}" style="--reveal-delay:${revealDelay}ms">
+    <article class="feed-card" role="button" tabindex="0" data-tid="${escapeHtml(String(item.tid))}" style="--reveal-delay:${revealDelay}ms">
       <div class="card-media">
         ${thumb}
         <div class="card-glass">
-          <h2 class="card-title">${escapeHtml(item.title)}</h2>
+          <h2 class="card-title">${escapeHtml(title)}</h2>
           <div class="card-meta">
             <div class="card-author">
               <span class="card-avatar">${authorAvatar}</span>
-              <span class="card-name">${escapeHtml(authorName)}</span>
+              <span class="card-name">${escapeHtml(actor.displayName)}</span>
             </div>
-            <button class="card-like${likedClass}" type="button" data-like-tid="${escapeHtml(item.tid)}" aria-label="点赞">
+            <button class="card-like${likedClass}" type="button" data-like-tid="${escapeHtml(String(item.tid))}" aria-label="点赞">
               <span class="card-like-icon" data-like-icon aria-hidden="true">${heart}</span>
               <span data-like-count>${likeCount}</span>
             </button>
@@ -361,17 +436,20 @@ function repliesTemplate(post) {
         <span>${replies.length ? `${replies.length} 条` : "暂无"}</span>
       </div>
       <div class="reply-list">
-        ${replies.length ? replies.map((reply) => `
+        ${replies.length ? replies.map((reply) => {
+          const actor = normalizeDisplayActor({ ...reply, actor: reply.actor, author: reply.author || reply.username });
+          return `
           <article class="reply-item">
             <div class="reply-meta">
-              <span>${escapeHtml(reply.username || "同学")}</span>
+              <span>${escapeHtml(actor.displayName)}</span>
               <span>${escapeHtml(fixFmtDate(reply.timestampISO))}</span>
             </div>
             <div class="lian-html">${reply.contentHtml || ""}</div>
           </article>
-        `).join("") : `<p class="reply-empty">还没有回复，来写第一条。</p>`}
+        `;
+        }).join("") : `<p class="reply-empty">还没有回复，来写第一条。</p>`}
       </div>
-      <form class="reply-form" data-reply-form data-tid="${escapeHtml(post.tid)}">
+      <form class="reply-form" data-reply-form data-tid="${escapeHtml(String(post.tid))}">
         <textarea name="content" rows="3" maxlength="2000" placeholder="写一条回复" required></textarea>
         <button type="submit">发送回复</button>
       </form>
@@ -464,16 +542,17 @@ async function openDetail(tid, options = {}) {
     if (post.liked) likedTids.add(String(tid));
     else likedTids.delete(String(tid));
     saveLikedTids(likedTids);
-    const { images, strippedHtml } = extractPostImages(post.contentHtml || "", post.cover || "");
-    const gallery = galleryTemplate(images, post.title || "");
-    const authorName = post.author || "同学";
+    const { images, strippedHtml } = extractPostImages(post.contentHtml || "", mediaUrlField(post.cover || ""));
+    const title = textField(post.title, "帖子详情");
+    const gallery = galleryTemplate(images, title);
+    const actor = normalizeDisplayActor(post);
     const authorAvatar = avatarHtml({
-      url: post.authorAvatarUrl || "",
-      text: post.authorAvatarText || authorName || "同"
+      url: actor.avatarUrl,
+      text: actor.avatarText || actor.displayName || "同"
     });
-    const timeLabel = post.timeLabel || fixFmtDate(post.timestampISO);
-    const identityTag = post.authorIdentityTag
-      ? `<span class="detail-author-tag">${escapeHtml(post.authorIdentityTag)}</span>`
+    const timeLabel = textField(post.timeLabel, "") || fixFmtDate(post.timestampISO);
+    const identityTag = actor.identityTag
+      ? `<span class="detail-author-tag">${escapeHtml(actor.identityTag)}</span>`
       : "";
     const bodyHtml = strippedHtml
       ? `<div class="detail-body lian-html">${strippedHtml}</div>`
@@ -485,12 +564,12 @@ async function openDetail(tid, options = {}) {
           <div class="detail-fixed-avatar">${authorAvatar}</div>
           <div class="detail-fixed-meta">
             <div class="detail-fixed-row">
-              <strong>${escapeHtml(authorName)}</strong>
+              <strong>${escapeHtml(actor.displayName)}</strong>
               <time>${escapeHtml(timeLabel)}</time>
             </div>
             ${identityTag}
           </div>
-          <h1>${escapeHtml(post.title)}</h1>
+          <h1>${escapeHtml(title)}</h1>
         </header>
         <main class="detail-scroll-body">
           ${gallery}
