@@ -399,7 +399,6 @@ function onDetailPointerDown(event: PointerEvent) {
   detailDragging.value = true;
   detailPointerId.value = event.pointerId;
   detailGestureLocked.value = null;
-  emit("chrome", false);
   (event.currentTarget as HTMLElement | null)?.setPointerCapture?.(event.pointerId);
 }
 
