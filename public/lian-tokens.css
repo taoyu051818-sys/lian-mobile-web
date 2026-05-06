@@ -55,6 +55,15 @@
   --glass-blur: 18px;
   --glass-blur-light: 12px;
   --glass-saturate: 1.28;
+  --floating-bar-max-width: 760px;
+  --floating-bar-side-inset: var(--space-3);
+  --floating-bar-top-offset: calc(var(--space-2) + env(safe-area-inset-top));
+  --floating-bar-bottom-offset: max(var(--space-3), env(safe-area-inset-bottom));
+  --floating-bar-height: 58px;
+  --floating-bar-padding: var(--space-2);
+  --floating-bar-radius: var(--radius-sheet);
+  --floating-bar-button-height: 40px;
+  --floating-bar-z: 70;
   --motion-fast: 160ms;
   --motion-standard: 220ms;
   --motion-page: 280ms;
