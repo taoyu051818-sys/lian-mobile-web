@@ -59,7 +59,11 @@ function areaPoints(points: Array<{ lat: number; lng: number }> = []) {
 }
 
 function placeIdForLocation(location: MapLocation) {
-  return location.place?.id || location.placeId || location.id;
+  return location.place?.id || location.placeId || "";
+}
+
+function hasStablePlaceRef(location: MapLocation) {
+  return Boolean(placeIdForLocation(location));
 }
 
 function placeStatusLabel(status?: PlaceStatus) {
@@ -253,7 +257,8 @@ onMounted(() => {
               <p>{{ selectedTarget.item.type || selectedTarget.item.place?.type || '校园地点' }}</p>
             </div>
             <div class="map-view__actions">
-              <LianButton size="sm" variant="ghost" :loading="placeSheetLoading" @click="openPlaceSheet(selectedTarget.item)">打开地点</LianButton>
+              <LianButton v-if="hasStablePlaceRef(selectedTarget.item)" size="sm" variant="ghost" :loading="placeSheetLoading" @click="openPlaceSheet(selectedTarget.item)">打开地点</LianButton>
+              <TrustBadge v-else tone="pending">暂无地点页</TrustBadge>
               <LianButton size="sm" variant="ghost" @click="selectNearestPostForLocation(selectedTarget.item)">查看附近内容</LianButton>
             </div>
           </template>
