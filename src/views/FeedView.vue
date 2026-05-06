@@ -301,7 +301,9 @@ function closeDetail() {
 }
 
 function isInteractiveTarget(target: EventTarget | null) {
-  return target instanceof HTMLElement && Boolean(target.closest("button, a, input, textarea, select, [role='button']"));
+  if (!(target instanceof HTMLElement)) return false;
+  if (target.closest(".post-detail-panel__gallery-item")) return false;
+  return Boolean(target.closest(".post-detail-panel__topbar, .post-detail-panel__dock, .post-detail-panel__report, .post-detail-panel__lightbox, a, button, input, textarea, select, [role='button']"));
 }
 
 function onDetailPointerDown(event: PointerEvent) {
@@ -324,14 +326,14 @@ function onDetailPointerMove(event: PointerEvent) {
   if (!detailGestureLocked.value) {
     if (Math.abs(deltaY) > SWIPE_VERTICAL_GUARD && Math.abs(deltaY) > Math.abs(deltaX)) {
       detailGestureLocked.value = "vertical";
-    } else if (Math.abs(deltaX) > 12 && Math.abs(deltaX) > Math.abs(deltaY) * 1.15) {
+    } else if (Math.abs(deltaX) > 8 && Math.abs(deltaX) > Math.abs(deltaY) * 1.05) {
       detailGestureLocked.value = "horizontal";
     }
   }
   if (detailGestureLocked.value !== "horizontal") return;
   event.preventDefault();
-  const constrained = deltaX > 0 ? deltaX * 0.18 : deltaX;
-  detailDragX.value = Math.max(-CARDIFY_DISTANCE, Math.min(64, constrained));
+  const constrained = deltaX > 0 ? deltaX * 0.14 : deltaX;
+  detailDragX.value = Math.max(-CARDIFY_DISTANCE, Math.min(48, constrained));
 }
 
 function onDetailPointerUp(event: PointerEvent) {
