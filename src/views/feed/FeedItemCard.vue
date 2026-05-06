@@ -14,6 +14,7 @@ const props = defineProps<{ item: FeedItem }>();
 const emit = defineEmits<{
   open: [id: FeedItemId, payload?: {
     item: FeedItem;
+    sourceElement?: HTMLElement;
     rect: { top: number; left: number; width: number; height: number };
   }];
 }>();
@@ -74,6 +75,7 @@ function emitOpen(target: HTMLElement | null) {
   const bounds = target?.getBoundingClientRect();
   emit("open", props.item.tid, bounds ? {
     item: props.item,
+    sourceElement: target || undefined,
     rect: {
       top: bounds.top,
       left: bounds.left,
@@ -204,6 +206,7 @@ onBeforeUnmount(() => {
     :data-motion-time="timeLabel"
     :data-motion-author="authorName"
     :data-motion-place="placeLabel"
+    data-motion-role="surface"
     role="button"
     tabindex="0"
     :aria-label="`${title}，${authorName}`"
@@ -216,20 +219,20 @@ onBeforeUnmount(() => {
     @keydown.enter.prevent="openCardFromKeyboard"
     @keydown.space.prevent="openCardFromKeyboard"
   >
-    <div v-if="cardTemplate !== 'text' || coverUrl" class="feed-item-card__media" data-motion-role="image-frame">
+    <div v-if="cardTemplate !== 'text' || coverUrl" class="feed-item-card__media">
       <img v-if="coverUrl" class="feed-item-card__cover" :src="coverUrl" :alt="title" loading="lazy" data-motion-role="image" draggable="false" />
-      <div v-else class="feed-item-card__placeholder" aria-hidden="true" data-motion-role="image-placeholder">
+      <div v-else class="feed-item-card__placeholder" aria-hidden="true" data-motion-role="image">
         <span>{{ templateMark }}</span>
       </div>
       <span v-if="primaryTag" class="feed-item-card__floating-tag" data-motion-role="tag">{{ primaryTag }}</span>
     </div>
 
-    <div class="feed-item-card__body" data-motion-role="body">
+    <div class="feed-item-card__body">
       <span v-if="cardTemplate === 'text' && primaryTag" class="feed-item-card__inline-tag" data-motion-role="tag">{{ primaryTag }}</span>
 
       <h3 :title="title" data-motion-role="title">{{ title }}</h3>
 
-      <footer class="feed-item-card__footer" data-motion-role="meta-row">
+      <footer class="feed-item-card__footer" data-motion-role="meta">
         <div class="feed-item-card__author" data-motion-role="author">
           <img v-if="authorAvatarUrl" :src="authorAvatarUrl" :alt="authorName" loading="lazy" data-motion-role="avatar" draggable="false" />
           <span v-else class="feed-item-card__avatar-text" aria-hidden="true" data-motion-role="avatar">{{ authorInitial }}</span>
@@ -237,6 +240,7 @@ onBeforeUnmount(() => {
         </div>
 
         <span class="feed-item-card__motion-time" data-motion-role="time" aria-hidden="true">{{ timeLabel }}</span>
+        <span class="feed-item-card__motion-place" data-motion-role="place" aria-hidden="true">{{ placeLabel }}</span>
 
         <button
           class="feed-item-card__like"
@@ -246,7 +250,7 @@ onBeforeUnmount(() => {
           :aria-pressed="liked"
           :disabled="likeBusy"
           data-card-control="like"
-          data-motion-role="like"
+          data-motion-role="action"
           @click.stop="handleLike"
           @pointerdown.stop
           @pointerup.stop
@@ -458,7 +462,8 @@ onBeforeUnmount(() => {
   white-space: nowrap;
 }
 
-.feed-item-card__motion-time {
+.feed-item-card__motion-time,
+.feed-item-card__motion-place {
   position: absolute;
   width: 1px;
   height: 1px;
