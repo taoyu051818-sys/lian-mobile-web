@@ -20,11 +20,6 @@ export interface SourceSignal {
   visible?: boolean;
 }
 
-export interface FeedAuthor extends DisplayActor {
-  nodebbUid?: number;
-  source?: string;
-}
-
 export interface FeedItem {
   tid: FeedItemId;
   title: string;
@@ -33,7 +28,6 @@ export interface FeedItem {
   primaryTag: string;
   actor?: DisplayActor;
   source?: SourceSignal;
-  author?: FeedAuthor;
   timeLabel: string;
   timestampISO: string;
   likeCount: number;
