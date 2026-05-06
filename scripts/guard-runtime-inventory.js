@@ -45,6 +45,26 @@ const forbiddenSnippets = [
   ["/path/to", "lian-platform-server"].join("/")
 ];
 
+const canonicalContractForbiddenSnippets = [
+  ["props.item.author", "Feed cards must render identity from item.actor only"],
+  ["props.post?.author", "Detail must render post identity from post.actor only"],
+  ["props.post?.authorAvatarUrl", "Detail must render avatar from post.actor.avatarUrl only"],
+  ["reply.author", "Replies must render identity from reply.actor only"],
+  ["item.author", "Channel messages must not use legacy flat author fallback"],
+  ["item.displayName", "Channel messages must not use legacy flat displayName fallback"],
+  ["item.username", "Channel messages must not use legacy flat username fallback"],
+  ["item.avatarUrl", "Channel messages must not use legacy flat avatarUrl fallback"],
+  ["item.avatarText", "Channel messages must not use legacy flat avatarText fallback"],
+  ["item.identityTag", "Channel messages must read optional identityTag from actor.identityTag"],
+  ["authorAvatarUrl?:", "Post DTO types must not reintroduce legacy authorAvatarUrl"],
+  ["authorIdentityTag?:", "Post DTO types must not reintroduce legacy authorIdentityTag"],
+  ["FeedAuthor", "Feed DTO types must not reintroduce legacy FeedAuthor"],
+  ["ChannelMessageAuthor", "Messages DTO types must not reintroduce legacy ChannelMessageAuthor"],
+  ["location.place?.id || location.placeId || location.id", "Map/Publish must not treat marker location.id as stable PlaceRef"],
+  ["location.placeId || location.id", "Map/Publish must not treat marker location.id as stable PlaceRef"],
+  ["fetchPlaceSheet(location.id", "PlaceSheet must be opened from place.id/placeId only"]
+];
+
 const textExtensions = new Set([
   ".js",
   ".ts",
@@ -178,6 +198,23 @@ function checkForbiddenSnippets() {
   if (!found) ok("no forbidden runtime aliases found");
 }
 
+function checkCanonicalContractFallbacks() {
+  let found = false;
+  const srcDir = path.join(rootDir, "src");
+  for (const file of walkFiles(srcDir)) {
+    const rel = path.relative(rootDir, file).replaceAll(path.sep, "/");
+    if (!textExtensions.has(path.extname(file))) continue;
+    const text = fs.readFileSync(file, "utf8");
+    for (const [snippet, reason] of canonicalContractForbiddenSnippets) {
+      if (text.includes(snippet)) {
+        found = true;
+        fail(`canonical contract fallback in ${rel}`, `${reason}: ${snippet}`);
+      }
+    }
+  }
+  if (!found) ok("no legacy actor/place contract fallbacks found in src");
+}
+
 function checkDiffGuard() {
   const files = changedFiles();
   if (!files.length) {
@@ -203,6 +240,7 @@ console.log("\n═══ LIAN runtime inventory guard ═══\n");
 checkRequiredFiles();
 checkSchemaShape();
 checkForbiddenSnippets();
+checkCanonicalContractFallbacks();
 checkDiffGuard();
 
 console.log(`\n═══ Result: ${passed} passed, ${failed} failed${noted ? `, ${noted} noted` : ""} ═══\n`);

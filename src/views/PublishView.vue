@@ -63,7 +63,11 @@ const selectedLocationDraft = computed<PublishLocationDraft | null>(() => {
     place: placeRefForLocation(location),
   });
 });
-const knownPlaceLabel = computed(() => selectedMapLocation.value ? placeRefForLocation(selectedMapLocation.value).name : "");
+const knownPlaceLabel = computed(() => {
+  const location = selectedMapLocation.value;
+  if (!location) return "";
+  return placeRefForLocation(location)?.name || location.name;
+});
 const locationPreviewLabel = computed(() => knownPlaceLabel.value || placeName.value.trim() || "未绑定地点");
 const locationBindingMeta = computed(() => selectedMapLocation.value ? "已绑定已知地点" : "手填地点仅作为展示文本");
 
@@ -75,11 +79,12 @@ const visibilityOptions: Array<{ value: PublishVisibility; label: string }> = [
 ];
 
 function placeIdForLocation(location: MapLocation) {
-  return location.place?.id || location.placeId || location.id;
+  return location.place?.id || location.placeId || "";
 }
 
-function placeRefForLocation(location: MapLocation): PlaceRef {
+function placeRefForLocation(location: MapLocation): PlaceRef | undefined {
   const id = placeIdForLocation(location);
+  if (!id) return undefined;
   return location.place || {
     id,
     name: location.name,
