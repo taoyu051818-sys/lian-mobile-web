@@ -213,3 +213,28 @@
   filter: none !important;
   transform: translate3d(0, var(--detail-bottom-chrome-translate-y, 0px), 0) scale(1) !important;
 }
+
+/* Unified progress-driven floating chrome. Pages may only provide the time step. */
+.lian-floating-chrome--top[data-floating-state="progress"] {
+  opacity: var(--floating-chrome-visibility-progress, 1);
+  pointer-events: none;
+  filter: blur(calc((1 - var(--floating-chrome-visibility-progress, 1)) * var(--floating-chrome-blur)));
+  transform: translate3d(
+    0,
+    calc((1 - var(--floating-chrome-visibility-progress, 1)) * var(--floating-chrome-top-exit-y)),
+    0
+  ) scale(calc(var(--floating-chrome-hidden-scale) + (1 - var(--floating-chrome-hidden-scale)) * var(--floating-chrome-visibility-progress, 1)));
+  transition: none;
+}
+
+.lian-floating-chrome--bottom[data-floating-state="progress"] {
+  opacity: var(--floating-chrome-visibility-progress, var(--bottom-chrome-visibility-progress, 1));
+  pointer-events: none;
+  filter: blur(calc((1 - var(--floating-chrome-visibility-progress, var(--bottom-chrome-visibility-progress, 1))) * var(--floating-chrome-blur)));
+  transform: translate3d(
+    0,
+    calc((1 - var(--floating-chrome-visibility-progress, var(--bottom-chrome-visibility-progress, 1))) * var(--floating-chrome-bottom-exit-y)),
+    0
+  ) scale(calc(var(--floating-chrome-hidden-scale) + (1 - var(--floating-chrome-hidden-scale)) * var(--floating-chrome-visibility-progress, var(--bottom-chrome-visibility-progress, 1))));
+  transition: none;
+}
