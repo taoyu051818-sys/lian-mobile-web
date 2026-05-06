@@ -32,6 +32,22 @@ export interface FeedCardMorphOptions {
   onReady?: () => void;
 }
 
+interface DetailMorphTargets {
+  surface: MotionRectSnapshot;
+  image: MotionRectSnapshot;
+  tag: MotionRectSnapshot;
+  title: MotionRectSnapshot;
+  metadata: MotionRectSnapshot;
+  reply: MotionRectSnapshot;
+  surfaceRadius: string;
+  imageRadius: string;
+  tagRadius: string;
+  titleFontSize: string;
+  titleLineHeight: string;
+  metadataRadius: string;
+  replyRadius: string;
+}
+
 const DEFAULT_MORPH_TIMING: KeyframeAnimationOptions = {
   duration: 420,
   easing: "cubic-bezier(0.22, 1, 0.36, 1)",
@@ -103,7 +119,7 @@ export function createMorphClone(source: HTMLElement, rect: MotionRectSnapshot) 
     transform: "translate3d(0, 0, 0) scale(1, 1)",
     transformOrigin: "top left",
     pointerEvents: "none",
-    willChange: "transform, opacity, clip-path",
+    willChange: "transform, opacity, clip-path, border-radius",
   });
   return clone;
 }
@@ -252,14 +268,49 @@ function waitForAnimations(animations: Animation[]) {
   return Promise.all(animations.map((animation) => animation.finished.catch(() => undefined)));
 }
 
-export async function playFeedCardToDetailMorph(root: HTMLElement, options: FeedCardMorphOptions = {}) {
-  if (typeof window === "undefined" || prefersReducedMotion()) return;
+function nextFrame() {
+  return new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+}
 
-  const snapshot = collectMotionSnapshot(root);
+function sleep(ms: number) {
+  return new Promise<void>((resolve) => window.setTimeout(resolve, ms));
+}
+
+function queryOne(root: ParentNode, selectors: string[]) {
+  for (const selector of selectors) {
+    const element = root.querySelector<HTMLElement>(selector);
+    if (element) return element;
+  }
+  return null;
+}
+
+function rectOf(element: HTMLElement | null, fallback: MotionRectSnapshot) {
+  return element ? toMotionRect(element.getBoundingClientRect()) : fallback;
+}
+
+function styleValue(element: HTMLElement | null, property: keyof CSSStyleDeclaration, fallback: string) {
+  if (!element) return fallback;
+  const value = String(window.getComputedStyle(element)[property] || "").trim();
+  return value || fallback;
+}
+
+async function waitForDetailRoot(timeoutMs = 900) {
+  const started = performance.now();
+  let root: HTMLElement | null = null;
+
+  do {
+    await nextFrame();
+    root = document.querySelector<HTMLElement>(".feed-view__detail .post-detail-panel, .post-detail-panel");
+    const hasDetailLayout = Boolean(root?.querySelector("#post-detail-title, .post-detail-panel__gallery, .post-detail-panel__content, .post-detail-panel__dock"));
+    if (root && hasDetailLayout) return root;
+    await sleep(32);
+  } while (performance.now() - started < timeoutMs);
+
+  return root;
+}
+
+function fallbackTargets(snapshot: CardMorphSnapshot): DetailMorphTargets {
   const viewport = viewportRect();
-  const duration = options.duration || 520;
-  const layer = createMorphLayer();
-  const animations: Animation[] = [];
   const sideInset = Math.max(12, Math.round(viewport.width * 0.045));
   const maxContentWidth = Math.min(viewport.width - sideInset * 2, 420);
   const contentLeft = Math.round((viewport.width - maxContentWidth) / 2);
@@ -269,26 +320,82 @@ export async function playFeedCardToDetailMorph(root: HTMLElement, options: Feed
   const metaTop = titleTop + 82;
   const replyTop = viewport.height - 84;
 
-  const surfaceTarget = rectFromBox(0, 0, viewport.width, viewport.height);
-  const imageTarget = rectFromBox(contentLeft, imageTop, maxContentWidth, imageHeight);
-  const tagTarget = rectFromBox(contentLeft + 12, imageTop + imageHeight - 42, Math.min(140, maxContentWidth - 24), 28);
-  const titleTarget = rectFromBox(contentLeft, titleTop, maxContentWidth, 72);
-  const metaTarget = rectFromBox(contentLeft, metaTop, maxContentWidth, 34);
-  const replyTarget = rectFromBox(contentLeft, replyTop, maxContentWidth, 50);
+  return {
+    surface: rectFromBox(0, 0, viewport.width, viewport.height),
+    image: rectFromBox(contentLeft, imageTop, maxContentWidth, imageHeight),
+    tag: rectFromBox(contentLeft + 12, imageTop + imageHeight - 42, Math.min(140, maxContentWidth - 24), 28),
+    title: rectFromBox(contentLeft, titleTop, maxContentWidth, 72),
+    metadata: rectFromBox(contentLeft, metaTop, maxContentWidth, 34),
+    reply: rectFromBox(contentLeft, replyTop, maxContentWidth, 50),
+    surfaceRadius: "0px",
+    imageRadius: "var(--radius-card)",
+    tagRadius: "var(--radius-chip)",
+    titleFontSize: "22px",
+    titleLineHeight: "1.32",
+    metadataRadius: "var(--radius-sheet)",
+    replyRadius: "var(--radius-chip)",
+  };
+}
 
+function detailTargetsFromDom(detailRoot: HTMLElement | null, snapshot: CardMorphSnapshot): DetailMorphTargets {
+  const fallback = fallbackTargets(snapshot);
+  if (!detailRoot) return fallback;
+
+  const stage = queryOne(detailRoot, [".post-detail-panel__stage", ".post-detail-panel"]);
+  const galleryItem = queryOne(detailRoot, [".post-detail-panel__gallery-item", ".post-detail-panel__gallery img", ".post-detail-panel__gallery"]);
+  const galleryImage = queryOne(detailRoot, [".post-detail-panel__gallery img", ".post-detail-panel__gallery-item"]);
+  const tag = queryOne(detailRoot, [".post-detail-panel__pill--tag", ".post-detail-panel__info-left .post-detail-panel__pill"]);
+  const title = queryOne(detailRoot, ["#post-detail-title", ".post-detail-panel__content h2"]);
+  const metadata = queryOne(detailRoot, [".post-detail-panel__info-strip", ".post-detail-panel__info-left"]);
+  const reply = queryOne(detailRoot, [".post-detail-panel__reply-box", ".post-detail-panel__dock"]);
+
+  return {
+    surface: rectOf(stage, fallback.surface),
+    image: rectOf(galleryImage || galleryItem, fallback.image),
+    tag: rectOf(tag, fallback.tag),
+    title: rectOf(title, fallback.title),
+    metadata: rectOf(metadata, fallback.metadata),
+    reply: rectOf(reply, fallback.reply),
+    surfaceRadius: styleValue(stage, "borderRadius", fallback.surfaceRadius),
+    imageRadius: styleValue(galleryItem || galleryImage, "borderRadius", fallback.imageRadius),
+    tagRadius: styleValue(tag, "borderRadius", fallback.tagRadius),
+    titleFontSize: styleValue(title, "fontSize", fallback.titleFontSize),
+    titleLineHeight: styleValue(title, "lineHeight", fallback.titleLineHeight),
+    metadataRadius: styleValue(metadata, "borderRadius", fallback.metadataRadius),
+    replyRadius: styleValue(reply, "borderRadius", fallback.replyRadius),
+  };
+}
+
+function animateRadius(element: HTMLElement, from: string, to: string, duration: number, delay = 0) {
+  return element.animate(
+    [{ borderRadius: from }, { borderRadius: to }],
+    { duration, delay, easing: "cubic-bezier(0.22, 1, 0.36, 1)", fill: "forwards" },
+  );
+}
+
+export async function playFeedCardToDetailMorph(root: HTMLElement, options: FeedCardMorphOptions = {}) {
+  if (typeof window === "undefined" || prefersReducedMotion()) {
+    options.onReady?.();
+    return;
+  }
+
+  const snapshot = collectMotionSnapshot(root);
+  const duration = options.duration || 520;
+  const layer = createMorphLayer();
+  const animations: Animation[] = [];
+
+  options.onReady?.();
+  const detailRoot = await waitForDetailRoot();
+  const targets = detailTargetsFromDom(detailRoot, snapshot);
+
+  const rootStyle = window.getComputedStyle(root);
   const surfaceClone = createSurfaceClone(root, snapshot.card);
   layer.appendChild(surfaceClone);
-  animations.push(animateMorphClone(surfaceClone, snapshot.card, surfaceTarget, {
+  animations.push(animateMorphClone(surfaceClone, snapshot.card, targets.surface, {
     duration,
     easing: "cubic-bezier(0.22, 1, 0.36, 1)",
   }));
-  surfaceClone.animate(
-    [
-      { borderRadius: window.getComputedStyle(root).borderRadius },
-      { borderRadius: "0px" },
-    ],
-    { duration, easing: "cubic-bezier(0.22, 1, 0.36, 1)", fill: "forwards" },
-  );
+  animations.push(animateRadius(surfaceClone, rootStyle.borderRadius, targets.surfaceRadius, duration));
 
   const imageSource = sourceRoleElement(root, "image") || sourceRoleElement(root, "image-frame") || sourceRoleElement(root, "image-placeholder");
   if (imageSource) {
@@ -297,10 +404,11 @@ export async function playFeedCardToDetailMorph(root: HTMLElement, options: Feed
     imageClone.dataset.morphRole = "image";
     applyCloneReset(imageClone);
     layer.appendChild(imageClone);
-    animations.push(animateMorphClone(imageClone, from, imageTarget, {
+    animations.push(animateMorphClone(imageClone, from, targets.image, {
       duration,
       easing: "cubic-bezier(0.22, 1, 0.36, 1)",
     }));
+    animations.push(animateRadius(imageClone, window.getComputedStyle(imageSource).borderRadius, targets.imageRadius, duration));
   }
 
   const tagSource = sourceRoleElement(root, "tag");
@@ -310,11 +418,12 @@ export async function playFeedCardToDetailMorph(root: HTMLElement, options: Feed
     tagClone.dataset.morphRole = "tag";
     applyCloneReset(tagClone);
     layer.appendChild(tagClone);
-    animations.push(animateMorphClone(tagClone, from, tagTarget, {
+    animations.push(animateMorphClone(tagClone, from, targets.tag, {
       duration: duration - 60,
       delay: 90,
       easing: "cubic-bezier(0.22, 1, 0.36, 1)",
     }));
+    animations.push(animateRadius(tagClone, window.getComputedStyle(tagSource).borderRadius, targets.tagRadius, duration - 60, 90));
   }
 
   const titleSource = sourceRoleElement(root, "title");
@@ -323,14 +432,21 @@ export async function playFeedCardToDetailMorph(root: HTMLElement, options: Feed
     const titleClone = createMorphClone(titleSource, from);
     titleClone.dataset.morphRole = "title";
     applyCloneReset(titleClone);
-    titleClone.style.fontSize = "22px";
-    titleClone.style.lineHeight = "1.32";
+    titleClone.style.fontSize = window.getComputedStyle(titleSource).fontSize;
+    titleClone.style.lineHeight = window.getComputedStyle(titleSource).lineHeight;
     layer.appendChild(titleClone);
-    animations.push(animateMorphClone(titleClone, from, titleTarget, {
+    animations.push(animateMorphClone(titleClone, from, targets.title, {
       duration: duration - 90,
       delay: 130,
       easing: "cubic-bezier(0.22, 1, 0.36, 1)",
     }));
+    animations.push(titleClone.animate(
+      [
+        { fontSize: window.getComputedStyle(titleSource).fontSize, lineHeight: window.getComputedStyle(titleSource).lineHeight },
+        { fontSize: targets.titleFontSize, lineHeight: targets.titleLineHeight },
+      ],
+      { duration: duration - 90, delay: 130, easing: "cubic-bezier(0.22, 1, 0.36, 1)", fill: "forwards" },
+    ));
   }
 
   const timeText = root.dataset.motionTime || snapshot.elements.time?.text || "刚刚";
@@ -341,11 +457,12 @@ export async function playFeedCardToDetailMorph(root: HTMLElement, options: Feed
     const metaClone = createTextClone(metaText, from, "card-morph-meta-row");
     metaClone.dataset.morphRole = "metadata";
     layer.appendChild(metaClone);
-    animations.push(animateMorphClone(metaClone, from, metaTarget, {
+    animations.push(animateMorphClone(metaClone, from, targets.metadata, {
       duration: duration - 120,
       delay: 170,
       easing: "cubic-bezier(0.22, 1, 0.36, 1)",
     }));
+    animations.push(animateRadius(metaClone, window.getComputedStyle(root).borderRadius, targets.metadataRadius, duration - 120, 170));
   }
 
   const likeSource = sourceRoleElement(root, "like");
@@ -360,19 +477,18 @@ export async function playFeedCardToDetailMorph(root: HTMLElement, options: Feed
     replyClone.style.justifyContent = "flex-start";
     replyClone.style.paddingInline = "16px";
     layer.appendChild(replyClone);
-    animations.push(animateMorphClone(replyClone, from, replyTarget, {
+    animations.push(animateMorphClone(replyClone, from, targets.reply, {
       duration: duration - 160,
       delay: 220,
       easing: "cubic-bezier(0.22, 1, 0.36, 1)",
     }));
+    animations.push(animateRadius(replyClone, window.getComputedStyle(likeSource).borderRadius, targets.replyRadius, duration - 160, 220));
   }
-
-  options.onReady?.();
 
   try {
     await waitForAnimations(animations);
     layer.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 90, fill: "forwards" });
-    await new Promise((resolve) => window.setTimeout(resolve, 90));
+    await sleep(90);
   } finally {
     layer.remove();
   }
