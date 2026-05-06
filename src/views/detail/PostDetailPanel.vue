@@ -1,8 +1,10 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
+import { fetchPlaceSheet } from "../../api/places";
 import { reportPost, sendPostReply, togglePostLike, togglePostSave } from "../../api/posts";
 import { InlineError, LianButton } from "../../ui";
 import type { DisplayActor } from "../../types/feed";
+import type { PlaceSheet, PlaceStatus } from "../../types/place";
 import type { PostDetail, PostReply } from "../../types/post";
 
 const props = withDefaults(defineProps<{
@@ -45,13 +47,18 @@ const replyContent = ref("");
 const galleryPointerDownX = ref(0);
 const galleryPointerDownY = ref(0);
 const galleryPointerMoved = ref(false);
+const placeSheet = ref<PlaceSheet | null>(null);
+const placeSheetOpen = ref(false);
+const placeSheetLoading = ref(false);
+const placeSheetError = ref("");
 
 const postId = computed(() => props.post?.tid ?? null);
 const title = computed(() => props.post?.title || "帖子详情");
 const authorLabel = computed(() => actorDisplayName(props.post?.actor, props.post?.author));
 const authorAvatarUrl = computed(() => actorAvatarUrl(props.post?.actor, props.post?.authorAvatarUrl));
 const authorInitial = computed(() => actorAvatarText(props.post?.actor, authorLabel.value));
-const placeLabel = computed(() => props.post?.locationArea || "");
+const structuredPlace = computed(() => props.post?.place || null);
+const placeLabel = computed(() => structuredPlace.value?.name || props.post?.locationArea || "");
 const primaryTag = computed(() => normalizePostTag(props.post?.primaryTag || ""));
 const rawBodyHtml = computed(() => props.post?.contentHtml || "");
 const bodyHtml = computed(() => stripDecorativeContentFromHtml(rawBodyHtml.value));
@@ -60,6 +67,7 @@ const images = computed(() => uniqueGalleryImages([props.post?.cover || "", ...(
 const fullResolutionImages = computed(() => images.value.map(toFullResolutionImageUrl));
 const timeLabel = computed(() => formatRelativeTime(props.post?.timestampISO || "") || props.post?.timeLabel || "刚刚");
 const replyIdentityLabel = computed(() => `以当前身份回复`);
+const placeStatusText = computed(() => placeStatusLabel(placeSheet.value?.status || structuredPlace.value?.status));
 
 watch(() => props.post, (post) => {
   liked.value = Boolean(post?.liked);
@@ -72,6 +80,10 @@ watch(() => props.post, (post) => {
   replyContent.value = "";
   fullscreenImage.value = "";
   galleryPointerMoved.value = false;
+  placeSheet.value = null;
+  placeSheetOpen.value = false;
+  placeSheetLoading.value = false;
+  placeSheetError.value = "";
 }, { immediate: true });
 
 watch(fullResolutionImages, (urls) => {
@@ -177,6 +189,22 @@ function formatRelativeTime(value: string) {
   return `${date.getMonth() + 1}月${date.getDate()}日`;
 }
 
+function placeStatusLabel(status?: PlaceStatus) {
+  const labels: Record<PlaceStatus, string> = {
+    confirmed: "已确认",
+    pending: "待确认",
+    disputed: "有争议",
+    expired: "可能过期",
+    "ai-organized": "AI 整理",
+    official: "官方",
+  };
+  return status ? labels[status] || "地点" : "地点";
+}
+
+function placeRecentPostActorLabel(actor?: DisplayActor) {
+  return actorDisplayName(actor, "同学");
+}
+
 function showActionMessage(message: string) {
   actionError.value = "";
   actionMessage.value = message;
@@ -212,6 +240,22 @@ function openGalleryImage(index: number) {
     return;
   }
   fullscreenImage.value = fullResolutionImages.value[index] || images.value[index] || "";
+}
+
+async function openPlaceSheet() {
+  const placeId = structuredPlace.value?.id;
+  if (!placeId) return;
+  placeSheetOpen.value = true;
+  placeSheetError.value = "";
+  if (placeSheet.value?.id === placeId) return;
+  placeSheetLoading.value = true;
+  try {
+    placeSheet.value = await fetchPlaceSheet(placeId);
+  } catch (error) {
+    placeSheetError.value = error instanceof Error ? error.message : "地点信息暂时没有加载出来。";
+  } finally {
+    placeSheetLoading.value = false;
+  }
 }
 
 async function handleShare() {
@@ -373,11 +417,53 @@ async function submitReply() {
           <div class="post-detail-panel__info-left">
             <span v-if="primaryTag" class="post-detail-panel__pill post-detail-panel__pill--tag">{{ primaryTag }}</span>
             <span class="post-detail-panel__pill">{{ timeLabel }}</span>
-            <span v-if="placeLabel" class="post-detail-panel__pill">{{ placeLabel }}</span>
+            <button
+              v-if="structuredPlace?.id"
+              class="post-detail-panel__pill post-detail-panel__pill-button"
+              type="button"
+              :aria-expanded="placeSheetOpen"
+              @click.stop="openPlaceSheet"
+            >
+              {{ placeLabel }} · {{ placeStatusText }}
+            </button>
+            <span v-else-if="placeLabel" class="post-detail-panel__pill">{{ placeLabel }}</span>
           </div>
           <button class="post-detail-panel__report-entry" type="button" :disabled="reportBusy" @click.stop="toggleReport">
             {{ reportOpen ? "收起" : "举报" }}
           </button>
+        </section>
+
+        <section v-if="placeSheetOpen" class="post-detail-panel__place-sheet" aria-label="地点信息" @click.stop>
+          <div class="post-detail-panel__section-title">
+            <h3>{{ placeSheet?.name || structuredPlace?.name || placeLabel }}</h3>
+            <button type="button" @click="placeSheetOpen = false">收起</button>
+          </div>
+          <p v-if="placeSheetLoading" class="post-detail-panel__state">正在加载地点信息…</p>
+          <InlineError v-else-if="placeSheetError">
+            {{ placeSheetError }}
+            <button type="button" @click="openPlaceSheet">重试</button>
+          </InlineError>
+          <template v-else>
+            <div class="post-detail-panel__place-meta">
+              <span>{{ placeStatusText }}</span>
+              <span v-if="placeSheet?.type || structuredPlace?.type">{{ placeSheet?.type || structuredPlace?.type }}</span>
+              <span v-if="placeSheet?.updatedAt">更新于 {{ formatRelativeTime(placeSheet.updatedAt) || placeSheet.updatedAt }}</span>
+            </div>
+            <p v-if="placeSheet?.summary?.text" class="post-detail-panel__place-summary">{{ placeSheet.summary.text }}</p>
+            <p v-else class="post-detail-panel__empty">这个地点还在沉淀信息。</p>
+            <div v-if="placeSheet?.stats" class="post-detail-panel__place-stats" aria-label="地点统计">
+              <span v-if="placeSheet.stats.postCount != null">{{ placeSheet.stats.postCount }} 条内容</span>
+              <span v-if="placeSheet.stats.correctionCount != null">{{ placeSheet.stats.correctionCount }} 条修正</span>
+              <span v-if="placeSheet.stats.savedCount != null">{{ placeSheet.stats.savedCount }} 次收藏</span>
+            </div>
+            <div v-if="placeSheet?.recentPosts?.length" class="post-detail-panel__place-posts">
+              <article v-for="recent in placeSheet.recentPosts.slice(0, 3)" :key="String(recent.tid)">
+                <strong>{{ recent.title || "相关内容" }}</strong>
+                <p v-if="recent.excerpt">{{ recent.excerpt }}</p>
+                <small>{{ placeRecentPostActorLabel(recent.actor) }} · {{ formatRelativeTime(recent.timestampISO || "") || "刚刚" }}</small>
+              </article>
+            </div>
+          </template>
         </section>
 
         <section v-if="reportOpen" class="post-detail-panel__report" aria-label="举报原因" @click.stop>
@@ -504,7 +590,9 @@ async function submitReply() {
 .post-detail-panel__dock-action,
 .post-detail-panel__send,
 .post-detail-panel__report-entry,
-.post-detail-panel__gallery-item {
+.post-detail-panel__gallery-item,
+.post-detail-panel__pill-button,
+.post-detail-panel__place-sheet button {
   border: 0;
   background: transparent;
   color: var(--lian-ink);
@@ -600,7 +688,9 @@ async function submitReply() {
 
 .post-detail-panel__content,
 .post-detail-panel__replies,
-.post-detail-panel__report {
+.post-detail-panel__report,
+.post-detail-panel__place-sheet,
+.post-detail-panel__place-posts {
   display: grid;
   gap: var(--space-3);
 }
@@ -659,6 +749,14 @@ async function submitReply() {
   background: rgba(255, 255, 255, 0.58);
 }
 
+.post-detail-panel__pill-button {
+  cursor: pointer;
+}
+
+.post-detail-panel__pill-button:hover {
+  color: var(--lian-primary-deep);
+}
+
 .post-detail-panel__pill--tag {
   color: var(--lian-primary-deep);
   font-weight: 900;
@@ -668,12 +766,53 @@ async function submitReply() {
   background: transparent;
 }
 
+.post-detail-panel__report,
+.post-detail-panel__place-sheet {
+  padding: var(--space-3);
+  border-radius: var(--radius-card);
+}
+
 .post-detail-panel__report {
   justify-items: end;
-  padding: var(--space-3);
   border: 1px solid rgba(239, 68, 68, 0.16);
-  border-radius: var(--radius-card);
   background: rgba(239, 68, 68, 0.06);
+}
+
+.post-detail-panel__place-sheet {
+  border: 1px solid rgba(31, 167, 160, 0.18);
+  background: rgba(255, 255, 255, 0.52);
+}
+
+.post-detail-panel__place-meta,
+.post-detail-panel__place-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  color: var(--lian-muted);
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.post-detail-panel__place-meta span,
+.post-detail-panel__place-stats span {
+  padding: 4px 8px;
+  border-radius: var(--radius-chip);
+  background: rgba(255, 255, 255, 0.62);
+}
+
+.post-detail-panel__place-summary,
+.post-detail-panel__place-posts p,
+.post-detail-panel__place-posts small {
+  color: var(--lian-muted);
+  line-height: 1.6;
+}
+
+.post-detail-panel__place-posts article {
+  display: grid;
+  gap: var(--space-1);
+  padding: var(--space-2);
+  border-radius: var(--radius-3);
+  background: rgba(255, 255, 255, 0.46);
 }
 
 .post-detail-panel__report label {
@@ -719,6 +858,12 @@ async function submitReply() {
 .post-detail-panel__reply-meta span {
   color: var(--lian-muted);
   font-size: 12px;
+}
+
+.post-detail-panel__section-title button {
+  color: var(--lian-muted);
+  font-size: 12px;
+  font-weight: 900;
 }
 
 .post-detail-panel__reply {
