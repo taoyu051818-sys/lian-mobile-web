@@ -263,7 +263,6 @@ function closeDetailWithCardify(options: { syncHistory?: boolean; direction?: nu
   detailReturning.value = true;
   detailPointerId.value = null;
   detailGestureLocked.value = null;
-  emit("chrome", false);
   detailDragX.value = Math.sign(direction || 1) * CARDIFY_DISTANCE;
   window.setTimeout(() => {
     resetDetailState();
