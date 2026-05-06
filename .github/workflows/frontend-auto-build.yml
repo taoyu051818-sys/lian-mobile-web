@@ -1,0 +1,134 @@
+name: frontend auto build
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: frontend-auto-build-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: verify frontend
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run project checks
+        run: npm run check
+
+      - name: Guard runtime inventory
+        run: npm run ops:guard
+
+      - name: Build frontend
+        run: npm run build
+
+      - name: Stamp build commit
+        run: |
+          mkdir -p dist
+          {
+            echo "commit=${GITHUB_SHA}"
+            echo "ref=${GITHUB_REF_NAME}"
+            echo "run_id=${GITHUB_RUN_ID}"
+            echo "built_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          } > dist/build-commit.txt
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-dist-${{ github.sha }}
+          path: dist
+          if-no-files-found: error
+
+  deploy-main:
+    name: deploy main frontend
+    needs: verify
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: frontend-production
+    steps:
+      - name: Check deploy secrets
+        run: |
+          missing=0
+          if [ -z "${{ secrets.LIAN_WEB_SSH_HOST }}" ]; then echo "Missing secret: LIAN_WEB_SSH_HOST"; missing=1; fi
+          if [ -z "${{ secrets.LIAN_WEB_SSH_USER }}" ]; then echo "Missing secret: LIAN_WEB_SSH_USER"; missing=1; fi
+          if [ -z "${{ secrets.LIAN_WEB_SSH_KEY }}" ]; then echo "Missing secret: LIAN_WEB_SSH_KEY"; missing=1; fi
+          exit "$missing"
+
+      - name: Install SSH key
+        run: |
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "${{ secrets.LIAN_WEB_SSH_KEY }}" > ~/.ssh/lian_web_deploy_key
+          chmod 600 ~/.ssh/lian_web_deploy_key
+          ssh-keyscan -H "${{ secrets.LIAN_WEB_SSH_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: Pull, build, and stamp production frontend
+        env:
+          LIAN_WEB_DIR: ${{ vars.LIAN_WEB_DIR || '/opt/lian-mobile-web' }}
+          EXPECTED_COMMIT: ${{ github.sha }}
+        run: |
+          ssh -i ~/.ssh/lian_web_deploy_key \
+            -o IdentitiesOnly=yes \
+            -o StrictHostKeyChecking=yes \
+            "${{ secrets.LIAN_WEB_SSH_USER }}@${{ secrets.LIAN_WEB_SSH_HOST }}" \
+            "LIAN_WEB_DIR='${LIAN_WEB_DIR}' EXPECTED_COMMIT='${EXPECTED_COMMIT}' bash -s" <<'REMOTE'
+          set -Eeuo pipefail
+
+          cd "$LIAN_WEB_DIR"
+          git fetch origin main
+          git reset --hard origin/main
+
+          current_commit="$(git rev-parse HEAD)"
+          if [ "$current_commit" != "$EXPECTED_COMMIT" ]; then
+            echo "ERROR: deployed checkout is $current_commit, expected $EXPECTED_COMMIT"
+            exit 1
+          fi
+
+          npm ci
+          npm run build
+
+          mkdir -p dist
+          {
+            echo "commit=$current_commit"
+            echo "branch=main"
+            echo "built_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            echo "builder=github-actions"
+          } > dist/build-commit.txt
+
+          echo "Frontend build deployed at $current_commit"
+          REMOTE
+
+      - name: Verify remote build marker
+        env:
+          LIAN_WEB_DIR: ${{ vars.LIAN_WEB_DIR || '/opt/lian-mobile-web' }}
+        run: |
+          ssh -i ~/.ssh/lian_web_deploy_key \
+            -o IdentitiesOnly=yes \
+            -o StrictHostKeyChecking=yes \
+            "${{ secrets.LIAN_WEB_SSH_USER }}@${{ secrets.LIAN_WEB_SSH_HOST }}" \
+            "LIAN_WEB_DIR='${LIAN_WEB_DIR}' bash -s" <<'REMOTE'
+          set -Eeuo pipefail
+          cd "$LIAN_WEB_DIR"
+          test -f dist/build-commit.txt
+          cat dist/build-commit.txt
+          REMOTE
