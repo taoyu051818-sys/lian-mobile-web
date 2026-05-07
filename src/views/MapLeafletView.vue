@@ -3,12 +3,18 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue"
 import { fetchMapV2Items } from "../api/map";
 import { GlassPanel, InlineError, LianButton, LocationChip, TrustBadge } from "../ui";
 import type { MapAsset, MapBounds, MapLayerPoint, MapLocation, MapPost, MapRoad, MapRoute, MapV2ItemsResponse } from "../types/map";
-
-declare global {
-  interface Window {
-    L?: any;
-  }
-}
+import {
+  type LeafletDivIconLike,
+  type LeafletImageOverlayLike,
+  type LeafletLayerGroupLike,
+  type LeafletLike,
+  type LeafletMapLike,
+  type LeafletMarkerLike,
+  LeafletUnavailableError,
+  getLeaflet,
+  isLeafletAvailable,
+  tryGetLeaflet,
+} from "../platform/leaflet";
 
 type ActiveTarget = { kind: "location"; item: MapLocation } | { kind: "post"; item: MapPost };
 type LayerKey = "areas" | "roadsCasing" | "roads" | "routes" | "assets" | "locations" | "posts";
@@ -30,9 +36,9 @@ const errorMessage = ref("");
 const activeFilter = ref<"all" | "locations" | "posts">("all");
 const activeTarget = ref<ActiveTarget | null>(null);
 
-let map: any = null;
-let layers: Record<LayerKey, any> | null = null;
-let baseOverlay: any = null;
+let map: LeafletMapLike | null = null;
+let layers: Record<LayerKey, LeafletLayerGroupLike> | null = null;
+let baseOverlay: LeafletImageOverlayLike | null = null;
 
 const bounds = computed(() => mapData.value?.bounds || DEFAULT_BOUNDS);
 const locations = computed(() => mapData.value?.locations || []);
@@ -50,17 +56,17 @@ const stats = computed(() => [
   `${roads.value.length} 路段`,
 ]);
 
-function mapBounds() {
+function mapBounds(): [number, number][] {
   return [[bounds.value.south, bounds.value.west], [bounds.value.north, bounds.value.east]];
 }
 
-function points(list: MapLayerPoint[] = []) {
+function points(list: MapLayerPoint[] = []): [number, number][] {
   return list
-    .map((point) => [Number(point.lat), Number(point.lng)])
+    .map((point): [number, number] => [Number(point.lat), Number(point.lng)])
     .filter(([lat, lng]) => Number.isFinite(lat) && Number.isFinite(lng));
 }
 
-function latLng(item: { lat?: number; lng?: number }) {
+function latLng(item: { lat?: number; lng?: number }): [number, number] | null {
   const lat = Number(item.lat);
   const lng = Number(item.lng);
   return Number.isFinite(lat) && Number.isFinite(lng) ? [lat, lng] : null;
@@ -93,8 +99,8 @@ function isActivePost(post: MapPost) {
   return activeTarget.value?.kind === "post" && String(activeTarget.value.item.tid) === String(post.tid);
 }
 
-function htmlIcon(className: string, html: string, size: [number, number], anchor: [number, number]) {
-  return window.L.divIcon({
+function htmlIcon(className: string, html: string, size: [number, number], anchor: [number, number]): LeafletDivIconLike {
+  return getLeaflet().divIcon({
     className,
     html,
     iconSize: size,
@@ -134,8 +140,8 @@ function postIcon(post: MapPost) {
 }
 
 function assetIcon(asset: MapAsset) {
-  const size = Array.isArray(asset.size) ? asset.size : [64, 64];
-  const anchor = Array.isArray(asset.anchor) ? asset.anchor : [size[0] / 2, size[1]];
+  const size: [number, number] = Array.isArray(asset.size) ? [asset.size[0] ?? 64, asset.size[1] ?? 64] : [64, 64];
+  const anchor: [number, number] = Array.isArray(asset.anchor) ? [asset.anchor[0] ?? size[0] / 2, asset.anchor[1] ?? size[1]] : [size[0] / 2, size[1]];
   const opacity = Math.max(0, Math.min(1, Number(asset.opacity ?? 1)));
   const rotation = Number(asset.rotation || 0);
   return htmlIcon(
@@ -147,27 +153,30 @@ function assetIcon(asset: MapAsset) {
 }
 
 function clearLayers() {
-  if (!layers) return;
-  Object.values(layers).forEach((layer) => layer.clearLayers());
+  const lyrs = layers;
+  if (!lyrs) return;
+  Object.values(lyrs).forEach((layer) => layer.clearLayers());
 }
 
 function renderAreas() {
-  if (!layers) return;
+  const lyrs = layers;
+  if (!lyrs) return;
   areas.value.forEach((area) => {
     const areaPoints = points(area.points);
     if (areaPoints.length < 3) return;
-    window.L.polygon(areaPoints, {
+    getLeaflet().polygon(areaPoints, {
       color: area.style?.strokeColor || area.style?.color || "#1fa7a0",
       weight: 2,
       fillColor: area.style?.fillColor || area.style?.color || "#1fa7a0",
       fillOpacity: Number(area.style?.fillOpacity ?? 0.1),
       className: "vue-map-area",
-    }).bindTooltip(area.name, { sticky: true }).addTo(layers.areas);
+    }).bindTooltip(area.name, { sticky: true }).addTo(lyrs.areas);
   });
 }
 
 function renderRoads() {
-  if (!map || !layers) return;
+  const lyrs = layers;
+  if (!map || !lyrs) return;
   const zoom = map.getZoom?.() || 16;
   roads.value.forEach((road) => {
     if (road.status && road.status !== "active") return;
@@ -175,7 +184,7 @@ function renderRoads() {
     if (zoom < style.minZoom) return;
     const roadPoints = points(road.points);
     if (roadPoints.length < 2) return;
-    window.L.polyline(roadPoints, {
+    getLeaflet().polyline(roadPoints, {
       color: style.casing,
       weight: style.weight + style.casingExtra,
       opacity: 0.96,
@@ -183,8 +192,8 @@ function renderRoads() {
       lineJoin: "round",
       interactive: false,
       className: "vue-map-road-casing",
-    }).addTo(layers.roadsCasing);
-    const roadLine = window.L.polyline(roadPoints, {
+    }).addTo(lyrs.roadsCasing);
+    const roadLine = getLeaflet().polyline(roadPoints, {
       color: style.color,
       weight: style.weight,
       dashArray: style.dashArray,
@@ -195,16 +204,17 @@ function renderRoads() {
       className: `vue-map-road vue-map-road--${escapeHtml(road.type || "default")}`,
     });
     if (road.interactive !== false) roadLine.bindTooltip(road.name || "道路", { sticky: true });
-    roadLine.addTo(layers.roads);
+    roadLine.addTo(lyrs.roads);
   });
 }
 
 function renderRoutes() {
-  if (!layers) return;
+  const lyrs = layers;
+  if (!lyrs) return;
   (routes.value as MapRoute[]).forEach((route) => {
     const routePoints = points(route.points);
     if (routePoints.length < 2) return;
-    window.L.polyline(routePoints, {
+    getLeaflet().polyline(routePoints, {
       color: route.style?.color || "#2563eb",
       weight: Number(route.style?.weight || 4),
       dashArray: route.style?.dashArray || "",
@@ -212,45 +222,47 @@ function renderRoutes() {
       lineCap: "round",
       lineJoin: "round",
       className: "vue-map-route",
-    }).bindTooltip(route.name || route.title || "路线", { sticky: true }).addTo(layers.routes);
+    }).bindTooltip(route.name || route.title || "路线", { sticky: true }).addTo(lyrs.routes);
   });
 }
 
 function renderAssets() {
-  if (!layers) return;
+  const lyrs = layers;
+  if (!lyrs) return;
   assets.value.forEach((asset) => {
     if (!asset.url || !asset.position) return;
     const position = latLng(asset.position);
     if (!position) return;
-    window.L.marker(position, {
+    getLeaflet().marker(position, {
       icon: assetIcon(asset),
       interactive: Boolean(asset.clickBehavior && asset.clickBehavior !== "none"),
       keyboard: false,
       zIndexOffset: Number(asset.zIndex || 20),
-    }).addTo(layers.assets);
+    }).addTo(lyrs.assets);
   });
 }
 
 function renderMarkers() {
-  if (!layers) return;
+  const lyrs = layers;
+  if (!lyrs) return;
   visibleLocations.value.forEach((location) => {
     const position = latLng(location);
     if (!position) return;
-    window.L.marker(position, { icon: locationIcon(location), title: location.name, zIndexOffset: 80 })
+    getLeaflet().marker(position, { icon: locationIcon(location), title: location.name, zIndexOffset: 80 })
       .on("click", () => selectLocation(location, true))
-      .addTo(layers.locations);
+      .addTo(lyrs.locations);
   });
   visiblePosts.value.forEach((post) => {
     const position = latLng(post);
     if (!position) return;
-    window.L.marker(position, { icon: postIcon(post), title: post.title || post.locationArea || "", zIndexOffset: 120 })
+    getLeaflet().marker(position, { icon: postIcon(post), title: post.title || post.locationArea || "", zIndexOffset: 120 })
       .on("click", () => selectPost(post, true))
-      .addTo(layers.posts);
+      .addTo(lyrs.posts);
   });
 }
 
 function renderMap() {
-  if (!map || !layers || !window.L) return;
+  if (!map || !layers || !tryGetLeaflet()) return;
   clearLayers();
   renderAreas();
   renderRoads();
@@ -260,7 +272,8 @@ function renderMap() {
 }
 
 function initMap() {
-  if (!stageEl.value || !window.L) return;
+  const L = tryGetLeaflet();
+  if (!stageEl.value || !L) return;
   const nextBounds = mapBounds();
   if (map) {
     baseOverlay?.setBounds(nextBounds);
@@ -269,7 +282,7 @@ function initMap() {
     return;
   }
   const center = mapData.value?.center || { lat: 18.3935, lng: 110.0159 };
-  map = window.L.map(stageEl.value, {
+  map = L.map(stageEl.value, {
     center: [center.lat, center.lng],
     zoom: mapData.value?.zoom || 16,
     minZoom: 15,
@@ -279,27 +292,27 @@ function initMap() {
     zoomControl: false,
     attributionControl: false,
   });
-  window.L.control.zoom({ position: "topright" }).addTo(map);
-  window.L.tileLayer(GAODE_TILE_URL, {
+  L.control.zoom({ position: "topright" }).addTo(map);
+  L.tileLayer(GAODE_TILE_URL, {
     subdomains: ["1", "2", "3", "4"],
     maxZoom: 19,
     minZoom: 3,
     opacity: 0.18,
     attribution: "&copy; Gaode Map",
   }).addTo(map);
-  baseOverlay = window.L.imageOverlay("/assets/campus-base-map.png", nextBounds, {
+  baseOverlay = L.imageOverlay("/assets/campus-base-map.png", nextBounds, {
     interactive: false,
     opacity: 0.94,
     zIndex: 10,
   }).addTo(map);
   layers = {
-    areas: window.L.layerGroup().addTo(map),
-    roadsCasing: window.L.layerGroup().addTo(map),
-    roads: window.L.layerGroup().addTo(map),
-    routes: window.L.layerGroup().addTo(map),
-    assets: window.L.layerGroup().addTo(map),
-    locations: window.L.layerGroup().addTo(map),
-    posts: window.L.layerGroup().addTo(map),
+    areas: L.layerGroup().addTo(map),
+    roadsCasing: L.layerGroup().addTo(map),
+    roads: L.layerGroup().addTo(map),
+    routes: L.layerGroup().addTo(map),
+    assets: L.layerGroup().addTo(map),
+    locations: L.layerGroup().addTo(map),
+    posts: L.layerGroup().addTo(map),
   };
   map.on("zoomend resize", renderMap);
   setTimeout(() => map?.invalidateSize(), 80);
@@ -308,8 +321,8 @@ function initMap() {
 
 async function refreshMap() {
   await nextTick();
-  if (!window.L) {
-    errorMessage.value = "Leaflet 地图库还没有加载完成，请刷新后重试。";
+  if (!isLeafletAvailable()) {
+    errorMessage.value = new LeafletUnavailableError().message;
     return;
   }
   initMap();
