@@ -19,13 +19,14 @@ When docs disagree, prefer this order:
 11. `references/HANDOFFS_OVERRIDE_2026-05-05.md` for handoff conflict handling.
 12. `references/CONTRACTS_OVERRIDE_2026-05-05.md` for API-contract conflict handling.
 13. `references/DOC_REVIEW_FINDINGS_2026-05-05.md` for known stale-doc warnings.
-14. Latest handoff for the task area as context only.
-15. Current task doc as scope/history, after override checks.
-16. `PROJECT_FILE_INDEX.md` as historical/structural context.
-17. Domain docs as business intent and historical context.
-18. Contract docs as split-era API inventory, after contract override checks.
-19. `ARCHITECTURE_WORKPLAN.md`, `03_FILE_OWNERSHIP.md`, and `04_DECISIONS.md` as historical/planning context.
-20. Historical baseline/planning docs.
+14. `docs/agent/FRONTEND_REVIEWER_HANDOFF.md` - frontend review handoff context for continuation.
+15. Latest handoff for the task area as context only.
+16. Current task doc as scope/history, after override checks.
+17. `PROJECT_FILE_INDEX.md` as historical/structural context.
+18. Domain docs as business intent and historical context.
+19. Contract docs as split-era API inventory, after contract override checks.
+20. `ARCHITECTURE_WORKPLAN.md`, `03_FILE_OWNERSHIP.md`, and `04_DECISIONS.md` as historical/planning context.
+21. Historical baseline/planning docs.
 
 ## Thread Workflow
 
@@ -52,15 +53,16 @@ Read these in order before starting implementation work:
 10. `references/CONTRACTS_OVERRIDE_2026-05-05.md` - current API-contract conflict handling
 11. `references/DOC_REVIEW_FINDINGS_2026-05-05.md` - known stale-doc risks and cleanup recommendations
 12. `00_AGENT_RULES.md` - operating rules, validation, high-conflict files
-13. `ARCHITECTURE_WORKPLAN.md` - historical architecture direction; verify stale points against overrides and PRs
-14. `05_TASK_BOARD.md` - long task context; may contain older status and must be checked against PRs and override files
-15. `03_FILE_OWNERSHIP.md` - historical ownership/conflict context; check against ownership override before use
-16. `PROJECT_FILE_INDEX.md` - historical file index; check against override before use
-17. `04_DECISIONS.md` - historical decision context; check against decisions override before use
-18. `domains/<area>.md` - domain intent and historical context; check against domain override before use
-19. `tasks/<task>.md` - task scope/history; check against task override before use
-20. `handoffs/<task>.md` - thread context only; check against handoffs override before use
-21. `contracts/<contract>.md` - split-era contract inventory; check against contracts override and current code before use
+13. `docs/agent/FRONTEND_REVIEWER_HANDOFF.md` - frontend review handoff context for continuation
+14. `ARCHITECTURE_WORKPLAN.md` - historical architecture direction; verify stale points against overrides and PRs
+15. `05_TASK_BOARD.md` - long task context; may contain older status and must be checked against PRs and override files
+16. `03_FILE_OWNERSHIP.md` - historical ownership/conflict context; check against ownership override before use
+17. `PROJECT_FILE_INDEX.md` - historical file index; check against override before use
+18. `04_DECISIONS.md` - historical decision context; check against decisions override before use
+19. `domains/<area>.md` - domain intent and historical context; check against domain override before use
+20. `tasks/<task>.md` - task scope/history; check against task override before use
+21. `handoffs/<task>.md` - thread context only; check against handoffs override before use
+22. `contracts/<contract>.md` - split-era contract inventory; check against contracts override and current code before use
 
 ## Current Frontend Runtime Snapshot
 
