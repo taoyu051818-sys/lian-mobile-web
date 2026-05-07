@@ -20,8 +20,10 @@ Do not treat older docs that describe a single `npm run dev` / Vite 5173 workflo
 ## Install dependencies
 
 ```bash
-npm install
+npm ci
 ```
+
+Use `npm install` only when adding or updating dependencies locally.
 
 ## Start both frontend lanes
 
