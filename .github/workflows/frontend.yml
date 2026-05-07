@@ -26,37 +26,11 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Build Vue entry
-        run: npm run build
-
-      - name: Run project checks
-        run: npm run check
-
-      - name: Start legacy static rehearsal server
-        run: |
-          npm run start:frontend-static > /tmp/lian-frontend.log 2>&1 &
-          echo $! > /tmp/lian-frontend.pid
-          sleep 2
-
-      - name: Run legacy static smoke test
-        run: npm test
+      - name: Verify frontend (static guards + build + smoke)
+        run: npm run verify
 
       - name: Run static proxy forwarded header regression
         run: node scripts/test-static-proxy-forwarded-headers.js
-
-      - name: Print static server log on failure
-        if: failure()
-        run: |
-          if [ -f /tmp/lian-frontend.log ]; then
-            cat /tmp/lian-frontend.log
-          fi
-
-      - name: Stop legacy static rehearsal server
-        if: always()
-        run: |
-          if [ -f /tmp/lian-frontend.pid ]; then
-            kill "$(cat /tmp/lian-frontend.pid)" || true
-          fi
 
   publish-legacy-status:
     name: Publish legacy commit status

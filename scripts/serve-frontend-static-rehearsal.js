@@ -60,7 +60,7 @@ function injectRuntimeConfig(html) {
 
 function safePublicPath(pathname) {
   const normalized = path.normalize(decodeURIComponent(pathname)).replace(/^([.][.][/\\])+/, "");
-  const relative = normalized === "/" || normalized === "." ? "index.html" : normalized.replace(/^[/\\]+/, "");
+  const relative = normalized === "/" || normalized === "\\" || normalized === "." ? "index.html" : normalized.replace(/^[/\\]+/, "");
   const fullPath = path.resolve(publicDir, relative);
   if (!fullPath.startsWith(publicDir + path.sep) && fullPath !== publicDir) return null;
   return fullPath;
