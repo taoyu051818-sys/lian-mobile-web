@@ -6,6 +6,7 @@ This directory contains frontend-specific contracts, guidelines, and reference d
 
 ## Contents
 
+- `probe-debug-governance-contract.md` — Lifecycle governance for temporary probes, debug UI, feature flags, release diagnostics, and production cleanup. (Issue #155)
 - `ui-primitive-contract.md` — UI primitive responsibilities, side-effect boundaries, accessibility expectations, and review guardrails.
 
 ## Related
