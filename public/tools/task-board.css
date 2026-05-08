@@ -28,6 +28,10 @@ body {
   overflow: hidden;
 }
 
+a {
+  color: inherit;
+}
+
 .shell {
   display: grid;
   grid-template-rows: auto 1fr;
@@ -139,6 +143,83 @@ body {
   padding: 16px;
 }
 
+.legacy-banner {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(260px, 0.9fr);
+  gap: 16px;
+  padding: 18px;
+  border: 1px solid #f3d9b1;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #fff8ef 0%, #fffdf8 100%);
+  box-shadow: var(--shadow);
+}
+
+.legacy-copy h2 {
+  font-size: 22px;
+  line-height: 1.2;
+  margin-top: 10px;
+}
+
+.legacy-copy p {
+  margin-top: 10px;
+  color: #6f5a40;
+  max-width: 60ch;
+}
+
+.legacy-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: #fff1da;
+  color: #9a3412;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.legacy-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  gap: 10px;
+}
+
+.legacy-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 42px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(37, 99, 235, 0.18);
+  background: rgba(255, 255, 255, 0.92);
+  color: #1d4ed8;
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+  transition: transform 0.12s ease, box-shadow 0.12s ease, border-color 0.12s ease;
+}
+
+.legacy-link:hover {
+  transform: translateY(-1px);
+  border-color: rgba(37, 99, 235, 0.34);
+  box-shadow: 0 8px 18px rgba(37, 99, 235, 0.08);
+}
+
+.legacy-status {
+  grid-column: 1 / -1;
+  padding-top: 2px;
+  color: #6f5a40;
+  font-size: 12px;
+}
+
+.legacy-status.is-error {
+  color: #b91c1c;
+}
+
 .metric-grid {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
@@ -158,6 +239,11 @@ body {
 .metric-card {
   padding: 12px;
   min-height: 92px;
+}
+
+.metric-card-wide {
+  grid-column: 1 / -1;
+  min-height: auto;
 }
 
 .metric-label,
@@ -507,12 +593,13 @@ body {
   .shell {
     grid-template-columns: 220px 1fr 320px;
   }
-  .metric-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
+  .legacy-banner,
   .dashboard-grid,
   .lane-board {
     grid-template-columns: 1fr;
+  }
+  .metric-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
   .workstream-grid {
     grid-template-columns: 1fr;
@@ -536,5 +623,12 @@ body {
   .sidebar { border-right: 0; border-bottom: 1px solid var(--line); }
   .detail { border-left: 0; border-top: 1px solid var(--line); }
   .metric-grid { grid-template-columns: 1fr; }
+  .legacy-copy h2 {
+    font-size: 18px;
+  }
+  .legacy-link {
+    width: 100%;
+    justify-content: flex-start;
+  }
   .main { overflow-y: visible; }
 }
