@@ -1,6 +1,10 @@
 :root {
   --lian-bg: #f7f4ec;
   --lian-surface: #ffffff;
+  --lian-surface-page: #f8f6f0;
+  --lian-surface-content: rgba(255, 255, 255, 0.9);
+  --lian-surface-content-muted: rgba(255, 255, 255, 0.72);
+  --lian-surface-floating: rgba(255, 255, 255, 0.8);
   --lian-card: rgba(255, 255, 255, 0.76);
   --lian-card-strong: rgba(255, 255, 255, 0.92);
   --lian-primary: #1fa7a0;
@@ -12,6 +16,7 @@
   --lian-muted: #6b7280;
   --lian-faint: #9ca3af;
   --lian-line: rgba(31, 41, 51, 0.08);
+  --lian-line-strong: rgba(31, 41, 51, 0.12);
   --lian-danger: #ef4444;
   --lian-warning: #f59e0b;
   --lian-success: #22c55e;
@@ -46,8 +51,13 @@
   --radius-panel: 20px;
   --radius-sheet: 24px;
   --radius-orb: 999px;
+  --radius-cover: 12px;
+  --radius-content-card: 18px;
   --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.06);
+  --shadow-content-card: 0 2px 10px rgba(22, 32, 27, 0.06);
+  --shadow-content-card-hover: 0 10px 26px rgba(22, 32, 27, 0.12);
   --shadow-floating: 0 8px 24px rgba(0, 0, 0, 0.12);
+  --shadow-floating-soft: 0 12px 30px rgba(22, 32, 27, 0.11);
   --shadow-glass: 0 14px 34px rgba(22, 32, 27, 0.18);
   --glass-bg: rgba(255, 255, 255, 0.56);
   --glass-bg-strong: rgba(255, 255, 255, 0.72);
@@ -55,6 +65,8 @@
   --glass-blur: 18px;
   --glass-blur-light: 12px;
   --glass-saturate: 1.28;
+  --content-hover-scale: 1.012;
+  --content-grid-max-width: 760px;
   --floating-bar-max-width: 760px;
   --floating-bar-side-inset: var(--space-3);
   --floating-bar-top-offset: calc(var(--space-2) + env(safe-area-inset-top));
@@ -65,8 +77,10 @@
   --floating-bar-button-height: 40px;
   --floating-bar-z: 70;
   --motion-fast: 160ms;
+  --motion-micro: 160ms;
   --motion-standard: 220ms;
-  --motion-page: 280ms;
+  --motion-panel: 280ms;
+  --motion-page: 320ms;
   --motion-ease-standard: cubic-bezier(0.22, 0.61, 0.36, 1);
   --bg: var(--lian-bg);
   --paper: var(--lian-surface);
