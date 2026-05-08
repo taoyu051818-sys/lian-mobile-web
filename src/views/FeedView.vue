@@ -2,12 +2,13 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, ref } from "vue";
 import { fetchFeed } from "../api/feed";
 import { fetchPostDetail } from "../api/posts";
-import { InlineError, LianButton } from "../ui";
+import { useAutoLoadSentinel } from "../composables/useAutoLoadSentinel";
+import { useFloatingChromeController } from "../motion/floatingChrome";
 import type { FeedItem, FeedItemId, FeedTab } from "../types/feed";
 import type { PostDetail } from "../types/post";
-import FeedItemCard from "./feed/FeedItemCard.vue";
+import { InlineError, LianButton } from "../ui";
 import PostDetailPanel from "./detail/PostDetailPanel.vue";
-import { useFloatingChromeController } from "../motion/floatingChrome";
+import FeedItemCard from "./feed/FeedItemCard.vue";
 
 interface CardOpenPayload {
   item: FeedItem;
@@ -71,6 +72,7 @@ const detailHistoryActive = ref(false);
 const ignoreNextPopState = ref(false);
 const viewportWidth = ref(390);
 const viewportHeight = ref(844);
+const loadMoreSentinelRef = ref<HTMLElement | null>(null);
 
 const detailOpen = computed(() => selectedPostId.value !== null);
 const feedTabsChromeState = feedTabsChrome.phase;
@@ -131,6 +133,12 @@ const cardTransitionStyle = computed(() => {
     "--card-height": `${snapshot.rect.height}px`,
   };
 });
+const canAutoLoadMore = computed(() => (
+  hasMore.value
+  && !loading.value
+  && !loadingMore.value
+  && !detailOpen.value
+));
 
 function estimateCardWeight(item: FeedItem) {
   const coverWeight = item.cover ? 1.32 : 0.72;
@@ -345,6 +353,11 @@ function switchTab(tabId: string) {
   void loadFeed(true);
 }
 
+function triggerLoadMore() {
+  if (!canAutoLoadMore.value) return;
+  void loadFeed(false);
+}
+
 async function openItem(id: FeedItemId, payload?: CardOpenPayload) {
   updateViewport();
 
@@ -469,6 +482,12 @@ function onDetailPointerCancel(event: PointerEvent) {
   abortDetailDrag(event, true);
 }
 
+useAutoLoadSentinel(loadMoreSentinelRef, triggerLoadMore, {
+  enabled: () => canAutoLoadMore.value,
+  rootMargin: "720px 0px 720px 0px",
+  cooldownMs: 900,
+});
+
 onMounted(() => {
   updateViewport();
   window.addEventListener("resize", updateViewport);
@@ -559,14 +578,22 @@ onBeforeUnmount(() => {
       </div>
 
       <div v-if="items.length" class="feed-view__load-more">
-        <LianButton
-          v-if="hasMore"
-          :loading="loadingMore"
-          variant="ghost"
-          @click="loadFeed(false)"
-        >
-          加载更多
-        </LianButton>
+        <template v-if="hasMore">
+          <div class="feed-view__load-more-stack">
+            <LianButton
+              :loading="loadingMore"
+              variant="ghost"
+              @click="loadFeed(false)"
+            >
+              加载更多
+            </LianButton>
+            <div
+              ref="loadMoreSentinelRef"
+              class="feed-view__load-more-sentinel"
+              aria-hidden="true"
+            ></div>
+          </div>
+        </template>
         <span v-else>已经看到这里啦</span>
       </div>
     </div>
@@ -775,6 +802,17 @@ onBeforeUnmount(() => {
   padding-bottom: var(--space-2);
   color: var(--lian-muted);
   font-size: 13px;
+}
+
+.feed-view__load-more-stack {
+  display: grid;
+  justify-items: center;
+  width: 100%;
+}
+
+.feed-view__load-more-sentinel {
+  width: 100%;
+  height: 1px;
 }
 
 .feed-view__detail {
