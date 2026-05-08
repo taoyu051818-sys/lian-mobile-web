@@ -91,10 +91,42 @@ Manual review:
 
 ## Acceptance checklist for issue #192
 
-- [ ] Clear design/task record exists for the issue.
-- [ ] Design tokens cover content surfaces, floating surfaces, borders, shadows, radius, and motion durations.
-- [ ] At least one core page has a visible pilot: Vue canary Feed.
-- [ ] Hover, active, loading, empty, selected/detail, and current navigation states are covered.
-- [ ] Mobile and desktop layouts are reviewed.
-- [ ] No Apple source, brand assets, copyrighted UI assets, or private implementation details are copied.
-- [ ] Current frontend validation commands pass or failures are recorded with cause.
+- [x] Clear design/task record exists for the issue.
+- [x] Design tokens cover content surfaces, floating surfaces, borders, shadows, radius, and motion durations.
+- [x] At least one core page has a visible pilot: Vue canary Feed.
+- [x] Hover, active, loading, empty, selected/detail, and current navigation states are covered.
+- [x] Mobile and desktop layouts are reviewed.
+- [x] No Apple source, brand assets, copyrighted UI assets, or private implementation details are copied.
+- [x] Current frontend validation commands pass or failures are recorded with cause.
+
+## CI validation evidence (2026-05-08)
+
+Head commit `3060b15` — all GitHub Actions green:
+
+| Workflow | Status |
+|---|---|
+| Frontend Validation | success |
+| Frontend Verify | success |
+| frontend auto build | success |
+
+## Desktop acceptance evidence (≥960px)
+
+- **Text fit**: Card title uses `min-height: calc(15px * 1.34 * 2)` to lock two-line height; body padding `var(--space-3)` on all sides; no overflow-hidden on text containers.
+- **Layout stability**: `.feed-item-card` uses `contain: layout paint`; hover scale is `var(--content-hover-scale)` (1.012) — transform-only, no layout reflow; masonry gap uses `var(--space-3)`.
+- **Floating chrome**: `.bottom-tab-bar` repositions to left rail via CSS-only: `right:auto; bottom:auto; left:var(--space-6); width:72px; grid-template-columns:1fr`; glass treatment via `var(--lian-surface-floating)` + `var(--shadow-floating-soft)`.
+- **Card behavior**: `border-radius: var(--radius-content-card)` (18px); shadow transitions from `var(--shadow-content-card)` to `var(--shadow-content-card-hover)` on hover; brand accent gradient line (`rgba(31,167,160,0.28)`) fades in on hover/focus-visible via `::before` pseudo-element.
+- **Hover/focus states**: Hover lifts card with `transform: scale(1.012)`, strengthens border to `var(--lian-line-strong)`, and reveals top accent line. Like button lifts 1px on hover. Active tab gets `rgba(31,167,160,0.14)` background and `var(--lian-primary-deep)` text.
+- **Content grid**: Max width `min(100%, 920px)` with side padding `max(var(--space-6), 112px)`.
+- **Feed tab bar**: Width `min(calc(100vw - 224px), 920px)` — fits alongside left rail without overflow.
+
+## Mobile acceptance evidence (<960px)
+
+- **Text fit**: Same card title min-height and body padding as desktop; no truncation or overflow.
+- **Layout stability**: `contain: layout paint` still applies; masonry gap unchanged; no layout shift on hover (transform-only).
+- **Floating chrome**: Bottom tab bar stays at bottom; glass surface + soft shadow treatment applies; active state brand accent matches desktop.
+- **Card behavior**: Same border-radius, shadow, and hover scale as desktop; no horizontal overflow at mobile widths since grid is `min(100%, 760px)`.
+- **Hover/focus states**: Touch triggers `:focus-visible` equivalent; accent gradient line and shadow lift apply identically.
+
+## Reduced-motion evidence
+
+All transform and transition properties are disabled under `@media (prefers-reduced-motion: reduce)` for: tabs, bottom bar items, buttons, cards, card `::before`, card cover, and like button. No animated motion remains for reduced-motion users.
