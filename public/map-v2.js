@@ -1,6 +1,9 @@
 (function () {
   const GAODE_TILE_URL = "https://webrd0{s}.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=8&x={x}&y={y}&z={z}";
   const LIAN_API_BASE = (typeof window !== "undefined" && window.LIAN_API_BASE_URL) || "";
+  const PREVIEW_PROJECTION_ORIGIN = { lat: 18.393453, lng: 110.015821 };
+  const METERS_PER_DEGREE_LAT = 111320;
+  const METERS_PER_DEGREE_LNG = METERS_PER_DEGREE_LAT * Math.cos(PREVIEW_PROJECTION_ORIGIN.lat * Math.PI / 180);
   const LIAN_IMAGE_PROXY_BASE = (() => {
     const configured = (typeof window !== "undefined" && window.LIAN_IMAGE_PROXY_BASE_URL) || "";
     if (configured) return configured.replace(/\/$/, "");
@@ -77,6 +80,7 @@
   const state = {
     map: null,
     data: null,
+    roadPreview: null,
     layers: null,
     mode: "browse",
     pickCallback: null,
@@ -279,6 +283,50 @@
       .filter(([lat, lng]) => Number.isFinite(lat) && Number.isFinite(lng));
   }
 
+  function previewPoint(point = []) {
+    const transform = state.roadPreview?.transform || {};
+    const scale = Number(transform.scale || 1);
+    const rotation = Number(transform.rotation || 0) * Math.PI / 180;
+    const translateX = Number(transform.translateX || 0);
+    const translateY = Number(transform.translateY || 0);
+    const lat = Number(point[0]);
+    const lng = Number(point[1]);
+    const dx = (lng - PREVIEW_PROJECTION_ORIGIN.lng) * METERS_PER_DEGREE_LNG;
+    const dy = (lat - PREVIEW_PROJECTION_ORIGIN.lat) * METERS_PER_DEGREE_LAT;
+    const scaledX = dx * scale;
+    const scaledY = dy * scale;
+    const rotatedX = scaledX * Math.cos(rotation) - scaledY * Math.sin(rotation);
+    const rotatedY = scaledX * Math.sin(rotation) + scaledY * Math.cos(rotation);
+    return {
+      lat: PREVIEW_PROJECTION_ORIGIN.lat + (rotatedY + translateY) / METERS_PER_DEGREE_LAT,
+      lng: PREVIEW_PROJECTION_ORIGIN.lng + (rotatedX + translateX) / METERS_PER_DEGREE_LNG
+    };
+  }
+
+  function previewRoads() {
+    return (state.roadPreview?.roads || [])
+      .map((road) => ({
+        id: `preview-road-${road.road_id}`,
+        name: `Preview road ${road.road_id}`,
+        type: road.road_type === "walking" ? "pedestrian_path" : "main_road",
+        points: (road.points || []).map(previewPoint),
+        style: {
+          color: road.road_type === "walking" ? "#b8a99a" : "#8f98a3",
+          weight: Math.max(2, Math.min(6, Number(road.width_m || 3.2))),
+          dashArray: road.road_type === "walking" ? "5 5" : ""
+        },
+        interactive: false,
+        status: "active",
+        source: state.roadPreview?.source || "road_network_preview"
+      }))
+      .filter((road) => road.points.length >= 2);
+  }
+
+  function renderableRoads() {
+    const officialRoads = state.data?.layers?.roads || [];
+    return officialRoads.length > 0 ? officialRoads : previewRoads();
+  }
+
   function renderAreas(areas = []) {
     state.layers.areas.clearLayers();
     for (const area of areas) {
@@ -396,7 +444,7 @@
   function renderAll() {
     if (!state.map || !state.data) return;
     renderAreas(state.data.layers?.areas || []);
-    renderRoads(state.data.layers?.roads || []);
+    renderRoads(renderableRoads());
     renderRoutes(state.data.layers?.routes || []);
     renderAssets(state.data.layers?.assets || []);
     renderLocations(state.data.locations || []);
@@ -405,7 +453,14 @@
   }
 
   async function loadData() {
-    state.data = await api("/api/map/v2/items");
+    const [data, preview] = await Promise.all([
+      api("/api/map/v2/items"),
+      fetch("/assets/road-network-preview.json", { cache: "force-cache" })
+        .then((response) => response.ok ? response.json() : null)
+        .catch(() => null)
+    ]);
+    state.data = data;
+    state.roadPreview = preview;
     return state.data;
   }
 
@@ -440,7 +495,7 @@
       bindMapIconScale(state.map);
       state.map.on("click", handleMapClick);
       state.map.on("popupopen", bindPopupActions);
-      state.map.on("zoomend", () => renderRoads(state.data?.layers?.roads || []));
+      state.map.on("zoomend", () => renderRoads(renderableRoads()));
     }
     renderAll();
     setTimeout(() => state.map.invalidateSize(), 50);
@@ -540,7 +595,7 @@
   function invalidateSize() {
     if (!state.map) return;
     state.map.invalidateSize();
-    renderRoads(state.data?.layers?.roads || []);
+    renderRoads(renderableRoads());
     applyMapIconScale();
   }
 
