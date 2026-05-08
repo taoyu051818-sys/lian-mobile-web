@@ -50,6 +50,7 @@ const requiredFiles = [
   "docs/architecture/0001-vue3-vite-typescript-ui-entry.md",
   "scripts/smoke-frontend.js",
   "scripts/serve-frontend-static-rehearsal.js",
+  "scripts/guard-unsafe-dom-sinks.js",
   "package.json",
   "README.md"
 ];
@@ -73,7 +74,8 @@ const frontendJsFiles = [
   "public/explore-preload.js",
   "public/app.js",
   "scripts/smoke-frontend.js",
-  "scripts/serve-frontend-static-rehearsal.js"
+  "scripts/serve-frontend-static-rehearsal.js",
+  "scripts/guard-unsafe-dom-sinks.js"
 ];
 
 const backendOnlyPaths = [
