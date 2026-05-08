@@ -83,6 +83,29 @@ Origin of content for trust labeling.
 | `aiSummary` | AI 整理 | AI-summarized from multiple sources |
 | `system` | 系统 | System-generated content |
 
+### 1.6 PermissionState
+
+Access or authorization state for content, features, and audience-scoped surfaces.
+
+| Value | Chinese Label | Description |
+|---|---|---|
+| `granted` | 已授权 | Access confirmed for current user |
+| `denied` | 无权限 | Access explicitly denied |
+| `restricted` | 受限访问 | Access scoped to school, org, or role |
+| `pending` | 待审核 | Awaiting approval or verification |
+| `expired` | 已过期 | Permission or access window has lapsed |
+| `public` | 公开 | No restriction, publicly accessible |
+
+### 1.7 UI Primitive Boundary Rule
+
+Domain enums (`ContentType`, `TrustStatus`, `PlaceType`, `Visibility`, `PermissionState`, `SourceKind`) MUST NOT be defined, re-exported, or referenced inside `src/ui/**`. UI primitives accept only:
+
+- Visual props: `tone: SemanticTone`, `size`, `variant`
+- Rendered content: `label: string`, `icon: string`
+- Accessibility: `ariaLabel: string`
+
+If a UI primitive receives a domain enum, the boundary is violated. Domain-to-visual mapping lives exclusively in presenter functions outside `src/ui/`.
+
 ---
 
 ## 2. Presenter Output Shape
@@ -114,6 +137,7 @@ interface PresenterOutput {
 | `presentTrustStatus(tone: TrustTone)` | TrustTone | `PresenterOutput` |
 | `presentPlaceType(type: PlaceType)` | PlaceType | `PresenterOutput` |
 | `presentVisibility(vis: Visibility)` | Visibility | `PresenterOutput` |
+| `presentPermissionState(state: PermissionState)` | PermissionState | `PresenterOutput` |
 | `presentSourceKind(kind: SourceKind)` | SourceKind | `PresenterOutput` |
 
 ### 2.2 Presenter Rules
@@ -225,6 +249,10 @@ Every badge/chip must provide a text alternative that conveys the same semantic 
 | `presentTrustStatus("expired")` | "已过期 — 信息可能不再准确" |
 | `presentTrustStatus("ai")` | "AI 整理 — 可能不准确" |
 | `presentPlaceType("dining")` | "食堂" |
+| `presentPermissionState("denied")` | "无权限 — 当前用户无法访问" |
+| `presentPermissionState("restricted")` | "受限访问 — 仅限特定群体" |
+| `presentPermissionState("pending")` | "待审核 — 等待审批" |
+| `presentPermissionState("expired")` | "已过期 — 权限已失效" |
 
 ### 5.4 Color Independence
 
@@ -277,6 +305,15 @@ Semantic tones are the bridge between domain presenters and visual design tokens
 | `ai` | `ai` |
 | `official` | `official` |
 
+| PermissionState | Semantic Tone |
+|---|---|
+| `granted` | `success` |
+| `denied` | `danger` |
+| `restricted` | `warning` |
+| `pending` | `info` |
+| `expired` | `neutral` |
+| `public` | `neutral` |
+
 ### 6.3 Tone Rules
 
 - UI primitives must accept `SemanticTone`, not domain enum values.
@@ -302,8 +339,8 @@ From `docs/design/LIAN-Campus-UI-UX-Guidelines-V0.1.md`:
 
 ## 8. Acceptance Criteria
 
-- [ ] Domain enums are not defined inside UI primitive components.
-- [ ] Each taxonomy has a presenter function returning `PresenterOutput`.
+- [ ] Domain enums are not defined inside UI primitive components (`src/ui/**`).
+- [ ] Each taxonomy (ContentType, TrustStatus, PlaceType, Visibility, PermissionState, SourceKind) has a presenter function returning `PresenterOutput`.
 - [ ] Unknown enum values produce the fallback output, not empty or null.
 - [ ] AI badges distinguish `aiGenerated`, `aiAssisted`, `aiSummary` with distinct labels.
 - [ ] Official badges are driven only by backend-authorized fields.
@@ -311,3 +348,11 @@ From `docs/design/LIAN-Campus-UI-UX-Guidelines-V0.1.md`:
 - [ ] Semantic tone mapping is documented and covers all taxonomy values.
 - [ ] Tones include light, dark, and high-contrast token values.
 - [ ] UI primitives accept `SemanticTone`, not domain enums.
+- [ ] `presentPermissionState` covers all six states with correct tone mapping.
+- [ ] UI primitive boundary rule (§1.7) is enforced — no domain enum imports in `src/ui/**`.
+
+---
+
+## Issue Linkage
+
+Part of #188. Related to #188. Does not close #188 — runtime implementation and component migration are tracked separately.
