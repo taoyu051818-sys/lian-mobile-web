@@ -2,10 +2,11 @@
 import { computed, ref, watch } from "vue";
 import { fetchPlaceSheet } from "../../api/places";
 import { reportPost, sendPostReply, togglePostLike, togglePostSave } from "../../api/posts";
-import { InlineError, LianButton } from "../../ui";
 import type { DisplayActor } from "../../types/feed";
 import type { PlaceSheet, PlaceStatus } from "../../types/place";
 import type { PostDetail, PostReply } from "../../types/post";
+import { formatRelativeTime, formatTimestampLabel } from "../../utils/time";
+import { InlineError, LianButton } from "../../ui";
 
 type FloatingChromePhase = "visible" | "exiting" | "hidden" | "entering" | "progress";
 
@@ -72,7 +73,7 @@ const bodyHtml = computed(() => stripDecorativeContentFromHtml(rawBodyHtml.value
 const replies = computed(() => props.post?.replies || []);
 const images = computed(() => uniqueGalleryImages([props.post?.cover || "", ...(props.post?.imageUrls || [])]).slice(0, 8));
 const fullResolutionImages = computed(() => images.value.map(toFullResolutionImageUrl));
-const timeLabel = computed(() => formatRelativeTime(props.post?.timestampISO || "") || props.post?.timeLabel || "");
+const timeLabel = computed(() => formatTimestampLabel(props.post?.timestampISO, props.post?.timeLabel || ""));
 const replyIdentityLabel = computed(() => `以当前身份回复`);
 const placeStatusText = computed(() => placeStatusLabel(placeSheet.value?.status || structuredPlace.value?.status));
 
@@ -181,19 +182,6 @@ function stripDecorativeContentFromHtml(value: string) {
     .replace(/<p[^>]*>\s*<strong>\s*#+[^<]+\s*<\/strong>\s*<\/p>/gi, "")
     .replace(/<p[^>]*>\s*#+[^<]+\s*<\/p>/gi, "")
     .trim();
-}
-
-function formatRelativeTime(value: string) {
-  if (!value) return "";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "";
-  const diff = Date.now() - date.getTime();
-  if (diff < 60_000) return "刚刚";
-  if (diff < 3_600_000) return `${Math.floor(diff / 60_000)}分钟前`;
-  if (diff < 86_400_000) return `${Math.floor(diff / 3_600_000)}小时前`;
-  if (diff < 172_800_000) return "昨天";
-  if (diff < 604_800_000) return `${Math.floor(diff / 86_400_000)}天前`;
-  return `${date.getMonth() + 1}月${date.getDate()}日`;
 }
 
 function placeStatusLabel(status?: PlaceStatus) {
