@@ -3,6 +3,10 @@
 
   var API = "/api/internal/task-board";
   var RECENT_DAYS = 14;
+  var SOURCE_OF_TRUTH = {
+    controlRoom: "Control Room #112",
+    controlRoomUrl: "https://github.com/taoyu051818-sys/lian-platform-server/issues/112"
+  };
 
   var STATUS_COLORS = {
     "Done": "done",
@@ -201,6 +205,25 @@
       .replace(/[^a-z0-9\u4e00-\u9fa5]+/g, "-")
       .replace(/^-+|-+$/g, "")
       .slice(0, 80);
+  }
+
+  function setLegacyStatus(message, isError) {
+    var statusNode = document.getElementById("legacyStatus");
+    if (!statusNode) return;
+    statusNode.textContent = message;
+    statusNode.classList.toggle("is-error", !!isError);
+  }
+
+  function renderLegacyApiUnavailable(message) {
+    var summary = "GitHub source of truth: " + SOURCE_OF_TRUTH.controlRoom;
+    document.getElementById("queueSummary").textContent = summary;
+    document.getElementById("metricGrid").innerHTML =
+      '<div class="metric-card metric-card-wide"><div class="metric-label">Legacy snapshot unavailable</div><div class="metric-hint">' + escHtml(message) + '</div></div>';
+    document.getElementById("workstreamGrid").innerHTML = '<div class="empty-note">Use the Control Room and GitHub label queues above for the active workflow state.</div>';
+    document.getElementById("recentList").innerHTML = '<div class="empty-note">Legacy API data is unavailable. GitHub is the current source of truth.</div>';
+    document.getElementById("laneBoard").innerHTML = '<div class="empty-note">This legacy viewer cannot reconstruct live launch, review, or follow-up state without the internal snapshot API.</div>';
+    document.getElementById("detailPanel").innerHTML = '<div class="detail-empty">Legacy snapshot unavailable. Use ' + escHtml(SOURCE_OF_TRUTH.controlRoom) + ' for current coordination.</div>';
+    setLegacyStatus(message, true);
   }
 
   function buildSidebar() {
@@ -482,7 +505,7 @@
 
     var p0Items = sortQueue(tasks.filter(function (t) { return t.priority === "P0" && t.phase !== "done"; }));
     var summary = p0Items.map(function (t) { return t.title; }).slice(0, 4).join(" → ");
-    document.getElementById("queueSummary").textContent = "P0 active: " + (summary || "none");
+    document.getElementById("queueSummary").textContent = summary ? "P0 active: " + summary : "GitHub source of truth: " + SOURCE_OF_TRUTH.controlRoom;
   }
 
   function statusBadge(s) {
@@ -519,6 +542,8 @@
     });
   });
 
+  document.getElementById("queueSummary").textContent = "GitHub source of truth: " + SOURCE_OF_TRUTH.controlRoom;
+
   fetch(API)
     .then(function (r) {
       if (!r.ok) throw new Error("HTTP " + r.status);
@@ -528,9 +553,12 @@
       tasks = parseTaskBoard(md);
       buildSidebar();
       applyFilters();
+      setLegacyStatus("Snapshot loaded from the legacy internal task-board API. Informational only; Control Room #112 and GitHub labels remain authoritative.", false);
     })
     .catch(function (err) {
+      var message = "Legacy snapshot unavailable (" + err.message + "). Use Control Room #112 and the GitHub label queues above for live status.";
+      renderLegacyApiUnavailable(message);
       document.getElementById("taskBody").innerHTML =
-        '<tr><td colspan="6" style="padding:40px;text-align:center;color:var(--danger)">Failed to load task board: ' + escHtml(err.message) + '</td></tr>';
+        '<tr><td colspan="6" style="padding:40px;text-align:center;color:var(--danger)">' + escHtml(message) + '</td></tr>';
     });
 })();
