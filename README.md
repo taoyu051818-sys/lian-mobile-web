@@ -17,6 +17,8 @@ The current merged code runs two frontend lanes during migration:
 
 Do not treat older docs that describe a single `npm run dev` / Vite 5173 workflow as the current operational entry. `npm run dev` is still a Vite development helper, but the project runtime entry for current review is the dual-lane supervisor.
 
+For the operator-facing split between install, build, deploy-prepare, and startup responsibilities, read `docs/frontend/runtime-responsibility-contract.md`.
+
 ## Install dependencies
 
 ```bash
