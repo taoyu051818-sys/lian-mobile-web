@@ -19,6 +19,7 @@
     "ops:guard": "node scripts/guard-runtime-inventory.js",
     "serve:legacy": "node scripts/serve-frontend-static-rehearsal.js",
     "test": "node scripts/smoke-frontend.js http://127.0.0.1:4300",
+    "test:unit": "vitest run",
     "test:vue-canary": "node scripts/smoke-frontend.js http://127.0.0.1:4301",
     "verify:static": "npm run check && npm run ops:guard && npm run build",
     "verify:smoke": "node scripts/run-smoke-with-server.js",
@@ -32,6 +33,7 @@
     "@vitejs/plugin-vue": "^5.2.1",
     "typescript": "^5.7.2",
     "vite": "^6.0.5",
+    "vitest": "^4.1.5",
     "vue-tsc": "^2.2.0"
   }
 }
