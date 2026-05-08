@@ -141,7 +141,17 @@ Completing the bounded follow-up for PR #199 merge-readiness gap identified by A
 
 **CSS review result**: No defects found inside pilot scope. All base styles in `content-immersive-ui.css` apply at every width; the `@media (min-width: 960px)` block only adds the desktop left-rail layout override. Mobile inherits the full pilot treatment without gaps.
 
-**Changes made**:
-- Enriched mobile acceptance evidence above with CSS property-level specificity matching the desktop section.
-- Updated PR #199 body to reflect current green workflow evidence and enriched acceptance detail.
+**CSS property verification** (against `src/styles/content-immersive-ui.css`):
+- `.feed-item-card` — `contain: layout paint`; hover `transform: scale(var(--content-hover-scale))` (token resolves to 1.012); border transition to `var(--lian-line-strong)`; shadow transition to `var(--shadow-content-card-hover)`.
+- `.feed-item-card::before` — accent gradient line `linear-gradient(90deg, transparent, rgba(31, 167, 160, 0.28), transparent)` at 1px height; opacity 0→1 on hover/focus-visible.
+- `.feed-item-card__like` — hover/focus-visible `transform: translateY(-1px)`; opacity 0.82→1.
+- `.feed-item-card__cover` — hover/focus-visible zoom from `scale(1.001)` to `scale(1.018)` with `var(--motion-panel)` duration.
+- `.feed-view__tab` / `.bottom-tab-bar__item` — glass treatment via `var(--lian-surface-floating)` + `var(--shadow-floating-soft)` + `rgba(255,255,255,0.62)` border; active state `rgba(31,167,160,0.14)` background + `var(--lian-primary-deep)` text.
+- `@media (min-width: 960px)` — `.bottom-tab-bar` repositions to left rail (`right:auto; bottom:auto; left:var(--space-6); width:72px; grid-template-columns:1fr`); `.feed-view__tabs` width `min(calc(100vw - 224px), 920px)`.
+- `@media (prefers-reduced-motion: reduce)` — all `transition` and `transform` properties disabled for tabs, bottom bar items, buttons, cards, card `::before`, card cover, and like button.
+
+**PR body updates**:
+- Enriched mobile acceptance evidence with CSS property-level specificity matching the desktop section.
+- Updated PR #199 Validation section to reflect current green workflow evidence on head `6808c4d`.
 - Issue linkage confirmed slice-accurate: PR body uses "Follow-up slice for #192", not `Closes #192`.
+- Added explicit follow-up validation evidence section to PR body.
