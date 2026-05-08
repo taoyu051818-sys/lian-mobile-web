@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
-import { fetchMapV2Items } from "../api/map";
+import { fetchMapV2Items, fetchRoadNetworkPreview } from "../api/map";
 import { GlassPanel, InlineError, LianButton, LocationChip, TrustBadge } from "../ui";
-import type { MapAsset, MapBounds, MapLayerPoint, MapLocation, MapPost, MapRoad, MapRoute, MapV2ItemsResponse } from "../types/map";
+import type { MapAsset, MapBounds, MapLayerPoint, MapLocation, MapPost, MapRoad, MapRoadNetworkPreview, MapRoute, MapV2ItemsResponse } from "../types/map";
 import {
   type LeafletDivIconLike,
   type LeafletImageOverlayLike,
@@ -21,6 +21,9 @@ type LayerKey = "areas" | "roadsCasing" | "roads" | "routes" | "assets" | "locat
 
 const GAODE_TILE_URL = "https://webrd0{s}.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=8&x={x}&y={y}&z={z}";
 const DEFAULT_BOUNDS: MapBounds = { south: 18.37107, west: 109.98464, north: 18.41730, east: 110.04775 };
+const PREVIEW_PROJECTION_ORIGIN = { lat: 18.393453, lng: 110.015821 };
+const METERS_PER_DEGREE_LAT = 111320;
+const METERS_PER_DEGREE_LNG = METERS_PER_DEGREE_LAT * Math.cos(PREVIEW_PROJECTION_ORIGIN.lat * Math.PI / 180);
 const ROAD_STYLE: Record<string, { color: string; casing: string; weight: number; casingExtra: number; opacity: number; minZoom: number; dashArray: string }> = {
   main_road: { color: "#9ca3af", casing: "#f8fafc", weight: 7, casingExtra: 5, opacity: 0.96, minZoom: 15, dashArray: "" },
   pedestrian_path: { color: "#c4b5a5", casing: "#fffaf0", weight: 3, casingExtra: 3, opacity: 0.9, minZoom: 16, dashArray: "6 4" },
@@ -31,6 +34,7 @@ const ROAD_STYLE: Record<string, { color: string; casing: string; weight: number
 
 const stageEl = ref<HTMLElement | null>(null);
 const mapData = ref<MapV2ItemsResponse | null>(null);
+const roadPreview = ref<MapRoadNetworkPreview | null>(null);
 const loading = ref(false);
 const errorMessage = ref("");
 const activeFilter = ref<"all" | "locations" | "posts">("all");
@@ -44,7 +48,27 @@ const bounds = computed(() => mapData.value?.bounds || DEFAULT_BOUNDS);
 const locations = computed(() => mapData.value?.locations || []);
 const posts = computed(() => mapData.value?.posts || []);
 const areas = computed(() => mapData.value?.layers?.areas || []);
-const roads = computed(() => mapData.value?.layers?.roads || []);
+const officialRoads = computed(() => mapData.value?.layers?.roads || []);
+const previewRoads = computed<MapRoad[]>(() => {
+  if (officialRoads.value.length > 0) return [];
+  return (roadPreview.value?.roads || [])
+    .map((road): MapRoad => ({
+      id: `preview-road-${road.road_id}`,
+      name: `Preview road ${road.road_id}`,
+      type: road.road_type === "walking" ? "pedestrian_path" : "main_road",
+      points: road.points.map(previewPoint).filter((point) => Number.isFinite(point.lat) && Number.isFinite(point.lng)),
+      style: {
+        color: road.road_type === "walking" ? "#b8a99a" : "#8f98a3",
+        weight: Math.max(2, Math.min(6, Number(road.width_m || 3.2))),
+        dashArray: road.road_type === "walking" ? "5 5" : "",
+      },
+      interactive: false,
+      status: "active",
+      source: roadPreview.value?.source || "road_network_preview",
+    }))
+    .filter((road) => road.points.length >= 2);
+});
+const roads = computed(() => officialRoads.value.length > 0 ? officialRoads.value : previewRoads.value);
 const routes = computed(() => mapData.value?.layers?.routes || []);
 const assets = computed(() => mapData.value?.layers?.assets || []);
 const visibleLocations = computed(() => activeFilter.value === "posts" ? [] : locations.value);
@@ -70,6 +94,26 @@ function latLng(item: { lat?: number; lng?: number }): [number, number] | null {
   const lat = Number(item.lat);
   const lng = Number(item.lng);
   return Number.isFinite(lat) && Number.isFinite(lng) ? [lat, lng] : null;
+}
+
+function previewPoint(point: [number, number]): MapLayerPoint {
+  const transform = roadPreview.value?.transform || {};
+  const scale = Number(transform.scale || 1);
+  const rotation = Number(transform.rotation || 0) * Math.PI / 180;
+  const translateX = Number(transform.translateX || 0);
+  const translateY = Number(transform.translateY || 0);
+  const lat = Number(point[0]);
+  const lng = Number(point[1]);
+  const dx = (lng - PREVIEW_PROJECTION_ORIGIN.lng) * METERS_PER_DEGREE_LNG;
+  const dy = (lat - PREVIEW_PROJECTION_ORIGIN.lat) * METERS_PER_DEGREE_LAT;
+  const scaledX = dx * scale;
+  const scaledY = dy * scale;
+  const rotatedX = scaledX * Math.cos(rotation) - scaledY * Math.sin(rotation);
+  const rotatedY = scaledX * Math.sin(rotation) + scaledY * Math.cos(rotation);
+  return {
+    lat: PREVIEW_PROJECTION_ORIGIN.lat + (rotatedY + translateY) / METERS_PER_DEGREE_LAT,
+    lng: PREVIEW_PROJECTION_ORIGIN.lng + (rotatedX + translateX) / METERS_PER_DEGREE_LNG,
+  };
 }
 
 function escapeHtml(value = "") {
@@ -332,7 +376,12 @@ async function loadMap() {
   loading.value = true;
   errorMessage.value = "";
   try {
-    mapData.value = await fetchMapV2Items();
+    const [items, preview] = await Promise.all([
+      fetchMapV2Items(),
+      fetchRoadNetworkPreview().catch(() => null),
+    ]);
+    mapData.value = items;
+    roadPreview.value = preview;
     if (!activeTarget.value && locations.value[0]) {
       activeTarget.value = { kind: "location", item: locations.value[0] };
     }
