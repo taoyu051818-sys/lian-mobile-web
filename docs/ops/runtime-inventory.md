@@ -35,6 +35,12 @@ The frontend quality gate is split into two visible layers:
 
 `npm run verify` is allowed to call both layers so CI and local validation do not drift. Smoke owns the temporary static rehearsal server lifecycle during validation and should not require a developer to start that server manually.
 
+## Install and Node version policy
+
+Frontend CI and reproducible local setup use Node 22 with npm 10 or newer. The repository declares this through `.nvmrc` and `package.json` engines.
+
+CI workflows must install from the lockfile with `npm ci`; `npm install` is reserved for local dependency updates that intentionally change `package-lock.json`. This keeps validation aligned with the committed dependency graph and avoids workflow drift between the frontend validation lanes.
+
 ## Static rehearsal routing contract
 
 The static rehearsal server should map `/` to `index.html`, serve frontend assets from the repository/public build context, and preserve the existing API/proxy behavior used by smoke tests. Changes to root-path handling, forwarded headers, proxy behavior, or default port assumptions are runtime-sensitive and must be described here.
