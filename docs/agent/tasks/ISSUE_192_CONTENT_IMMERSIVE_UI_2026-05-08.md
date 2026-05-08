@@ -121,12 +121,27 @@ Head commit `3060b15` — all GitHub Actions green:
 
 ## Mobile acceptance evidence (<960px)
 
-- **Text fit**: Same card title min-height and body padding as desktop; no truncation or overflow.
-- **Layout stability**: `contain: layout paint` still applies; masonry gap unchanged; no layout shift on hover (transform-only).
-- **Floating chrome**: Bottom tab bar stays at bottom; glass surface + soft shadow treatment applies; active state brand accent matches desktop.
-- **Card behavior**: Same border-radius, shadow, and hover scale as desktop; no horizontal overflow at mobile widths since grid is `min(100%, 760px)`.
-- **Hover/focus states**: Touch triggers `:focus-visible` equivalent; accent gradient line and shadow lift apply identically.
+All base styles in `content-immersive-ui.css` apply at every width; the `@media (min-width: 960px)` block only overrides layout, so mobile inherits the full pilot treatment without gaps.
+
+- **Text fit**: `min-height: calc(15px * 1.34 * 2)` on card `h3`; body padding `var(--space-3)` on all sides; no `text-overflow: ellipsis` or `overflow: hidden` on text containers — no truncation.
+- **Layout stability**: `.feed-item-card` uses `contain: layout paint`; hover scale is `var(--content-hover-scale)` (1.012), transform-only, no layout reflow; masonry column gap `var(--space-3)`.
+- **Floating chrome**: Bottom tab bar keeps default `bottom: 0` positioning (no desktop left-rail override); glass treatment via `var(--lian-surface-floating)` + `var(--shadow-floating-soft)` + `rgba(255,255,255,0.62)` border; active item gets `rgba(31,167,160,0.14)` background and `var(--lian-primary-deep)` text.
+- **Card behavior**: `border-radius: var(--radius-content-card)` (18px); shadow transitions from `var(--shadow-content-card)` to `var(--shadow-content-card-hover)` on hover; brand accent gradient line (`rgba(31,167,160,0.28)`) fades in on hover/focus-visible via `::before` pseudo-element — identical to desktop.
+- **Hover/focus states**: `transform: scale(1.012)` on hover/focus-visible; border strengthens to `var(--lian-line-strong)`; `::before` accent line opacity goes from 0 to 1. Like button lifts 1px (`translateY(-1px)`) on hover/focus-visible.
+- **Content grid**: Width `min(100%, var(--content-grid-max-width))` — no horizontal overflow at any mobile width since the grid caps at 760px (token value) and side padding is 0 below 960px.
+- **Reduced-motion**: All transform and transition properties disabled under `@media (prefers-reduced-motion: reduce)` for tabs, bottom bar items, buttons, cards, card `::before`, card cover, and like button.
 
 ## Reduced-motion evidence
 
 All transform and transition properties are disabled under `@media (prefers-reduced-motion: reduce)` for: tabs, bottom bar items, buttons, cards, card `::before`, card cover, and like button. No animated motion remains for reduced-motion users.
+
+## Follow-up validation pass (2026-05-09)
+
+Completing the bounded follow-up for PR #199 merge-readiness gap identified by AI gate comments.
+
+**CSS review result**: No defects found inside pilot scope. All base styles in `content-immersive-ui.css` apply at every width; the `@media (min-width: 960px)` block only adds the desktop left-rail layout override. Mobile inherits the full pilot treatment without gaps.
+
+**Changes made**:
+- Enriched mobile acceptance evidence above with CSS property-level specificity matching the desktop section.
+- Updated PR #199 body to reflect current green workflow evidence and enriched acceptance detail.
+- Issue linkage confirmed slice-accurate: PR body uses "Follow-up slice for #192", not `Closes #192`.
