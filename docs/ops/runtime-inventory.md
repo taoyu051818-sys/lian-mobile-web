@@ -55,3 +55,13 @@ This inventory update acknowledges the runtime-sensitive changes in PR #168:
 - static rehearsal root-path handling is clarified so `/` resolves to `index.html` consistently.
 
 The intended runtime split remains unchanged: legacy/static rehearsal stays on port 4300 and Vue canary preview stays on port 4301 unless a later runtime-inventory update says otherwise.
+
+## Maintenance recovery note
+
+The maintenance recovery branch adds docs and a manual Vue canary preview helper without changing the default runtime split:
+
+- `docs/architecture/frontend-project-structure.md` documents the current legacy/static plus Vue shell structure.
+- `docs/ops/2026-05-05-bad-smell-cleanup-summary.md` records prior runtime and migration guardrail lessons.
+- `scripts/preview-branch-vue-canary.sh` is a manual branch preview helper for Vue canary builds. It uses `npm ci`, `npm run build`, and `npm run preview:vue-canary` on port 4301 unless overridden by `LIAN_PREVIEW_PORT`.
+
+These additions do not change production startup, default ports, CI workflow behavior, or the student-facing runtime entrypoint.
