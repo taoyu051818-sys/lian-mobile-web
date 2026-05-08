@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>LIAN Development Progress</title>
+    <title>LIAN Legacy Task Board</title>
     <link rel="stylesheet" href="/tools/task-board.css">
     <link rel="stylesheet" href="/tools/task-board-structure.css">
   </head>
@@ -11,8 +11,8 @@
     <div class="shell">
       <header class="topbar">
         <div>
-          <h1>LIAN Development Progress</h1>
-          <div class="subtitle">自动从项目任务板识别开发分组、近期速度、进度和排期</div>
+          <h1>LIAN Legacy Task Board</h1>
+          <div class="subtitle">Legacy internal snapshot for historical development context. GitHub Control Room and label queues are the active source of truth.</div>
         </div>
         <div class="counts">
           <span>Total: <span class="count-val" id="countTotal">0</span></span>
@@ -26,13 +26,28 @@
       <aside class="sidebar" id="sidebar"></aside>
 
       <section class="main">
-        <section class="dashboard" aria-label="Development dashboard">
+        <section class="dashboard" aria-label="Legacy task-board dashboard">
+          <article class="legacy-banner" aria-label="Legacy task-board notice">
+            <div class="legacy-copy">
+              <span class="legacy-tag">Legacy Internal Viewer</span>
+              <h2>GitHub is the active control plane for LIAN automation.</h2>
+              <p>This page is an informational snapshot backed by the legacy internal task-board API. It does not drive launches, gate decisions, merge truth, or current queue routing.</p>
+            </div>
+            <div class="legacy-actions" aria-label="Source of truth links">
+              <a class="legacy-link" href="https://github.com/taoyu051818-sys/lian-platform-server/issues/112" target="_blank" rel="noreferrer">Control Room #112</a>
+              <a class="legacy-link" href="https://github.com/taoyu051818-sys/lian-mobile-web/issues?q=is%3Aopen+label%3A%22agent%3Acodex-action-needed%22" target="_blank" rel="noreferrer">Frontend action queue</a>
+              <a class="legacy-link" href="https://github.com/taoyu051818-sys/lian-mobile-web/issues?q=is%3Aopen+label%3A%22agent%3Areview-needed%22" target="_blank" rel="noreferrer">Frontend review queue</a>
+              <a class="legacy-link" href="https://github.com/taoyu051818-sys/lian-mobile-web/issues?q=is%3Aopen+label%3A%22agent%3Afollow-up-needed%22" target="_blank" rel="noreferrer">Frontend follow-up queue</a>
+            </div>
+            <p class="legacy-status" id="legacyStatus">Snapshot status: loading legacy internal task-board data.</p>
+          </article>
+
           <div class="metric-grid" id="metricGrid"></div>
           <div class="dashboard-grid">
             <article class="panel panel-wide">
               <div class="panel-head">
                 <h2>自动工作流分组</h2>
-                <span class="panel-note">按任务标题、文档路径和正文关键词自动归类</span>
+                <span class="panel-note">按旧任务板快照的标题、文档路径和正文关键词自动归类</span>
               </div>
               <div class="workstream-grid" id="workstreamGrid"></div>
             </article>
@@ -47,7 +62,7 @@
           <article class="panel">
             <div class="panel-head">
               <h2>排期 / 等待开发 / 复核队列</h2>
-              <span class="panel-note">用于判断下一步应该推进哪里</span>
+              <span class="panel-note">旧任务板快照，仅供参考，不是当前控制面</span>
             </div>
             <div class="lane-board" id="laneBoard"></div>
           </article>
@@ -68,12 +83,12 @@
               <div class="mmd-row mmd-row-three">
                 <div class="mmd-node mmd-runtime">Legacy Static Runtime<span>public/app*.js<br>feed · publish · map-v2</span></div>
                 <div class="mmd-node mmd-runtime">Vue 3 + Vite Shell<span>src/main.ts → App.vue</span></div>
-                <div class="mmd-node mmd-runtime">Internal Tools<span>public/tools/task-board.html</span></div>
+                <div class="mmd-node mmd-runtime">Legacy Internal Tools<span>public/tools/task-board.html</span></div>
               </div>
               <div class="mmd-row mmd-row-three mmd-subrow">
                 <div class="mmd-node mmd-api">/api/* proxy<span>127.0.0.1:4200</span></div>
                 <div class="mmd-node mmd-page">App Shell<span>TopBar · AppViewHost<br>BottomTabBar · ToastHost</span></div>
-                <div class="mmd-node mmd-tool">Development Board<span>进度 · 速度 · 排期 · 架构</span></div>
+                <div class="mmd-node mmd-tool">Legacy Task Board<span>informational only</span></div>
               </div>
               <div class="mmd-row mmd-row-three mmd-subrow">
                 <div class="mmd-node mmd-guard">Automation Guards<span>npm run check<br>structure · smoke · encoding</span></div>
@@ -92,11 +107,11 @@
   Product([LIAN Mobile Web]) --> Runtime{Frontend Runtime}
   Runtime --> Legacy[Legacy Static Runtime]
   Runtime --> Vue[Vue 3 + Vite Shell]
-  Runtime --> Tools[Internal Tools]
+  Runtime --> Tools[Legacy Internal Tools]
   Vue --> Shell[App Shell]
   Shell --> Views[Feed / Map / Messages / Profile]
-  Tools --> Board[Development Board]
-  Board -. admin only .-> TaskAPI[/api/internal/task-board/]
+  Tools --> Board[Legacy Task Board]
+  Board -. informational only .-> TaskAPI[/api/internal/task-board/]
   Legacy --> Api[/api/* proxy/]
   Vue --> Api
   Api --> Backend[(lian-platform-server)]
@@ -116,7 +131,7 @@
               </section>
               <section class="architecture-card">
                 <h3>运行关系</h3>
-                <p>4300 是 Legacy 静态运行时，4301 是 Vue canary。工具页可独立展示架构图；任务指标依赖后端内部 task-board API。</p>
+                <p>4300 是 Legacy 静态运行时，4301 是 Vue canary。工具页可独立展示架构图；任务指标依赖后端内部 task-board API，仅供参考。</p>
               </section>
             </div>
           </article>
