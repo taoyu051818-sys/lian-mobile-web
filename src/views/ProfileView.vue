@@ -5,6 +5,7 @@ import { fetchAuthMe, fetchProfileTab, logoutAuth } from "../api/profile";
 import { GlassPanel, IdentityBadge, InlineError, LianButton, TagChip } from "../ui";
 import type { FeedItemId } from "../types/feed";
 import type { ProfileListItem, ProfileTabKey, ProfileUser } from "../types/profile";
+import { formatRelativeTime } from "../utils/time";
 import AuthPanel from "./auth/AuthPanel.vue";
 import ProfileEditorPanel from "./profile/ProfileEditorPanel.vue";
 
@@ -162,19 +163,6 @@ async function handleAuthenticated(authenticatedUser: ProfileUser | null) {
 
 async function handleProfileUpdated() {
   await loadProfile();
-}
-
-function formatRelativeTime(value?: string) {
-  if (!value) return "";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "";
-  const diff = Date.now() - date.getTime();
-  if (diff < 60_000) return "刚刚";
-  if (diff < 3_600_000) return `${Math.floor(diff / 60_000)}分钟前`;
-  if (diff < 86_400_000) return `${Math.floor(diff / 3_600_000)}小时前`;
-  if (diff < 172_800_000) return "昨天";
-  if (diff < 604_800_000) return `${Math.floor(diff / 86_400_000)}天前`;
-  return `${date.getMonth() + 1}月${date.getDate()}日`;
 }
 
 onMounted(() => {
