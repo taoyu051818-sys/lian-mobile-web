@@ -3,6 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "engines": {
+    "node": ">=22 <23",
+    "npm": ">=10"
+  },
   "scripts": {
     "start": "node scripts/serve-frontend-runtimes.js",
     "dev": "vite --host 0.0.0.0",
