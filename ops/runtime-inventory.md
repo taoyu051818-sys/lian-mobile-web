@@ -22,6 +22,12 @@ The shared runtime config accessor (`src/config/runtime-config.ts`) reads `windo
 
 This keeps the injection order contract explicit: the serve script injects config into `<head>` before any app module runs, and the accessor never freezes a stale value at import time.
 
+## Unsafe DOM sink guard
+
+The frontend verification gate includes `scripts/guard-unsafe-dom-sinks.js` to block newly introduced raw `v-html`, `innerHTML`, and direct browser dialog sinks outside approved safe-rendering surfaces.
+
+Any PR that changes unsafe DOM sink guard coverage, project-structure validation, or the verification script that wires the guard must keep this inventory updated. Existing feature code should route HTML rendering through approved safe utilities/components rather than adding new allowlist entries.
+
 ## Public runtime exposure guard
 
 The frontend verification gate includes `npm run check:runtime-exposure`, which runs `scripts/guard-public-runtime-exposure.js`.
@@ -36,4 +42,4 @@ Any PR that changes the verify script, unit-test wiring, TypeScript test config,
 
 ## Operational rule
 
-Any PR that changes dependency preflight behavior, the runtime supervisor exit contract, Windows spawn compatibility, the runtime config accessor/env-validation contract, public runtime exposure checks, frontend project-structure validation, or frontend verify/test wiring must update this document or another runtime inventory artifact in the same PR.
+Any PR that changes dependency preflight behavior, the runtime supervisor exit contract, Windows spawn compatibility, the runtime config accessor/env-validation contract, unsafe DOM sink guard coverage, public runtime exposure checks, frontend project-structure validation, or frontend verify/test wiring must update this document or another runtime inventory artifact in the same PR.

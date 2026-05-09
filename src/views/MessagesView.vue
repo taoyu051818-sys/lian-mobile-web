@@ -40,10 +40,10 @@ const composerSignalMeta = computed(() => composerIdentityTag.value ? `身份信
 
 function stripHtml(html?: string) {
   if (!html) return "";
-  if (typeof document === "undefined") return html.replace(/<[^>]+>/g, " ");
-  const container = document.createElement("div");
-  container.innerHTML = html;
-  return container.textContent || container.innerText || "";
+  return html
+    .replace(/<[^>]+>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 function actorDisplayName(actor?: DisplayActor | null, fallback = "") {
