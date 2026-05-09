@@ -1,6 +1,5 @@
-// Actor/source DTO mapper for legacy public feed rendering.
-// Server #57 exposes canonical actor/source fields for feed, detail, and replies.
-// Keep legacy flat fields only as compatibility fallback during the migration window.
+// Actor/source DTO mapper for public feed rendering.
+// Backend DTOs expose display identity through canonical actor/source fields.
 function isPlainRecord(value) {
   return value && typeof value === "object" && !Array.isArray(value);
 }
@@ -39,28 +38,15 @@ function normalizeFeedTab(tab) {
   return { id, label: label || id };
 }
 
-function legacyActorRecord(entity) {
-  return isPlainRecord(entity?.author) ? entity.author : null;
-}
-
 function normalizeDisplayActor(entity) {
-  const actor = isPlainRecord(entity?.actor) ? entity.actor : null;
-  const legacyAuthor = legacyActorRecord(entity);
-  const flatAuthor = textField(entity?.author, "");
-  const displayName = textField(actor?.displayName, "")
-    || recordText(legacyAuthor, ["displayName"], "")
-    || flatAuthor
-    || textField(entity?.username, "")
+  const actor = isPlainRecord(entity?.actor) ? entity.actor : {};
+  const displayName = textField(actor.displayName, "")
+    || textField(actor.username, "")
+    || textField(actor.name, "")
     || "同学";
-  const avatarUrl = mediaUrlField(actor?.avatarUrl)
-    || mediaUrlField(legacyAuthor?.avatarUrl)
-    || textField(entity?.authorAvatarUrl || entity?.avatarUrl, "");
-  const avatarText = textField(actor?.avatarText, "")
-    || recordText(legacyAuthor, ["avatarText"], "")
-    || textField(entity?.authorAvatarText || entity?.avatarText, displayName || "同");
-  const identityTag = textField(actor?.identityTag, "")
-    || recordText(legacyAuthor, ["identityTag"], "")
-    || textField(entity?.authorIdentityTag || entity?.identityTag, "");
+  const avatarUrl = mediaUrlField(actor.avatarUrl);
+  const avatarText = textField(actor.avatarText, displayName || "同");
+  const identityTag = textField(actor.identityTag, "");
   return { displayName, avatarUrl, avatarText, identityTag };
 }
 
