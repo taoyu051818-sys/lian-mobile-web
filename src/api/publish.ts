@@ -7,18 +7,11 @@ import type {
   PublishVisibility,
   UploadImageResponse,
 } from "../types/publish";
-
-declare global {
-  interface Window {
-    LIAN_API_BASE_URL?: string;
-  }
-}
-
-const API_BASE = typeof window !== "undefined" ? window.LIAN_API_BASE_URL || "" : "";
+import { getApiBase } from "../config/runtime-config";
 
 function withApiBase(path: string) {
   if (/^https?:\/\//i.test(path)) return path;
-  return path.startsWith("/") ? `${API_BASE}${path}` : path;
+  return path.startsWith("/") ? `${getApiBase()}${path}` : path;
 }
 
 export function normalizePublishTag(value = "") {

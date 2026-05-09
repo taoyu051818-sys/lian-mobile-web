@@ -2,6 +2,7 @@
 @import "../ui/primitives.css";
 @import "./floating-chrome.css";
 @import "./card-camera-transition.css";
+@import "./content-immersive-ui.css";
 
 * {
   box-sizing: border-box;

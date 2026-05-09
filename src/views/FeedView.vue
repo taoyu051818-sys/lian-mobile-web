@@ -2,12 +2,12 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, ref } from "vue";
 import { fetchFeed } from "../api/feed";
 import { fetchPostDetail } from "../api/posts";
-import { useAutoLoadSentinel } from "../composables/useAutoLoadSentinel";
 import { useFloatingChromeController } from "../motion/floatingChrome";
 import type { FeedItem, FeedItemId, FeedTab } from "../types/feed";
 import type { PostDetail } from "../types/post";
 import { InlineError, LianButton } from "../ui";
 import PostDetailPanel from "./detail/PostDetailPanel.vue";
+import FeedAutoLoadSentinel from "./feed/FeedAutoLoadSentinel.vue";
 import FeedItemCard from "./feed/FeedItemCard.vue";
 
 interface CardOpenPayload {
@@ -72,7 +72,6 @@ const detailHistoryActive = ref(false);
 const ignoreNextPopState = ref(false);
 const viewportWidth = ref(390);
 const viewportHeight = ref(844);
-const loadMoreSentinelRef = ref<HTMLElement | null>(null);
 
 const detailOpen = computed(() => selectedPostId.value !== null);
 const feedTabsChromeState = feedTabsChrome.phase;
@@ -482,12 +481,6 @@ function onDetailPointerCancel(event: PointerEvent) {
   abortDetailDrag(event, true);
 }
 
-useAutoLoadSentinel(loadMoreSentinelRef, triggerLoadMore, {
-  enabled: () => canAutoLoadMore.value,
-  rootMargin: "720px 0px 720px 0px",
-  cooldownMs: 900,
-});
-
 onMounted(() => {
   updateViewport();
   window.addEventListener("resize", updateViewport);
@@ -587,11 +580,11 @@ onBeforeUnmount(() => {
             >
               加载更多
             </LianButton>
-            <div
-              ref="loadMoreSentinelRef"
+            <FeedAutoLoadSentinel
               class="feed-view__load-more-sentinel"
-              aria-hidden="true"
-            ></div>
+              :enabled="canAutoLoadMore"
+              @intersect="triggerLoadMore"
+            />
           </div>
         </template>
         <span v-else>已经看到这里啦</span>

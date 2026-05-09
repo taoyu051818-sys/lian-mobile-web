@@ -17,6 +17,8 @@ The current merged code runs two frontend lanes during migration:
 
 Do not treat older docs that describe a single `npm run dev` / Vite 5173 workflow as the current operational entry. `npm run dev` is still a Vite development helper, but the project runtime entry for current review is the dual-lane supervisor.
 
+For the operator-facing split between install, build, deploy-prepare, and startup responsibilities, read `docs/frontend/runtime-responsibility-contract.md`.
+
 ## Install dependencies
 
 ```bash
@@ -78,7 +80,7 @@ npm run test
 npm run test:vue-canary
 ```
 
-Or run the frontend verification bundle:
+Or run the full frontend verification bundle:
 
 ```bash
 npm run verify
@@ -90,7 +92,9 @@ Current meanings:
 - `npm run ops:guard` checks runtime inventory guardrails.
 - `npm run test` runs the smoke test against `http://127.0.0.1:4300`.
 - `npm run test:vue-canary` runs the smoke test against `http://127.0.0.1:4301`.
-- `npm run verify` runs check, ops guard, and build.
+- `npm run verify:static` runs check, ops guard, and build.
+- `npm run verify:smoke` runs the rehearsal-server-backed smoke flow.
+- `npm run verify` runs both `verify:static` and `verify:smoke`.
 
 ## Agent documentation
 
