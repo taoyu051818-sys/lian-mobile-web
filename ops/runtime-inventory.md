@@ -16,6 +16,12 @@ This keeps production startup deterministic and aligns runtime behavior with the
 
 When spawning a `.cmd` shim on Windows (for example the Vite binary) the supervisor must pass `shell: true` so `cmd.exe` resolves the shim correctly. This flag is limited to `.cmd` paths; Unix process startup remains unchanged.
 
+## Public runtime exposure guard
+
+The frontend verification gate includes `npm run check:runtime-exposure`, which runs `scripts/guard-public-runtime-exposure.js`.
+
+The guard scans public/runtime entry files for rehearsal-only and debug-only markers before build or smoke validation. Any PR that changes the public runtime exposure guard, its focused test script, or frontend project-structure validation must keep this inventory updated so operational reviewers can see why the runtime gate changed.
+
 ## Operational rule
 
-Any PR that changes dependency preflight behavior, the runtime supervisor exit contract, or Windows spawn compatibility must update this document or another runtime inventory artifact in the same PR.
+Any PR that changes dependency preflight behavior, the runtime supervisor exit contract, Windows spawn compatibility, public runtime exposure checks, or frontend project-structure validation must update this document or another runtime inventory artifact in the same PR.
