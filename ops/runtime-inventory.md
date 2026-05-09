@@ -22,6 +22,12 @@ The shared runtime config accessor (`src/config/runtime-config.ts`) reads `windo
 
 This keeps the injection order contract explicit: the serve script injects config into `<head>` before any app module runs, and the accessor never freezes a stale value at import time.
 
+## Verify gate unit-test contract
+
+The frontend verification gate runs static checks, build, focused unit tests, and smoke validation in one `npm run verify` path. Unit-test configuration lives in `vitest.config.ts`, and test dependencies are locked by `package-lock.json`.
+
+Any PR that changes the verify script, unit-test wiring, TypeScript test config, or locked test dependencies must keep this inventory updated so CI behavior stays reviewable.
+
 ## Operational rule
 
-Any PR that changes dependency preflight behavior, the runtime supervisor exit contract, Windows spawn compatibility, or the runtime config accessor/env-validation contract must update this document or another runtime inventory artifact in the same PR.
+Any PR that changes dependency preflight behavior, the runtime supervisor exit contract, Windows spawn compatibility, the runtime config accessor/env-validation contract, or frontend verify/test wiring must update this document or another runtime inventory artifact in the same PR.
