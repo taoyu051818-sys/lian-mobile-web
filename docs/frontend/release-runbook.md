@@ -297,24 +297,42 @@ If the kill switch is not available or not working:
 
 ## 10. Production must not run runtime npm install
 
-`scripts/serve-frontend-runtimes.js` contains `ensureRuntimeDependencies()` which runs `npm install` if the Vite binary is missing. This is a safety net for local development; it must never execute in production.
+The current frontend runtime contract is split across four stages:
 
-**Why:**
+1. **Install** materializes the committed dependency graph from `package-lock.json`.
+2. **Build** creates the reviewed frontend artifact.
+3. **Deploy-prepare** assembles that artifact and target-environment runtime config for the host.
+4. **Startup** launches the already-prepared runtime and may fail fast if prerequisites are missing.
 
-- Runtime `npm install` is non-deterministic: the dependency tree may differ from what CI validated.
-- It requires network access at startup, which is unreliable and slow.
-- It introduces supply-chain risk: a compromised registry could inject malicious code at deploy time.
-- The installed dependencies may differ from the lockfile if `package-lock.json` is absent or stale.
+Production startup owns only the last step. It must never repair missing prerequisites by installing dependencies or rebuilding the app on the target host.
 
-**Enforcement:**
+**Current implementation truth:**
 
-- CI artifact must include `node_modules/` or the pre-built `dist/` output so `ensureRuntimeDependencies()` finds the Vite binary and skips install.
-- If the Vite binary is missing at runtime, the supervisor should **fail fast** with a clear error: `"Vite binary missing; deployment artifact is incomplete"` rather than attempting install.
-- Deployment documentation must state: "Never run `npm install` on the target host. Use the CI artifact."
+- PR #170 removed runtime-time dependency installation from `scripts/serve-frontend-runtimes.js` and changed missing prerequisite handling to fail fast with operator guidance.
+- PR #189 aligned CI and local setup on a lockfile-based install and Node version policy.
+- `README.md` and `docs/frontend/runtime-responsibility-contract.md` are now the operator-facing references for this split.
 
-**Current state:** `ensureRuntimeDependencies()` in `scripts/serve-frontend-runtimes.js` (lines 15-29) unconditionally runs `npm install` when the Vite binary is absent. Both branches of the `installCommand` ternary resolve to `"npm install"`. This must be changed to fail-fast before production use.
+**Production rules:**
 
-**Tracked in:** #134 (P1: runtime supervisor should not install in target environment), #125 (supply chain baseline).
+- Install happens in CI or deploy-prepare with `npm ci`.
+- Build happens before deployment with `npm run build` and related validation.
+- Startup launches reviewed artifacts only.
+- A missing Vite binary, missing build output, or other prerequisite gap must stop startup with a clear operator-facing error instead of trying to mutate the host.
+
+**Why this boundary exists:**
+
+- Runtime dependency installation is non-deterministic compared with the dependency graph CI validated.
+- Startup-time network access is fragile and slows incident recovery.
+- Reinstalling or rebuilding on the target host weakens rollback truth because the running artifact no longer matches the reviewed artifact.
+- Supply-chain and host-drift risk both increase when process launch mutates dependency state.
+
+**Still intentionally out of scope here:**
+
+- whether production canary should keep using `vite preview` or move to a different static-hosting path;
+- release-manifest generation and artifact provenance automation;
+- broader supervisor redesign beyond the current startup/preflight boundary.
+
+Those remaining decisions stay tracked separately under #171 and #134.
 
 ---
 
@@ -332,6 +350,7 @@ Before deploying a new frontend release:
 - [ ] PWA kill switch tested (when PWA is enabled)
 - [ ] `cache-control` headers configured at CDN/reverse proxy layer
 - [ ] Rollback artifact available and verified
+- [ ] Startup owner has confirmed the host already has the reviewed dependencies and artifact; no runtime install/build step remains
 
 ## Post-release checklist
 

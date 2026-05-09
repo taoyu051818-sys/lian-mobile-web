@@ -8,9 +8,17 @@ import { fileURLToPath } from "node:url";
 const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const publicDir = path.join(rootDir, "public");
 
+function parseEnvUrl(raw, label) {
+  const value = String(raw || "").trim().replace(/\/+$/, "");
+  if (value && !/^https?:\/\/./i.test(value)) {
+    throw new Error(`[serve-frontend] ${label} must be an absolute URL (got: ${JSON.stringify(value)})`);
+  }
+  return value;
+}
+
 const port = Number(process.env.FRONTEND_PORT || 4300);
-const backendBaseUrl = String(process.env.LIAN_BACKEND_BASE_URL || "http://127.0.0.1:4200").replace(/\/$/, "");
-const imageProxyBaseUrl = String(process.env.LIAN_IMAGE_PROXY_BASE_URL || "http://127.0.0.1:4201").replace(/\/$/, "");
+const backendBaseUrl = parseEnvUrl(process.env.LIAN_BACKEND_BASE_URL, "LIAN_BACKEND_BASE_URL") || "http://127.0.0.1:4200";
+const imageProxyBaseUrl = parseEnvUrl(process.env.LIAN_IMAGE_PROXY_BASE_URL, "LIAN_IMAGE_PROXY_BASE_URL") || "http://127.0.0.1:4201";
 const publicProto = String(process.env.LIAN_PUBLIC_PROTO || "").trim().toLowerCase();
 
 const MIME_TYPES = {

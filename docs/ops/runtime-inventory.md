@@ -2,6 +2,8 @@
 
 This file is the runtime-inventory companion for frontend runtime-sensitive changes. It exists so changes to CI workflows, package scripts, frontend entrypoints, serve scripts, preview behavior, or runtime/deployment assumptions are reviewed together with the runtime contract they affect.
 
+For the operator-facing split between install, build, deploy-prepare, and startup responsibilities, read `docs/frontend/runtime-responsibility-contract.md`.
+
 ## Current frontend runtimes
 
 | Runtime | Purpose | Default port | Entry command |
@@ -44,6 +46,18 @@ CI workflows must install from the lockfile with `npm ci`; `npm install` is rese
 ## Static rehearsal routing contract
 
 The static rehearsal server should map `/` to `index.html`, serve frontend assets from the repository/public build context, and preserve the existing API/proxy behavior used by smoke tests. Changes to root-path handling, forwarded headers, proxy behavior, or default port assumptions are runtime-sensitive and must be described here.
+
+## Runtime config accessor change note (issue #167)
+
+This inventory update acknowledges runtime-sensitive changes for the runtime config accessor slice:
+
+- `src/config/runtime-config.ts` is the new shared accessor module; it reads `window.LIAN_API_BASE_URL` and `window.LIAN_IMAGE_PROXY_BASE_URL` lazily on every call instead of freezing the value at module load time.
+- `src/api/http.ts`, `src/api/profile.ts`, and `src/api/publish.ts` now import from the shared accessor instead of independently reading and freezing `window.LIAN_API_BASE_URL` at import time.
+- `vite.config.ts` adds `parseEnvUrl` validation so a malformed `LIAN_BACKEND_BASE_URL` or `LIAN_IMAGE_PROXY_BASE_URL` is rejected at dev-server or build startup rather than silently falling back to a localhost default.
+- `scripts/serve-frontend-static-rehearsal.js` adds the same `parseEnvUrl` validation at server startup.
+- `tests/config/runtime-config.test.ts` covers injection-order, malformed/missing env, and absolute-URL policy behavior.
+
+The runtime contract is unchanged: the static rehearsal server continues to inject `window.LIAN_API_BASE_URL` and `window.LIAN_IMAGE_PROXY_BASE_URL` via a `<head>` script before any app module loads. The accessor now enforces that a non-dev context must receive a valid absolute URL for the image-proxy base and rejects localhost origins outside dev.
 
 ## Current change note
 
