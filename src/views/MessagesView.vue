@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from "vue";
+import { computed, nextTick, onMounted, ref } from "vue";
 import { fetchAuthMe } from "../api/profile";
 import { fetchChannelMessages, fetchNotifications, sendChannelMessage } from "../api/messages";
 import { GlassPanel, IdentityBadge, InlineError, LianButton, TrustBadge } from "../ui";
@@ -100,6 +100,14 @@ async function loadChannel(reset = true) {
   if (channelLoading.value) return;
   channelLoading.value = true;
   channelError.value = "";
+
+  let prevScrollHeight = 0;
+  let prevScrollTop = 0;
+  if (!reset) {
+    prevScrollHeight = document.documentElement.scrollHeight;
+    prevScrollTop = window.scrollY;
+  }
+
   if (reset) {
     channelItems.value = [];
     channelOffset.value = 0;
@@ -113,6 +121,14 @@ async function loadChannel(reset = true) {
     channelItems.value = reset ? uniqueItems : [...uniqueItems, ...channelItems.value];
     channelHasMore.value = Boolean(response.hasMore);
     channelOffset.value = response.nextOffset || channelOffset.value + (response.items?.length || 0);
+
+    if (!reset) {
+      await nextTick();
+      const delta = document.documentElement.scrollHeight - prevScrollHeight;
+      if (delta > 0) {
+        window.scrollTo(0, prevScrollTop + delta);
+      }
+    }
   } catch (error) {
     channelError.value = error instanceof Error ? error.message : "频道消息暂时没加载出来，可以稍后再试。";
   } finally {
