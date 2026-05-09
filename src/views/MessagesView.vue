@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, ref } from "vue";
 import { fetchAuthMe } from "../api/profile";
-import { fetchChannelMessages, fetchNotifications, sendChannelMessage } from "../api/messages";
+import { fetchChannelMessages, fetchNotifications, markChannelMessagesRead, sendChannelMessage } from "../api/messages";
 import { GlassPanel, IdentityBadge, InlineError, LianButton, TrustBadge } from "../ui";
 import type { DisplayActor } from "../types/feed";
 import type { ChannelMessage, MessageTabKey, NotificationItem } from "../types/messages";
@@ -120,7 +120,7 @@ async function loadChannel(reset = true) {
     const uniqueItems = nextItems.filter((item) => !known.has(String(item.id)));
     channelItems.value = reset ? uniqueItems : [...uniqueItems, ...channelItems.value];
     channelHasMore.value = Boolean(response.hasMore);
-    channelOffset.value = response.nextOffset || channelOffset.value + (response.items?.length || 0);
+    channelOffset.value = response.nextOffset ?? channelOffset.value + (response.items?.length || 0);
 
     if (!reset) {
       await nextTick();
@@ -128,6 +128,11 @@ async function loadChannel(reset = true) {
       if (delta > 0) {
         window.scrollTo(0, prevScrollTop + delta);
       }
+    }
+
+    if (reset && channelItems.value.length) {
+      const ids = channelItems.value.map((item) => item.id);
+      markChannelMessagesRead(ids).catch(() => {});
     }
   } catch (error) {
     channelError.value = error instanceof Error ? error.message : "频道消息暂时没加载出来，可以稍后再试。";
