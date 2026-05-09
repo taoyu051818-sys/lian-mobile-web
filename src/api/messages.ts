@@ -1,5 +1,5 @@
 import { apiGet, apiSend } from "./http";
-import type { ChannelResponse, NotificationResponse, SendChannelMessagePayload } from "../types/messages";
+import type { ChannelReadPayload, ChannelResponse, NotificationResponse, SendChannelMessagePayload } from "../types/messages";
 
 export async function fetchChannelMessages(offset = 0, limit = 30): Promise<ChannelResponse> {
   const params = new URLSearchParams();
@@ -34,5 +34,22 @@ export async function sendChannelMessage(payload: SendChannelMessagePayload): Pr
       content: payload.content,
       identityTag: payload.identityTag || "",
     }),
+  });
+}
+
+export function buildChannelReadPayload(messageIds: Array<string | number>): ChannelReadPayload {
+  return { messageIds, readerId: ensureClientId() };
+}
+
+export async function markChannelMessagesRead(messageIds: Array<string | number>): Promise<void> {
+  if (!messageIds.length) return;
+  const payload = buildChannelReadPayload(messageIds);
+  await apiSend("/api/channel/read", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      "x-client-id": payload.readerId,
+    },
+    body: JSON.stringify(payload),
   });
 }
