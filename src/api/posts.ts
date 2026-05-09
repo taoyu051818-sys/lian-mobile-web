@@ -1,5 +1,5 @@
 import { apiGet, apiSend } from "./http";
-import { ensureClientId } from "../utils/client-id";
+import { ensureClientId } from "../platform/browser-storage";
 import type { FeedItemId } from "../types/feed";
 import type { PostDetail } from "../types/post";
 

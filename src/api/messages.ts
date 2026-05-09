@@ -1,5 +1,5 @@
 import { apiGet, apiSend } from "./http";
-import { ensureClientId } from "../utils/client-id";
+import { ensureClientId } from "../platform/browser-storage";
 import type { ChannelReadPayload, ChannelResponse, NotificationResponse, SendChannelMessagePayload } from "../types/messages";
 
 export async function fetchChannelMessages(offset = 0, limit = 30): Promise<ChannelResponse> {

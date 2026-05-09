@@ -9,6 +9,7 @@ import { InlineError, LianButton } from "../ui";
 import PostDetailPanel from "./detail/PostDetailPanel.vue";
 import FeedAutoLoadSentinel from "./feed/FeedAutoLoadSentinel.vue";
 import FeedItemCard from "./feed/FeedItemCard.vue";
+import { READ_HISTORY_KEY, HOME_UPDATE_PROBE_PREFIX } from "../platform/browser-storage";
 
 interface CardOpenPayload {
   item: FeedItem;
@@ -28,7 +29,8 @@ const DEFAULT_TABS: FeedTab[] = [
 ];
 const PAGE_SIZE = 12;
 const HOME_UPDATE_PROBE_VERSION = "home-ui-main-2026-05-05-01";
-const HOME_UPDATE_PROBE_KEY = `lian.homeUpdateProbe.${HOME_UPDATE_PROBE_VERSION}`;
+const HOME_UPDATE_PROBE_KEY = `${HOME_UPDATE_PROBE_PREFIX}.${HOME_UPDATE_PROBE_VERSION}`;
+const UPDATE_PROBE_ENABLED = import.meta.env.DEV;
 const SWIPE_THRESHOLD = 96;
 const SWIPE_VERTICAL_GUARD = 52;
 const DETAIL_DRAG_EDGE_GUARD = 28;
@@ -166,7 +168,7 @@ function updateViewport() {
 
 function readHistoryQuery() {
   try {
-    const history = JSON.parse(localStorage.getItem("lian.readHistory") || "[]") as Array<{ tid: FeedItemId }>;
+    const history = JSON.parse(localStorage.getItem(READ_HISTORY_KEY) || "[]") as Array<{ tid: FeedItemId }>;
     return history.map((entry) => entry.tid).join(",");
   } catch {
     return "";
@@ -175,16 +177,20 @@ function readHistoryQuery() {
 
 function rememberReadItem(id: FeedItemId) {
   try {
-    const history = JSON.parse(localStorage.getItem("lian.readHistory") || "[]") as Array<{ tid: FeedItemId; lastViewedAt: string }>;
+    const history = JSON.parse(localStorage.getItem(READ_HISTORY_KEY) || "[]") as Array<{ tid: FeedItemId; lastViewedAt: string }>;
     const nextHistory = history.filter((entry) => Number(entry.tid) !== Number(id));
     nextHistory.push({ tid: id, lastViewedAt: new Date().toISOString() });
-    localStorage.setItem("lian.readHistory", JSON.stringify(nextHistory.slice(-500)));
+    localStorage.setItem(READ_HISTORY_KEY, JSON.stringify(nextHistory.slice(-500)));
   } catch {
     // Reading history should never block opening a card.
   }
 }
 
 function openUpdateProbe() {
+  if (!UPDATE_PROBE_ENABLED) {
+    showUpdateProbe.value = false;
+    return;
+  }
   try {
     showUpdateProbe.value = localStorage.getItem(HOME_UPDATE_PROBE_KEY) !== "seen";
   } catch {
