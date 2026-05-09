@@ -28,6 +28,12 @@ The frontend verification gate includes `scripts/guard-unsafe-dom-sinks.js` to b
 
 Any PR that changes unsafe DOM sink guard coverage, project-structure validation, or the verification script that wires the guard must keep this inventory updated. Existing feature code should route HTML rendering through approved safe utilities/components rather than adding new allowlist entries.
 
+## Public runtime exposure guard
+
+The frontend verification gate includes `npm run check:runtime-exposure`, which runs `scripts/guard-public-runtime-exposure.js`.
+
+The guard scans public/runtime entry files for rehearsal-only and debug-only markers before build or smoke validation. Any PR that changes the public runtime exposure guard, its focused test script, or frontend project-structure validation must keep this inventory updated so operational reviewers can see why the runtime gate changed.
+
 ## Verify gate unit-test contract
 
 The frontend verification gate runs static checks, build, focused unit tests, and smoke validation in one `npm run verify` path. Unit-test configuration lives in `vitest.config.ts`, and test dependencies are locked by `package-lock.json`.
@@ -36,4 +42,4 @@ Any PR that changes the verify script, unit-test wiring, TypeScript test config,
 
 ## Operational rule
 
-Any PR that changes dependency preflight behavior, the runtime supervisor exit contract, Windows spawn compatibility, the runtime config accessor/env-validation contract, unsafe DOM sink guard coverage, frontend project-structure validation, or frontend verify/test wiring must update this document or another runtime inventory artifact in the same PR.
+Any PR that changes dependency preflight behavior, the runtime supervisor exit contract, Windows spawn compatibility, the runtime config accessor/env-validation contract, unsafe DOM sink guard coverage, public runtime exposure checks, frontend project-structure validation, or frontend verify/test wiring must update this document or another runtime inventory artifact in the same PR.
