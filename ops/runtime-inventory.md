@@ -16,6 +16,12 @@ This keeps production startup deterministic and aligns runtime behavior with the
 
 When spawning a `.cmd` shim on Windows (for example the Vite binary) the supervisor must pass `shell: true` so `cmd.exe` resolves the shim correctly. This flag is limited to `.cmd` paths; Unix process startup remains unchanged.
 
+## Unsafe DOM sink guard
+
+The frontend verification gate includes `scripts/guard-unsafe-dom-sinks.js` to block newly introduced raw `v-html`, `innerHTML`, and direct browser dialog sinks outside approved safe-rendering surfaces.
+
+Any PR that changes unsafe DOM sink guard coverage, project-structure validation, or the verification script that wires the guard must keep this inventory updated. Existing feature code should route HTML rendering through approved safe utilities/components rather than adding new allowlist entries.
+
 ## Operational rule
 
-Any PR that changes dependency preflight behavior, the runtime supervisor exit contract, or Windows spawn compatibility must update this document or another runtime inventory artifact in the same PR.
+Any PR that changes dependency preflight behavior, the runtime supervisor exit contract, Windows spawn compatibility, unsafe DOM sink guard coverage, or frontend project-structure validation must update this document or another runtime inventory artifact in the same PR.
