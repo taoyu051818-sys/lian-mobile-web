@@ -175,6 +175,9 @@ onMounted(async () => {
             v-model="username"
             maxlength="30"
             autocomplete="nickname"
+            autocapitalize="words"
+            autocorrect="off"
+            spellcheck="false"
             enterkeyhint="next"
             required
             :aria-invalid="usernameHasError"
