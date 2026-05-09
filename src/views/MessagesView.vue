@@ -120,7 +120,7 @@ async function loadChannel(reset = true) {
     const uniqueItems = nextItems.filter((item) => !known.has(String(item.id)));
     channelItems.value = reset ? uniqueItems : [...uniqueItems, ...channelItems.value];
     channelHasMore.value = Boolean(response.hasMore);
-    channelOffset.value = response.nextOffset || channelOffset.value + (response.items?.length || 0);
+    channelOffset.value = response.nextOffset ?? channelOffset.value + (response.items?.length || 0);
 
     if (!reset) {
       await nextTick();
@@ -133,6 +133,28 @@ async function loadChannel(reset = true) {
     channelError.value = error instanceof Error ? error.message : "频道消息暂时没加载出来，可以稍后再试。";
   } finally {
     channelLoading.value = false;
+  }
+}
+
+async function refreshLatest() {
+  try {
+    const response = await fetchChannelMessages(0, 30);
+    const latestItems = (response.items || []).slice().reverse();
+    const existingIds = new Set(channelItems.value.map((item) => String(item.id)));
+    const newItems = latestItems.filter((item) => !existingIds.has(String(item.id)));
+    if (newItems.length) {
+      const merged = [...channelItems.value, ...newItems];
+      merged.sort((a, b) => {
+        const ta = a.timestampISO || a.time || "";
+        const tb = b.timestampISO || b.time || "";
+        return ta < tb ? -1 : ta > tb ? 1 : 0;
+      });
+      channelItems.value = merged;
+    }
+    await nextTick();
+    window.scrollTo(0, document.documentElement.scrollHeight);
+  } catch {
+    /* silent — the message was already sent successfully */
   }
 }
 
@@ -166,7 +188,7 @@ async function submitMessage() {
   try {
     await sendChannelMessage({ content, identityTag: composerIdentityTag.value });
     composerContent.value = "";
-    await loadChannel(true);
+    await refreshLatest();
   } catch (error) {
     sendError.value = error instanceof Error ? error.message : "消息没有发送成功，可以稍后再试。";
   } finally {
