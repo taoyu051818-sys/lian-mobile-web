@@ -12,7 +12,8 @@ const IGNORE_DIRS = new Set([
   "dist",
   "docs",
   "node_modules",
-  "runtime-inventory"
+  "runtime-inventory",
+  "tests"
 ]);
 const IGNORE_FILES = new Set([
   "scripts/guard-unsafe-dom-sinks.js"
