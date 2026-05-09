@@ -1,3 +1,5 @@
+import { getApiBase } from "../config/runtime-config";
+
 export class LianApiError extends Error {
   status: number;
   code: string;
@@ -12,17 +14,9 @@ export class LianApiError extends Error {
 
 type JsonRecord = Record<string, unknown>;
 
-declare global {
-  interface Window {
-    LIAN_API_BASE_URL?: string;
-  }
-}
-
-const API_BASE = typeof window !== "undefined" ? window.LIAN_API_BASE_URL || "" : "";
-
 function withApiBase(path: string) {
   if (/^https?:\/\//i.test(path)) return path;
-  return path.startsWith("/") ? `${API_BASE}${path}` : path;
+  return path.startsWith("/") ? `${getApiBase()}${path}` : path;
 }
 
 function normalizeJsonOptions(options: RequestInit = {}) {

@@ -1,0 +1,27 @@
+# Runtime inventory
+
+## Dependency preflight contract
+
+The frontend runtime supervisor (`scripts/serve-frontend-runtimes.js`) must not install dependencies at startup.
+
+When the Vite binary is missing the supervisor must:
+
+1. Log the missing binary path.
+2. Log a deployment guidance message referencing `npm ci` or a verified artifact.
+3. Exit with a non-zero status.
+
+This keeps production startup deterministic and aligns runtime behavior with the CI artifact / lockfile supply-chain baseline (#134, #125).
+
+## Windows spawn compatibility
+
+When spawning a `.cmd` shim on Windows (for example the Vite binary) the supervisor must pass `shell: true` so `cmd.exe` resolves the shim correctly. This flag is limited to `.cmd` paths; Unix process startup remains unchanged.
+
+## Runtime config accessor contract
+
+The shared runtime config accessor (`src/config/runtime-config.ts`) reads `window.LIAN_API_BASE_URL` and `window.LIAN_IMAGE_PROXY_BASE_URL` lazily on every call. The static rehearsal server and Vite dev-server config both validate env vars at startup via an inline `parseEnvUrl` helper that rejects non-absolute URLs. Outside dev contexts the accessor rejects localhost origins and requires the image-proxy URL to be non-empty.
+
+This keeps the injection order contract explicit: the serve script injects config into `<head>` before any app module runs, and the accessor never freezes a stale value at import time.
+
+## Operational rule
+
+Any PR that changes dependency preflight behavior, the runtime supervisor exit contract, Windows spawn compatibility, or the runtime config accessor/env-validation contract must update this document or another runtime inventory artifact in the same PR.

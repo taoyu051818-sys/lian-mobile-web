@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from "vue";
+import { computed, nextTick, onMounted, ref } from "vue";
 import { fetchAuthMe } from "../api/profile";
 import { fetchChannelMessages, fetchNotifications, sendChannelMessage } from "../api/messages";
 import { GlassPanel, IdentityBadge, InlineError, LianButton, TrustBadge } from "../ui";
 import type { DisplayActor } from "../types/feed";
 import type { ChannelMessage, MessageTabKey, NotificationItem } from "../types/messages";
 import type { ProfileUser } from "../types/profile";
+import { formatRelativeTime } from "../utils/time";
 
 const activeTab = ref<MessageTabKey>("channel");
 const channelItems = ref<ChannelMessage[]>([]);
@@ -82,19 +83,6 @@ function isReplyNotification(item: NotificationItem) {
   return ["new-reply", "reply", "new-post", "post-reply"].includes(String(item.type || ""));
 }
 
-function formatRelativeTime(value?: string) {
-  if (!value) return "";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "";
-  const diff = Date.now() - date.getTime();
-  if (diff < 60_000) return "刚刚";
-  if (diff < 3_600_000) return `${Math.floor(diff / 60_000)}分钟前`;
-  if (diff < 86_400_000) return `${Math.floor(diff / 3_600_000)}小时前`;
-  if (diff < 172_800_000) return "昨天";
-  if (diff < 604_800_000) return `${Math.floor(diff / 86_400_000)}天前`;
-  return `${date.getMonth() + 1}月${date.getDate()}日`;
-}
-
 async function loadCurrentUser() {
   try {
     const user = await fetchAuthMe();
@@ -112,6 +100,14 @@ async function loadChannel(reset = true) {
   if (channelLoading.value) return;
   channelLoading.value = true;
   channelError.value = "";
+
+  let prevScrollHeight = 0;
+  let prevScrollTop = 0;
+  if (!reset) {
+    prevScrollHeight = document.documentElement.scrollHeight;
+    prevScrollTop = window.scrollY;
+  }
+
   if (reset) {
     channelItems.value = [];
     channelOffset.value = 0;
@@ -125,6 +121,14 @@ async function loadChannel(reset = true) {
     channelItems.value = reset ? uniqueItems : [...uniqueItems, ...channelItems.value];
     channelHasMore.value = Boolean(response.hasMore);
     channelOffset.value = response.nextOffset || channelOffset.value + (response.items?.length || 0);
+
+    if (!reset) {
+      await nextTick();
+      const delta = document.documentElement.scrollHeight - prevScrollHeight;
+      if (delta > 0) {
+        window.scrollTo(0, prevScrollTop + delta);
+      }
+    }
   } catch (error) {
     channelError.value = error instanceof Error ? error.message : "频道消息暂时没加载出来，可以稍后再试。";
   } finally {

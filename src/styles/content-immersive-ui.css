@@ -1,0 +1,242 @@
+/*
+ * Issue #192 content-first immersive UI pilot.
+ *
+ * This file intentionally layers on top of existing Vue canary styles instead of
+ * rewriting page components. It keeps the pilot scoped to content hierarchy,
+ * card stability, floating chrome polish, and restrained motion.
+ */
+
+.vue-shell {
+  background:
+    radial-gradient(circle at 14% 8%, rgba(31, 167, 160, 0.1), transparent 24%),
+    radial-gradient(circle at 86% 2%, rgba(91, 184, 214, 0.1), transparent 26%),
+    var(--lian-surface-page);
+}
+
+.vue-shell__grid {
+  width: min(100%, var(--content-grid-max-width));
+}
+
+.feed-view__tabs,
+.bottom-tab-bar,
+.top-bar,
+.lian-sheet__panel,
+.lian-toast {
+  border-color: rgba(255, 255, 255, 0.62);
+  background: var(--lian-surface-floating);
+  box-shadow: var(--shadow-floating-soft);
+}
+
+.feed-view__tab,
+.bottom-tab-bar__item,
+.lian-button {
+  transition:
+    background-color var(--motion-micro) var(--motion-ease-standard),
+    color var(--motion-micro) var(--motion-ease-standard),
+    box-shadow var(--motion-micro) var(--motion-ease-standard),
+    transform var(--motion-micro) var(--motion-ease-standard),
+    opacity var(--motion-micro) var(--motion-ease-standard);
+}
+
+.feed-view__tab.is-active,
+.bottom-tab-bar__item.is-active {
+  background: rgba(31, 167, 160, 0.14);
+  color: var(--lian-primary-deep);
+  transform: none;
+}
+
+.feed-view__tab:hover,
+.bottom-tab-bar__item:hover {
+  background: rgba(31, 41, 51, 0.05);
+  color: var(--lian-ink);
+}
+
+.feed-view__content {
+  gap: var(--space-4);
+}
+
+.feed-view__masonry,
+.feed-view__masonry-column {
+  gap: var(--space-3);
+}
+
+.feed-view__state {
+  border: 1px solid var(--lian-line);
+  border-radius: var(--radius-content-card);
+  background: var(--lian-surface-content-muted);
+  box-shadow: var(--shadow-content-card);
+}
+
+.feed-item-card {
+  position: relative;
+  overflow: hidden;
+  border-color: var(--lian-line);
+  border-radius: var(--radius-content-card);
+  background: var(--lian-surface-content);
+  box-shadow: var(--shadow-content-card);
+  contain: layout paint;
+  transition:
+    transform var(--motion-micro) var(--motion-ease-standard),
+    border-color var(--motion-micro) var(--motion-ease-standard),
+    box-shadow var(--motion-micro) var(--motion-ease-standard),
+    background-color var(--motion-micro) var(--motion-ease-standard);
+}
+
+.feed-item-card::before {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(31, 167, 160, 0.28), transparent);
+  content: "";
+  opacity: 0;
+  transition: opacity var(--motion-micro) var(--motion-ease-standard);
+}
+
+.feed-item-card:hover,
+.feed-item-card:focus-visible {
+  border-color: var(--lian-line-strong);
+  box-shadow: var(--shadow-content-card-hover);
+  transform: scale(var(--content-hover-scale));
+}
+
+.feed-item-card:hover::before,
+.feed-item-card:focus-visible::before {
+  opacity: 1;
+}
+
+.feed-item-card--text,
+.feed-item-card--activity,
+.feed-item-card--place,
+.feed-item-card--merchant,
+.feed-item-card--help {
+  background: var(--lian-surface-content);
+}
+
+.feed-item-card__media {
+  margin: var(--space-2) var(--space-2) 0;
+  border-radius: var(--radius-cover);
+  background: rgba(31, 41, 51, 0.04);
+}
+
+.feed-item-card__cover,
+.feed-item-card__placeholder {
+  border-radius: inherit;
+}
+
+.feed-item-card__cover {
+  transform: scale(1.001);
+  transition:
+    transform var(--motion-panel) var(--motion-ease-standard),
+    opacity var(--motion-panel) var(--motion-ease-standard);
+}
+
+.feed-item-card:hover .feed-item-card__cover,
+.feed-item-card:focus-visible .feed-item-card__cover {
+  transform: scale(1.018);
+}
+
+.feed-item-card__body {
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-3) var(--space-3);
+}
+
+.feed-item-card h3 {
+  min-height: calc(15px * 1.34 * 2);
+  color: var(--lian-ink);
+  letter-spacing: -0.01em;
+}
+
+.feed-item-card__floating-tag,
+.feed-item-card__inline-tag,
+.feed-item-card__like {
+  border-color: var(--lian-line);
+  background: rgba(255, 255, 255, 0.78);
+}
+
+.feed-item-card__floating-tag {
+  box-shadow: 0 6px 18px rgba(15, 23, 20, 0.12);
+}
+
+.feed-item-card__footer {
+  min-height: 30px;
+}
+
+.feed-item-card__author-name {
+  color: var(--lian-ink);
+}
+
+.feed-item-card__like {
+  opacity: 0.82;
+  transition:
+    background-color var(--motion-micro) var(--motion-ease-standard),
+    color var(--motion-micro) var(--motion-ease-standard),
+    opacity var(--motion-micro) var(--motion-ease-standard),
+    transform var(--motion-micro) var(--motion-ease-standard);
+}
+
+.feed-item-card__like:hover,
+.feed-item-card__like:focus-visible {
+  opacity: 1;
+  transform: translateY(-1px);
+}
+
+.feed-view__card-transition {
+  border-color: var(--lian-line-strong);
+  border-radius: var(--radius-content-card);
+  background: var(--lian-surface-content);
+  box-shadow: var(--shadow-floating-soft);
+}
+
+@media (min-width: 960px) {
+  .vue-shell {
+    padding-right: max(var(--space-6), 112px);
+    padding-left: max(var(--space-6), 112px);
+  }
+
+  .vue-shell__grid {
+    width: min(100%, 920px);
+  }
+
+  .bottom-tab-bar {
+    top: calc(var(--space-6) + env(safe-area-inset-top));
+    right: auto;
+    bottom: auto;
+    left: var(--space-6);
+    grid-template-columns: 1fr;
+    width: 72px;
+    padding: var(--space-2);
+    border-radius: var(--radius-sheet);
+  }
+
+  .bottom-tab-bar__item {
+    min-height: 58px;
+    font-size: 11px;
+  }
+
+  .feed-view__tabs {
+    width: min(calc(100vw - 224px), 920px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .feed-view__tab,
+  .bottom-tab-bar__item,
+  .lian-button,
+  .feed-item-card,
+  .feed-item-card::before,
+  .feed-item-card__cover,
+  .feed-item-card__like {
+    transition: none;
+  }
+
+  .feed-item-card:hover,
+  .feed-item-card:focus-visible,
+  .feed-item-card:hover .feed-item-card__cover,
+  .feed-item-card:focus-visible .feed-item-card__cover,
+  .feed-item-card__like:hover,
+  .feed-item-card__like:focus-visible {
+    transform: none;
+  }
+}

@@ -58,6 +58,26 @@ export interface MapRoad {
   source?: string;
 }
 
+export interface MapRoadNetworkPreviewRoad {
+  road_id: number;
+  lane_count?: number;
+  road_type?: string;
+  width_m?: number;
+  points: [number, number][];
+}
+
+export interface MapRoadNetworkPreview {
+  source?: string;
+  projection?: string;
+  transform?: {
+    translateX?: number;
+    translateY?: number;
+    scale?: number;
+    rotation?: number;
+  };
+  roads?: MapRoadNetworkPreviewRoad[];
+}
+
 export interface MapAsset {
   id?: string;
   kind?: string;

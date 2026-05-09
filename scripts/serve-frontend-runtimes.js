@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { execFileSync, spawn } from "node:child_process";
+import { spawn } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -16,17 +16,9 @@ function ensureRuntimeDependencies() {
   if (fs.existsSync(viteBin)) return;
 
   console.error(`[runtime] missing Vite binary: ${viteBin}`);
-  console.error("[runtime] installing frontend dependencies before starting runtimes");
-  const installCommand = fs.existsSync(path.join(rootDir, "package-lock.json")) ? "npm install" : "npm install";
-  execFileSync("/bin/sh", ["-lc", installCommand], {
-    cwd: rootDir,
-    stdio: "inherit",
-    env: process.env
-  });
-
-  if (!fs.existsSync(viteBin)) {
-    throw new Error(`Vite binary still missing after dependency install: ${viteBin}`);
-  }
+  console.error("[runtime] frontend dependencies are missing; refusing to install at runtime.");
+  console.error("[runtime] deploy a verified artifact or run npm ci before starting the supervisor.");
+  throw new Error(`Missing frontend runtime dependency: ${viteBin}`);
 }
 
 function startProcess(name, command, args, env = {}) {
@@ -36,7 +28,8 @@ function startProcess(name, command, args, env = {}) {
       ...process.env,
       ...env
     },
-    stdio: ["ignore", "pipe", "pipe"]
+    stdio: ["ignore", "pipe", "pipe"],
+    shell: process.platform === "win32" && command.endsWith(".cmd")
   });
 
   children.set(name, child);

@@ -3,6 +3,9 @@
 
   var API = "/api/internal/task-board";
   var RECENT_DAYS = 14;
+  var CONTROL_ROOM_URL = "https://github.com/taoyu051818-sys/lian-platform-server/issues/112";
+  var ISSUE_QUEUE_URL = "https://github.com/taoyu051818-sys/lian-mobile-web/issues?q=is%3Aopen+sort%3Aupdated-desc";
+  var PR_QUEUE_URL = "https://github.com/taoyu051818-sys/lian-mobile-web/pulls?q=is%3Aopen+sort%3Aupdated-desc";
 
   var STATUS_COLORS = {
     "Done": "done",
@@ -205,7 +208,7 @@
 
   function buildSidebar() {
     var sidebar = document.getElementById("sidebar");
-    var html = '<input type="text" class="search-box" id="searchBox" placeholder="Search tasks...">';
+    var html = '<input type="text" class="search-box" id="searchBox" placeholder="Search legacy tasks...">';
 
     html += '<h3>Status</h3>';
     var statuses = unique(tasks.map(function (t) { return t.status; }).filter(Boolean));
@@ -531,6 +534,6 @@
     })
     .catch(function (err) {
       document.getElementById("taskBody").innerHTML =
-        '<tr><td colspan="6" style="padding:40px;text-align:center;color:var(--danger)">Failed to load task board: ' + escHtml(err.message) + '</td></tr>';
+        '<tr><td colspan="6" style="padding:40px;text-align:center;color:var(--danger)">Failed to load legacy task board data: ' + escHtml(err.message) + '<br><span style="display:block;margin-top:12px;color:var(--muted)">This page is informational only. Use <a href="' + CONTROL_ROOM_URL + '" target="_blank" rel="noreferrer">Control Room #112</a>, the <a href="' + ISSUE_QUEUE_URL + '" target="_blank" rel="noreferrer">issue queue</a>, and the <a href="' + PR_QUEUE_URL + '" target="_blank" rel="noreferrer">PR queue</a> for current status.</span></td></tr>';
     });
 })();
