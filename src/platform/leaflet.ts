@@ -31,9 +31,10 @@ export interface LeafletMapOptions {
 
 export interface LeafletMapLike {
   getZoom(): number;
+  getMaxZoom(): number;
+  getPane(name: string): HTMLElement | null;
   invalidateSize(): void;
   remove(): void;
-  panTo(latlng: LeafletLatLngTuple, options?: { animate?: boolean }): void;
   on(event: string, handler: (...args: unknown[]) => void): LeafletMapLike;
 }
 
