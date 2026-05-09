@@ -141,6 +141,28 @@ async function loadChannel(reset = true) {
   }
 }
 
+async function refreshLatest() {
+  try {
+    const response = await fetchChannelMessages(0, 30);
+    const latestItems = (response.items || []).slice().reverse();
+    const existingIds = new Set(channelItems.value.map((item) => String(item.id)));
+    const newItems = latestItems.filter((item) => !existingIds.has(String(item.id)));
+    if (newItems.length) {
+      const merged = [...channelItems.value, ...newItems];
+      merged.sort((a, b) => {
+        const ta = a.timestampISO || a.time || "";
+        const tb = b.timestampISO || b.time || "";
+        return ta < tb ? -1 : ta > tb ? 1 : 0;
+      });
+      channelItems.value = merged;
+    }
+    await nextTick();
+    window.scrollTo(0, document.documentElement.scrollHeight);
+  } catch {
+    /* silent — the message was already sent successfully */
+  }
+}
+
 async function loadNotifications() {
   if (notificationLoading.value) return;
   notificationLoading.value = true;
@@ -171,7 +193,7 @@ async function submitMessage() {
   try {
     await sendChannelMessage({ content, identityTag: composerIdentityTag.value });
     composerContent.value = "";
-    await loadChannel(true);
+    await refreshLatest();
   } catch (error) {
     sendError.value = error instanceof Error ? error.message : "消息没有发送成功，可以稍后再试。";
   } finally {
