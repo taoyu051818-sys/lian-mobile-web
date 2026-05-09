@@ -7,6 +7,7 @@ import type { PlaceSheet, PlaceStatus } from "../../types/place";
 import type { PostDetail, PostReply } from "../../types/post";
 import { formatRelativeTime, formatTimestampLabel } from "../../utils/time";
 import { InlineError, LianButton } from "../../ui";
+import { sharePost } from "../../platform/share";
 
 type FloatingChromePhase = "visible" | "exiting" | "hidden" | "entering" | "progress";
 
@@ -254,22 +255,14 @@ async function openPlaceSheet() {
 }
 
 async function handleShare() {
-  const shareUrl = typeof window !== "undefined" ? window.location.href : "";
-  const browserNavigator = typeof navigator !== "undefined" ? navigator : null;
-  const data = { title: title.value, text: title.value, url: shareUrl };
-  try {
-    if (browserNavigator && "share" in browserNavigator && typeof browserNavigator.share === "function") {
-      await browserNavigator.share(data);
-      return;
-    }
-    const clipboard = browserNavigator?.clipboard;
-    if (clipboard && shareUrl) {
-      await clipboard.writeText(shareUrl);
-      showActionMessage("链接已复制");
-    }
-  } catch {
-    showActionError(null, "分享没有完成，可以稍后再试。");
+  if (postId.value == null) return;
+  const result = await sharePost({ tid: postId.value, title: title.value });
+  if (result.outcome === "shared" || result.outcome === "cancelled") return;
+  if (result.outcome === "copied") {
+    showActionMessage("链接已复制");
+    return;
   }
+  showActionError(null, result.message);
 }
 
 async function handleLike() {
