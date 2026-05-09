@@ -16,10 +16,6 @@ import {
 } from "../platform/leaflet";
 
 type LayerKey = "areas" | "roadsCasing" | "roads" | "routes" | "assets" | "locations" | "posts";
-type ScalableLeafletMap = LeafletMapLike & {
-  getMaxZoom?: () => number;
-  getPane?: (name: string) => HTMLElement | null;
-};
 
 const GAODE_TILE_URL = "https://webrd0{s}.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=8&x={x}&y={y}&z={z}";
 const DEFAULT_BOUNDS: MapBounds = { south: 18.37107, west: 109.98464, north: 18.41730, east: 110.04775 };
@@ -95,9 +91,8 @@ function roadStyle(road: MapRoad) {
 }
 
 function iconScaleForZoom(target: LeafletMapLike | null = map, zoom = target?.getZoom?.()) {
-  const scalableMap = target as ScalableLeafletMap | null;
-  if (!scalableMap) return 1;
-  const maxZoom = scalableMap.getMaxZoom?.() || Number(zoom) || 16;
+  if (!target) return 1;
+  const maxZoom = target.getMaxZoom() || Number(zoom) || 16;
   const nextZoom = Number.isFinite(Number(zoom)) ? Number(zoom) : maxZoom;
   return Math.pow(2, nextZoom - maxZoom);
 }
@@ -121,7 +116,7 @@ function zoomFromEvent(event: unknown): number | undefined {
 }
 
 function applyMapIconScale(target: LeafletMapLike | null = map, zoom = target?.getZoom?.()) {
-  const markerPane = (target as ScalableLeafletMap | null)?.getPane?.("markerPane");
+  const markerPane = target?.getPane("markerPane");
   if (!markerPane) return;
   const scale = iconScaleForZoom(target, zoom);
   markerPane.querySelectorAll<HTMLElement>(SCALED_ICON_SELECTOR).forEach((element) => {
