@@ -41,3 +41,8 @@ export interface SendChannelMessagePayload {
   content: string;
   identityTag?: string;
 }
+
+export interface ChannelReadPayload {
+  messageIds: Array<string | number>;
+  readerId: string;
+}
