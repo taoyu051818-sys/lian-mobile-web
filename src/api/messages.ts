@@ -1,4 +1,5 @@
 import { apiGet, apiSend } from "./http";
+import { ensureClientId } from "../utils/client-id";
 import type { ChannelResponse, NotificationResponse, SendChannelMessagePayload } from "../types/messages";
 
 export async function fetchChannelMessages(offset = 0, limit = 30): Promise<ChannelResponse> {
@@ -10,15 +11,6 @@ export async function fetchChannelMessages(offset = 0, limit = 30): Promise<Chan
 
 export async function fetchNotifications(): Promise<NotificationResponse> {
   return apiGet<NotificationResponse>("/api/messages");
-}
-
-function ensureClientId() {
-  const key = "lian.clientId";
-  const existing = localStorage.getItem(key);
-  if (existing) return existing;
-  const next = crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
-  localStorage.setItem(key, next);
-  return next;
 }
 
 export async function sendChannelMessage(payload: SendChannelMessagePayload): Promise<void> {

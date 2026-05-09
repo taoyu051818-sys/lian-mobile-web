@@ -1,4 +1,5 @@
 import { apiGet, apiSend } from "./http";
+import { ensureClientId } from "../utils/client-id";
 import type { FeedItemId } from "../types/feed";
 import type { PostDetail } from "../types/post";
 
@@ -14,15 +15,6 @@ export interface PostSaveResponse {
 export interface ReportPostPayload {
   category: string;
   reason: string;
-}
-
-function ensureClientId() {
-  const key = "lian.clientId";
-  const existing = localStorage.getItem(key);
-  if (existing) return existing;
-  const next = crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
-  localStorage.setItem(key, next);
-  return next;
 }
 
 export async function fetchPostDetail(id: FeedItemId): Promise<PostDetail> {
