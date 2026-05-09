@@ -1,27 +1,32 @@
 <script setup lang="ts">
-import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
+import { computed, nextTick, onBeforeUnmount, onMounted, ref } from "vue";
 import { fetchMapV2Items, fetchRoadNetworkPreview } from "../api/map";
 import { resolveRoads } from "../map/roads";
-import { GlassPanel, InlineError, LianButton, LocationChip, TrustBadge } from "../ui";
+import { InlineError } from "../ui";
 import type { MapAsset, MapBounds, MapLayerPoint, MapLocation, MapPost, MapRoad, MapRoadNetworkPreview, MapRoute, MapV2ItemsResponse } from "../types/map";
 import {
   type LeafletDivIconLike,
   type LeafletImageOverlayLike,
   type LeafletLayerGroupLike,
-  type LeafletLike,
   type LeafletMapLike,
-  type LeafletMarkerLike,
   LeafletUnavailableError,
   getLeaflet,
   isLeafletAvailable,
   tryGetLeaflet,
 } from "../platform/leaflet";
 
-type ActiveTarget = { kind: "location"; item: MapLocation } | { kind: "post"; item: MapPost };
 type LayerKey = "areas" | "roadsCasing" | "roads" | "routes" | "assets" | "locations" | "posts";
+type ScalableLeafletMap = LeafletMapLike & {
+  getMaxZoom?: () => number;
+  getPane?: (name: string) => HTMLElement | null;
+};
 
 const GAODE_TILE_URL = "https://webrd0{s}.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=8&x={x}&y={y}&z={z}";
 const DEFAULT_BOUNDS: MapBounds = { south: 18.37107, west: 109.98464, north: 18.41730, east: 110.04775 };
+const SCALED_ICON_SELECTOR = "[data-vue-map-scaled-icon]";
+const MAX_RENDERED_LOCATIONS = 120;
+const MAX_RENDERED_POSTS = 60;
+const MAX_RENDERED_ASSETS = 120;
 const ROAD_STYLE: Record<string, { color: string; casing: string; weight: number; casingExtra: number; opacity: number; minZoom: number; dashArray: string }> = {
   main_road: { color: "#9ca3af", casing: "#f8fafc", weight: 7, casingExtra: 5, opacity: 0.96, minZoom: 15, dashArray: "" },
   pedestrian_path: { color: "#c4b5a5", casing: "#fffaf0", weight: 3, casingExtra: 3, opacity: 0.9, minZoom: 16, dashArray: "6 4" },
@@ -35,8 +40,7 @@ const mapData = ref<MapV2ItemsResponse | null>(null);
 const roadPreview = ref<MapRoadNetworkPreview | null>(null);
 const loading = ref(false);
 const errorMessage = ref("");
-const activeFilter = ref<"all" | "locations" | "posts">("all");
-const activeTarget = ref<ActiveTarget | null>(null);
+const iconScaleBoundMaps = new WeakSet<LeafletMapLike>();
 
 let map: LeafletMapLike | null = null;
 let layers: Record<LayerKey, LeafletLayerGroupLike> | null = null;
@@ -51,14 +55,9 @@ const resolvedRoads = computed(() => resolveRoads(officialRoads.value, roadPrevi
 const roads = computed(() => resolvedRoads.value.roads);
 const routes = computed(() => mapData.value?.layers?.routes || []);
 const assets = computed(() => mapData.value?.layers?.assets || []);
-const visibleLocations = computed(() => activeFilter.value === "posts" ? [] : locations.value);
-const visiblePosts = computed(() => activeFilter.value === "locations" ? [] : posts.value);
-
-const stats = computed(() => [
-  `${locations.value.length} 地点`,
-  `${posts.value.length} 内容`,
-  `${roads.value.length} 路段`,
-]);
+const renderedLocations = computed(() => locations.value.slice(0, MAX_RENDERED_LOCATIONS));
+const renderedPosts = computed(() => posts.value.slice(0, MAX_RENDERED_POSTS));
+const renderedAssets = computed(() => assets.value.slice(0, MAX_RENDERED_ASSETS));
 
 function mapBounds(): [number, number][] {
   return [[bounds.value.south, bounds.value.west], [bounds.value.north, bounds.value.east]];
@@ -95,18 +94,52 @@ function roadStyle(road: MapRoad) {
   };
 }
 
-function isActiveLocation(location: MapLocation) {
-  return activeTarget.value?.kind === "location" && activeTarget.value.item.id === location.id;
+function iconScaleForZoom(target: LeafletMapLike | null = map, zoom = target?.getZoom?.()) {
+  const scalableMap = target as ScalableLeafletMap | null;
+  if (!scalableMap) return 1;
+  const maxZoom = scalableMap.getMaxZoom?.() || Number(zoom) || 16;
+  const nextZoom = Number.isFinite(Number(zoom)) ? Number(zoom) : maxZoom;
+  return Math.pow(2, nextZoom - maxZoom);
 }
 
-function isActivePost(post: MapPost) {
-  return activeTarget.value?.kind === "post" && String(activeTarget.value.item.tid) === String(post.tid);
+function scaledIconHtml(html: string, anchor: [number, number]) {
+  const x = Number(anchor[0] ?? 0);
+  const y = Number(anchor[1] ?? 0);
+  return `
+    <span
+      class="vue-map-scaled-icon-inner"
+      data-vue-map-scaled-icon
+      style="width:100%;height:100%;transform-origin:${escapeHtml(String(x))}px ${escapeHtml(String(y))}px;will-change:transform"
+    >${html}</span>
+  `;
+}
+
+function zoomFromEvent(event: unknown): number | undefined {
+  if (!event || typeof event !== "object" || !("zoom" in event)) return undefined;
+  const zoom = Number((event as { zoom?: unknown }).zoom);
+  return Number.isFinite(zoom) ? zoom : undefined;
+}
+
+function applyMapIconScale(target: LeafletMapLike | null = map, zoom = target?.getZoom?.()) {
+  const markerPane = (target as ScalableLeafletMap | null)?.getPane?.("markerPane");
+  if (!markerPane) return;
+  const scale = iconScaleForZoom(target, zoom);
+  markerPane.querySelectorAll<HTMLElement>(SCALED_ICON_SELECTOR).forEach((element) => {
+    element.style.transform = `scale(${scale})`;
+  });
+}
+
+function bindMapIconScale(target: LeafletMapLike) {
+  if (iconScaleBoundMaps.has(target)) return;
+  const update = (...args: unknown[]) => applyMapIconScale(target, zoomFromEvent(args[0]) ?? target.getZoom());
+  target.on("zoom zoomend viewreset moveend", update);
+  iconScaleBoundMaps.add(target);
 }
 
 function htmlIcon(className: string, html: string, size: [number, number], anchor: [number, number]): LeafletDivIconLike {
   return getLeaflet().divIcon({
     className,
-    html,
+    html: scaledIconHtml(html, anchor),
     iconSize: size,
     iconAnchor: anchor,
     popupAnchor: [0, -Math.round(size[1] * 0.72)],
@@ -115,37 +148,35 @@ function htmlIcon(className: string, html: string, size: [number, number], ancho
 
 function locationIcon(location: MapLocation) {
   const image = location.card?.imageUrl || location.icon?.url;
-  const active = isActiveLocation(location) ? " is-active" : "";
   if (image) {
     return htmlIcon(
-      `vue-map-marker vue-map-marker--place-card${active}`,
-      `<button type="button"><img src="${escapeHtml(image)}" alt=""><span>${escapeHtml(location.name)}</span></button>`,
+      "vue-map-marker vue-map-marker--place-card",
+      `<span class="vue-map-location-card"><img src="${escapeHtml(image)}" alt=""><span class="vue-map-sr-only">${escapeHtml(location.name)}</span></span>`,
       [142, 48],
       [71, 48],
     );
   }
   return htmlIcon(
-    `vue-map-marker vue-map-marker--location${active}`,
-    `<button type="button"><strong>${escapeHtml(location.name.slice(0, 2))}</strong></button>`,
+    "vue-map-marker vue-map-marker--location",
+    `<span class="vue-map-location-pin"><strong>${escapeHtml(location.name.slice(0, 2))}</strong></span>`,
     [46, 54],
     [23, 54],
   );
 }
 
 function postIcon(post: MapPost) {
-  const active = isActivePost(post) ? " is-active" : "";
   const image = post.imageUrl ? `<img src="${escapeHtml(post.imageUrl)}" alt="">` : "<strong>帖</strong>";
   return htmlIcon(
-    `vue-map-marker vue-map-marker--post${active}`,
-    `<button type="button">${image}<span>${escapeHtml(post.title || post.locationArea || "地图内容")}</span></button>`,
+    "vue-map-marker vue-map-marker--post",
+    `<span class="vue-map-post-card">${image}<span>${escapeHtml(post.title || post.locationArea || "地图内容")}</span></span>`,
     [72, 78],
     [36, 78],
   );
 }
 
 function assetIcon(asset: MapAsset) {
-  const size: [number, number] = Array.isArray(asset.size) ? [asset.size[0] ?? 64, asset.size[1] ?? 64] : [64, 64];
-  const anchor: [number, number] = Array.isArray(asset.anchor) ? [asset.anchor[0] ?? size[0] / 2, asset.anchor[1] ?? size[1]] : [size[0] / 2, size[1]];
+  const size: [number, number] = Array.isArray(asset.size) ? [Number(asset.size[0] ?? 64), Number(asset.size[1] ?? 64)] : [64, 64];
+  const anchor: [number, number] = Array.isArray(asset.anchor) ? [Number(asset.anchor[0] ?? size[0] / 2), Number(asset.anchor[1] ?? size[1])] : [size[0] / 2, size[1]];
   const opacity = Math.max(0, Math.min(1, Number(asset.opacity ?? 1)));
   const rotation = Number(asset.rotation || 0);
   return htmlIcon(
@@ -174,7 +205,7 @@ function renderAreas() {
       fillColor: area.style?.fillColor || area.style?.color || "#1fa7a0",
       fillOpacity: Number(area.style?.fillOpacity ?? 0.1),
       className: "vue-map-area",
-    }).bindTooltip(area.name, { sticky: true }).addTo(lyrs.areas);
+    }).addTo(lyrs.areas);
   });
 }
 
@@ -197,18 +228,16 @@ function renderRoads() {
       interactive: false,
       className: "vue-map-road-casing",
     }).addTo(lyrs.roadsCasing);
-    const roadLine = getLeaflet().polyline(roadPoints, {
+    getLeaflet().polyline(roadPoints, {
       color: style.color,
       weight: style.weight,
       dashArray: style.dashArray,
       opacity: style.opacity,
       lineCap: "round",
       lineJoin: "round",
-      interactive: road.interactive !== false,
+      interactive: false,
       className: `vue-map-road vue-map-road--${escapeHtml(road.type || "default")}`,
-    });
-    if (road.interactive !== false) roadLine.bindTooltip(road.name || "道路", { sticky: true });
-    roadLine.addTo(lyrs.roads);
+    }).addTo(lyrs.roads);
   });
 }
 
@@ -225,21 +254,22 @@ function renderRoutes() {
       opacity: 0.92,
       lineCap: "round",
       lineJoin: "round",
+      interactive: false,
       className: "vue-map-route",
-    }).bindTooltip(route.name || route.title || "路线", { sticky: true }).addTo(lyrs.routes);
+    }).addTo(lyrs.routes);
   });
 }
 
 function renderAssets() {
   const lyrs = layers;
   if (!lyrs) return;
-  assets.value.forEach((asset) => {
+  renderedAssets.value.forEach((asset) => {
     if (!asset.url || !asset.position) return;
     const position = latLng(asset.position);
     if (!position) return;
     getLeaflet().marker(position, {
       icon: assetIcon(asset),
-      interactive: Boolean(asset.clickBehavior && asset.clickBehavior !== "none"),
+      interactive: false,
       keyboard: false,
       zIndexOffset: Number(asset.zIndex || 20),
     }).addTo(lyrs.assets);
@@ -249,18 +279,16 @@ function renderAssets() {
 function renderMarkers() {
   const lyrs = layers;
   if (!lyrs) return;
-  visibleLocations.value.forEach((location) => {
+  renderedLocations.value.forEach((location) => {
     const position = latLng(location);
     if (!position) return;
-    getLeaflet().marker(position, { icon: locationIcon(location), title: location.name, zIndexOffset: 80 })
-      .on("click", () => selectLocation(location, true))
+    getLeaflet().marker(position, { icon: locationIcon(location), title: location.name, zIndexOffset: 80, interactive: false, keyboard: false })
       .addTo(lyrs.locations);
   });
-  visiblePosts.value.forEach((post) => {
+  renderedPosts.value.forEach((post) => {
     const position = latLng(post);
     if (!position) return;
-    getLeaflet().marker(position, { icon: postIcon(post), title: post.title || post.locationArea || "", zIndexOffset: 120 })
-      .on("click", () => selectPost(post, true))
+    getLeaflet().marker(position, { icon: postIcon(post), title: post.title || post.locationArea || "", zIndexOffset: 120, interactive: false, keyboard: false })
       .addTo(lyrs.posts);
   });
 }
@@ -273,6 +301,7 @@ function renderMap() {
   renderRoutes();
   renderAssets();
   renderMarkers();
+  applyMapIconScale();
 }
 
 function initMap() {
@@ -318,8 +347,12 @@ function initMap() {
     locations: L.layerGroup().addTo(map),
     posts: L.layerGroup().addTo(map),
   };
+  bindMapIconScale(map);
   map.on("zoomend resize", renderMap);
-  setTimeout(() => map?.invalidateSize(), 80);
+  setTimeout(() => {
+    map?.invalidateSize();
+    applyMapIconScale();
+  }, 80);
   renderMap();
 }
 
@@ -342,9 +375,6 @@ async function loadMap() {
     ]);
     mapData.value = items;
     roadPreview.value = preview;
-    if (!activeTarget.value && locations.value[0]) {
-      activeTarget.value = { kind: "location", item: locations.value[0] };
-    }
   } catch (error) {
     errorMessage.value = error instanceof Error ? error.message : "地图数据暂时没加载出来，可以稍后再试。";
   } finally {
@@ -352,27 +382,6 @@ async function loadMap() {
     await refreshMap();
   }
 }
-
-function selectLocation(location: MapLocation, fromMarker = false) {
-  activeTarget.value = { kind: "location", item: location };
-  if (!fromMarker) map?.panTo([location.lat, location.lng], { animate: true });
-  renderMap();
-}
-
-function selectPost(post: MapPost, fromMarker = false) {
-  activeTarget.value = { kind: "post", item: post };
-  if (!fromMarker) map?.panTo([post.lat, post.lng], { animate: true });
-  renderMap();
-}
-
-function selectNearestPost(location: MapLocation) {
-  const nearby = posts.value
-    .map((post) => ({ post, distance: Math.hypot((post.lat - location.lat) * 100000, (post.lng - location.lng) * 100000) }))
-    .sort((a, b) => a.distance - b.distance)[0]?.post;
-  if (nearby) selectPost(nearby);
-}
-
-watch(activeFilter, renderMap);
 
 onMounted(() => {
   void loadMap();
@@ -387,142 +396,18 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <section class="map-view" aria-label="探索">
-    <GlassPanel class="map-view__card">
-      <header class="map-view__hero">
-        <div>
-          <LocationChip>LIAN Campus Map</LocationChip>
-          <h2>探索校园正在发生什么</h2>
-          <p>接入高德 Leaflet 底图，叠加 Map V2 的地点、道路、资产和内容。</p>
-        </div>
-        <div class="map-view__stats" aria-label="地图统计">
-          <span v-for="item in stats" :key="item">{{ item }}</span>
-        </div>
-      </header>
-
-      <div class="map-view__toolbar" aria-label="地图筛选">
-        <button type="button" :class="{ 'is-active': activeFilter === 'all' }" @click="activeFilter = 'all'">全部</button>
-        <button type="button" :class="{ 'is-active': activeFilter === 'locations' }" @click="activeFilter = 'locations'">地点</button>
-        <button type="button" :class="{ 'is-active': activeFilter === 'posts' }" @click="activeFilter = 'posts'">内容</button>
-        <LianButton size="sm" variant="ghost" :loading="loading" @click="loadMap">刷新</LianButton>
-      </div>
-
-      <InlineError v-if="errorMessage">
-        {{ errorMessage }}
-        <button type="button" @click="loadMap">重新加载</button>
-      </InlineError>
-
-      <section class="map-view__stage-wrap" aria-label="校园地图">
-        <div ref="stageEl" class="map-view__leaflet" :class="{ 'is-loading': loading }"></div>
-        <div v-if="loading" class="map-view__map-state" role="status">正在加载校园地图…</div>
-        <div class="map-view__legend" aria-label="地图图例">
-          <span><i class="is-road"></i>道路</span>
-          <span><i class="is-place"></i>地点</span>
-          <span><i class="is-post"></i>内容</span>
-        </div>
-      </section>
-
-      <section v-if="activeTarget" class="map-view__detail" aria-label="选中地点或内容">
-        <template v-if="activeTarget.kind === 'location'">
-          <div>
-            <LocationChip>{{ activeTarget.item.name }}</LocationChip>
-            <h3>{{ activeTarget.item.name }}</h3>
-            <p>{{ activeTarget.item.type || activeTarget.item.place?.type || '校园地点' }}</p>
-          </div>
-          <div class="map-view__actions">
-            <TrustBadge :tone="activeTarget.item.place?.status === 'pending' ? 'pending' : 'confirmed'">
-              {{ activeTarget.item.place?.status || '地点' }}
-            </TrustBadge>
-            <LianButton size="sm" variant="ghost" @click="selectNearestPost(activeTarget.item)">附近内容</LianButton>
-          </div>
-        </template>
-        <template v-else>
-          <div>
-            <LocationChip>{{ activeTarget.item.locationArea || '地图内容' }}</LocationChip>
-            <h3>{{ activeTarget.item.title || '未命名内容' }}</h3>
-            <p>{{ activeTarget.item.locationArea || '地点未知' }}</p>
-          </div>
-          <TrustBadge tone="confirmed">地图内容</TrustBadge>
-        </template>
-      </section>
-
-      <section class="map-view__places" aria-label="地点入口">
-        <article v-for="location in locations.slice(0, 12)" :key="location.id" class="map-view__place" @click="selectLocation(location)">
-          <LocationChip>{{ location.name }}</LocationChip>
-          <TrustBadge tone="confirmed">{{ location.type || location.place?.type || '地点' }}</TrustBadge>
-        </article>
-      </section>
-    </GlassPanel>
+  <section class="map-view" aria-label="校园地图">
+    <section class="map-view__stage-wrap" aria-label="校园地图">
+      <div ref="stageEl" class="map-view__leaflet" :class="{ 'is-loading': loading }"></div>
+      <div v-if="loading" class="map-view__map-state" role="status">正在加载校园地图…</div>
+      <InlineError v-if="errorMessage" class="map-view__error">{{ errorMessage }}</InlineError>
+    </section>
   </section>
 </template>
 
 <style scoped>
-.map-view,
-.map-view__card,
-.map-view__places {
-  display: grid;
-  gap: var(--space-4);
-}
-
-.map-view__hero,
-.map-view__toolbar,
-.map-view__detail,
-.map-view__place,
-.map-view__actions,
-.map-view__stats,
-.map-view__legend {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
-  align-items: center;
-  justify-content: space-between;
-}
-
-.map-view h2,
-.map-view h3,
-.map-view p {
-  margin: 0;
-}
-
-.map-view__hero p,
-.map-view__detail p {
-  color: var(--lian-muted);
-  line-height: 1.6;
-}
-
-.map-view__hero h2 {
-  margin-top: var(--space-2);
-  font-size: clamp(22px, 5vw, 34px);
-  line-height: 1.08;
-}
-
-.map-view__stats span,
-.map-view__legend span {
-  padding: 6px 9px;
-  border-radius: var(--radius-chip);
-  background: rgba(255, 255, 255, 0.68);
-  color: var(--lian-muted);
-  font-size: 12px;
-  font-weight: 850;
-}
-
-.map-view__toolbar {
-  justify-content: flex-start;
-}
-
-.map-view__toolbar button {
-  min-height: 36px;
-  padding: 0 var(--space-3);
-  border: 1px solid var(--glass-border);
-  border-radius: var(--radius-chip);
-  background: rgba(255, 255, 255, 0.54);
-  color: var(--lian-muted);
-  font-weight: 850;
-}
-
-.map-view__toolbar button.is-active {
-  background: var(--lian-ink);
-  color: #fff;
+.map-view {
+  display: block;
 }
 
 .map-view__stage-wrap {
@@ -537,7 +422,7 @@ onBeforeUnmount(() => {
 .map-view__leaflet {
   width: 100%;
   min-height: 420px;
-  height: min(68vh, 640px);
+  height: min(76vh, 760px);
   background: rgba(247, 244, 236, 0.72);
 }
 
@@ -545,7 +430,8 @@ onBeforeUnmount(() => {
   filter: saturate(0.9) blur(0.5px);
 }
 
-.map-view__map-state {
+.map-view__map-state,
+.map-view__error {
   position: absolute;
   inset: 0;
   z-index: 700;
@@ -556,62 +442,9 @@ onBeforeUnmount(() => {
   backdrop-filter: blur(8px);
 }
 
-.map-view__legend {
-  position: absolute;
-  left: var(--space-3);
-  right: var(--space-3);
-  bottom: var(--space-3);
-  z-index: 650;
-  justify-content: flex-start;
-  pointer-events: none;
-}
-
-.map-view__legend i {
-  display: inline-block;
-  width: 10px;
-  height: 10px;
-  margin-right: 6px;
-  border-radius: 999px;
-  vertical-align: -1px;
-}
-
-.map-view__legend .is-road { background: #9ca3af; }
-.map-view__legend .is-place { background: #1fa7a0; }
-.map-view__legend .is-post { background: #111827; }
-
-.map-view__detail,
-.map-view__place {
-  padding: var(--space-3);
-  border: 1px solid var(--lian-border);
-  border-radius: var(--radius-3);
-  background: rgba(255, 255, 255, 0.52);
-}
-
-.map-view__detail {
-  align-items: flex-start;
-}
-
-.map-view__detail > div {
-  display: grid;
-  gap: var(--space-2);
-}
-
-.map-view__actions {
-  justify-content: flex-start;
-}
-
-.map-view__place {
-  cursor: pointer;
-}
-
-.inline-error button {
-  min-height: 32px;
-  margin-left: var(--space-2);
-  border: 0;
-  border-radius: var(--radius-chip);
-  background: rgba(255, 255, 255, 0.72);
-  color: currentColor;
-  font-weight: 900;
+.map-view__error {
+  inset: auto var(--space-3) var(--space-3) var(--space-3);
+  place-items: start;
 }
 
 :deep(.leaflet-container) {
@@ -639,53 +472,60 @@ onBeforeUnmount(() => {
 :deep(.vue-map-asset) {
   background: transparent;
   border: 0;
+  pointer-events: none;
 }
 
-:deep(.vue-map-marker button) {
+:deep(.vue-map-scaled-icon-inner) {
+  display: block;
+}
+
+:deep(.vue-map-location-pin) {
   display: grid;
   place-items: center;
   width: 100%;
   height: 100%;
   border: 1px solid var(--glass-border);
-  box-shadow: var(--shadow-soft);
-  cursor: pointer;
-}
-
-:deep(.vue-map-marker--location button) {
   border-radius: var(--radius-orb);
   background: rgba(255, 255, 255, 0.9);
+  box-shadow: var(--shadow-soft);
   color: var(--lian-ink);
 }
 
-:deep(.vue-map-marker--place-card button) {
-  grid-template-columns: 40px 1fr;
-  gap: 8px;
+:deep(.vue-map-location-card) {
+  display: block;
   overflow: hidden;
-  padding: 4px 10px 4px 4px;
+  width: 100%;
+  height: 100%;
+  border: 1px solid var(--glass-border);
   border-radius: 18px;
   background: rgba(255, 255, 255, 0.92);
-  color: var(--lian-ink);
-  font-size: 12px;
-  font-weight: 900;
+  box-shadow: var(--shadow-soft);
 }
 
-:deep(.vue-map-marker--place-card img),
-:deep(.vue-map-marker--post img) {
+:deep(.vue-map-location-card img),
+:deep(.vue-map-post-card img) {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
 
-:deep(.vue-map-marker--post button) {
+:deep(.vue-map-post-card) {
+  position: relative;
+  display: grid;
+  place-items: center;
   overflow: hidden;
+  width: 100%;
+  height: 100%;
+  border: 1px solid var(--glass-border);
   border-radius: 20px;
   background: rgba(31, 41, 51, 0.86);
+  box-shadow: var(--shadow-soft);
   color: #fff;
   font-size: 11px;
   font-weight: 900;
 }
 
-:deep(.vue-map-marker--post span) {
+:deep(.vue-map-post-card > span) {
   position: absolute;
   left: 6px;
   right: 6px;
@@ -696,16 +536,22 @@ onBeforeUnmount(() => {
   text-shadow: 0 1px 4px rgba(0, 0, 0, 0.45);
 }
 
-:deep(.vue-map-marker.is-active button) {
-  outline: 3px solid rgba(31, 167, 160, 0.38);
-  transform: translateY(-4px);
-}
-
 :deep(.vue-map-asset img) {
   width: 100%;
   height: 100%;
   object-fit: contain;
   pointer-events: none;
+}
+
+:deep(.vue-map-sr-only) {
+  position: absolute;
+  overflow: hidden;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 @media (max-width: 640px) {
@@ -715,7 +561,7 @@ onBeforeUnmount(() => {
   }
 
   .map-view__leaflet {
-    height: 58vh;
+    height: 62vh;
   }
 }
 </style>
