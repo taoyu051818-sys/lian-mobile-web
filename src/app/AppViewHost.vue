@@ -1,23 +1,30 @@
 <script setup lang="ts">
+import { defineAsyncComponent, type Component, type PropType } from "vue";
 import type { AppViewKey } from "./view-types";
-import type { PropType } from "vue";
 import FeedView from "../views/FeedView.vue";
-import MapLeafletView from "../views/MapLeafletView.vue";
-import MessagesView from "../views/MessagesView.vue";
-import ProfileView from "../views/ProfileView.vue";
-import PublishView from "../views/PublishView.vue";
+import ViewAsyncError from "./ViewAsyncError.vue";
+import ViewLoadingFallback from "./ViewLoadingFallback.vue";
 
 export type ChromeStatePayload = boolean | {
   hidden?: boolean;
   progress?: number;
 };
 
-const viewComponents = {
+function asyncView(loader: () => Promise<{ default: Component }>) {
+  return defineAsyncComponent({
+    loader,
+    loadingComponent: ViewLoadingFallback,
+    errorComponent: ViewAsyncError,
+    timeout: 15000,
+  });
+}
+
+const viewComponents: Record<AppViewKey, Component> = {
   feed: FeedView,
-  map: MapLeafletView,
-  publish: PublishView,
-  messages: MessagesView,
-  profile: ProfileView,
+  map: asyncView(() => import("../views/MapLeafletView.vue")),
+  publish: asyncView(() => import("../views/PublishView.vue")),
+  messages: asyncView(() => import("../views/MessagesView.vue")),
+  profile: asyncView(() => import("../views/ProfileView.vue")),
 };
 
 const props = defineProps({
