@@ -1,0 +1,142 @@
+/**
+ * Runtime config accessor for LIAN frontend.
+ *
+ * PUBLIC config  – injected by the serve/rehearsal script into <head> BEFORE
+ *   any app module script runs.  The accessor reads from window on every call
+ *   so a late-injected value is never missed.
+ *
+ * PRIVATE config – the accessor validates each read:
+ *   - Outside dev, localhost / 127.0.0.1 / ::1 origins are rejected.
+ *   - Outside dev, LIAN_IMAGE_PROXY_BASE_URL must be non-empty and absolute.
+ *   - Malformed or insecure URLs throw at read time rather than silently
+ *     falling back to localhost.
+ */
+
+declare global {
+  interface Window {
+    LIAN_API_BASE_URL?: string;
+    LIAN_IMAGE_PROXY_BASE_URL?: string;
+  }
+}
+
+export interface RuntimeConfig {
+  /** May be empty when the API is same-origin. */
+  apiBaseUrl: string;
+  /** Always an absolute URL outside dev contexts. */
+  imageProxyBaseUrl: string;
+}
+
+/** Read on every call so the accessor is never stale after injection. */
+function readRaw(key: "LIAN_API_BASE_URL" | "LIAN_IMAGE_PROXY_BASE_URL"): string {
+  return typeof window !== "undefined" ? (window[key] ?? "") : "";
+}
+
+function isLocalhostOrigin(url: string): boolean {
+  try {
+    const { hostname } = new URL(url);
+    return (
+      hostname === "localhost" ||
+      hostname === "127.0.0.1" ||
+      hostname === "::1" ||
+      hostname === "[::1]"
+    );
+  } catch {
+    return false;
+  }
+}
+
+function isAbsoluteUrl(value: string): boolean {
+  return /^https?:\/\/./i.test(value);
+}
+
+/**
+ * Dev-mode detection.  Vite sets import.meta.url with @fs or /@id prefixes
+ * during dev; a built bundle uses a file:// or https?:// origin instead.
+ */
+export function isDevContext(): boolean {
+  try {
+    if (typeof window !== "undefined" && "__VITE_DEV__" in window) {
+      return true;
+    }
+    const url = import.meta.url;
+    return url.includes("/@fs/") || url.includes("/@id/") || url.includes("__vite_");
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Validate an env value read from process.env at build/serve time.
+ *
+ * - Allows empty (caller falls back to a default).
+ * - Rejects values that look like paths rather than URLs.
+ * - Outside dev, rejects localhost origins.
+ *
+ * Returns the trimmed, slash-stripped value or throws.
+ */
+export function parseEnvUrl(
+  raw: string | undefined,
+  label: string,
+  { dev }: { dev: boolean },
+): string {
+  const value = (raw ?? "").trim().replace(/\/+$/, "");
+  if (!value) return value;
+  if (!isAbsoluteUrl(value)) {
+    throw new Error(
+      `[runtime-config] ${label} must be an absolute URL (got: ${JSON.stringify(value)})`,
+    );
+  }
+  if (!dev && isLocalhostOrigin(value)) {
+    throw new Error(
+      `[runtime-config] ${label} must not use a localhost origin outside dev (got: ${JSON.stringify(value)})`,
+    );
+  }
+  return value;
+}
+
+function validateAbsoluteOrEmpty(value: string, label: string, dev: boolean): string {
+  if (!value) return value;
+  if (!isAbsoluteUrl(value)) {
+    throw new Error(
+      `[runtime-config] ${label} is not an absolute URL: ${JSON.stringify(value)}`,
+    );
+  }
+  if (!dev && isLocalhostOrigin(value)) {
+    throw new Error(
+      `[runtime-config] ${label} must not use a localhost origin outside dev (got: ${JSON.stringify(value)})`,
+    );
+  }
+  return value;
+}
+
+function validateAbsoluteRequired(value: string, label: string, dev: boolean): string {
+  if (!value) {
+    if (dev) return value;
+    throw new Error(
+      `[runtime-config] ${label} is missing; set it via the runtime config injection script`,
+    );
+  }
+  return validateAbsoluteOrEmpty(value, label, dev);
+}
+
+export function getRuntimeConfig(): RuntimeConfig {
+  const dev = isDevContext();
+  return {
+    apiBaseUrl: validateAbsoluteOrEmpty(
+      readRaw("LIAN_API_BASE_URL"), "LIAN_API_BASE_URL", dev,
+    ),
+    imageProxyBaseUrl: validateAbsoluteRequired(
+      readRaw("LIAN_IMAGE_PROXY_BASE_URL"), "LIAN_IMAGE_PROXY_BASE_URL", dev,
+    ),
+  };
+}
+
+/** Convenience accessor – prefer getRuntimeConfig() when both values are needed. */
+export function getApiBase(): string {
+  return validateAbsoluteOrEmpty(readRaw("LIAN_API_BASE_URL"), "LIAN_API_BASE_URL", isDevContext());
+}
+
+/** Convenience accessor – prefer getRuntimeConfig() when both values are needed. */
+export function getImageProxyBase(): string {
+  return validateAbsoluteRequired(readRaw("LIAN_IMAGE_PROXY_BASE_URL"), "LIAN_IMAGE_PROXY_BASE_URL", isDevContext());
+}
