@@ -24,11 +24,27 @@ const errorMessage = ref("");
 const successMessage = ref("");
 const codeMessage = ref("");
 
+const formErrorId = "auth-form-error";
+const loginHintId = "auth-login-hint";
+const usernameHintId = "auth-username-hint";
+const emailHintId = "auth-email-hint";
+const emailCodeHintId = "auth-email-code-hint";
+const passwordHintId = "auth-password-hint";
+const inviteCodeHintId = "auth-invite-code-hint";
+
 const primaryLabel = computed(() => mode.value === "login" ? "登录" : "注册并登录");
 const note = computed(() => mode.value === "login"
   ? "使用邮箱或昵称登录。"
   : "选择兴趣后，会用于首页推荐和第一个马甲。"
 );
+const emailCodeHint = computed(() => codeMessage.value || "验证码会发送到你的高校邮箱。邀请码注册时可以留空。");
+const passwordEnterKeyHint = computed(() => mode.value === "login" ? "go" : "next");
+const loginHasError = computed(() => mode.value === "login" && errorMessage.value.includes("邮箱或昵称"));
+const usernameHasError = computed(() => mode.value === "register" && errorMessage.value.includes("昵称"));
+const emailHasError = computed(() => mode.value === "register" && errorMessage.value.includes("高校邮箱"));
+const emailCodeHasError = computed(() => mode.value === "register" && errorMessage.value.includes("验证码"));
+const passwordHasError = computed(() => errorMessage.value.includes("密码至少"));
+const inviteCodeHasError = computed(() => mode.value === "register" && errorMessage.value.includes("邀请码"));
 
 function switchMode(nextMode: AuthMode) {
   mode.value = nextMode;
@@ -137,26 +153,80 @@ onMounted(async () => {
     <form class="auth-panel__form" @submit.prevent="submitAuth">
       <label v-if="mode === 'login'">
         <span>邮箱或昵称</span>
-        <input v-model="login" autocomplete="username" placeholder="邮箱或昵称" />
+        <input
+          v-model="login"
+          autocomplete="username"
+          autocapitalize="none"
+          autocorrect="off"
+          spellcheck="false"
+          enterkeyhint="next"
+          required
+          :aria-invalid="loginHasError"
+          :aria-describedby="[loginHintId, loginHasError ? formErrorId : null].filter(Boolean).join(' ')"
+          placeholder="邮箱或昵称"
+        />
+        <small :id="loginHintId" class="auth-panel__hint">支持邮箱或昵称登录。</small>
       </label>
 
       <template v-else>
         <label>
           <span>昵称</span>
-          <input v-model="username" maxlength="30" autocomplete="nickname" placeholder="怎么称呼你" />
+          <input
+            v-model="username"
+            maxlength="30"
+            autocomplete="nickname"
+            enterkeyhint="next"
+            required
+            :aria-invalid="usernameHasError"
+            :aria-describedby="[usernameHintId, usernameHasError ? formErrorId : null].filter(Boolean).join(' ')"
+            placeholder="怎么称呼你"
+          />
+          <small :id="usernameHintId" class="auth-panel__hint">这个昵称会用于你的初始身份展示。</small>
         </label>
         <label>
           <span>高校邮箱</span>
-          <input v-model="email" type="email" autocomplete="email" placeholder="邀请码注册可不填" />
+          <input
+            v-model="email"
+            type="email"
+            autocomplete="email"
+            autocapitalize="none"
+            autocorrect="off"
+            spellcheck="false"
+            enterkeyhint="next"
+            inputmode="email"
+            :aria-invalid="emailHasError"
+            :aria-describedby="[emailHintId, emailHasError ? formErrorId : null].filter(Boolean).join(' ')"
+            placeholder="邀请码注册可不填"
+          />
+          <small :id="emailHintId" class="auth-panel__hint">高校邮箱注册需要先获取 6 位验证码；邀请码注册时可以留空。</small>
         </label>
         <label>
           <span>邮箱验证码</span>
           <div class="auth-panel__code-row">
-            <input v-model="emailCode" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="6 位验证码" />
-            <button type="button" :disabled="sendingCode" @click="requestEmailCode">
+            <input
+              v-model="emailCode"
+              inputmode="numeric"
+              maxlength="6"
+              pattern="[0-9]*"
+              autocomplete="one-time-code"
+              autocapitalize="none"
+              autocorrect="off"
+              spellcheck="false"
+              enterkeyhint="next"
+              :aria-invalid="emailCodeHasError"
+              :aria-describedby="[emailCodeHintId, emailCodeHasError ? formErrorId : null].filter(Boolean).join(' ')"
+              placeholder="6 位验证码"
+            />
+            <button
+              type="button"
+              :disabled="sendingCode"
+              :aria-describedby="emailCodeHintId"
+              @click="requestEmailCode"
+            >
               {{ sendingCode ? "发送中" : "发送" }}
             </button>
           </div>
+          <small :id="emailCodeHintId" class="auth-panel__hint" aria-live="polite">{{ emailCodeHint }}</small>
         </label>
 
         <section v-if="interestOptions.length" class="auth-panel__interests" aria-label="兴趣选择">
@@ -187,18 +257,35 @@ onMounted(async () => {
           type="password"
           required
           minlength="8"
+          autocapitalize="none"
+          autocorrect="off"
+          spellcheck="false"
           :autocomplete="mode === 'login' ? 'current-password' : 'new-password'"
+          :enterkeyhint="passwordEnterKeyHint"
+          :aria-invalid="passwordHasError"
+          :aria-describedby="[passwordHintId, passwordHasError ? formErrorId : null].filter(Boolean).join(' ')"
           placeholder="至少 8 位"
         />
+        <small :id="passwordHintId" class="auth-panel__hint">至少 8 位，支持密码管理器自动填充。</small>
       </label>
 
       <label v-if="mode === 'register'">
         <span>邀请码</span>
-        <input v-model="inviteCode" autocomplete="off" placeholder="非高校邮箱时填写" />
+        <input
+          v-model="inviteCode"
+          autocomplete="off"
+          autocapitalize="none"
+          autocorrect="off"
+          spellcheck="false"
+          enterkeyhint="done"
+          :aria-invalid="inviteCodeHasError"
+          :aria-describedby="[inviteCodeHintId, inviteCodeHasError ? formErrorId : null].filter(Boolean).join(' ')"
+          placeholder="非高校邮箱时填写"
+        />
+        <small :id="inviteCodeHintId" class="auth-panel__hint">没有高校邮箱时，可以改用邀请码注册。</small>
       </label>
 
-      <InlineError v-if="errorMessage">{{ errorMessage }}</InlineError>
-      <p v-if="codeMessage" class="auth-panel__success">{{ codeMessage }}</p>
+      <InlineError v-if="errorMessage" :id="formErrorId">{{ errorMessage }}</InlineError>
       <p v-if="successMessage" class="auth-panel__success">{{ successMessage }}</p>
 
       <button class="auth-panel__submit" type="submit" :disabled="submitting">
@@ -241,7 +328,8 @@ onMounted(async () => {
 
 .auth-panel > p,
 .auth-panel label span,
-.auth-panel__section-title span {
+.auth-panel__section-title span,
+.auth-panel__hint {
   color: var(--lian-muted);
   line-height: 1.6;
 }
@@ -274,6 +362,11 @@ onMounted(async () => {
   gap: var(--space-2);
   font-size: 13px;
   font-weight: 800;
+}
+
+.auth-panel__hint {
+  font-size: 12px;
+  font-weight: 700;
 }
 
 .auth-panel input {
