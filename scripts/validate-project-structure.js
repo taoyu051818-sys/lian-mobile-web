@@ -51,6 +51,7 @@ const requiredFiles = [
   "scripts/smoke-frontend.js",
   "scripts/serve-frontend-static-rehearsal.js",
   "scripts/guard-public-runtime-exposure.js",
+  "scripts/test-guard-public-runtime-exposure.js",
   "package.json",
   "README.md"
 ];
@@ -75,7 +76,8 @@ const frontendJsFiles = [
   "public/app.js",
   "scripts/smoke-frontend.js",
   "scripts/serve-frontend-static-rehearsal.js",
-  "scripts/guard-public-runtime-exposure.js"
+  "scripts/guard-public-runtime-exposure.js",
+  "scripts/test-guard-public-runtime-exposure.js"
 ];
 
 const backendOnlyPaths = [
