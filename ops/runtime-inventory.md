@@ -40,6 +40,12 @@ The frontend verification gate runs static checks, build, focused unit tests, an
 
 Any PR that changes the verify script, unit-test wiring, TypeScript test config, or locked test dependencies must keep this inventory updated so CI behavior stays reviewable.
 
+## UGC HTML sanitizer verification
+
+The frontend verification path includes focused sanitizer/audit coverage for user-generated HTML rendering. The package scripts may wire `scripts/audit-v-html-usage.js` and `scripts/test-html-sanitizer.js` so PRs that touch UGC rendering prove that raw HTML only reaches approved safe-rendering surfaces.
+
+Any PR that changes sanitizer verification scripts, package-level HTML safety checks, or safe-rendering guard coverage must update this inventory in the same branch.
+
 ## Operational rule
 
-Any PR that changes dependency preflight behavior, the runtime supervisor exit contract, Windows spawn compatibility, the runtime config accessor/env-validation contract, unsafe DOM sink guard coverage, public runtime exposure checks, frontend project-structure validation, or frontend verify/test wiring must update this document or another runtime inventory artifact in the same PR.
+Any PR that changes dependency preflight behavior, the runtime supervisor exit contract, Windows spawn compatibility, the runtime config accessor/env-validation contract, unsafe DOM sink guard coverage, public runtime exposure checks, frontend project-structure validation, frontend verify/test wiring, or UGC HTML sanitizer verification must update this document or another runtime inventory artifact in the same PR.
