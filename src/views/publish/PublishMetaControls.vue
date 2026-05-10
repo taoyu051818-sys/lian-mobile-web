@@ -3,12 +3,15 @@ import { TagChip } from "../../ui";
 import type { PublishVisibility } from "../../types/publish";
 
 defineProps<{
+  tagPanelOpen: boolean;
+  visibilityPanelOpen: boolean;
   tagInput: string;
   normalizedTag: string;
   identityTag: string;
   identityTagOptions: string[];
   visibility: PublishVisibility;
   visibilityOptions: Array<{ value: PublishVisibility; label: string }>;
+  visibilityLabel: string;
 }>();
 
 const emit = defineEmits<{
@@ -19,27 +22,42 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <label class="publish-meta__field">
-    <span>帖子标签</span>
-    <input :value="tagInput" maxlength="18" placeholder="一个标签，例如 #晚霞" @input="emit('update:tagInput', ($event.target as HTMLInputElement).value)" />
-  </label>
+  <section
+    v-if="tagPanelOpen || normalizedTag || identityTag"
+    class="publish-meta__panel"
+    aria-label="标签设置"
+  >
+    <div class="publish-meta__panel-header">
+      <strong>标签</strong>
+      <span>让内容更好被理解</span>
+    </div>
 
-  <div v-if="normalizedTag" class="publish-meta__tags" aria-label="帖子标签预览">
-    <TagChip :tag="normalizedTag" />
-  </div>
+    <label class="publish-meta__field publish-meta__field--compact">
+      <span>帖子标签</span>
+      <input :value="tagInput" maxlength="18" placeholder="一个标签，例如 #晚霞" @input="emit('update:tagInput', ($event.target as HTMLInputElement).value)" />
+    </label>
 
-  <label v-if="identityTagOptions.length" class="publish-meta__field">
-    <span>身份标签</span>
-    <select :value="identityTag" @change="emit('update:identityTag', ($event.target as HTMLSelectElement).value)">
-      <option value="">不使用身份标签</option>
-      <option v-for="tag in identityTagOptions" :key="tag" :value="tag">{{ tag }}</option>
-    </select>
-  </label>
+    <div v-if="normalizedTag" class="publish-meta__tags" aria-label="帖子标签预览">
+      <TagChip :tag="normalizedTag" />
+    </div>
 
-  <section class="publish-meta__section" aria-labelledby="publish-visibility-title">
-    <div class="publish-meta__section-title">
+    <label v-if="identityTagOptions.length" class="publish-meta__field publish-meta__field--compact">
+      <span>身份标签</span>
+      <select :value="identityTag" @change="emit('update:identityTag', ($event.target as HTMLSelectElement).value)">
+        <option value="">不使用身份标签</option>
+        <option v-for="tag in identityTagOptions" :key="tag" :value="tag">{{ tag }}</option>
+      </select>
+    </label>
+  </section>
+
+  <section
+    v-if="visibilityPanelOpen"
+    class="publish-meta__panel"
+    aria-labelledby="publish-visibility-title"
+  >
+    <div class="publish-meta__panel-header">
       <strong id="publish-visibility-title">可见范围</strong>
-      <span>{{ visibilityOptions.find((item) => item.value === visibility)?.label }}</span>
+      <span>{{ visibilityLabel }}</span>
     </div>
     <div class="publish-meta__visibility-grid">
       <button
@@ -57,16 +75,16 @@ const emit = defineEmits<{
 </template>
 
 <style scoped>
-.publish-meta__section {
+.publish-meta__panel {
   display: grid;
-  gap: var(--space-4);
-  padding: var(--space-3);
+  gap: var(--space-3);
+  padding: var(--space-4);
   border: 1px solid rgba(31, 41, 51, 0.08);
-  border-radius: var(--radius-card);
-  background: rgba(255, 255, 255, 0.48);
+  border-radius: calc(var(--radius-card) + 2px);
+  background: rgba(255, 255, 255, 0.56);
 }
 
-.publish-meta__section-title {
+.publish-meta__panel-header {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-2);
@@ -74,9 +92,10 @@ const emit = defineEmits<{
   justify-content: space-between;
 }
 
-.publish-meta__section-title span {
+.publish-meta__panel-header span {
   color: var(--lian-muted);
-  line-height: 1.6;
+  font-size: 12px;
+  font-weight: 800;
 }
 
 .publish-meta__field {
@@ -85,7 +104,7 @@ const emit = defineEmits<{
   padding: var(--space-3);
   border: 1px solid rgba(31, 41, 51, 0.08);
   border-radius: var(--radius-card);
-  background: rgba(255, 255, 255, 0.48);
+  background: rgba(255, 255, 255, 0.72);
   color: var(--lian-muted);
   font-size: 13px;
   font-weight: 800;
@@ -96,12 +115,30 @@ const emit = defineEmits<{
   width: 100%;
   min-height: 44px;
   box-sizing: border-box;
-  padding: 0 var(--space-3);
-  border: 1px solid var(--lian-border);
+  border: 0;
   border-radius: var(--radius-3);
-  background: rgba(255, 255, 255, 0.72);
+  background: transparent;
   color: var(--lian-ink);
   font: inherit;
+}
+
+.publish-meta__field input {
+  padding: 0;
+}
+
+.publish-meta__field select {
+  padding: 0 var(--space-3);
+}
+
+.publish-meta__field--compact {
+  gap: 6px;
+}
+
+.publish-meta__field span {
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
 .publish-meta__tags {
@@ -120,19 +157,19 @@ const emit = defineEmits<{
 
 .publish-meta__visibility {
   display: grid;
-  min-height: 48px;
+  min-height: 54px;
   place-items: center;
-  padding: var(--space-2);
-  border: 1px solid var(--glass-border);
+  padding: var(--space-3);
+  border: 1px solid rgba(31, 41, 51, 0.1);
   border-radius: var(--radius-card);
-  background: rgba(255, 255, 255, 0.54);
+  background: rgba(255, 255, 255, 0.74);
   color: var(--lian-ink);
   text-align: center;
 }
 
 .publish-meta__visibility.is-active {
-  border-color: rgba(31, 167, 160, 0.34);
-  background: rgba(31, 167, 160, 0.12);
+  border-color: rgba(31, 167, 160, 0.3);
+  background: rgba(31, 167, 160, 0.14);
 }
 
 @media (max-width: 640px) {
