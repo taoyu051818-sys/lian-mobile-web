@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { IdentityBadge, InlineError, LianButton } from "../../ui";
+import { InlineError, LianButton } from "../../ui";
 import type { DisplayActor } from "../../types/feed";
 import type { ChannelMessage, ChannelMessageActor } from "../../types/messages";
 import { formatRelativeTime } from "../../utils/time";
@@ -65,15 +65,21 @@ function messageMeta(item: ChannelMessage) {
     <div v-else-if="!items.length" class="messages-view__state">还没有消息</div>
     <div v-else class="messages-view__list" aria-live="polite">
       <article v-for="item in items" :key="String(item.id)" class="messages-view__message" :class="{ 'is-self': item.isSelf }">
-        <IdentityBadge v-if="!item.isSelf" class="messages-view__message-avatar" :avatar-text="messageAvatarText(item)" :label="messageAuthor(item)" :meta="messageMeta(item)" />
-        <div class="messages-view__bubble">
-          <p>{{ messageText(item) }}</p>
-          <footer>
-            <span>{{ formatRelativeTime(item.timestampISO || item.time) || "刚刚" }}</span>
-            <span v-if="item.isSelf && item.deliveryState === 'sending'">发送中…</span>
-            <span v-else-if="item.isSelf && item.deliveryState === 'failed'">发送失败</span>
-            <span v-else-if="item.readCount">{{ item.readCount }} 次已读</span>
-          </footer>
+        <span v-if="!item.isSelf" class="messages-view__message-avatar identity-badge__avatar" aria-hidden="true">{{ messageAvatarText(item) }}</span>
+        <div class="messages-view__message-body">
+          <span v-if="!item.isSelf" class="messages-view__message-author identity-badge__text">
+            <strong>{{ messageAuthor(item) }}</strong>
+            <small>{{ messageMeta(item) }}</small>
+          </span>
+          <div class="messages-view__bubble">
+            <p>{{ messageText(item) }}</p>
+            <footer>
+              <span>{{ formatRelativeTime(item.timestampISO || item.time) || "刚刚" }}</span>
+              <span v-if="item.isSelf && item.deliveryState === 'sending'">发送中…</span>
+              <span v-else-if="item.isSelf && item.deliveryState === 'failed'">发送失败</span>
+              <span v-else-if="item.readCount">{{ item.readCount }} 次已读</span>
+            </footer>
+          </div>
         </div>
       </article>
     </div>
@@ -97,7 +103,8 @@ function messageMeta(item: ChannelMessage) {
 }
 
 .messages-view__message {
-  display: flex;
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr);
   gap: var(--space-2);
   align-items: flex-start;
   max-width: 85%;
@@ -105,7 +112,7 @@ function messageMeta(item: ChannelMessage) {
 
 .messages-view__message.is-self {
   align-self: flex-end;
-  flex-direction: row-reverse;
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .messages-view__message:not(.is-self) {
@@ -113,7 +120,28 @@ function messageMeta(item: ChannelMessage) {
 }
 
 .messages-view__message-avatar {
+  grid-column: 1;
+  grid-row: 2;
   flex-shrink: 0;
+}
+
+.messages-view__message-body {
+  display: grid;
+  grid-column: 2;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.messages-view__message.is-self .messages-view__message-body {
+  grid-column: 1;
+}
+
+.messages-view__message-author {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  align-items: baseline;
+  padding-inline: var(--space-1);
 }
 
 .messages-view__bubble {
