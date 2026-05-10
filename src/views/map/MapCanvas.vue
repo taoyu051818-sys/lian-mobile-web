@@ -142,10 +142,12 @@ const props = defineProps<{
   mapData: MapV2ItemsResponse | null;
   roadPreview: MapRoadNetworkPreview | null;
   loading: boolean;
+  visibleLayers?: Record<string, boolean>;
 }>();
 
 const emit = defineEmits<{
   "load-error": [message: string];
+  "place-select": [place: MapLocation | MapPost];
 }>();
 
 const stageEl = ref<HTMLElement | null>(null);
@@ -440,16 +442,16 @@ function renderMarkers() {
   renderedLocations.value.forEach((location) => {
     const position = latLng(location);
     if (!position) return;
-    getLeaflet().marker(position, { icon: locationIcon(location), title: location.name, zIndexOffset: 80, interactive: true, keyboard: true })
-      .bindTooltip(location.name, { sticky: true })
-      .addTo(lyrs.locations);
+    const m = getLeaflet().marker(position, { icon: locationIcon(location), title: location.name, zIndexOffset: 80, interactive: true, keyboard: true });
+    m.on("click", () => emit("place-select", location));
+    m.bindTooltip(location.name, { sticky: true }).addTo(lyrs.locations);
   });
   renderedPosts.value.forEach((post) => {
     const position = latLng(post);
     if (!position) return;
-    getLeaflet().marker(position, { icon: postIcon(post), title: post.title || post.locationArea || "", zIndexOffset: 120, interactive: true, keyboard: true })
-      .bindTooltip(post.title || post.locationArea || "地图内容", { sticky: true })
-      .addTo(lyrs.posts);
+    const m = getLeaflet().marker(position, { icon: postIcon(post), title: post.title || post.locationArea || "", zIndexOffset: 120, interactive: true, keyboard: true });
+    m.on("click", () => emit("place-select", post));
+    m.bindTooltip(post.title || post.locationArea || "地图内容", { sticky: true }).addTo(lyrs.posts);
   });
 }
 
@@ -530,6 +532,21 @@ async function refreshMap() {
 watch(() => props.mapData, (next) => {
   if (next) void refreshMap();
 });
+
+watch(() => props.visibleLayers, (vis) => {
+  const lyrs = layers;
+  if (!lyrs || !vis) return;
+  const mapEl = map.value as LeafletMapLike & { hasLayer(l: unknown): boolean; removeLayer(l: unknown): LeafletMapLike } | null;
+  if (!mapEl) return;
+  const toggle = (layer: LeafletLayerGroupLike, key: string) => {
+    const visible = vis[key] !== false;
+    const has = mapEl.hasLayer(layer);
+    if (visible && !has) layer.addTo(mapEl);
+    else if (!visible && has) mapEl.removeLayer(layer);
+  };
+  toggle(lyrs.locations, "locations");
+  toggle(lyrs.posts, "posts");
+}, { deep: true });
 
 onBeforeUnmount(() => {
   map.value?.remove();
