@@ -1,8 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-vi.stubGlobal("document", { querySelector: vi.fn(() => null) });
-vi.stubGlobal("MutationObserver", class { observe() {} disconnect() {} });
-
 const setRegion = vi.fn();
 const resetRegions = vi.fn();
 
@@ -19,36 +16,39 @@ describe("usePublishChromeActions", () => {
   });
 
   it("setup calls setRegion with clear and submit button specs", () => {
-    const actions = usePublishChromeActions({ onPublish: vi.fn(), onClear: vi.fn() });
+    const onPublish = vi.fn();
+    const onClear = vi.fn();
+    const actions = usePublishChromeActions({ onPublish, onClear });
     actions.setup();
-    expect(setRegion).toHaveBeenCalledWith("bottom", {
-      buttons: [
-        { id: "publish-clear", label: "清空", variant: "ghost" },
-        { id: "publish-submit", label: "发布", variant: "primary", disabled: false },
-      ],
-    });
+    const buttons = setRegion.mock.calls[0][1].buttons;
+    expect(buttons).toMatchObject([
+      { id: "publish-clear", label: "清空", variant: "ghost" },
+      { id: "publish-submit", label: "发布", variant: "primary", disabled: false },
+    ]);
   });
 
   it("updateDisabled sets submit button disabled state", () => {
-    const actions = usePublishChromeActions({ onPublish: vi.fn(), onClear: vi.fn() });
+    const onPublish = vi.fn();
+    const onClear = vi.fn();
+    const actions = usePublishChromeActions({ onPublish, onClear });
     actions.updateDisabled(true);
-    expect(setRegion).toHaveBeenCalledWith("bottom", {
-      buttons: [
-        { id: "publish-clear", label: "清空", variant: "ghost" },
-        { id: "publish-submit", label: "发布", variant: "primary", disabled: true },
-      ],
-    });
+    const buttons = setRegion.mock.calls[0][1].buttons;
+    expect(buttons).toMatchObject([
+      { id: "publish-clear", label: "清空", variant: "ghost" },
+      { id: "publish-submit", label: "发布", variant: "primary", disabled: true },
+    ]);
   });
 
   it("updateDisabled(false) enables submit button", () => {
-    const actions = usePublishChromeActions({ onPublish: vi.fn(), onClear: vi.fn() });
+    const onPublish = vi.fn();
+    const onClear = vi.fn();
+    const actions = usePublishChromeActions({ onPublish, onClear });
     actions.updateDisabled(false);
-    expect(setRegion).toHaveBeenCalledWith("bottom", {
-      buttons: [
-        { id: "publish-clear", label: "清空", variant: "ghost" },
-        { id: "publish-submit", label: "发布", variant: "primary", disabled: false },
-      ],
-    });
+    const buttons = setRegion.mock.calls[0][1].buttons;
+    expect(buttons).toMatchObject([
+      { id: "publish-clear", label: "清空", variant: "ghost" },
+      { id: "publish-submit", label: "发布", variant: "primary", disabled: false },
+    ]);
   });
 
   it("cleanup calls resetRegions", () => {
@@ -62,5 +62,26 @@ describe("usePublishChromeActions", () => {
     const actions = usePublishChromeActions({ onPublish: vi.fn(), onClear: vi.fn() });
     expect(() => actions.cleanup()).not.toThrow();
     expect(resetRegions).toHaveBeenCalled();
+  });
+
+  it("button specs include onClick handlers for the provided callbacks", () => {
+    const onPublish = vi.fn();
+    const onClear = vi.fn();
+    const actions = usePublishChromeActions({ onPublish, onClear });
+    actions.setup();
+    const buttons = setRegion.mock.calls[0][1].buttons;
+    expect(buttons[0].onClick).toBe(onClear);
+    expect(buttons[1].onClick).toBe(onPublish);
+  });
+
+  it("onClick handlers are updated when updateDisabled is called", () => {
+    const onPublish = vi.fn();
+    const onClear = vi.fn();
+    const actions = usePublishChromeActions({ onPublish, onClear });
+    actions.setup();
+    actions.updateDisabled(true);
+    const buttons = setRegion.mock.calls[1][1].buttons;
+    expect(buttons[0].onClick).toBe(onClear);
+    expect(buttons[1].onClick).toBe(onPublish);
   });
 });
