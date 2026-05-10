@@ -1,0 +1,21 @@
+.content-frame {
+  display: grid;
+  width: min(100%, 760px);
+  gap: var(--space-3);
+  margin: 0 auto;
+}
+
+.content-frame--full-bleed {
+  width: 100%;
+  max-width: none;
+}
+
+.content-frame--composer-safe {
+  padding-bottom: var(--space-8);
+}
+
+@media (min-width: 720px) {
+  .content-frame {
+    width: min(100%, var(--content-grid-max-width, 760px));
+  }
+}
