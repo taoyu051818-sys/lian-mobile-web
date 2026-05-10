@@ -77,7 +77,7 @@ function handleTabSelect(tabId: string) {
   >
     <template v-if="hasTabs">
       <nav
-        class="shell-chrome__tabs feed-view__tabs lian-floating-chrome"
+        class="shell-chrome__tabs lian-floating-chrome"
         :class="[`lian-floating-chrome--${region}`]"
         :aria-label="regionSpec.tabs?.ariaLabel ?? '标签切换'"
         :aria-hidden="regionSpec.tabs?.floatingState === 'hidden'"
@@ -88,7 +88,7 @@ function handleTabSelect(tabId: string) {
           v-for="tab in regionSpec.tabs?.items ?? []"
           :key="tab.id"
           type="button"
-          class="shell-chrome__tab feed-view__tab"
+          class="shell-chrome__tab"
           :class="{ 'is-active': tab.id === regionSpec.tabs?.activeKey }"
           :aria-pressed="tab.id === regionSpec.tabs?.activeKey"
           @click="handleTabSelect(tab.id)"

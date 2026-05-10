@@ -60,9 +60,8 @@
   display: none;
 }
 
-/* Tab button base styles (shared with .feed-view__tab for content-immersive-ui.css compat) */
-.shell-chrome__tab,
-.feed-view__tab {
+/* Shell-owned tab button base styles */
+.shell-chrome__tab {
   flex: 0 0 auto;
   min-height: var(--floating-bar-button-height);
   padding: 0 var(--space-3);
@@ -76,28 +75,24 @@
   transition: background 160ms ease, color 160ms ease, transform 160ms ease;
 }
 
-.shell-chrome__tab.is-active,
-.feed-view__tab.is-active {
+.shell-chrome__tab.is-active {
   background: var(--lian-ink);
   color: #fff;
   transform: translateY(-1px);
 }
 
-.shell-chrome__tab:disabled,
-.feed-view__tab:disabled {
+.shell-chrome__tab:disabled {
   cursor: wait;
   opacity: 0.6;
 }
 
-.shell-chrome__tab:focus-visible,
-.feed-view__tab:focus-visible {
+.shell-chrome__tab:focus-visible {
   outline: 3px solid rgba(31, 167, 160, 0.32);
   outline-offset: 2px;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .shell-chrome__tab,
-  .feed-view__tab {
+  .shell-chrome__tab {
     transition: none;
   }
 }
