@@ -1,3 +1,8 @@
+/* QUARANTINE: v1 card-camera overlay scaffolding (issue #85 / #274).
+   This file is temporary. Do not extend or add new behavior here.
+   The final shared-element/detail motion architecture will replace it.
+   Reduced-motion users get instant detail open (JS guard in FeedView.vue).
+*/
 :root {
   --card-camera-motion-duration: 360ms;
   --card-camera-width: min(92vw, 430px);

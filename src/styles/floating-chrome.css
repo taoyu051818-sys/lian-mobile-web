@@ -26,26 +26,6 @@
   bottom: var(--floating-bar-bottom-offset);
 }
 
-.lian-floating-chrome--top.is-hidden,
-.lian-floating-chrome--top[data-floating-state="hidden"],
-.lian-floating-chrome--top[data-floating-state="exiting"],
-.lian-floating-chrome--bottom.is-hidden,
-.lian-floating-chrome--bottom[data-floating-state="hidden"],
-.lian-floating-chrome--bottom[data-floating-state="exiting"] {
-  opacity: 0;
-  pointer-events: none;
-}
-
-.lian-floating-chrome[data-floating-state="entering"],
-.lian-floating-chrome[data-floating-state="visible"] {
-  opacity: 1;
-}
-
-.lian-floating-chrome[data-floating-state="entering"],
-.lian-floating-chrome[data-floating-state="exiting"] {
-  pointer-events: none;
-}
-
 .bottom-tab-bar.lian-floating-chrome {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
