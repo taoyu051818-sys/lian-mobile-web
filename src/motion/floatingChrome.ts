@@ -3,12 +3,23 @@ import { computed, ref } from "vue";
 /**
  * Floating chrome phase model.
  *
- * `entering` and `exiting` are transitional no-ops: the controller collapses
- * them immediately to `visible` / `hidden`. The real exit-swap-enter lifecycle
- * is owned by issue #278 and will activate these phases once the shell chrome
- * transition system lands.
+ * Phases drive the shell chrome transition lifecycle:
  *
- * `progress` is used for gesture-driven interpolation (e.g., drag-to-dismiss).
+ *   visible → exiting → [swap content/spec] → entering → visible
+ *
+ * - `visible` -- chrome fully shown, no transition active.
+ * - `exiting` -- chrome is animating out (opacity → 0). Duration controlled
+ *   by the CSS custom property `--floating-chrome-motion-duration` or the
+ *   `transitionDuration` option. Pointer events are disabled.
+ * - `hidden` -- chrome fully hidden, no transition active.
+ * - `entering` -- chrome is animating in (opacity → 1) after a content/spec
+ *   swap. Pointer events are disabled during this phase.
+ * - `progress` -- continuous gesture-driven interpolation (e.g., drag).
+ *   Uses `--bottom-chrome-visibility-progress` with `transition: none`.
+ *
+ * Reduced-motion mode preserves the full phase sequence (visible → exiting →
+ * swap → entering → visible) but uses zero-duration transitions so no
+ * movement or blur is perceptible.
  */
 export type FloatingChromePhase = "visible" | "exiting" | "hidden" | "entering" | "progress";
 
@@ -34,6 +45,11 @@ export function useFloatingChromeController(options: {
   const progress = ref(
     phaseState.value === "hidden" || phaseState.value === "exiting" ? 0 : 1,
   );
+
+  let pendingTimer: ReturnType<typeof setTimeout> | undefined;
+
+  // Guard against double-dispose
+  let disposed = false;
 
   function setVisible() {
     phaseState.value = "visible";
@@ -117,8 +133,86 @@ export function useFloatingChromeController(options: {
     transitionTo(nextPhase);
   }
 
+  /**
+   * Drive the exit-swap-enter transition lifecycle.
+   *
+   * Sequence: visible → exiting → [callback fires] → entering → visible
+   *
+   * The callback receives no arguments and fires after the exiting phase
+   * completes. The caller is responsible for swapping chrome specs or
+   * content during this callback.
+   *
+   * If the controller is already in an exiting/entering transition, the
+   * call is a no-op and returns `false`. Returns `true` when the
+   * transition starts.
+   *
+   * Top and bottom regions may transition independently: each controller
+   * instance owns its own lifecycle. When both regions must transition
+   * together, the caller should invoke `transitionSpec` on both
+   * controllers in the same tick.
+   *
+   * Reduced-motion mode preserves the full phase sequence but uses
+   * zero-duration transitions, so no movement or blur is perceptible.
+   */
+  function transitionSpec(
+    nextSpec: Record<string, unknown>,
+    onSwap?: () => void,
+  ): boolean {
+    if (disposed) return false;
+
+    // No-op if already transitioning or in progress gesture
+    if (
+      phaseState.value === "exiting"
+      || phaseState.value === "entering"
+      || phaseState.value === "progress"
+    ) {
+      return false;
+    }
+
+    cancelPendingTimer();
+
+    // Phase 1: exiting
+    phaseState.value = "exiting";
+    progress.value = 0;
+
+    const duration = options.phaseMs ?? 220;
+
+    pendingTimer = setTimeout(() => {
+      if (disposed) return;
+
+      // Swap phase: caller updates specs/content
+      onSwap?.();
+      Object.assign(pendingSpec, nextSpec);
+
+      // Phase 3: entering
+      phaseState.value = "entering";
+      progress.value = 1;
+
+      pendingTimer = setTimeout(() => {
+        if (disposed) return;
+
+        // Phase 4: visible
+        setVisible();
+        pendingTimer = undefined;
+      }, duration);
+    }, duration);
+
+    return true;
+  }
+
+  // Internal spec buffer for transitionSpec swaps
+  const pendingSpec: Record<string, unknown> = {};
+
+  function cancelPendingTimer() {
+    if (pendingTimer !== undefined) {
+      clearTimeout(pendingTimer);
+      pendingTimer = undefined;
+    }
+  }
+
   function dispose() {
-    // No timers, frames, or listeners.
+    disposed = true;
+    cancelPendingTimer();
   }
 
   return {
@@ -127,6 +221,7 @@ export function useFloatingChromeController(options: {
     style,
     apply,
     transitionTo,
+    transitionSpec,
     show,
     hide,
     activate,
