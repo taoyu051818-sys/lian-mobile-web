@@ -1,8 +1,16 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue";
-import { fetchAuthRules, loginAuth, registerAuth, sendEmailCode } from "../../api/auth";
+import {
+  AUTH_ONBOARDING_INTEREST_LIMIT,
+  createLoadingAuthInterestSelectionState,
+  loadAuthInterestSelectionState,
+  loginAuth,
+  registerAuth,
+  sendEmailCode,
+  toggleAuthInterestSelection,
+} from "../../api/auth";
 import { InlineError, TypeChip } from "../../ui";
-import type { AuthInterestOption, AuthMode } from "../../api/auth";
+import type { AuthInterestSelectionState, AuthMode } from "../../api/auth";
 import type { ProfileUser } from "../../types/profile";
 
 const emit = defineEmits<{
@@ -16,8 +24,9 @@ const email = ref("");
 const emailCode = ref("");
 const password = ref("");
 const inviteCode = ref("");
-const interestOptions = ref<AuthInterestOption[]>([]);
+const interestState = ref<AuthInterestSelectionState>(createLoadingAuthInterestSelectionState());
 const selectedInterests = ref<string[]>([]);
+const skippedInterests = ref(false);
 const submitting = ref(false);
 const sendingCode = ref(false);
 const errorMessage = ref("");
@@ -31,11 +40,12 @@ const emailHintId = "auth-email-hint";
 const emailCodeHintId = "auth-email-code-hint";
 const passwordHintId = "auth-password-hint";
 const inviteCodeHintId = "auth-invite-code-hint";
+const interestHintId = "auth-interest-hint";
 
 const primaryLabel = computed(() => mode.value === "login" ? "登录" : "注册并登录");
 const note = computed(() => mode.value === "login"
   ? "使用邮箱或昵称登录。"
-  : "选择兴趣后，会用于首页推荐和第一个马甲。"
+  : "选择兴趣可帮助初始化首页推荐。可稍后再设置，不会直接绑定到身份展示。"
 );
 const emailCodeHint = computed(() => codeMessage.value || "验证码会发送到你的高校邮箱。邀请码注册时可以留空。");
 const passwordEnterKeyHint = computed(() => mode.value === "login" ? "go" : "next");
@@ -45,6 +55,14 @@ const emailHasError = computed(() => mode.value === "register" && errorMessage.v
 const emailCodeHasError = computed(() => mode.value === "register" && errorMessage.value.includes("验证码"));
 const passwordHasError = computed(() => errorMessage.value.includes("密码至少"));
 const inviteCodeHasError = computed(() => mode.value === "register" && errorMessage.value.includes("邀请码"));
+const interestsAreSelectable = computed(() => interestState.value.availability === "ready" && interestState.value.options.length > 0);
+const interestCountLabel = computed(() => `${selectedInterests.value.length}/${AUTH_ONBOARDING_INTEREST_LIMIT}`);
+const interestHint = computed(() => {
+  if (skippedInterests.value) {
+    return "你已选择稍后再设置兴趣偏好，注册后也可以在后续流程里补充。";
+  }
+  return interestState.value.helperText;
+});
 
 function switchMode(nextMode: AuthMode) {
   mode.value = nextMode;
@@ -54,16 +72,23 @@ function switchMode(nextMode: AuthMode) {
 }
 
 function toggleInterest(id: string) {
-  if (selectedInterests.value.includes(id)) {
-    selectedInterests.value = selectedInterests.value.filter((item) => item !== id);
-    return;
+  skippedInterests.value = false;
+  selectedInterests.value = toggleAuthInterestSelection(selectedInterests.value, id);
+}
+
+function skipInterestsForNow() {
+  skippedInterests.value = true;
+  selectedInterests.value = [];
+  if (errorMessage.value.includes("兴趣")) {
+    errorMessage.value = "";
   }
-  if (selectedInterests.value.length >= 5) return;
-  selectedInterests.value = [...selectedInterests.value, id];
 }
 
 function validate() {
   if (password.value.length < 8) return "密码至少需要 8 位。";
+  if (selectedInterests.value.length > AUTH_ONBOARDING_INTEREST_LIMIT) {
+    return `最多选择 ${AUTH_ONBOARDING_INTEREST_LIMIT} 个兴趣。`;
+  }
   if (mode.value === "login") {
     if (!login.value.trim()) return "请填写邮箱或昵称。";
     return "";
@@ -71,7 +96,6 @@ function validate() {
   if (!username.value.trim()) return "请填写昵称。";
   if (!email.value.trim() && !inviteCode.value.trim()) return "请填写高校邮箱，或填写邀请码。";
   if (email.value.trim() && !emailCode.value.trim()) return "高校邮箱注册需要填写验证码。";
-  if (!selectedInterests.value.length) return "至少选择一个兴趣，用来初始化推荐流。";
   return "";
 }
 
@@ -91,7 +115,7 @@ async function submitAuth() {
         emailCode: emailCode.value.trim() || undefined,
         password: password.value,
         inviteCode: inviteCode.value.trim() || undefined,
-        interests: selectedInterests.value,
+        interests: selectedInterests.value.length ? selectedInterests.value : [],
       });
     successMessage.value = "已登录，正在刷新个人资料。";
     emit("authenticated", user);
@@ -125,12 +149,7 @@ async function requestEmailCode() {
 }
 
 onMounted(async () => {
-  try {
-    const rules = await fetchAuthRules();
-    interestOptions.value = rules.interests || [];
-  } catch {
-    interestOptions.value = [];
-  }
+  interestState.value = await loadAuthInterestSelectionState();
 });
 </script>
 
@@ -232,23 +251,39 @@ onMounted(async () => {
           <small :id="emailCodeHintId" class="auth-panel__hint" aria-live="polite">{{ emailCodeHint }}</small>
         </label>
 
-        <section v-if="interestOptions.length" class="auth-panel__interests" aria-label="兴趣选择">
-          <div class="auth-panel__section-title">
-            <strong>兴趣</strong>
-            <span>{{ selectedInterests.length }}/5</span>
+        <section class="auth-panel__interests" aria-labelledby="auth-interest-title">
+          <div class="auth-panel__section-title auth-panel__section-title--stacked">
+            <div>
+              <strong id="auth-interest-title">兴趣偏好</strong>
+              <p :id="interestHintId" class="auth-panel__interest-copy" aria-live="polite">{{ interestHint }}</p>
+            </div>
+            <span v-if="interestsAreSelectable">{{ interestCountLabel }}</span>
           </div>
-          <div class="auth-panel__interest-grid">
+
+          <div v-if="interestsAreSelectable" class="auth-panel__interest-grid">
             <button
-              v-for="interest in interestOptions"
+              v-for="interest in interestState.options"
               :key="interest.id"
               type="button"
               class="auth-panel__interest"
-              :class="{ 'is-active': selectedInterests.includes(interest.id) }"
+              :class="{
+                'is-active': selectedInterests.includes(interest.id),
+                'is-disabled': !selectedInterests.includes(interest.id) && selectedInterests.length >= AUTH_ONBOARDING_INTEREST_LIMIT,
+              }"
+              :aria-pressed="selectedInterests.includes(interest.id)"
+              :aria-describedby="interestHintId"
+              :disabled="!selectedInterests.includes(interest.id) && selectedInterests.length >= AUTH_ONBOARDING_INTEREST_LIMIT"
               @click="toggleInterest(interest.id)"
             >
               <strong>{{ interest.label }}</strong>
               <span>{{ interest.description }}</span>
             </button>
+          </div>
+          <p v-else class="auth-panel__interest-status">{{ interestHint }}</p>
+
+          <div class="auth-panel__interest-actions">
+            <button type="button" class="auth-panel__skip" @click="skipInterestsForNow">跳过，稍后设置</button>
+            <span v-if="skippedInterests" class="auth-panel__skip-note">当前会先以空兴趣偏好完成注册。</span>
           </div>
         </section>
       </template>
@@ -316,7 +351,8 @@ onMounted(async () => {
 .auth-panel__header,
 .auth-panel__tabs,
 .auth-panel__code-row,
-.auth-panel__section-title {
+.auth-panel__section-title,
+.auth-panel__interest-actions {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-2);
@@ -332,7 +368,10 @@ onMounted(async () => {
 .auth-panel > p,
 .auth-panel label span,
 .auth-panel__section-title span,
-.auth-panel__hint {
+.auth-panel__hint,
+.auth-panel__interest-copy,
+.auth-panel__interest-status,
+.auth-panel__skip-note {
   color: var(--lian-muted);
   line-height: 1.6;
 }
@@ -342,7 +381,8 @@ onMounted(async () => {
 }
 
 .auth-panel__tabs button,
-.auth-panel__interest {
+.auth-panel__interest,
+.auth-panel__skip {
   border: 1px solid var(--glass-border);
   background: rgba(255, 255, 255, 0.54);
   color: var(--lian-muted);
@@ -367,9 +407,17 @@ onMounted(async () => {
   font-weight: 800;
 }
 
-.auth-panel__hint {
+.auth-panel__hint,
+.auth-panel__interest-copy,
+.auth-panel__interest-status,
+.auth-panel__skip-note {
   font-size: 12px;
   font-weight: 700;
+}
+
+.auth-panel__interest-copy,
+.auth-panel__interest-status {
+  margin-top: 4px;
 }
 
 .auth-panel input {
@@ -393,17 +441,28 @@ onMounted(async () => {
 }
 
 .auth-panel__code-row button,
-.auth-panel__submit {
+.auth-panel__submit,
+.auth-panel__skip {
   min-height: 44px;
-  border: 0;
   border-radius: var(--radius-chip);
   font-weight: 900;
 }
 
-.auth-panel__code-row button {
+.auth-panel__code-row button,
+.auth-panel__skip {
   padding: 0 var(--space-3);
   background: rgba(255, 255, 255, 0.72);
   color: var(--lian-ink);
+}
+
+.auth-panel__code-row button,
+.auth-panel__skip,
+.auth-panel__submit {
+  border: 0;
+}
+
+.auth-panel__section-title--stacked {
+  align-items: flex-start;
 }
 
 .auth-panel__interest-grid {
@@ -436,13 +495,18 @@ onMounted(async () => {
   color: var(--lian-ink);
 }
 
+.auth-panel__interest.is-disabled {
+  opacity: 0.6;
+}
+
 .auth-panel__submit {
   background: var(--lian-ink);
   color: #fff;
 }
 
 .auth-panel__submit:disabled,
-.auth-panel__code-row button:disabled {
+.auth-panel__code-row button:disabled,
+.auth-panel__interest:disabled {
   opacity: 0.62;
 }
 
