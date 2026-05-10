@@ -5,6 +5,22 @@
  * which road source to render (official API data preferred, preview fallback).
  *
  * Related to #219. Part of #219. Does not close #219.
+ *
+ * ## Exit criteria for removing preview fallback (#297)
+ *
+ * The preview road fallback (`/assets/road-network-preview.json`) should be
+ * removed or disabled once **all** of the following are true:
+ *
+ * 1. The official road API (`MapLayerBundle.roads`) returns non-empty road data
+ *    for every map tile/bundle that currently falls back to preview data.
+ * 2. At least two consecutive releases ship with zero `[map-roads] using preview
+ *    road fallback` info-level log events in production telemetry.
+ * 3. QA has verified road rendering parity (route, type, style) between official
+ *    data and the current preview snapshot for all active campus maps.
+ *
+ * When those conditions hold, remove `convertPreviewToRoads`, the preview
+ * import, and the fallback branch in `resolveRoads`. The `RoadResolution.source`
+ * field will then only ever be `"official"` or `"empty"`.
  */
 
 import type { MapLayerPoint, MapRoad, MapRoadNetworkPreview } from "../types/map";
@@ -43,6 +59,14 @@ export function previewPoint(
   };
 }
 
+/**
+ * Converts preview road network data into MapRoad format.
+ *
+ * Every converted road is marked for distinguishability:
+ * - `id` is prefixed with `"preview-road-"` to prevent id collisions with official roads.
+ * - `source` is set to the preview's `source` field (defaulting to `"road_network_preview"`).
+ * - `interactive` is `false` (preview roads are display-only, not clickable).
+ */
 export function convertPreviewToRoads(preview: MapRoadNetworkPreview | null | undefined): MapRoad[] {
   if (!preview?.roads?.length) return [];
   return preview.roads
@@ -65,6 +89,13 @@ export function convertPreviewToRoads(preview: MapRoadNetworkPreview | null | un
     .filter((road) => road.points.length >= 2);
 }
 
+/**
+ * Checks whether official road data is non-empty.
+ *
+ * Logs once per session when falling back to preview or when all sources are
+ * empty. The info-level "using preview road fallback" log is the primary
+ * telemetry signal for the exit criteria described in the module header.
+ */
 export function validateOfficialRoads(roads: MapRoad[] | null | undefined, preview?: MapRoadNetworkPreview | null): boolean {
   if (!roads || roads.length === 0) {
     if (preview?.roads?.length) {
@@ -81,6 +112,16 @@ export function validateOfficialRoads(roads: MapRoad[] | null | undefined, previ
   return true;
 }
 
+/**
+ * Resolves which road data to render.
+ *
+ * Official roads are always preferred. When falling back to preview, returned
+ * roads carry a `"preview-road-{id}"` id prefix and a `"road_network_preview"`
+ * (or preview-specific) source string so callers and telemetry can distinguish
+ * them from official data.
+ *
+ * @see RoadResolution.source — `"official"` | `"preview"` | `"empty"`
+ */
 export function resolveRoads(
   officialRoads: MapRoad[] | null | undefined,
   preview: MapRoadNetworkPreview | null | undefined,
