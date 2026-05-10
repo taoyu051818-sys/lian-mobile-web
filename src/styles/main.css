@@ -2,6 +2,7 @@
 @import "../ui/primitives.css";
 @import "../shell/shell-chrome.css";
 @import "../shell/content-frame.css";
+@import "../shell/detail-sheet.css";
 @import "./floating-chrome.css";
 @import "./card-camera-transition.css";
 @import "./content-immersive-ui.css";
