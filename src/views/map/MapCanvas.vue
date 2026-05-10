@@ -25,6 +25,23 @@ import type {
 import MapLayerControls from "./MapLayerControls.vue";
 
 type LayerKey = "areas" | "roadsCasing" | "roads" | "routes" | "assets" | "locations" | "posts";
+type RoadVisualStyle = {
+  asphalt: string;
+  edge: string;
+  shadow: string;
+  centerline: string;
+  weight: number;
+  edgeExtra: number;
+  shadowExtra: number;
+  opacity: number;
+  minZoom: number;
+  centerlineDashArray: string;
+  centerlineWeight: number;
+  centerlineOpacity: number;
+  previewOpacity: number;
+  previewWeight: number;
+  drivable: boolean;
+};
 
 const GAODE_TILE_URL = "https://webrd0{s}.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=8&x={x}&y={y}&z={z}";
 const DEFAULT_BOUNDS: MapBounds = { south: 18.37107, west: 109.98464, north: 18.41730, east: 110.04775 };
@@ -33,12 +50,92 @@ const ICON_BASE_ZOOM = 16;
 const MAX_RENDERED_LOCATIONS = 120;
 const MAX_RENDERED_POSTS = 60;
 const MAX_RENDERED_ASSETS = 120;
-const ROAD_STYLE: Record<string, { color: string; casing: string; weight: number; casingExtra: number; opacity: number; minZoom: number; dashArray: string }> = {
-  main_road: { color: "#9ca3af", casing: "#f8fafc", weight: 7, casingExtra: 5, opacity: 0.96, minZoom: 15, dashArray: "" },
-  pedestrian_path: { color: "#c4b5a5", casing: "#fffaf0", weight: 3, casingExtra: 3, opacity: 0.9, minZoom: 16, dashArray: "6 4" },
-  shuttle_route: { color: "#2563eb", casing: "#dbeafe", weight: 4, casingExtra: 4, opacity: 0.92, minZoom: 15, dashArray: "" },
-  service_path: { color: "#d4d4d4", casing: "#fafafa", weight: 2, casingExtra: 3, opacity: 0.82, minZoom: 16, dashArray: "4 6" },
-  default: { color: "#a3a3a3", casing: "#f8fafc", weight: 4, casingExtra: 4, opacity: 0.9, minZoom: 15, dashArray: "" },
+const ROAD_STYLE: Record<string, RoadVisualStyle> = {
+  main_road: {
+    asphalt: "rgba(43, 48, 52, 0.9)",
+    edge: "rgba(230, 238, 246, 0.76)",
+    shadow: "rgba(11, 18, 24, 0.24)",
+    centerline: "rgba(255, 207, 79, 0.86)",
+    weight: 10,
+    edgeExtra: 5,
+    shadowExtra: 8,
+    opacity: 0.94,
+    minZoom: 15,
+    centerlineDashArray: "18 12",
+    centerlineWeight: 1.7,
+    centerlineOpacity: 0.86,
+    previewOpacity: 0.48,
+    previewWeight: 0.78,
+    drivable: true,
+  },
+  pedestrian_path: {
+    asphalt: "transparent",
+    edge: "transparent",
+    shadow: "transparent",
+    centerline: "transparent",
+    weight: 0,
+    edgeExtra: 0,
+    shadowExtra: 0,
+    opacity: 0,
+    minZoom: 99,
+    centerlineDashArray: "",
+    centerlineWeight: 0,
+    centerlineOpacity: 0,
+    previewOpacity: 0,
+    previewWeight: 0,
+    drivable: false,
+  },
+  shuttle_route: {
+    asphalt: "transparent",
+    edge: "transparent",
+    shadow: "transparent",
+    centerline: "transparent",
+    weight: 0,
+    edgeExtra: 0,
+    shadowExtra: 0,
+    opacity: 0,
+    minZoom: 99,
+    centerlineDashArray: "",
+    centerlineWeight: 0,
+    centerlineOpacity: 0,
+    previewOpacity: 0,
+    previewWeight: 0,
+    drivable: false,
+  },
+  service_path: {
+    asphalt: "transparent",
+    edge: "transparent",
+    shadow: "transparent",
+    centerline: "transparent",
+    weight: 0,
+    edgeExtra: 0,
+    shadowExtra: 0,
+    opacity: 0,
+    minZoom: 99,
+    centerlineDashArray: "",
+    centerlineWeight: 0,
+    centerlineOpacity: 0,
+    previewOpacity: 0,
+    previewWeight: 0,
+    drivable: false,
+  },
+  default: {
+    asphalt: "rgba(48, 53, 57, 0.88)",
+    edge: "rgba(230, 238, 246, 0.68)",
+    shadow: "rgba(11, 18, 24, 0.2)",
+    centerline: "rgba(255, 207, 79, 0.76)",
+    weight: 8,
+    edgeExtra: 4,
+    shadowExtra: 7,
+    opacity: 0.88,
+    minZoom: 15,
+    centerlineDashArray: "16 12",
+    centerlineWeight: 1.4,
+    centerlineOpacity: 0.76,
+    previewOpacity: 0.42,
+    previewWeight: 0.76,
+    drivable: true,
+  },
 };
 
 const props = defineProps<{
@@ -95,15 +192,23 @@ function escapeHtml(value = "") {
     .replace(/"/g, "&quot;");
 }
 
-function roadStyle(road: MapRoad) {
+function roadStyle(road: MapRoad): RoadVisualStyle {
   const base = ROAD_STYLE[road.type || ""] || ROAD_STYLE.default;
   const weight = Number(road.style?.weight || 0);
   return {
     ...base,
-    color: road.style?.color || base.color,
     weight: weight > 0 ? weight : base.weight,
-    dashArray: road.style?.dashArray ?? base.dashArray,
   };
+}
+
+function roadZoomScale(zoom: number) {
+  if (zoom <= 15) return 0.82;
+  if (zoom >= 17) return 1.18;
+  return 1;
+}
+
+function isPreviewRoad(road: MapRoad) {
+  return String(road.source || "").includes("preview") || String(road.id || "").startsWith("preview:");
 }
 
 function iconScaleForZoom(target: LeafletMapLike | null = map.value, zoom = target?.getZoom?.()) {
@@ -219,6 +324,66 @@ function renderAreas() {
   });
 }
 
+function renderDualLaneRoad(road: MapRoad, roadPoints: [number, number][], style: RoadVisualStyle, zoom: number) {
+  const lyrs = layers;
+  if (!lyrs) return;
+  const scale = roadZoomScale(zoom);
+  const sourceOpacity = isPreviewRoad(road) ? style.previewOpacity : 1;
+  const sourceWeight = isPreviewRoad(road) ? style.previewWeight : 1;
+  const weight = style.weight * scale * sourceWeight;
+  const opacity = style.opacity * sourceOpacity;
+  const classSuffix = escapeHtml(road.type || "default");
+  const baseOptions = {
+    lineCap: "round" as const,
+    lineJoin: "round" as const,
+    interactive: false,
+  };
+
+  getLeaflet().polyline(roadPoints, {
+    ...baseOptions,
+    color: style.shadow,
+    weight: weight + style.shadowExtra * scale,
+    opacity: Math.min(0.9, 0.78 * sourceOpacity),
+    className: `vue-map-road-shadow vue-map-road-shadow--${classSuffix}`,
+  }).addTo(lyrs.roadsCasing);
+
+  getLeaflet().polyline(roadPoints, {
+    ...baseOptions,
+    color: style.edge,
+    weight: weight + style.edgeExtra * scale,
+    opacity: Math.min(0.95, 0.86 * sourceOpacity),
+    className: `vue-map-road-edge vue-map-road-edge--${classSuffix}`,
+  }).addTo(lyrs.roadsCasing);
+
+  getLeaflet().polyline(roadPoints, {
+    ...baseOptions,
+    color: style.asphalt,
+    weight,
+    opacity,
+    className: `vue-map-road-asphalt vue-map-road-asphalt--${classSuffix}`,
+  }).addTo(lyrs.roads);
+
+  getLeaflet().polyline(roadPoints, {
+    ...baseOptions,
+    color: "rgba(255, 255, 255, 0.12)",
+    weight: Math.max(1.2, weight * 0.42),
+    opacity: 0.34 * sourceOpacity,
+    className: `vue-map-road-asphalt-highlight vue-map-road-asphalt-highlight--${classSuffix}`,
+  }).addTo(lyrs.roads);
+
+  if (style.centerlineWeight > 0 && style.centerline !== "transparent") {
+    getLeaflet().polyline(roadPoints, {
+      ...baseOptions,
+      color: style.centerline,
+      weight: Math.max(1, style.centerlineWeight * scale * sourceWeight),
+      dashArray: style.centerlineDashArray,
+      opacity: style.centerlineOpacity * sourceOpacity,
+      lineCap: "butt",
+      className: `vue-map-road-centerline vue-map-road-centerline--${classSuffix}`,
+    }).addTo(lyrs.roads);
+  }
+}
+
 function renderRoads() {
   const lyrs = layers;
   const currentMap = map.value;
@@ -227,28 +392,10 @@ function renderRoads() {
   roads.value.forEach((road) => {
     if (road.status && road.status !== "active") return;
     const style = roadStyle(road);
-    if (zoom < style.minZoom) return;
+    if (!style.drivable || zoom < style.minZoom) return;
     const roadPoints = points(road.points);
     if (roadPoints.length < 2) return;
-    getLeaflet().polyline(roadPoints, {
-      color: style.casing,
-      weight: style.weight + style.casingExtra,
-      opacity: 0.96,
-      lineCap: "round",
-      lineJoin: "round",
-      interactive: false,
-      className: "vue-map-road-casing",
-    }).addTo(lyrs.roadsCasing);
-    getLeaflet().polyline(roadPoints, {
-      color: style.color,
-      weight: style.weight,
-      dashArray: style.dashArray,
-      opacity: style.opacity,
-      lineCap: "round",
-      lineJoin: "round",
-      interactive: false,
-      className: `vue-map-road vue-map-road--${escapeHtml(road.type || "default")}`,
-    }).addTo(lyrs.roads);
+    renderDualLaneRoad(road, roadPoints, style, zoom);
   });
 }
 
@@ -444,6 +591,18 @@ defineExpose({ map });
 
 :deep(.vue-map-asset) {
   pointer-events: none;
+}
+
+:deep(.vue-map-road-shadow),
+:deep(.vue-map-road-edge),
+:deep(.vue-map-road-asphalt),
+:deep(.vue-map-road-asphalt-highlight),
+:deep(.vue-map-road-centerline) {
+  vector-effect: non-scaling-stroke;
+}
+
+:deep(.vue-map-road-centerline) {
+  stroke-linecap: butt;
 }
 
 :deep(.vue-map-scaled-icon-inner) {
