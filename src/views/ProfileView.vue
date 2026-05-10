@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { LianApiError } from "../api/http";
 import { fetchAuthMe, fetchProfileTab, logoutAuth } from "../api/profile";
+import { useShellChrome } from "../shell/useShellChrome";
 import { GlassPanel, InlineError } from "../ui";
 import type { FeedItemId } from "../types/feed";
 import type { ProfileListItem, ProfileTabKey, ProfileUser } from "../types/profile";
@@ -11,6 +12,8 @@ import ProfileHeader from "./profile/ProfileHeader.vue";
 import ProfileActions from "./profile/ProfileActions.vue";
 import ProfileTabs from "./profile/ProfileTabs.vue";
 import ProfileCollectionList from "./profile/ProfileCollectionList.vue";
+
+const { setRegion, resetRegions } = useShellChrome();
 
 const user = ref<ProfileUser | null>(null);
 const loading = ref(false);
@@ -55,6 +58,23 @@ const userTags = computed(() => {
   return tags.slice(0, 5);
 });
 const listEmptyText = computed(() => tabs.find((tab) => tab.key === activeTab.value)?.empty || "暂无内容");
+
+function applyProfileChrome() {
+  if (!user.value) {
+    resetRegions();
+    return;
+  }
+  setRegion("top", {
+    visible: true,
+    slot: "tabs",
+    buttons: [
+      { id: "profile:toggle-editor", label: editorOpen.value ? "收起编辑" : "编辑资料", variant: "tonal" },
+      { id: "profile:logout", label: "退出登录", variant: "ghost" },
+    ],
+  });
+}
+
+watch([user, editorOpen], applyProfileChrome);
 
 function readHistoryIds() {
   try {
@@ -170,6 +190,10 @@ async function handleProfileUpdated() {
 
 onMounted(() => {
   void loadProfile();
+});
+
+onBeforeUnmount(() => {
+  resetRegions();
 });
 </script>
 
