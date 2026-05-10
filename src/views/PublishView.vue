@@ -3,11 +3,14 @@ import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 import { fetchMapV2Items } from "../api/map";
 import { buildPublishPayload, createMapV2LocationDraft, normalizeIdentityTag, normalizePublishTag, publishPost, uploadPublishImage } from "../api/publish";
 import { fetchAuthMe } from "../api/profile";
-import { placeTypeLabel } from "../utils/placeTypeLabel";
-import { GlassPanel, IdentityBadge, InlineError, LianButton, LocationChip, TagChip } from "../ui";
+import { GlassPanel, IdentityBadge, InlineError } from "../ui";
 import type { MapLocation } from "../types/map";
 import type { PlaceRef } from "../types/place";
 import type { PublishLocationDraft, PublishVisibility } from "../types/publish";
+import PublishComposer from "./publish/PublishComposer.vue";
+import PublishLocationControls from "./publish/PublishLocationControls.vue";
+import PublishMetaControls from "./publish/PublishMetaControls.vue";
+import PublishActionBar from "./publish/PublishActionBar.vue";
 
 const MAX_IMAGE_COUNT = 9;
 
@@ -132,10 +135,6 @@ function selectMapLocation(location: MapLocation) {
 
 function clearMapLocation() {
   selectedMapLocation.value = null;
-}
-
-function isSelectedMapLocation(location: MapLocation) {
-  return selectedMapLocation.value?.id === location.id;
 }
 
 function revokePreviewUrls() {
@@ -263,124 +262,54 @@ onBeforeUnmount(() => {
       <p v-if="successMessage" class="publish-view__success">{{ successMessage }}</p>
 
       <form class="publish-view__form" @submit.prevent="submitPublish">
-        <section class="publish-view__section">
-          <div class="publish-view__section-title">
-            <strong>图片</strong>
-            <span>{{ imageStatus }}</span>
-          </div>
-          <div v-if="localPreviewUrls.length" class="publish-view__image-grid" aria-label="已选图片">
-            <div v-for="(url, index) in localPreviewUrls" :key="url" class="publish-view__image">
-              <img :src="url" alt="待发布图片" />
-              <button type="button" aria-label="移除图片" @click="removeImage(index)">×</button>
-            </div>
-          </div>
-          <label class="publish-view__upload">
-            <span>选择图片</span>
-            <input type="file" accept="image/*" multiple @change="handleFiles" />
-          </label>
-        </section>
+        <PublishComposer
+          :local-preview-urls="localPreviewUrls"
+          :image-status="imageStatus"
+          :title="title"
+          :body="body"
+          :uploading="uploading"
+          :publishing="publishing"
+          @update:title="title = $event"
+          @update:body="body = $event"
+          @handle-files="handleFiles"
+          @remove-image="removeImage"
+        />
 
-        <label class="publish-view__field">
-          <span>标题</span>
-          <input v-model="title" maxlength="40" placeholder="发生了什么？" />
-        </label>
+        <PublishLocationControls
+          :filtered-map-locations="filteredMapLocations"
+          :selected-map-location="selectedMapLocation"
+          :map-location-loading="mapLocationLoading"
+          :map-location-error="mapLocationError"
+          :location-search="locationSearch"
+          :place-name="placeName"
+          :known-place-label="knownPlaceLabel"
+          :location-preview-label="locationPreviewLabel"
+          :location-binding-meta="locationBindingMeta"
+          @update:location-search="locationSearch = $event"
+          @update:place-name="placeName = $event"
+          @select-map-location="selectMapLocation"
+          @clear-map-location="clearMapLocation"
+          @load-map-locations="loadMapLocations"
+        />
 
-        <label class="publish-view__field">
-          <span>正文</span>
-          <textarea v-model="body" rows="6" maxlength="300" placeholder="写清楚内容、时间、限制或下一步。" />
-        </label>
+        <PublishMetaControls
+          :tag-input="tagInput"
+          :normalized-tag="normalizedTag"
+          :identity-tag="identityTag"
+          :identity-tag-options="identityTagOptions"
+          :visibility="visibility"
+          :visibility-options="visibilityOptions"
+          @update:tag-input="tagInput = $event"
+          @update:identity-tag="identityTag = $event"
+          @update:visibility="visibility = $event"
+        />
 
-        <section class="publish-view__section publish-view__map-picker" aria-labelledby="publish-map-title">
-          <div class="publish-view__section-title">
-            <strong id="publish-map-title">绑定地点</strong>
-            <span>{{ selectedMapLocation ? '已绑定已知地点' : '可选' }}</span>
-          </div>
-
-          <label class="publish-view__field publish-view__map-search">
-            <span>搜索已知地点</span>
-            <input v-model="locationSearch" maxlength="40" placeholder="搜索图书馆、食堂、教学楼…" />
-          </label>
-
-          <InlineError v-if="mapLocationError">
-            {{ mapLocationError }}
-            <button type="button" @click="loadMapLocations">重新加载</button>
-          </InlineError>
-
-          <div v-if="mapLocationLoading" class="publish-view__mini-state" role="status">正在加载地点…</div>
-          <div v-else-if="filteredMapLocations.length" class="publish-view__map-locations" aria-label="地点列表">
-            <button
-              v-for="location in filteredMapLocations"
-              :key="location.id"
-              type="button"
-              class="publish-view__map-location"
-              :class="{ 'is-active': isSelectedMapLocation(location) }"
-              @click="selectMapLocation(location)"
-            >
-              <strong>{{ location.name }}</strong>
-              <span>{{ placeTypeLabel(location.place?.type, location.type) }}</span>
-            </button>
-          </div>
-          <div v-else class="publish-view__mini-state">没有匹配地点，可以手填地点发布。</div>
-
-          <div v-if="selectedMapLocation" class="publish-view__map-selected">
-            <div>
-              <LocationChip>{{ knownPlaceLabel }}</LocationChip>
-              <span>{{ locationBindingMeta }}</span>
-            </div>
-            <LianButton type="button" size="sm" variant="ghost" @click="clearMapLocation">改用手填</LianButton>
-          </div>
-        </section>
-
-        <label class="publish-view__field">
-          <span>手填地点</span>
-          <input v-model="placeName" maxlength="40" placeholder="例如 图书馆、食堂、教学楼，也可以留空" />
-        </label>
-
-        <div class="publish-view__location-preview">
-          <LocationChip>{{ locationPreviewLabel }}</LocationChip>
-          <span>{{ locationBindingMeta }}</span>
-        </div>
-
-        <label class="publish-view__field">
-          <span>帖子标签</span>
-          <input v-model="tagInput" maxlength="18" placeholder="一个标签，例如 #晚霞" />
-        </label>
-
-        <div v-if="normalizedTag" class="publish-view__tags" aria-label="帖子标签预览">
-          <TagChip :tag="normalizedTag" />
-        </div>
-
-        <label v-if="identityTagOptions.length" class="publish-view__field">
-          <span>身份标签</span>
-          <select v-model="identityTag">
-            <option value="">不使用身份标签</option>
-            <option v-for="tag in identityTagOptions" :key="tag" :value="tag">{{ tag }}</option>
-          </select>
-        </label>
-
-        <section class="publish-view__section" aria-labelledby="publish-visibility-title">
-          <div class="publish-view__section-title">
-            <strong id="publish-visibility-title">可见范围</strong>
-            <span>{{ visibilityOptions.find((item) => item.value === visibility)?.label }}</span>
-          </div>
-          <div class="publish-view__visibility-grid">
-            <button
-              v-for="option in visibilityOptions"
-              :key="option.value"
-              type="button"
-              class="publish-view__visibility"
-              :class="{ 'is-active': visibility === option.value }"
-              @click="visibility = option.value"
-            >
-              <strong>{{ option.label }}</strong>
-            </button>
-          </div>
-        </section>
-
-        <div class="publish-view__actions">
-          <LianButton type="button" variant="ghost" :disabled="publishing || uploading" @click="resetForm">清空</LianButton>
-          <LianButton type="submit" variant="primary" :loading="publishing" :disabled="!canSubmit">发布到 LIAN</LianButton>
-        </div>
+        <PublishActionBar
+          :publishing="publishing"
+          :uploading="uploading"
+          :can-submit="canSubmit"
+          @reset-form="resetForm"
+        />
       </form>
     </GlassPanel>
   </section>
@@ -389,22 +318,9 @@ onBeforeUnmount(() => {
 <style scoped>
 .publish-view,
 .publish-view__card,
-.publish-view__form,
-.publish-view__section {
+.publish-view__form {
   display: grid;
   gap: var(--space-4);
-}
-
-.publish-view__section-title,
-.publish-view__actions,
-.publish-view__location-preview,
-.publish-view__tags,
-.publish-view__map-selected {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
-  align-items: center;
-  justify-content: space-between;
 }
 
 .publish-view p {
@@ -419,219 +335,15 @@ onBeforeUnmount(() => {
   line-height: 1.5;
 }
 
-.publish-view__section-title span,
-.publish-view__map-selected span,
-.publish-view__location-preview span {
-  color: var(--lian-muted);
-  line-height: 1.6;
-}
-
 .publish-view__success {
   color: var(--lian-primary);
   font-weight: 850;
 }
 
-.publish-view__identity,
-.publish-view__section,
-.publish-view__field,
-.publish-view__upload {
+.publish-view__identity {
   padding: var(--space-3);
   border: 1px solid rgba(31, 41, 51, 0.08);
   border-radius: var(--radius-card);
   background: rgba(255, 255, 255, 0.48);
-}
-
-.publish-view__field,
-.publish-view__upload {
-  display: grid;
-  gap: var(--space-2);
-  color: var(--lian-muted);
-  font-size: 13px;
-  font-weight: 800;
-}
-
-.publish-view__field input,
-.publish-view__field textarea,
-.publish-view__field select {
-  width: 100%;
-  min-height: 44px;
-  box-sizing: border-box;
-  border: 1px solid var(--lian-border);
-  border-radius: var(--radius-3);
-  background: rgba(255, 255, 255, 0.72);
-  color: var(--lian-ink);
-  font: inherit;
-}
-
-.publish-view__field input,
-.publish-view__field select {
-  padding: 0 var(--space-3);
-}
-
-.publish-view__field textarea {
-  resize: vertical;
-  padding: var(--space-3);
-  line-height: 1.5;
-}
-
-.publish-view__upload {
-  position: relative;
-  min-height: 72px;
-  place-items: center;
-  border-style: dashed;
-  color: var(--lian-ink);
-  cursor: pointer;
-}
-
-.publish-view__upload input {
-  position: absolute;
-  inset: 0;
-  opacity: 0;
-  cursor: pointer;
-}
-
-.publish-view__image-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
-  gap: var(--space-2);
-}
-
-.publish-view__image {
-  position: relative;
-  overflow: hidden;
-  border-radius: var(--radius-3);
-  background: rgba(31, 41, 51, 0.06);
-}
-
-.publish-view__image img {
-  width: 100%;
-  aspect-ratio: 1;
-  display: block;
-  object-fit: cover;
-}
-
-.publish-view__image button {
-  position: absolute;
-  top: 6px;
-  right: 6px;
-  display: grid;
-  width: 32px;
-  height: 32px;
-  min-width: 32px;
-  place-items: center;
-  border: 1px solid var(--glass-border);
-  border-radius: var(--radius-orb);
-  background: rgba(255, 255, 255, 0.82);
-  color: var(--lian-ink);
-  font-size: 18px;
-  font-weight: 900;
-}
-
-.publish-view__map-picker {
-  background: rgba(31, 167, 160, 0.07);
-}
-
-.publish-view__map-search {
-  padding: 0;
-  border: 0;
-  background: transparent;
-}
-
-.publish-view__map-locations {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(132px, 1fr));
-  gap: var(--space-2);
-  max-height: 240px;
-  overflow: auto;
-}
-
-.publish-view__map-location {
-  display: grid;
-  gap: 4px;
-  min-height: 62px;
-  padding: var(--space-3);
-  border: 1px solid var(--glass-border);
-  border-radius: var(--radius-card);
-  background: rgba(255, 255, 255, 0.62);
-  color: var(--lian-ink);
-  text-align: left;
-}
-
-.publish-view__map-location span {
-  color: var(--lian-muted);
-  font-size: 12px;
-}
-
-.publish-view__map-location.is-active {
-  border-color: rgba(31, 167, 160, 0.34);
-  background: rgba(31, 167, 160, 0.16);
-}
-
-.publish-view__map-selected {
-  justify-content: flex-start;
-  padding: var(--space-3);
-  border: 1px solid rgba(31, 167, 160, 0.2);
-  border-radius: var(--radius-card);
-  background: rgba(255, 255, 255, 0.58);
-}
-
-.publish-view__map-selected > div {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
-  align-items: center;
-}
-
-.publish-view__mini-state {
-  display: grid;
-  min-height: 72px;
-  place-items: center;
-  color: var(--lian-muted);
-  text-align: center;
-}
-
-.publish-view__tags,
-.publish-view__actions,
-.publish-view__location-preview {
-  justify-content: flex-start;
-}
-
-.publish-view__visibility-grid {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: var(--space-2);
-}
-
-.publish-view__visibility {
-  display: grid;
-  min-height: 48px;
-  place-items: center;
-  padding: var(--space-2);
-  border: 1px solid var(--glass-border);
-  border-radius: var(--radius-card);
-  background: rgba(255, 255, 255, 0.54);
-  color: var(--lian-ink);
-  text-align: center;
-}
-
-.publish-view__visibility.is-active {
-  border-color: rgba(31, 167, 160, 0.34);
-  background: rgba(31, 167, 160, 0.12);
-}
-
-.inline-error button {
-  min-height: 32px;
-  margin-left: var(--space-2);
-  border: 0;
-  border-radius: var(--radius-chip);
-  background: rgba(255, 255, 255, 0.72);
-  color: currentColor;
-  font-weight: 900;
-}
-
-@media (max-width: 640px) {
-  .publish-view__visibility-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
 }
 </style>
