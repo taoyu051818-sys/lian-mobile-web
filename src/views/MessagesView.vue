@@ -4,7 +4,7 @@ import { fetchAuthMe } from "../api/profile";
 import { fetchChannelMessages, fetchNotifications, markChannelMessagesRead, sendChannelMessage } from "../api/messages";
 import { GlassPanel, IdentityBadge, InlineError, LianButton, TrustBadge } from "../ui";
 import type { DisplayActor } from "../types/feed";
-import type { ChannelMessage, MessageTabKey, NotificationItem } from "../types/messages";
+import type { ChannelMessage, ChannelMessageActor, MessageTabKey, NotificationItem } from "../types/messages";
 import type { ProfileUser } from "../types/profile";
 import { formatRelativeTime } from "../utils/time";
 
@@ -58,8 +58,8 @@ function messageText(item: ChannelMessage) {
   return item.content || stripHtml(item.contentHtml) || "这条消息暂时没有内容。";
 }
 
-function messageActor(item: ChannelMessage): DisplayActor {
-  return item.actor || {};
+function messageActor(item: ChannelMessage): ChannelMessageActor {
+  return item.actor || { id: "" };
 }
 
 function messageAuthor(item: ChannelMessage) {
@@ -249,12 +249,14 @@ onMounted(async () => {
         <div v-if="channelLoading && !channelItems.length" class="messages-view__state" role="status">正在加载频道消息…</div>
         <div v-else-if="!channelItems.length" class="messages-view__state">还没有消息</div>
         <div v-else class="messages-view__list" aria-live="polite">
-          <article v-for="item in channelItems" :key="String(item.id)" class="messages-view__message">
+          <article v-for="item in channelItems" :key="String(item.id)" class="messages-view__message" :class="{ 'is-self': item.isSelf }">
             <IdentityBadge :avatar-text="messageAvatarText(item)" :label="messageAuthor(item)" :meta="messageMeta(item)" />
             <p>{{ messageText(item) }}</p>
             <footer>
               <span>{{ formatRelativeTime(item.timestampISO || item.time) || "刚刚" }}</span>
-              <span v-if="item.readCount">{{ item.readCount }} 次已读</span>
+              <span v-if="item.isSelf && item.deliveryState === 'sending'">发送中…</span>
+              <span v-else-if="item.isSelf && item.deliveryState === 'failed'">发送失败</span>
+              <span v-else-if="item.readCount">{{ item.readCount }} 次已读</span>
             </footer>
           </article>
         </div>
@@ -392,6 +394,11 @@ onMounted(async () => {
   place-items: center;
   color: var(--lian-muted);
   text-align: center;
+}
+
+.messages-view__message.is-self {
+  border-color: rgba(31, 167, 160, 0.18);
+  background: rgba(31, 167, 160, 0.06);
 }
 
 .messages-view__notification.is-unread {

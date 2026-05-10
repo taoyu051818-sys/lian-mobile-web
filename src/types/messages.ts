@@ -2,15 +2,23 @@ import type { DisplayActor, SourceSignal } from "./feed";
 
 export type MessageTabKey = "channel" | "notifications";
 
+export type MessageDeliveryState = "sending" | "sent" | "delivered" | "read" | "failed";
+
+export interface ChannelMessageActor extends DisplayActor {
+  id: string;
+}
+
 export interface ChannelMessage {
   id: string | number;
   content?: string;
   contentHtml?: string;
-  actor?: DisplayActor;
+  actor?: ChannelMessageActor;
   source?: SourceSignal;
   time?: string;
   timestampISO?: string;
   readCount?: number;
+  deliveryState?: MessageDeliveryState;
+  isSelf?: boolean;
 }
 
 export interface ChannelResponse {

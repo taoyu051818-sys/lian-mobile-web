@@ -1,12 +1,29 @@
 import { apiGet, apiSend } from "./http";
 import { ensureClientId } from "../platform/browser-storage";
-import type { ChannelReadPayload, ChannelResponse, NotificationResponse, SendChannelMessagePayload } from "../types/messages";
+import type { ChannelMessage, ChannelReadPayload, ChannelResponse, NotificationResponse, SendChannelMessagePayload } from "../types/messages";
+
+export function normalizeChannelMessage(raw: ChannelMessage): ChannelMessage {
+  const clientId = ensureClientId();
+  const actor = raw.actor
+    ? { id: raw.actor.id || `legacy:${raw.actor.identityTag || raw.actor.displayName || "unknown"}`, ...raw.actor }
+    : undefined;
+  return {
+    ...raw,
+    actor,
+    deliveryState: raw.deliveryState || "sent",
+    isSelf: raw.isSelf ?? (actor?.id === clientId),
+  };
+}
 
 export async function fetchChannelMessages(offset = 0, limit = 30): Promise<ChannelResponse> {
   const params = new URLSearchParams();
   params.set("limit", String(limit));
   params.set("offset", String(Math.max(0, offset)));
-  return apiGet<ChannelResponse>(`/api/channel?${params.toString()}`);
+  const response = await apiGet<ChannelResponse>(`/api/channel?${params.toString()}`);
+  return {
+    ...response,
+    items: response.items?.map(normalizeChannelMessage),
+  };
 }
 
 export async function fetchNotifications(): Promise<NotificationResponse> {
