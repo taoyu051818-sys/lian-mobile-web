@@ -1,5 +1,7 @@
 export { default as BottomTabBar } from "./BottomTabBar.vue";
 export { default as GlassPanel } from "./GlassPanel.vue";
+export { default as LianIcon } from "./icons/LianIcon.vue";
+export type { LianIconName } from "./icons/paths";
 export { default as IdentityBadge } from "./IdentityBadge.vue";
 export { default as InlineError } from "./InlineError.vue";
 export { default as LianButton } from "./LianButton.vue";

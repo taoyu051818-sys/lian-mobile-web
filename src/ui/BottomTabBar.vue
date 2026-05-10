@@ -1,6 +1,9 @@
 <script setup lang="ts">
+import LianIcon from "./icons/LianIcon.vue";
+import type { LianIconName } from "./icons/paths";
+
 defineProps<{
-  items: Array<{ key: string; label: string; icon?: string }>;
+  items: Array<{ key: string; label: string; icon?: LianIconName }>;
   activeKey: string;
 }>();
 
@@ -20,7 +23,7 @@ const emit = defineEmits<{
       :aria-current="item.key === activeKey ? 'page' : undefined"
       @click="emit('change', item.key)"
     >
-      <span v-if="item.icon" aria-hidden="true">{{ item.icon }}</span>
+      <LianIcon v-if="item.icon" :name="item.icon" :size="22" />
       <span>{{ item.label }}</span>
     </button>
   </nav>
