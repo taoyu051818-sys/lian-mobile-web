@@ -2,7 +2,7 @@
 import { computed, onBeforeUnmount } from "vue";
 import { BottomTabBar, ToastHost } from "./ui";
 import AppViewHost from "./app/AppViewHost.vue";
-import { ShellChrome } from "./shell";
+import { ShellChrome, useShellChrome } from "./shell";
 import { appViews, getShellLayoutMode, type AppViewKey } from "./app/view-types";
 import { useActiveView } from "./app/useActiveView";
 import { type FloatingChromeCommand, useFloatingChromeController } from "./motion/floatingChrome";
@@ -10,7 +10,10 @@ import { type FloatingChromeCommand, useFloatingChromeController } from "./motio
 type ChromeStatePayload = FloatingChromeCommand;
 
 const { activeViewKey, setActiveView } = useActiveView();
+const { setRegion } = useShellChrome();
 const appBottomChrome = useFloatingChromeController({ initialPhase: "visible" });
+
+setRegion("bottom", { slot: "tabs" });
 
 const tabs = appViews.map((view) => ({
   key: view.key,
@@ -48,6 +51,8 @@ onBeforeUnmount(() => {
     <ShellChrome region="top" />
     <div class="vue-shell__grid" :class="shellLayoutClass">
       <AppViewHost :active-view-key="activeViewKey" @chrome="handleChromeChange" />
+    </div>
+    <ShellChrome region="bottom">
       <BottomTabBar
         class="vue-shell__bottom-tab lian-floating-chrome lian-floating-chrome--bottom"
         :class="{ 'is-hidden': bottomChromeState === 'hidden' }"
@@ -59,8 +64,7 @@ onBeforeUnmount(() => {
         :active-key="activeViewKey"
         @change="handleViewChange"
       />
-    </div>
-    <ShellChrome region="bottom" />
+    </ShellChrome>
   </main>
   <ToastHost />
 </template>

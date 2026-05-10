@@ -3,7 +3,6 @@ import {
   createEmptyRegionSpec,
   createDefaultChromeState,
   type ShellChromeRegionSpec,
-  type ShellChromeState,
 } from "../../src/shell/shell-chrome-types";
 import { useShellChrome } from "../../src/shell/useShellChrome";
 
@@ -63,6 +62,15 @@ describe("useShellChrome", () => {
       chrome.setRegion("top", { visible: false });
       expect(chrome.state.top.buttons).toHaveLength(1);
       expect(chrome.state.top.visible).toBe(false);
+    });
+
+    it("supports slot field for bottom-tabs mode", () => {
+      chrome.setRegion("bottom", { slot: "tabs" });
+      expect(chrome.state.bottom.slot).toBe("tabs");
+
+      chrome.setRegion("bottom", { visible: false });
+      expect(chrome.state.bottom.slot).toBe("tabs");
+      expect(chrome.state.bottom.visible).toBe(false);
     });
   });
 
