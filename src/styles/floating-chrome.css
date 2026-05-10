@@ -84,9 +84,12 @@
 }
 
 /* Final no-motion floating chrome contract.
-   Pages only switch chrome visible/hidden/progress.
-   No bump, no settle, no fade, no fly-in/fly-out.
+   Chrome transitions use the visible → exiting → swap → entering → visible
+   lifecycle (issue #278). Transitions are instantaneous (0ms duration) --
+   the phase sequence runs but no movement or blur is perceptible.
+   Reduced-motion mode preserves the same sequence with the same zero duration.
    Resolves stale motion variable conflict (issue #279).
+   Fixes misleading phase semantics (issue #281).
 */
 :root {
   --floating-chrome-motion-duration: 0ms;
@@ -160,5 +163,16 @@
 .post-detail-panel__dock.lian-floating-chrome[data-floating-state="progress"],
 .bottom-tab-bar.lian-floating-chrome[data-floating-state="progress"],
 .vue-shell__bottom-tab.lian-floating-chrome[data-floating-state="progress"] {
+  pointer-events: none !important;
+}
+
+/* Entering phase: opacity is on but pointer events are disabled until
+   the transition completes and phase reaches visible. */
+.lian-floating-chrome[data-floating-state="entering"],
+.feed-view__tabs.lian-floating-chrome[data-floating-state="entering"],
+.post-detail-panel__topbar.lian-floating-chrome[data-floating-state="entering"],
+.post-detail-panel__dock.lian-floating-chrome[data-floating-state="entering"],
+.bottom-tab-bar.lian-floating-chrome[data-floating-state="entering"],
+.vue-shell__bottom-tab.lian-floating-chrome[data-floating-state="entering"] {
   pointer-events: none !important;
 }

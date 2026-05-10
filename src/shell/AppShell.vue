@@ -55,7 +55,7 @@ onBeforeUnmount(() => {
         <slot :on-chrome="handleChromeChange" />
       </PageSurface>
     </ContentFrame>
-    <ShellChrome region="bottom">
+    <ShellChrome region="bottom" :chrome-phase="bottomChromeState">
       <BottomTabBar
         class="vue-shell__bottom-tab lian-floating-chrome lian-floating-chrome--bottom"
         :class="{ 'is-hidden': bottomChromeState === 'hidden' }"
