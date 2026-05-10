@@ -26,6 +26,7 @@ export interface AuthInterestOption {
 export interface AuthRulesResponse {
   institutions?: Array<{ name: string; tags: string[]; domains: string[] }>;
   interests?: AuthInterestOption[];
+  interestsRequired?: boolean;
 }
 
 export interface AuthResponse {
