@@ -1,5 +1,15 @@
 import { computed, ref } from "vue";
 
+/**
+ * Floating chrome phase model.
+ *
+ * `entering` and `exiting` are transitional no-ops: the controller collapses
+ * them immediately to `visible` / `hidden`. The real exit-swap-enter lifecycle
+ * is owned by issue #278 and will activate these phases once the shell chrome
+ * transition system lands.
+ *
+ * `progress` is used for gesture-driven interpolation (e.g., drag-to-dismiss).
+ */
 export type FloatingChromePhase = "visible" | "exiting" | "hidden" | "entering" | "progress";
 
 export type FloatingChromeCommand = boolean | {

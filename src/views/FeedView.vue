@@ -221,6 +221,7 @@ function clearDetailHistory() {
   }
 }
 
+// QUARANTINE: v1 card-camera overlay (issue #85 / #274). Temporary scaffolding; do not extend.
 function startCardTransition(payload?: CardOpenPayload) {
   if (!payload || typeof window === "undefined" || prefersReducedMotion()) return;
   cardTransition.value = payload;
@@ -577,6 +578,7 @@ onBeforeUnmount(() => {
       @pointercancel="onDetailPointerCancel"
     />
 
+    <!-- QUARANTINE: v1 card-camera overlay (issue #85 / #274). Temporary scaffolding; do not extend. -->
     <div
       v-if="cardTransition"
       class="feed-view__card-transition"

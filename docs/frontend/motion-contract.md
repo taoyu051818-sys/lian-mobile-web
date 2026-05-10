@@ -23,25 +23,25 @@ The `useFloatingChromeController` composable manages visibility of "floating chr
 | Phase | CSS `data-floating-state` | Meaning |
 |-------|---------------------------|---------|
 | `visible` | `"visible"` | Chrome fully visible, no transition active. |
-| `exiting` | `"exiting"` | CSS transition toward hidden has started. |
-| `exiting-to-hidden` | `"exiting-to-hidden"` | Exit transition in progress (progress 0->1). |
+| `exiting` | `"exiting"` | **Transitional no-op**: immediately collapses to `hidden`. Real exit lifecycle deferred to #278. |
 | `hidden` | `"hidden"` | Chrome fully hidden, no transition active. |
-| `entering` | `"entering"` | CSS transition toward visible has started. |
-| `entering-to-visible` | `"entering-to-visible"` | Enter transition in progress (progress 0->1). |
+| `entering` | `"entering"` | **Transitional no-op**: immediately collapses to `visible`. Real enter lifecycle deferred to #278. |
 | `progress` | `"progress"` | Continuous gesture-driven interpolation (e.g., drag). Uses `--bottom-chrome-visibility-progress` with `transition: none`. |
 
-#### State machine transitions
+> **Note**: `exiting-to-hidden` and `entering-to-visible` are planned for the exit-swap-enter lifecycle (#278) and do not exist in the current type.
+
+#### State machine transitions (current)
 
 ```
-visible ──[hide]──> exiting ──[transitionstart]──> exiting-to-hidden ──[transitionend]──> hidden
-hidden ──[show]──> entering ──[transitionstart]──> entering-to-visible ──[transitionend]──> visible
-any ──[drag start]──> progress ──[drag end]──> visible | hidden
+visible ──[hide]──> hidden       (immediate, no CSS transition)
+hidden  ──[show]──> visible      (immediate, no CSS transition)
+any     ──[drag]──> progress ──[drag end]──> visible | hidden
 ```
 
 #### Contract rules
 
 1. The composable MUST NOT own any timers or rAF handles. All animation timing is CSS-owned.
-2. Phase transitions driven by CSS MUST fire on `transitionstart` / `transitionend` events.
+2. `entering` and `exiting` are accepted but collapse immediately; they are reserved for #278.
 3. The `progress` phase sets `transition: none` on the element; the CSS custom property `--bottom-chrome-visibility-progress` (range 0-1) is updated per-frame by the gesture caller.
 4. When entering `progress` from `visible` or `hidden`, the composable MUST snapshot the current progress value to avoid jumps.
 
@@ -130,8 +130,8 @@ The codebase uses a **dual-layer** approach:
 
 | File | CSS coverage | JS coverage |
 |------|-------------|-------------|
-| `floating-chrome.css` | No-motion contract (lines 106-184); all chrome transitions disabled unconditionally | N/A (composable is pure state) |
-| `card-camera-transition.css` | Lines 191-203 | N/A |
+| `floating-chrome.css` | No-motion contract (lines 86+); all chrome transitions disabled unconditionally | N/A (composable is pure state) |
+| `card-camera-transition.css` | Reduced-motion block (~line 132); quarantined v1 scaffolding | N/A |
 | `FeedView.vue` | Lines 866-882 | Lines 197-199, 230, 265 |
 | `FeedItemCard.vue` | Lines 498-506 | None needed |
 | `PostDetailPanel.vue` | Lines 1003-1009 | None needed |
@@ -260,3 +260,4 @@ This documentation slice identifies but does **not** resolve the following:
 | D-6 | ~~Floating chrome no-motion override~~ | ~~P2~~ | **Resolved (#279)**: No-motion contract is permanent. Stale motion variables, dead transitions, redundant `prefers-reduced-motion` block, and dead progress/closed-loop rules removed. |
 | D-7 | No unit tests for phase transitions | P2 | See `docs/qa/motion-verification.md` for required test scenarios. |
 | D-8 | Magic numbers not tokenized | P2 | `SWIPE_THRESHOLD=96`, `CARDIFY_DISTANCE=320`, `RETURN_ANIMATION_MS=380` are raw constants, not CSS tokens. |
+| D-9 | v1 card-camera overlay quarantined | P2 | **Quarantined (#274)**: `card-camera-transition.css` and `FeedView.vue` card transition code marked as temporary scaffolding. Must not be extended; will be replaced by shared-element/detail motion architecture. |
