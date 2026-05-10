@@ -95,36 +95,25 @@ test("validateOfficialRoads returns true for non-empty roads", () => {
   assert.equal(validateOfficialRoads(roads), true);
 });
 
-test("validateOfficialRoads returns false and warns for empty array", () => {
-  let warned = false;
-  const origWarn = console.warn;
-  console.warn = (...args: unknown[]) => {
-    if (String(args[0]).includes("[map-roads]")) warned = true;
+test("validateOfficialRoads returns false and logs info when preview fallback exists", () => {
+  let informed = false;
+  const origInfo = console.info;
+  console.info = (...args: unknown[]) => {
+    if (String(args[0]).includes("using preview road fallback")) informed = true;
   };
-  assert.equal(validateOfficialRoads([]), false);
-  assert.equal(warned, true, "should log warning");
-  console.warn = origWarn;
+  assert.equal(validateOfficialRoads([], { source: "test", roads: [{ road_id: 1, points: [[1, 1], [2, 2]] }] }), false);
+  assert.equal(informed, true, "should log preview fallback info");
+  console.info = origInfo;
 });
 
-test("validateOfficialRoads returns false and warns for null", () => {
+test("validateOfficialRoads returns false and warns when all road sources are empty", () => {
   let warned = false;
   const origWarn = console.warn;
   console.warn = (...args: unknown[]) => {
-    if (String(args[0]).includes("[map-roads]")) warned = true;
+    if (String(args[0]).includes("Official and preview road data are empty")) warned = true;
   };
-  assert.equal(validateOfficialRoads(null), false);
-  assert.equal(warned, true, "should log warning for null");
-  console.warn = origWarn;
-});
-
-test("validateOfficialRoads returns false and warns for undefined", () => {
-  let warned = false;
-  const origWarn = console.warn;
-  console.warn = (...args: unknown[]) => {
-    if (String(args[0]).includes("[map-roads]")) warned = true;
-  };
-  assert.equal(validateOfficialRoads(undefined), false);
-  assert.equal(warned = true, true, "should log warning for undefined");
+  assert.equal(validateOfficialRoads(null, null), false);
+  assert.equal(warned, true, "should warn for truly empty roads");
   console.warn = origWarn;
 });
 

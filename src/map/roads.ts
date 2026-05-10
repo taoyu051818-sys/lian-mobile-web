@@ -18,6 +18,9 @@ export interface RoadResolution {
   source: "official" | "preview" | "empty";
 }
 
+let loggedPreviewFallback = false;
+let loggedEmptyRoads = false;
+
 export function previewPoint(
   point: [number, number],
   transform?: MapRoadNetworkPreview["transform"],
@@ -62,9 +65,17 @@ export function convertPreviewToRoads(preview: MapRoadNetworkPreview | null | un
     .filter((road) => road.points.length >= 2);
 }
 
-export function validateOfficialRoads(roads: MapRoad[] | null | undefined): boolean {
+export function validateOfficialRoads(roads: MapRoad[] | null | undefined, preview?: MapRoadNetworkPreview | null): boolean {
   if (!roads || roads.length === 0) {
-    console.warn("[map-roads] Official road data is empty — falling back to preview.");
+    if (preview?.roads?.length) {
+      if (!loggedPreviewFallback) {
+        console.info("[map-roads] Official road data is empty; using preview road fallback.");
+        loggedPreviewFallback = true;
+      }
+    } else if (!loggedEmptyRoads) {
+      console.warn("[map-roads] Official and preview road data are empty.");
+      loggedEmptyRoads = true;
+    }
     return false;
   }
   return true;
@@ -74,7 +85,7 @@ export function resolveRoads(
   officialRoads: MapRoad[] | null | undefined,
   preview: MapRoadNetworkPreview | null | undefined,
 ): RoadResolution {
-  if (validateOfficialRoads(officialRoads)) {
+  if (validateOfficialRoads(officialRoads, preview)) {
     return { roads: officialRoads!, source: "official" };
   }
   const fallback = convertPreviewToRoads(preview);
