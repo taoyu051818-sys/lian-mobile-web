@@ -337,6 +337,117 @@
   line-height: 1.45;
 }
 
+.page-surface {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 0;
+}
+
+.page-surface--padded {
+  padding: var(--space-4) var(--space-4) calc(var(--space-4) + env(safe-area-inset-bottom));
+}
+
+.page-surface--bleed {
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.page-section {
+  box-sizing: border-box;
+  display: grid;
+  gap: var(--space-3);
+}
+
+.page-section__header {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.page-section__title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--lian-ink);
+}
+
+.page-section__description {
+  margin: 0;
+  font-size: 13px;
+  color: var(--lian-muted);
+  line-height: 1.45;
+}
+
+.content-stack {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+}
+
+.content-stack--gap-sm { gap: var(--space-2); }
+.content-stack--gap-md { gap: var(--space-3); }
+.content-stack--gap-lg { gap: var(--space-4); }
+
+.content-stack--align-start { align-items: flex-start; }
+.content-stack--align-center { align-items: center; }
+.content-stack--align-end { align-items: flex-end; }
+.content-stack--align-stretch { align-items: stretch; }
+
+.action-row {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.action-row--justify-start { justify-content: flex-start; }
+.action-row--justify-center { justify-content: center; }
+.action-row--justify-end { justify-content: flex-end; }
+.action-row--justify-between { justify-content: space-between; }
+.action-row--justify-around { justify-content: space-around; }
+
+.action-row--wrap {
+  flex-wrap: wrap;
+}
+
+.empty-state {
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-3);
+  padding: var(--space-6) var(--space-4);
+  text-align: center;
+}
+
+.empty-state__icon {
+  font-size: 36px;
+  line-height: 1;
+}
+
+.empty-state__copy {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.empty-state__title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 800;
+  color: var(--lian-ink);
+}
+
+.empty-state__description {
+  margin: 0;
+  font-size: 13px;
+  color: var(--lian-muted);
+  line-height: 1.45;
+}
+
+.empty-state__action {
+  margin-top: var(--space-2);
+}
+
 @keyframes lian-spin {
   to { transform: rotate(360deg); }
 }
