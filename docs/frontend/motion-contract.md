@@ -130,7 +130,7 @@ The codebase uses a **dual-layer** approach:
 
 | File | CSS coverage | JS coverage |
 |------|-------------|-------------|
-| `floating-chrome.css` | Lines 156-168, 242-319 | N/A (composable is pure state) |
+| `floating-chrome.css` | No-motion contract (lines 106-184); all chrome transitions disabled unconditionally | N/A (composable is pure state) |
 | `card-camera-transition.css` | Lines 191-203 | N/A |
 | `FeedView.vue` | Lines 866-882 | Lines 197-199, 230, 265 |
 | `FeedItemCard.vue` | Lines 498-506 | None needed |
@@ -206,7 +206,7 @@ Source: `public/lian-tokens.css` (lines 67-70)
 
 | Token | File | Value | Usage |
 |-------|------|-------|-------|
-| `--floating-chrome-motion-duration` | `floating-chrome.css` | 260ms | Floating chrome show/hide transitions |
+| `--floating-chrome-motion-duration` | `floating-chrome.css` | 0ms | Floating chrome show/hide (no-motion contract; transitions disabled) |
 | `--card-camera-motion-duration` | `card-camera-transition.css` | 360ms | Card-to-detail morph |
 | `--card-camera-ease` | `card-camera-transition.css` | `cubic-bezier(0.2, 0.86, 0.24, 1)` | Card morph easing (snappier) |
 
@@ -257,6 +257,6 @@ This documentation slice identifies but does **not** resolve the following:
 | D-3 | `prefersReducedMotion()` not shared | P1 | Duplicated in `FeedView.vue`; needs extraction to `src/motion/useReducedMotion.ts`. |
 | D-4 | Gesture logic monolith in `FeedView.vue` | P2 | Detail drag gesture is not reusable; should be extracted to a composable. |
 | D-5 | `closeDetailWithCardify` coupling | P2 | Handles animation, chrome state, browser history, and detail state reset in one function. |
-| D-6 | Floating chrome no-motion override | P2 | `floating-chrome.css` lines 242-319 disable all chrome motion. Unclear if this is permanent or temporary. |
+| D-6 | ~~Floating chrome no-motion override~~ | ~~P2~~ | **Resolved (#279)**: No-motion contract is permanent. Stale motion variables, dead transitions, redundant `prefers-reduced-motion` block, and dead progress/closed-loop rules removed. |
 | D-7 | No unit tests for phase transitions | P2 | See `docs/qa/motion-verification.md` for required test scenarios. |
 | D-8 | Magic numbers not tokenized | P2 | `SWIPE_THRESHOLD=96`, `CARDIFY_DISTANCE=320`, `RETURN_ANIMATION_MS=380` are raw constants, not CSS tokens. |

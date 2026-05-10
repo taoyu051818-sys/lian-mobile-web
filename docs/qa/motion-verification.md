@@ -47,9 +47,9 @@ Each item has an **ID**, a **description**, a **component/file reference**, and 
 
 | ID | Scenario | Expected | Status |
 |----|----------|----------|--------|
-| RM-1 | System preference `prefers-reduced-motion: reduce` | All CSS transitions set to `none`; no transform/filter animations | Verify |
+| RM-1 | System preference `prefers-reduced-motion: reduce` | All CSS transitions set to `none`; no transform/filter animations. Floating chrome has no transitions by default (no-motion contract). | Verify |
 | RM-2 | Toggle reduced motion at runtime | `useReducedMotion` composable reacts to `change` event; next gesture skips animation | `[TODO]` Fix D-3 |
-| RM-3 | Floating chrome in reduced motion | Chrome shows/hides instantly (no blur, translate, scale) | Verify |
+| RM-3 | Floating chrome in reduced motion | Chrome shows/hides instantly (no blur, translate, scale); no-motion contract applies unconditionally (#279) | Verify |
 | RM-4 | Card hover in reduced motion | No `translateY(-1px)` lift; no box-shadow transition | Verify |
 | RM-5 | Probe animation in reduced motion | `feed-update-probe-motion` transition disabled; probe appears/disappears instantly | Verify |
 | RM-6 | Spinner in reduced motion | `lian-spin` animation continues (spinners are exempt from reduced motion) | Verify |
