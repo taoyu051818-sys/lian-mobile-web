@@ -54,6 +54,21 @@ button {
   margin: 0 auto;
 }
 
+.vue-shell__grid--full-bleed {
+  width: 100%;
+  max-width: none;
+}
+
+.vue-shell__grid--full-bleed .map-view__stage-wrap {
+  border-radius: 0;
+  border-left: 0;
+  border-right: 0;
+}
+
+.vue-shell__grid--composer-safe {
+  padding-bottom: var(--space-8);
+}
+
 .vue-shell__hero {
   display: grid;
   gap: var(--space-4);

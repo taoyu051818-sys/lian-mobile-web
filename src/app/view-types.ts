@@ -1,9 +1,23 @@
 export type AppViewKey = "feed" | "map" | "publish" | "messages" | "profile";
 
+export type ShellLayoutMode = "content" | "full-bleed" | "composer-safe";
+
 export interface AppViewDefinition {
   key: AppViewKey;
   label: string;
   icon: string;
+}
+
+export const shellLayoutModes: Record<AppViewKey, ShellLayoutMode> = {
+  feed: "content",
+  map: "full-bleed",
+  publish: "content",
+  messages: "composer-safe",
+  profile: "content",
+};
+
+export function getShellLayoutMode(key: AppViewKey): ShellLayoutMode {
+  return shellLayoutModes[key] ?? "content";
 }
 
 export const appViews: AppViewDefinition[] = [

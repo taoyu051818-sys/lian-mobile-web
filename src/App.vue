@@ -2,7 +2,7 @@
 import { computed, onBeforeUnmount } from "vue";
 import { BottomTabBar, ToastHost } from "./ui";
 import AppViewHost from "./app/AppViewHost.vue";
-import { appViews, type AppViewKey } from "./app/view-types";
+import { appViews, getShellLayoutMode, type AppViewKey } from "./app/view-types";
 import { useActiveView } from "./app/useActiveView";
 import { type FloatingChromeCommand, useFloatingChromeController } from "./motion/floatingChrome";
 
@@ -20,6 +20,7 @@ const tabs = appViews.map((view) => ({
 const bottomChromeState = computed(() => appBottomChrome.phase.value);
 const bottomChromeStyle = computed(() => appBottomChrome.style.value);
 const chromeProgress = computed(() => appBottomChrome.progress.value);
+const shellLayoutClass = computed(() => `vue-shell__grid--${getShellLayoutMode(activeViewKey.value)}`);
 
 function isAppViewKey(key: string): key is AppViewKey {
   return appViews.some((view) => view.key === key);
@@ -43,7 +44,7 @@ onBeforeUnmount(() => {
 
 <template>
   <main class="vue-shell" aria-label="LIAN 主内容">
-    <div class="vue-shell__grid">
+    <div class="vue-shell__grid" :class="shellLayoutClass">
       <AppViewHost :active-view-key="activeViewKey" @chrome="handleChromeChange" />
       <BottomTabBar
         class="vue-shell__bottom-tab lian-floating-chrome lian-floating-chrome--bottom"
