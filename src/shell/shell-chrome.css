@@ -42,3 +42,10 @@
   opacity: 0;
   pointer-events: none;
 }
+
+/* Tabs mode: ShellChrome acts as a transparent semantic wrapper.
+   The slotted BottomTabBar owns its own positioning, visibility,
+   and safe-area handling via floating-chrome classes. */
+.shell-chrome--tabs {
+  display: contents;
+}

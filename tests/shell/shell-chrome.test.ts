@@ -64,6 +64,16 @@ describe("useShellChrome", () => {
       expect(chrome.state.top.buttons).toHaveLength(1);
       expect(chrome.state.top.visible).toBe(false);
     });
+
+    it("supports slot field for bottom-tabs mode", () => {
+      chrome.setRegion("bottom", { slot: "tabs" });
+      expect(chrome.state.bottom.slot).toBe("tabs");
+
+      // Slot survives partial patches to other fields
+      chrome.setRegion("bottom", { visible: false });
+      expect(chrome.state.bottom.slot).toBe("tabs");
+      expect(chrome.state.bottom.visible).toBe(false);
+    });
   });
 
   describe("applyRegions", () => {
