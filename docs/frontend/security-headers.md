@@ -7,7 +7,7 @@
 
 ## 1. Minimum Headers (all environments)
 
-Every HTML response — production, staging, and `scripts/serve-frontend-static-rehearsal.js` — MUST include:
+Every HTML response — production and staging — MUST include:
 
 | Header | Value | Rationale |
 |---|---|---|
@@ -15,26 +15,9 @@ Every HTML response — production, staging, and `scripts/serve-frontend-static-
 | `Referrer-Policy` | `strict-origin-when-cross-origin` | Leak only origin (not full URL) on cross-origin navigations; send full path on same-origin. |
 | `Permissions-Policy` | `geolocation=(), camera=(), microphone=(), payment=()` | Disable browser permission APIs by default. Geolocation is re-enabled per-page via iframe allow or explicit user gesture only. |
 
-These three headers have zero impact on current functionality and can be added immediately to both the static rehearsal server (`scripts/serve-frontend-static-rehearsal.js`) and any reverse-proxy / CDN config.
+These three headers have zero impact on current functionality and can be added immediately to any reverse-proxy / CDN config or Vite preview server middleware.
 
-### 1.1 Static Rehearsal Server
-
-In `scripts/serve-frontend-static-rehearsal.js`, the `send()` helper already sets `cache-control: no-store`. Add the minimum headers there:
-
-```js
-function send(res, status, body, headers = {}) {
-  res.writeHead(status, {
-    "cache-control": "no-store",
-    "x-content-type-options": "nosniff",
-    "referrer-policy": "strict-origin-when-cross-origin",
-    "permissions-policy": "geolocation=(), camera=(), microphone=(), payment=()",
-    ...headers,
-  });
-  res.end(body);
-}
-```
-
-### 1.2 Production / Reverse Proxy
+### 1.1 Production / Reverse Proxy
 
 The same three headers should be set at the reverse-proxy or CDN layer (Nginx, Cloudflare, etc.) so they apply to all responses regardless of origin server.
 
@@ -56,7 +39,7 @@ Audited from `index.html` and `src/views/MapLeafletView.vue`:
 | Campus base map | `/assets/campus-base-map.png` (same-origin) | `img-src` |
 | API endpoint | Same-origin (`/api/...` via proxy) | `connect-src` |
 | Image proxy | Same-origin (`/api/image-proxy` via proxy) | `img-src`, `connect-src` |
-| Runtime config inline script | `<script>` in `<head>` (static rehearsal inject) | `script-src` (requires `unsafe-inline`) |
+| Runtime config inline script | `<script>` in `<head>` (runtime config inject) | `script-src` (requires `unsafe-inline`) |
 
 ### 2.2 Report-Only Policy
 
@@ -80,7 +63,7 @@ Content-Security-Policy-Report-Only:
 | Directive | Value | Why |
 |---|---|---|
 | `default-src` | `'self'` | Restrictive default; every category must be explicitly allowlisted. |
-| `script-src` | `'self' https://unpkg.com 'unsafe-inline'` | `unpkg.com` hosts Leaflet JS. `'unsafe-inline'` is required for the runtime config `<script>` injected by the static rehearsal server and any Vite-injected inline chunks. |
+| `script-src` | `'self' https://unpkg.com 'unsafe-inline'` | `unpkg.com` hosts Leaflet JS. `'unsafe-inline'` is required for the runtime config `<script>` injection and any Vite-injected inline chunks. |
 | `style-src` | `'self' https://unpkg.com 'unsafe-inline'` | `unpkg.com` hosts Leaflet CSS. `'unsafe-inline'` is required for Vue scoped styles and Vite dev-mode `<style>` injection. |
 | `img-src` | `'self' https://webrd0{1-4}.is.autonavi.com data: blob:` | Gaode tile servers. `data:` for inline SVG fallbacks; `blob:` for Leaflet canvas rendering. |
 | `connect-src` | `'self' https://webrd0{1-4}.is.autonavi.com` | API calls go to same-origin proxy. Gaode tiles fetched via XHR/fetch in some Leaflet configurations. |
@@ -102,7 +85,7 @@ Gaode tiles load from `webrd01` through `webrd04.is.autonavi.com`. All four subd
 ### 3.1 `unsafe-inline` (script-src)
 
 **Current reasons:**
-- `scripts/serve-frontend-static-rehearsal.js` injects a `<script>` block for `window.LIAN_STATIC_REHEARSAL` runtime config.
+- Runtime config is injected via a `<script>` block for `window.LIAN_*` globals.
 - Vite dev mode injects HMR client and module scripts inline.
 - Vite production build may produce inline `<script>` chunks for critical path.
 
@@ -128,36 +111,9 @@ Gaode tiles load from `webrd01` through `webrd04.is.autonavi.com`. All four subd
 
 ---
 
-## 4. Enabling Report-Only in the Static Rehearsal Server
+## 4. Enabling Report-Only
 
-Add the `Content-Security-Policy-Report-Only` header alongside the minimum headers:
-
-```js
-const CSP_REPORT_ONLY = [
-  "default-src 'self'",
-  "script-src 'self' https://unpkg.com 'unsafe-inline'",
-  "style-src 'self' https://unpkg.com 'unsafe-inline'",
-  "img-src 'self' https://webrd01.is.autonavi.com https://webrd02.is.autonavi.com https://webrd03.is.autonavi.com https://webrd04.is.autonavi.com data: blob:",
-  "connect-src 'self' https://webrd01.is.autonavi.com https://webrd02.is.autonavi.com https://webrd03.is.autonavi.com https://webrd04.is.autonavi.com",
-  "font-src 'self'",
-  "frame-src 'none'",
-  "object-src 'none'",
-  "base-uri 'self'",
-  "form-action 'self'",
-].join("; ");
-
-function send(res, status, body, headers = {}) {
-  res.writeHead(status, {
-    "cache-control": "no-store",
-    "x-content-type-options": "nosniff",
-    "referrer-policy": "strict-origin-when-cross-origin",
-    "permissions-policy": "geolocation=(), camera=(), microphone=(), payment=()",
-    "content-security-policy-report-only": CSP_REPORT_ONLY,
-    ...headers,
-  });
-  res.end(body);
-}
-```
+Add the `Content-Security-Policy-Report-Only` header alongside the minimum headers. This can be done via reverse-proxy/CDN configuration or Vite preview server middleware.
 
 > A `report-uri` endpoint (`/api/csp-report`) must be implemented on the backend to collect violation reports. Until then, omit `report-uri` and rely on browser DevTools console warnings.
 
@@ -200,8 +156,8 @@ Leaflet CSS also has SRI:
 | Phase | Action | Blocking? |
 |---|---|---|
 | **Phase 1 (this doc)** | Document headers, allowlist, and migration plan. | No |
-| **Phase 2** | Add minimum headers (`X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy`) to static rehearsal server and production reverse proxy. | No — safe to ship immediately. |
-| **Phase 3** | Enable `Content-Security-Policy-Report-Only` in static rehearsal. Monitor browser console for violations. | No — does not block any resources. |
+| **Phase 2** | Add minimum headers (`X-Content-Type-Options`, `Referrer-Policy`, `Permissions-Policy`) to production reverse proxy. | No — safe to ship immediately. |
+| **Phase 3** | Enable `Content-Security-Policy-Report-Only`. Monitor browser console for violations. | No — does not block any resources. |
 | **Phase 4** | Implement `/api/csp-report` backend endpoint. Add `report-uri` to the CSP policy. | No |
 | **Phase 5** | Migrate runtime config inline script to external file. Remove `'unsafe-inline'` from `script-src` if no other inline scripts remain. | Requires code change + testing. |
 | **Phase 6** | Evaluate nonce-based CSP for styles or keep `'unsafe-inline'` in `style-src` with documented exception. | Requires Vue build config change. |
@@ -215,7 +171,7 @@ From #112 and #125, the following CI guards should be added:
 
 - **External resource scanner**: grep for new `<script src="http` and `<link href="http` in `index.html` and `public/` files; require SRI and CSP allowlist entry.
 - **`unsafe-inline` / `unsafe-eval` guard**: flag any new `eval()`, `new Function()`, or `setTimeout(string)` usage.
-- **Header smoke test**: verify that the static rehearsal server responses include the minimum headers.
+- **Header smoke test**: verify that production responses include the minimum headers.
 
 ---
 

@@ -44,14 +44,11 @@ Do not turn a one-off smell into a broad issue unless it reveals a reusable/syst
 
 ## Repository context to keep in mind
 
-Current frontend runtime model from the repo docs and code:
+Current frontend runtime model from the repo docs and code (updated after PR #282):
 
-- The repo owns both legacy/static rehearsal and Vue canary lanes.
-- `npm start` starts both lanes through `scripts/serve-frontend-runtimes.js`.
-- Legacy/static rehearsal lane defaults to port 4300.
-- Vue canary lane defaults to port 4301.
-- Vue shell covers Feed, Detail, Profile, Messages, Auth, Publish, Map V2, and Profile Editor parity work.
-- Current review should treat dual runtime migration as active context.
+- Vue/Vite is the sole active web runtime.
+- The legacy static runtime was removed in PR #282 and migrated to https://github.com/taoyu051818-sys/-lian-mobile-web-legacy.
+- Vue shell covers Feed, Detail, Profile, Messages, Auth, Publish, Map V2, and Profile Editor.
 
 ## Standard workflow for each scan round
 

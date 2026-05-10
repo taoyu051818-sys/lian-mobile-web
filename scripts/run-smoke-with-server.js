@@ -55,8 +55,7 @@ const server = spawn("npm", ["run", "preview", "--", "--host", "0.0.0.0", "--por
   stdio: "inherit",
   shell: process.platform === "win32",
   env: {
-    ...process.env,
-    LIAN_VUE_RUNTIME: "1"
+    ...process.env
   }
 });
 

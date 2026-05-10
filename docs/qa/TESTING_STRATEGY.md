@@ -6,20 +6,12 @@ Scope: frontend testing foundation, phased verify path, automation boundaries
 
 ## Current state
 
-The repository has one test mechanism: `scripts/smoke-frontend.js`, an HTTP-based smoke script that checks:
+The repository uses `scripts/run-smoke-with-server.js` for smoke testing, which builds the Vue frontend, starts Vite preview, and runs checks:
 
 - Homepage HTML structure and `<title>`
-- Static JS file reachability (12 scripts in expected load order)
 - API endpoint JSON validity (`/api/feed`, `/api/map/v2/items`)
-- Legacy frontend syntax (`node --check`)
-- CSS reachability
 
-Smoke runs against two lanes:
-
-| Command | Target | Lane |
-|---|---|---|
-| `npm run test` | `http://127.0.0.1:4300` | legacy/static rehearsal |
-| `npm run test:vue-canary` | `http://127.0.0.1:4301` | Vue canary |
+Smoke runs against the Vite preview server. The legacy static runtime was removed in PR #282.
 
 The `verify` gate now chains static checks and smoke:
 
@@ -178,7 +170,7 @@ These feed unit tests (Phase 1), component tests (Phase 2), and E2E (Phase 3).
 
 These items should be versioned in a release checklist doc and executed before promotion:
 
-1. Smoke passes on both lanes (4300, 4301)
+1. Smoke passes on the Vite preview server
 2. `npm run verify` passes clean
 3. Test account authenticated; profile liked/saved returns data (not 401)
 4. At least one post with structured place renders PlaceSheet correctly

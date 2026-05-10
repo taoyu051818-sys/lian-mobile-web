@@ -3,7 +3,7 @@
 Issue: [#185](https://github.com/taoyu051818-sys/lian-mobile-web/issues/185)
 Contract: `docs/frontend/runtime-error-boundary-contract.md`
 
-Minimal test checklist for the runtime error boundary implementation. Each item maps to a contract section. Tests should run against both `legacy` (4300) and `vue-canary` (4301) lanes where applicable.
+Minimal test checklist for the runtime error boundary implementation. Each item maps to a contract section. Tests should run against the Vue/Vite runtime. The legacy static runtime was removed in PR #282.
 
 ---
 
@@ -65,7 +65,7 @@ Minimal test checklist for the runtime error boundary implementation. Each item 
   - Cookie values, auth tokens
 - [ ] **T8b.** Verify the diagnostics payload contains exactly: `runtime`, `view`, `componentName`, `errorKind`, `messageHash`, `stackHash`, `releaseId`, `timestamp`.
 - [ ] **T8c.** Verify `messageHash` and `stackHash` are 16-character hex strings.
-- [ ] **T8d.** Verify `runtime` is either `'vue-canary'` or `'legacy'`.
+- [ ] **T8d.** Verify `runtime` is `'vue'`.
 
 ## T9 — Dev Mode Behavior (Contract §5.4, §6)
 
@@ -90,15 +90,14 @@ Minimal test checklist for the runtime error boundary implementation. Each item 
 
 ## Running This Checklist
 
-1. Start both lanes: `npm start`
-2. Open `http://127.0.0.1:4301` (Vue canary) in Chrome DevTools
+1. Start the dev server: `npm run dev`
+2. Open the dev server URL in Chrome DevTools
 3. Use the Vue DevTools to inject errors or modify component behavior for T1–T3
 4. Use the browser console for T4–T5 (promise rejections, global errors)
 5. For T6, temporarily break an import in `main.ts` or corrupt the bundle
 6. For T8, inspect network requests in the DevTools Network tab
 7. For T9, toggle between `import.meta.env.DEV` and production builds
 8. For T10, use Chrome DevTools Accessibility panel and keyboard navigation
-9. Repeat critical tests (T1, T2, T4, T7) against `http://127.0.0.1:4300` (legacy lane) if the boundary applies there
 
 ---
 

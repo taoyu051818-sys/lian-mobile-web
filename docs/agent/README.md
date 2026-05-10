@@ -66,14 +66,13 @@ Read these in order before starting implementation work:
 
 ## Current Frontend Runtime Snapshot
 
-Current merged PRs and code establish this frontend model:
+Current merged PRs and code establish this frontend model (updated after PR #282):
 
-- `npm start` runs both frontend lanes through `scripts/serve-frontend-runtimes.js`.
-- legacy/static rehearsal lane uses port 4300.
-- Vue canary lane uses port 4301.
-- `npm run test` targets 4300.
-- `npm run test:vue-canary` targets 4301.
-- `npm run verify` runs check, ops guard, and build.
+- Vue/Vite is the sole active web runtime.
+- The legacy static runtime was removed in PR #282 and migrated to https://github.com/taoyu051818-sys/-lian-mobile-web-legacy.
+- `npm run dev` starts the Vite dev server.
+- `npm run preview` starts the Vite preview server (production build).
+- `npm run verify` runs check, ops guard, build, and smoke.
 
 ## Current Domain Docs
 

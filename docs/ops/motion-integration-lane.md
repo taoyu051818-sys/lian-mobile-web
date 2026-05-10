@@ -3,6 +3,8 @@
 Issue: #86
 Scope: operational expectations for merging motion work into production
 
+> **Note:** The legacy static runtime was removed in PR #282. References to port 4300 and dual-lane testing are historical. Motion work now targets only the Vue/Vite runtime.
+
 ## Purpose
 
 This document defines the operational contract for motion integration — how motion PRs move from feature branches through validation to production merge. It complements the governance rules in `docs/frontend/motion-workflow-governance.md` and the parallel development rules in `docs/development/motion-parallel-development.md`.

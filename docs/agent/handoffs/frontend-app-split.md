@@ -1,8 +1,10 @@
 ---
 task: frontend-app-split
-status: completed
+status: superseded
 date: 2026-05-02
 ---
+
+> **Superseded by PR #282.** The legacy static runtime files described here (`public/app.js`, split scripts, `public/index.html`) were removed in PR #282 and migrated to https://github.com/taoyu051818-sys/-lian-mobile-web-legacy. This handoff is retained as historical context only.
 
 # Handoff: Frontend App Split
 
