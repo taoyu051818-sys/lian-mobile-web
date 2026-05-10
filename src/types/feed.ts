@@ -21,6 +21,8 @@ export interface SourceSignal {
   visible?: boolean;
 }
 
+export type FeedPresentationIntent = "image" | "text" | "activity" | "place" | "merchant" | "help";
+
 export interface FeedItem {
   tid: FeedItemId;
   title: string;
@@ -35,6 +37,7 @@ export interface FeedItem {
   liked: boolean;
   locationArea: string;
   contentType: string;
+  presentationIntent?: FeedPresentationIntent | string | null;
 }
 
 export interface FeedResponse {

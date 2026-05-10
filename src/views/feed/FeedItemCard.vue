@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, watch } from "vue";
 import { togglePostLike } from "../../api/posts";
-import type { FeedItem, FeedItemId } from "../../types/feed";
+import type { FeedItem, FeedItemId, FeedPresentationIntent } from "../../types/feed";
 
-type CardTemplate = "image" | "text" | "activity" | "place" | "merchant" | "help";
+type CardTemplate = FeedPresentationIntent;
 
 const MAX_VISIBLE_TITLE_CHARS = 42;
 const MAX_VISIBLE_AUTHOR_CHARS = 10;
@@ -29,6 +29,12 @@ const pointerWasLongPress = ref(false);
 const pointerCandidateId = ref<number | null>(null);
 let longPressTimer = 0;
 
+const CARD_TEMPLATES: ReadonlySet<CardTemplate> = new Set(["image", "text", "activity", "place", "merchant", "help"]);
+
+function normalizePresentationIntent(value: FeedItem["presentationIntent"]): CardTemplate | null {
+  return typeof value === "string" && CARD_TEMPLATES.has(value as CardTemplate) ? value as CardTemplate : null;
+}
+
 const title = computed(() => props.item.title || "未命名内容");
 const coverUrl = computed(() => props.item.cover || "");
 const primaryTag = computed(() => props.item.primaryTag || "");
@@ -39,12 +45,14 @@ const authorName = computed(() => actor.value.displayName || actor.value.usernam
 const authorAvatarUrl = computed(() => actor.value.avatarUrl || "");
 const authorInitial = computed(() => actor.value.avatarText || authorName.value.slice(0, 1) || "同");
 const searchText = computed(() => `${props.item.contentType} ${primaryTag.value} ${title.value} ${placeLabel.value}`.toLowerCase());
+const serverPresentationIntent = computed(() => normalizePresentationIntent(props.item.presentationIntent));
 const cardWarning = computed(() => [
   title.value.length > MAX_VISIBLE_TITLE_CHARS ? "title-clamped" : "",
   authorName.value.length > MAX_VISIBLE_AUTHOR_CHARS ? "author-ellipsized" : "",
 ].filter(Boolean).join(" ") || undefined);
 
 const cardTemplate = computed<CardTemplate>(() => {
+  if (serverPresentationIntent.value) return serverPresentationIntent.value;
   const raw = searchText.value;
   if (raw.includes("报名") || raw.includes("活动") || raw.includes("社团") || raw.includes("opportunity") || raw.includes("activity")) return "activity";
   if (raw.includes("商家") || raw.includes("优惠") || raw.includes("店") || raw.includes("merchant") || raw.includes("trade")) return "merchant";
