@@ -3,6 +3,7 @@ import {
   createEmptyRegionSpec,
   createDefaultChromeState,
   type ShellChromeRegionSpec,
+  type ChromeTabSpec,
 } from "../../src/shell/shell-chrome-types";
 import { useShellChrome } from "../../src/shell/useShellChrome";
 import { useActiveView } from "../../src/app/useActiveView";
@@ -73,6 +74,54 @@ describe("useShellChrome", () => {
       chrome.setRegion("bottom", { visible: false });
       expect(chrome.state.bottom.slot).toBe("tabs");
       expect(chrome.state.bottom.visible).toBe(false);
+    });
+
+    it("supports typed tabs spec", () => {
+      const tabs: ChromeTabSpec = {
+        kind: "tabs",
+        items: [{ id: "a", label: "A" }, { id: "b", label: "B" }],
+        activeKey: "a",
+        ariaLabel: "分类",
+      };
+      chrome.setRegion("top", { tabs });
+      expect(chrome.state.top.tabs).toBeDefined();
+      expect(chrome.state.top.tabs!.kind).toBe("tabs");
+      expect(chrome.state.top.tabs!.items).toHaveLength(2);
+      expect(chrome.state.top.tabs!.activeKey).toBe("a");
+      expect(chrome.state.top.tabs!.ariaLabel).toBe("分类");
+    });
+
+    it("supports onTabSelect callback", () => {
+      const handler = (_tabId: string) => {};
+      chrome.setRegion("top", { onTabSelect: handler });
+      expect(chrome.state.top.onTabSelect).toBe(handler);
+    });
+
+    it("clears tabs with null", () => {
+      chrome.setRegion("top", {
+        tabs: { kind: "tabs", items: [{ id: "x", label: "X" }], activeKey: "x" },
+      });
+      expect(chrome.state.top.tabs).toBeDefined();
+      chrome.setRegion("top", { tabs: null });
+      expect(chrome.state.top.tabs).toBeNull();
+    });
+
+    it("clears onTabSelect with null", () => {
+      chrome.setRegion("top", { onTabSelect: () => {} });
+      expect(chrome.state.top.onTabSelect).toBeDefined();
+      chrome.setRegion("top", { onTabSelect: null });
+      expect(chrome.state.top.onTabSelect).toBeNull();
+    });
+
+    it("preserves tabs across partial patches", () => {
+      chrome.setRegion("top", {
+        tabs: { kind: "tabs", items: [{ id: "a", label: "A" }], activeKey: "a" },
+        onTabSelect: () => {},
+      });
+      chrome.setRegion("top", { visible: false });
+      expect(chrome.state.top.tabs).toBeDefined();
+      expect(chrome.state.top.onTabSelect).toBeDefined();
+      expect(chrome.state.top.visible).toBe(false);
     });
   });
 

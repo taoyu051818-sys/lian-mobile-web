@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, onBeforeUnmount, onMounted, ref } from "vue";
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { fetchFeed } from "../api/feed";
 import { fetchPostDetail } from "../api/posts";
 import { useFloatingChromeController } from "../motion/floatingChrome";
@@ -472,7 +472,17 @@ function onDetailPointerCancel(event: PointerEvent) {
 
 onMounted(() => {
   updateViewport();
-  setRegion("top", { slot: "tabs", visible: true });
+  setRegion("top", {
+    tabs: {
+      kind: "tabs",
+      items: tabs.value,
+      activeKey: activeTab.value,
+      ariaLabel: "信息分类",
+      floatingState: feedTabsChromeState.value,
+    },
+    onTabSelect: switchTab,
+    visible: true,
+  });
   window.addEventListener("resize", updateViewport);
   window.addEventListener("popstate", onWindowPopState);
   emit("chrome", false);
@@ -480,9 +490,21 @@ onMounted(() => {
   void loadFeed(true);
 });
 
+watch([tabs, activeTab, feedTabsChromeState], () => {
+  setRegion("top", {
+    tabs: {
+      kind: "tabs",
+      items: tabs.value,
+      activeKey: activeTab.value,
+      ariaLabel: "信息分类",
+      floatingState: feedTabsChromeState.value,
+    },
+  });
+});
+
 onBeforeUnmount(() => {
   clearDetailHistory();
-  setRegion("top", { slot: "", visible: false });
+  setRegion("top", { tabs: null, onTabSelect: null, visible: false });
   feedTabsChrome.dispose();
   detailChrome.dispose();
   window.removeEventListener("resize", updateViewport);
@@ -510,28 +532,6 @@ onBeforeUnmount(() => {
         </div>
       </div>
     </Transition>
-
-    <Teleport to="aside.shell-chrome--top">
-      <nav
-        class="feed-view__tabs lian-floating-chrome lian-floating-chrome--top"
-        aria-label="信息分类"
-        :aria-hidden="feedTabsChromeState === 'hidden'"
-        :data-floating-state="feedTabsChromeState"
-        data-floating-chrome="top"
-      >
-        <button
-          v-for="tab in tabs"
-          :key="tab.id"
-          type="button"
-          class="feed-view__tab"
-          :class="{ 'is-active': tab.id === activeTab }"
-          :aria-pressed="tab.id === activeTab"
-          @click="switchTab(tab.id)"
-        >
-          {{ tab.label }}
-        </button>
-      </nav>
-    </Teleport>
 
     <InlineError v-if="errorMessage">
       {{ errorMessage }}
@@ -661,63 +661,6 @@ onBeforeUnmount(() => {
   word-break: break-all;
 }
 
-.feed-view__tabs {
-  position: fixed;
-  top: var(--floating-bar-top-offset);
-  right: max(var(--floating-bar-side-inset), env(safe-area-inset-right));
-  left: max(var(--floating-bar-side-inset), env(safe-area-inset-left));
-  z-index: var(--floating-bar-z);
-  display: flex;
-  gap: var(--space-1);
-  width: min(calc(100vw - var(--space-6)), var(--floating-bar-max-width));
-  min-height: var(--floating-bar-height);
-  margin: 0 auto;
-  padding: var(--floating-bar-padding);
-  overflow-x: auto;
-  border: 1px solid var(--glass-border);
-  border-radius: var(--floating-bar-radius);
-  background: var(--glass-bg-strong);
-  box-shadow: var(--shadow-floating);
-  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
-  opacity: var(--feed-under-detail-opacity, 1);
-  scrollbar-width: none;
-  transition: opacity var(--motion-standard) var(--motion-ease-standard);
-}
-
-.feed-view__tabs::-webkit-scrollbar {
-  display: none;
-}
-
-.feed-view__tab {
-  flex: 0 0 auto;
-  min-height: var(--floating-bar-button-height);
-  padding: 0 var(--space-3);
-  border: 0;
-  border-radius: var(--radius-chip);
-  background: transparent;
-  color: var(--lian-muted);
-  font-size: 13px;
-  font-weight: 850;
-  white-space: nowrap;
-  transition: background 160ms ease, color 160ms ease, transform 160ms ease;
-}
-
-.feed-view__tab.is-active {
-  background: var(--lian-ink);
-  color: #fff;
-  transform: translateY(-1px);
-}
-
-.feed-view__tab:disabled {
-  cursor: wait;
-  opacity: 0.6;
-}
-
-.feed-view__tab:focus-visible {
-  outline: 3px solid rgba(31, 167, 160, 0.32);
-  outline-offset: 2px;
-}
-
 .feed-view__content {
   display: grid;
   gap: var(--space-3);
@@ -832,9 +775,7 @@ onBeforeUnmount(() => {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .feed-view__tab,
   .feed-view__content,
-  .feed-view__tabs,
   .feed-view__card-transition,
   .feed-update-probe-motion-enter-active,
   .feed-update-probe-motion-leave-active {

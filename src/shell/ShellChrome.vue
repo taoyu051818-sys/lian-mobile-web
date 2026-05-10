@@ -15,6 +15,7 @@ const props = withDefaults(defineProps<{
 
 const emit = defineEmits<{
   "button-click": [id: string, region: ShellRegionKey];
+  "tab-select": [tabId: string, region: ShellRegionKey];
 }>();
 
 const { state } = useShellChrome();
@@ -22,7 +23,8 @@ const { state } = useShellChrome();
 const regionSpec = computed(() => state[props.region]);
 const isVisible = computed(() => regionSpec.value.visible !== false);
 const buttons = computed(() => regionSpec.value.buttons ?? []);
-const isTabs = computed(() => regionSpec.value.slot === "tabs");
+const hasTabs = computed(() => regionSpec.value.tabs != null);
+const isSlottedTabs = computed(() => !hasTabs.value && regionSpec.value.slot === "tabs");
 
 /**
  * Effective floating state for the data attribute.
@@ -55,18 +57,47 @@ function handleButtonClick(button: ChromeButtonSpec) {
     emit("button-click", button.id, props.region);
   }
 }
+
+function handleTabSelect(tabId: string) {
+  if (!isTransitioning.value) {
+    regionSpec.value.onTabSelect?.(tabId);
+    emit("tab-select", tabId, props.region);
+  }
+}
 </script>
 
 <template>
   <aside
     class="shell-chrome"
-    :class="[`shell-chrome--${region}`, { 'shell-chrome--tabs': isTabs }]"
-    :aria-hidden="isTabs ? undefined : !isVisible"
+    :class="[`shell-chrome--${region}`, { 'shell-chrome--tabs': hasTabs || isSlottedTabs }]"
+    :aria-hidden="hasTabs || isSlottedTabs ? undefined : !isVisible"
     role="complementary"
     :aria-label="region === 'top' ? '顶部操作区' : '底部操作区'"
     :data-floating-state="floatingState"
   >
-    <template v-if="isTabs">
+    <template v-if="hasTabs">
+      <nav
+        class="shell-chrome__tabs feed-view__tabs lian-floating-chrome"
+        :class="[`lian-floating-chrome--${region}`]"
+        :aria-label="regionSpec.tabs?.ariaLabel ?? '标签切换'"
+        :aria-hidden="regionSpec.tabs?.floatingState === 'hidden'"
+        :data-floating-state="regionSpec.tabs?.floatingState ?? 'visible'"
+        :data-floating-chrome="region"
+      >
+        <button
+          v-for="tab in regionSpec.tabs?.items ?? []"
+          :key="tab.id"
+          type="button"
+          class="shell-chrome__tab feed-view__tab"
+          :class="{ 'is-active': tab.id === regionSpec.tabs?.activeKey }"
+          :aria-pressed="tab.id === regionSpec.tabs?.activeKey"
+          @click="handleTabSelect(tab.id)"
+        >
+          {{ tab.label }}
+        </button>
+      </nav>
+    </template>
+    <template v-else-if="isSlottedTabs">
       <slot />
     </template>
     <template v-else>
