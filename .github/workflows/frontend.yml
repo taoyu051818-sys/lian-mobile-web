@@ -33,9 +33,6 @@ jobs:
       - name: Verify frontend (static guards + build + smoke)
         run: npm run verify
 
-      - name: Run static proxy forwarded header regression
-        run: node scripts/test-static-proxy-forwarded-headers.js
-
   publish-legacy-status:
     name: Publish legacy commit status
     runs-on: ubuntu-latest

@@ -33,7 +33,7 @@ async function waitForServer(url, timeoutMs = 30000) {
 function spawnLogged(command, args, options = {}) {
   return spawn(command, args, {
     stdio: "inherit",
-    shell: false,
+    shell: process.platform === "win32",
     ...options
   });
 }
@@ -53,7 +53,7 @@ if (buildCode !== 0) process.exit(buildCode);
 console.log(`[smoke] starting Vite preview on ${baseUrl}`);
 const server = spawn("npm", ["run", "preview", "--", "--host", "0.0.0.0", "--port", String(port), "--strictPort"], {
   stdio: "inherit",
-  shell: false,
+  shell: process.platform === "win32",
   env: {
     ...process.env,
     LIAN_VUE_RUNTIME: "1"

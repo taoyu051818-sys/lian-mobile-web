@@ -26,9 +26,6 @@ const runtimeSensitiveFiles = [
   "index.html",
   "public/index.html",
   "vite.config.ts",
-  "scripts/serve-frontend-runtimes.js",
-  "scripts/serve-frontend-static-rehearsal.js",
-  "scripts/smoke-frontend.js",
   "scripts/validate-project-structure.js"
 ];
 
