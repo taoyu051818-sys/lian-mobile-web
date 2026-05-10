@@ -2,11 +2,11 @@
 import { computed, nextTick, onMounted, ref } from "vue";
 import { fetchAuthMe } from "../api/profile";
 import { fetchChannelMessages, fetchNotifications, markChannelMessagesRead, sendChannelMessage } from "../api/messages";
-import { GlassPanel, IdentityBadge, InlineError, LianButton, TrustBadge } from "../ui";
+import { GlassPanel } from "../ui";
 import type { DisplayActor } from "../types/feed";
 import type { ChannelMessage, ChannelMessageActor, MessageTabKey, NotificationItem } from "../types/messages";
 import type { ProfileUser } from "../types/profile";
-import { formatRelativeTime } from "../utils/time";
+import { MessagesTabs, ChannelComposer, ChannelThread, NotificationList } from "./messages";
 
 const activeTab = ref<MessageTabKey>("channel");
 const channelItems = ref<ChannelMessage[]>([]);
@@ -210,208 +210,47 @@ onMounted(async () => {
 <template>
   <section class="messages-view" aria-label="消息">
     <GlassPanel class="messages-view__card">
-      <nav class="messages-view__tabs" aria-label="消息分类">
-        <button
-          v-for="tab in tabs"
-          :key="tab.key"
-          type="button"
-          class="messages-view__tab"
-          :class="{ 'is-active': activeTab === tab.key }"
-          @click="switchTab(tab.key)"
-        >
-          {{ tab.label }}
-        </button>
-      </nav>
+      <MessagesTabs :tabs="tabs" :active-tab="activeTab" @switch="switchTab" />
 
-      <section v-if="activeTab === 'channel'" class="messages-view__pane" aria-label="校园频道">
-        <form class="messages-view__composer" @submit.prevent="submitMessage">
-          <IdentityBadge :avatar-text="composerAvatarText" :label="composerActorName" :meta="composerSignalMeta" />
-          <label v-if="identityTags.length" class="messages-view__field">
-            <span>身份信号</span>
-            <select v-model="composerIdentityTag">
-              <option value="">不使用身份信号</option>
-              <option v-for="tag in identityTags" :key="tag" :value="tag">{{ tag }}</option>
-            </select>
-          </label>
-          <label class="messages-view__field messages-view__field--content">
-            <span>说点什么</span>
-            <textarea v-model="composerContent" rows="3" placeholder="发到校园频道…" />
-          </label>
-          <InlineError v-if="sendError">{{ sendError }}</InlineError>
-          <LianButton type="submit" :loading="sending">发送</LianButton>
-        </form>
+      <template v-if="activeTab === 'channel'">
+        <ChannelComposer
+          :avatar-text="composerAvatarText"
+          :actor-name="composerActorName"
+          :signal-meta="composerSignalMeta"
+          :identity-tags="identityTags"
+          :content="composerContent"
+          :identity-tag="composerIdentityTag"
+          :sending="sending"
+          :send-error="sendError"
+          @update:content="composerContent = $event"
+          @update:identity-tag="composerIdentityTag = $event"
+          @submit="submitMessage"
+        />
+        <ChannelThread
+          :items="channelItems"
+          :loading="channelLoading"
+          :error="channelError"
+          :has-more="channelHasMore"
+          @retry="loadChannel(true)"
+          @load-more="loadChannel(false)"
+        />
+      </template>
 
-        <InlineError v-if="channelError">
-          {{ channelError }}
-          <button type="button" @click="loadChannel(true)">重新加载</button>
-        </InlineError>
-
-        <div v-if="channelLoading && !channelItems.length" class="messages-view__state" role="status">正在加载频道消息…</div>
-        <div v-else-if="!channelItems.length" class="messages-view__state">还没有消息</div>
-        <div v-else class="messages-view__list" aria-live="polite">
-          <article v-for="item in channelItems" :key="String(item.id)" class="messages-view__message" :class="{ 'is-self': item.isSelf }">
-            <IdentityBadge :avatar-text="messageAvatarText(item)" :label="messageAuthor(item)" :meta="messageMeta(item)" />
-            <p>{{ messageText(item) }}</p>
-            <footer>
-              <span>{{ formatRelativeTime(item.timestampISO || item.time) || "刚刚" }}</span>
-              <span v-if="item.isSelf && item.deliveryState === 'sending'">发送中…</span>
-              <span v-else-if="item.isSelf && item.deliveryState === 'failed'">发送失败</span>
-              <span v-else-if="item.readCount">{{ item.readCount }} 次已读</span>
-            </footer>
-          </article>
-        </div>
-
-        <div class="messages-view__load-more">
-          <LianButton v-if="channelHasMore" variant="ghost" :loading="channelLoading" @click="loadChannel(false)">加载更早消息</LianButton>
-        </div>
-      </section>
-
-      <section v-else class="messages-view__pane" aria-label="通知">
-        <InlineError v-if="notificationError">
-          {{ notificationError }}
-          <button type="button" @click="loadNotifications">重新加载</button>
-        </InlineError>
-
-        <div v-if="notificationLoading && !notificationItems.length" class="messages-view__state" role="status">正在加载通知…</div>
-        <div v-else-if="!notificationItems.length" class="messages-view__state">暂无通知</div>
-        <div v-else class="messages-view__list" aria-live="polite">
-          <article
-            v-for="item in notificationItems"
-            :key="String(item.id || item.tid || item.title)"
-            class="messages-view__notification"
-            :class="{ 'is-unread': !item.read }"
-          >
-            <header>
-              <strong>{{ notificationActor(item) }}</strong>
-              <TrustBadge :tone="item.read ? 'confirmed' : 'pending'">{{ item.read ? "已读" : "未读" }}</TrustBadge>
-            </header>
-            <h3>{{ item.title || "新通知" }}</h3>
-            <p v-if="item.excerpt && item.excerpt !== item.title">{{ item.excerpt }}</p>
-            <time>{{ formatRelativeTime(item.timestampISO || item.time) }}</time>
-          </article>
-        </div>
-      </section>
+      <NotificationList
+        v-else
+        :items="notificationItems"
+        :loading="notificationLoading"
+        :error="notificationError"
+        @retry="loadNotifications"
+      />
     </GlassPanel>
   </section>
 </template>
 
 <style scoped>
 .messages-view,
-.messages-view__card,
-.messages-view__pane,
-.messages-view__list,
-.messages-view__composer {
+.messages-view__card {
   display: grid;
   gap: var(--space-4);
-}
-
-.messages-view__tabs,
-.messages-view__message footer,
-.messages-view__notification header,
-.messages-view__load-more {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
-  align-items: center;
-  justify-content: space-between;
-}
-
-.messages-view h3,
-.messages-view p {
-  margin: 0;
-}
-
-.messages-view__message p,
-.messages-view__notification p,
-.messages-view__message footer,
-.messages-view__notification time {
-  color: var(--lian-muted);
-  line-height: 1.6;
-}
-
-.messages-view__tabs,
-.messages-view__load-more {
-  justify-content: flex-start;
-}
-
-.messages-view__tab {
-  min-height: 36px;
-  padding: 0 var(--space-3);
-  border: 1px solid var(--glass-border);
-  border-radius: var(--radius-chip);
-  background: rgba(255, 255, 255, 0.54);
-  color: var(--lian-muted);
-  font-weight: 850;
-}
-
-.messages-view__tab.is-active {
-  background: var(--lian-ink);
-  color: #fff;
-}
-
-.messages-view__composer,
-.messages-view__message,
-.messages-view__notification {
-  padding: var(--space-3);
-  border: 1px solid rgba(31, 41, 51, 0.08);
-  border-radius: var(--radius-card);
-  background: rgba(255, 255, 255, 0.48);
-}
-
-.messages-view__field {
-  display: grid;
-  gap: var(--space-2);
-  color: var(--lian-muted);
-  font-size: 13px;
-  font-weight: 800;
-}
-
-.messages-view__field select,
-.messages-view__field textarea {
-  width: 100%;
-  min-height: 44px;
-  box-sizing: border-box;
-  border: 1px solid var(--lian-border);
-  border-radius: var(--radius-3);
-  background: rgba(255, 255, 255, 0.72);
-  color: var(--lian-ink);
-  font: inherit;
-}
-
-.messages-view__field textarea {
-  resize: vertical;
-  padding: var(--space-3);
-  line-height: 1.5;
-}
-
-.messages-view__field select {
-  padding: 0 var(--space-3);
-}
-
-.messages-view__state {
-  display: grid;
-  min-height: 112px;
-  place-items: center;
-  color: var(--lian-muted);
-  text-align: center;
-}
-
-.messages-view__message.is-self {
-  border-color: rgba(31, 167, 160, 0.18);
-  background: rgba(31, 167, 160, 0.06);
-}
-
-.messages-view__notification.is-unread {
-  border-color: rgba(31, 167, 160, 0.28);
-}
-
-.inline-error button {
-  min-height: 32px;
-  margin-left: var(--space-2);
-  border: 0;
-  border-radius: var(--radius-chip);
-  background: rgba(255, 255, 255, 0.72);
-  color: currentColor;
-  font-weight: 900;
 }
 </style>

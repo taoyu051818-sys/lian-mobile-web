@@ -1,0 +1,52 @@
+<script setup lang="ts">
+import type { MessageTabKey } from "../../types/messages";
+
+defineProps<{
+  tabs: Array<{ key: MessageTabKey; label: string }>;
+  activeTab: MessageTabKey;
+}>();
+
+const emit = defineEmits<{
+  switch: [tab: MessageTabKey];
+}>();
+</script>
+
+<template>
+  <nav class="messages-view__tabs" aria-label="消息分类">
+    <button
+      v-for="tab in tabs"
+      :key="tab.key"
+      type="button"
+      class="messages-view__tab"
+      :class="{ 'is-active': activeTab === tab.key }"
+      @click="emit('switch', tab.key)"
+    >
+      {{ tab.label }}
+    </button>
+  </nav>
+</template>
+
+<style scoped>
+.messages-view__tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.messages-view__tab {
+  min-height: 36px;
+  padding: 0 var(--space-3);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-chip);
+  background: rgba(255, 255, 255, 0.54);
+  color: var(--lian-muted);
+  font-weight: 850;
+}
+
+.messages-view__tab.is-active {
+  background: var(--lian-ink);
+  color: #fff;
+}
+</style>

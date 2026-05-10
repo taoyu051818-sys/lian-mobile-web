@@ -10,6 +10,7 @@ const typesFeed = fs.readFileSync(path.join(repoRoot, "src/types/feed.ts"), "utf
 const typesProfile = fs.readFileSync(path.join(repoRoot, "src/types/profile.ts"), "utf8");
 const apiMessages = fs.readFileSync(path.join(repoRoot, "src/api/messages.ts"), "utf8");
 const viewSource = fs.readFileSync(path.join(repoRoot, "src/views/MessagesView.vue"), "utf8");
+const channelThreadSource = fs.readFileSync(path.join(repoRoot, "src/views/messages/ChannelThread.vue"), "utf8");
 
 // --- DisplayActor.id ---
 
@@ -85,13 +86,13 @@ test("MessagesView imports ChannelMessageActor", () => {
   assert.match(viewSource, /import type \{[^}]*ChannelMessageActor[^}]*\} from "\.\.\/types\/messages"/);
 });
 
-test("MessagesView uses isSelf for message CSS class", () => {
-  assert.match(viewSource, /is-self.*item\.isSelf/);
+test("ChannelThread uses isSelf for message CSS class", () => {
+  assert.match(channelThreadSource, /is-self.*item\.isSelf/);
 });
 
-test("MessagesView shows delivery state for self messages", () => {
-  assert.match(viewSource, /item\.isSelf && item\.deliveryState === 'sending'/);
-  assert.match(viewSource, /item\.isSelf && item\.deliveryState === 'failed'/);
+test("ChannelThread shows delivery state for self messages", () => {
+  assert.match(channelThreadSource, /item\.isSelf && item\.deliveryState === 'sending'/);
+  assert.match(channelThreadSource, /item\.isSelf && item\.deliveryState === 'failed'/);
 });
 
 test("MessagesView messageActor returns ChannelMessageActor with fallback id", () => {
