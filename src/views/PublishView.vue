@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { fetchMapV2Items } from "../api/map";
 import { buildPublishPayload, createMapV2LocationDraft, normalizeIdentityTag, normalizePublishTag, publishPost, uploadPublishImage } from "../api/publish";
 import { fetchAuthMe } from "../api/profile";
@@ -10,9 +10,18 @@ import type { PublishLocationDraft, PublishVisibility } from "../types/publish";
 import PublishComposer from "./publish/PublishComposer.vue";
 import PublishLocationControls from "./publish/PublishLocationControls.vue";
 import PublishMetaControls from "./publish/PublishMetaControls.vue";
-import PublishActionBar from "./publish/PublishActionBar.vue";
+import { usePublishChromeActions } from "./publish/usePublishChromeActions";
 
 const MAX_IMAGE_COUNT = 9;
+
+const emit = defineEmits<{
+  chrome: [payload: boolean];
+}>();
+
+const chromeActions = usePublishChromeActions({
+  onPublish: () => submitPublish(),
+  onClear: () => resetForm(),
+});
 
 const title = ref("");
 const body = ref("");
@@ -271,10 +280,18 @@ function resetForm() {
 onMounted(() => {
   void loadIdentity();
   void loadMapLocations();
+  chromeActions.setup();
+  emit("chrome", true);
 });
 
 onBeforeUnmount(() => {
+  chromeActions.cleanup();
+  emit("chrome", false);
   revokePreviewUrls();
+});
+
+watch(canSubmit, (val) => {
+  chromeActions.updateDisabled(!val);
 });
 </script>
 
@@ -353,13 +370,6 @@ onBeforeUnmount(() => {
           @update:tag-input="tagInput = $event"
           @update:identity-tag="identityTag = $event"
           @update:visibility="visibility = $event"
-        />
-
-        <PublishActionBar
-          :publishing="publishing"
-          :uploading="uploading"
-          :can-submit="canSubmit"
-          @reset-form="resetForm"
         />
       </form>
     </GlassPanel>
