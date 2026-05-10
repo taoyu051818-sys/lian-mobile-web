@@ -2,11 +2,12 @@
 import { computed, ref, watch } from "vue";
 import { fetchPlaceSheet } from "../../api/places";
 import { reportPost, sendPostReply, togglePostLike, togglePostSave } from "../../api/posts";
+import { InlineError, LianButton, SafeHtml } from "../../ui";
+import { sanitizeHtml } from "../../utils/html";
 import type { DisplayActor } from "../../types/feed";
 import type { PlaceSheet, PlaceStatus } from "../../types/place";
 import type { PostDetail, PostReply } from "../../types/post";
 import { formatRelativeTime, formatTimestampLabel } from "../../utils/time";
-import { InlineError, LianButton } from "../../ui";
 import { sharePost } from "../../platform/share";
 
 type FloatingChromePhase = "visible" | "exiting" | "hidden" | "entering" | "progress";
@@ -70,7 +71,7 @@ const structuredPlace = computed(() => props.post?.place || null);
 const placeLabel = computed(() => structuredPlace.value?.name || props.post?.locationArea || "");
 const primaryTag = computed(() => normalizePostTag(props.post?.primaryTag || ""));
 const rawBodyHtml = computed(() => props.post?.contentHtml || "");
-const bodyHtml = computed(() => stripDecorativeContentFromHtml(rawBodyHtml.value));
+const bodyHtml = computed(() => stripDecorativeContentFromHtml(sanitizeHtml(rawBodyHtml.value)));
 const replies = computed(() => props.post?.replies || []);
 const images = computed(() => uniqueGalleryImages([props.post?.cover || "", ...(props.post?.imageUrls || [])]).slice(0, 8));
 const fullResolutionImages = computed(() => images.value.map(toFullResolutionImageUrl));
@@ -183,6 +184,10 @@ function stripDecorativeContentFromHtml(value: string) {
     .replace(/<p[^>]*>\s*<strong>\s*#+[^<]+\s*<\/strong>\s*<\/p>/gi, "")
     .replace(/<p[^>]*>\s*#+[^<]+\s*<\/p>/gi, "")
     .trim();
+}
+
+function sanitizeReplyHtml(value: string) {
+  return stripDecorativeContentFromHtml(sanitizeHtml(value));
 }
 
 function placeStatusLabel(status?: PlaceStatus) {
@@ -403,7 +408,7 @@ async function submitReply() {
 
         <section class="post-detail-panel__content">
           <h2 v-if="title" id="post-detail-title">{{ title }}</h2>
-          <div v-if="bodyHtml" class="lian-html" v-html="bodyHtml"></div>
+          <SafeHtml v-if="bodyHtml" :html="bodyHtml" as="div" class="lian-html" />
         </section>
 
         <section class="post-detail-panel__info-strip" aria-label="帖子属性">
@@ -486,11 +491,11 @@ async function submitReply() {
               <strong v-if="replyAuthorLabel(reply)">{{ replyAuthorLabel(reply) }}</strong>
               <span v-if="formatRelativeTime(reply.timestampISO)">{{ formatRelativeTime(reply.timestampISO) }}</span>
             </div>
-            <div
-              v-if="stripDecorativeContentFromHtml(reply.content || '')"
+            <SafeHtml
+              :html="sanitizeReplyHtml(reply.content || '')"
+              as="div"
               class="post-detail-panel__reply-content"
-              v-html="stripDecorativeContentFromHtml(reply.content || '')"
-            ></div>
+            />
           </article>
           <p v-if="!replies.length" class="post-detail-panel__empty">还没有回复，来写第一条。</p>
         </section>

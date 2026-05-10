@@ -16,7 +16,8 @@ const IGNORE_DIRS = new Set([
   "tests"
 ]);
 const IGNORE_FILES = new Set([
-  "scripts/guard-unsafe-dom-sinks.js"
+  "scripts/guard-unsafe-dom-sinks.js",
+  "scripts/test-html-sanitizer.js"
 ]);
 
 const RULES = [
