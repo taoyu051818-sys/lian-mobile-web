@@ -2,6 +2,7 @@
 import { computed, onBeforeUnmount } from "vue";
 import { BottomTabBar, ToastHost } from "./ui";
 import AppViewHost from "./app/AppViewHost.vue";
+import { ShellChrome } from "./shell";
 import { appViews, getShellLayoutMode, type AppViewKey } from "./app/view-types";
 import { useActiveView } from "./app/useActiveView";
 import { type FloatingChromeCommand, useFloatingChromeController } from "./motion/floatingChrome";
@@ -44,6 +45,7 @@ onBeforeUnmount(() => {
 
 <template>
   <main class="vue-shell" aria-label="LIAN 主内容">
+    <ShellChrome region="top" />
     <div class="vue-shell__grid" :class="shellLayoutClass">
       <AppViewHost :active-view-key="activeViewKey" @chrome="handleChromeChange" />
       <BottomTabBar
@@ -58,6 +60,7 @@ onBeforeUnmount(() => {
         @change="handleViewChange"
       />
     </div>
+    <ShellChrome region="bottom" />
   </main>
   <ToastHost />
 </template>

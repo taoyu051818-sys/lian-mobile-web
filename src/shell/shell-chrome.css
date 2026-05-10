@@ -1,0 +1,44 @@
+.shell-chrome {
+  position: fixed;
+  left: 0;
+  right: 0;
+  z-index: var(--floating-bar-z, 70);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: auto;
+}
+
+.shell-chrome--top {
+  top: 0;
+  padding: calc(var(--space-2) + env(safe-area-inset-top)) var(--space-3) var(--space-2);
+}
+
+.shell-chrome--bottom {
+  bottom: 0;
+  padding: var(--space-2) var(--space-3) calc(var(--space-2) + env(safe-area-inset-bottom));
+}
+
+.shell-chrome__inner {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: min(100%, var(--floating-bar-max-width, 760px));
+}
+
+.shell-chrome__slot {
+  flex: 1;
+  min-width: 0;
+}
+
+.shell-chrome__buttons {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  flex-shrink: 0;
+}
+
+.shell-chrome[aria-hidden="true"] {
+  opacity: 0;
+  pointer-events: none;
+}
