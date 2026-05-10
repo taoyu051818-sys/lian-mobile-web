@@ -1,19 +1,11 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount } from "vue";
-import { BottomTabBar, ToastHost } from "./ui";
+import { ToastHost } from "./ui";
 import AppViewHost from "./app/AppViewHost.vue";
-import { ShellChrome, ContentFrame, useShellChrome } from "./shell";
+import { AppShell } from "./shell";
 import { appViews, getShellLayoutMode, type AppViewKey } from "./app/view-types";
 import { useActiveView } from "./app/useActiveView";
-import { type FloatingChromeCommand, useFloatingChromeController } from "./motion/floatingChrome";
-
-type ChromeStatePayload = FloatingChromeCommand;
 
 const { activeViewKey, setActiveView } = useActiveView();
-const { setRegion } = useShellChrome();
-const appBottomChrome = useFloatingChromeController({ initialPhase: "visible" });
-
-setRegion("bottom", { slot: "tabs" });
 
 const tabs = appViews.map((view) => ({
   key: view.key,
@@ -21,49 +13,27 @@ const tabs = appViews.map((view) => ({
   icon: view.icon,
 }));
 
-const bottomChromeState = computed(() => appBottomChrome.phase.value);
-const bottomChromeStyle = computed(() => appBottomChrome.style.value);
-const chromeProgress = computed(() => appBottomChrome.progress.value);
-
 function isAppViewKey(key: string): key is AppViewKey {
   return appViews.some((view) => view.key === key);
 }
 
-function handleChromeChange(payload: ChromeStatePayload) {
-  appBottomChrome.apply(payload);
-}
-
 function handleViewChange(key: string) {
-  appBottomChrome.show();
   if (isAppViewKey(key)) {
     setActiveView(key);
   }
 }
-
-onBeforeUnmount(() => {
-  appBottomChrome.dispose();
-});
 </script>
 
 <template>
-  <main class="vue-shell" aria-label="LIAN 主内容">
-    <ShellChrome region="top" />
-    <ContentFrame :layout-mode="getShellLayoutMode(activeViewKey)">
-      <AppViewHost :active-view-key="activeViewKey" @chrome="handleChromeChange" />
-    </ContentFrame>
-    <ShellChrome region="bottom">
-      <BottomTabBar
-        class="vue-shell__bottom-tab lian-floating-chrome lian-floating-chrome--bottom"
-        :class="{ 'is-hidden': bottomChromeState === 'hidden' }"
-        data-floating-chrome="bottom"
-        :data-floating-state="bottomChromeState"
-        :data-floating-progress="bottomChromeState === 'progress' ? chromeProgress : undefined"
-        :style="bottomChromeStyle"
-        :items="tabs"
-        :active-key="activeViewKey"
-        @change="handleViewChange"
-      />
-    </ShellChrome>
-  </main>
+  <AppShell
+    :active-view-key="activeViewKey"
+    :layout-mode="getShellLayoutMode(activeViewKey)"
+    :tabs="tabs"
+    @view-change="handleViewChange"
+  >
+    <template #default="{ onChrome }">
+      <AppViewHost :active-view-key="activeViewKey" @chrome="onChrome" />
+    </template>
+  </AppShell>
   <ToastHost />
 </template>
