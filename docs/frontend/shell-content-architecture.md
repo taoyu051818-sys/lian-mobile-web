@@ -275,6 +275,17 @@ Migration is sequenced so each step is independently shippable and does not brea
 - Remove page-owned floating chrome DOM
 - Remove legacy `floating-chrome.css` where no longer needed
 
+#### Profile chrome spec integration (#321)
+
+ProfileView now declares its top chrome spec via `useShellChrome()`:
+
+- **Authenticated state**: top region with `slot: "tabs"` and two action buttons (`profile:toggle-editor` tonal, `profile:logout` ghost)
+- **Guest state**: chrome reset to defaults via `resetRegions()`
+- **Editor toggle**: button label switches between "编辑资料" / "收起编辑"
+- **Cleanup**: `resetRegions()` on component unmount
+
+The existing `ProfileActions` and `ProfileTabs` components remain in the view template as the primary UI until ShellChrome button-click events are wired through AppShell to views.
+
 ## 9. Dependency Graph
 
 ```
@@ -289,7 +300,7 @@ Migration is sequenced so each step is independently shippable and does not brea
 
 #292 + #307 ──→ #309  AppShell extraction
 
-All above ──→ Page chrome migration (no issue yet)
+All above ──→ Page chrome migration (#321 Profile, remaining views TBD)
 ```
 
 ## 10. Safe Parallel Work vs Blocked Work
