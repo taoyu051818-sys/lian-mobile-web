@@ -5,7 +5,10 @@ import type { ChannelMessage, ChannelReadPayload, ChannelResponse, NotificationR
 export function normalizeChannelMessage(raw: ChannelMessage): ChannelMessage {
   const clientId = ensureClientId();
   const actor = raw.actor
-    ? { id: raw.actor.id || `legacy:${raw.actor.identityTag || raw.actor.displayName || "unknown"}`, ...raw.actor }
+    ? {
+        ...raw.actor,
+        id: raw.actor.id || `legacy:${raw.actor.identityTag || raw.actor.displayName || "unknown"}`,
+      }
     : undefined;
   return {
     ...raw,
