@@ -68,7 +68,12 @@ public/
 
 This is the current legacy mobile frontend runtime. It remains active while features migrate into the Vue shell.
 
-`public/tools/task-board.html`, `public/tools/task-board.js`, and `public/tools/task-board.css` provide the development progress dashboard. The page reads the existing task board API and derives workstreams, progress, velocity, lanes, and task detail from the existing task-board Markdown source. It must not introduce a separate hand-maintained planning database.
+`public/tools/task-board.html`, `public/tools/task-board.js`, and `public/tools/task-board.css` now exist as a legacy/internal historical viewer for earlier LIAN task-board data. They are not the live development control plane. For current coordination truth, use `lian-platform-server` Control Room #112 plus the active GitHub issue and PR queues instead of treating this page as authoritative:
+
+- Control Room: `https://github.com/taoyu051818-sys/lian-platform-server/issues/112`
+- Issue queue: `https://github.com/taoyu051818-sys/lian-mobile-web/issues?q=is%3Aopen+sort%3Aupdated-desc`
+- PR queue: `https://github.com/taoyu051818-sys/lian-mobile-web/pulls?q=is%3Aopen+sort%3Aupdated-desc`
+- Label queues: use the open GitHub `agent:*` labels such as `agent:codex-action-needed`, `agent:review-needed`, and `agent:follow-up-needed`
 
 ### Vue 3 + Vite shell
 
@@ -230,15 +235,7 @@ Current internal tool page:
 public/tools/task-board.html
 ```
 
-It is the development progress dashboard. It should remain data-derived:
-
-- task source: existing task-board Markdown API
-- grouping: derived from title/body/doc-path keywords
-- progress: derived from status and section
-- velocity: derived from task dates when present
-- lanes: derived from phase and priority
-
-Do not add a second manual planning list for this page.
+It is a legacy/internal historical viewer for the superseded task-board flow, not the authoritative development dashboard. Keep it as reference material only. For live LIAN coordination, use Control Room #112 and the GitHub issue/PR label queues instead of relying on this page for project status.
 
 ## Validation commands
 
