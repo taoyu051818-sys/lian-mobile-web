@@ -2,7 +2,8 @@ import type { PlaceRef } from "./place";
 
 export type PublishVisibility = "public" | "campus" | "school" | "private";
 export type PublishLocationSource = "manual" | "skipped" | "map_v2";
-export type PublishMapVersion = "legacy" | "gaode_v2";
+/** "manual" = display-only free-text fallback, "gaode_v2" = resolved map selection */
+export type PublishMapVersion = "legacy" | "manual" | "gaode_v2";
 
 export interface PublishLocationDraft {
   source: PublishLocationSource;
