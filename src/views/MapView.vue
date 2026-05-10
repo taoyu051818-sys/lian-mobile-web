@@ -1,16 +1,12 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue";
 import { fetchMapV2Items } from "../api/map";
-import { fetchPlaceSheet } from "../api/places";
-import { fetchPostDetail } from "../api/posts";
 import { GlassPanel, InlineError, LianButton, LocationChip, TrustBadge } from "../ui";
-import type { DisplayActor, FeedItemId } from "../types/feed";
-import type { MapBounds, MapLocation, MapPost, MapV2ItemsResponse } from "../types/map";
-import type { PlaceSheet, PlaceStatus } from "../types/place";
-import type { PostDetail } from "../types/post";
+import type { DisplayActor } from "../types/feed";
+import type { MapBounds, MapLocation, MapV2ItemsResponse } from "../types/map";
+import type { PlaceStatus } from "../types/place";
 import PostDetailPanel from "./detail/PostDetailPanel.vue";
-
-type MapTarget = { kind: "location"; item: MapLocation } | { kind: "post"; item: MapPost };
+import { hasStablePlaceRef, useMapSelection } from "./map/useMapSelection";
 
 const DEFAULT_BOUNDS: MapBounds = { south: 18.37107, west: 109.98464, north: 18.41730, east: 110.04775 };
 
@@ -18,15 +14,25 @@ const mapData = ref<MapV2ItemsResponse | null>(null);
 const loading = ref(false);
 const errorMessage = ref("");
 const activeFilter = ref<"all" | "locations" | "posts">("all");
-const selectedTarget = ref<MapTarget | null>(null);
-const selectedPostId = ref<FeedItemId | null>(null);
-const selectedPost = ref<PostDetail | null>(null);
-const detailLoading = ref(false);
-const detailError = ref("");
-const selectedPlaceSheet = ref<PlaceSheet | null>(null);
-const placeSheetLoading = ref(false);
-const placeSheetError = ref("");
-const openPlaceId = ref("");
+
+const {
+  selectedTarget,
+  selectedPostId,
+  selectedPost,
+  detailLoading,
+  detailError,
+  selectedPlaceSheet,
+  placeSheetLoading,
+  placeSheetError,
+  openPlaceId,
+  selectLocation,
+  openPlaceSheet,
+  openPost,
+  retryDetail,
+  closeDetail,
+  closePlaceSheet,
+  selectNearestPostForLocation,
+} = useMapSelection(() => mapData.value?.posts || []);
 
 const bounds = computed(() => mapData.value?.bounds || DEFAULT_BOUNDS);
 const locations = computed(() => mapData.value?.locations || []);
@@ -56,14 +62,6 @@ function areaPoints(points: Array<{ lat: number; lng: number }> = []) {
     const projected = projectPoint(point.lat, point.lng);
     return `${projected.left} ${projected.top}`;
   }).join(", ");
-}
-
-function placeIdForLocation(location: MapLocation) {
-  return location.place?.id || location.placeId || "";
-}
-
-function hasStablePlaceRef(location: MapLocation) {
-  return Boolean(placeIdForLocation(location));
 }
 
 function placeStatusLabel(status?: PlaceStatus) {
@@ -108,79 +106,6 @@ async function loadMap() {
   } finally {
     loading.value = false;
   }
-}
-
-function selectLocation(item: MapLocation) {
-  selectedTarget.value = { kind: "location", item };
-  selectedPlaceSheet.value = null;
-  placeSheetError.value = "";
-  openPlaceId.value = "";
-}
-
-async function openPlaceSheet(location: MapLocation) {
-  const placeId = placeIdForLocation(location);
-  if (!placeId) return;
-  openPlaceId.value = placeId;
-  selectedPlaceSheet.value = null;
-  placeSheetError.value = "";
-  placeSheetLoading.value = true;
-  try {
-    const sheet = await fetchPlaceSheet(placeId);
-    if (openPlaceId.value === placeId) {
-      selectedPlaceSheet.value = sheet;
-    }
-  } catch (error) {
-    if (openPlaceId.value === placeId) {
-      placeSheetError.value = error instanceof Error ? error.message : "地点信息暂时没加载出来，可以稍后再试。";
-    }
-  } finally {
-    if (openPlaceId.value === placeId) {
-      placeSheetLoading.value = false;
-    }
-  }
-}
-
-async function openPost(item: MapPost) {
-  selectedTarget.value = { kind: "post", item };
-  selectedPlaceSheet.value = null;
-  placeSheetError.value = "";
-  openPlaceId.value = "";
-  selectedPostId.value = item.tid;
-  selectedPost.value = null;
-  detailError.value = "";
-  detailLoading.value = true;
-  try {
-    const detail = await fetchPostDetail(item.tid);
-    if (String(selectedPostId.value) === String(item.tid)) {
-      selectedPost.value = detail;
-    }
-  } catch (error) {
-    detailError.value = error instanceof Error ? error.message : "详情暂时没加载出来，可以稍后再试。";
-  } finally {
-    if (String(selectedPostId.value) === String(item.tid)) {
-      detailLoading.value = false;
-    }
-  }
-}
-
-function retryDetail() {
-  const target = selectedTarget.value;
-  if (target?.kind !== "post") return;
-  void openPost(target.item);
-}
-
-function closeDetail() {
-  selectedPostId.value = null;
-  selectedPost.value = null;
-  detailLoading.value = false;
-  detailError.value = "";
-}
-
-function selectNearestPostForLocation(location: MapLocation) {
-  const nearby = posts.value
-    .map((post) => ({ post, distance: Math.hypot((post.lat - location.lat) * 100000, (post.lng - location.lng) * 100000) }))
-    .sort((a, b) => a.distance - b.distance)[0]?.post;
-  if (nearby) void openPost(nearby);
 }
 
 onMounted(() => {
@@ -278,7 +203,7 @@ onMounted(() => {
               <LocationChip>{{ selectedPlaceSheet?.name || (selectedTarget?.kind === 'location' ? selectedTarget.item.name : '地点') }}</LocationChip>
               <h3>{{ selectedPlaceSheet?.name || (selectedTarget?.kind === 'location' ? selectedTarget.item.name : '地点信息') }}</h3>
             </div>
-            <button type="button" @click="openPlaceId = ''; selectedPlaceSheet = null; placeSheetError = ''">收起</button>
+            <button type="button" @click="closePlaceSheet">收起</button>
           </div>
           <p v-if="placeSheetLoading" class="map-view__state">正在加载地点信息…</p>
           <InlineError v-else-if="placeSheetError">
