@@ -2,12 +2,15 @@
 import { computed, onMounted, ref } from "vue";
 import { LianApiError } from "../api/http";
 import { fetchAuthMe, fetchProfileTab, logoutAuth } from "../api/profile";
-import { GlassPanel, IdentityBadge, InlineError, LianButton, TagChip } from "../ui";
+import { GlassPanel, InlineError } from "../ui";
 import type { FeedItemId } from "../types/feed";
 import type { ProfileListItem, ProfileTabKey, ProfileUser } from "../types/profile";
-import { formatRelativeTime } from "../utils/time";
 import AuthPanel from "./auth/AuthPanel.vue";
 import ProfileEditorPanel from "./profile/ProfileEditorPanel.vue";
+import ProfileHeader from "./profile/ProfileHeader.vue";
+import ProfileActions from "./profile/ProfileActions.vue";
+import ProfileTabs from "./profile/ProfileTabs.vue";
+import ProfileCollectionList from "./profile/ProfileCollectionList.vue";
 
 const user = ref<ProfileUser | null>(null);
 const loading = ref(false);
@@ -181,66 +184,30 @@ onMounted(() => {
       <div v-if="loading" class="profile-view__state" role="status">正在加载个人资料…</div>
 
       <template v-else-if="user">
-        <section class="profile-view__identity" aria-label="当前身份">
-          <IdentityBadge :avatar-text="avatarText" :label="displayName" :meta="identityMeta" />
-          <p>{{ user.email || "邀请码用户" }} · {{ user.institution || "校园用户" }}</p>
-          <div v-if="userTags.length" class="profile-view__chips" aria-label="身份标签">
-            <TagChip v-for="tag in userTags" :key="tag" :tag="tag" />
-          </div>
-        </section>
+        <ProfileHeader
+          :user="user"
+          :avatar-text="avatarText"
+          :display-name="displayName"
+          :identity-meta="identityMeta"
+          :user-tags="userTags"
+          :active-alias="activeAlias"
+          :active-alias-hint="activeAliasHint"
+          :active-alias-summary="activeAliasSummary"
+        />
 
-        <section class="profile-view__alias-card" aria-label="马甲身份说明">
-          <div>
-            <strong>{{ activeAlias ? activeAlias.name : "真实身份" }}</strong>
-            <p>{{ activeAliasHint }}</p>
-          </div>
-          <dl v-if="activeAliasSummary.length" class="profile-view__alias-grid">
-            <div v-for="item in activeAliasSummary" :key="item.label">
-              <dt>{{ item.label }}</dt>
-              <dd>{{ item.value }}</dd>
-            </div>
-          </dl>
-        </section>
-
-        <div class="profile-view__actions">
-          <LianButton variant="tonal" @click="editorOpen = !editorOpen">
-            {{ editorOpen ? "收起编辑" : "编辑资料" }}
-          </LianButton>
-          <LianButton variant="ghost" @click="logout">退出登录</LianButton>
-        </div>
+        <ProfileActions :editor-open="editorOpen" @toggle-editor="editorOpen = !editorOpen" @logout="logout" />
 
         <ProfileEditorPanel v-if="editorOpen" :user="user" @updated="handleProfileUpdated" />
 
-        <nav class="profile-view__tabs" aria-label="个人内容分类">
-          <button
-            v-for="tab in tabs"
-            :key="tab.key"
-            type="button"
-            class="profile-view__tab"
-            :class="{ 'is-active': activeTab === tab.key }"
-            @click="loadProfileList(tab.key)"
-          >
-            {{ tab.label }}
-          </button>
-        </nav>
+        <ProfileTabs :tabs="tabs" :active-tab="activeTab" @select="loadProfileList" />
 
-        <InlineError v-if="listError">
-          {{ listError }}
-          <button type="button" @click="loadProfileList(activeTab)">重新加载</button>
-        </InlineError>
-
-        <div v-if="listLoading" class="profile-view__state" role="status">正在加载列表…</div>
-        <div v-else-if="!profileItems.length" class="profile-view__state">{{ listEmptyText }}</div>
-        <div v-else class="profile-view__list" aria-live="polite">
-          <article v-for="item in profileItems" :key="String(item.tid)" class="profile-view__item">
-            <img v-if="item.cover" :src="item.cover" :alt="item.title || '内容封面'" loading="lazy" />
-            <div v-else class="profile-view__thumb" aria-hidden="true">{{ (item.title || '内').slice(0, 1) }}</div>
-            <div>
-              <h3>{{ item.title || "未命名内容" }}</h3>
-              <p>{{ formatRelativeTime(item.lastViewedAt || item.timestampISO) || "时间未知" }}</p>
-            </div>
-          </article>
-        </div>
+        <ProfileCollectionList
+          :items="profileItems"
+          :loading="listLoading"
+          :empty-text="listEmptyText"
+          :error="listError"
+          @retry="loadProfileList(activeTab)"
+        />
       </template>
 
       <section v-else class="profile-view__guest">
@@ -253,97 +220,9 @@ onMounted(() => {
 <style scoped>
 .profile-view,
 .profile-view__card,
-.profile-view__identity,
-.profile-view__guest,
-.profile-view__list {
+.profile-view__guest {
   display: grid;
   gap: var(--space-4);
-}
-
-.profile-view__chips,
-.profile-view__tabs,
-.profile-view__actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
-  align-items: center;
-  justify-content: space-between;
-}
-
-.profile-view h3,
-.profile-view p {
-  margin: 0;
-}
-
-.profile-view__identity p,
-.profile-view__item p,
-.profile-view__alias-card p {
-  color: var(--lian-muted);
-  line-height: 1.6;
-}
-
-.profile-view__chips,
-.profile-view__tabs,
-.profile-view__actions {
-  justify-content: flex-start;
-}
-
-.profile-view__alias-card {
-  display: grid;
-  gap: var(--space-3);
-  padding: var(--space-3);
-  border: 1px solid rgba(31, 167, 160, 0.16);
-  border-radius: var(--radius-card);
-  background: rgba(31, 167, 160, 0.08);
-}
-
-.profile-view__alias-card strong {
-  display: block;
-  margin-bottom: 4px;
-  color: var(--lian-ink);
-}
-
-.profile-view__alias-grid {
-  display: grid;
-  gap: var(--space-2);
-  margin: 0;
-}
-
-.profile-view__alias-grid div {
-  display: grid;
-  gap: 4px;
-  padding: var(--space-2);
-  border: 1px solid rgba(31, 41, 51, 0.08);
-  border-radius: var(--radius-3);
-  background: rgba(255, 255, 255, 0.52);
-}
-
-.profile-view__alias-grid dt {
-  color: var(--lian-muted);
-  font-size: 12px;
-  font-weight: 850;
-}
-
-.profile-view__alias-grid dd {
-  margin: 0;
-  color: var(--lian-ink);
-  font-size: 13px;
-  line-height: 1.5;
-}
-
-.profile-view__tab {
-  min-height: 36px;
-  padding: 0 var(--space-3);
-  border: 1px solid var(--glass-border);
-  border-radius: var(--radius-chip);
-  background: rgba(255, 255, 255, 0.54);
-  color: var(--lian-muted);
-  font-weight: 850;
-}
-
-.profile-view__tab.is-active {
-  background: var(--lian-ink);
-  color: #fff;
 }
 
 .profile-view__state {
@@ -352,38 +231,6 @@ onMounted(() => {
   place-items: center;
   color: var(--lian-muted);
   text-align: center;
-}
-
-.profile-view__item {
-  display: grid;
-  grid-template-columns: 64px 1fr;
-  gap: var(--space-3);
-  align-items: center;
-  padding: var(--space-3);
-  border: 1px solid rgba(31, 41, 51, 0.08);
-  border-radius: var(--radius-card);
-  background: rgba(255, 255, 255, 0.48);
-}
-
-.profile-view__item img,
-.profile-view__thumb {
-  width: 64px;
-  height: 64px;
-  border-radius: var(--radius-3);
-  object-fit: cover;
-}
-
-.profile-view__thumb {
-  display: grid;
-  place-items: center;
-  background: rgba(31, 41, 51, 0.06);
-  color: var(--lian-muted);
-  font-weight: 900;
-}
-
-.profile-view__item h3 {
-  margin-bottom: 4px;
-  font-size: 15px;
 }
 
 .inline-error button {
