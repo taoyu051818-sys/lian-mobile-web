@@ -3,6 +3,7 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref } from "vue";
 import { fetchFeed } from "../api/feed";
 import { fetchPostDetail } from "../api/posts";
 import { useFloatingChromeController } from "../motion/floatingChrome";
+import { useShellChrome } from "../shell/useShellChrome";
 import type { FeedItem, FeedItemId, FeedTab } from "../types/feed";
 import type { PostDetail } from "../types/post";
 import { InlineError, LianButton } from "../ui";
@@ -66,6 +67,7 @@ const detailDragging = ref(false);
 const detailReturning = ref(false);
 const detailPointerId = ref<number | null>(null);
 const detailGestureLocked = ref<"horizontal" | "vertical" | null>(null);
+const { setRegion } = useShellChrome();
 const feedTabsChrome = useFloatingChromeController({ initialPhase: "visible" });
 const detailChrome = useFloatingChromeController({ initialPhase: "hidden" });
 const detailChromePhase = detailChrome.phase;
@@ -469,6 +471,7 @@ function onDetailPointerCancel(event: PointerEvent) {
 
 onMounted(() => {
   updateViewport();
+  setRegion("top", { slot: "tabs", visible: true });
   window.addEventListener("resize", updateViewport);
   window.addEventListener("popstate", onWindowPopState);
   emit("chrome", false);
@@ -478,6 +481,7 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   clearDetailHistory();
+  setRegion("top", { slot: "", visible: false });
   feedTabsChrome.dispose();
   detailChrome.dispose();
   window.removeEventListener("resize", updateViewport);
@@ -506,25 +510,27 @@ onBeforeUnmount(() => {
       </div>
     </Transition>
 
-    <nav
-      class="feed-view__tabs lian-floating-chrome lian-floating-chrome--top"
-      aria-label="信息分类"
-      :aria-hidden="feedTabsChromeState === 'hidden'"
-      :data-floating-state="feedTabsChromeState"
-      data-floating-chrome="top"
-    >
-      <button
-        v-for="tab in tabs"
-        :key="tab.id"
-        type="button"
-        class="feed-view__tab"
-        :class="{ 'is-active': tab.id === activeTab }"
-        :aria-pressed="tab.id === activeTab"
-        @click="switchTab(tab.id)"
+    <Teleport to="aside.shell-chrome--top">
+      <nav
+        class="feed-view__tabs lian-floating-chrome lian-floating-chrome--top"
+        aria-label="信息分类"
+        :aria-hidden="feedTabsChromeState === 'hidden'"
+        :data-floating-state="feedTabsChromeState"
+        data-floating-chrome="top"
       >
-        {{ tab.label }}
-      </button>
-    </nav>
+        <button
+          v-for="tab in tabs"
+          :key="tab.id"
+          type="button"
+          class="feed-view__tab"
+          :class="{ 'is-active': tab.id === activeTab }"
+          :aria-pressed="tab.id === activeTab"
+          @click="switchTab(tab.id)"
+        >
+          {{ tab.label }}
+        </button>
+      </nav>
+    </Teleport>
 
     <InlineError v-if="errorMessage">
       {{ errorMessage }}
