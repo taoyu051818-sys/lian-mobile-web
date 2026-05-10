@@ -356,7 +356,7 @@ async function submitReply() {
   <aside class="post-detail-panel" aria-labelledby="post-detail-title">
     <PostDetailTopbar
       :author-label="authorLabel"
-      :author-avatar-url="authorAvatarUrl"
+      :avatar-url="authorAvatarUrl"
       :author-initial="authorInitial"
       :has-author-identity="hasAuthorIdentity"
       :chrome-phase="chromePhase"

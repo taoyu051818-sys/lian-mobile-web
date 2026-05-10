@@ -3,7 +3,7 @@ type FloatingChromePhase = "visible" | "exiting" | "hidden" | "entering" | "prog
 
 defineProps<{
   authorLabel?: string;
-  authorAvatarUrl?: string;
+  avatarUrl?: string;
   authorInitial?: string;
   hasAuthorIdentity?: boolean;
   chromePhase?: FloatingChromePhase;
@@ -25,7 +25,7 @@ const emit = defineEmits<{
   >
     <button class="post-detail-topbar__close" type="button" aria-label="关闭详情" @click="emit('close')">‹</button>
     <div v-if="hasAuthorIdentity" class="post-detail-topbar__author-chip">
-      <img v-if="authorAvatarUrl" :src="authorAvatarUrl" :alt="authorLabel || '作者头像'" loading="lazy" />
+      <img v-if="avatarUrl" :src="avatarUrl" :alt="authorLabel || '作者头像'" loading="lazy" />
       <span v-else-if="authorInitial" class="post-detail-topbar__avatar-text" aria-hidden="true">{{ authorInitial }}</span>
       <strong v-if="authorLabel">{{ authorLabel }}</strong>
     </div>
