@@ -1,6 +1,6 @@
 # Frontend Release Runbook
 
-Operational runbook for releasing, verifying, and rolling back the LIAN Mobile Web frontend. Covers both the legacy `public/` static entry and the Vue/Vite canary shell.
+Operational runbook for releasing, verifying, and rolling back the LIAN Mobile Web frontend. Covers the Vue/Vite runtime. The legacy static runtime was removed in PR #282 and migrated to https://github.com/taoyu051818-sys/-lian-mobile-web-legacy.
 
 ## Table of Contents
 
@@ -9,7 +9,7 @@ Operational runbook for releasing, verifying, and rolling back the LIAN Mobile W
 3. [Runtime config](#3-runtime-config)
 4. [Cache headers](#4-cache-headers)
 5. [CDN and external assets](#5-cdn-and-external-assets)
-6. [Legacy and Vue canary runtimes](#6-legacy-and-vue-canary-runtimes)
+6. [Vue/Vite runtime](#6-vuevite-runtime)
 7. [Post-deploy smoke](#7-post-deploy-smoke)
 8. [Rollback](#8-rollback)
 9. [PWA and Service Worker kill switch](#9-pwa-and-service-worker-kill-switch)
@@ -21,15 +21,13 @@ Related issues: #109 (PWA RFC), #125 (supply chain), #134 (release contracts), #
 
 ## 1. Release artifact
 
-The deployable artifact is the output of `npm run build` (Vite `dist/` directory) plus the legacy `public/` static files. CI must produce and archive this artifact; deployments must use the archived artifact, never rebuild on the target host.
+The deployable artifact is the output of `npm run build` (Vite `dist/` directory). CI must produce and archive this artifact; deployments must use the archived artifact, never rebuild on the target host.
 
 **What gets archived:**
 
 | Content | Source | Notes |
 |---|---|---|
 | Vite hashed JS/CSS/assets | `dist/` | Content-addressed filenames |
-| Legacy static HTML/JS/CSS | `public/` | Unhashed; cache policy differs |
-| `index.html` | `public/index.html` | Legacy entry point |
 | `manifest.webmanifest` | `public/manifest.webmanifest` | PWA manifest (when enabled) |
 
 **CI artifact boundary** (`.github/workflows/frontend.yml`):
@@ -87,20 +85,18 @@ Runtime config is injected into `index.html` via a `<script>` block that sets `w
 **Production contract:**
 
 - `LIAN_API_BASE_URL` and `LIAN_IMAGE_PROXY_BASE_URL` must be set to the production origin or empty (same-origin).
-- The static rehearsal server (`serve-frontend-static-rehearsal.js`) injects `LIAN_STATIC_REHEARSAL` with backend/image-proxy URLs and rewrites proxied response bodies to use the request origin. This is rehearsal-only; production does not use this mechanism.
 - Runtime config must **not** contain secrets, tokens, or per-user data.
 
 **Release checklist for runtime config:**
 
 - [ ] Confirm `LIAN_API_BASE_URL` and `LIAN_IMAGE_PROXY_BASE_URL` match the target environment
-- [ ] Confirm no `LIAN_STATIC_REHEARSAL` marker leaks into production HTML
 - [ ] Inject `releaseId` from the release manifest into runtime config
 
 ---
 
 ## 4. Cache headers
 
-Cache policy differs between rehearsal and production. The rehearsal server uses `cache-control: no-store` for all responses; production must differentiate resource types.
+Production must differentiate resource types for caching.
 
 **Production cache header contract:**
 
@@ -108,7 +104,6 @@ Cache policy differs between rehearsal and production. The rehearsal server uses
 |---|---|---|
 | `index.html` | `no-cache` (or `max-age=0, must-revalidate`) | Always revalidate; HTML is the entry point |
 | Vite hashed JS/CSS (`/assets/*.js`, `/assets/*.css`) | `max-age=31536000, immutable` | Content hash in filename; safe to cache forever |
-| Legacy `public/*.js`, `public/*.css` | `max-age=3600` or `no-cache` | Unhashed; must pick up fixes within an hour |
 | `manifest.webmanifest` | `max-age=3600` | Short cache; PWA metadata may change |
 | Icons / images | `max-age=86400` | Daily revalidation acceptable |
 | Service Worker (`sw.js`) | `no-cache` | Must always check for updates |
@@ -119,13 +114,11 @@ Cache policy differs between rehearsal and production. The rehearsal server uses
 - CDN/reverse proxy must set these headers. The application server alone cannot guarantee correct caching.
 - Post-deploy smoke should verify `cache-control` on `index.html`, a hashed asset, and `sw.js` (when PWA is enabled).
 
-**Rehearsal server note:** `scripts/serve-frontend-static-rehearsal.js` sets `cache-control: no-store` on all static responses. This is correct for CI/rehearsal and must not be changed to long-cache values.
-
 ---
 
 ## 5. CDN and external assets
 
-The legacy frontend loads Leaflet from unpkg CDN. This creates a runtime dependency on an external service.
+The frontend loads Leaflet from unpkg CDN. This creates a runtime dependency on an external service.
 
 **Current external dependencies:**
 
@@ -158,52 +151,34 @@ The legacy frontend loads Leaflet from unpkg CDN. This creates a runtime depende
 
 ---
 
-## 6. Legacy and Vue canary runtimes
+## 6. Vue/Vite runtime
 
-The application runs two runtimes via `scripts/serve-frontend-runtimes.js`:
+The legacy static runtime was removed in PR #282 and migrated to https://github.com/taoyu051818-sys/-lian-mobile-web-legacy. Vue/Vite is the sole active web runtime.
 
 | Runtime | Entry | Port | Failure behavior |
 |---|---|---|---|
-| Legacy | `scripts/serve-frontend-static-rehearsal.js` | `FRONTEND_PORT` (default 4300) | Supervisor exits with code 1; systemd restarts |
-| Vue canary | `vite preview` | 4301 (strict) | Supervisor logs error; legacy remains available |
+| Vue/Vite | `npm run preview` | 4173 (default) | Process exits with error code |
 
 **Health checks:**
 
-- Legacy: `GET /` on port 4300 should return 200 with `class="app-shell"` in HTML.
-- Vue canary: `GET /` on port 4301 should return 200.
-- Both: `GET /api/feed` and `GET /api/map/v2/items` should return JSON (or 502 if backend is down; this is acceptable in smoke).
-
-**Canary rollout criteria (to be defined):**
-
-- Vue canary passes post-deploy smoke.
-- No increase in client-side errors.
-- Runtime config matches legacy.
-- Traffic can be shifted by updating the reverse proxy / load balancer to route a percentage of requests to port 4301.
-
-**Canary rollback:**
-
-- Disable the Vue canary route in the reverse proxy; all traffic returns to legacy on port 4300.
-- The Vue canary process can remain running; it receives no traffic.
+- `GET /` should return 200.
+- `GET /api/feed` and `GET /api/map/v2/items` should return JSON (or 502 if backend is down; this is acceptable in smoke).
 
 ---
 
 ## 7. Post-deploy smoke
 
-Run these checks immediately after deploying to each environment. Use `scripts/smoke-frontend.js` as a base and extend with the checks below.
+Run these checks immediately after deploying to each environment.
 
 **Smoke checklist:**
 
 | Check | Target | Expected |
 |---|---|---|
-| `GET /` | Legacy (port 4300) | 200, contains `<title>`, `class="app-shell"`, all split scripts |
-| `GET /` | Vue canary (port 4301) | 200 |
-| `GET /styles.css` | Legacy | 200 |
-| `GET /map-v2.js` | Legacy | 200 |
-| `GET /api/feed` | Both | JSON response (skip if backend unavailable) |
-| `GET /api/map/v2/items` | Both | JSON response (skip if backend unavailable) |
+| `GET /` | Vue/Vite | 200 |
+| `GET /api/feed` | Vue/Vite | JSON response (skip if backend unavailable) |
+| `GET /api/map/v2/items` | Vue/Vite | JSON response (skip if backend unavailable) |
 | `cache-control` on `GET /` | Production | `no-cache` or `max-age=0, must-revalidate` |
 | `cache-control` on hashed asset | Production | `max-age=31536000, immutable` |
-| Runtime config in HTML | Production | No `LIAN_STATIC_REHEARSAL`; correct `LIAN_API_BASE_URL` |
 | Release ID | Production | Matches expected git SHA from release manifest |
 | Leaflet CDN | Production | `https://unpkg.com/leaflet@1.9.4/dist/leaflet.js` returns 200 |
 
@@ -239,14 +214,6 @@ Store this in the release log or deployment ticket.
 5. **Verify rollback.** Run the post-deploy smoke against the rolled-back deployment. Confirm the release ID matches the previous release.
 
 6. **Notify.** Post in the deployment channel with: rolled-back release ID, reason, and smoke results.
-
-### Vue canary rollback
-
-If only the Vue canary is broken:
-
-1. Update the reverse proxy to stop routing traffic to port 4301.
-2. All traffic falls back to legacy on port 4300.
-3. No artifact redeployment needed.
 
 ### Rollback with PWA/Service Worker
 
@@ -290,7 +257,6 @@ If the kill switch is not available or not working:
 
 - Vite hashed assets: safe; new filenames mean new cache entries.
 - `index.html`: must be revalidated (`no-cache`); SW should use network-first for HTML.
-- Legacy unhashed JS/CSS: high risk; old versions may persist in SW cache. Use short TTL or network-first strategy.
 - Third-party tiles (Gaode): do **not** cache in SW unless explicitly allowed by provider terms.
 
 ---
@@ -308,7 +274,7 @@ Production startup owns only the last step. It must never repair missing prerequ
 
 **Current implementation truth:**
 
-- PR #170 removed runtime-time dependency installation from `scripts/serve-frontend-runtimes.js` and changed missing prerequisite handling to fail fast with operator guidance.
+- PR #170 removed runtime-time dependency installation from the startup path and changed missing prerequisite handling to fail fast with operator guidance.
 - PR #189 aligned CI and local setup on a lockfile-based install and Node version policy.
 - `README.md` and `docs/frontend/runtime-responsibility-contract.md` are now the operator-facing references for this split.
 
@@ -359,8 +325,5 @@ After deploying:
 - [ ] Post-deploy smoke passed (all checks in section 7)
 - [ ] Release ID in runtime config matches expected git SHA
 - [ ] `cache-control` headers correct on key resources
-- [ ] No `LIAN_STATIC_REHEARSAL` marker in production HTML
-- [ ] Legacy runtime healthy (port 4300)
-- [ ] Vue canary healthy (port 4301, if deployed)
 - [ ] No spike in client-side errors (check logs/analytics)
 - [ ] Deployment logged with release ID, timestamp, and deployer

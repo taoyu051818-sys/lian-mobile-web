@@ -44,9 +44,8 @@ Icons will be generated from existing brand assets and committed to `public/icon
 | Concern | Decision |
 |---|---|
 | Registration path | `/sw.js` at origin root |
-| Scope | `/` (covers both legacy and Vue entries) |
-| Legacy `public/` pages | Covered; see cache strategy below |
-| Vue/Vite canary entry | Covered |
+| Scope | `/` |
+| Vue/Vite entry | Covered |
 | `public/tools/*` | Covered but not pre-cached; runtime cache only if explicitly allowed |
 | Cache namespace | Single namespace with versioned cache names: `static-v{N}`, `runtime-v{N}` |
 

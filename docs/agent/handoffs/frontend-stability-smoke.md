@@ -2,6 +2,8 @@
 
 Date: 2026-05-02
 
+> **Superseded by PR #282.** The legacy static runtime and `scripts/smoke-frontend.js` described here were removed in PR #282. Smoke testing now uses `scripts/run-smoke-with-server.js` with Vite preview. This handoff is retained as historical context only.
+
 ## Summary
 
 Added `scripts/smoke-frontend.js` — a browserless HTTP smoke test for the split frontend.

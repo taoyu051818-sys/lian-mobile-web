@@ -8,11 +8,7 @@ Does not close #171.
 
 ## Scope
 
-This contract covers the current dual-lane frontend runtime:
-
-- legacy/static rehearsal on port 4300;
-- Vue canary preview on port 4301;
-- the supervisor entrypoint started by `npm start`.
+This contract covers the Vue/Vite frontend runtime. The legacy static runtime was removed in PR #282 and migrated to https://github.com/taoyu051818-sys/-lian-mobile-web-legacy.
 
 It documents responsibility boundaries only. It does not redesign the hosting strategy, replace `vite preview`, or add build-manifest automation.
 
@@ -23,7 +19,7 @@ It documents responsibility boundaries only. It does not redesign the hosting st
 | Install | Materialize the committed dependency graph from `package-lock.json` | `npm ci` in CI or deploy-prepare; `npm install` only for intentional local dependency changes that also update the lockfile | Running package installation during startup or after the runtime process has been handed off to the process manager | `npm ci` |
 | Build | Produce the frontend artifact that is reviewed and deployed | `npm run build`; type-check and static verification as part of CI or deploy-prepare | Building on the target host as part of production startup | `npm run build`, `npm run verify` |
 | Deploy-prepare | Assemble the artifact, runtime config, and process-manager inputs for the target environment | Copying the reviewed artifact, wiring runtime config, checking ports, confirming rollback inputs | Ad-hoc rebuilds, dependency graph changes, or undocumented host-specific mutations after review | CI artifact assembly, operator/environment setup |
-| Startup | Launch the already-prepared frontend runtimes | Start the legacy/static and Vue canary processes with the reviewed artifact and prepared dependencies; fail fast if prerequisites are missing | `npm install`, `npm ci`, `npm run build`, lockfile mutation, or hidden environment repair during process launch | `npm start`, process-manager start/restart |
+| Startup | Launch the already-prepared frontend runtime | Start the Vue/Vite preview process with the reviewed artifact and prepared dependencies; fail fast if prerequisites are missing | `npm install`, `npm ci`, `npm run build`, lockfile mutation, or hidden environment repair during process launch | `npm run preview`, process-manager start/restart |
 
 ## Current implementation truth
 

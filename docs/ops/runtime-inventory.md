@@ -4,13 +4,13 @@ This file is the runtime-inventory companion for frontend runtime-sensitive chan
 
 For the operator-facing split between install, build, deploy-prepare, and startup responsibilities, read `docs/frontend/runtime-responsibility-contract.md`.
 
-## Current frontend runtimes
+## Current frontend runtime
 
 | Runtime | Purpose | Default port | Entry command |
 | --- | --- | ---: | --- |
-| Legacy/static rehearsal | Student-facing legacy/static frontend rehearsal and fallback runtime | 4300 | `npm run serve:legacy` or the supervisor entrypoint |
-| Vue canary preview | Vue canary shell preview, including the Vue Map/Explore surface | 4301 | `npm run preview:vue-canary` or the supervisor entrypoint |
-| Dual runtime supervisor | Starts both legacy/static and Vue canary preview when the deployed frontend process is expected to expose both surfaces | 4300 and 4301 | `npm run start` |
+| Vue/Vite preview | Vue/Vite frontend shell, including Map/Explore surface | 4173 (vite preview default) | `npm run preview` |
+
+The legacy static runtime was removed in PR #282 and migrated to https://github.com/taoyu051818-sys/-lian-mobile-web-legacy. Vue/Vite is now the sole active web runtime.
 
 The production process manager name and deploy path are intentionally not hardcoded here. They are environment-specific and should be checked on the target host before any restart, reload, or rollback operation.
 
@@ -20,11 +20,8 @@ The following file groups must update this inventory or explicitly document why 
 
 - `.github/workflows/*`
 - `package.json`
-- `index.html` and `public/index.html`
+- `index.html`
 - `vite.config.ts`
-- `scripts/serve-frontend-runtimes.js`
-- `scripts/serve-frontend-static-rehearsal.js`
-- `scripts/smoke-frontend.js`
 - `scripts/validate-project-structure.js`
 - `ops/*` and `docs/ops/*`
 
@@ -33,9 +30,9 @@ The following file groups must update this inventory or explicitly document why 
 The frontend quality gate is split into two visible layers:
 
 - `verify:static`: project checks, runtime inventory guard, and build/type validation.
-- `verify:smoke`: static rehearsal server lifecycle plus browser/API smoke checks.
+- `verify:smoke`: Vite preview server lifecycle plus browser/API smoke checks.
 
-`npm run verify` is allowed to call both layers so CI and local validation do not drift. Smoke owns the temporary static rehearsal server lifecycle during validation and should not require a developer to start that server manually.
+`npm run verify` is allowed to call both layers so CI and local validation do not drift. Smoke owns the temporary Vite preview server lifecycle during validation and should not require a developer to start that server manually.
 
 ## Install and Node version policy
 
@@ -54,9 +51,9 @@ This inventory update acknowledges the runtime-sensitive workflow baseline chang
 
 These workflow-baseline changes do not alter the student-facing runtime split, preview ports, or static rehearsal routing behavior. They tighten the validation contract around the existing frontend runtimes.
 
-## Static rehearsal routing contract
+## Routing contract
 
-The static rehearsal server should map `/` to `index.html`, serve frontend assets from the repository/public build context, and preserve the existing API/proxy behavior used by smoke tests. Changes to root-path handling, forwarded headers, proxy behavior, or default port assumptions are runtime-sensitive and must be described here.
+The Vite preview server serves the built Vue app from `dist/`. Changes to root-path handling, base path configuration, proxy behavior, or default port assumptions are runtime-sensitive and must be described here.
 
 ## Runtime config accessor change note (issue #167)
 
@@ -65,28 +62,19 @@ This inventory update acknowledges runtime-sensitive changes for the runtime con
 - `src/config/runtime-config.ts` is the new shared accessor module; it reads `window.LIAN_API_BASE_URL` and `window.LIAN_IMAGE_PROXY_BASE_URL` lazily on every call instead of freezing the value at module load time.
 - `src/api/http.ts`, `src/api/profile.ts`, and `src/api/publish.ts` now import from the shared accessor instead of independently reading and freezing `window.LIAN_API_BASE_URL` at import time.
 - `vite.config.ts` adds `parseEnvUrl` validation so a malformed `LIAN_BACKEND_BASE_URL` or `LIAN_IMAGE_PROXY_BASE_URL` is rejected at dev-server or build startup rather than silently falling back to a localhost default.
-- `scripts/serve-frontend-static-rehearsal.js` adds the same `parseEnvUrl` validation at server startup.
 - `tests/config/runtime-config.test.ts` covers injection-order, malformed/missing env, and absolute-URL policy behavior.
 
-The runtime contract is unchanged: the static rehearsal server continues to inject `window.LIAN_API_BASE_URL` and `window.LIAN_IMAGE_PROXY_BASE_URL` via a `<head>` script before any app module loads. The accessor now enforces that a non-dev context must receive a valid absolute URL for the image-proxy base and rejects localhost origins outside dev.
+The runtime contract uses Vite's built-in environment variable handling for backend and image-proxy URLs.
 
-## Current change note
+## Current change note (PR #282)
 
-This inventory update acknowledges the runtime-sensitive changes in PR #168:
-
-- frontend workflows now call the clearer `npm run verify` gate;
-- `package.json` separates static verification from smoke verification;
-- the smoke runner owns static rehearsal server startup/shutdown;
-- static rehearsal root-path handling is clarified so `/` resolves to `index.html` consistently.
-
-The intended runtime split remains unchanged: legacy/static rehearsal stays on port 4300 and Vue canary preview stays on port 4301 unless a later runtime-inventory update says otherwise.
+PR #282 removed the migrated legacy static runtime from this repository. The legacy runtime now lives in https://github.com/taoyu051818-sys/-lian-mobile-web-legacy. Vue/Vite is the sole active web runtime in this repository.
 
 ## Maintenance recovery note
 
-The maintenance recovery branch adds docs and a manual Vue canary preview helper without changing the default runtime split:
+The maintenance recovery branch adds docs and a manual Vue preview helper:
 
-- `docs/architecture/frontend-project-structure.md` documents the current legacy/static plus Vue shell structure.
+- `docs/architecture/frontend-project-structure.md` documents the current Vue/Vite shell structure.
 - `docs/ops/2026-05-05-bad-smell-cleanup-summary.md` records prior runtime and migration guardrail lessons.
-- `scripts/preview-branch-vue-canary.sh` is a manual branch preview helper for Vue canary builds. It uses `npm ci`, `npm run build`, and `npm run preview:vue-canary` on port 4301 unless overridden by `LIAN_PREVIEW_PORT`.
 
 These additions do not change production startup, default ports, CI workflow behavior, or the student-facing runtime entrypoint.

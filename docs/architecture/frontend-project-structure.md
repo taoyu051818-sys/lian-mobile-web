@@ -39,36 +39,13 @@ The root contains the Vue/Vite application entry and project configuration:
 - `package.json` defines development, build, validation, and rehearsal commands.
 - `vite.config.ts` and `tsconfig.json` define frontend build and TypeScript behavior.
 
-## Runtime modes
+## Runtime mode
 
-The frontend currently has two active modes during migration.
+The frontend uses Vue 3 + Vite as the sole active web runtime. The legacy static runtime was removed in PR #282 and migrated to https://github.com/taoyu051818-sys/-lian-mobile-web-legacy.
 
-### Legacy static runtime
+`public/assets/` contains map resources used by the Vue map runtime. `public/tools/` contains standalone internal tools.
 
-```text
-public/
-|-- index.html
-|-- app.js
-|-- app-state.js
-|-- app-utils.js
-|-- app-auth-avatar.js
-|-- app-feed.js
-|-- app-legacy-map.js
-|-- app-ai-publish.js
-|-- app-messages-profile.js
-|-- publish-page.js
-|-- map-v2.js
-|-- reply-form-click-guard.js
-|-- explore-preload.js
-|-- styles.css
-|-- glass-ui.css
-|-- lian-tokens.css
-`-- tools/
-```
-
-This is the current legacy mobile frontend runtime. It remains active while features migrate into the Vue shell.
-
-`public/tools/task-board.html`, `public/tools/task-board.js`, and `public/tools/task-board.css` now exist as a legacy/internal historical viewer for earlier LIAN task-board data. They are not the live development control plane. For current coordination truth, use `lian-platform-server` Control Room #112 plus the active GitHub issue and PR queues instead of treating this page as authoritative:
+`public/tools/task-board.html`, `public/tools/task-board.js`, and `public/tools/task-board.css` are a legacy/internal historical viewer for earlier LIAN task-board data. They are not the live development control plane. For current coordination truth, use `lian-platform-server` Control Room #112 plus the active GitHub issue and PR queues instead of treating this page as authoritative:
 
 - Control Room: `https://github.com/taoyu051818-sys/lian-platform-server/issues/112`
 - Issue queue: `https://github.com/taoyu051818-sys/lian-mobile-web/issues?q=is%3Aopen+sort%3Aupdated-desc`
@@ -192,10 +169,7 @@ Important scripts:
 
 - `scripts/validate-project-structure.js` checks required frontend files and backend-only exclusions.
 - `scripts/check-encoding-contamination.js` blocks encoding contamination.
-- `scripts/serve-frontend-runtimes.js` serves frontend runtimes.
-- `scripts/serve-frontend-static-rehearsal.js` serves the legacy static rehearsal mode.
-- `scripts/smoke-frontend.js` runs frontend smoke checks.
-- `scripts/run-smoke-with-server.js` starts a static rehearsal server and runs smoke checks.
+- `scripts/run-smoke-with-server.js` builds the Vue frontend, starts Vite preview, and runs smoke checks.
 - `scripts/guard-runtime-inventory.js` guards runtime inventory.
 
 ## Page structure
@@ -211,21 +185,9 @@ The Vue shell has four primary tabs:
 | `profile` | Profile | Identity, contributions, and posting history |
 | `profile` | 鎴戠殑 | Identity, contributions, and posting history |
 
-### Legacy mobile pages
+### Legacy mobile pages (removed in PR #282)
 
-The legacy runtime still owns active user flows under `public/`, including:
-
-- home/feed runtime
-- auth/avatar runtime
-- legacy map runtime
-- AI publish runtime
-- publish page runtime
-- messages/profile runtime
-- Map V2 runtime
-- explore preload behavior
-- reply form click guard
-
-These files should be migrated incrementally into the Vue shell only after each feature is validated.
+The legacy static runtime files (`public/index.html`, `public/app.js`, `public/styles.css`, and related split scripts) were removed in PR #282 and migrated to https://github.com/taoyu051818-sys/-lian-mobile-web-legacy. The Vue shell now owns all active user flows.
 
 ### Internal tools pages
 
@@ -249,13 +211,6 @@ For build-sensitive Vue shell changes:
 
 ```bash
 npm run build
-```
-
-For static rehearsal smoke testing:
-
-```bash
-npm run start:frontend-static
-npm test
 ```
 
 For full frontend verification:

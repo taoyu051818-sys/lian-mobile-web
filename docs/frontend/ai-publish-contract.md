@@ -6,7 +6,7 @@ Frontend contract for the AI-assisted ("AI light") publish flow, covering risk f
 
 | Path | Role |
 |---|---|
-| `public/app-ai-publish.js` | Legacy AI publish flow (DOM innerHTML sheet) |
+| `public/app-ai-publish.js` | Legacy AI publish flow (removed in PR #282, migrated to legacy repo) |
 | `src/api/publish.ts` | Vue publish API helpers (`buildPublishPayload`, `uploadPublishImage`, `publishPost`) |
 | `src/views/PublishView.vue` | Vue publish view |
 | `src/types/publish.ts` | Shared `PublishPayload`, `PublishLocationDraft`, `PublishVisibility` |
