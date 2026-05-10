@@ -191,11 +191,9 @@ async function switchTab(tab: MessageTabKey) {
   activeTab.value = tab;
   if (tab === "channel") {
     composerChrome.show();
-    emit("chrome", true);
     if (!channelItems.value.length) await loadChannel(true);
   } else {
     composerChrome.hide();
-    emit("chrome", false);
     if (!notificationItems.value.length) await loadNotifications();
   }
 }
@@ -218,14 +216,12 @@ async function submitMessage() {
 }
 
 onMounted(async () => {
-  emit("chrome", true);
   await loadCurrentUser();
   await loadChannel(true);
 });
 
 onBeforeUnmount(() => {
   composerChrome.dispose();
-  emit("chrome", false);
 });
 </script>
 

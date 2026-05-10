@@ -1,7 +1,8 @@
 <script setup lang="ts">
+import { computed, ref } from "vue";
 import { IdentityBadge, InlineError, LianButton } from "../../ui";
 
-defineProps<{
+const props = defineProps<{
   avatarText: string;
   actorName: string;
   signalMeta: string;
@@ -17,32 +18,48 @@ const emit = defineEmits<{
   "update:identityTag": [value: string];
   submit: [];
 }>();
+
+const focused = ref(false);
+const isCompact = computed(() => !props.content.trim() && !focused.value);
 </script>
 
 <template>
-  <form class="messages-view__composer" @submit.prevent="emit('submit')">
-    <IdentityBadge :avatar-text="avatarText" :label="actorName" :meta="signalMeta" />
-    <label v-if="identityTags.length" class="messages-view__field">
+  <form class="messages-view__composer" :class="{ 'is-compact': isCompact }" @submit.prevent="emit('submit')">
+    <IdentityBadge v-if="!isCompact" :avatar-text="avatarText" :label="actorName" :meta="signalMeta" />
+    <label v-if="!isCompact && identityTags.length" class="messages-view__field">
       <span>身份信号</span>
       <select :value="identityTag" @input="emit('update:identityTag', ($event.target as HTMLSelectElement).value)">
         <option value="">不使用身份信号</option>
         <option v-for="tag in identityTags" :key="tag" :value="tag">{{ tag }}</option>
       </select>
     </label>
-    <label class="messages-view__field messages-view__field--content">
-      <span>说点什么</span>
-      <textarea :value="content" rows="3" placeholder="发到校园频道…" @input="emit('update:content', ($event.target as HTMLTextAreaElement).value)" />
-    </label>
+    <div class="messages-view__input-row">
+      <label class="messages-view__field messages-view__field--content">
+        <span v-if="!isCompact">说点什么</span>
+        <textarea
+          :value="content"
+          :rows="isCompact ? 1 : 3"
+          placeholder="发到校园频道…"
+          @input="emit('update:content', ($event.target as HTMLTextAreaElement).value)"
+          @focus="focused = true"
+          @blur="focused = false"
+        />
+      </label>
+      <LianButton type="submit" :loading="sending">发送</LianButton>
+    </div>
     <InlineError v-if="sendError">{{ sendError }}</InlineError>
-    <LianButton type="submit" :loading="sending">发送</LianButton>
   </form>
 </template>
 
 <style scoped>
 .messages-view__composer {
   display: grid;
-  gap: var(--space-4);
+  gap: var(--space-3);
   padding: var(--space-3);
+}
+
+.messages-view__composer.is-compact {
+  gap: 0;
 }
 
 .messages-view__field {
@@ -73,5 +90,25 @@ const emit = defineEmits<{
 
 .messages-view__field select {
   padding: 0 var(--space-3);
+}
+
+.messages-view__input-row {
+  display: flex;
+  gap: var(--space-2);
+  align-items: flex-end;
+}
+
+.messages-view__input-row .messages-view__field--content {
+  flex: 1;
+  min-width: 0;
+}
+
+.messages-view__composer.is-compact .messages-view__field textarea {
+  min-height: 36px;
+  padding: var(--space-2) var(--space-3);
+}
+
+.messages-view__composer.is-compact .messages-view__input-row {
+  align-items: center;
 }
 </style>

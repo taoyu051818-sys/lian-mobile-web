@@ -65,14 +65,16 @@ function messageMeta(item: ChannelMessage) {
     <div v-else-if="!items.length" class="messages-view__state">还没有消息</div>
     <div v-else class="messages-view__list" aria-live="polite">
       <article v-for="item in items" :key="String(item.id)" class="messages-view__message" :class="{ 'is-self': item.isSelf }">
-        <IdentityBadge :avatar-text="messageAvatarText(item)" :label="messageAuthor(item)" :meta="messageMeta(item)" />
-        <p>{{ messageText(item) }}</p>
-        <footer>
-          <span>{{ formatRelativeTime(item.timestampISO || item.time) || "刚刚" }}</span>
-          <span v-if="item.isSelf && item.deliveryState === 'sending'">发送中…</span>
-          <span v-else-if="item.isSelf && item.deliveryState === 'failed'">发送失败</span>
-          <span v-else-if="item.readCount">{{ item.readCount }} 次已读</span>
-        </footer>
+        <IdentityBadge v-if="!item.isSelf" class="messages-view__message-avatar" :avatar-text="messageAvatarText(item)" :label="messageAuthor(item)" :meta="messageMeta(item)" />
+        <div class="messages-view__bubble">
+          <p>{{ messageText(item) }}</p>
+          <footer>
+            <span>{{ formatRelativeTime(item.timestampISO || item.time) || "刚刚" }}</span>
+            <span v-if="item.isSelf && item.deliveryState === 'sending'">发送中…</span>
+            <span v-else-if="item.isSelf && item.deliveryState === 'failed'">发送失败</span>
+            <span v-else-if="item.readCount">{{ item.readCount }} 次已读</span>
+          </footer>
+        </div>
       </article>
     </div>
 
@@ -83,40 +85,70 @@ function messageMeta(item: ChannelMessage) {
 </template>
 
 <style scoped>
-.messages-view__pane,
-.messages-view__list {
+.messages-view__pane {
   display: grid;
   gap: var(--space-4);
 }
 
-.messages-view__message footer,
-.messages-view__load-more {
+.messages-view__list {
   display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
-  align-items: center;
-  justify-content: space-between;
-}
-
-.messages-view__load-more {
-  justify-content: flex-start;
-}
-
-.messages-view__message p {
-  margin: 0;
-}
-
-.messages-view__message p,
-.messages-view__message footer {
-  color: var(--lian-muted);
-  line-height: 1.6;
+  flex-direction: column;
+  gap: var(--space-3);
 }
 
 .messages-view__message {
+  display: flex;
+  gap: var(--space-2);
+  align-items: flex-start;
+  max-width: 85%;
+}
+
+.messages-view__message.is-self {
+  align-self: flex-end;
+  flex-direction: row-reverse;
+}
+
+.messages-view__message:not(.is-self) {
+  align-self: flex-start;
+}
+
+.messages-view__message-avatar {
+  flex-shrink: 0;
+}
+
+.messages-view__bubble {
   padding: var(--space-3);
   border: 1px solid rgba(31, 41, 51, 0.08);
   border-radius: var(--radius-card);
   background: rgba(255, 255, 255, 0.48);
+  min-width: 0;
+}
+
+.messages-view__message.is-self .messages-view__bubble {
+  border-color: rgba(31, 167, 160, 0.18);
+  background: rgba(31, 167, 160, 0.06);
+}
+
+.messages-view__bubble p {
+  margin: 0;
+  color: var(--lian-ink);
+  line-height: 1.6;
+  word-break: break-word;
+}
+
+.messages-view__bubble footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: center;
+  margin-top: var(--space-1);
+  color: var(--lian-muted);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.messages-view__message.is-self .messages-view__bubble footer {
+  justify-content: flex-end;
 }
 
 .messages-view__state {
@@ -127,9 +159,12 @@ function messageMeta(item: ChannelMessage) {
   text-align: center;
 }
 
-.messages-view__message.is-self {
-  border-color: rgba(31, 167, 160, 0.18);
-  background: rgba(31, 167, 160, 0.06);
+.messages-view__load-more {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: center;
+  justify-content: flex-start;
 }
 
 .inline-error button {
