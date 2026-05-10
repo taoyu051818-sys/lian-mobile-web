@@ -20,6 +20,7 @@ type LayerKey = "areas" | "roadsCasing" | "roads" | "routes" | "assets" | "locat
 const GAODE_TILE_URL = "https://webrd0{s}.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=8&x={x}&y={y}&z={z}";
 const DEFAULT_BOUNDS: MapBounds = { south: 18.37107, west: 109.98464, north: 18.41730, east: 110.04775 };
 const SCALED_ICON_SELECTOR = "[data-vue-map-scaled-icon]";
+const ICON_BASE_ZOOM = 16;
 const MAX_RENDERED_LOCATIONS = 120;
 const MAX_RENDERED_POSTS = 60;
 const MAX_RENDERED_ASSETS = 120;
@@ -92,9 +93,8 @@ function roadStyle(road: MapRoad) {
 
 function iconScaleForZoom(target: LeafletMapLike | null = map, zoom = target?.getZoom?.()) {
   if (!target) return 1;
-  const maxZoom = target.getMaxZoom() || Number(zoom) || 16;
-  const nextZoom = Number.isFinite(Number(zoom)) ? Number(zoom) : maxZoom;
-  return Math.pow(2, nextZoom - maxZoom);
+  const nextZoom = Number.isFinite(Number(zoom)) ? Number(zoom) : ICON_BASE_ZOOM;
+  return Math.pow(2, nextZoom - ICON_BASE_ZOOM);
 }
 
 function scaledIconHtml(html: string, anchor: [number, number]) {
@@ -277,13 +277,15 @@ function renderMarkers() {
   renderedLocations.value.forEach((location) => {
     const position = latLng(location);
     if (!position) return;
-    getLeaflet().marker(position, { icon: locationIcon(location), title: location.name, zIndexOffset: 80, interactive: false, keyboard: false })
+    getLeaflet().marker(position, { icon: locationIcon(location), title: location.name, zIndexOffset: 80, interactive: true, keyboard: true })
+      .bindTooltip(location.name, { sticky: true })
       .addTo(lyrs.locations);
   });
   renderedPosts.value.forEach((post) => {
     const position = latLng(post);
     if (!position) return;
-    getLeaflet().marker(position, { icon: postIcon(post), title: post.title || post.locationArea || "", zIndexOffset: 120, interactive: false, keyboard: false })
+    getLeaflet().marker(position, { icon: postIcon(post), title: post.title || post.locationArea || "", zIndexOffset: 120, interactive: true, keyboard: true })
+      .bindTooltip(post.title || post.locationArea || "地图内容", { sticky: true })
       .addTo(lyrs.posts);
   });
 }
@@ -325,7 +327,7 @@ function initMap() {
     subdomains: ["1", "2", "3", "4"],
     maxZoom: 19,
     minZoom: 3,
-    opacity: 0.18,
+    opacity: 0,
     attribution: "&copy; Gaode Map",
   }).addTo(map);
   baseOverlay = L.imageOverlay("/assets/campus-base-map.png", nextBounds, {
@@ -403,21 +405,25 @@ onBeforeUnmount(() => {
 <style scoped>
 .map-view {
   display: block;
+  width: 100vw;
+  min-height: calc(100vh - 92px - env(safe-area-inset-bottom));
+  margin-block-start: calc(-1 * (var(--space-2) + env(safe-area-inset-top)));
+  margin-inline-start: calc(50% - 50vw);
 }
 
 .map-view__stage-wrap {
   position: relative;
   overflow: hidden;
-  min-height: 420px;
-  border: 1px solid rgba(31, 41, 51, 0.08);
-  border-radius: var(--radius-card);
+  min-height: calc(100vh - 92px - env(safe-area-inset-bottom));
+  border: 0;
+  border-radius: 0;
   background: rgba(255, 255, 255, 0.42);
 }
 
 .map-view__leaflet {
   width: 100%;
-  min-height: 420px;
-  height: min(76vh, 760px);
+  min-height: inherit;
+  height: calc(100vh - 92px - env(safe-area-inset-bottom));
   background: rgba(247, 244, 236, 0.72);
 }
 
@@ -467,6 +473,13 @@ onBeforeUnmount(() => {
 :deep(.vue-map-asset) {
   background: transparent;
   border: 0;
+}
+
+:deep(.vue-map-marker) {
+  cursor: pointer;
+}
+
+:deep(.vue-map-asset) {
   pointer-events: none;
 }
 
@@ -547,16 +560,5 @@ onBeforeUnmount(() => {
   clip: rect(0, 0, 0, 0);
   white-space: nowrap;
   border: 0;
-}
-
-@media (max-width: 640px) {
-  .map-view__stage-wrap,
-  .map-view__leaflet {
-    min-height: 340px;
-  }
-
-  .map-view__leaflet {
-    height: 62vh;
-  }
 }
 </style>
