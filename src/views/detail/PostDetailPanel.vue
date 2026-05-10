@@ -3,16 +3,13 @@ import { computed, ref, watch } from "vue";
 import { fetchPlaceSheet } from "../../api/places";
 import { reportPost, sendPostReply, togglePostLike, togglePostSave } from "../../api/posts";
 import { InlineError } from "../../ui";
-import { sanitizeHtml } from "../../utils/html";
-import type { DisplayActor } from "../../types/feed";
-import type { PlaceSheet, PlaceStatus } from "../../types/place";
-import type { PostDetail } from "../../types/post";
-import { formatTimestampLabel } from "../../utils/time";
+import type { PlaceSheet, PostDetail } from "../../types/post";
 import { sharePost } from "../../platform/share";
 import PostDetailTopbar from "./PostDetailTopbar.vue";
 import PostDetailContent from "./PostDetailContent.vue";
 import PostReplies from "./PostReplies.vue";
 import PostReplyDock from "./PostReplyDock.vue";
+import { usePostDetailPresentation } from "./usePostDetailPresentation";
 
 type FloatingChromePhase = "visible" | "exiting" | "hidden" | "entering" | "progress";
 
@@ -65,28 +62,31 @@ const placeSheetOpen = ref(false);
 const placeSheetLoading = ref(false);
 const placeSheetError = ref("");
 
-const postId = computed(() => props.post?.tid ?? null);
-const title = computed(() => props.post?.title || "");
-const authorLabel = computed(() => actorDisplayName(props.post?.actor));
-const authorAvatarUrl = computed(() => actorAvatarUrl(props.post?.actor));
-const authorInitial = computed(() => actorAvatarText(props.post?.actor, authorLabel.value));
-const hasAuthorIdentity = computed(() => Boolean(authorLabel.value || authorAvatarUrl.value || authorInitial.value));
-const structuredPlace = computed(() => props.post?.place || null);
-const placeLabel = computed(() => structuredPlace.value?.name || props.post?.locationArea || "");
-const primaryTag = computed(() => normalizePostTag(props.post?.primaryTag || ""));
-const rawBodyHtml = computed(() => props.post?.contentHtml || "");
-const bodyHtml = computed(() => stripDecorativeContentFromHtml(sanitizeHtml(rawBodyHtml.value)));
-const replies = computed(() => props.post?.replies || []);
-const images = computed(() => uniqueGalleryImages([props.post?.cover || "", ...(props.post?.imageUrls || [])]).slice(0, 8));
-const fullResolutionImages = computed(() => images.value.map(toFullResolutionImageUrl));
-const timeLabel = computed(() => formatTimestampLabel(props.post?.timestampISO, props.post?.timeLabel || ""));
-const replyIdentityLabel = computed(() => `以当前身份回复`);
-const placeStatusText = computed(() => placeStatusLabel(placeSheet.value?.status || structuredPlace.value?.status));
+const post = computed(() => props.post);
+const placeSheetState = computed(() => placeSheet.value);
+const {
+  postId,
+  title,
+  authorLabel,
+  authorAvatarUrl,
+  authorInitial,
+  hasAuthorIdentity,
+  structuredPlace,
+  placeLabel,
+  primaryTag,
+  bodyHtml,
+  replies,
+  images,
+  fullResolutionImages,
+  timeLabel,
+  placeStatusText,
+} = usePostDetailPresentation(post, placeSheetState);
+const replyIdentityLabel = "以当前身份回复";
 
-watch(() => props.post, (post) => {
-  liked.value = Boolean(post?.liked);
-  saved.value = Boolean(post?.bookmarked);
-  likeCount.value = Math.max(0, Number(post?.likeCount || 0));
+watch(post, (nextPost) => {
+  liked.value = Boolean(nextPost?.liked);
+  saved.value = Boolean(nextPost?.bookmarked);
+  likeCount.value = Math.max(0, Number(nextPost?.likeCount || 0));
   actionError.value = "";
   actionMessage.value = "";
   reportOpen.value = false;
@@ -99,104 +99,6 @@ watch(() => props.post, (post) => {
   placeSheetLoading.value = false;
   placeSheetError.value = "";
 }, { immediate: true });
-
-watch(fullResolutionImages, (urls) => {
-  preloadImages(urls);
-}, { immediate: true });
-
-function actorDisplayName(actor?: DisplayActor | null) {
-  return actor?.displayName || actor?.username || actor?.name || "";
-}
-
-function actorAvatarUrl(actor?: DisplayActor | null) {
-  return actor?.avatarUrl || "";
-}
-
-function actorAvatarText(actor?: DisplayActor | null, labelFallback = "") {
-  return actor?.avatarText || labelFallback.slice(0, 1) || "";
-}
-
-function normalizePostTag(value: string) {
-  const text = String(value || "").trim().replace(/^#+/, "");
-  return text ? `#${text}` : "";
-}
-
-function galleryImageKey(value: string) {
-  const raw = String(value || "").trim();
-  if (!raw) return "";
-  try {
-    const url = new URL(raw, typeof window !== "undefined" ? window.location.origin : "https://lian.invalid");
-    const pathname = url.pathname.replace(/^\/+/, "");
-    const uploadIndex = pathname.indexOf("/upload/");
-    if (uploadIndex >= 0) {
-      return pathname
-        .slice(uploadIndex + "/upload/".length)
-        .replace(/^(?:[^/]+\/)*v\d+\//, "")
-        .replace(/^v\d+\//, "")
-        .replace(/\.[a-z0-9]+$/i, "");
-    }
-    return pathname.replace(/\.[a-z0-9]+$/i, "");
-  } catch {
-    return raw.replace(/\?.*$/, "").replace(/\.[a-z0-9]+$/i, "");
-  }
-}
-
-function uniqueGalleryImages(urls: string[]) {
-  const seen = new Set<string>();
-  const result: string[] = [];
-  for (const url of urls) {
-    const value = String(url || "").trim();
-    if (!value) continue;
-    const key = galleryImageKey(value);
-    if (seen.has(key)) continue;
-    seen.add(key);
-    result.push(value);
-  }
-  return result;
-}
-
-function toFullResolutionImageUrl(value: string) {
-  const raw = String(value || "").trim();
-  if (!raw) return "";
-  try {
-    const url = new URL(raw, typeof window !== "undefined" ? window.location.origin : "https://lian.invalid");
-    if (!url.hostname.includes("cloudinary.com") || !url.pathname.includes("/upload/")) return raw;
-    url.pathname = url.pathname.replace(/\/upload\/[^/]+\//, "/upload/f_auto,q_auto/");
-    return url.toString();
-  } catch {
-    return raw;
-  }
-}
-
-function preloadImages(urls: string[]) {
-  if (typeof window === "undefined") return;
-  for (const url of urls) {
-    if (!url) continue;
-    const image = new Image();
-    image.decoding = "async";
-    image.src = url;
-  }
-}
-
-function stripDecorativeContentFromHtml(value: string) {
-  return String(value || "")
-    .replace(/<img\b[^>]*>/gi, "")
-    .replace(/<p[^>]*>\s*<strong>\s*#+[^<]+\s*<\/strong>\s*<\/p>/gi, "")
-    .replace(/<p[^>]*>\s*#+[^<]+\s*<\/p>/gi, "")
-    .trim();
-}
-
-function placeStatusLabel(status?: PlaceStatus) {
-  const labels: Record<PlaceStatus, string> = {
-    confirmed: "已确认",
-    pending: "待确认",
-    disputed: "有争议",
-    expired: "可能过期",
-    "ai-organized": "AI 整理",
-    official: "官方",
-  };
-  return status ? labels[status] || "地点" : "地点";
-}
 
 function showActionMessage(message: string) {
   actionError.value = "";
