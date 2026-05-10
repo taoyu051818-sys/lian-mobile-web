@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { useFloatingChromeController } from "../../src/motion/floatingChrome";
 
 function readRepoFile(relativePath: string) {
-  return readFileSync(new URL(relativePath, import.meta.url), "utf8");
+  return readFileSync(new URL(relativePath, import.meta.url), "utf8").replace(/\r\n/g, "\n");
 }
 
 function getReducedMotionBlock(source: string) {
@@ -56,9 +56,7 @@ describe("Feed detail reduced-motion guards", () => {
   });
 
   it("disables non-essential feed detail transitions without globally disabling all animation", () => {
-    expect(reducedMotionBlock).toContain(".feed-view__tab,");
     expect(reducedMotionBlock).toContain(".feed-view__content,");
-    expect(reducedMotionBlock).toContain(".feed-view__tabs,");
     expect(reducedMotionBlock).toContain(".feed-view__card-transition,");
     expect(reducedMotionBlock).toContain(".feed-update-probe-motion-enter-active,");
     expect(reducedMotionBlock).toContain(".feed-update-probe-motion-leave-active {");
@@ -83,5 +81,16 @@ describe("card camera reduced-motion stylesheet", () => {
     expect(reducedMotionBlock).toContain("transform: none !important;");
     expect(reducedMotionBlock).toContain("filter: none !important;");
     expect(reducedMotionBlock).not.toContain("animation: none");
+  });
+});
+
+describe("shell chrome tabs reduced-motion stylesheet", () => {
+  it("disables tab transitions under reduced motion", () => {
+    const source = readRepoFile("../../src/shell/shell-chrome.css");
+    const reducedMotionBlock = getReducedMotionBlock(source);
+
+    expect(reducedMotionBlock).toContain(".shell-chrome__tab");
+    expect(reducedMotionBlock).toContain(".feed-view__tab");
+    expect(reducedMotionBlock).toContain("transition: none");
   });
 });

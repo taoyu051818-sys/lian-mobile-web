@@ -46,3 +46,58 @@
 .shell-chrome--tabs {
   display: contents;
 }
+
+/* Shell-owned tab nav container */
+.shell-chrome__tabs {
+  display: flex;
+  gap: var(--space-1);
+  overflow-x: auto;
+  padding: var(--floating-bar-padding);
+  scrollbar-width: none;
+}
+
+.shell-chrome__tabs::-webkit-scrollbar {
+  display: none;
+}
+
+/* Tab button base styles (shared with .feed-view__tab for content-immersive-ui.css compat) */
+.shell-chrome__tab,
+.feed-view__tab {
+  flex: 0 0 auto;
+  min-height: var(--floating-bar-button-height);
+  padding: 0 var(--space-3);
+  border: 0;
+  border-radius: var(--radius-chip);
+  background: transparent;
+  color: var(--lian-muted);
+  font-size: 13px;
+  font-weight: 850;
+  white-space: nowrap;
+  transition: background 160ms ease, color 160ms ease, transform 160ms ease;
+}
+
+.shell-chrome__tab.is-active,
+.feed-view__tab.is-active {
+  background: var(--lian-ink);
+  color: #fff;
+  transform: translateY(-1px);
+}
+
+.shell-chrome__tab:disabled,
+.feed-view__tab:disabled {
+  cursor: wait;
+  opacity: 0.6;
+}
+
+.shell-chrome__tab:focus-visible,
+.feed-view__tab:focus-visible {
+  outline: 3px solid rgba(31, 167, 160, 0.32);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shell-chrome__tab,
+  .feed-view__tab {
+    transition: none;
+  }
+}

@@ -19,6 +19,12 @@ function mergeRegion(target: ShellChromeRegionSpec, patch: ShellChromeRegionSpec
   if (patch.slot !== undefined) {
     target.slot = patch.slot;
   }
+  if (patch.tabs !== undefined) {
+    target.tabs = patch.tabs;
+  }
+  if (patch.onTabSelect !== undefined) {
+    target.onTabSelect = patch.onTabSelect;
+  }
 }
 
 function setRegion(key: ShellRegionKey, spec: ShellChromeRegionSpec) {
