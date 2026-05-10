@@ -3,7 +3,6 @@ import {
   createEmptyRegionSpec,
   createDefaultChromeState,
   type ShellChromeRegionSpec,
-  type ShellChromeState,
 } from "../../src/shell/shell-chrome-types";
 import { useShellChrome } from "../../src/shell/useShellChrome";
 
@@ -69,7 +68,6 @@ describe("useShellChrome", () => {
       chrome.setRegion("bottom", { slot: "tabs" });
       expect(chrome.state.bottom.slot).toBe("tabs");
 
-      // Slot survives partial patches to other fields
       chrome.setRegion("bottom", { visible: false });
       expect(chrome.state.bottom.slot).toBe("tabs");
       expect(chrome.state.bottom.visible).toBe(false);

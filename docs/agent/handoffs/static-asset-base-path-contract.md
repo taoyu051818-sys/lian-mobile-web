@@ -3,6 +3,8 @@
 Date: 2026-05-10
 Issue: #156
 
+> **Note:** The legacy static runtime was removed in PR #282. References to `public/index.html`, `scripts/serve-frontend-static-rehearsal.js`, and dual-runtime base-path alignment are now historical. The contract covers only the Vue/Vite runtime.
+
 ## Summary
 
 Created a bounded docs-only contract slice defining the static asset base path contract for LIAN mobile web. The contract covers root versus subpath deployment modes, Vite `base` configuration and `LIAN_BASE_PATH` env variable, asset URL resolution for both the Vue and legacy runtimes, dual-runtime base-path alignment rules, PWA `scope` and `start_url` alignment with the base path, CDN and external asset interaction, reverse proxy contract, and verification checklists for both deployment modes.

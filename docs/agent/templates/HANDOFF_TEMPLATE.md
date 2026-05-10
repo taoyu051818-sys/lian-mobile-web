@@ -29,7 +29,7 @@ What changed in 3-5 bullet points.
 ## Repository and ownership notes
 
 - Repository touched: `lian-mobile-web`
-- Owned area touched: frontend runtime lanes / Vue canary / legacy-static rehearsal / task-board UI / frontend docs / other:
+- Owned area touched: Vue/Vite runtime / task-board UI / frontend docs / other:
 - Backend/API/runtime changes needed? If yes, link the backend task or handoff in `lian-platform-server`.
 
 ## API or contract changed

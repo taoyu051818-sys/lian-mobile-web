@@ -13,7 +13,7 @@ Test checklist for badge/chip presenter contract validation. Each section maps 1
 
 - Each item is a checkbox (`- [ ]`). Check off when verified.
 - Items use descriptive IDs: `T1a`, `T2b`, `FC-1`, etc.
-- Run against both lanes where applicable: `legacy` (4300) and `vue-canary` (4301).
+- Run against the Vue/Vite runtime. The legacy static runtime was removed in PR #282.
 
 ---
 

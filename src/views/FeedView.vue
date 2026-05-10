@@ -7,8 +7,8 @@ import type { FeedItem, FeedItemId, FeedTab } from "../types/feed";
 import type { PostDetail } from "../types/post";
 import { InlineError, LianButton } from "../ui";
 import PostDetailPanel from "./detail/PostDetailPanel.vue";
-import FeedAutoLoadSentinel from "./feed/FeedAutoLoadSentinel.vue";
-import FeedItemCard from "./feed/FeedItemCard.vue";
+import FeedList from "./feed/FeedList.vue";
+import FeedLoadMore from "./feed/FeedLoadMore.vue";
 import { READ_HISTORY_KEY, HOME_UPDATE_PROBE_PREFIX } from "../platform/browser-storage";
 
 interface CardOpenPayload {
@@ -78,7 +78,6 @@ const viewportHeight = ref(844);
 const detailOpen = computed(() => selectedPostId.value !== null);
 const feedTabsChromeState = feedTabsChrome.phase;
 const isEmpty = computed(() => !loading.value && !errorMessage.value && items.value.length === 0);
-const masonryColumns = computed(() => splitIntoMasonryColumns(items.value));
 const detailCardifyProgress = computed(() => Math.min(1, Math.max(0, Math.abs(detailDragX.value) / CARDIFY_DISTANCE)));
 const detailTargetScale = computed(() => {
   const snapshot = lastOpenSnapshot.value;
@@ -140,25 +139,6 @@ const canAutoLoadMore = computed(() => (
   && !loadingMore.value
   && !detailOpen.value
 ));
-
-function estimateCardWeight(item: FeedItem) {
-  const coverWeight = item.cover ? 1.32 : 0.72;
-  const titleWeight = Math.min(0.44, Math.max(0.18, item.title.length / 80));
-  const bodyWeight = item.bodyPreview ? Math.min(0.62, Math.max(0.22, item.bodyPreview.length / 120)) : 0;
-  const metaWeight = 0.34;
-  return coverWeight + titleWeight + bodyWeight + metaWeight;
-}
-
-function splitIntoMasonryColumns(sourceItems: FeedItem[]) {
-  const columns: FeedItem[][] = [[], []];
-  const weights = [0, 0];
-  sourceItems.forEach((item) => {
-    const columnIndex = weights[0] <= weights[1] ? 0 : 1;
-    columns[columnIndex].push(item);
-    weights[columnIndex] += estimateCardWeight(item);
-  });
-  return columns;
-}
 
 function updateViewport() {
   if (typeof window === "undefined") return;
@@ -561,40 +541,15 @@ onBeforeUnmount(() => {
     </div>
 
     <div v-show="!detailOpen || detailReturning || detailDragging" class="feed-view__content" :class="{ 'is-under-detail': detailOpen }">
-      <div v-if="!loading && !isEmpty" class="feed-view__masonry" aria-live="polite">
-        <div
-          v-for="(column, columnIndex) in masonryColumns"
-          :key="columnIndex"
-          class="feed-view__masonry-column"
-        >
-          <FeedItemCard
-            v-for="item in column"
-            :key="String(item.tid)"
-            :item="item"
-            @open="openItem"
-          />
-        </div>
-      </div>
+      <FeedList v-if="!loading && !isEmpty" :items="items" @open="openItem" />
 
-      <div v-if="items.length" class="feed-view__load-more">
-        <template v-if="hasMore">
-          <div class="feed-view__load-more-stack">
-            <LianButton
-              :loading="loadingMore"
-              variant="ghost"
-              @click="loadFeed(false)"
-            >
-              加载更多
-            </LianButton>
-            <FeedAutoLoadSentinel
-              class="feed-view__load-more-sentinel"
-              :enabled="canAutoLoadMore"
-              @intersect="triggerLoadMore"
-            />
-          </div>
-        </template>
-        <span v-else>已经看到这里啦</span>
-      </div>
+      <FeedLoadMore
+        v-if="items.length"
+        :has-more="hasMore"
+        :loading-more="loadingMore"
+        :can-auto-load-more="canAutoLoadMore"
+        @load-more="triggerLoadMore"
+      />
     </div>
 
     <PostDetailPanel
@@ -767,19 +722,6 @@ onBeforeUnmount(() => {
   filter: saturate(0.96);
 }
 
-.feed-view__masonry {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--space-3);
-  align-items: start;
-}
-
-.feed-view__masonry-column {
-  display: grid;
-  gap: var(--space-3);
-  min-width: 0;
-}
-
 .feed-view__state {
   display: grid;
   gap: var(--space-2);
@@ -793,25 +735,6 @@ onBeforeUnmount(() => {
   border: 1px solid var(--lian-line);
   border-radius: var(--radius-card);
   background: var(--lian-card);
-}
-
-.feed-view__load-more {
-  display: grid;
-  place-items: center;
-  padding-bottom: var(--space-2);
-  color: var(--lian-muted);
-  font-size: 13px;
-}
-
-.feed-view__load-more-stack {
-  display: grid;
-  justify-items: center;
-  width: 100%;
-}
-
-.feed-view__load-more-sentinel {
-  width: 100%;
-  height: 1px;
 }
 
 .feed-view__detail {

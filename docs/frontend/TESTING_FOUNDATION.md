@@ -8,16 +8,13 @@ This file defines the testing foundation specific to the frontend codebase. See 
 
 ## Current test surface
 
-### Smoke coverage (`scripts/smoke-frontend.js`)
+### Smoke coverage
 
 | Check | What it validates | What it misses |
 |---|---|---|
-| Homepage HTML | `<title>`, `<main class="app-shell">`, script order | DOM content after JS execution |
-| Static JS reachability | All 12 scripts return HTTP 200 | JS runtime errors, module resolution |
+| Homepage HTML | `<title>`, Vue mount point | DOM content after JS execution |
 | API JSON validity | `/api/feed`, `/api/map/v2/items` parse as JSON | Response shape, field types, edge cases |
-| Legacy syntax | `node --check` on 8 split files | Vue SFC compilation, TypeScript errors |
-| CSS reachability | `/styles.css` returns 200 | Style application, responsive layout |
-| Helper contract | `expectedScriptOrder` array match | Runtime global availability |
+| Build output | `npm run build` succeeds | Runtime behavior |
 
 ### Verify gate integration
 
@@ -31,7 +28,7 @@ npm run verify
   └── npm run verify:smoke    (smoke with managed server lifecycle)
 ```
 
-`npm run test` and `npm run test:vue-canary` target ports 4300 and 4301 respectively for standalone smoke runs.
+`npm run test` runs smoke checks against the Vite preview server.
 
 ## First pure-function unit-test targets
 

@@ -13,7 +13,6 @@ const { activeViewKey, setActiveView } = useActiveView();
 const { setRegion } = useShellChrome();
 const appBottomChrome = useFloatingChromeController({ initialPhase: "visible" });
 
-// Route bottom region through ShellChrome tabs mode
 setRegion("bottom", { slot: "tabs" });
 
 const tabs = appViews.map((view) => ({

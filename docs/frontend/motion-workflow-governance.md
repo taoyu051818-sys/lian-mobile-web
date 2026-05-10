@@ -38,7 +38,7 @@ Motion PRs must merge in dependency order. The canonical sequence:
 
 ### Merge-order exceptions
 
-- **Hotfix**: If a motion regression is live on the static rehearsal lane (4300) or Vue canary (4301), a targeted fix may merge ahead of sequence. The PR body must document why the exception was made.
+- **Hotfix**: If a motion regression is live, a targeted fix may merge ahead of sequence. The PR body must document why the exception was made.
 - **Parallel-safe leaf changes**: Documentation, test-only, or CSS-only changes that do not alter motion timing or DOM structure may merge in any order.
 
 ### Pre-merge checklist
@@ -48,7 +48,7 @@ Before merging any motion PR:
 1. Verify the PR's dependency chain is merged or explicitly waived.
 2. Run `npm run check` (lint + type check).
 3. Run `npm run verify` (static + smoke).
-4. If the PR touches `data-motion-role` attributes or overlay DOM, manually test the card-to-detail transition on both lanes (4300, 4301).
+4. If the PR touches `data-motion-role` attributes or overlay DOM, manually test the card-to-detail transition.
 5. If the PR touches reduced-motion, test with `prefers-reduced-motion: reduce` enabled.
 
 ## Ownership boundaries

@@ -44,7 +44,7 @@ When a router is introduced, each tab view MUST map to a stable, human-readable 
 
 ### 1.3 Legacy coexistence
 
-During migration, the Vue canary shell (port 4301) and the legacy static rehearsal (port 4300) share the same origin path space. The router contract applies only to the Vue canary shell. Legacy routes are governed by `docs/ops/runtime-inventory.md`.
+The legacy static runtime was removed in PR #282 and migrated to https://github.com/taoyu051818-sys/-lian-mobile-web-legacy. The Vue/Vite shell is now the sole web runtime. The router contract applies to the Vue/Vite shell.
 
 ### 1.4 Browser history
 

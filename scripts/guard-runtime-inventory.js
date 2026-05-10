@@ -24,7 +24,6 @@ const opsInventoryFiles = [
 const runtimeSensitiveFiles = [
   "package.json",
   "index.html",
-  "public/index.html",
   "vite.config.ts",
   "scripts/validate-project-structure.js"
 ];

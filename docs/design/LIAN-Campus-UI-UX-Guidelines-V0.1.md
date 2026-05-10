@@ -896,7 +896,7 @@ src/components/map/
 src/components/community/
 ```
 
-Current implementation note: `lian-mobile-web` is still classic-script frontend plus CSS under `public/`. Apply these rules incrementally through `public/styles.css`, `public/glass-ui.css`, and frontend page scripts until the frontend split introduces component directories.
+Current implementation note: `lian-mobile-web` uses Vue/Vite with component directories under `src/`. The legacy static runtime was removed in PR #282. Apply these rules through Vue components and CSS under `src/styles/`.
 
 First practical code rules:
 

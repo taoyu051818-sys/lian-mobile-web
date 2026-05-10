@@ -27,20 +27,14 @@ These tasks touch shared surfaces and require coordination with other lanes:
 | Motion timing changes | UX guidelines compliance | Must verify durations against `LIAN-Campus-UI-UX-Guidelines-V0.1.md` section 7. |
 | Gesture/tap discrimination | Feed interaction, long-press, scroll | Coordinate with interaction thread. Merge gesture PR before motion PR that depends on it. |
 
-## Dual-lane considerations
+## Runtime considerations
 
-Motion work runs on two frontend lanes:
+The legacy static runtime was removed in PR #282. Motion work now targets only the Vue/Vite runtime under `src/`.
 
-| Lane | Port | Motion relevance |
-|---|---|---|
-| Legacy/static rehearsal | 4300 | Card-to-detail transition uses `public/` CSS and DOM. Motion changes here affect the legacy path. |
-| Vue canary | 4301 | Motion components live under `src/`. Changes here affect the Vue path. |
+### Rules
 
-### Cross-lane rules
-
-- A motion PR that changes the **contract** (`data-motion-role` attributes, overlay DOM structure) must update both lanes or explicitly document which lane is out of scope.
-- A motion PR that changes only **implementation** (timing, easing, CSS) may target a single lane. The PR body must state which lane.
-- If a motion PR breaks the other lane's smoke test, the PR must not merge until both lanes pass.
+- A motion PR that changes the **contract** (`data-motion-role` attributes, overlay DOM structure) must update the design doc and all referencing components in the same PR.
+- A motion PR that changes only **implementation** (timing, easing, CSS) may target a single concern.
 
 ## Integration lane expectations (refs: #84)
 

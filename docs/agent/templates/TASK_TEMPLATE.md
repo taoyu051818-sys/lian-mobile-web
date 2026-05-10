@@ -28,7 +28,7 @@ Which user or system flow does this task complete? What can the user do after th
 ## Repository and ownership scope
 
 - Repository: `lian-mobile-web`
-- Owned area: frontend runtime lanes / Vue canary / legacy-static rehearsal / task-board UI / frontend docs / other:
+- Owned area: Vue/Vite runtime / task-board UI / frontend docs / other:
 - Backend/API/runtime changes required? If yes, create or reference a backend task in `lian-platform-server` instead of editing backend code here.
 
 ## Allowed files

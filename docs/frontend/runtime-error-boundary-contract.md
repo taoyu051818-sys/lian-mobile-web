@@ -234,7 +234,7 @@ The runtime error reporter MUST include ONLY these fields:
 
 | Field | Type | Description |
 |-------|------|-------------|
-| `runtime` | `string` | `'vue-canary'` or `'legacy'` |
+| `runtime` | `string` | `'vue'` |
 | `view` | `string` | Active view key: `'feed'`, `'map'`, `'publish'`, `'messages'`, `'profile'`, `'unknown'` |
 | `componentName` | `string` | Vue component name or `'unknown'` |
 | `errorKind` | `string` | `'vue-component'`, `'global'`, `'unhandled-rejection'`, `'bootstrap'` |

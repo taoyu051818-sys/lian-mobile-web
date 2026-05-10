@@ -27,10 +27,10 @@ Do not start from `ARCHITECTURE_WORKPLAN.md`, `05_TASK_BOARD.md`, `03_FILE_OWNER
 
 ## Current repo facts
 
-- `lian-mobile-web` owns frontend runtime lanes, frontend UI, Vue canary, legacy/static rehearsal, frontend task-board UI, assets, design docs, and frontend docs.
+- `lian-mobile-web` owns the Vue/Vite frontend runtime, frontend UI, frontend task-board UI, assets, design docs, and frontend docs. The legacy static runtime was removed in PR #282 and migrated to https://github.com/taoyu051818-sys/-lian-mobile-web-legacy.
 - `lian-platform-server` owns backend/API/runtime, Redis object-native state, NodeBB integration, auth/session, uploads, image proxy, map/data APIs, and backend validation.
 - `lian-mobile-web-full` is historical only.
-- Frontend runtime is dual-lane: 4300 legacy/static rehearsal and 4301 Vue canary.
+- Frontend runtime is Vue/Vite only (legacy static runtime removed in PR #282).
 
 ## Thread role split
 
@@ -66,9 +66,8 @@ Rules:
 | File / area | Level | Notes |
 |---|---|---|
 | `src/**` | soft-lock | Vue canary/runtime lane; check current PRs and task scope. |
-| `public/**` | soft-lock | Legacy/static rehearsal lane and tools; check ownership and task scope. |
+| `public/**` | soft-lock | Map assets and tools; check ownership and task scope. |
 | `public/tools/task-board.*` | soft-lock | Task-board UI; keep unauthenticated shell useful. |
-| `scripts/serve-frontend-runtimes.js` | hard-review | Runtime supervisor for 4300/4301. |
 | `package.json` | hard-review | Defines current frontend commands; avoid script drift. |
 | `docs/agent/**` | documentation | Must follow current source-of-truth order. |
 
@@ -78,15 +77,14 @@ Backend-owned files such as `server.js`, `src/server/*`, runtime `data/*`, backe
 
 These frontend areas can be developed in parallel with minimal conflict when scoped correctly:
 
-- Vue canary page-level work under `src/`.
-- Legacy/static compatibility fixes under `public/`.
+- Vue/Vite page-level work under `src/`.
 - Frontend task-board UI files.
 - Frontend docs and design references.
 - Frontend smoke/check scripts listed in current `package.json`.
 
 These areas need coordination:
 
-- Changes that affect both 4300 legacy/static and 4301 Vue canary.
+- Changes that affect the Vue/Vite runtime.
 - Runtime supervisor or package script changes.
 - API contract changes that require backend updates.
 - Map geometry/data/editor changes; keep human-assisted.
@@ -117,14 +115,8 @@ npm run verify
 Current runtime startup:
 
 ```bash
-npm start
-```
-
-Expected lanes:
-
-```text
-legacy/static rehearsal: 4300
-Vue canary: 4301
+npm run dev        # Vite dev server
+npm run preview    # Vite preview (production build)
 ```
 
 If a referenced script does not exist, say so in your handoff and check current `package.json` before inventing replacements.
