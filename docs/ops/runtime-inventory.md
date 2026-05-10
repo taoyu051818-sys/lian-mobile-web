@@ -43,6 +43,17 @@ Frontend CI and reproducible local setup use Node 22 with npm 10 or newer. The r
 
 CI workflows must install from the lockfile with `npm ci`; `npm install` is reserved for local dependency updates that intentionally change `package-lock.json`. This keeps validation aligned with the committed dependency graph and avoids workflow drift between the frontend validation lanes.
 
+## Workflow baseline note (PR #266)
+
+This inventory update acknowledges the runtime-sensitive workflow baseline changes on PR #266:
+
+- `.github/workflows/frontend.yml` now declares a workflow-wide `permissions: contents: read` baseline for ordinary validation work.
+- The `publish-legacy-status` job is the only job in that workflow that widens permissions, and it does so only for the existing commit-status writeback path (`statuses: write` with `contents: read`).
+- `actions/setup-node` now reads `.nvmrc` through `node-version-file`, so CI uses the same repo-declared Node baseline instead of duplicating `22` inside the workflow file.
+- Dependency installation in the workflow remains `npm ci`, so the validation lane still runs from the committed lockfile rather than a floating dependency graph.
+
+These workflow-baseline changes do not alter the student-facing runtime split, preview ports, or static rehearsal routing behavior. They tighten the validation contract around the existing frontend runtimes.
+
 ## Static rehearsal routing contract
 
 The static rehearsal server should map `/` to `index.html`, serve frontend assets from the repository/public build context, and preserve the existing API/proxy behavior used by smoke tests. Changes to root-path handling, forwarded headers, proxy behavior, or default port assumptions are runtime-sensitive and must be described here.

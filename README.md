@@ -19,6 +19,12 @@ Do not treat older docs that describe a single `npm run dev` / Vite 5173 workflo
 
 For the operator-facing split between install, build, deploy-prepare, and startup responsibilities, read `docs/frontend/runtime-responsibility-contract.md`.
 
+## Toolchain baseline
+
+- `.nvmrc` pins the repo Node baseline to `22`.
+- The frontend GitHub Actions workflow reads that same file through `actions/setup-node`.
+- `package-lock.json` is required, and CI installs from it with `npm ci`.
+
 ## Install dependencies
 
 ```bash
