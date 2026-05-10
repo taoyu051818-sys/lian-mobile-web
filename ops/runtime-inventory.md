@@ -46,6 +46,14 @@ The frontend verification path includes focused sanitizer/audit coverage for use
 
 Any PR that changes sanitizer verification scripts, package-level HTML safety checks, or safe-rendering guard coverage must update this inventory in the same branch.
 
+## Leaflet bundled asset contract
+
+Leaflet JS and CSS are bundled through npm (`leaflet` dependency in `package.json`) and resolved by Vite at build time. The previous unpkg CDN `<link>` and `<script>` tags with SRI hashes have been removed from `index.html`.
+
+This ensures the map runtime loads from the same origin as the app bundle, eliminating CDN availability and SRI mismatch failures. The `@types/leaflet` dev dependency provides type coverage for Leaflet APIs used in the map views.
+
+Any PR that changes the Leaflet dependency version, adds or removes Leaflet plugins, or alters how Leaflet assets are imported must keep this inventory updated.
+
 ## Operational rule
 
 Any PR that changes dependency preflight behavior, the runtime supervisor exit contract, Windows spawn compatibility, the runtime config accessor/env-validation contract, unsafe DOM sink guard coverage, public runtime exposure checks, frontend project-structure validation, frontend verify/test wiring, or UGC HTML sanitizer verification must update this document or another runtime inventory artifact in the same PR.

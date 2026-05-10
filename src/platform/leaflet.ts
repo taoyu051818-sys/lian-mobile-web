@@ -1,13 +1,15 @@
 /**
- * Platform adapter for Leaflet loaded via CDN (window.L).
+ * Platform adapter for Leaflet bundled through Vite.
  *
  * All `any` usage is quarantined inside this file. Vue components
  * must import typed helpers from here and never access window.L directly.
  *
- * Leaflet remains loaded from unpkg CDN in index.html. This adapter
- * only provides the type/runtime boundary; it does not change the
- * loading strategy.
+ * This file imports Leaflet JS/CSS once, then exposes the local typed
+ * surface used by Vue components.
  */
+
+import * as LeafletRuntime from "leaflet";
+import "leaflet/dist/leaflet.css";
 
 export type LeafletLatLngTuple = [number, number];
 
@@ -148,25 +150,16 @@ export class LeafletUnavailableError extends Error {
 }
 
 export function isLeafletAvailable(): boolean {
-  return typeof window !== "undefined" && !!window.L;
+  return !!LeafletRuntime;
 }
 
 export function getLeaflet(): LeafletLike {
   if (!isLeafletAvailable()) {
     throw new LeafletUnavailableError();
   }
-  // window.L is verified present; cast through the adapter boundary.
-  // This is the only cast from the CDN global to the local Leaflet surface.
-  return window.L as LeafletLike;
+  return LeafletRuntime as unknown as LeafletLike;
 }
 
 export function tryGetLeaflet(): LeafletLike | null {
-  return isLeafletAvailable() ? (window.L as LeafletLike) : null;
-}
-
-declare global {
-  interface Window {
-    /** Leaflet library loaded via CDN. Typed via LeafletLike at the adapter boundary. */
-    L?: LeafletLike;
-  }
+  return isLeafletAvailable() ? (LeafletRuntime as unknown as LeafletLike) : null;
 }
