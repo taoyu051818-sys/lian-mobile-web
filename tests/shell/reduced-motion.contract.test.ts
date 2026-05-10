@@ -47,12 +47,15 @@ describe("floating chrome reduced-motion contract", () => {
 });
 
 describe("Feed detail reduced-motion guards", () => {
-  const source = readRepoFile("../../src/views/FeedView.vue");
-  const reducedMotionBlock = getReducedMotionBlock(source);
+  const viewSource = readRepoFile("../../src/views/FeedView.vue");
+  const detailSource = readRepoFile("../../src/views/feed/useFeedDetail.ts");
+  const reducedMotionBlock = getReducedMotionBlock(viewSource);
 
   it("short-circuits detail open and close motion when reduced motion is enabled", () => {
-    expect(source).toContain('if (!payload || typeof window === "undefined" || prefersReducedMotion()) return;');
-    expect(source).toContain("if (prefersReducedMotion()) {\n    resetDetailState();\n    return;\n  }");
+    expect(viewSource).toContain(
+      'if (!payload || typeof window === "undefined" || prefersReducedMotion()) return;'
+    );
+    expect(detailSource).toContain("if (deps.prefersReducedMotion()) {\n      resetDetailState();\n      return;\n    }");
   });
 
   it("disables non-essential feed detail transitions without globally disabling all animation", () => {
