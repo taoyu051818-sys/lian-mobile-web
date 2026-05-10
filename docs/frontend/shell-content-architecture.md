@@ -1,31 +1,33 @@
 # Frontend Shell/Content Architecture
 
-> Issue #302 — defines the target component decomposition for LIAN mobile web.
-> Related: #273 (ShellChrome direction), #275/#292 (ShellChrome foundation), #276 (BottomTabBar migration), #277 (Feed top tabs migration), #278 (chrome transition lifecycle), #307 (ContentFrame), #308 (DetailSheet), #309 (AppShell).
+> Issue #302 — defines the component decomposition for LIAN mobile web.
+> Related: #273 (ShellChrome direction), #275/#292 (ShellChrome foundation), #276 (BottomTabBar migration), #277 (Feed top tabs migration), #278 (chrome transition lifecycle), #307 (ContentFrame), #308 (DetailSheet), #309 (AppShell), #318 (Publish actions), #319 (Messages chrome), #320 (Map chrome), #321 (Profile chrome).
 
-## 1. Problem Statement
+## 1. Problem Statement (Historical)
 
-Today LIAN's Vue frontend has no formal shell/content decomposition. Ownership boundaries are implicit:
+Before the shell/content migration, LIAN's Vue frontend had no formal shell/content decomposition. Ownership boundaries were implicit:
 
-- `App.vue` renders the shell grid, `BottomTabBar`, and manages bottom chrome state.
-- `FeedView.vue` renders its own fixed top tabs and owns chrome visibility/progress.
-- `PostDetailPanel.vue` owns detail topbar and dock surfaces.
-- Layout modes (`content`, `full-bleed`, `composer-safe`) are applied as CSS classes on a grid div inside `App.vue`.
-- `floating-chrome.css` mixes motion-capable phase styles with a no-motion override block.
+- `App.vue` rendered the shell grid, `BottomTabBar`, and managed bottom chrome state.
+- `FeedView.vue` rendered its own fixed top tabs and owned chrome visibility/progress.
+- `PostDetailPanel.vue` owned detail topbar and dock surfaces.
+- Layout modes (`content`, `full-bleed`, `composer-safe`) were applied as CSS classes on a grid div inside `App.vue`.
+- `floating-chrome.css` mixed motion-capable phase styles with a no-motion override block.
 
-This makes it hard to reason about transitions, detail handoff, and which component owns which DOM. Pages reach into shell concerns; the shell reaches into page chrome.
+This made it hard to reason about transitions, detail handoff, and which component owns which DOM. Pages reached into shell concerns; the shell reached into page chrome.
+
+**Status:** This decomposition is now implemented. All shell/content migration PRs through #338 are merged to main.
 
 ## 2. Architecture Model (Apple Music Pattern)
 
-LIAN's target architecture follows the same structural pattern as Apple Music's iOS app, applied to Vue's component model:
+LIAN's architecture follows the same structural pattern as Apple Music's iOS app, applied to Vue's component model:
 
-| Layer | Apple Music equivalent | LIAN target |
+| Layer | Apple Music equivalent | LIAN implementation |
 |---|---|---|
 | App bootstrap | `UIApplicationDelegate` | `App.vue` — thin mount wrapper |
 | Shell composition | `UITabBarController` + nav chrome | `AppShell.vue` — owns region composition |
 | Persistent chrome | Navigation bar / tab bar | `ShellChrome` — shell-owned top + bottom regions |
 | Content frame | Content area with safe-area / layout modes | `ContentFrame` — scroll, safe-area, layout mode |
-| Page surface | Individual tab content | `PageSurface` components (Feed, Map, etc.) |
+| Page surface | Individual tab content | Page components (Feed, Map, etc.) |
 | Detail overlay | Modal / push detail sheet | `DetailSheet` — shell-level persistent overlay |
 
 The key architectural principle:
@@ -34,69 +36,63 @@ The key architectural principle:
 
 This is not about copying Apple Music's UI. It is about adopting the same layering that makes iOS apps maintainable: a stable shell that owns layout infrastructure, and pages that are pure content providers.
 
-## 3. Current Component Tree
-
-```
-App.vue                              ← shell grid + chrome state + toast
-├── main.vue-shell__grid             ← CSS class switches on ShellLayoutMode
-│   └── AppViewHost.vue              ← dynamic component switcher
-│       ├── FeedView.vue             ← owns top tabs chrome, detail open/close
-│       │   ├── FeedItemCard.vue
-│       │   ├── FeedAutoLoadSentinel.vue
-│       │   └── PostDetailPanel.vue  ← owns detail topbar + dock chrome
-│       ├── MapLeafletView.vue       ← lazy-loaded
-│       ├── PublishView.vue          ← lazy-loaded
-│       ├── MessagesView.vue         ← lazy-loaded
-│       └── ProfileView.vue          ← lazy-loaded
-│           ├── ProfileSummary.vue
-│           ├── ProfileEditorPanel.vue
-│           └── AuthPanel.vue
-├── BottomTabBar.vue                 ← one-off fixed floating chrome
-└── ToastHost.vue                    ← outside shell grid
-```
-
-### Current problems
-
-| Problem | Where it lives |
-|---|---|
-| Pages control floating chrome state | FeedView emits `chrome` events to App.vue |
-| Detail surfaces are page-owned fixed panels | PostDetailPanel renders its own topbar/dock |
-| Layout mode is a CSS class on a generic grid div | `App.vue` applies `vue-shell__grid--{mode}` |
-| No typed chrome spec — pages use imperative emit | FeedView `emit("chrome", true)` |
-| BottomTabBar is outside the chrome system | One-off fixed element in App.vue |
-
-## 4. Target Component Tree
+## 3. Current Component Tree (as of PR #338)
 
 ```
 App.vue                              ← thin bootstrap: mount, provide, error boundary
 └── AppShell.vue                     ← shell composition owner
     ├── ShellChrome.vue [top]        ← shell-owned persistent top region
-    │   └── (slot: page-provided chrome content via ChromeSpec)
+    │   └── (slot: page-provided chrome content via Teleport / useShellChrome)
     ├── ContentFrame.vue             ← shell-owned content area
-    │   └── AppViewHost.vue          ← dynamic page switcher (unchanged)
-    │       ├── FeedView.vue         ← provides chrome spec, owns only content
-    │       ├── MapLeafletView.vue   ← provides chrome spec
-    │       ├── PublishView.vue      ← provides chrome spec
-    │       ├── MessagesView.vue     ← provides chrome spec
-    │       └── ProfileView.vue      ← provides chrome spec
+    │   ├── PageSurface.vue          ← content surface wrapper (padding, bleed)
+    │   │   └── AppViewHost.vue      ← dynamic page switcher
+    │   │       ├── FeedView.vue     ← provides top chrome spec (tabs), owns content
+    │   │       ├── MapLeafletView.vue ← provides top (filters) + bottom (actions) chrome
+    │   │       ├── PublishView.vue  ← provides bottom chrome spec (Clear/Publish actions)
+    │   │       ├── MessagesView.vue ← provides top (tabs) + bottom (composer) chrome
+    │   │       └── ProfileView.vue  ← provides top chrome spec (edit/logout actions)
     ├── ShellChrome.vue [bottom]     ← shell-owned persistent bottom region
-    │   └── (slot: tabs / composer / actions / none)
+    │   └── BottomTabBar.vue         ← rendered in tabs mode
     └── ToastHost.vue                ← outside content frame
 
-DetailSheet.vue                      ← shell-level overlay (separate from AppShell tree)
+DetailSheet.vue                      ← shell-level overlay (Teleport to body)
     └── (slot: post detail / place sheet / profile editor / image preview)
 ```
 
-### What changed
+### What was migrated
 
-| Current | Target | Why |
-|---|---|---|
-| `App.vue` owns everything | `App.vue` is a thin wrapper | Separation of concerns |
-| No `AppShell` | `AppShell.vue` owns shell composition | Single owner for chrome + frame |
-| No `ShellChrome` | `ShellChrome.vue` owns top + bottom regions | Pages declare, shell renders |
-| No `ContentFrame` | `ContentFrame.vue` owns layout modes | One frame, one set of layout rules |
-| Pages render detail panels inline | `DetailSheet` is shell-level overlay | Consistent focus, safe-area, close behavior |
-| No typed chrome spec | `useShellChrome` composable + `ChromeSpec` type | Declarative, testable chrome contract |
+| Phase | PR | Issue | Status |
+|---|---|---|---|
+| ShellChrome foundation | #292 | #275 | **MERGED** |
+| BottomTabBar into ShellChrome bottom | #326 | #276 | **MERGED** |
+| Feed top tabs into ShellChrome top | #335 | #277 | **MERGED** |
+| ContentFrame | #330 | #307 | **MERGED** |
+| DetailSheet foundation | #334 | #308 | **MERGED** |
+| AppShell extraction | #332 | #309 | **MERGED** |
+| Profile chrome spec | #333 | #321 | **MERGED** |
+| Publish actions into bottom chrome | #336 | #318 | **MERGED** |
+| Map filters/actions into chrome | #337 | #320 | **MERGED** |
+| Messages tabs/composer into chrome | #338 | #319 | **MERGED** |
+
+## 4. Per-View Chrome Integration
+
+| View | `useShellChrome()` | Emits `chrome` event | Teleport to ShellChrome | Own floating chrome | Layout mode |
+|---|---|---|---|---|---|
+| FeedView | Yes (top region) | Yes | Yes (top tabs) | Yes (2 controllers) | `content` |
+| MapLeafletView | Yes (via `useMapChrome`) | No | No | No | `full-bleed` |
+| PublishView | Yes (via `usePublishChromeActions`) | Yes | No | No | `content` |
+| MessagesView | Yes (top + bottom) | Yes | No | No | `composer-safe` |
+| ProfileView | Yes (top region) | No | No | No | `content` |
+
+### Chrome integration patterns
+
+**Centralized ShellChrome pattern (primary):** Views call `useShellChrome()` to declaratively configure top/bottom regions. `ShellChrome.vue` renders those regions. Used by all five views.
+
+**Teleport pattern (FeedView):** FeedView uses `Teleport to="aside.shell-chrome--top"` to inject feed category tabs into the top ShellChrome region. This coexists with the declarative `useShellChrome()` spec.
+
+**Composable wrappers:** Some views use domain-specific composables that wrap `useShellChrome()`:
+- `useMapChrome()` — configures top (filter buttons) and bottom (place action buttons) for the map
+- `usePublishChromeActions()` — configures bottom region with "Clear" and "Publish" buttons
 
 ## 5. Component Definitions
 
@@ -117,9 +113,9 @@ Shell composition owner. Responsibilities:
 - Renders `ShellChrome[top]`, `ContentFrame`, `ShellChrome[bottom]` in correct z-order
 - Manages app-level chrome state (bottom bar visibility for detail open/close)
 - Coordinates chrome handoff when active view changes
+- Manages `useFloatingChromeController` for the bottom tab bar's show/hide state
 
-Props: none (reads active view from `useActiveView`).
-Slots: none (composition is internal).
+Props: `activeViewKey` (AppViewKey), `layoutMode` (ShellLayoutMode), `tabs` (AppShellTab[]).
 
 ### 5.3 `ShellChrome.vue`
 
@@ -127,46 +123,59 @@ Persistent chrome region renderer. Two instances: top and bottom.
 
 Responsibilities:
 
-- Renders region content based on active `ChromeSpec`
+- Renders region content based on active chrome spec from `useShellChrome()`
 - Manages region visibility, safe-area insets, z-index
-- Drives the chrome transition lifecycle: `visible -> exiting -> swap -> entering -> visible`
-- Respects `prefers-reduced-motion`
+- Two rendering modes:
+  - **Tabs mode** (`slot === "tabs"`): passes through a `<slot />` for parent-injected tab content
+  - **Button mode**: renders a button bar from `ChromeButtonSpec[]` in the chrome state
+- Emits `button-click` events for action buttons
 
-Props: `region: "top" | "bottom"`, `spec: ChromeSpec`.
-Slots: fallback content per mode (tabs, title, actions, composer, none).
+Props: `region: "top" | "bottom"`.
+
+Companion composable: `useShellChrome()` — module-level singleton reactive store. Exposes `setRegion(key, spec)`, `applyRegions(map)`, and `resetRegions()`.
 
 ### 5.4 `ContentFrame.vue`
 
 Shell-owned content area. Responsibilities:
 
-- Applies layout mode (`content`, `full-bleed`, `composer-safe`) as internal CSS
-- Manages safe-area padding, scroll container, overflow
-- Hosts `AppViewHost` as its content slot
+- Applies layout mode (`content`, `full-bleed`, `composer-safe`) as CSS modifier classes
+- Constrains content width (default `min(100%, 760px)`)
+- Full-bleed removes max-width; composer-safe adds bottom padding
 
-Props: `layoutMode: ShellLayoutMode` (derived from active view).
-Slots: default content (the active page).
+Props: `layoutMode: ShellLayoutMode`.
 
-### 5.5 `DetailSheet`
+### 5.5 `PageSurface.vue`
+
+Generic content surface wrapper (UI primitive). Responsibilities:
+
+- Applies standard padding and bleed behavior
+- Configurable element tag (`as` prop)
+- `bleed` and `padded` boolean props
+
+Used inside ContentFrame by AppShell with `as="div" :padded="false"`.
+
+### 5.6 `DetailSheet.vue`
 
 Shell-level persistent overlay for detail surfaces. Responsibilities:
 
-- Manages overlay z-index, backdrop, safe-area, focus trap, close gesture
-- Renders page-provided detail content (post detail, place sheet, profile editor, image preview)
-- Coordinates with ShellChrome for detail-specific chrome spec changes
-- Respects `prefers-reduced-motion` (no card-camera motion in reduced-motion mode)
+- Teleports to `<body>` and renders when `state.open === true`
+- Shows backdrop + slide-up panel with header and scrollable body
+- Keyboard support: Escape key closes the sheet
+- Slot exposes `kind` and `payload` from the state
 
-Props: `mode: DetailSheetMode`, `content: Component`.
-Emits: `close`.
+Companion composable: `useDetailSheet()` — module-level singleton. Exposes `open(kind, payload)` and `close()`.
 
-### 5.6 Page Components (FeedView, MapLeafletView, etc.)
+Payload kinds: `DetailSheetPostPayload` (postId), `DetailSheetPlacePayload` (placeId), `DetailSheetProfilePayload` (actorId).
 
-Page responsibilities shrink to:
+**Note:** DetailSheet is defined and exported from the shell barrel but is not yet adopted by view components. FeedView, MapLeafletView, and MapView currently render their detail panels inline. Migration to DetailSheet is a follow-up task.
 
-- Provide a `ChromeSpec` via `useShellChrome()` composable
-- Render page content only (no chrome DOM, no detail overlay DOM)
-- Open detail surfaces by requesting the shell's `DetailSheet`
+### 5.7 Page Components
 
-Page components do **not** render floating chrome, fixed overlays, or layout-mode CSS.
+Page responsibilities:
+
+- Provide a chrome spec via `useShellChrome()` composable (or domain-specific wrapper)
+- Render page content only (no chrome DOM in most cases)
+- Open detail surfaces (currently inline; DetailSheet adoption is a follow-up)
 
 ## 6. Ownership Rules
 
@@ -174,10 +183,10 @@ Page components do **not** render floating chrome, fixed overlays, or layout-mod
 |---|---|---|
 | Shell composition | `AppShell` | Renders chrome regions + content frame |
 | Top chrome content | Active page (via spec) | Page declares what top chrome shows |
-| Bottom chrome content | Active page (via spec) or shell default | Tab bar is shell default; composer is page-specific |
+| Bottom chrome content | Active page (via spec) or shell default | Tab bar is shell default; composer/actions are page-specific |
 | Layout mode | `ContentFrame` | Derived from active view's declared mode |
 | Scroll / safe-area | `ContentFrame` | Shell owns the scroll container |
-| Detail overlays | `DetailSheet` + page content component | Shell owns container, page owns content |
+| Detail overlays | `DetailSheet` + page content component | Shell owns container, page owns content (pending adoption) |
 | Chrome transition lifecycle | `ShellChrome` | Shell owns phase machine, pages trigger |
 | Design tokens | `lian-tokens.css` | Unchanged — shared across all layers |
 | Page business logic | Page components | Fetch, state, interactions |
@@ -190,160 +199,121 @@ Page components do **not** render floating chrome, fixed overlays, or layout-mod
 4. **Shell never imports page components.** Shell renders specs and slots.
 5. **DetailSheet never imports page detail components.** Pages register themselves as sheet content providers.
 
-## 7. ChromeSpec Type
+### Known deviations from ownership rules
+
+| Deviation | Where | Issue |
+|---|---|---|
+| FeedView renders `PostDetailPanel` inline (not via DetailSheet) | `src/views/FeedView.vue` | Follow-up |
+| FeedView owns two `useFloatingChromeController` instances for internal chrome | `src/views/FeedView.vue` | Follow-up |
+| MessagesView previously bypassed ShellChrome (now migrated as of #338) | Resolved | — |
+| `usePublishChromeActions` uses MutationObserver to wire button click handlers | `src/views/publish/usePublishChromeActions.ts` | Gap in ShellChrome event API |
+
+## 7. ChromeSpec Type (Current Implementation)
 
 ```typescript
-type ChromeTopMode = "tabs" | "title" | "search" | "actions" | "none";
-type ChromeBottomMode = "tabs" | "composer" | "actions" | "none";
+// src/shell/shell-chrome-types.ts
+type ShellRegionKey = "top" | "bottom";
 
-interface ChromeAction {
+interface ChromeButtonSpec {
   id: string;
-  icon: LianIconName;
   label: string;
+  icon?: string;
+  variant?: "ghost" | "tonal" | "danger";
   disabled?: boolean;
-  active?: boolean;
 }
 
-interface ChromeSpec {
-  top?: {
-    visible: boolean;
-    mode: ChromeTopMode;
-    title?: string;
-    leading?: ChromeAction[];
-    trailing?: ChromeAction[];
-  };
-  bottom?: {
-    visible: boolean;
-    mode: ChromeBottomMode;
-    actions?: ChromeAction[];
-  };
+interface ShellChromeRegionSpec {
+  buttons?: ChromeButtonSpec[];
+  visible?: boolean;
+  slot?: "tabs";
+}
+
+interface ShellChromeState {
+  top: ShellChromeRegionSpec;
+  bottom: ShellChromeRegionSpec;
 }
 ```
 
-Pages provide a `ChromeSpec` via `useShellChrome()`. The shell renders the corresponding region content. When the active view changes, the spec changes and the shell transitions chrome.
+The `useShellChrome()` composable provides `setRegion(key, spec)`, `applyRegions(map)`, and `resetRegions()`. Pages call these to declare their chrome needs; ShellChrome renders accordingly.
 
-## 8. Migration Order
+## 8. Migration Status
 
-Migration is sequenced so each step is independently shippable and does not break existing behavior.
+All eight migration phases are complete. The shell/content architecture is fully implemented.
 
-### Phase 1: ShellChrome foundation (PR #292, issue #275) — **IN PROGRESS**
+### Completed phases
 
-- Add `src/shell/` module with `ShellChrome.vue`, `useShellChrome.ts`, region spec types
-- Render ShellChrome top/bottom regions in `App.vue` **alongside** existing `BottomTabBar` (no migration)
-- Regions render empty by default — no visual change
-- This is the foundation everything else depends on
+| Phase | PR | Issue | Description |
+|---|---|---|---|
+| 1. ShellChrome foundation | #292 | #275 | `src/shell/` module with `ShellChrome.vue`, `useShellChrome.ts`, region spec types |
+| 2. BottomTabBar migration | #326 | #276 | BottomTabBar rendered through ShellChrome bottom `tabs` mode |
+| 3. Feed top tabs migration | #335 | #277 | Feed top tabs moved from FeedView fixed DOM into ShellChrome top region |
+| 4. ContentFrame | #330 | #307 | ContentFrame wraps AppViewHost with layout-mode CSS |
+| 5. DetailSheet foundation | #334 | #308 | Shell-level DetailSheet with backdrop, keyboard, slot-based content |
+| 6. AppShell extraction | #332 | #309 | AppShell.vue owns shell composition; App.vue is thin bootstrap |
+| 7. Profile chrome | #333 | #321 | ProfileView declares top chrome spec via useShellChrome() |
+| 8. Page chrome migration | #336–#338 | #318–#320 | Publish, Map, Messages migrated to ShellChrome |
 
-### Phase 2: BottomTabBar migration (issue #276) — **BLOCKED on #292**
+## 9. Remaining Issues
 
-- Move `BottomTabBar` rendering into ShellChrome bottom `tabs` mode
-- Remove one-off BottomTabBar from `App.vue`
-- Preserve all existing navigation behavior
+### #274 — Motion layer cleanup
 
-### Phase 3: Feed top tabs migration (issue #277) — **BLOCKED on #292**
+`src/styles/floating-chrome.css` contains conflicting motion-capable and no-motion override blocks. The first part defines motion phases (entering/exiting with blur/scale/translate transitions); a later block forces `--floating-chrome-motion-duration: 0ms` and `transition: none !important`. This needs cleanup: either commit to no-motion until #278 lands, or quarantine the motion-capable code behind a flag.
 
-- Move Feed top tabs from `FeedView.vue` fixed DOM into ShellChrome top region
-- Feed provides a top chrome spec instead of rendering its own floating chrome root
-- Remove duplicate Feed floating chrome lifecycle code
+### #278 — Chrome transition lifecycle
 
-### Phase 4: Chrome transition lifecycle (issue #278) — **BLOCKED on #276, #277**
+Implement shell-owned `visible -> exiting -> swap -> entering -> visible` lifecycle for chrome spec changes. Currently, chrome transitions are instant (no animated handoff between page chrome specs). Reduced-motion users should keep the same state sequence while skipping movement/blur animations. Depends on #274 motion cleanup.
 
-- Implement `visible -> exiting -> swap -> entering -> visible` lifecycle in ShellChrome
-- Resolve `floating-chrome.css` motion-capable vs no-motion conflict
-- Ensure `prefers-reduced-motion` skips movement while preserving phase logic
+### #281 — FloatingChromePhase narrowing
 
-### Phase 5: ContentFrame (issue #307) — **BLOCKED on #292**
+`src/motion/floatingChrome.ts` exposes phases (`visible`, `exiting`, `hidden`, `entering`, `progress`) but the controller largely collapses `entering` to visible and `exiting` to hidden. The public type suggests a lifecycle that does not actually run. This should be narrowed to implemented behavior or documented as deferred until #278.
 
-- Add `ContentFrame.vue` around `AppViewHost`
-- Move layout-mode handling from scattered page CSS into ContentFrame
-- Pages stop needing viewport magic numbers
-
-### Phase 6: DetailSheet (issue #308) — **BLOCKED on #292, recommended after #307**
-
-- Add shell-level `DetailSheet` foundation
-- Define sheet modes (`post`, `place`, `profile-editor`, `image-preview`)
-- Migrate one low-risk sheet (e.g., profile editor) as proof
-
-### Phase 7: AppShell extraction (issue #309) — **BLOCKED on #292, #307**
-
-- Introduce `AppShell.vue` as structural owner
-- `App.vue` becomes thin bootstrap wrapper
-- Shell composition moves into AppShell
-
-### Phase 8: Page chrome migration — **BLOCKED on all above**
-
-- Migrate remaining pages to provide chrome specs via `useShellChrome()`
-- Remove page-owned floating chrome DOM
-- Remove legacy `floating-chrome.css` where no longer needed
-
-#### Profile chrome spec integration (#321)
-
-ProfileView now declares its top chrome spec via `useShellChrome()`:
-
-- **Authenticated state**: top region with `slot: "tabs"` and two action buttons (`profile:toggle-editor` tonal, `profile:logout` ghost)
-- **Guest state**: chrome reset to defaults via `resetRegions()`
-- **Editor toggle**: button label switches between "编辑资料" / "收起编辑"
-- **Cleanup**: `resetRegions()` on component unmount
-
-The existing `ProfileActions` and `ProfileTabs` components remain in the view template as the primary UI until ShellChrome button-click events are wired through AppShell to views.
-
-## 9. Dependency Graph
+## 10. Dependency Graph (Historical)
 
 ```
-#275 / PR #292  ShellChrome foundation
-    ├── #276  BottomTabBar migration
-    ├── #277  Feed top tabs migration
-    ├── #307  ContentFrame
-    └── #308  DetailSheet (recommended after #307)
-    └── #309  AppShell extraction
+#275 / PR #292  ShellChrome foundation                    ✓ MERGED
+    ├── #276  BottomTabBar migration                      ✓ MERGED (#326)
+    ├── #277  Feed top tabs migration                     ✓ MERGED (#335)
+    ├── #307  ContentFrame                                ✓ MERGED (#330)
+    └── #308  DetailSheet                                 ✓ MERGED (#334)
+    └── #309  AppShell extraction                         ✓ MERGED (#332)
 
-#276 + #277 ──→ #278  Chrome transition lifecycle
+#276 + #277 ──→ #278  Chrome transition lifecycle         OPEN
 
-#292 + #307 ──→ #309  AppShell extraction
+#292 + #307 ──→ #309  AppShell extraction                 ✓ MERGED (#332)
 
-All above ──→ Page chrome migration (#321 Profile, remaining views TBD)
+All above ──→ Page chrome migration (#321, #318, #320, #319)  ✓ MERGED
+
+#274  Motion cleanup ──→ #278  Chrome transition lifecycle    OPEN
+#274 ──→ #281  FloatingChromePhase narrowing                 OPEN
 ```
 
-## 10. Safe Parallel Work vs Blocked Work
+## 11. Safe Parallel Work vs Blocked Work
 
-### Safe to start now (no dependency on PR #292)
+### All core migration work is complete
 
-| Work | Why it is safe |
-|---|---|
-| Design token additions in `lian-tokens.css` | Tokens are shared, additive only |
-| New UI primitives in `src/ui/` | Independent of shell decomposition |
-| Page content refactors (simplifying FeedView data fetching, etc.) | Does not touch chrome or shell |
-| API layer improvements | Independent of shell architecture |
-| New composables (non-shell) | No dependency on ShellChrome |
-| Accessibility improvements to existing components | Independent of shell decomposition |
-| Documentation updates | Docs-only |
+The shell/content architecture is fully implemented. All views use `useShellChrome()`. AppShell, ShellChrome, ContentFrame, DetailSheet, and PageSurface are all in place.
 
-### Blocked on PR #292 (issue #275) merge
+### Remaining follow-up work
 
-| Work | Issue | Why blocked |
+| Work | Issue | Status |
 |---|---|---|
-| BottomTabBar into shell chrome | #276 | Needs ShellChrome regions to exist |
-| Feed top tabs into shell chrome | #277 | Needs ShellChrome regions to exist |
-| ContentFrame | #307 | Touches `App.vue`, shell layout, imports |
-| DetailSheet | #308 | Needs ShellChrome for chrome coordination |
-| AppShell extraction | #309 | Needs ShellChrome + ContentFrame |
-| Chrome transition lifecycle | #278 | Needs at least one surface using ShellChrome |
+| Motion layer cleanup | #274 | **OPEN** — remove conflicting floating-chrome.css blocks |
+| Chrome transition lifecycle | #278 | **OPEN** — depends on #274 |
+| FloatingChromePhase narrowing | #281 | **OPEN** — depends on #274 |
+| DetailSheet adoption by views | — | **OPEN** — views still render detail panels inline |
+| FeedView floating chrome consolidation | — | **OPEN** — FeedView still owns 2 floating chrome controllers |
+| ShellChrome button-click event API | — | **OPEN** — MutationObserver workaround in usePublishChromeActions |
 
-### Blocked on #276 + #277
-
-| Work | Issue | Why blocked |
-|---|---|---|
-| Chrome transition lifecycle | #278 | Needs top + bottom surfaces using ShellChrome to test lifecycle |
-
-## 11. Migration Safety Rules
+## 12. Migration Safety Rules
 
 1. **Each migration step preserves existing behavior.** No visual or functional regression is acceptable at any step.
 2. **ShellChrome regions render empty by default.** Adding a region does not change what users see until a page provides a spec.
-3. **Old and new coexist during migration.** `BottomTabBar` stays in `App.vue` until ShellChrome bottom `tabs` mode is verified. Feed top tabs stay in `FeedView` until ShellChrome top mode is verified.
+3. **Old and new coexist during migration.** Legacy code stays until the new path is verified.
 4. **One surface at a time.** Do not migrate multiple chrome surfaces in the same PR.
 5. **Tests pass at every step.** `npm run check`, `npm run test:unit`, `npm run build` must pass before merging.
 6. **Reduced-motion is tested at every step.** `prefers-reduced-motion: reduce` must not break layout or pointer behavior.
 
-## 12. Folder Structure (Target)
+## 13. Folder Structure (Current)
 
 ```
 src/
@@ -353,26 +323,31 @@ src/
     ShellChrome.vue              ← chrome region renderer
     useShellChrome.ts            ← chrome spec composable
     shell-chrome.css             ← chrome region styles
-    chrome-types.ts              ← ChromeSpec, ChromeAction types
-  content/
-    ContentFrame.vue             ← layout mode + safe-area + scroll
+    shell-chrome-types.ts        ← ShellRegionKey, ChromeButtonSpec, ShellChromeRegionSpec
+    ContentFrame.vue             ← layout mode + safe-area
     content-frame.css            ← frame styles
-  sheets/
     DetailSheet.vue              ← shell-level detail overlay
+    useDetailSheet.ts            ← detail sheet composable
+    detail-sheet-types.ts        ← DetailSheetPostPayload, PlacePayload, ProfilePayload
     detail-sheet.css             ← sheet styles
-  views/                         ← page components (unchanged location)
-    FeedView.vue
-    MapLeafletView.vue
-    MessagesView.vue
-    ProfileView.vue
-    PublishView.vue
-  ui/                            ← primitives (unchanged)
+    index.ts                     ← barrel export
+  ui/
+    layout/
+      PageSurface.vue            ← content surface wrapper
+    Sheet.vue                    ← generic sheet primitive
+    ...                          ← other UI primitives
+  views/
+    FeedView.vue                 ← provides top chrome spec (tabs), owns content
+    MapLeafletView.vue           ← provides top + bottom chrome via useMapChrome()
+    MessagesView.vue             ← provides top (tabs) + bottom (composer) chrome
+    ProfileView.vue              ← provides top chrome spec (edit/logout actions)
+    PublishView.vue              ← provides bottom chrome spec via usePublishChromeActions()
   styles/                        ← tokens, motion (unchanged)
   api/                           ← API layer (unchanged)
   types/                         ← shared types (unchanged)
 ```
 
-## 13. Apple Music Comparison
+## 14. Apple Music Comparison
 
 This section explains the architectural parallels without implying UI similarity.
 
