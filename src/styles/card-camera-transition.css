@@ -37,58 +37,6 @@
     opacity 120ms ease !important;
 }
 
-.feed-view__card-transition::before,
-.feed-view__card-transition::after {
-  position: absolute;
-  z-index: 4;
-  border: 1px solid rgba(255, 255, 255, 0.58);
-  box-shadow: 0 8px 24px rgba(15, 23, 20, 0.12);
-  opacity: 0;
-  pointer-events: none;
-  backdrop-filter: blur(12px);
-  transition:
-    transform 280ms var(--card-camera-ease),
-    opacity 180ms ease,
-    width 280ms var(--card-camera-ease),
-    height 280ms var(--card-camera-ease),
-    border-radius 280ms var(--card-camera-ease);
-}
-
-.feed-view__card-transition::before {
-  content: "刚刚 · 校园";
-  right: var(--space-4);
-  bottom: calc(var(--space-4) + 104px);
-  display: grid;
-  min-width: 88px;
-  min-height: 30px;
-  place-items: center;
-  padding: 0 10px;
-  border-radius: var(--radius-chip);
-  background: rgba(255, 255, 255, 0.78);
-  color: var(--lian-muted);
-  font-size: 11px;
-  font-weight: 900;
-  transform: translate3d(0, -42px, 0) scale(0.92);
-}
-
-.feed-view__card-transition::after {
-  content: "写回复";
-  right: var(--space-4);
-  bottom: var(--space-4);
-  left: var(--space-4);
-  display: flex;
-  height: 40px;
-  align-items: center;
-  padding: 0 var(--space-3);
-  border-radius: var(--radius-chip);
-  background: rgba(255, 255, 255, 0.82);
-  color: var(--lian-muted);
-  font-size: 13px;
-  font-weight: 850;
-  transform: translate3d(0, 28px, 0) scaleX(0.82);
-  transform-origin: center bottom;
-}
-
 .feed-view__card-transition.is-active {
   top: 50svh !important;
   left: 50vw !important;
@@ -99,18 +47,6 @@
   opacity: 1 !important;
   filter: none !important;
   transform: translate3d(-50%, -50%, 0) scale(1) !important;
-}
-
-.feed-view__card-transition.is-active::before {
-  opacity: 1;
-  transform: translate3d(0, 0, 0) scale(1);
-}
-
-.feed-view__card-transition.is-active::after {
-  height: 46px;
-  opacity: 1;
-  transform: translate3d(0, 0, 0) scaleX(1);
-  transition-delay: 110ms;
 }
 
 .feed-view__card-transition img {
@@ -193,9 +129,7 @@
   .feed-view__card-transition.is-active,
   .feed-view__card-transition img,
   .feed-view__card-transition strong,
-  .feed-view__card-transition-tag,
-  .feed-view__card-transition::before,
-  .feed-view__card-transition::after {
+  .feed-view__card-transition-tag {
     transition: none !important;
     transform: none !important;
     filter: none !important;
