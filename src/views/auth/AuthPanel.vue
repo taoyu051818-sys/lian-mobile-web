@@ -16,6 +16,7 @@ const {
   password,
   inviteCode,
   interestOptions,
+  interestStatus,
   selectedInterests,
   submitting,
   sendingCode,
@@ -31,8 +32,14 @@ const {
   emailCodeHasError,
   passwordHasError,
   inviteCodeHasError,
+  hasInterestChoices,
+  showInterestSkip,
+  interestHint,
   switchMode,
   toggleInterest,
+  skipInterestSelection,
+  isInterestDisabled,
+  refreshInterestSettings,
   submitAuth,
   requestEmailCode,
 } = useAuthForm((user) => emit("authenticated", user));
@@ -144,22 +151,40 @@ const inviteCodeHintId = "auth-invite-code-hint";
           <small :id="emailCodeHintId" class="auth-panel__hint" aria-live="polite">{{ emailCodeHint }}</small>
         </label>
 
-        <section v-if="interestOptions.length" class="auth-panel__interests" aria-label="兴趣选择">
+        <section class="auth-panel__interests" aria-label="兴趣偏好">
           <div class="auth-panel__section-title">
-            <strong>兴趣</strong>
-            <span>{{ selectedInterests.length }}/5</span>
+            <div class="auth-panel__section-copy">
+              <strong>兴趣偏好</strong>
+              <small class="auth-panel__hint">{{ interestHint }}</small>
+            </div>
+            <span v-if="hasInterestChoices">{{ selectedInterests.length }}/5</span>
           </div>
-          <div class="auth-panel__interest-grid">
+
+          <div v-if="hasInterestChoices" class="auth-panel__interest-grid">
             <button
               v-for="interest in interestOptions"
               :key="interest.id"
               type="button"
               class="auth-panel__interest"
               :class="{ 'is-active': selectedInterests.includes(interest.id) }"
+              :aria-pressed="selectedInterests.includes(interest.id)"
+              :disabled="isInterestDisabled(interest.id)"
               @click="toggleInterest(interest.id)"
             >
               <strong>{{ interest.label }}</strong>
               <span>{{ interest.description }}</span>
+            </button>
+          </div>
+
+          <div v-else-if="interestStatus === 'unavailable'" class="auth-panel__interest-state">
+            <button type="button" class="auth-panel__secondary-action" @click="refreshInterestSettings">
+              重新加载兴趣选项
+            </button>
+          </div>
+
+          <div v-if="showInterestSkip" class="auth-panel__interest-actions">
+            <button type="button" class="auth-panel__secondary-action" @click="skipInterestSelection">
+              暂时跳过
             </button>
           </div>
         </section>
@@ -228,7 +253,8 @@ const inviteCodeHintId = "auth-invite-code-hint";
 .auth-panel__header,
 .auth-panel__tabs,
 .auth-panel__code-row,
-.auth-panel__section-title {
+.auth-panel__section-title,
+.auth-panel__interest-actions {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-2);
@@ -272,7 +298,8 @@ const inviteCodeHintId = "auth-invite-code-hint";
   color: #fff;
 }
 
-.auth-panel label {
+.auth-panel label,
+.auth-panel__section-copy {
   display: grid;
   gap: var(--space-2);
   font-size: 13px;
@@ -305,14 +332,16 @@ const inviteCodeHintId = "auth-invite-code-hint";
 }
 
 .auth-panel__code-row button,
-.auth-panel__submit {
+.auth-panel__submit,
+.auth-panel__secondary-action {
   min-height: 44px;
   border: 0;
   border-radius: var(--radius-chip);
   font-weight: 900;
 }
 
-.auth-panel__code-row button {
+.auth-panel__code-row button,
+.auth-panel__secondary-action {
   padding: 0 var(--space-3);
   background: rgba(255, 255, 255, 0.72);
   color: var(--lian-ink);
@@ -348,14 +377,20 @@ const inviteCodeHintId = "auth-invite-code-hint";
   color: var(--lian-ink);
 }
 
-.auth-panel__submit {
-  background: var(--lian-ink);
-  color: #fff;
-}
-
+.auth-panel__interest:disabled,
 .auth-panel__submit:disabled,
 .auth-panel__code-row button:disabled {
   opacity: 0.62;
+}
+
+.auth-panel__interest-state {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.auth-panel__submit {
+  background: var(--lian-ink);
+  color: #fff;
 }
 
 .auth-panel__success {
