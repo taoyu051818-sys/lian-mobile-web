@@ -28,6 +28,14 @@ export function normalizeIdentityTag(value = "") {
   return String(value || "").trim().slice(0, 16);
 }
 
+/**
+ * Creates a display-only fallback draft from free-text place name.
+ * When `placeName` is non-empty the source is "manual"; when empty the
+ * source is "skipped" and all location fields are zeroed out.
+ *
+ * Uses `mapVersion: "manual"` to distinguish this from resolved map
+ * selections (`"gaode_v2"`) and legacy records (`"legacy"`).
+ */
 export function createManualLocationDraft(placeName: string): PublishLocationDraft {
   const value = placeName.trim();
   return {
@@ -39,13 +47,17 @@ export function createManualLocationDraft(placeName: string): PublishLocationDra
     lng: null,
     legacyPoint: { x: null, y: null },
     imagePoint: { x: null, y: null },
-    mapVersion: "legacy",
+    mapVersion: "manual",
     confidence: value ? 0.65 : 0,
     skipped: !value,
     note: "",
   };
 }
 
+/**
+ * Creates a draft from a resolved Gaode Map V2 location selection.
+ * Coordinates are rounded to 7 decimal places for backend consistency.
+ */
 export function createMapV2LocationDraft(input: {
   locationId: string;
   name: string;
@@ -75,6 +87,11 @@ export function createMapV2LocationDraft(input: {
   };
 }
 
+/**
+ * Assembles the full publish payload. Falls back to a manual location
+ * draft when no `locationDraft` is provided, using `placeName` as
+ * the display-only fallback text.
+ */
 export function buildPublishPayload(input: {
   imageUrls: string[];
   title: string;
