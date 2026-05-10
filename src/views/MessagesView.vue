@@ -1,12 +1,17 @@
 <script setup lang="ts">
-import { computed, nextTick, onMounted, ref } from "vue";
+import { computed, nextTick, onBeforeUnmount, onMounted, ref } from "vue";
 import { fetchAuthMe } from "../api/profile";
 import { fetchChannelMessages, fetchNotifications, markChannelMessagesRead, sendChannelMessage } from "../api/messages";
+import { useFloatingChromeController } from "../motion/floatingChrome";
 import { GlassPanel } from "../ui";
 import type { DisplayActor } from "../types/feed";
 import type { ChannelMessage, ChannelMessageActor, MessageTabKey, NotificationItem } from "../types/messages";
 import type { ProfileUser } from "../types/profile";
 import { MessagesTabs, ChannelComposer, ChannelThread, NotificationList } from "./messages";
+
+const emit = defineEmits<{
+  chrome: [hidden: boolean];
+}>();
 
 const activeTab = ref<MessageTabKey>("channel");
 const channelItems = ref<ChannelMessage[]>([]);
@@ -23,6 +28,10 @@ const currentUser = ref<ProfileUser | null>(null);
 const identityTags = ref<string[]>([]);
 const sending = ref(false);
 const sendError = ref("");
+
+const composerChrome = useFloatingChromeController({ initialPhase: "visible" });
+const composerChromePhase = composerChrome.phase;
+const composerChromeStyle = composerChrome.style;
 
 const tabs: Array<{ key: MessageTabKey; label: string }> = [
   { key: "channel", label: "频道" },
@@ -180,8 +189,15 @@ async function loadNotifications() {
 
 async function switchTab(tab: MessageTabKey) {
   activeTab.value = tab;
-  if (tab === "channel" && !channelItems.value.length) await loadChannel(true);
-  if (tab === "notifications" && !notificationItems.value.length) await loadNotifications();
+  if (tab === "channel") {
+    composerChrome.show();
+    emit("chrome", true);
+    if (!channelItems.value.length) await loadChannel(true);
+  } else {
+    composerChrome.hide();
+    emit("chrome", false);
+    if (!notificationItems.value.length) await loadNotifications();
+  }
 }
 
 async function submitMessage() {
@@ -202,39 +218,38 @@ async function submitMessage() {
 }
 
 onMounted(async () => {
+  emit("chrome", true);
   await loadCurrentUser();
   await loadChannel(true);
+});
+
+onBeforeUnmount(() => {
+  composerChrome.dispose();
+  emit("chrome", false);
 });
 </script>
 
 <template>
   <section class="messages-view" aria-label="消息">
-    <GlassPanel class="messages-view__card">
-      <MessagesTabs :tabs="tabs" :active-tab="activeTab" @switch="switchTab" />
+    <MessagesTabs
+      class="messages-view__chrome-tabs lian-floating-chrome lian-floating-chrome--top"
+      data-floating-chrome="top"
+      data-floating-state="visible"
+      :tabs="tabs"
+      :active-tab="activeTab"
+      @switch="switchTab"
+    />
 
-      <template v-if="activeTab === 'channel'">
-        <ChannelComposer
-          :avatar-text="composerAvatarText"
-          :actor-name="composerActorName"
-          :signal-meta="composerSignalMeta"
-          :identity-tags="identityTags"
-          :content="composerContent"
-          :identity-tag="composerIdentityTag"
-          :sending="sending"
-          :send-error="sendError"
-          @update:content="composerContent = $event"
-          @update:identity-tag="composerIdentityTag = $event"
-          @submit="submitMessage"
-        />
-        <ChannelThread
-          :items="channelItems"
-          :loading="channelLoading"
-          :error="channelError"
-          :has-more="channelHasMore"
-          @retry="loadChannel(true)"
-          @load-more="loadChannel(false)"
-        />
-      </template>
+    <GlassPanel class="messages-view__card">
+      <ChannelThread
+        v-if="activeTab === 'channel'"
+        :items="channelItems"
+        :loading="channelLoading"
+        :error="channelError"
+        :has-more="channelHasMore"
+        @retry="loadChannel(true)"
+        @load-more="loadChannel(false)"
+      />
 
       <NotificationList
         v-else
@@ -244,13 +259,71 @@ onMounted(async () => {
         @retry="loadNotifications"
       />
     </GlassPanel>
+
+    <ChannelComposer
+      v-if="activeTab === 'channel'"
+      class="messages-view__chrome-composer lian-floating-chrome lian-floating-chrome--bottom"
+      data-floating-chrome="bottom"
+      :data-floating-state="composerChromePhase"
+      :style="composerChromeStyle"
+      :avatar-text="composerAvatarText"
+      :actor-name="composerActorName"
+      :signal-meta="composerSignalMeta"
+      :identity-tags="identityTags"
+      :content="composerContent"
+      :identity-tag="composerIdentityTag"
+      :sending="sending"
+      :send-error="sendError"
+      @update:content="composerContent = $event"
+      @update:identity-tag="composerIdentityTag = $event"
+      @submit="submitMessage"
+    />
   </section>
 </template>
 
 <style scoped>
-.messages-view,
+.messages-view {
+  display: grid;
+  gap: var(--space-4);
+  padding-top: calc(var(--floating-bar-height) + env(safe-area-inset-top));
+  padding-bottom: calc(var(--space-8) + env(safe-area-inset-bottom));
+}
+
 .messages-view__card {
   display: grid;
   gap: var(--space-4);
+}
+
+.messages-view__chrome-tabs {
+  position: fixed;
+  top: var(--floating-bar-top-offset);
+  right: max(var(--floating-bar-side-inset), env(safe-area-inset-right));
+  left: max(var(--floating-bar-side-inset), env(safe-area-inset-left));
+  z-index: var(--floating-bar-z);
+  width: min(calc(100vw - var(--space-6)), var(--floating-bar-max-width));
+  min-height: var(--floating-bar-height);
+  margin: 0 auto;
+  padding: var(--floating-bar-padding);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--floating-bar-radius);
+  background: var(--glass-bg-strong);
+  box-shadow: var(--shadow-floating);
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+}
+
+.messages-view__chrome-composer {
+  position: fixed;
+  bottom: env(safe-area-inset-bottom, 0px);
+  right: max(var(--floating-bar-side-inset), env(safe-area-inset-right));
+  left: max(var(--floating-bar-side-inset), env(safe-area-inset-left));
+  z-index: var(--floating-bar-z);
+  width: min(calc(100vw - var(--space-6)), var(--floating-bar-max-width));
+  margin: 0 auto;
+  padding: var(--floating-bar-padding);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--floating-bar-radius);
+  background: var(--glass-bg-strong);
+  box-shadow: var(--shadow-floating);
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
 }
 </style>

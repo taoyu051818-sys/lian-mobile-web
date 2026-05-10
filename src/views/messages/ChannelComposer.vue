@@ -43,9 +43,6 @@ const emit = defineEmits<{
   display: grid;
   gap: var(--space-4);
   padding: var(--space-3);
-  border: 1px solid rgba(31, 41, 51, 0.08);
-  border-radius: var(--radius-card);
-  background: rgba(255, 255, 255, 0.48);
 }
 
 .messages-view__field {

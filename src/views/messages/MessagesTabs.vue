@@ -30,23 +30,27 @@ const emit = defineEmits<{
 .messages-view__tabs {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-2);
+  gap: var(--space-1);
   align-items: center;
   justify-content: flex-start;
 }
 
 .messages-view__tab {
-  min-height: 36px;
+  flex: 0 0 auto;
+  min-height: var(--floating-bar-button-height, 36px);
   padding: 0 var(--space-3);
-  border: 1px solid var(--glass-border);
+  border: 0;
   border-radius: var(--radius-chip);
-  background: rgba(255, 255, 255, 0.54);
+  background: transparent;
   color: var(--lian-muted);
+  font-size: 13px;
   font-weight: 850;
+  white-space: nowrap;
 }
 
 .messages-view__tab.is-active {
   background: var(--lian-ink);
   color: #fff;
+  transform: translateY(-1px);
 }
 </style>
