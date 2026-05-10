@@ -90,7 +90,7 @@ describe("shell chrome tabs reduced-motion stylesheet", () => {
     const reducedMotionBlock = getReducedMotionBlock(source);
 
     expect(reducedMotionBlock).toContain(".shell-chrome__tab");
-    expect(reducedMotionBlock).toContain(".feed-view__tab");
+    expect(reducedMotionBlock).not.toContain(".feed-view__tab");
     expect(reducedMotionBlock).toContain("transition: none");
   });
 });
