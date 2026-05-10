@@ -1,5 +1,11 @@
-import { describe, it, expect } from "vitest";
-import { validateAuthForm, type AuthFormFields } from "../../src/views/auth/useAuthForm";
+import { describe, it, expect, vi } from "vitest";
+import type { AuthRulesResponse } from "../../src/api/auth";
+import {
+  loadAuthInterestSettings,
+  toggleSelectedInterest,
+  validateAuthForm,
+  type AuthFormFields,
+} from "../../src/views/auth/useAuthForm";
 
 function loginFields(overrides: Partial<AuthFormFields> = {}): AuthFormFields {
   return {
@@ -11,6 +17,7 @@ function loginFields(overrides: Partial<AuthFormFields> = {}): AuthFormFields {
     password: "securepass",
     inviteCode: "",
     selectedInterests: [],
+    interestSelectionRequired: false,
     ...overrides,
   };
 }
@@ -25,6 +32,7 @@ function registerFields(overrides: Partial<AuthFormFields> = {}): AuthFormFields
     password: "securepass",
     inviteCode: "",
     selectedInterests: ["art"],
+    interestSelectionRequired: false,
     ...overrides,
   };
 }
@@ -77,8 +85,16 @@ describe("validateAuthForm", () => {
       ).toBe("");
     });
 
-    it("rejects empty selectedInterests", () => {
-      expect(validateAuthForm(registerFields({ selectedInterests: [] }))).toContain("兴趣");
+    it("accepts empty selectedInterests when onboarding can skip preferences", () => {
+      expect(validateAuthForm(registerFields({ selectedInterests: [] }))).toBe("");
+    });
+
+    it("rejects empty selectedInterests when onboarding requires them", () => {
+      expect(
+        validateAuthForm(
+          registerFields({ selectedInterests: [], interestSelectionRequired: true }),
+        ),
+      ).toContain("兴趣");
     });
 
     it("returns empty string for valid register with email", () => {
@@ -92,5 +108,71 @@ describe("validateAuthForm", () => {
         ),
       ).toBe("");
     });
+  });
+});
+
+describe("loadAuthInterestSettings", () => {
+  it("returns ready state when rules include interests", async () => {
+    const rules: AuthRulesResponse = {
+      interests: [{ id: "art", label: "艺术", description: "画展和创作" }],
+    };
+    const fetchRules = vi.fn<() => Promise<AuthRulesResponse>>().mockResolvedValue(rules);
+
+    await expect(loadAuthInterestSettings(fetchRules)).resolves.toEqual({
+      options: rules.interests,
+      status: "ready",
+      required: false,
+    });
+  });
+
+  it("keeps required state only when the API explicitly marks it", async () => {
+    const fetchRules = vi.fn<() => Promise<AuthRulesResponse>>().mockResolvedValue({
+      interests: [{ id: "art", label: "艺术", description: "画展和创作" }],
+      interestsRequired: true,
+    });
+
+    await expect(loadAuthInterestSettings(fetchRules)).resolves.toEqual({
+      options: [{ id: "art", label: "艺术", description: "画展和创作" }],
+      status: "ready",
+      required: true,
+    });
+  });
+
+  it("returns empty state when the API responds without choices", async () => {
+    const fetchRules = vi.fn<() => Promise<AuthRulesResponse>>().mockResolvedValue({
+      interests: [],
+    });
+
+    await expect(loadAuthInterestSettings(fetchRules)).resolves.toEqual({
+      options: [],
+      status: "empty",
+      required: false,
+    });
+  });
+
+  it("returns unavailable state when auth rules fail", async () => {
+    const fetchRules = vi.fn<() => Promise<AuthRulesResponse>>().mockRejectedValue(new Error("boom"));
+
+    await expect(loadAuthInterestSettings(fetchRules)).resolves.toEqual({
+      options: [],
+      status: "unavailable",
+      required: false,
+    });
+  });
+});
+
+describe("toggleSelectedInterest", () => {
+  it("adds an interest from zero to one selection", () => {
+    expect(toggleSelectedInterest([], "art")).toEqual(["art"]);
+  });
+
+  it("removes an already-selected interest", () => {
+    expect(toggleSelectedInterest(["art", "music"], "art")).toEqual(["music"]);
+  });
+
+  it("does not add a sixth interest", () => {
+    expect(
+      toggleSelectedInterest(["a", "b", "c", "d", "e"], "f"),
+    ).toEqual(["a", "b", "c", "d", "e"]);
   });
 });
