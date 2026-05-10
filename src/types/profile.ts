@@ -15,6 +15,7 @@ export interface ProfileAlias {
 }
 
 export interface ProfileUser {
+  id?: string;
   username?: string;
   email?: string;
   institution?: string;

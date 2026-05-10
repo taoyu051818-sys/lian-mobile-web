@@ -6,6 +6,7 @@ export interface FeedTab {
 }
 
 export interface DisplayActor {
+  id?: string;
   displayName?: string;
   username?: string;
   name?: string;
