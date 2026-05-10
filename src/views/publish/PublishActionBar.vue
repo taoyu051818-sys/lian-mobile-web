@@ -16,7 +16,7 @@ const emit = defineEmits<{
 <template>
   <div class="publish-action__bar">
     <LianButton type="button" variant="ghost" :disabled="publishing || uploading" @click="emit('resetForm')">清空</LianButton>
-    <LianButton type="submit" variant="primary" :loading="publishing" :disabled="!canSubmit">发布到 LIAN</LianButton>
+    <LianButton type="submit" variant="primary" :loading="publishing" :disabled="!canSubmit">发布</LianButton>
   </div>
 </template>
 
@@ -26,6 +26,6 @@ const emit = defineEmits<{
   flex-wrap: wrap;
   gap: var(--space-2);
   align-items: center;
-  justify-content: flex-start;
+  justify-content: flex-end;
 }
 </style>

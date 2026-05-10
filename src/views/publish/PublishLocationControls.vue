@@ -4,6 +4,7 @@ import { InlineError, LianButton, LocationChip } from "../../ui";
 import type { MapLocation } from "../../types/map";
 
 defineProps<{
+  panelOpen: boolean;
   filteredMapLocations: MapLocation[];
   selectedMapLocation: MapLocation | null;
   mapLocationLoading: boolean;
@@ -25,13 +26,27 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <section class="publish-location__picker" aria-labelledby="publish-map-title">
-    <div class="publish-location__section-title">
-      <strong id="publish-map-title">绑定地点</strong>
-      <span>{{ selectedMapLocation ? '已绑定已知地点' : '可选' }}</span>
+  <section
+    v-if="panelOpen || selectedMapLocation || placeName.trim()"
+    class="publish-location__panel"
+    aria-labelledby="publish-map-title"
+  >
+    <div class="publish-location__panel-header">
+      <strong id="publish-map-title">地点</strong>
+      <span>{{ selectedMapLocation ? "已绑定已知地点" : "默认收起，按需展开" }}</span>
     </div>
 
-    <label class="publish-location__field publish-location__search">
+    <div v-if="selectedMapLocation || placeName.trim()" class="publish-location__preview">
+      <LocationChip>{{ locationPreviewLabel }}</LocationChip>
+      <span>{{ locationBindingMeta }}</span>
+    </div>
+
+    <label class="publish-location__field publish-location__field--compact">
+      <span>手填地点</span>
+      <input :value="placeName" maxlength="40" placeholder="例如 图书馆、食堂、教学楼，也可以留空" @input="emit('update:placeName', ($event.target as HTMLInputElement).value)" />
+    </label>
+
+    <label class="publish-location__field publish-location__field--compact publish-location__map-search">
       <span>搜索已知地点</span>
       <input :value="locationSearch" maxlength="40" placeholder="搜索图书馆、食堂、教学楼…" @input="emit('update:locationSearch', ($event.target as HTMLInputElement).value)" />
     </label>
@@ -60,34 +75,26 @@ const emit = defineEmits<{
     <div v-if="selectedMapLocation" class="publish-location__selected">
       <div>
         <LocationChip>{{ knownPlaceLabel }}</LocationChip>
-        <span>{{ locationBindingMeta }}</span>
+        <span>{{ placeTypeLabel(selectedMapLocation?.place?.type, selectedMapLocation?.type) }}</span>
       </div>
       <LianButton type="button" size="sm" variant="ghost" @click="emit('clearMapLocation')">改用手填</LianButton>
     </div>
   </section>
-
-  <label class="publish-location__field">
-    <span>手填地点</span>
-    <input :value="placeName" maxlength="40" placeholder="例如 图书馆、食堂、教学楼，也可以留空" @input="emit('update:placeName', ($event.target as HTMLInputElement).value)" />
-  </label>
-
-  <div class="publish-location__preview">
-    <LocationChip>{{ locationPreviewLabel }}</LocationChip>
-    <span>{{ locationBindingMeta }}</span>
-  </div>
 </template>
 
 <style scoped>
-.publish-location__picker {
+.publish-location__panel {
   display: grid;
-  gap: var(--space-4);
-  padding: var(--space-3);
+  gap: var(--space-3);
+  padding: var(--space-4);
   border: 1px solid rgba(31, 41, 51, 0.08);
-  border-radius: var(--radius-card);
-  background: rgba(31, 167, 160, 0.07);
+  border-radius: calc(var(--radius-card) + 2px);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.82), rgba(255, 255, 255, 0.62)),
+    radial-gradient(circle at top right, rgba(31, 167, 160, 0.1), transparent 42%);
 }
 
-.publish-location__section-title {
+.publish-location__panel-header {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-2);
@@ -95,9 +102,24 @@ const emit = defineEmits<{
   justify-content: space-between;
 }
 
-.publish-location__section-title span {
+.publish-location__panel-header span {
   color: var(--lian-muted);
-  line-height: 1.6;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.publish-location__preview {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.publish-location__preview span {
+  color: var(--lian-muted);
+  font-size: 12px;
+  font-weight: 800;
 }
 
 .publish-location__field {
@@ -106,7 +128,7 @@ const emit = defineEmits<{
   padding: var(--space-3);
   border: 1px solid rgba(31, 41, 51, 0.08);
   border-radius: var(--radius-card);
-  background: rgba(255, 255, 255, 0.48);
+  background: rgba(255, 255, 255, 0.72);
   color: var(--lian-muted);
   font-size: 13px;
   font-weight: 800;
@@ -117,17 +139,26 @@ const emit = defineEmits<{
   min-height: 44px;
   box-sizing: border-box;
   padding: 0 var(--space-3);
-  border: 1px solid var(--lian-border);
+  border: 0;
   border-radius: var(--radius-3);
-  background: rgba(255, 255, 255, 0.72);
+  background: transparent;
   color: var(--lian-ink);
   font: inherit;
 }
 
-.publish-location__search {
-  padding: 0;
-  border: 0;
-  background: transparent;
+.publish-location__field--compact {
+  gap: 6px;
+}
+
+.publish-location__field span {
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.publish-location__map-search {
+  background: rgba(248, 251, 252, 0.9);
 }
 
 .publish-location__list {
@@ -141,11 +172,11 @@ const emit = defineEmits<{
 .publish-location__item {
   display: grid;
   gap: 4px;
-  min-height: 62px;
+  min-height: 54px;
   padding: var(--space-3);
-  border: 1px solid var(--glass-border);
+  border: 1px solid rgba(31, 41, 51, 0.1);
   border-radius: var(--radius-card);
-  background: rgba(255, 255, 255, 0.62);
+  background: rgba(255, 255, 255, 0.74);
   color: var(--lian-ink);
   text-align: left;
 }
@@ -156,8 +187,8 @@ const emit = defineEmits<{
 }
 
 .publish-location__item.is-active {
-  border-color: rgba(31, 167, 160, 0.34);
-  background: rgba(31, 167, 160, 0.16);
+  border-color: rgba(31, 167, 160, 0.3);
+  background: rgba(31, 167, 160, 0.14);
 }
 
 .publish-location__selected {
@@ -165,11 +196,7 @@ const emit = defineEmits<{
   flex-wrap: wrap;
   gap: var(--space-2);
   align-items: center;
-  justify-content: flex-start;
-  padding: var(--space-3);
-  border: 1px solid rgba(31, 167, 160, 0.2);
-  border-radius: var(--radius-card);
-  background: rgba(255, 255, 255, 0.58);
+  justify-content: space-between;
 }
 
 .publish-location__selected > div {
@@ -181,7 +208,8 @@ const emit = defineEmits<{
 
 .publish-location__selected span {
   color: var(--lian-muted);
-  line-height: 1.6;
+  font-size: 12px;
+  font-weight: 800;
 }
 
 .publish-location__mini-state {
@@ -190,19 +218,6 @@ const emit = defineEmits<{
   place-items: center;
   color: var(--lian-muted);
   text-align: center;
-}
-
-.publish-location__preview {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
-  align-items: center;
-  justify-content: flex-start;
-}
-
-.publish-location__preview span {
-  color: var(--lian-muted);
-  line-height: 1.6;
 }
 
 .inline-error button {

@@ -37,16 +37,27 @@ const selectedMapLocation = ref<MapLocation | null>(null);
 const mapLocationLoading = ref(false);
 const mapLocationError = ref("");
 const locationSearch = ref("");
+const locationPanelOpen = ref(false);
+const tagPanelOpen = ref(false);
+const visibilityPanelOpen = ref(false);
 
 const normalizedTag = computed(() => normalizePublishTag(tagInput.value));
 const normalizedIdentityTag = computed(() => normalizeIdentityTag(identityTag.value));
 const avatarText = computed(() => identityName.value.slice(0, 2) || "同");
 const publishIdentityCopy = computed(() => `你将以「${identityName.value} · ${identityMeta.value}」发布`);
 const canSubmit = computed(() => title.value.trim().length > 0 && body.value.trim().length > 0 && !uploading.value && !publishing.value);
+const titleCount = computed(() => title.value.length);
+const bodyCount = computed(() => body.value.length);
+const locationToolLabel = computed(() => {
+  if (selectedMapLocation.value) return knownPlaceLabel.value;
+  if (placeName.value.trim()) return placeName.value.trim();
+  return "可选";
+});
+const visibilityLabel = computed(() => visibilityOptions.find((item) => item.value === visibility.value)?.label || "公开");
 const imageStatus = computed(() => {
-  if (!selectedFiles.value.length) return "可不传图片";
-  if (uploading.value) return `图片上传中 ${uploadedImageUrls.value.length}/${selectedFiles.value.length}`;
-  return `已准备 ${uploadedImageUrls.value.length}/${selectedFiles.value.length} 张图片`;
+  if (!selectedFiles.value.length) return "最多 9 张";
+  if (uploading.value) return `上传中 ${uploadedImageUrls.value.length}/${selectedFiles.value.length}`;
+  return `已准备 ${uploadedImageUrls.value.length}/${selectedFiles.value.length} 张`;
 });
 const filteredMapLocations = computed(() => {
   const keyword = locationSearch.value.trim().toLowerCase();
@@ -130,11 +141,25 @@ function selectMapLocation(location: MapLocation) {
   selectedMapLocation.value = location;
   placeName.value = location.name;
   locationSearch.value = location.name;
+  locationPanelOpen.value = true;
   mapLocationError.value = "";
 }
 
 function clearMapLocation() {
   selectedMapLocation.value = null;
+  locationPanelOpen.value = true;
+}
+
+function toggleLocationPanel() {
+  locationPanelOpen.value = !locationPanelOpen.value;
+}
+
+function toggleTagPanel() {
+  tagPanelOpen.value = !tagPanelOpen.value;
+}
+
+function toggleVisibilityPanel() {
+  visibilityPanelOpen.value = !visibilityPanelOpen.value;
 }
 
 function revokePreviewUrls() {
@@ -237,6 +262,9 @@ function resetForm() {
   uploadedImageUrls.value = [];
   selectedMapLocation.value = null;
   locationSearch.value = "";
+  locationPanelOpen.value = false;
+  tagPanelOpen.value = false;
+  visibilityPanelOpen.value = false;
   revokePreviewUrls();
 }
 
@@ -255,7 +283,10 @@ onBeforeUnmount(() => {
     <GlassPanel class="publish-view__card">
       <section class="publish-view__identity" aria-label="当前发布身份">
         <IdentityBadge :avatar-text="avatarText" :label="identityName" :meta="identityMeta" />
-        <p class="publish-view__identity-copy">{{ publishIdentityCopy }}</p>
+        <div class="publish-view__identity-copy">
+          <p>{{ publishIdentityCopy }}</p>
+          <span>正文是主角，其他信息按需要补充。</span>
+        </div>
       </section>
 
       <InlineError v-if="errorMessage">{{ errorMessage }}</InlineError>
@@ -269,13 +300,30 @@ onBeforeUnmount(() => {
           :body="body"
           :uploading="uploading"
           :publishing="publishing"
+          :title-count="titleCount"
+          :body-count="bodyCount"
+          :selected-files-count="selectedFiles.length"
+          :selected-map-location="selectedMapLocation"
+          :place-name="placeName"
+          :normalized-tag="normalizedTag"
+          :normalized-identity-tag="normalizedIdentityTag"
+          :location-preview-label="locationPreviewLabel"
+          :location-tool-label="locationToolLabel"
+          :location-panel-open="locationPanelOpen"
+          :tag-panel-open="tagPanelOpen"
+          :visibility-panel-open="visibilityPanelOpen"
+          :visibility-label="visibilityLabel"
           @update:title="title = $event"
           @update:body="body = $event"
           @handle-files="handleFiles"
           @remove-image="removeImage"
+          @toggle-location-panel="toggleLocationPanel"
+          @toggle-tag-panel="toggleTagPanel"
+          @toggle-visibility-panel="toggleVisibilityPanel"
         />
 
         <PublishLocationControls
+          :panel-open="locationPanelOpen"
           :filtered-map-locations="filteredMapLocations"
           :selected-map-location="selectedMapLocation"
           :map-location-loading="mapLocationLoading"
@@ -293,12 +341,15 @@ onBeforeUnmount(() => {
         />
 
         <PublishMetaControls
+          :tag-panel-open="tagPanelOpen"
+          :visibility-panel-open="visibilityPanelOpen"
           :tag-input="tagInput"
           :normalized-tag="normalizedTag"
           :identity-tag="identityTag"
           :identity-tag-options="identityTagOptions"
           :visibility="visibility"
           :visibility-options="visibilityOptions"
+          :visibility-label="visibilityLabel"
           @update:tag-input="tagInput = $event"
           @update:identity-tag="identityTag = $event"
           @update:visibility="visibility = $event"
@@ -327,23 +378,38 @@ onBeforeUnmount(() => {
   margin: 0;
 }
 
+.publish-view__card {
+  gap: var(--space-5);
+}
+
+.publish-view__identity {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid rgba(31, 41, 51, 0.08);
+}
+
 .publish-view__identity-copy {
-  margin-top: var(--space-2);
+  display: grid;
+  gap: 4px;
+  justify-items: end;
   color: var(--lian-muted);
   font-size: 13px;
   font-weight: 800;
   line-height: 1.5;
+  text-align: right;
+}
+
+.publish-view__identity-copy span {
+  font-size: 12px;
+  font-weight: 700;
 }
 
 .publish-view__success {
   color: var(--lian-primary);
   font-weight: 850;
-}
-
-.publish-view__identity {
-  padding: var(--space-3);
-  border: 1px solid rgba(31, 41, 51, 0.08);
-  border-radius: var(--radius-card);
-  background: rgba(255, 255, 255, 0.48);
 }
 </style>
