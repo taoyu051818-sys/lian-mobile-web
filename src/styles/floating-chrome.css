@@ -33,26 +33,8 @@
   padding: var(--floating-bar-padding);
 }
 
-.feed-view__tabs,
-.feed-view__tabs.lian-floating-chrome {
-  position: fixed;
-  top: var(--floating-bar-top-offset);
-  right: max(var(--floating-bar-side-inset), env(safe-area-inset-right));
-  left: max(var(--floating-bar-side-inset), env(safe-area-inset-left));
-  z-index: var(--floating-bar-z);
-  display: flex;
-  gap: var(--space-1);
-  width: min(calc(100vw - var(--space-6)), var(--floating-bar-max-width));
-  min-height: var(--floating-bar-height);
-  margin: 0 auto;
-  overflow-x: auto;
-  padding: var(--floating-bar-padding);
-  scrollbar-width: none;
-}
-
-.feed-view__tabs::-webkit-scrollbar,
-.feed-view__tabs.lian-floating-chrome::-webkit-scrollbar {
-  display: none;
+.shell-chrome__tabs.lian-floating-chrome {
+  /* layout and scrollbar hiding inherited from .lian-floating-chrome base and .shell-chrome__tabs */
 }
 
 .feed-view__content.is-under-detail {
@@ -101,7 +83,7 @@
 }
 
 .lian-floating-chrome,
-.feed-view__tabs.lian-floating-chrome,
+.shell-chrome__tabs.lian-floating-chrome,
 .post-detail-panel__topbar.lian-floating-chrome,
 .post-detail-panel__dock.lian-floating-chrome,
 .bottom-tab-bar.lian-floating-chrome,
@@ -115,8 +97,8 @@
 .lian-floating-chrome[data-floating-state="hidden"],
 .lian-floating-chrome[data-floating-state="exiting"],
 .lian-floating-chrome.is-hidden,
-.feed-view__tabs.lian-floating-chrome[data-floating-state="hidden"],
-.feed-view__tabs.lian-floating-chrome[data-floating-state="exiting"],
+.shell-chrome__tabs.lian-floating-chrome[data-floating-state="hidden"],
+.shell-chrome__tabs.lian-floating-chrome[data-floating-state="exiting"],
 .post-detail-panel__topbar.lian-floating-chrome[data-floating-state="hidden"],
 .post-detail-panel__topbar.lian-floating-chrome[data-floating-state="exiting"],
 .post-detail-panel__dock.lian-floating-chrome[data-floating-state="hidden"],
@@ -136,9 +118,9 @@
 .lian-floating-chrome[data-floating-state="visible"],
 .lian-floating-chrome[data-floating-state="entering"],
 .lian-floating-chrome[data-floating-state="progress"],
-.feed-view__tabs.lian-floating-chrome[data-floating-state="visible"],
-.feed-view__tabs.lian-floating-chrome[data-floating-state="entering"],
-.feed-view__tabs.lian-floating-chrome[data-floating-state="progress"],
+.shell-chrome__tabs.lian-floating-chrome[data-floating-state="visible"],
+.shell-chrome__tabs.lian-floating-chrome[data-floating-state="entering"],
+.shell-chrome__tabs.lian-floating-chrome[data-floating-state="progress"],
 .post-detail-panel__topbar.lian-floating-chrome[data-floating-state="visible"],
 .post-detail-panel__topbar.lian-floating-chrome[data-floating-state="entering"],
 .post-detail-panel__topbar.lian-floating-chrome[data-floating-state="progress"],
@@ -158,7 +140,7 @@
   transition: none !important;
 }
 
-.feed-view__tabs.lian-floating-chrome[data-floating-state="progress"],
+.shell-chrome__tabs.lian-floating-chrome[data-floating-state="progress"],
 .post-detail-panel__topbar.lian-floating-chrome[data-floating-state="progress"],
 .post-detail-panel__dock.lian-floating-chrome[data-floating-state="progress"],
 .bottom-tab-bar.lian-floating-chrome[data-floating-state="progress"],
@@ -169,7 +151,7 @@
 /* Entering phase: opacity is on but pointer events are disabled until
    the transition completes and phase reaches visible. */
 .lian-floating-chrome[data-floating-state="entering"],
-.feed-view__tabs.lian-floating-chrome[data-floating-state="entering"],
+.shell-chrome__tabs.lian-floating-chrome[data-floating-state="entering"],
 .post-detail-panel__topbar.lian-floating-chrome[data-floating-state="entering"],
 .post-detail-panel__dock.lian-floating-chrome[data-floating-state="entering"],
 .bottom-tab-bar.lian-floating-chrome[data-floating-state="entering"],
