@@ -3,6 +3,7 @@ import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 import { fetchMapV2Items } from "../api/map";
 import { buildPublishPayload, createMapV2LocationDraft, normalizeIdentityTag, normalizePublishTag, publishPost, uploadPublishImage } from "../api/publish";
 import { fetchAuthMe } from "../api/profile";
+import { placeTypeLabel } from "../utils/placeTypeLabel";
 import { GlassPanel, IdentityBadge, InlineError, LianButton, LocationChip, TagChip } from "../ui";
 import type { MapLocation } from "../types/map";
 import type { PlaceRef } from "../types/place";
@@ -316,7 +317,7 @@ onBeforeUnmount(() => {
               @click="selectMapLocation(location)"
             >
               <strong>{{ location.name }}</strong>
-              <span>{{ location.place?.type || location.type || '校园地点' }}</span>
+              <span>{{ placeTypeLabel(location.place?.type, location.type) }}</span>
             </button>
           </div>
           <div v-else class="publish-view__mini-state">没有匹配地点，可以手填地点发布。</div>
