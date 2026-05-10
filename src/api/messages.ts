@@ -7,14 +7,14 @@ export function normalizeChannelMessage(raw: ChannelMessage): ChannelMessage {
   const actor = raw.actor
     ? {
         ...raw.actor,
-        id: raw.actor.id || `legacy:${raw.actor.identityTag || raw.actor.displayName || "unknown"}`,
+        ...(raw.actor.id ? { id: raw.actor.id, authoritative: true } : {}),
       }
     : undefined;
   return {
     ...raw,
     actor,
     deliveryState: raw.deliveryState || "sent",
-    isSelf: raw.isSelf ?? (actor?.id === clientId),
+    isSelf: raw.isSelf ?? (actor?.authoritative ? actor.id === clientId : false),
   };
 }
 

@@ -5,7 +5,8 @@ export type MessageTabKey = "channel" | "notifications";
 export type MessageDeliveryState = "sending" | "sent" | "delivered" | "read" | "failed";
 
 export interface ChannelMessageActor extends DisplayActor {
-  id: string;
+  id?: string;
+  authoritative?: boolean;
 }
 
 export interface ChannelMessage {

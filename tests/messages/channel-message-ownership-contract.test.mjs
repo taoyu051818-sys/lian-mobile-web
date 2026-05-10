@@ -29,7 +29,8 @@ test("ProfileUser has optional id field", () => {
 
 test("types/messages.ts defines ChannelMessageActor extending DisplayActor", () => {
   assert.match(typesMessages, /export interface ChannelMessageActor extends DisplayActor/);
-  assert.match(typesMessages, /id:\s*string;/);
+  assert.match(typesMessages, /id\?:\s*string;/);
+  assert.match(typesMessages, /authoritative\?:\s*boolean;/);
 });
 
 // --- MessageDeliveryState ---
@@ -63,16 +64,21 @@ test("api/messages.ts exports normalizeChannelMessage", () => {
   assert.match(apiMessages, /export function normalizeChannelMessage/);
 });
 
-test("normalizeChannelMessage synthesizes actor.id for legacy messages", () => {
-  assert.match(apiMessages, /raw\.actor\.id \|\| `legacy:/);
+test("normalizeChannelMessage does not derive actor.id from display fields", () => {
+  assert.doesNotMatch(apiMessages, /legacy:/);
+  assert.doesNotMatch(apiMessages, /identityTag \|\| raw\.actor\.displayName/);
+});
+
+test("normalizeChannelMessage marks server-provided actor.id as authoritative", () => {
+  assert.match(apiMessages, /authoritative:\s*true/);
 });
 
 test("normalizeChannelMessage defaults deliveryState to sent", () => {
   assert.match(apiMessages, /raw\.deliveryState \|\| "sent"/);
 });
 
-test("normalizeChannelMessage computes isSelf from clientId when server omits it", () => {
-  assert.match(apiMessages, /raw\.isSelf \?\? \(actor\?\.id === clientId\)/);
+test("normalizeChannelMessage computes isSelf only when actor id is authoritative", () => {
+  assert.match(apiMessages, /raw\.isSelf \?\? \(actor\?\.authoritative \? actor\.id === clientId : false\)/);
 });
 
 test("fetchChannelMessages normalizes items before returning", () => {
@@ -99,53 +105,80 @@ test("MessagesView messageActor returns ChannelMessageActor with fallback id", (
   assert.match(viewSource, /return item\.actor \|\| \{ id: "" \}/);
 });
 
-// --- Pure JS: normalization backward tolerance ---
+// --- Pure JS: actor id authority semantics ---
 
-test("legacy actor without id gets synthesized id", () => {
-  const legacyActor = { displayName: "小明", identityTag: "校园" };
-  const id = legacyActor.id || `legacy:${legacyActor.identityTag || legacyActor.displayName || "unknown"}`;
-  assert.equal(id, "legacy:校园");
+test("actor without id stays undefined and is non-authoritative", () => {
+  const raw = { displayName: "小明", identityTag: "校园" };
+  const actor = raw.id ? { id: raw.id, authoritative: true } : {};
+  assert.equal(actor.id, undefined);
+  assert.equal(actor.authoritative, undefined);
 });
 
-test("legacy actor without id or identityTag falls back to displayName", () => {
-  const legacyActor = { displayName: "小明" };
-  const id = legacyActor.id || `legacy:${legacyActor.identityTag || legacyActor.displayName || "unknown"}`;
-  assert.equal(id, "legacy:小明");
+test("actor with id is marked authoritative", () => {
+  const raw = { id: "user-abc", displayName: "小明" };
+  const actor = raw.id ? { id: raw.id, authoritative: true } : {};
+  assert.equal(actor.id, "user-abc");
+  assert.equal(actor.authoritative, true);
 });
 
-test("legacy actor with no fields falls back to unknown", () => {
-  const legacyActor = {};
-  const id = legacyActor.id || `legacy:${legacyActor.identityTag || legacyActor.displayName || "unknown"}`;
-  assert.equal(id, "legacy:unknown");
+test("actor without id does not leak display fields into identity", () => {
+  const raw = { displayName: "小明" };
+  const actor = { ...raw, ...(raw.id ? { id: raw.id, authoritative: true } : {}) };
+  assert.equal(actor.id, undefined);
+  assert.equal(actor.displayName, "小明");
+  assert.equal(actor.authoritative, undefined);
 });
 
-test("actor with id is preserved as-is", () => {
-  const actor = { id: "user-abc", displayName: "小明" };
-  const id = actor.id || `legacy:${actor.identityTag || actor.displayName || "unknown"}`;
-  assert.equal(id, "user-abc");
+test("no legacy prefix is ever derived from display fields", () => {
+  const cases = [
+    { displayName: "小明", identityTag: "校园" },
+    { displayName: "小明" },
+    { identityTag: "校园" },
+    {},
+  ];
+  for (const raw of cases) {
+    const id = raw.id || undefined;
+    assert.equal(id, undefined, `expected no derived id for ${JSON.stringify(raw)}`);
+  }
 });
 
-test("isSelf defaults to clientId comparison when server omits it", () => {
+test("isSelf defaults to true for authoritative actor matching clientId", () => {
   const clientId = "client-123";
-  const actorId = "client-123";
+  const actor = { id: "client-123", authoritative: true };
   const rawIsSelf = undefined;
-  const isSelf = rawIsSelf ?? (actorId === clientId);
+  const isSelf = rawIsSelf ?? (actor.authoritative ? actor.id === clientId : false);
   assert.equal(isSelf, true);
 });
 
-test("isSelf defaults to false when actorId differs from clientId", () => {
+test("isSelf defaults to false for authoritative actor not matching clientId", () => {
   const clientId = "client-123";
-  const actorId = "client-456";
+  const actor = { id: "client-456", authoritative: true };
   const rawIsSelf = undefined;
-  const isSelf = rawIsSelf ?? (actorId === clientId);
+  const isSelf = rawIsSelf ?? (actor.authoritative ? actor.id === clientId : false);
+  assert.equal(isSelf, false);
+});
+
+test("isSelf defaults to false for non-authoritative actor even if id matches", () => {
+  const clientId = "client-123";
+  const actor = { id: "client-123", authoritative: false };
+  const rawIsSelf = undefined;
+  const isSelf = rawIsSelf ?? (actor.authoritative ? actor.id === clientId : false);
+  assert.equal(isSelf, false);
+});
+
+test("isSelf defaults to false when actor has no id", () => {
+  const clientId = "client-123";
+  const actor = {};
+  const rawIsSelf = undefined;
+  const isSelf = rawIsSelf ?? (actor.authoritative ? actor.id === clientId : false);
   assert.equal(isSelf, false);
 });
 
 test("server-provided isSelf takes precedence over client computation", () => {
   const clientId = "client-123";
-  const actorId = "client-456";
+  const actor = { id: "client-456", authoritative: true };
   const rawIsSelf = true;
-  const isSelf = rawIsSelf ?? (actorId === clientId);
+  const isSelf = rawIsSelf ?? (actor.authoritative ? actor.id === clientId : false);
   assert.equal(isSelf, true);
 });
 
