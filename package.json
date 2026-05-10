@@ -8,12 +8,10 @@
     "npm": ">=10"
   },
   "scripts": {
-    "start": "node scripts/serve-frontend-runtimes.js",
+    "start": "vite preview --host 0.0.0.0 --port 4301 --strictPort",
     "dev": "vite --host 0.0.0.0",
-    "dev:vue-canary": "vite --host 0.0.0.0 --port 4301 --strictPort",
     "build": "vue-tsc --noEmit && vite build",
     "preview": "vite preview --host 0.0.0.0",
-    "preview:vue-canary": "vite preview --host 0.0.0.0 --port 4301 --strictPort",
     "check": "node scripts/validate-project-structure.js && node scripts/check-encoding-contamination.js && npm run check:runtime-exposure && npm run check:unsafe-dom",
     "check:encoding": "node scripts/check-encoding-contamination.js",
     "check:runtime-exposure": "node scripts/guard-public-runtime-exposure.js",
@@ -21,15 +19,13 @@
     "audit:v-html": "node scripts/audit-v-html-usage.js",
     "test:html-sanitizer": "node scripts/test-html-sanitizer.js",
     "ops:guard": "node scripts/guard-runtime-inventory.js",
-    "serve:legacy": "node scripts/serve-frontend-static-rehearsal.js",
-    "test": "node scripts/smoke-frontend.js http://127.0.0.1:4300",
+    "test": "node scripts/smoke-vue-frontend.js http://127.0.0.1:4301",
     "test:unit": "vitest run",
-    "test:vue-canary": "node scripts/smoke-frontend.js http://127.0.0.1:4301",
     "test:runtime-exposure-guard": "node scripts/test-guard-public-runtime-exposure.js",
     "verify:static": "npm run check && npm run ops:guard && npm run build",
-    "verify:smoke": "node scripts/run-smoke-with-server.js",
+    "verify:smoke": "node scripts/run-smoke-with-server.js --port 4301 -- npm run test:vue",
     "verify": "npm run verify:static && npm run test:unit && npm run verify:smoke",
-    "start:frontend-static": "node scripts/serve-frontend-runtimes.js"
+    "test:vue": "node scripts/smoke-vue-frontend.js http://127.0.0.1:4301"
   },
   "dependencies": {
     "vue": "^3.5.13"
