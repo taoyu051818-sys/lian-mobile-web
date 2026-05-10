@@ -1,124 +1,96 @@
 #!/usr/bin/env node
 
-/**
- * Self-contained smoke test runner with server lifecycle management.
- *
- * Starts the static rehearsal server, waits for it to be reachable,
- * runs the smoke test suite, then stops the server regardless of
- * test outcome.
- *
- * Usage: node scripts/run-smoke-with-server.js [--port PORT]
- */
-
 import { spawn } from "node:child_process";
-import http from "node:http";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
-
-const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
 const portArgIndex = process.argv.indexOf("--port");
-const port = portArgIndex !== -1 ? Number(process.argv[portArgIndex + 1]) : 4300;
+const port = portArgIndex !== -1 ? Number(process.argv[portArgIndex + 1]) : 4301;
+const separatorIndex = process.argv.indexOf("--");
+const smokeCommand = separatorIndex !== -1 ? process.argv.slice(separatorIndex + 1) : ["npm", "run", "test:vue"];
 const baseUrl = `http://127.0.0.1:${port}`;
 
-const STARTUP_TIMEOUT_MS = 15_000;
-const STARTUP_POLL_INTERVAL_MS = 200;
+function wait(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
-function waitForServer(url, timeoutMs) {
-  return new Promise((resolve, reject) => {
-    const deadline = Date.now() + timeoutMs;
+async function fetchOk(url) {
+  try {
+    const response = await fetch(url);
+    return response.ok;
+  } catch {
+    return false;
+  }
+}
 
-    function poll() {
-      const req = http.get(url, (res) => {
-        res.resume();
-        resolve(true);
-      });
+async function waitForServer(url, timeoutMs = 30000) {
+  const startedAt = Date.now();
+  while (Date.now() - startedAt < timeoutMs) {
+    if (await fetchOk(url)) return true;
+    await wait(500);
+  }
+  return false;
+}
 
-      req.on("error", () => {
-        if (Date.now() >= deadline) {
-          reject(new Error(`Server at ${url} did not become reachable within ${timeoutMs}ms`));
-        } else {
-          setTimeout(poll, STARTUP_POLL_INTERVAL_MS);
-        }
-      });
-
-      req.setTimeout(1000, () => {
-        req.destroy();
-        if (Date.now() >= deadline) {
-          reject(new Error(`Server at ${url} did not become reachable within ${timeoutMs}ms`));
-        } else {
-          setTimeout(poll, STARTUP_POLL_INTERVAL_MS);
-        }
-      });
-    }
-
-    poll();
+function spawnLogged(command, args, options = {}) {
+  return spawn(command, args, {
+    stdio: "inherit",
+    shell: process.platform === "win32",
+    ...options
   });
 }
 
-function startServer(port) {
-  const server = spawn(process.execPath, ["scripts/serve-frontend-static-rehearsal.js"], {
-    cwd: rootDir,
-    env: { ...process.env, FRONTEND_PORT: String(port) },
-    stdio: ["ignore", "pipe", "pipe"],
-  });
-
-  server.stdout.on("data", (chunk) => process.stdout.write(`[server] ${chunk}`));
-  server.stderr.on("data", (chunk) => process.stderr.write(`[server] ${chunk}`));
-
-  return server;
-}
-
-function stopServer(server) {
+function run(command, args, options = {}) {
   return new Promise((resolve) => {
-    if (server.exitCode !== null) {
-      resolve();
-      return;
-    }
-
-    const timeout = setTimeout(() => {
-      server.kill("SIGKILL");
-      resolve();
-    }, 5000);
-
-    server.on("exit", () => {
-      clearTimeout(timeout);
-      resolve();
-    });
-
-    server.kill("SIGTERM");
+    const child = spawnLogged(command, args, options);
+    child.on("exit", (code) => resolve(code ?? 1));
+    child.on("error", () => resolve(1));
   });
 }
 
-function runSmoke(baseUrl) {
-  return new Promise((resolve) => {
-    const child = spawn(process.execPath, ["scripts/smoke-frontend.js", baseUrl], {
-      cwd: rootDir,
-      stdio: "inherit",
-    });
+console.log(`[smoke] building Vue frontend`);
+const buildCode = await run("npm", ["run", "build"]);
+if (buildCode !== 0) process.exit(buildCode);
 
-    child.on("exit", (code) => resolve(code));
-  });
+console.log(`[smoke] starting Vite preview on ${baseUrl}`);
+const server = spawn("npm", ["run", "preview", "--", "--host", "0.0.0.0", "--port", String(port), "--strictPort"], {
+  stdio: "inherit",
+  shell: process.platform === "win32",
+  env: {
+    ...process.env,
+    LIAN_VUE_RUNTIME: "1"
+  }
+});
+
+let shuttingDown = false;
+function shutdown() {
+  if (shuttingDown) return;
+  shuttingDown = true;
+  server.kill("SIGTERM");
 }
 
-// --- Main ---
+process.on("SIGINT", () => {
+  shutdown();
+  process.exit(130);
+});
+process.on("SIGTERM", () => {
+  shutdown();
+  process.exit(143);
+});
 
-console.log(`\n[run-smoke] Starting static rehearsal server on port ${port}`);
-
-const server = startServer(port);
-let exitCode = 0;
-
-try {
-  await waitForServer(baseUrl, STARTUP_TIMEOUT_MS);
-  console.log(`[run-smoke] Server ready at ${baseUrl}\n`);
-
-  exitCode = await runSmoke(baseUrl);
-} catch (error) {
-  console.error(`\n[run-smoke] ${error.message}`);
-  exitCode = 1;
-} finally {
-  console.log("\n[run-smoke] Stopping server");
-  await stopServer(server);
+const ready = await waitForServer(baseUrl);
+if (!ready) {
+  console.error(`[smoke] server did not become ready: ${baseUrl}`);
+  shutdown();
+  process.exit(1);
 }
 
-process.exit(exitCode);
+console.log(`[smoke] running ${smokeCommand.join(" ")}`);
+const [command, ...args] = smokeCommand;
+const smokeCode = await run(command, args, {
+  env: {
+    ...process.env,
+    LIAN_SMOKE_BASE_URL: baseUrl
+  }
+});
+
+shutdown();
+process.exit(smokeCode);

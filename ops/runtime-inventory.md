@@ -1,24 +1,25 @@
 # Runtime inventory
 
+## Runtime model
+
+The frontend runs as a Vue 3 + Vite application. The legacy static runtime has been migrated to `taoyu051818-sys/-lian-mobile-web-legacy`.
+
+`npm start` runs `vite preview` on port 4301. `npm run dev` starts the Vite dev server. There is no longer a dual-lane supervisor or static rehearsal server.
+
 ## Dependency preflight contract
 
-The frontend runtime supervisor (`scripts/serve-frontend-runtimes.js`) must not install dependencies at startup.
+The Vite preview server must not install dependencies at startup.
 
-When the Vite binary is missing the supervisor must:
+When the Vite binary is missing the process must:
 
 1. Log the missing binary path.
-2. Log a deployment guidance message referencing `npm ci` or a verified artifact.
-3. Exit with a non-zero status.
+2. Exit with a non-zero status.
 
 This keeps production startup deterministic and aligns runtime behavior with the CI artifact / lockfile supply-chain baseline (#134, #125).
 
-## Windows spawn compatibility
-
-When spawning a `.cmd` shim on Windows (for example the Vite binary) the supervisor must pass `shell: true` so `cmd.exe` resolves the shim correctly. This flag is limited to `.cmd` paths; Unix process startup remains unchanged.
-
 ## Runtime config accessor contract
 
-The shared runtime config accessor (`src/config/runtime-config.ts`) reads `window.LIAN_API_BASE_URL` and `window.LIAN_IMAGE_PROXY_BASE_URL` lazily on every call. The static rehearsal server and Vite dev-server config both validate env vars at startup via an inline `parseEnvUrl` helper that rejects non-absolute URLs. Outside dev contexts the accessor rejects localhost origins and requires the image-proxy URL to be non-empty.
+The shared runtime config accessor (`src/config/runtime-config.ts`) reads `window.LIAN_API_BASE_URL` and `window.LIAN_IMAGE_PROXY_BASE_URL` lazily on every call. The Vite config validates env vars at startup via an inline `parseEnvUrl` helper that rejects non-absolute URLs. Outside dev contexts the accessor rejects localhost origins and requires the image-proxy URL to be non-empty.
 
 This keeps the injection order contract explicit: the serve script injects config into `<head>` before any app module runs, and the accessor never freezes a stale value at import time.
 
@@ -56,4 +57,4 @@ Any PR that changes the Leaflet dependency version, adds or removes Leaflet plug
 
 ## Operational rule
 
-Any PR that changes dependency preflight behavior, the runtime supervisor exit contract, Windows spawn compatibility, the runtime config accessor/env-validation contract, unsafe DOM sink guard coverage, public runtime exposure checks, frontend project-structure validation, frontend verify/test wiring, or UGC HTML sanitizer verification must update this document or another runtime inventory artifact in the same PR.
+Any PR that changes dependency preflight behavior, the runtime config accessor/env-validation contract, unsafe DOM sink guard coverage, public runtime exposure checks, frontend project-structure validation, frontend verify/test wiring, or UGC HTML sanitizer verification must update this document or another runtime inventory artifact in the same PR.
