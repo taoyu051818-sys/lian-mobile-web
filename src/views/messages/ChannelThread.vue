@@ -61,6 +61,10 @@ function messageMeta(item: ChannelMessage) {
       <button type="button" @click="emit('retry')">重新加载</button>
     </InlineError>
 
+    <div class="messages-view__load-more">
+      <LianButton v-if="hasMore" variant="ghost" :loading="loading" @click="emit('loadMore')">加载更早消息</LianButton>
+    </div>
+
     <div v-if="loading && !items.length" class="messages-view__state" role="status">正在加载频道消息…</div>
     <div v-else-if="!items.length" class="messages-view__state">还没有消息</div>
     <div v-else class="messages-view__list" aria-live="polite">
@@ -83,10 +87,6 @@ function messageMeta(item: ChannelMessage) {
         </div>
       </article>
     </div>
-
-    <div class="messages-view__load-more">
-      <LianButton v-if="hasMore" variant="ghost" :loading="loading" @click="emit('loadMore')">加载更早消息</LianButton>
-    </div>
   </section>
 </template>
 
@@ -94,6 +94,7 @@ function messageMeta(item: ChannelMessage) {
 .messages-view__pane {
   display: grid;
   gap: var(--space-4);
+  padding-bottom: calc(var(--space-6) + env(safe-area-inset-bottom));
 }
 
 .messages-view__list {

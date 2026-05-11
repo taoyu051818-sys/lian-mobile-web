@@ -14,13 +14,9 @@ test("MessagesView declares chrome emit for shell bottom tab bar control", () =>
   assert.match(viewSource, /chrome:\s*\[hidden:\s*boolean\]/);
 });
 
-test("MessagesView emits chrome true on mount to hide app bottom tab bar", () => {
-  assert.match(viewSource, /emit\("chrome",\s*true\)/);
-});
-
-test("MessagesView emits chrome false on unmount to restore app bottom tab bar", () => {
+test("MessagesView disposes floating chrome controller on unmount", () => {
   assert.match(viewSource, /onBeforeUnmount/);
-  assert.match(viewSource, /emit\("chrome",\s*false\)/);
+  assert.match(viewSource, /composerChrome\.dispose\(\)/);
 });
 
 test("MessagesView uses floating chrome controller for composer lifecycle", () => {
@@ -30,14 +26,12 @@ test("MessagesView uses floating chrome controller for composer lifecycle", () =
   assert.match(viewSource, /composerChromeStyle/);
 });
 
-test("MessagesView hides bottom tab bar when switching to channel tab", () => {
+test("MessagesView shows composer chrome when switching to channel tab", () => {
   assert.match(viewSource, /composerChrome\.show\(\)/);
-  assert.match(viewSource, /emit\("chrome",\s*true\)/);
 });
 
-test("MessagesView shows bottom tab bar when switching to notifications tab", () => {
+test("MessagesView hides composer chrome when switching to notifications tab", () => {
   assert.match(viewSource, /composerChrome\.hide\(\)/);
-  assert.match(viewSource, /emit\("chrome",\s*false\)/);
 });
 
 test("MessagesTabs renders as shell top chrome with floating chrome classes", () => {
