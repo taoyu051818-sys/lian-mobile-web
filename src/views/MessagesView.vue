@@ -50,14 +50,6 @@ const composerActorName = computed(() => activeAlias.value?.name || currentUser.
 const composerAvatarText = computed(() => composerActorName.value.slice(0, 2) || "同");
 const composerSignalMeta = computed(() => composerIdentityTag.value ? `身份信号：${composerIdentityTag.value}` : "未选择身份信号");
 
-function stripHtml(html?: string) {
-  if (!html) return "";
-  return html
-    .replace(/<[^>]+>/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
 function actorDisplayName(actor?: DisplayActor | null, fallback = "") {
   return actor?.displayName || actor?.username || actor?.name || fallback || "同学";
 }
@@ -67,7 +59,7 @@ function actorAvatarText(actor?: DisplayActor | null, fallback = "") {
 }
 
 function messageText(item: ChannelMessage) {
-  return item.content || stripHtml(item.contentHtml) || "这条消息暂时没有内容。";
+  return item.plainText || item.content || "这条消息暂时没有内容。";
 }
 
 function messageActor(item: ChannelMessage): ChannelMessageActor {
