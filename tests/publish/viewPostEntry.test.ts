@@ -42,4 +42,26 @@ describe("post-publish view entry URL", () => {
     const expected = `#/post/${tid}`;
     expect(buildPostDetailHref(tid)).toBe(expected);
   });
+
+  it("returns empty string when tid is undefined (falsy)", () => {
+    expect(buildPostDetailHref(undefined as unknown as null)).toBe("");
+  });
+
+  it("returns empty string when tid is NaN (falsy)", () => {
+    expect(buildPostDetailHref(NaN as unknown as null)).toBe("");
+  });
+
+  it("preserves large numeric tid without truncation", () => {
+    const tid = 9007199254740991; // Number.MAX_SAFE_INTEGER
+    expect(buildPostDetailHref(tid)).toBe("#/post/9007199254740991");
+  });
+
+  it("preserves hyphenated string tid", () => {
+    expect(buildPostDetailHref("a1b2-c3d4")).toBe("#/post/a1b2-c3d4");
+  });
+
+  it("href starts with hash-route prefix", () => {
+    const href = buildPostDetailHref(1);
+    expect(href.startsWith("#/post/")).toBe(true);
+  });
 });
