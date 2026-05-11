@@ -2,6 +2,18 @@ import { apiGet, apiSend } from "./http";
 import { ensureClientId } from "../platform/browser-storage";
 import type { ChannelMessage, ChannelReadPayload, ChannelResponse, NotificationResponse, SendChannelMessagePayload } from "../types/messages";
 
+export function extractChannelMessagePlainText(html?: string): string {
+  if (!html) return "";
+  return html
+    .replace(/<[^>]+>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+export function resolveChannelMessagePlainText(message: Pick<ChannelMessage, "content" | "contentHtml" | "plainText">): string {
+  return message.plainText?.trim() || message.content?.trim() || extractChannelMessagePlainText(message.contentHtml);
+}
+
 export function normalizeChannelMessage(raw: ChannelMessage): ChannelMessage {
   const clientId = ensureClientId();
   const actor = raw.actor
@@ -10,9 +22,11 @@ export function normalizeChannelMessage(raw: ChannelMessage): ChannelMessage {
         ...(raw.actor.id ? { id: raw.actor.id, authoritative: true } : {}),
       }
     : undefined;
+  const plainText = resolveChannelMessagePlainText(raw);
   return {
     ...raw,
     actor,
+    plainText,
     deliveryState: raw.deliveryState || "sent",
     isSelf: raw.isSelf ?? (actor?.authoritative ? actor.id === clientId : false),
   };
@@ -44,6 +58,7 @@ export function buildPendingChannelMessage(
   return {
     id,
     content,
+    plainText: content,
     actor: {
       id: currentUser?.id || "",
       name,
