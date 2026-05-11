@@ -105,7 +105,8 @@ function messageMeta(item: ChannelMessage) {
 .messages-view__message {
   display: grid;
   grid-template-columns: 32px minmax(0, 1fr);
-  gap: var(--space-2);
+  column-gap: var(--space-2);
+  row-gap: var(--space-1);
   align-items: flex-start;
   max-width: 85%;
 }
@@ -121,7 +122,7 @@ function messageMeta(item: ChannelMessage) {
 
 .messages-view__message-avatar {
   grid-column: 1;
-  grid-row: 2;
+  grid-row: 1;
   flex-shrink: 0;
 }
 
@@ -136,12 +137,20 @@ function messageMeta(item: ChannelMessage) {
   grid-column: 1;
 }
 
-.messages-view__message-author {
+.messages-view__message-author.identity-badge__text {
   display: flex;
+  flex-direction: row;
   flex-wrap: wrap;
   gap: var(--space-1);
   align-items: baseline;
   padding-inline: var(--space-1);
+  min-width: 0;
+  line-height: 1.2;
+}
+
+.messages-view__message-author strong,
+.messages-view__message-author small {
+  line-height: inherit;
 }
 
 .messages-view__bubble {
