@@ -65,10 +65,11 @@ const emit = defineEmits<{
   transition: transform var(--floating-chrome-motion-duration, 260ms) var(--motion-ease-standard),
     opacity var(--floating-chrome-motion-duration, 260ms) var(--motion-ease-standard),
     filter var(--floating-chrome-motion-duration, 260ms) var(--motion-ease-standard),
+    bottom 200ms ease,
     min-height 180ms ease,
     align-items 180ms ease;
   backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
-  bottom: var(--floating-bar-bottom-offset);
+  bottom: calc(var(--floating-bar-bottom-offset) + var(--keyboard-inset-bottom, 0px));
   display: flex;
   gap: var(--space-2);
   align-items: center;
