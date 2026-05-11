@@ -536,59 +536,6 @@ onBeforeUnmount(() => {
   touch-action: none;
 }
 
-.feed-view__card-transition {
-  position: fixed;
-  top: var(--card-top);
-  left: var(--card-left);
-  z-index: 160;
-  display: grid;
-  overflow: hidden;
-  width: var(--card-width);
-  height: var(--card-height);
-  border: 1px solid var(--lian-line);
-  border-radius: var(--radius-card);
-  background: var(--lian-card-strong);
-  box-shadow: var(--shadow-floating);
-  pointer-events: none;
-  transition: top 300ms var(--motion-ease-standard), left 300ms var(--motion-ease-standard), width 300ms var(--motion-ease-standard), height 300ms var(--motion-ease-standard), border-radius 300ms var(--motion-ease-standard), opacity 220ms ease, filter 300ms ease;
-}
-
-.feed-view__card-transition.is-active {
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  border-radius: 0;
-  opacity: 0;
-  filter: blur(5px);
-}
-
-.feed-view__card-transition img {
-  width: 100%;
-  min-height: 58%;
-  object-fit: cover;
-}
-
-.feed-view__card-transition strong {
-  align-self: end;
-  padding: var(--space-4);
-  color: var(--lian-ink);
-  font-size: 18px;
-  line-height: 1.34;
-}
-
-.feed-view__card-transition-tag {
-  position: absolute;
-  top: var(--space-3);
-  left: var(--space-3);
-  padding: 5px 8px;
-  border-radius: var(--radius-chip);
-  background: rgba(17, 24, 39, 0.64);
-  color: #fff;
-  font-size: 11px;
-  font-weight: 900;
-}
-
 .feed-update-probe-motion-enter-active,
 .feed-update-probe-motion-leave-active {
   transition: opacity 180ms ease, transform 180ms ease, filter 180ms ease;
