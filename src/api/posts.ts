@@ -1,7 +1,18 @@
 import { apiGet, apiSend } from "./http";
 import { ensureClientId } from "../platform/browser-storage";
+import {
+  asBoolean,
+  asNumber,
+  asRecord,
+  asString,
+  asStringArray,
+  normalizeDisplayActor,
+  normalizeFeedItemId,
+  normalizePlaceRef,
+  normalizeSourceSignal,
+} from "../platform/api-normalizers";
 import type { FeedItemId } from "../types/feed";
-import type { PostDetail } from "../types/post";
+import type { PostDetail, PostReply } from "../types/post";
 
 export interface PostLikeResponse {
   liked: boolean;
@@ -17,22 +28,83 @@ export interface ReportPostPayload {
   reason: string;
 }
 
+function normalizePostReply(value: unknown, fallbackId: FeedItemId): PostReply {
+  const record = asRecord(value);
+
+  return {
+    id: normalizeFeedItemId(record.id, fallbackId),
+    content: asString(record.content),
+    actor: normalizeDisplayActor(record.actor),
+    source: normalizeSourceSignal(record.source),
+    timestampISO: asString(record.timestampISO ?? record.time),
+  };
+}
+
+export function normalizePostDetail(value: unknown, fallbackId: FeedItemId): PostDetail {
+  const record = asRecord(value);
+  const tid = normalizeFeedItemId(record.tid, fallbackId);
+  const rawReplies = Array.isArray(record.replies)
+    ? record.replies.filter((reply) => reply && typeof reply === "object")
+    : [];
+  const bookmarkedValue = "bookmarked" in record ? record.bookmarked : record.saved;
+
+  return {
+    tid,
+    title: asString(record.title),
+    cover: asString(record.cover),
+    primaryTag: asString(record.primaryTag),
+    actor: normalizeDisplayActor(record.actor),
+    source: normalizeSourceSignal(record.source),
+    place: normalizePlaceRef(record.place),
+    timeLabel: asString(record.timeLabel ?? record.time),
+    timestampISO: asString(record.timestampISO),
+    likeCount: Math.max(0, Math.trunc(asNumber(record.likeCount, 0))),
+    liked: asBoolean(record.liked),
+    locationArea: asString(record.locationArea),
+    contentHtml: asString(record.contentHtml ?? record.html),
+    imageUrls: asStringArray(record.imageUrls ?? record.images),
+    sourceUrl: asString(record.sourceUrl ?? record.url),
+    replies: rawReplies.map((reply, index) => normalizePostReply(reply, tid * 1000 + index + 1)),
+    bookmarked: asBoolean(bookmarkedValue),
+  };
+}
+
+export function normalizePostLikeResponse(value: unknown): PostLikeResponse {
+  const record = asRecord(value);
+
+  return {
+    liked: asBoolean(record.liked),
+    likeCount: Math.max(0, Math.trunc(asNumber(record.likeCount, 0))),
+  };
+}
+
+export function normalizePostSaveResponse(value: unknown): PostSaveResponse {
+  const record = asRecord(value);
+
+  return {
+    saved: asBoolean(record.saved),
+  };
+}
+
 export async function fetchPostDetail(id: FeedItemId): Promise<PostDetail> {
-  return apiGet<PostDetail>(`/api/posts/${encodeURIComponent(String(id))}`);
+  const data = await apiGet<unknown>(`/api/posts/${encodeURIComponent(String(id))}`);
+  return normalizePostDetail(data, id);
 }
 
 export async function togglePostLike(id: FeedItemId, liked: boolean): Promise<PostLikeResponse> {
-  return apiSend<PostLikeResponse>(`/api/posts/${encodeURIComponent(String(id))}/like`, {
+  const data = await apiSend<unknown>(`/api/posts/${encodeURIComponent(String(id))}/like`, {
     method: "POST",
     body: JSON.stringify({ liked }),
   });
+  return normalizePostLikeResponse(data);
 }
 
 export async function togglePostSave(id: FeedItemId, saved: boolean): Promise<PostSaveResponse> {
-  return apiSend<PostSaveResponse>(`/api/posts/${encodeURIComponent(String(id))}/save`, {
+  const data = await apiSend<unknown>(`/api/posts/${encodeURIComponent(String(id))}/save`, {
     method: "POST",
     body: JSON.stringify({ saved }),
   });
+  return normalizePostSaveResponse(data);
 }
 
 export async function reportPost(id: FeedItemId, payload: ReportPostPayload): Promise<void> {
