@@ -85,6 +85,11 @@ const knownPlaceLabel = computed(() => {
 });
 const locationPreviewLabel = computed(() => knownPlaceLabel.value || placeName.value.trim() || "未绑定地点");
 const locationBindingMeta = computed(() => selectedMapLocation.value ? "已绑定已知地点" : "手填地点仅作为展示文本");
+const postDetailUrl = computed(() => {
+  const tid = lastTid.value;
+  if (!tid) return "";
+  return `#/post/${tid}`;
+});
 
 const visibilityOptions: Array<{ value: PublishVisibility; label: string }> = [
   { value: "public", label: "公开" },
@@ -290,7 +295,15 @@ onBeforeUnmount(() => {
       </section>
 
       <InlineError v-if="errorMessage">{{ errorMessage }}</InlineError>
-      <p v-if="successMessage" class="publish-view__success">{{ successMessage }}</p>
+      <div v-if="successMessage" class="publish-view__success-block">
+        <p class="publish-view__success">{{ successMessage }}</p>
+        <a
+          v-if="postDetailUrl"
+          class="publish-view__view-post"
+          :href="postDetailUrl"
+          data-testid="publish-view-post-link"
+        >查看帖子</a>
+      </div>
 
       <form class="publish-view__form" @submit.prevent="submitPublish">
         <PublishComposer
@@ -409,8 +422,25 @@ onBeforeUnmount(() => {
   font-weight: 700;
 }
 
+.publish-view__success-block {
+  display: grid;
+  gap: var(--space-2);
+}
+
 .publish-view__success {
   color: var(--lian-primary);
   font-weight: 850;
+  margin: 0;
+}
+
+.publish-view__view-post {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--lian-primary);
+  font-size: 14px;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 </style>
