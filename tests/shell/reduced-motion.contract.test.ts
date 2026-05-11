@@ -49,7 +49,22 @@ describe("floating chrome reduced-motion contract", () => {
 describe("Feed detail reduced-motion guards", () => {
   const viewSource = readRepoFile("../../src/views/FeedView.vue");
   const detailSource = readRepoFile("../../src/views/feed/useFeedDetail.ts");
+  const sharedSource = readRepoFile("../../src/motion/useReducedMotion.ts");
   const reducedMotionBlock = getReducedMotionBlock(viewSource);
+
+  it("FeedView imports prefersReducedMotion from the shared module instead of defining it locally", () => {
+    expect(viewSource).toContain(
+      'import { prefersReducedMotion } from "../motion/useReducedMotion"'
+    );
+    // Local function definition must be gone
+    expect(viewSource).not.toContain("function prefersReducedMotion()");
+  });
+
+  it("shared module exports prefersReducedMotion with SSR-safe matchMedia check", () => {
+    expect(sharedSource).toContain("export function prefersReducedMotion");
+    expect(sharedSource).toContain("window.matchMedia");
+    expect(sharedSource).toContain("prefers-reduced-motion: reduce");
+  });
 
   it("short-circuits detail open and close motion when reduced motion is enabled", () => {
     expect(viewSource).toContain(
@@ -95,5 +110,56 @@ describe("shell chrome tabs reduced-motion stylesheet", () => {
     expect(reducedMotionBlock).toContain(".shell-chrome__tab");
     expect(reducedMotionBlock).not.toContain(".feed-view__tab");
     expect(reducedMotionBlock).toContain("transition: none");
+  });
+});
+
+describe("card camera timer hygiene (#254)", () => {
+  const viewSource = readRepoFile("../../src/views/FeedView.vue");
+
+  it("FeedView saves and cancels card transition rAF handle", () => {
+    expect(viewSource).toContain("let pendingCardRaf = 0");
+    expect(viewSource).toContain("cancelAnimationFrame(pendingCardRaf)");
+    expect(viewSource).toContain("pendingCardRaf = requestAnimationFrame(");
+    expect(viewSource).toContain("cancelCardTransitionTimers()");
+  });
+
+  it("FeedView saves and cancels card transition timeout handle", () => {
+    expect(viewSource).toContain("let pendingCardTimer: ReturnType<typeof setTimeout>");
+    expect(viewSource).toContain("clearTimeout(pendingCardTimer)");
+    expect(viewSource).toContain("pendingCardTimer = window.setTimeout(");
+  });
+
+  it("FeedView cancels card transition timers on unmount", () => {
+    // The onBeforeUnmount hook should call cancelCardTransitionTimers
+    const unmountMatch = viewSource.match(
+      /onBeforeUnmount\(\(\) => \{[\s\S]*?cancelCardTransitionTimers\(\)/,
+    );
+    expect(unmountMatch).toBeTruthy();
+  });
+});
+
+describe("detail return timer hygiene (#254)", () => {
+  const detailSource = readRepoFile("../../src/views/feed/useFeedDetail.ts");
+
+  it("useFeedDetail saves and cancels return animation timeout handle", () => {
+    expect(detailSource).toContain("let pendingReturnTimer: ReturnType<typeof setTimeout>");
+    expect(detailSource).toContain("clearTimeout(pendingReturnTimer)");
+    expect(detailSource).toContain("pendingReturnTimer = window.setTimeout(");
+    expect(detailSource).toContain("cancelPendingReturnTimer()");
+  });
+
+  it("useFeedDetail cancels return timer on unmount", () => {
+    const unmountMatch = detailSource.match(
+      /onBeforeUnmount\(\(\) => \{[\s\S]*?cancelPendingReturnTimer\(\)/,
+    );
+    expect(unmountMatch).toBeTruthy();
+  });
+
+  it("useFeedDetail cancels existing return timer when a new close supersedes", () => {
+    // closeDetailWithCardify should call cancelPendingReturnTimer before creating new timer
+    const closeMatch = detailSource.match(
+      /function closeDetailWithCardify[\s\S]*?cancelPendingReturnTimer\(\)[\s\S]*?pendingReturnTimer = window\.setTimeout/,
+    );
+    expect(closeMatch).toBeTruthy();
   });
 });

@@ -2,6 +2,7 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { fetchFeed } from "../api/feed";
 import { useFloatingChromeController } from "../motion/floatingChrome";
+import { prefersReducedMotion } from "../motion/useReducedMotion";
 import { useShellChrome } from "../shell/useShellChrome";
 import type { FeedItem, FeedItemId, FeedTab } from "../types/feed";
 import { InlineError, LianButton } from "../ui";
@@ -99,8 +100,19 @@ function dismissUpdateProbe() {
   }
 }
 
-function prefersReducedMotion() {
-  return typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+// QUARANTINE: v1 card-camera overlay timer handles (issue #85 / #274).
+let pendingCardRaf = 0;
+let pendingCardTimer: ReturnType<typeof setTimeout> | undefined;
+
+function cancelCardTransitionTimers() {
+  if (pendingCardRaf) {
+    cancelAnimationFrame(pendingCardRaf);
+    pendingCardRaf = 0;
+  }
+  if (pendingCardTimer !== undefined) {
+    clearTimeout(pendingCardTimer);
+    pendingCardTimer = undefined;
+  }
 }
 
 // Detail lifecycle composable: owns detail data, history, open/close/retry.
@@ -119,12 +131,15 @@ const {
   // QUARANTINE: v1 card-camera overlay (issue #85 / #274). Temporary scaffolding; do not extend.
   startCardTransition(payload) {
     if (!payload || typeof window === "undefined" || prefersReducedMotion()) return;
+    cancelCardTransitionTimers();
     cardTransition.value = payload;
     cardTransitionActive.value = false;
     void nextTick(() => {
-      requestAnimationFrame(() => {
+      pendingCardRaf = requestAnimationFrame(() => {
+        pendingCardRaf = 0;
         cardTransitionActive.value = true;
-        window.setTimeout(() => {
+        pendingCardTimer = window.setTimeout(() => {
+          pendingCardTimer = undefined;
           cardTransition.value = null;
           cardTransitionActive.value = false;
         }, 320);
@@ -326,6 +341,7 @@ watch([tabs, activeTab, feedTabsChromeState], () => {
 });
 
 onBeforeUnmount(() => {
+  cancelCardTransitionTimers();
   setRegion("top", { tabs: null, onTabSelect: null, visible: false });
   feedTabsChrome.dispose();
   detailChrome.dispose();

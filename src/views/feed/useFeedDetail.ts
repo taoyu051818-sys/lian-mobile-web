@@ -45,6 +45,14 @@ export function useFeedDetail(deps: FeedDetailDeps) {
   const detailGestureLocked = ref<"horizontal" | "vertical" | null>(null);
   const detailHistoryActive = ref(false);
   const ignoreNextPopState = ref(false);
+  let pendingReturnTimer: ReturnType<typeof setTimeout> | undefined;
+
+  function cancelPendingReturnTimer() {
+    if (pendingReturnTimer !== undefined) {
+      clearTimeout(pendingReturnTimer);
+      pendingReturnTimer = undefined;
+    }
+  }
 
   const detailOpen = computed(() => selectedPostId.value !== null);
   const detailCardifyProgress = computed(() => Math.min(1, Math.max(0, Math.abs(detailDragX.value) / deps.cardifyDistance)));
@@ -145,6 +153,7 @@ export function useFeedDetail(deps: FeedDetailDeps) {
       resetDetailState();
       return;
     }
+    cancelPendingReturnTimer();
     deps.updateViewport();
     detailDragging.value = false;
     detailReturning.value = true;
@@ -158,7 +167,8 @@ export function useFeedDetail(deps: FeedDetailDeps) {
     deps.emitChrome(false);
 
     detailDragX.value = Math.sign(direction || 1) * deps.cardifyDistance;
-    window.setTimeout(() => {
+    pendingReturnTimer = window.setTimeout(() => {
+      pendingReturnTimer = undefined;
       resetDetailState();
     }, deps.returnAnimationMs);
   }
@@ -226,6 +236,7 @@ export function useFeedDetail(deps: FeedDetailDeps) {
   });
 
   onBeforeUnmount(() => {
+    cancelPendingReturnTimer();
     clearDetailHistory();
     window.removeEventListener("popstate", onWindowPopState);
   });
