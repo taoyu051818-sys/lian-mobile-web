@@ -3,6 +3,7 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { LianApiError } from "../api/http";
 import { fetchPostDetail } from "../api/posts";
 import { activateProfileAlias, deactivateProfileAlias, fetchAuthMe, fetchProfileTab, logoutAuth } from "../api/profile";
+import { getRecentReadHistoryIds } from "../platform/browser-storage";
 import { useShellChrome } from "../shell/useShellChrome";
 import { InlineError } from "../ui";
 import type { FeedItemId } from "../types/feed";
@@ -89,12 +90,7 @@ function applyProfileChrome() {
 watch([user, editorOpen], applyProfileChrome);
 
 function readHistoryIds() {
-  try {
-    const history = JSON.parse(localStorage.getItem("lian.readHistory") || "[]") as Array<{ tid: FeedItemId }>;
-    return history.slice().reverse().map((entry) => entry.tid).slice(0, 50);
-  } catch {
-    return [];
-  }
+  return getRecentReadHistoryIds(localStorage, 50);
 }
 
 function isMissingSessionError(error: unknown) {
