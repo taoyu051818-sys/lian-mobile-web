@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { LianButton } from "../../ui";
-
 defineProps<{
   editorOpen: boolean;
 }>();
@@ -13,19 +11,41 @@ const emit = defineEmits<{
 
 <template>
   <div class="profile-actions">
-    <LianButton variant="tonal" @click="emit('toggle-editor')">
+    <button type="button" class="profile-actions__btn" @click="emit('toggle-editor')">
       {{ editorOpen ? "收起编辑" : "编辑资料" }}
-    </LianButton>
-    <LianButton variant="ghost" @click="emit('logout')">退出登录</LianButton>
+    </button>
+    <span class="profile-actions__divider" aria-hidden="true">·</span>
+    <button type="button" class="profile-actions__btn profile-actions__btn--muted" @click="emit('logout')">
+      退出登录
+    </button>
   </div>
 </template>
 
 <style scoped>
 .profile-actions {
   display: flex;
-  flex-wrap: wrap;
   gap: var(--space-2);
   align-items: center;
-  justify-content: flex-start;
+  justify-content: center;
+}
+
+.profile-actions__divider {
+  color: var(--lian-faint);
+}
+
+.profile-actions__btn {
+  min-height: 36px;
+  padding: 0 var(--space-3);
+  border: 0;
+  border-radius: var(--radius-chip);
+  background: none;
+  color: var(--lian-primary);
+  font-size: 13px;
+  font-weight: 850;
+  cursor: pointer;
+}
+
+.profile-actions__btn--muted {
+  color: var(--lian-muted);
 }
 </style>

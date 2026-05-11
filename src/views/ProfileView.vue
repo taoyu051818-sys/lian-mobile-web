@@ -3,7 +3,7 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { LianApiError } from "../api/http";
 import { fetchAuthMe, fetchProfileTab, logoutAuth } from "../api/profile";
 import { useShellChrome } from "../shell/useShellChrome";
-import { GlassPanel, InlineError } from "../ui";
+import { InlineError } from "../ui";
 import type { FeedItemId } from "../types/feed";
 import type { ProfileListItem, ProfileTabKey, ProfileUser } from "../types/profile";
 import AuthPanel from "./auth/AuthPanel.vue";
@@ -25,7 +25,7 @@ const profileItems = ref<ProfileListItem[]>([]);
 const editorOpen = ref(false);
 
 const tabs: Array<{ key: ProfileTabKey; label: string; empty: string }> = [
-  { key: "history", label: "浏览记录", empty: "暂无浏览记录" },
+  { key: "history", label: "浏览", empty: "暂无浏览记录" },
   { key: "saved", label: "收藏", empty: "暂无收藏" },
   { key: "liked", label: "赞过", empty: "暂无点赞" },
 ];
@@ -199,54 +199,64 @@ onBeforeUnmount(() => {
 
 <template>
   <section class="profile-view" aria-label="我的">
-    <GlassPanel class="profile-view__card">
-      <InlineError v-if="errorMessage">
-        {{ errorMessage }}
-        <button type="button" @click="loadProfile">重新加载</button>
-      </InlineError>
+    <InlineError v-if="errorMessage">
+      {{ errorMessage }}
+      <button type="button" @click="loadProfile">重新加载</button>
+    </InlineError>
 
-      <div v-if="loading" class="profile-view__state" role="status">正在加载个人资料…</div>
+    <div v-if="loading" class="profile-view__state" role="status">正在加载个人资料…</div>
 
-      <template v-else-if="user">
-        <ProfileHeader
-          :user="user"
-          :avatar-text="avatarText"
-          :display-name="displayName"
-          :identity-meta="identityMeta"
-          :user-tags="userTags"
-          :active-alias="activeAlias"
-          :active-alias-hint="activeAliasHint"
-          :active-alias-summary="activeAliasSummary"
-        />
+    <template v-else-if="user">
+      <div class="profile-view__hero-bg" aria-hidden="true"></div>
 
-        <ProfileActions :editor-open="editorOpen" @toggle-editor="editorOpen = !editorOpen" @logout="logout" />
+      <ProfileHeader
+        :user="user"
+        :avatar-text="avatarText"
+        :display-name="displayName"
+        :identity-meta="identityMeta"
+        :user-tags="userTags"
+        :active-alias="activeAlias"
+        :active-alias-hint="activeAliasHint"
+        :active-alias-summary="activeAliasSummary"
+      />
 
-        <ProfileEditorPanel v-if="editorOpen" :user="user" @updated="handleProfileUpdated" />
+      <ProfileActions :editor-open="editorOpen" @toggle-editor="editorOpen = !editorOpen" @logout="logout" />
 
-        <ProfileTabs :tabs="tabs" :active-tab="activeTab" @select="loadProfileList" />
+      <ProfileEditorPanel v-if="editorOpen" :user="user" @updated="handleProfileUpdated" />
 
-        <ProfileCollectionList
-          :items="profileItems"
-          :loading="listLoading"
-          :empty-text="listEmptyText"
-          :error="listError"
-          @retry="loadProfileList(activeTab)"
-        />
-      </template>
+      <ProfileTabs :tabs="tabs" :active-tab="activeTab" @select="loadProfileList" />
 
-      <section v-else class="profile-view__guest">
-        <AuthPanel @authenticated="handleAuthenticated" />
-      </section>
-    </GlassPanel>
+      <ProfileCollectionList
+        :items="profileItems"
+        :loading="listLoading"
+        :empty-text="listEmptyText"
+        :error="listError"
+        @retry="loadProfileList(activeTab)"
+      />
+    </template>
+
+    <section v-else class="profile-view__guest">
+      <AuthPanel @authenticated="handleAuthenticated" />
+    </section>
   </section>
 </template>
 
 <style scoped>
-.profile-view,
-.profile-view__card,
-.profile-view__guest {
+.profile-view {
+  position: relative;
   display: grid;
   gap: var(--space-4);
+  padding-bottom: var(--space-6);
+}
+
+.profile-view__hero-bg {
+  position: absolute;
+  top: 0;
+  left: calc(-1 * var(--space-4));
+  right: calc(-1 * var(--space-4));
+  height: 200px;
+  background: linear-gradient(180deg, var(--lian-primary-soft) 0%, transparent 100%);
+  pointer-events: none;
 }
 
 .profile-view__state {
@@ -255,6 +265,12 @@ onBeforeUnmount(() => {
   place-items: center;
   color: var(--lian-muted);
   text-align: center;
+}
+
+.profile-view__guest {
+  display: grid;
+  gap: var(--space-4);
+  padding-top: var(--space-6);
 }
 
 .inline-error button {

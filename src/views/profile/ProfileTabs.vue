@@ -12,13 +12,15 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <nav class="profile-tabs" aria-label="个人内容分类">
+  <nav class="profile-tabs" role="tablist" aria-label="个人内容分类">
     <button
       v-for="tab in tabs"
       :key="tab.key"
       type="button"
+      role="tab"
       class="profile-tabs__tab"
       :class="{ 'is-active': activeTab === tab.key }"
+      :aria-selected="activeTab === tab.key"
       @click="emit('select', tab.key)"
     >
       {{ tab.label }}
@@ -29,24 +31,30 @@ const emit = defineEmits<{
 <style scoped>
 .profile-tabs {
   display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
-  align-items: center;
-  justify-content: flex-start;
+  gap: 0;
+  align-items: stretch;
+  border-bottom: 1px solid rgba(31, 41, 51, 0.08);
 }
 
 .profile-tabs__tab {
-  min-height: 36px;
-  padding: 0 var(--space-3);
-  border: 1px solid var(--glass-border);
-  border-radius: var(--radius-chip);
-  background: rgba(255, 255, 255, 0.54);
+  flex: 1;
+  min-height: 44px;
+  padding: var(--space-2) var(--space-3);
+  border: 0;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  background: none;
   color: var(--lian-muted);
+  font-size: 14px;
   font-weight: 850;
+  text-align: center;
+  cursor: pointer;
+  transition: color 0.15s ease, border-color 0.15s ease;
 }
 
 .profile-tabs__tab.is-active {
-  background: var(--lian-ink);
-  color: #fff;
+  border-bottom-color: var(--lian-primary);
+  color: var(--lian-ink);
+  font-weight: 900;
 }
 </style>
