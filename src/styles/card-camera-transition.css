@@ -17,6 +17,7 @@
 }
 
 .feed-view__card-transition {
+  position: fixed !important;
   top: var(--card-top) !important;
   left: var(--card-left) !important;
   z-index: 170 !important;
