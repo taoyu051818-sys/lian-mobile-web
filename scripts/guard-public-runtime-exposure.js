@@ -17,7 +17,6 @@ const textExtensions = new Set([
 
 const productionEntryFiles = [
   "index.html",
-  "public/index.html",
   "src/main.ts",
   "src/App.vue",
   "vite.config.ts"

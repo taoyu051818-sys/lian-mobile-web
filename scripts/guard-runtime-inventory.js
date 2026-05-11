@@ -11,7 +11,8 @@ const isCi = process.env.CI === "true" || process.env.GITHUB_ACTIONS === "true";
 
 const requiredFiles = [
   ".github/pull_request_template.md",
-  "ops/runtime-inventory.schema.json"
+  "ops/runtime-inventory.schema.json",
+  "index.html"
 ];
 
 const opsInventoryFiles = [
