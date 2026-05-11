@@ -126,8 +126,8 @@ export function normalizeFeedItem(value: unknown): FeedItem | null {
   const { cardTemplate, cardTemplateSource, presentationIntent } = normalizeFeedCardTemplate({
     cover,
     contentType,
-    presentationIntent: record.presentationIntent,
-    cardTemplate: record.cardTemplate,
+    presentationIntent: record.presentationIntent as FeedPresentationIntent | string | null | undefined,
+    cardTemplate: record.cardTemplate as FeedPresentationIntent | null | undefined,
   });
 
   return {
