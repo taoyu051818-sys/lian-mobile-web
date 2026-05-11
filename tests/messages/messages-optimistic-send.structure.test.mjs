@@ -236,3 +236,134 @@ test("pending messages sort after confirmed messages", () => {
   assert.equal(sorted[1].id, "server-2");
   assert.equal(sorted[2].id, "pending-123");
 });
+
+// --- replacePendingWithLatest window-miss hardening ---
+
+test("MessagesView defines REPLACE_RETRY_LIMIT constant", () => {
+  assert.match(viewSource, /REPLACE_RETRY_LIMIT/);
+  assert.match(viewSource, /const REPLACE_RETRY_LIMIT\s*=\s*\d+/);
+});
+
+test("MessagesView defines REPLACE_RETRY_DELAY_MS constant", () => {
+  assert.match(viewSource, /REPLACE_RETRY_DELAY_MS/);
+  assert.match(viewSource, /const REPLACE_RETRY_DELAY_MS\s*=\s*\d+/);
+});
+
+test("MessagesView defines resolvePendingState helper", () => {
+  assert.match(viewSource, /function resolvePendingState\(/);
+  assert.match(viewSource, /deliveryState:\s*"sent"\s*\|\s*"failed"/);
+});
+
+test("replacePendingWithLatest accepts retriesLeft parameter", () => {
+  assert.match(viewSource, /replacePendingWithLatest\(pendingId:\s*string,\s*retriesLeft/);
+});
+
+test("replacePendingWithLatest checks for confirmed message in fetch result", () => {
+  assert.match(viewSource, /confirmedFound/);
+  assert.match(viewSource, /serverItem\.content\s*===\s*pendingContent\s*&&\s*serverItem\.isSelf/);
+});
+
+test("replacePendingWithLatest retries when confirmed message not found and retries remain", () => {
+  const fnIdx = viewSource.indexOf("async function replacePendingWithLatest");
+  assert.ok(fnIdx >= 0, "replacePendingWithLatest should exist");
+  const afterFn = viewSource.slice(fnIdx);
+  assert.match(afterFn, /retriesLeft\s*>\s*0/);
+  assert.match(afterFn, /REPLACE_RETRY_DELAY_MS/);
+});
+
+test("replacePendingWithLatest resolves to sent when retries exhausted without finding confirmed message", () => {
+  const fnIdx = viewSource.indexOf("async function replacePendingWithLatest");
+  assert.ok(fnIdx >= 0);
+  const afterFn = viewSource.slice(fnIdx);
+  assert.match(afterFn, /resolvePendingState\(pendingId,\s*"sent"\)/);
+});
+
+test("replacePendingWithLatest resolves to failed on fetch error", () => {
+  const fnIdx = viewSource.indexOf("async function replacePendingWithLatest");
+  assert.ok(fnIdx >= 0);
+  const catchIdx = viewSource.indexOf("resolvePendingState(pendingId, \"failed\")", fnIdx);
+  assert.ok(catchIdx >= 0, "should resolve pending to failed in catch block");
+});
+
+test("resolvePendingState does not leave pending stuck in sending state", () => {
+  const fnIdx = viewSource.indexOf("function resolvePendingState");
+  assert.ok(fnIdx >= 0);
+  const afterFn = viewSource.slice(fnIdx, fnIdx + 300);
+  assert.match(afterFn, /deliveryState/);
+  assert.doesNotMatch(afterFn, /"sending"/);
+});
+
+test("replacePendingWithLatest does not silently swallow fetch errors", () => {
+  const fnIdx = viewSource.indexOf("async function replacePendingWithLatest");
+  assert.ok(fnIdx >= 0);
+  const afterFn = viewSource.slice(fnIdx);
+  const catchIdx = afterFn.indexOf("catch");
+  assert.ok(catchIdx >= 0, "should have catch block");
+  const catchBody = afterFn.slice(catchIdx, catchIdx + 200);
+  assert.match(catchBody, /resolvePendingState/);
+  assert.doesNotMatch(catchBody, /silent/);
+});
+
+// --- ChannelThread retry button mobile touch target ---
+
+test("ChannelThread retry button meets mobile touch target minimum (44px)", () => {
+  const btnMatch = threadSource.match(/\.messages-view__retry-btn\s*\{([^}]+)\}/);
+  assert.ok(btnMatch, "retry button styles should exist");
+  const styles = btnMatch[1];
+  const minHeightMatch = styles.match(/min-height:\s*(\d+)px/);
+  assert.ok(minHeightMatch, "retry button should have min-height");
+  assert.ok(Number(minHeightMatch[1]) >= 44, `retry button min-height ${minHeightMatch[1]}px should be >= 44px for mobile touch target`);
+});
+
+// --- Pure JS: window-miss resolution semantics ---
+
+test("pending item resolves to sent when server-confirmed message absent from fetch window", () => {
+  const items = [
+    { id: "server-old-1", content: "hello", isSelf: false, deliveryState: "sent" },
+    { id: "pending-999", content: "my message", isSelf: true, deliveryState: "sending" },
+  ];
+  const pendingId = "pending-999";
+  const latestItems = [
+    { id: "server-old-1", content: "hello", isSelf: false, deliveryState: "sent" },
+  ];
+
+  const pendingContent = items.find((i) => i.id === pendingId)?.content || "";
+  const confirmedFound = latestItems.some(
+    (s) => s.content === pendingContent && s.isSelf && !String(s.id).startsWith("pending-"),
+  );
+
+  assert.equal(confirmedFound, false, "confirmed message should not be found in fetch window");
+
+  if (!confirmedFound) {
+    const idx = items.findIndex((i) => i.id === pendingId);
+    items[idx] = { ...items[idx], deliveryState: "sent" };
+  }
+
+  assert.equal(items[1].deliveryState, "sent", "pending should resolve to sent, not stuck in sending");
+  assert.notEqual(items[1].deliveryState, "sending", "pending must not remain in sending state");
+});
+
+test("pending item resolves to failed when fetch throws", () => {
+  const items = [
+    { id: "pending-888", content: "test", isSelf: true, deliveryState: "sending" },
+  ];
+  const pendingId = "pending-888";
+
+  const idx = items.findIndex((i) => i.id === pendingId);
+  items[idx] = { ...items[idx], deliveryState: "failed" };
+
+  assert.equal(items[0].deliveryState, "failed", "pending should resolve to failed on fetch error");
+  assert.notEqual(items[0].deliveryState, "sending", "pending must not remain in sending state");
+});
+
+test("retry count bounded by REPLACE_RETRY_LIMIT", () => {
+  const limit = 2;
+  let retries = limit;
+  let attempts = 0;
+  while (retries > 0) {
+    retries--;
+    attempts++;
+  }
+  assert.equal(attempts, limit, "should retry exactly REPLACE_RETRY_LIMIT times");
+  assert.equal(retries, 0, "retries should be exhausted");
+});

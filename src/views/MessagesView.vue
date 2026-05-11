@@ -93,6 +93,8 @@ function isReplyNotification(item: NotificationItem) {
 }
 
 const SCROLL_BOTTOM_THRESHOLD = 120;
+const REPLACE_RETRY_LIMIT = 2;
+const REPLACE_RETRY_DELAY_MS = 1200;
 
 function checkNearBottom() {
   const doc = document.documentElement;
@@ -102,6 +104,14 @@ function checkNearBottom() {
 async function scrollToBottom() {
   await nextTick();
   window.scrollTo(0, document.documentElement.scrollHeight);
+}
+
+function resolvePendingState(pendingId: string, deliveryState: "sent" | "failed") {
+  const idx = channelItems.value.findIndex((item) => String(item.id) === pendingId);
+  if (idx === -1) return;
+  const updated = [...channelItems.value];
+  updated[idx] = { ...updated[idx], deliveryState };
+  channelItems.value = updated;
 }
 
 async function loadCurrentUser() {
@@ -164,33 +174,46 @@ async function loadChannel(reset = true) {
   }
 }
 
-async function replacePendingWithLatest(pendingId: string) {
+async function replacePendingWithLatest(pendingId: string, retriesLeft = REPLACE_RETRY_LIMIT) {
   try {
     const response = await fetchChannelMessages(0, 30);
     const latestItems = (response.items || []).slice().reverse();
-    const pendingContent = channelItems.value.find((item) => String(item.id) === pendingId)?.content || "";
+    const pendingItem = channelItems.value.find((item) => String(item.id) === pendingId);
+    const pendingContent = pendingItem?.content || "";
 
-    channelItems.value = channelItems.value
-      .filter((item) => String(item.id) !== pendingId)
-      .concat(latestItems.filter((serverItem) => {
-        const existingIds = new Set(channelItems.value.map((i) => String(i.id)));
-        if (existingIds.has(String(serverItem.id))) return false;
-        if (serverItem.content === pendingContent && !serverItem.isSelf) return false;
-        return true;
-      }));
+    const confirmedFound = latestItems.some(
+      (serverItem) => serverItem.content === pendingContent && serverItem.isSelf && !String(serverItem.id).startsWith("pending-"),
+    );
 
-    channelItems.value = channelItems.value.slice().sort((a, b) => {
-      const aPending = String(a.id).startsWith("pending-");
-      const bPending = String(b.id).startsWith("pending-");
-      if (aPending !== bPending) return aPending ? 1 : -1;
-      const ta = a.timestampISO || a.time || "";
-      const tb = b.timestampISO || b.time || "";
-      return ta < tb ? -1 : ta > tb ? 1 : 0;
-    });
+    if (confirmedFound) {
+      channelItems.value = channelItems.value
+        .filter((item) => String(item.id) !== pendingId)
+        .concat(latestItems.filter((serverItem) => {
+          const existingIds = new Set(channelItems.value.map((i) => String(i.id)));
+          if (existingIds.has(String(serverItem.id))) return false;
+          if (serverItem.content === pendingContent && !serverItem.isSelf) return false;
+          return true;
+        }));
+
+      channelItems.value = channelItems.value.slice().sort((a, b) => {
+        const aPending = String(a.id).startsWith("pending-");
+        const bPending = String(b.id).startsWith("pending-");
+        if (aPending !== bPending) return aPending ? 1 : -1;
+        const ta = a.timestampISO || a.time || "";
+        const tb = b.timestampISO || b.time || "";
+        return ta < tb ? -1 : ta > tb ? 1 : 0;
+      });
+    } else if (retriesLeft > 0) {
+      await new Promise((r) => setTimeout(r, REPLACE_RETRY_DELAY_MS));
+      await replacePendingWithLatest(pendingId, retriesLeft - 1);
+      return;
+    } else {
+      resolvePendingState(pendingId, "sent");
+    }
 
     if (isNearBottom.value) await scrollToBottom();
   } catch {
-    /* silent — the message was already sent successfully */
+    resolvePendingState(pendingId, "failed");
   }
 }
 

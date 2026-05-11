@@ -224,9 +224,9 @@ function messageMeta(item: ChannelMessage) {
 }
 
 .messages-view__retry-btn {
-  min-height: 28px;
+  min-height: 44px;
   margin-left: var(--space-2);
-  padding: 0 var(--space-2);
+  padding: var(--space-1) var(--space-2);
   border: 1px solid rgba(31, 167, 160, 0.24);
   border-radius: var(--radius-chip);
   background: rgba(31, 167, 160, 0.08);
