@@ -284,7 +284,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <section class="publish-view" aria-label="发布">
+  <section class="publish-view keyboard-aware-surface" aria-label="发布">
     <GlassPanel class="publish-view__card">
       <section class="publish-view__identity" aria-label="当前发布身份">
         <IdentityBadge :avatar-text="avatarText" :label="identityName" :meta="identityMeta" />
@@ -305,7 +305,7 @@ onBeforeUnmount(() => {
         >查看帖子</a>
       </div>
 
-      <form class="publish-view__form" @submit.prevent="submitPublish">
+      <form class="publish-view__form keyboard-aware-surface" @submit.prevent="submitPublish">
         <PublishComposer
           :local-preview-urls="localPreviewUrls"
           :image-status="imageStatus"
@@ -386,6 +386,15 @@ onBeforeUnmount(() => {
 .publish-view__form {
   display: grid;
   gap: var(--space-4);
+}
+
+.publish-view {
+  padding-bottom: calc(var(--space-8) + var(--keyboard-inset-bottom));
+  scroll-padding-bottom: calc(var(--space-8) + var(--keyboard-inset-bottom));
+}
+
+.publish-view__form {
+  scroll-padding-bottom: calc(var(--space-8) + var(--keyboard-inset-bottom));
 }
 
 .publish-view p {
