@@ -2,7 +2,7 @@
 import { computed, ref, watch } from "vue";
 import { fetchPlaceSheet } from "../../api/places";
 import { reportPost, sendPostReply, togglePostLike, togglePostSave } from "../../api/posts";
-import { InlineError } from "../../ui";
+import { InlineError, LianButton } from "../../ui";
 import type { PlaceSheet } from "../../types/place";
 import type { PostDetail } from "../../types/post";
 import { sharePost } from "../../platform/share";
@@ -10,6 +10,13 @@ import PostDetailTopbar from "./PostDetailTopbar.vue";
 import PostDetailContent from "./PostDetailContent.vue";
 import PostReplies from "./PostReplies.vue";
 import PostReplyDock from "./PostReplyDock.vue";
+import {
+  buildReportPayload,
+  getReportReasonPlaceholder,
+  getReportSubmissionMessage,
+  REPORT_CATEGORIES,
+  shouldShowReportReasonField,
+} from "./reportFlow";
 import { usePostDetailPresentation } from "./usePostDetailPresentation";
 
 type FloatingChromePhase = "visible" | "exiting" | "hidden" | "entering" | "progress";
@@ -32,15 +39,6 @@ const emit = defineEmits<{
   retry: [];
 }>();
 
-const reportCategories = [
-  { value: "privacy", label: "隐私问题" },
-  { value: "false_info", label: "虚假信息" },
-  { value: "abuse", label: "违规内容" },
-  { value: "wrong_location", label: "位置错误" },
-  { value: "expired", label: "过期内容" },
-  { value: "other", label: "其他" },
-];
-
 const liked = ref(false);
 const saved = ref(false);
 const likeCount = ref(0);
@@ -48,12 +46,15 @@ const likeBusy = ref(false);
 const saveBusy = ref(false);
 const reportBusy = ref(false);
 const reportOpen = ref(false);
+const reportReason = ref("");
+const reportFollowUpVisible = ref(false);
+const locallyHidden = ref(false);
 const replyBusy = ref(false);
 const replyExpanded = ref(false);
 const fullscreenImage = ref("");
 const actionError = ref("");
 const actionMessage = ref("");
-const reportCategory = ref(reportCategories[reportCategories.length - 1].value);
+const reportCategory = ref(REPORT_CATEGORIES[REPORT_CATEGORIES.length - 1].value);
 const replyContent = ref("");
 const galleryPointerDownX = ref(0);
 const galleryPointerDownY = ref(0);
@@ -65,6 +66,8 @@ const placeSheetError = ref("");
 
 const post = computed(() => props.post);
 const placeSheetState = computed(() => placeSheet.value);
+const reportReasonVisible = computed(() => shouldShowReportReasonField(reportCategory.value));
+const reportReasonPlaceholder = computed(() => getReportReasonPlaceholder(reportCategory.value));
 const {
   postId,
   title,
@@ -91,6 +94,9 @@ watch(post, (nextPost) => {
   actionError.value = "";
   actionMessage.value = "";
   reportOpen.value = false;
+  reportReason.value = "";
+  reportFollowUpVisible.value = false;
+  locallyHidden.value = false;
   replyExpanded.value = false;
   replyContent.value = "";
   fullscreenImage.value = "";
@@ -109,6 +115,11 @@ function showActionMessage(message: string) {
 function showActionError(error: unknown, fallback: string) {
   actionMessage.value = "";
   actionError.value = error instanceof Error ? error.message : fallback;
+}
+
+function setActionError(message: string) {
+  actionMessage.value = "";
+  actionError.value = message;
 }
 
 function collapseReplyIfOpen() {
@@ -210,21 +221,36 @@ async function handleSave() {
 function toggleReport() {
   actionError.value = "";
   actionMessage.value = "";
+  reportFollowUpVisible.value = false;
   reportOpen.value = !reportOpen.value;
+}
+
+function handleHideReportedPost() {
+  locallyHidden.value = true;
+  reportFollowUpVisible.value = false;
+  actionError.value = "";
+  actionMessage.value = "";
+}
+
+function undoHideReportedPost() {
+  locallyHidden.value = false;
+  reportFollowUpVisible.value = false;
+  showActionMessage("这条内容已经恢复显示。");
 }
 
 async function handleReport() {
   if (postId.value == null || reportBusy.value) return;
-  const category = reportCategories.find((item) => item.value === reportCategory.value) || reportCategories[reportCategories.length - 1];
   reportBusy.value = true;
   actionError.value = "";
   actionMessage.value = "";
   try {
-    await reportPost(postId.value, { category: category.value, reason: category.label });
+    await reportPost(postId.value, buildReportPayload(reportCategory.value, reportReason.value));
     reportOpen.value = false;
-    showActionMessage("举报已提交，感谢反馈。");
+    reportReason.value = "";
+    reportFollowUpVisible.value = true;
+    showActionMessage("举报已提交。你也可以先暂时隐藏这条内容。");
   } catch (error) {
-    showActionError(error, "举报没有提交成功，可以稍后再试。");
+    setActionError(getReportSubmissionMessage(error));
   } finally {
     reportBusy.value = false;
   }
@@ -277,40 +303,60 @@ async function submitReply() {
       </InlineError>
 
       <template v-else-if="post">
-        <PostDetailContent
-          :title="title"
-          :body-html="bodyHtml"
-          :images="images"
-          :primary-tag="primaryTag"
-          :time-label="timeLabel"
-          :place-label="placeLabel"
-          :place-status-text="placeStatusText"
-          :structured-place="structuredPlace"
-          :place-sheet-open="placeSheetOpen"
-          :place-sheet="placeSheet"
-          :place-sheet-loading="placeSheetLoading"
-          :place-sheet-error="placeSheetError"
-          :report-open="reportOpen"
-          :report-busy="reportBusy"
-          :report-category="reportCategory"
-          :action-error="actionError"
-          :action-message="actionMessage"
-          @gallery-pointer-down="handleGalleryPointerDown"
-          @gallery-pointer-move="handleGalleryPointerMove"
-          @open-gallery-image="openGalleryImage"
-          @open-place-sheet="openPlaceSheet"
-          @toggle-report="toggleReport"
-          @submit-report="handleReport"
-          @update:report-category="reportCategory = $event"
-          @update:place-sheet-open="placeSheetOpen = $event"
-        />
+        <section
+          v-if="locallyHidden"
+          class="post-detail-panel__hidden-state"
+          aria-label="当前会话已隐藏内容"
+          @click.stop
+        >
+          <h2>这条内容已在当前会话中隐藏</h2>
+          <p>这只是当前设备上的临时隐藏，不会替代平台审核，也不会同步到其他设备。</p>
+          <LianButton size="sm" variant="ghost" @click="undoHideReportedPost">撤销隐藏</LianButton>
+        </section>
 
-        <PostReplies :replies="replies" />
+        <template v-else>
+          <PostDetailContent
+            :title="title"
+            :body-html="bodyHtml"
+            :images="images"
+            :primary-tag="primaryTag"
+            :time-label="timeLabel"
+            :place-label="placeLabel"
+            :place-status-text="placeStatusText"
+            :structured-place="structuredPlace"
+            :place-sheet-open="placeSheetOpen"
+            :place-sheet="placeSheet"
+            :place-sheet-loading="placeSheetLoading"
+            :place-sheet-error="placeSheetError"
+            :report-open="reportOpen"
+            :report-busy="reportBusy"
+            :report-category="reportCategory"
+            :report-categories="REPORT_CATEGORIES"
+            :report-reason="reportReason"
+            :report-reason-visible="reportReasonVisible"
+            :report-reason-placeholder="reportReasonPlaceholder"
+            :report-follow-up-visible="reportFollowUpVisible"
+            :action-error="actionError"
+            :action-message="actionMessage"
+            @gallery-pointer-down="handleGalleryPointerDown"
+            @gallery-pointer-move="handleGalleryPointerMove"
+            @open-gallery-image="openGalleryImage"
+            @open-place-sheet="openPlaceSheet"
+            @toggle-report="toggleReport"
+            @submit-report="handleReport"
+            @hide-reported-post="handleHideReportedPost"
+            @update:report-category="reportCategory = $event"
+            @update:report-reason="reportReason = $event"
+            @update:place-sheet-open="placeSheetOpen = $event"
+          />
+
+          <PostReplies :replies="replies" />
+        </template>
       </template>
     </div>
 
     <PostReplyDock
-      v-if="post && !loading && !error"
+      v-if="post && !loading && !error && !locallyHidden"
       :liked="liked"
       :saved="saved"
       :like-count="likeCount"
@@ -362,6 +408,25 @@ async function submitReply() {
 .post-detail-panel__state {
   color: var(--lian-muted);
   text-align: center;
+}
+
+.post-detail-panel__hidden-state {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border: 1px solid rgba(239, 68, 68, 0.18);
+  border-radius: var(--radius-card);
+  background: rgba(239, 68, 68, 0.06);
+}
+
+.post-detail-panel__hidden-state h2,
+.post-detail-panel__hidden-state p {
+  margin: 0;
+}
+
+.post-detail-panel__hidden-state p {
+  color: var(--lian-muted);
+  line-height: 1.6;
 }
 
 .post-detail-panel__lightbox {

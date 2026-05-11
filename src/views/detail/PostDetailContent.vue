@@ -4,15 +4,6 @@ import type { DisplayActor } from "../../types/feed";
 import type { PlaceSheet, PlaceStatus } from "../../types/place";
 import { formatRelativeTime } from "../../utils/time";
 
-const reportCategories = [
-  { value: "privacy", label: "隐私问题" },
-  { value: "false_info", label: "虚假信息" },
-  { value: "abuse", label: "违规内容" },
-  { value: "wrong_location", label: "位置错误" },
-  { value: "expired", label: "过期内容" },
-  { value: "other", label: "其他" },
-];
-
 const props = defineProps<{
   title?: string;
   bodyHtml?: string;
@@ -29,6 +20,11 @@ const props = defineProps<{
   reportOpen?: boolean;
   reportBusy?: boolean;
   reportCategory?: string;
+  reportCategories?: Array<{ value: string; label: string }>;
+  reportReason?: string;
+  reportReasonVisible?: boolean;
+  reportReasonPlaceholder?: string;
+  reportFollowUpVisible?: boolean;
   actionError?: string;
   actionMessage?: string;
 }>();
@@ -40,7 +36,9 @@ const emit = defineEmits<{
   openPlaceSheet: [];
   toggleReport: [];
   submitReport: [];
+  hideReportedPost: [];
   "update:reportCategory": [value: string];
+  "update:reportReason": [value: string];
   "update:placeSheetOpen": [value: boolean];
 }>();
 
@@ -136,11 +134,28 @@ function placeRecentPostActorLabel(actor?: DisplayActor) {
       <label>
         <span>举报原因</span>
         <select :value="reportCategory" :disabled="reportBusy" @input="emit('update:reportCategory', ($event.target as HTMLSelectElement).value)">
-          <option v-for="category in reportCategories" :key="category.value" :value="category.value">{{ category.label }}</option>
+          <option v-for="category in reportCategories || []" :key="category.value" :value="category.value">{{ category.label }}</option>
         </select>
       </label>
+      <label v-if="reportReasonVisible">
+        <span>补充说明（可选）</span>
+        <textarea
+          :value="reportReason"
+          :disabled="reportBusy"
+          :placeholder="reportReasonPlaceholder"
+          rows="3"
+          maxlength="160"
+          @input="emit('update:reportReason', ($event.target as HTMLTextAreaElement).value)"
+        ></textarea>
+      </label>
+      <p v-if="reportReasonVisible" class="post-detail-content__report-hint">补充说明只会跟随这次举报一起提交，不会公开显示。</p>
       <LianButton size="sm" variant="danger" :loading="reportBusy" @click="emit('submitReport')">提交举报</LianButton>
     </section>
+
+    <div v-if="reportFollowUpVisible" class="post-detail-content__report-follow-up">
+      <p>如果你现在不想继续看到这条内容，可以先在当前会话里把它隐藏。</p>
+      <LianButton size="sm" variant="ghost" @click="emit('hideReportedPost')">暂时隐藏</LianButton>
+    </div>
 
     <InlineError v-if="actionError">{{ actionError }}</InlineError>
     <p v-if="actionMessage" class="post-detail-content__success">{{ actionMessage }}</p>
@@ -276,7 +291,8 @@ function placeRecentPostActorLabel(actor?: DisplayActor) {
 }
 
 .post-detail-content__report,
-.post-detail-content__place-sheet {
+.post-detail-content__place-sheet,
+.post-detail-content__report-follow-up {
   padding: var(--space-3);
   border-radius: var(--radius-card);
 }
@@ -285,6 +301,19 @@ function placeRecentPostActorLabel(actor?: DisplayActor) {
   justify-items: end;
   border: 1px solid rgba(239, 68, 68, 0.16);
   background: rgba(239, 68, 68, 0.06);
+}
+
+.post-detail-content__report-follow-up {
+  display: grid;
+  gap: var(--space-2);
+  border: 1px solid rgba(239, 68, 68, 0.12);
+  background: rgba(255, 255, 255, 0.62);
+}
+
+.post-detail-content__report-follow-up p {
+  margin: 0;
+  color: var(--lian-muted);
+  line-height: 1.6;
 }
 
 .post-detail-content__place-sheet {
@@ -333,7 +362,8 @@ function placeRecentPostActorLabel(actor?: DisplayActor) {
   font-weight: 850;
 }
 
-.post-detail-content__report select {
+.post-detail-content__report select,
+.post-detail-content__report textarea {
   width: 100%;
   box-sizing: border-box;
   border: 1px solid var(--lian-border);
@@ -341,8 +371,30 @@ function placeRecentPostActorLabel(actor?: DisplayActor) {
   background: rgba(255, 255, 255, 0.72);
   color: var(--lian-ink);
   font: inherit;
-  min-height: 36px;
   padding: 0 var(--space-2);
+}
+
+.post-detail-content__report select {
+  min-height: 36px;
+}
+
+.post-detail-content__report textarea {
+  min-height: 88px;
+  padding-block: var(--space-2);
+  resize: vertical;
+}
+
+.post-detail-content__report-hint,
+.post-detail-content__success {
+  font-size: 13px;
+  font-weight: 850;
+}
+
+.post-detail-content__report-hint {
+  width: 100%;
+  margin: 0;
+  color: var(--lian-muted);
+  line-height: 1.5;
 }
 
 .post-detail-content__success {
