@@ -153,6 +153,41 @@ test("ProfileView has openItem function that calls fetchPostDetail", () => {
   assert.match(src, /await fetchPostDetail\(tid\)/);
 });
 
+// --- ProfileView detail overlay and scroll preservation ---
+
+test("ProfileView wraps PostDetailPanel in a dialog overlay", () => {
+  const src = read("src/views/ProfileView.vue");
+  assert.match(src, /class="profile-view__detail-overlay"/);
+  assert.match(src, /role="dialog"/);
+  assert.match(src, /aria-modal="true"/);
+  assert.match(src, /aria-label="帖子详情"/);
+});
+
+test("ProfileView overlay has fixed positioning CSS", () => {
+  const src = read("src/views/ProfileView.vue");
+  assert.match(src, /\.profile-view__detail-overlay/);
+  assert.match(src, /position:\s*fixed/);
+  assert.match(src, /inset:\s*0/);
+  assert.match(src, /z-index:\s*30/);
+});
+
+test("ProfileView saves scroll position when opening detail", () => {
+  const src = read("src/views/ProfileView.vue");
+  assert.match(src, /savedScrollY/);
+  assert.match(src, /window\.scrollY/);
+});
+
+test("ProfileView restores scroll position when closing detail", () => {
+  const src = read("src/views/ProfileView.vue");
+  assert.match(src, /requestAnimationFrame/);
+  assert.match(src, /window\.scrollTo.*savedScrollY/);
+});
+
+test("ProfileView initializes savedScrollY ref", () => {
+  const src = read("src/views/ProfileView.vue");
+  assert.match(src, /const savedScrollY = ref\(0\)/);
+});
+
 // --- ProfileView alias switching ---
 
 test("ProfileView imports alias activation API functions", () => {
