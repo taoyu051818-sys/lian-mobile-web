@@ -40,7 +40,7 @@ const emit = defineEmits<{
 <style scoped>
 .profile-collection {
   display: grid;
-  gap: var(--space-4);
+  gap: var(--space-3);
 }
 
 .profile-collection h3,
@@ -53,34 +53,36 @@ const emit = defineEmits<{
   min-height: 112px;
   place-items: center;
   color: var(--lian-muted);
+  font-size: 13px;
   text-align: center;
 }
 
 .profile-collection__list {
   display: grid;
-  gap: var(--space-4);
+  gap: var(--space-3);
 }
 
 .profile-collection__item {
   display: grid;
-  grid-template-columns: 64px 1fr;
+  grid-template-columns: 56px 1fr;
   gap: var(--space-3);
   align-items: center;
   padding: var(--space-3);
-  border: 1px solid rgba(31, 41, 51, 0.08);
   border-radius: var(--radius-card);
-  background: rgba(255, 255, 255, 0.48);
+  background: rgba(255, 255, 255, 0.6);
+  box-shadow: var(--shadow-card);
 }
 
 .profile-collection__item p {
   color: var(--lian-muted);
-  line-height: 1.6;
+  font-size: 12px;
+  line-height: 1.5;
 }
 
 .profile-collection__item img,
 .profile-collection__thumb {
-  width: 64px;
-  height: 64px;
+  width: 56px;
+  height: 56px;
   border-radius: var(--radius-3);
   object-fit: cover;
 }
@@ -88,14 +90,18 @@ const emit = defineEmits<{
 .profile-collection__thumb {
   display: grid;
   place-items: center;
-  background: rgba(31, 41, 51, 0.06);
-  color: var(--lian-muted);
+  background: var(--lian-primary-soft);
+  color: var(--lian-primary-deep);
+  font-size: 18px;
   font-weight: 900;
 }
 
 .profile-collection__item h3 {
-  margin-bottom: 4px;
-  font-size: 15px;
+  margin-bottom: 2px;
+  color: var(--lian-ink);
+  font-size: 14px;
+  font-weight: 850;
+  line-height: 1.4;
 }
 
 .profile-collection :deep(.inline-error button) {
