@@ -3,7 +3,6 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref } from "vue";
 import { fetchAuthMe } from "../api/profile";
 import { fetchChannelMessages, fetchNotifications, markChannelMessagesRead, sendChannelMessage } from "../api/messages";
 import { useFloatingChromeController } from "../motion/floatingChrome";
-import { GlassPanel } from "../ui";
 import type { DisplayActor } from "../types/feed";
 import type { ChannelMessage, ChannelMessageActor, MessageTabKey, NotificationItem } from "../types/messages";
 import type { ProfileUser } from "../types/profile";
@@ -236,25 +235,23 @@ onBeforeUnmount(() => {
       @switch="switchTab"
     />
 
-    <GlassPanel class="messages-view__card">
-      <ChannelThread
-        v-if="activeTab === 'channel'"
-        :items="channelItems"
-        :loading="channelLoading"
-        :error="channelError"
-        :has-more="channelHasMore"
-        @retry="loadChannel(true)"
-        @load-more="loadChannel(false)"
-      />
+    <ChannelThread
+      v-if="activeTab === 'channel'"
+      :items="channelItems"
+      :loading="channelLoading"
+      :error="channelError"
+      :has-more="channelHasMore"
+      @retry="loadChannel(true)"
+      @load-more="loadChannel(false)"
+    />
 
-      <NotificationList
-        v-else
-        :items="notificationItems"
-        :loading="notificationLoading"
-        :error="notificationError"
-        @retry="loadNotifications"
-      />
-    </GlassPanel>
+    <NotificationList
+      v-else
+      :items="notificationItems"
+      :loading="notificationLoading"
+      :error="notificationError"
+      @retry="loadNotifications"
+    />
 
     <ChannelComposer
       v-if="activeTab === 'channel'"
@@ -283,11 +280,6 @@ onBeforeUnmount(() => {
   gap: var(--space-4);
   padding-top: calc(var(--floating-bar-height) + env(safe-area-inset-top));
   padding-bottom: calc(var(--space-8) + env(safe-area-inset-bottom));
-}
-
-.messages-view__card {
-  display: grid;
-  gap: var(--space-4);
 }
 
 .messages-view__chrome-tabs {

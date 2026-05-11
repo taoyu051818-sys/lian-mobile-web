@@ -76,7 +76,7 @@ const isCompact = computed(() => !props.content.trim() && !focused.value);
   min-height: 44px;
   box-sizing: border-box;
   border: 1px solid var(--lian-border);
-  border-radius: var(--radius-3);
+  border-radius: var(--radius-button);
   background: rgba(255, 255, 255, 0.72);
   color: var(--lian-ink);
   font: inherit;
@@ -86,6 +86,10 @@ const isCompact = computed(() => !props.content.trim() && !focused.value);
   resize: vertical;
   padding: var(--space-3);
   line-height: 1.5;
+}
+
+.messages-view__field textarea::placeholder {
+  color: var(--lian-faint);
 }
 
 .messages-view__field select {
@@ -104,8 +108,9 @@ const isCompact = computed(() => !props.content.trim() && !focused.value);
 }
 
 .messages-view__composer.is-compact .messages-view__field textarea {
-  min-height: 36px;
+  min-height: 40px;
   padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-button);
 }
 
 .messages-view__composer.is-compact .messages-view__input-row {
