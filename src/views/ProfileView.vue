@@ -32,6 +32,7 @@ const selectedPostId = ref<FeedItemId | null>(null);
 const selectedPost = ref<PostDetail | null>(null);
 const detailLoading = ref(false);
 const detailError = ref("");
+const savedScrollY = ref(0);
 
 const tabs: Array<{ key: ProfileTabKey; label: string; empty: string }> = [
   { key: "history", label: "浏览", empty: "暂无浏览记录" },
@@ -201,6 +202,7 @@ async function handleProfileUpdated() {
 }
 
 async function openItem(tid: FeedItemId) {
+  savedScrollY.value = window.scrollY;
   selectedPostId.value = tid;
   selectedPost.value = null;
   detailError.value = "";
@@ -219,6 +221,7 @@ function closeDetail() {
   selectedPost.value = null;
   detailLoading.value = false;
   detailError.value = "";
+  requestAnimationFrame(() => window.scrollTo(0, savedScrollY.value));
 }
 
 function retryDetail() {
@@ -291,14 +294,15 @@ onBeforeUnmount(() => {
         @open-item="openItem"
       />
 
-      <PostDetailPanel
-        v-if="detailOpen"
-        :post="selectedPost"
-        :loading="detailLoading"
-        :error="detailError"
-        @close="closeDetail"
-        @retry="retryDetail"
-      />
+      <div v-if="detailOpen" class="profile-view__detail-overlay" role="dialog" aria-modal="true" aria-label="帖子详情">
+        <PostDetailPanel
+          :post="selectedPost"
+          :loading="detailLoading"
+          :error="detailError"
+          @close="closeDetail"
+          @retry="retryDetail"
+        />
+      </div>
     </template>
 
     <section v-else class="profile-view__guest">
@@ -337,6 +341,14 @@ onBeforeUnmount(() => {
   display: grid;
   gap: var(--space-4);
   padding-top: var(--space-6);
+}
+
+.profile-view__detail-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  overflow-y: auto;
+  background: var(--lian-surface, #fff);
 }
 
 .inline-error button {
