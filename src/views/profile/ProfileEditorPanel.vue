@@ -147,7 +147,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <section class="profile-editor" aria-labelledby="profile-editor-title">
+  <section class="profile-editor keyboard-aware-surface" aria-labelledby="profile-editor-title">
     <header class="profile-editor__header">
       <div>
         <TypeChip type="official">资料管理</TypeChip>
@@ -234,9 +234,11 @@ onBeforeUnmount(() => {
 
 .profile-editor {
   padding: var(--space-3);
+  padding-bottom: calc(var(--space-3) + min(var(--keyboard-inset-bottom), 240px));
   border: 1px solid rgba(31, 41, 51, 0.08);
   border-radius: var(--radius-card);
   background: rgba(255, 255, 255, 0.48);
+  scroll-padding-bottom: calc(var(--space-8) + var(--keyboard-inset-bottom));
 }
 
 .profile-editor__header,
@@ -261,6 +263,7 @@ onBeforeUnmount(() => {
   border: 1px solid rgba(31, 41, 51, 0.08);
   border-radius: var(--radius-card);
   background: rgba(255, 255, 255, 0.42);
+  scroll-margin-bottom: calc(var(--space-6) + var(--keyboard-inset-bottom));
 }
 
 .profile-editor__block-title span,
