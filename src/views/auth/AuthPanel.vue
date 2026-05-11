@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { InlineError, TypeChip } from "../../ui";
 import type { ProfileUser } from "../../types/profile";
+import { useVisualViewport } from "../../composables/useVisualViewport";
 import { useAuthForm } from "./useAuthForm";
 
 const emit = defineEmits<{
@@ -43,6 +44,8 @@ const {
   submitAuth,
   requestEmailCode,
 } = useAuthForm((user) => emit("authenticated", user));
+
+useVisualViewport();
 
 const formErrorId = "auth-form-error";
 const loginHintId = "auth-login-hint";
@@ -245,9 +248,15 @@ const inviteCodeHintId = "auth-invite-code-hint";
 
 .auth-panel {
   padding: var(--space-3);
+  padding-bottom: calc(var(--space-3) + env(safe-area-inset-bottom) + var(--keyboard-inset-bottom, 0px));
   border: 1px solid rgba(31, 41, 51, 0.08);
   border-radius: var(--radius-card);
   background: rgba(255, 255, 255, 0.48);
+  scroll-padding-bottom: calc(var(--space-8) + var(--keyboard-inset-bottom, 0px));
+}
+
+.auth-panel__form {
+  padding-bottom: calc(var(--space-4) + var(--keyboard-inset-bottom, 0px));
 }
 
 .auth-panel__header,
@@ -320,6 +329,11 @@ const inviteCodeHintId = "auth-invite-code-hint";
   color: var(--lian-ink);
   font: inherit;
   padding: 0 var(--space-3);
+}
+
+.auth-panel input,
+.auth-panel button {
+  scroll-margin-bottom: calc(var(--keyboard-inset-bottom, 0px) + var(--space-8));
 }
 
 .auth-panel__code-row {
