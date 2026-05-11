@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue";
 import { fetchMapV2Items, fetchRoadNetworkPreview } from "../api/map";
-import type { MapRoadNetworkPreview, MapV2ItemsResponse } from "../types/map";
+import type { MapLocation, MapPost, MapRoadNetworkPreview, MapV2ItemsResponse } from "../types/map";
 import MapCanvas from "./map/MapCanvas.vue";
 import MapPlaceSheet from "./map/MapPlaceSheet.vue";
 import MapStatus from "./map/MapStatus.vue";
+import PostDetailPanel from "./detail/PostDetailPanel.vue";
 import { useMapChrome } from "./map/useMapChrome";
+import { useMapSelection } from "./map/useMapSelection";
 
 const { selectedPlace, filterActive, handlePlaceSelect, closePlaceSheet, toggleFilter, MAP_FILTERS } = useMapChrome();
 
@@ -14,10 +16,31 @@ const roadPreview = ref<MapRoadNetworkPreview | null>(null);
 const loading = ref(false);
 const errorMessage = ref("");
 
+const {
+  selectedPost,
+  detailLoading,
+  detailError,
+  openPost,
+  retryDetail,
+  closeDetail,
+} = useMapSelection(() => mapData.value?.posts || []);
+
 const visibleLayers = computed(() => ({
   locations: filterActive.value.locations,
   posts: filterActive.value.posts,
 }));
+
+function isMapPost(place: MapLocation | MapPost): place is MapPost {
+  return "tid" in place;
+}
+
+function handlePlaceSelectWithDetail(place: MapLocation | MapPost) {
+  if (isMapPost(place)) {
+    void openPost(place);
+  } else {
+    handlePlaceSelect(place);
+  }
+}
 
 async function loadMap() {
   loading.value = true;
@@ -54,10 +77,19 @@ onMounted(() => {
         :loading="loading"
         :visible-layers="visibleLayers"
         @load-error="onCanvasError"
-        @place-select="handlePlaceSelect"
+        @place-select="handlePlaceSelectWithDetail"
       />
       <MapStatus :loading="loading" :error-message="errorMessage" />
       <MapPlaceSheet :selected-place="selectedPlace" @close="closePlaceSheet" />
+      <PostDetailPanel
+        v-if="selectedPost !== null || detailLoading"
+        class="map-view__post-detail"
+        :post="selectedPost"
+        :loading="detailLoading"
+        :error="detailError"
+        @close="closeDetail"
+        @retry="retryDetail"
+      />
     </section>
     <nav class="map-view__filter-bar" aria-label="图层筛选">
       <button
@@ -126,5 +158,11 @@ onMounted(() => {
 
 .map-view__filter-btn:hover {
   background: rgba(255, 255, 255, 0.94);
+}
+
+.map-view__post-detail {
+  position: sticky;
+  bottom: calc(92px + env(safe-area-inset-bottom));
+  z-index: 20;
 }
 </style>
