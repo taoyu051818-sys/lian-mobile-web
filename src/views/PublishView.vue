@@ -3,6 +3,7 @@ import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 import { fetchMapV2Items } from "../api/map";
 import { buildPublishPayload, createMapV2LocationDraft, normalizeIdentityTag, normalizePublishTag, publishPost, uploadPublishImage } from "../api/publish";
 import { fetchAuthMe } from "../api/profile";
+import { useVisualViewport } from "../composables/useVisualViewport";
 import { GlassPanel, IdentityBadge, InlineError } from "../ui";
 import type { MapLocation } from "../types/map";
 import type { PlaceRef } from "../types/place";
@@ -40,6 +41,8 @@ const locationSearch = ref("");
 const locationPanelOpen = ref(false);
 const tagPanelOpen = ref(false);
 const visibilityPanelOpen = ref(false);
+
+useVisualViewport();
 
 const normalizedTag = computed(() => normalizePublishTag(tagInput.value));
 const normalizedIdentityTag = computed(() => normalizeIdentityTag(identityTag.value));
@@ -388,12 +391,25 @@ onBeforeUnmount(() => {
   gap: var(--space-4);
 }
 
+.publish-view {
+  padding-bottom: calc(var(--space-4) + env(safe-area-inset-bottom) + var(--keyboard-inset-bottom, 0px));
+  scroll-padding-bottom: calc(var(--space-8) + var(--keyboard-inset-bottom, 0px));
+}
+
 .publish-view p {
   margin: 0;
 }
 
 .publish-view__card {
   gap: var(--space-5);
+  padding-bottom: calc(var(--space-4) + var(--keyboard-inset-bottom, 0px));
+}
+
+.publish-view :deep(input),
+.publish-view :deep(textarea),
+.publish-view :deep(button),
+.publish-view :deep(select) {
+  scroll-margin-bottom: calc(var(--keyboard-inset-bottom, 0px) + var(--space-8));
 }
 
 .publish-view__identity {
