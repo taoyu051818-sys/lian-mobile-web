@@ -1,7 +1,15 @@
 import { computed, onMounted, ref } from "vue";
 import { fetchAuthRules, loginAuth, registerAuth, sendEmailCode } from "../../api/auth";
-import type { AuthInterestOption, AuthMode } from "../../api/auth";
+import type { AuthInterestOption, AuthMode, AuthRulesResponse } from "../../api/auth";
 import type { ProfileUser } from "../../types/profile";
+
+export type AuthInterestStatus = "loading" | "ready" | "empty" | "unavailable";
+
+export interface AuthInterestSettings {
+  options: AuthInterestOption[];
+  status: AuthInterestStatus;
+  required: boolean;
+}
 
 export interface AuthFormFields {
   mode: AuthMode;
@@ -12,6 +20,7 @@ export interface AuthFormFields {
   password: string;
   inviteCode: string;
   selectedInterests: string[];
+  interestSelectionRequired?: boolean;
 }
 
 export function validateAuthForm(fields: AuthFormFields): string {
@@ -21,13 +30,45 @@ export function validateAuthForm(fields: AuthFormFields): string {
     return "";
   }
   if (!fields.username.trim()) return "请填写昵称。";
-  if (!fields.email.trim() && !fields.inviteCode.trim())
+  if (!fields.email.trim() && !fields.inviteCode.trim()) {
     return "请填写高校邮箱，或填写邀请码。";
-  if (fields.email.trim() && !fields.emailCode.trim())
+  }
+  if (fields.email.trim() && !fields.emailCode.trim()) {
     return "高校邮箱注册需要填写验证码。";
-  if (!fields.selectedInterests.length)
+  }
+  if (fields.interestSelectionRequired && !fields.selectedInterests.length) {
     return "至少选择一个兴趣，用来初始化推荐流。";
+  }
   return "";
+}
+
+export function toggleSelectedInterest(current: string[], id: string, max = 5): string[] {
+  if (current.includes(id)) {
+    return current.filter((item) => item !== id);
+  }
+  if (current.length >= max) {
+    return current;
+  }
+  return [...current, id];
+}
+
+export async function loadAuthInterestSettings(
+  fetchRules: () => Promise<AuthRulesResponse> = fetchAuthRules,
+): Promise<AuthInterestSettings> {
+  try {
+    const rules = await fetchRules();
+    const options = rules.interests || [];
+    if (!options.length) {
+      return { options: [], status: "empty", required: false };
+    }
+    return {
+      options,
+      status: "ready",
+      required: rules.interestsRequired === true,
+    };
+  } catch {
+    return { options: [], status: "unavailable", required: false };
+  }
 }
 
 export function useAuthForm(onAuthenticated: (user: ProfileUser | null) => void) {
@@ -39,6 +80,8 @@ export function useAuthForm(onAuthenticated: (user: ProfileUser | null) => void)
   const password = ref("");
   const inviteCode = ref("");
   const interestOptions = ref<AuthInterestOption[]>([]);
+  const interestStatus = ref<AuthInterestStatus>("loading");
+  const interestsRequired = ref(false);
   const selectedInterests = ref<string[]>([]);
   const submitting = ref(false);
   const sendingCode = ref(false);
@@ -50,7 +93,7 @@ export function useAuthForm(onAuthenticated: (user: ProfileUser | null) => void)
   const note = computed(() =>
     mode.value === "login"
       ? "使用邮箱或昵称登录。"
-      : "选择兴趣后，会用于首页推荐和第一个马甲。",
+      : "兴趣会帮助初始化首页推荐，可先跳过，之后再调整推荐偏好。",
   );
   const emailCodeHint = computed(
     () => codeMessage.value || "验证码会发送到你的高校邮箱。邀请码注册时可以留空。",
@@ -72,6 +115,25 @@ export function useAuthForm(onAuthenticated: (user: ProfileUser | null) => void)
   const inviteCodeHasError = computed(
     () => mode.value === "register" && errorMessage.value.includes("邀请码"),
   );
+  const hasInterestChoices = computed(
+    () => interestStatus.value === "ready" && interestOptions.value.length > 0,
+  );
+  const showInterestSkip = computed(() => mode.value === "register" && !interestsRequired.value);
+  const interestHint = computed(() => {
+    if (interestStatus.value === "loading") {
+      return "正在加载首页推荐偏好选项。";
+    }
+    if (interestStatus.value === "empty") {
+      return "当前没有可选兴趣，也可以先完成注册，之后再调整首页推荐偏好。";
+    }
+    if (interestStatus.value === "unavailable") {
+      return "兴趣选项暂时加载失败，也可以先完成注册，之后再调整首页推荐偏好。";
+    }
+    if (interestsRequired.value) {
+      return "选择至少 1 个兴趣，用于初始化首页推荐；之后仍可以再调整。";
+    }
+    return "兴趣会帮助初始化首页推荐，可先跳过，之后再调整。";
+  });
 
   function switchMode(nextMode: AuthMode) {
     mode.value = nextMode;
@@ -81,12 +143,19 @@ export function useAuthForm(onAuthenticated: (user: ProfileUser | null) => void)
   }
 
   function toggleInterest(id: string) {
-    if (selectedInterests.value.includes(id)) {
-      selectedInterests.value = selectedInterests.value.filter((item) => item !== id);
-      return;
+    selectedInterests.value = toggleSelectedInterest(selectedInterests.value, id);
+    if (selectedInterests.value.length) {
+      errorMessage.value = errorMessage.value.includes("兴趣") ? "" : errorMessage.value;
     }
-    if (selectedInterests.value.length >= 5) return;
-    selectedInterests.value = [...selectedInterests.value, id];
+  }
+
+  function skipInterestSelection() {
+    selectedInterests.value = [];
+    errorMessage.value = errorMessage.value.includes("兴趣") ? "" : errorMessage.value;
+  }
+
+  function isInterestDisabled(id: string): boolean {
+    return selectedInterests.value.length >= 5 && !selectedInterests.value.includes(id);
   }
 
   function validate(): string {
@@ -99,7 +168,22 @@ export function useAuthForm(onAuthenticated: (user: ProfileUser | null) => void)
       password: password.value,
       inviteCode: inviteCode.value,
       selectedInterests: selectedInterests.value,
+      interestSelectionRequired: interestsRequired.value && interestOptions.value.length > 0,
     });
+  }
+
+  async function refreshInterestSettings() {
+    interestStatus.value = "loading";
+    const settings = await loadAuthInterestSettings();
+    interestOptions.value = settings.options;
+    interestStatus.value = settings.status;
+    interestsRequired.value = settings.required;
+    if (!settings.options.length) {
+      selectedInterests.value = [];
+      return;
+    }
+    const optionIds = new Set(settings.options.map((option) => option.id));
+    selectedInterests.value = selectedInterests.value.filter((id) => optionIds.has(id));
   }
 
   async function submitAuth() {
@@ -119,7 +203,7 @@ export function useAuthForm(onAuthenticated: (user: ProfileUser | null) => void)
               emailCode: emailCode.value.trim() || undefined,
               password: password.value,
               inviteCode: inviteCode.value.trim() || undefined,
-              interests: selectedInterests.value,
+              interests: selectedInterests.value.length ? selectedInterests.value : undefined,
             });
       successMessage.value = "已登录，正在刷新个人资料。";
       onAuthenticated(user);
@@ -154,13 +238,8 @@ export function useAuthForm(onAuthenticated: (user: ProfileUser | null) => void)
     }
   }
 
-  onMounted(async () => {
-    try {
-      const rules = await fetchAuthRules();
-      interestOptions.value = rules.interests || [];
-    } catch {
-      interestOptions.value = [];
-    }
+  onMounted(() => {
+    void refreshInterestSettings();
   });
 
   return {
@@ -172,6 +251,8 @@ export function useAuthForm(onAuthenticated: (user: ProfileUser | null) => void)
     password,
     inviteCode,
     interestOptions,
+    interestStatus,
+    interestsRequired,
     selectedInterests,
     submitting,
     sendingCode,
@@ -188,8 +269,14 @@ export function useAuthForm(onAuthenticated: (user: ProfileUser | null) => void)
     emailCodeHasError,
     passwordHasError,
     inviteCodeHasError,
+    hasInterestChoices,
+    showInterestSkip,
+    interestHint,
     switchMode,
     toggleInterest,
+    skipInterestSelection,
+    isInterestDisabled,
+    refreshInterestSettings,
     submitAuth,
     requestEmailCode,
   };
