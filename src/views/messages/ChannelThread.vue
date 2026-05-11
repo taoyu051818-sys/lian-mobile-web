@@ -98,7 +98,7 @@ function messageMeta(item: ChannelMessage) {
 .messages-view__pane {
   display: grid;
   gap: var(--space-4);
-  padding-bottom: calc(var(--space-6) + env(safe-area-inset-bottom));
+  padding-bottom: calc(var(--space-6) + env(safe-area-inset-bottom) + var(--keyboard-inset-bottom));
 }
 
 .messages-view__list {

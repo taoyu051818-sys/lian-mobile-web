@@ -3,6 +3,7 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref } from "vue";
 import { fetchAuthMe } from "../api/profile";
 import { buildPendingChannelMessage, fetchChannelMessages, fetchNotifications, markChannelMessagesRead, sendChannelMessage } from "../api/messages";
 import { useFloatingChromeController } from "../motion/floatingChrome";
+import { useVisualViewport } from "../composables/useVisualViewport";
 import type { DisplayActor } from "../types/feed";
 import type { ChannelMessage, ChannelMessageActor, MessageTabKey, NotificationItem } from "../types/messages";
 import type { ProfileUser } from "../types/profile";
@@ -28,6 +29,8 @@ const identityTags = ref<string[]>([]);
 const sending = ref(false);
 const sendError = ref("");
 const isNearBottom = ref(true);
+
+useVisualViewport();
 
 const composerChrome = useFloatingChromeController({ initialPhase: "visible" });
 const composerChromePhase = composerChrome.phase;
@@ -369,7 +372,7 @@ onBeforeUnmount(() => {
   display: grid;
   gap: var(--space-4);
   padding-top: calc(var(--floating-bar-height) + env(safe-area-inset-top));
-  padding-bottom: calc(var(--space-8) + env(safe-area-inset-bottom));
+  padding-bottom: calc(var(--space-8) + env(safe-area-inset-bottom) + var(--keyboard-inset-bottom));
 }
 
 .messages-view__chrome-tabs {
@@ -391,7 +394,7 @@ onBeforeUnmount(() => {
 
 .messages-view__chrome-composer {
   position: fixed;
-  bottom: env(safe-area-inset-bottom, 0px);
+  bottom: calc(env(safe-area-inset-bottom, 0px) + var(--keyboard-inset-bottom));
   right: max(var(--floating-bar-side-inset), env(safe-area-inset-right));
   left: max(var(--floating-bar-side-inset), env(safe-area-inset-left));
   z-index: var(--floating-bar-z);
