@@ -8,6 +8,7 @@ import {
   uploadProfileAvatar,
 } from "../../api/profile";
 import { IdentityBadge, InlineError, LianButton, TypeChip } from "../../ui";
+import { useVisualViewport } from "../../composables/useVisualViewport";
 import type { ProfileUser } from "../../types/profile";
 
 const props = defineProps<{
@@ -27,6 +28,8 @@ const inviteBusy = ref(false);
 const errorMessage = ref("");
 const successMessage = ref("");
 const inviteCode = ref("");
+
+useVisualViewport();
 
 const displayName = computed(() => props.user.username || "同学");
 const avatarText = computed(() => displayName.value.slice(0, 2) || "同");
@@ -234,9 +237,11 @@ onBeforeUnmount(() => {
 
 .profile-editor {
   padding: var(--space-3);
+  padding-bottom: calc(var(--space-3) + env(safe-area-inset-bottom) + var(--keyboard-inset-bottom, 0px));
   border: 1px solid rgba(31, 41, 51, 0.08);
   border-radius: var(--radius-card);
   background: rgba(255, 255, 255, 0.48);
+  scroll-padding-bottom: calc(var(--space-8) + var(--keyboard-inset-bottom, 0px));
 }
 
 .profile-editor__header,
@@ -261,6 +266,13 @@ onBeforeUnmount(() => {
   border: 1px solid rgba(31, 41, 51, 0.08);
   border-radius: var(--radius-card);
   background: rgba(255, 255, 255, 0.42);
+}
+
+.profile-editor__block,
+.profile-editor input,
+.profile-editor button,
+.profile-editor__upload {
+  scroll-margin-bottom: calc(var(--keyboard-inset-bottom, 0px) + var(--space-8));
 }
 
 .profile-editor__block-title span,
