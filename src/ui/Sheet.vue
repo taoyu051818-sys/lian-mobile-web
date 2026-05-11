@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { watch, onBeforeUnmount, useTemplateRef, nextTick } from "vue";
+import { useVisualViewport } from "../composables/useVisualViewport";
 
 const props = withDefaults(defineProps<{
   title?: string;
@@ -12,6 +13,8 @@ const props = withDefaults(defineProps<{
 const emit = defineEmits<{
   close: [];
 }>();
+
+useVisualViewport();
 
 const overlayRef = useTemplateRef<HTMLElement>("overlay");
 let triggerEl: HTMLElement | null = null;
@@ -79,3 +82,35 @@ onBeforeUnmount(() => {
     </div>
   </Teleport>
 </template>
+
+<style scoped>
+.lian-sheet__panel {
+  bottom: var(--keyboard-inset-bottom, 0px);
+  max-height: calc(100dvh - env(safe-area-inset-top) - var(--space-4) - var(--keyboard-inset-bottom, 0px));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-bottom: calc(var(--space-4) + env(safe-area-inset-bottom));
+  scroll-padding-bottom: calc(var(--space-8) + var(--keyboard-inset-bottom, 0px));
+}
+
+.lian-sheet__panel :deep(input),
+.lian-sheet__panel :deep(textarea),
+.lian-sheet__panel :deep(select),
+.lian-sheet__panel :deep(button) {
+  scroll-margin-bottom: calc(var(--keyboard-inset-bottom, 0px) + var(--space-8));
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .lian-sheet__panel {
+    transition:
+      bottom var(--motion-fast) var(--motion-ease-standard),
+      max-height var(--motion-fast) var(--motion-ease-standard);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lian-sheet__panel {
+    transition: none;
+  }
+}
+</style>
