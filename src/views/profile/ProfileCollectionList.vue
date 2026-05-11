@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { InlineError } from "../../ui";
+import type { FeedItemId } from "../../types/feed";
 import type { ProfileListItem } from "../../types/profile";
 import { formatRelativeTime } from "../../utils/time";
 
@@ -12,6 +13,7 @@ defineProps<{
 
 const emit = defineEmits<{
   retry: [];
+  "open-item": [tid: FeedItemId];
 }>();
 </script>
 
@@ -25,7 +27,7 @@ const emit = defineEmits<{
     <div v-if="loading" class="profile-collection__state" role="status">正在加载列表…</div>
     <div v-else-if="!items.length" class="profile-collection__state">{{ emptyText }}</div>
     <div v-else class="profile-collection__list" aria-live="polite">
-      <article v-for="item in items" :key="String(item.tid)" class="profile-collection__item">
+      <article v-for="item in items" :key="String(item.tid)" class="profile-collection__item" role="button" tabindex="0" @click="emit('open-item', item.tid)" @keydown.enter="emit('open-item', item.tid)" @keydown.space.prevent="emit('open-item', item.tid)">
         <img v-if="item.cover" :src="item.cover" :alt="item.title || '内容封面'" loading="lazy" />
         <div v-else class="profile-collection__thumb" aria-hidden="true">{{ (item.title || '内').slice(0, 1) }}</div>
         <div>
@@ -71,6 +73,21 @@ const emit = defineEmits<{
   border-radius: var(--radius-card);
   background: rgba(255, 255, 255, 0.6);
   box-shadow: var(--shadow-card);
+  cursor: pointer;
+  transition: box-shadow 0.15s, transform 0.15s;
+}
+
+.profile-collection__item:hover {
+  box-shadow: var(--shadow-card), 0 2px 8px rgba(31, 167, 160, 0.12);
+}
+
+.profile-collection__item:focus-visible {
+  outline: 2px solid var(--lian-primary);
+  outline-offset: 2px;
+}
+
+.profile-collection__item:active {
+  transform: scale(0.99);
 }
 
 .profile-collection__item p {
