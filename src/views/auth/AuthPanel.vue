@@ -54,7 +54,7 @@ const inviteCodeHintId = "auth-invite-code-hint";
 </script>
 
 <template>
-  <section class="auth-panel" aria-labelledby="auth-panel-title">
+  <section class="auth-panel keyboard-aware-surface" aria-labelledby="auth-panel-title">
     <div class="auth-panel__header">
       <div>
         <TypeChip type="official">账号</TypeChip>
@@ -69,7 +69,7 @@ const inviteCodeHintId = "auth-invite-code-hint";
       <button type="button" :class="{ 'is-active': mode === 'register' }" @click="switchMode('register')">注册</button>
     </nav>
 
-    <form class="auth-panel__form" @submit.prevent="submitAuth">
+    <form class="auth-panel__form keyboard-aware-surface" @submit.prevent="submitAuth">
       <label v-if="mode === 'login'">
         <span>邮箱或昵称</span>
         <input
@@ -245,9 +245,15 @@ const inviteCodeHintId = "auth-invite-code-hint";
 
 .auth-panel {
   padding: var(--space-3);
+  padding-bottom: calc(var(--space-3) + min(var(--keyboard-inset-bottom), 240px));
   border: 1px solid rgba(31, 41, 51, 0.08);
   border-radius: var(--radius-card);
   background: rgba(255, 255, 255, 0.48);
+  scroll-padding-bottom: calc(var(--space-8) + var(--keyboard-inset-bottom));
+}
+
+.auth-panel__form {
+  scroll-padding-bottom: calc(var(--space-8) + var(--keyboard-inset-bottom));
 }
 
 .auth-panel__header,
