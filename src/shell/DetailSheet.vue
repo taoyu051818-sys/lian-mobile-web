@@ -7,6 +7,7 @@ const emit = defineEmits<{
 }>();
 
 const { state, close } = useDetailSheet();
+let triggerEl: HTMLElement | null = null;
 
 function handleClose() {
   close();
@@ -20,18 +21,31 @@ function handleKeydown(event: KeyboardEvent) {
   }
 }
 
+function lockScroll() {
+  document.body.style.setProperty("overflow", "hidden");
+}
+
+function unlockScroll() {
+  document.body.style.removeProperty("overflow");
+}
+
 watch(
   () => state.open,
   (isOpen) => {
     if (isOpen) {
+      triggerEl = document.activeElement as HTMLElement;
+      lockScroll();
       document.addEventListener("keydown", handleKeydown);
     } else {
+      unlockScroll();
       document.removeEventListener("keydown", handleKeydown);
+      triggerEl?.focus();
     }
   },
 );
 
 onBeforeUnmount(() => {
+  unlockScroll();
   document.removeEventListener("keydown", handleKeydown);
 });
 </script>
