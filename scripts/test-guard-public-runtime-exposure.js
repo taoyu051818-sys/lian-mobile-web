@@ -55,7 +55,7 @@ async function runGuardFixture(name, files, expectedStatus, expectedNeedle) {
 await runGuardFixture(
   "clean production fixture",
   {
-    "public/index.html": "<!doctype html><html><body><script src=\"/app.js\"></script></body></html>",
+    "index.html": "<!doctype html><html><body><div id=\"vue-root\"></div><script type=\"module\" src=\"/src/main.ts\"></script></body></html>",
     "src/main.ts": "console.log('ok');"
   },
   "pass",
@@ -65,7 +65,7 @@ await runGuardFixture(
 await runGuardFixture(
   "rehearsal marker fixture",
   {
-    "public/index.html": "<!doctype html><html><body>LIAN_STATIC_REHEARSAL</body></html>"
+    "index.html": "<!doctype html><html><body>LIAN_STATIC_REHEARSAL</body></html>"
   },
   "fail",
   /rehearsal marker/
@@ -74,7 +74,7 @@ await runGuardFixture(
 await runGuardFixture(
   "internal tool path fixture",
   {
-    "public/index.html": "<!doctype html><html><body><a href=\"\/tools\/debug\">debug</a></body></html>"
+    "index.html": "<!doctype html><html><body><a href=\"\/tools\/debug\">debug</a></body></html>"
   },
   "fail",
   /internal\/debug path/
