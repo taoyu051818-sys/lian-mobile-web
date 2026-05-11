@@ -73,10 +73,18 @@ Returning from detail reverses the same camera path:
 
 ## Current implementation stage
 
-The first implementation stage uses a transition overlay:
+The first implementation stage uses a transition overlay (quarantined v1 scaffolding, issue #274):
 
 - `FeedItemCard.vue` exposes motion anchors through `data-motion-role` attributes.
 - `card-camera-transition.css` controls the overlay moving from card rect to center.
+- `content-immersive-ui.css` layers visual skin (border, bg, shadow) on the overlay.
 - Tag, time, and reply are currently represented by overlay styling and pseudo-elements to validate timing and direction.
+
+### Ownership after #347
+
+- `useFeedDetail.ts` owns detail data lifecycle, history/popstate, close orchestration (`closeDetailWithCardify`), and chrome handoff.
+- `FeedView.vue` still owns the v1 card overlay DOM, the `startCardTransition` injection (rAF + setTimeout scaffolding), and scoped card-transition CSS.
+- Floating chrome lifecycle exists (phase controller in `useFloatingChromeController`), but visual motion remains suppressed by the no-motion CSS contract (`--floating-chrome-motion-duration: 0ms`).
+- Visual chrome restoration is a serial follow-up after runtime timer cleanup (see D-12 in motion-contract.md).
 
 Future stages should replace pseudo-elements with real DOM morph targets and connect values from the selected feed item rather than static placeholder text.

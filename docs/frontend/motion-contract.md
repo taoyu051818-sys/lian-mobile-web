@@ -54,9 +54,11 @@ invokes `transitionSpec` on both controllers in the same tick.
 
 ### 1.2 Card Camera Transition
 
-Source: `FeedView.vue` (`startCardTransition`, `closeDetailWithCardify`)
+Source: `FeedView.vue` (`startCardTransition` injection), `useFeedDetail.ts` (`closeDetailWithCardify`, detail lifecycle)
 
 The card camera transition morphs a feed card into the detail panel (open) or reverses the morph (close).
+
+**Post-#347 ownership split**: `useFeedDetail.ts` owns detail data, history/popstate, close orchestration, and chrome handoff. `FeedView.vue` still owns the v1 card overlay DOM, the `startCardTransition` injection (rAF + setTimeout scaffolding), and scoped card-transition CSS. Visual chrome restoration remains a serial follow-up after runtime timer cleanup.
 
 #### Phase definitions
 
@@ -83,9 +85,9 @@ The card camera transition morphs a feed card into the detail panel (open) or re
 
 | Location | Timer type | Cleanup on unmount |
 |----------|-----------|-------------------|
-| `FeedView.vue:startCardTransition` | `requestAnimationFrame` | **Not saved** -- handle discarded |
-| `FeedView.vue:startCardTransition` | `setTimeout(320)` | **Not saved** -- handle discarded |
-| `FeedView.vue:closeDetailWithCardify` | `setTimeout(RETURN_ANIMATION_MS)` | **Not saved** -- handle discarded |
+| `FeedView.vue:startCardTransition` (injection) | `requestAnimationFrame` | **Not saved** -- handle discarded |
+| `FeedView.vue:startCardTransition` (injection) | `setTimeout(320)` | **Not saved** -- handle discarded |
+| `useFeedDetail.ts:closeDetailWithCardify` | `setTimeout(RETURN_ANIMATION_MS)` | **Not saved** -- handle discarded |
 | `FeedItemCard.vue:handlePointerDown` | `setTimeout(CARD_CLICK_MAX_DURATION_MS)` | Module-level variable, cleared on pointerup/cancel |
 
 ### 2.2 Contract rules
@@ -129,7 +131,7 @@ The codebase uses a **dual-layer** approach:
 
 1. Every CSS transition/animation MUST have a corresponding `@media (prefers-reduced-motion: reduce)` override that sets `transition: none`, `animation: none`, `transform: none` (where safe), and `filter: none`.
 2. JS-driven transitions (card camera, detail return) MUST check `prefersReducedMotion()` **before** creating any rAF or timeout. If true, skip animation and apply final state immediately.
-3. The `prefersReducedMotion()` helper MUST be extracted to a shared composable (`src/motion/useReducedMotion.ts`) so all components can import it. Current duplication across `FeedView.vue` is a known debt.
+3. The `prefersReducedMotion()` helper MUST be extracted to a shared composable (`src/motion/useReducedMotion.ts`) so all components can import it. Current duplication across `FeedView.vue` (local function at line 102) and `useFeedDetail.ts` (injected via deps) is a known debt.
 4. The shared composable MUST use `window.matchMedia('(prefers-reduced-motion: reduce)')` with a `change` event listener so it reacts to runtime preference changes.
 5. The `progress` phase of floating chrome MUST also respect reduced motion: when active, snap `progress` to 0 or 1 (nearest endpoint) instead of interpolating.
 
@@ -139,7 +141,8 @@ The codebase uses a **dual-layer** approach:
 |------|-------------|-------------|
 | `floating-chrome.css` | No-motion contract (lines 86+); all chrome transitions disabled unconditionally | N/A (composable is pure state) |
 | `card-camera-transition.css` | Reduced-motion block (~line 132); quarantined v1 scaffolding | N/A |
-| `FeedView.vue` | Lines 866-882 | Lines 197-199, 230, 265 |
+| `FeedView.vue` | Lines 598-611 | Lines 102-103 (`prefersReducedMotion()`), 121 (injection guard) |
+| `useFeedDetail.ts` | N/A | Line 144 (`closeDetailWithCardify` reduced-motion guard) |
 | `FeedItemCard.vue` | Lines 498-506 | None needed |
 | `PostDetailPanel.vue` | Lines 1003-1009 | None needed |
 | `primitives.css` | None (spinner only) | N/A |
@@ -268,9 +271,9 @@ This documentation slice identifies but does **not** resolve the following:
 
 | ID | Issue | Severity | Notes |
 |----|-------|----------|-------|
-| D-1 | Timer/rAF handles not saved on unmount | P1 | `FeedView.vue` discards rAF and setTimeout handles. See Section 2. |
+| D-1 | Timer/rAF handles not saved on unmount | P1 | `FeedView.vue` discards rAF and setTimeout handles in the `startCardTransition` injection. See Section 2. |
 | D-2 | Duration drift: JS 320ms vs CSS 360ms | P1 | `startCardTransition` cleanup timeout (320ms) does not match `--card-camera-motion-duration` (360ms). |
-| D-3 | `prefersReducedMotion()` not shared | P1 | Duplicated in `FeedView.vue`; needs extraction to `src/motion/useReducedMotion.ts`. |
+| D-3 | `prefersReducedMotion()` not shared | P1 | Local function in `FeedView.vue` (line 102); injected into `useFeedDetail.ts` via deps. Needs extraction to `src/motion/useReducedMotion.ts`. |
 | D-4 | Gesture logic monolith in `FeedView.vue` | P2 | Detail drag gesture is not reusable; should be extracted to a composable. |
 | D-5 | `closeDetailWithCardify` coupling | P2 | Handles animation, chrome state, browser history, and detail state reset in one function. |
 | D-6 | ~~Floating chrome no-motion override~~ | ~~P2~~ | **Resolved (#279)**: No-motion contract is permanent. Stale motion variables, dead transitions, redundant `prefers-reduced-motion` block, and dead progress/closed-loop rules removed. |
@@ -279,3 +282,4 @@ This documentation slice identifies but does **not** resolve the following:
 | D-9 | v1 card-camera overlay quarantined | P2 | **Quarantined (#274)**: `card-camera-transition.css` and `FeedView.vue` card transition code marked as temporary scaffolding. Must not be extended; will be replaced by shared-element/detail motion architecture. |
 | D-10 | ~~FloatingChromePhase misleading~~ | ~~P2~~ | **Resolved (#281)**: `entering` and `exiting` are now real lifecycle phases driven by `transitionSpec()`. Phase semantics are documented and tested. |
 | D-11 | ~~Chrome transition lifecycle~~ | ~~P2~~ | **Resolved (#278)**: `visible → exiting → swap → entering → visible` lifecycle implemented in `useFloatingChromeController.transitionSpec()`. |
+| D-12 | Visual chrome restoration blocked on timer cleanup | P2 | Floating chrome phase lifecycle exists and runs, but visual motion remains suppressed by the no-motion CSS contract (`--floating-chrome-motion-duration: 0ms`). Restoring visual chrome transitions is a serial follow-up after D-1 timer cleanup lands. |

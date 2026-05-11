@@ -1,7 +1,12 @@
 /* QUARANTINE: v1 card-camera overlay scaffolding (issue #85 / #274).
    This file is temporary. Do not extend or add new behavior here.
    The final shared-element/detail motion architecture will replace it.
-   Reduced-motion users get instant detail open (JS guard in FeedView.vue).
+
+   Ownership (post-#347):
+   - FeedView.vue owns the v1 overlay DOM and startCardTransition injection.
+   - useFeedDetail.ts owns detail lifecycle, close orchestration, and chrome handoff.
+   - Visual skin overrides live in content-immersive-ui.css (border, bg, shadow).
+   - Reduced-motion users get instant detail open (JS guard in FeedView.vue).
 */
 :root {
   --card-camera-motion-duration: 360ms;
