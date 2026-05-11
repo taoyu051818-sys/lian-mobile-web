@@ -31,7 +31,7 @@ let longPressTimer = 0;
 
 const CARD_TEMPLATES: ReadonlySet<CardTemplate> = new Set(["image", "text", "activity", "place", "merchant", "help"]);
 
-function normalizePresentationIntent(value: FeedItem["presentationIntent"]): CardTemplate | null {
+function normalizePresentationIntent(value: FeedItem["cardTemplate"] | FeedItem["presentationIntent"]): CardTemplate | null {
   return typeof value === "string" && CARD_TEMPLATES.has(value as CardTemplate) ? value as CardTemplate : null;
 }
 
@@ -44,7 +44,7 @@ const actor = computed(() => props.item.actor || {});
 const authorName = computed(() => actor.value.displayName || actor.value.username || actor.value.name || "同学");
 const authorAvatarUrl = computed(() => actor.value.avatarUrl || "");
 const authorInitial = computed(() => actor.value.avatarText || authorName.value.slice(0, 1) || "同");
-const searchText = computed(() => `${props.item.contentType} ${primaryTag.value} ${title.value} ${placeLabel.value}`.toLowerCase());
+const normalizedCardTemplate = computed(() => normalizePresentationIntent(props.item.cardTemplate));
 const serverPresentationIntent = computed(() => normalizePresentationIntent(props.item.presentationIntent));
 const cardWarning = computed(() => [
   title.value.length > MAX_VISIBLE_TITLE_CHARS ? "title-clamped" : "",
@@ -52,13 +52,8 @@ const cardWarning = computed(() => [
 ].filter(Boolean).join(" ") || undefined);
 
 const cardTemplate = computed<CardTemplate>(() => {
+  if (normalizedCardTemplate.value) return normalizedCardTemplate.value;
   if (serverPresentationIntent.value) return serverPresentationIntent.value;
-  const raw = searchText.value;
-  if (raw.includes("报名") || raw.includes("活动") || raw.includes("社团") || raw.includes("opportunity") || raw.includes("activity")) return "activity";
-  if (raw.includes("商家") || raw.includes("优惠") || raw.includes("店") || raw.includes("merchant") || raw.includes("trade")) return "merchant";
-  if (raw.includes("食") || raw.includes("饭") || raw.includes("food")) return "merchant";
-  if (raw.includes("互助") || raw.includes("求助") || raw.includes("组队") || raw.includes("help")) return "help";
-  if (raw.includes("地点") || raw.includes("路线") || raw.includes("图书馆") || raw.includes("map") || raw.includes("place")) return "place";
   return coverUrl.value ? "image" : "text";
 });
 
