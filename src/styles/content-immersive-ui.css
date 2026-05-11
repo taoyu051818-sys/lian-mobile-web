@@ -182,6 +182,9 @@
   transform: translateY(-1px);
 }
 
+/* Visual skin for the quarantined v1 card-camera overlay (issue #85 / #274).
+   Layers on top of structural/animation rules in card-camera-transition.css.
+   Keep both files in sync until shared-element architecture replaces this. */
 .feed-view__card-transition {
   border-color: var(--lian-line-strong);
   border-radius: var(--radius-content-card);
