@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref } from "vue";
 import { fetchAuthMe } from "../api/profile";
-import { fetchChannelMessages, fetchNotifications, markChannelMessagesRead, sendChannelMessage } from "../api/messages";
+import { buildPendingChannelMessage, fetchChannelMessages, fetchNotifications, markChannelMessagesRead, sendChannelMessage } from "../api/messages";
 import { useFloatingChromeController } from "../motion/floatingChrome";
 import type { DisplayActor } from "../types/feed";
 import type { ChannelMessage, ChannelMessageActor, MessageTabKey, NotificationItem } from "../types/messages";
@@ -27,6 +27,7 @@ const currentUser = ref<ProfileUser | null>(null);
 const identityTags = ref<string[]>([]);
 const sending = ref(false);
 const sendError = ref("");
+const isNearBottom = ref(true);
 
 const composerChrome = useFloatingChromeController({ initialPhase: "visible" });
 const composerChromePhase = composerChrome.phase;
@@ -91,6 +92,18 @@ function isReplyNotification(item: NotificationItem) {
   return ["new-reply", "reply", "new-post", "post-reply"].includes(String(item.type || ""));
 }
 
+const SCROLL_BOTTOM_THRESHOLD = 120;
+
+function checkNearBottom() {
+  const doc = document.documentElement;
+  isNearBottom.value = doc.scrollHeight - window.scrollY - window.innerHeight < SCROLL_BOTTOM_THRESHOLD;
+}
+
+async function scrollToBottom() {
+  await nextTick();
+  window.scrollTo(0, document.documentElement.scrollHeight);
+}
+
 async function loadCurrentUser() {
   try {
     const user = await fetchAuthMe();
@@ -141,7 +154,9 @@ async function loadChannel(reset = true) {
     if (reset && channelItems.value.length) {
       const ids = channelItems.value.map((item) => item.id);
       markChannelMessagesRead(ids).catch(() => {});
+      await scrollToBottom();
     }
+    checkNearBottom();
   } catch (error) {
     channelError.value = error instanceof Error ? error.message : "频道消息暂时没加载出来，可以稍后再试。";
   } finally {
@@ -149,23 +164,31 @@ async function loadChannel(reset = true) {
   }
 }
 
-async function refreshLatest() {
+async function replacePendingWithLatest(pendingId: string) {
   try {
     const response = await fetchChannelMessages(0, 30);
     const latestItems = (response.items || []).slice().reverse();
-    const existingIds = new Set(channelItems.value.map((item) => String(item.id)));
-    const newItems = latestItems.filter((item) => !existingIds.has(String(item.id)));
-    if (newItems.length) {
-      const merged = [...channelItems.value, ...newItems];
-      merged.sort((a, b) => {
-        const ta = a.timestampISO || a.time || "";
-        const tb = b.timestampISO || b.time || "";
-        return ta < tb ? -1 : ta > tb ? 1 : 0;
-      });
-      channelItems.value = merged;
-    }
-    await nextTick();
-    window.scrollTo(0, document.documentElement.scrollHeight);
+    const pendingContent = channelItems.value.find((item) => String(item.id) === pendingId)?.content || "";
+
+    channelItems.value = channelItems.value
+      .filter((item) => String(item.id) !== pendingId)
+      .concat(latestItems.filter((serverItem) => {
+        const existingIds = new Set(channelItems.value.map((i) => String(i.id)));
+        if (existingIds.has(String(serverItem.id))) return false;
+        if (serverItem.content === pendingContent && !serverItem.isSelf) return false;
+        return true;
+      }));
+
+    channelItems.value = channelItems.value.slice().sort((a, b) => {
+      const aPending = String(a.id).startsWith("pending-");
+      const bPending = String(b.id).startsWith("pending-");
+      if (aPending !== bPending) return aPending ? 1 : -1;
+      const ta = a.timestampISO || a.time || "";
+      const tb = b.timestampISO || b.time || "";
+      return ta < tb ? -1 : ta > tb ? 1 : 0;
+    });
+
+    if (isNearBottom.value) await scrollToBottom();
   } catch {
     /* silent — the message was already sent successfully */
   }
@@ -203,11 +226,52 @@ async function submitMessage() {
 
   sending.value = true;
   sendError.value = "";
+
+  const pending = buildPendingChannelMessage(content, composerIdentityTag.value || undefined, currentUser.value);
+  channelItems.value = [...channelItems.value, pending];
+  composerContent.value = "";
+  await scrollToBottom();
+
   try {
     await sendChannelMessage({ content, identityTag: composerIdentityTag.value });
-    composerContent.value = "";
-    await refreshLatest();
+    await replacePendingWithLatest(String(pending.id));
   } catch (error) {
+    const idx = channelItems.value.findIndex((item) => String(item.id) === String(pending.id));
+    if (idx !== -1) {
+      const updated = [...channelItems.value];
+      updated[idx] = { ...updated[idx], deliveryState: "failed" };
+      channelItems.value = updated;
+    }
+    sendError.value = error instanceof Error ? error.message : "消息没有发送成功，可以稍后再试。";
+  } finally {
+    sending.value = false;
+  }
+}
+
+async function retryMessage(pendingId: string) {
+  const pending = channelItems.value.find((item) => String(item.id) === pendingId);
+  if (!pending || sending.value) return;
+
+  sending.value = true;
+  sendError.value = "";
+
+  const idx = channelItems.value.findIndex((item) => String(item.id) === pendingId);
+  if (idx !== -1) {
+    const updated = [...channelItems.value];
+    updated[idx] = { ...updated[idx], deliveryState: "sending" };
+    channelItems.value = updated;
+  }
+
+  try {
+    await sendChannelMessage({ content: pending.content || "", identityTag: composerIdentityTag.value || "" });
+    await replacePendingWithLatest(pendingId);
+  } catch (error) {
+    const failIdx = channelItems.value.findIndex((item) => String(item.id) === pendingId);
+    if (failIdx !== -1) {
+      const updated = [...channelItems.value];
+      updated[failIdx] = { ...updated[failIdx], deliveryState: "failed" };
+      channelItems.value = updated;
+    }
     sendError.value = error instanceof Error ? error.message : "消息没有发送成功，可以稍后再试。";
   } finally {
     sending.value = false;
@@ -217,9 +281,11 @@ async function submitMessage() {
 onMounted(async () => {
   await loadCurrentUser();
   await loadChannel(true);
+  window.addEventListener("scroll", checkNearBottom, { passive: true });
 });
 
 onBeforeUnmount(() => {
+  window.removeEventListener("scroll", checkNearBottom);
   composerChrome.dispose();
 });
 </script>
@@ -243,6 +309,7 @@ onBeforeUnmount(() => {
       :has-more="channelHasMore"
       @retry="loadChannel(true)"
       @load-more="loadChannel(false)"
+      @retry-message="retryMessage"
     />
 
     <NotificationList

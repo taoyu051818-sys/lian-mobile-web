@@ -14,6 +14,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   retry: [];
   loadMore: [];
+  retryMessage: [pendingId: string];
 }>();
 
 function stripHtml(html?: string) {
@@ -68,7 +69,7 @@ function messageMeta(item: ChannelMessage) {
     <div v-if="loading && !items.length" class="messages-view__state" role="status">正在加载频道消息…</div>
     <div v-else-if="!items.length" class="messages-view__state">还没有消息</div>
     <div v-else class="messages-view__list" aria-live="polite">
-      <article v-for="item in items" :key="String(item.id)" class="messages-view__message" :class="{ 'is-self': item.isSelf }">
+      <article v-for="item in items" :key="String(item.id)" class="messages-view__message" :class="{ 'is-self': item.isSelf, 'is-pending': String(item.id).startsWith('pending-') }">
         <span v-if="!item.isSelf" class="messages-view__message-avatar identity-badge__avatar" aria-hidden="true">{{ messageAvatarText(item) }}</span>
         <div class="messages-view__message-body">
           <span v-if="!item.isSelf" class="messages-view__message-author identity-badge__text">
@@ -80,7 +81,10 @@ function messageMeta(item: ChannelMessage) {
             <footer>
               <span>{{ formatRelativeTime(item.timestampISO || item.time) || "刚刚" }}</span>
               <span v-if="item.isSelf && item.deliveryState === 'sending'">发送中…</span>
-              <span v-else-if="item.isSelf && item.deliveryState === 'failed'">发送失败</span>
+              <span v-else-if="item.isSelf && item.deliveryState === 'failed'">
+                发送失败
+                <button type="button" class="messages-view__retry-btn" @click="emit('retryMessage', String(item.id))">重试</button>
+              </span>
               <span v-else-if="item.readCount">{{ item.readCount }} 次已读</span>
             </footer>
           </div>
@@ -213,5 +217,21 @@ function messageMeta(item: ChannelMessage) {
   background: rgba(255, 255, 255, 0.72);
   color: currentColor;
   font-weight: 900;
+}
+
+.messages-view__message.is-pending {
+  opacity: 0.7;
+}
+
+.messages-view__retry-btn {
+  min-height: 28px;
+  margin-left: var(--space-2);
+  padding: 0 var(--space-2);
+  border: 1px solid rgba(31, 167, 160, 0.24);
+  border-radius: var(--radius-chip);
+  background: rgba(31, 167, 160, 0.08);
+  color: var(--lian-accent, #1fa7a0);
+  font-size: 12px;
+  font-weight: 800;
 }
 </style>

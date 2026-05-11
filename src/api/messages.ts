@@ -33,6 +33,31 @@ export async function fetchNotifications(): Promise<NotificationResponse> {
   return apiGet<NotificationResponse>("/api/messages");
 }
 
+export function buildPendingChannelMessage(
+  content: string,
+  identityTag: string | undefined,
+  currentUser: { username?: string; displayName?: string; avatarText?: string; id?: string } | null,
+): ChannelMessage {
+  const id = `pending-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  const now = new Date().toISOString();
+  const name = currentUser?.displayName || currentUser?.username || "同学";
+  return {
+    id,
+    content,
+    actor: {
+      id: currentUser?.id || "",
+      name,
+      displayName: name,
+      avatarText: currentUser?.avatarText || name.slice(0, 2) || "同",
+      authoritative: false,
+    },
+    timestampISO: now,
+    time: now,
+    deliveryState: "sending",
+    isSelf: true,
+  };
+}
+
 export async function sendChannelMessage(payload: SendChannelMessagePayload): Promise<void> {
   const readerId = ensureClientId();
   await apiSend("/api/channel/messages", {
