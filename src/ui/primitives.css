@@ -242,7 +242,7 @@
 .lian-sheet {
   position: fixed;
   inset: 0;
-  z-index: 100;
+  z-index: var(--z-sheet);
 }
 
 .lian-sheet__backdrop {
@@ -286,7 +286,7 @@
   top: calc(12px + env(safe-area-inset-top));
   right: 12px;
   left: 12px;
-  z-index: 200;
+  z-index: var(--z-toast);
   display: grid;
   gap: var(--space-2);
   pointer-events: none;
