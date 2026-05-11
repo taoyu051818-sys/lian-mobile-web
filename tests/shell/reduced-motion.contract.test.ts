@@ -36,13 +36,19 @@ describe("floating chrome reduced-motion contract", () => {
     expect(chrome.style.value["--floating-chrome-drag-progress"]).toBe("0.35");
   });
 
-  it("uses a permanent no-motion stylesheet contract for floating chrome surfaces", () => {
+  it("uses restrained visual motion with strict reduced-motion fallback for floating chrome surfaces", () => {
     const source = readRepoFile("../../src/styles/floating-chrome.css");
 
-    expect(source).toContain("--floating-chrome-motion-duration: 0ms;");
-    expect(source).toContain("transition: none !important;");
+    // Normal motion uses tokenized duration
+    expect(source).toContain("--floating-chrome-motion-duration: var(--motion-fast)");
+    // Progress state selector exists
     expect(source).toContain('.lian-floating-chrome[data-floating-state="progress"]');
-    expect(source).not.toContain("@media (prefers-reduced-motion: reduce)");
+    // Reduced-motion block enforces strict no-motion
+    expect(source).toContain("@media (prefers-reduced-motion: reduce)");
+    const rmBlock = source.slice(source.indexOf("@media (prefers-reduced-motion: reduce)"));
+    expect(rmBlock).toContain("transition: none !important");
+    expect(rmBlock).toContain("transform: none !important");
+    expect(rmBlock).toContain("filter: none !important");
   });
 });
 
