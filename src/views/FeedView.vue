@@ -1,28 +1,15 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { fetchFeed } from "../api/feed";
-import { fetchPostDetail } from "../api/posts";
 import { useFloatingChromeController } from "../motion/floatingChrome";
 import { useShellChrome } from "../shell/useShellChrome";
 import type { FeedItem, FeedItemId, FeedTab } from "../types/feed";
-import type { PostDetail } from "../types/post";
 import { InlineError, LianButton } from "../ui";
 import PostDetailPanel from "./detail/PostDetailPanel.vue";
 import FeedList from "./feed/FeedList.vue";
 import FeedLoadMore from "./feed/FeedLoadMore.vue";
+import { useFeedDetail, type CardOpenPayload, type CardTransitionSnapshot } from "./feed/useFeedDetail";
 import { READ_HISTORY_KEY, HOME_UPDATE_PROBE_PREFIX } from "../platform/browser-storage";
-
-interface CardOpenPayload {
-  item: FeedItem;
-  rect: { top: number; left: number; width: number; height: number };
-}
-
-interface CardTransitionSnapshot extends CardOpenPayload {}
-
-interface DetailHistoryState {
-  lianDetail?: boolean;
-  tid?: string;
-}
 
 const DEFAULT_TABS: FeedTab[] = [
   { id: "此刻", label: "此刻" },
@@ -52,95 +39,18 @@ const hasMore = ref(true);
 const loading = ref(false);
 const loadingMore = ref(false);
 const errorMessage = ref("");
-const selectedPostId = ref<FeedItemId | null>(null);
-const selectedPost = ref<PostDetail | null>(null);
-const detailLoading = ref(false);
-const detailError = ref("");
 const showUpdateProbe = ref(false);
 const cardTransition = ref<CardTransitionSnapshot | null>(null);
-const lastOpenSnapshot = ref<CardTransitionSnapshot | null>(null);
 const cardTransitionActive = ref(false);
-const dragStartX = ref(0);
-const dragStartY = ref(0);
-const detailDragX = ref(0);
-const detailDragging = ref(false);
-const detailReturning = ref(false);
-const detailPointerId = ref<number | null>(null);
-const detailGestureLocked = ref<"horizontal" | "vertical" | null>(null);
+const viewportWidth = ref(390);
+const viewportHeight = ref(844);
+
 const { setRegion } = useShellChrome();
 const feedTabsChrome = useFloatingChromeController({ initialPhase: "visible" });
 const detailChrome = useFloatingChromeController({ initialPhase: "hidden" });
 const detailChromePhase = detailChrome.phase;
 const detailChromeStyle = detailChrome.style;
-const detailHistoryActive = ref(false);
-const ignoreNextPopState = ref(false);
-const viewportWidth = ref(390);
-const viewportHeight = ref(844);
-
-const detailOpen = computed(() => selectedPostId.value !== null);
 const feedTabsChromeState = feedTabsChrome.phase;
-const isEmpty = computed(() => !loading.value && !errorMessage.value && items.value.length === 0);
-const detailCardifyProgress = computed(() => Math.min(1, Math.max(0, Math.abs(detailDragX.value) / CARDIFY_DISTANCE)));
-const detailTargetScale = computed(() => {
-  const snapshot = lastOpenSnapshot.value;
-  if (!snapshot) return 0.5;
-  const scaleByWidth = snapshot.rect.width / Math.max(1, viewportWidth.value);
-  const scaleByHeight = snapshot.rect.height / Math.max(1, viewportHeight.value);
-  return Math.max(0.34, Math.min(0.72, Math.max(scaleByWidth, scaleByHeight)));
-});
-const detailTargetX = computed(() => {
-  const snapshot = lastOpenSnapshot.value;
-  if (!snapshot) return 0;
-  return snapshot.rect.left + snapshot.rect.width / 2 - viewportWidth.value / 2;
-});
-const detailTargetY = computed(() => {
-  const snapshot = lastOpenSnapshot.value;
-  if (!snapshot) return 0;
-  return snapshot.rect.top + snapshot.rect.height / 2 - viewportHeight.value / 2;
-});
-const detailDragStyle = computed(() => {
-  const progress = detailCardifyProgress.value;
-  const returning = detailReturning.value;
-  const scale = returning
-    ? 1 - (1 - detailTargetScale.value) * progress
-    : 1 - (1 - DRAG_STAGE_MIN_SCALE) * progress;
-  const translateX = returning ? detailTargetX.value * progress : detailDragX.value;
-  const translateY = returning ? detailTargetY.value * progress : 0;
-  const feedOpacity = detailOpen.value ? Math.max(0.1, progress * 0.9) : 1;
-  const feedScale = detailOpen.value ? 0.985 + progress * 0.015 : 1;
-  const chromeOpacity = 1;
-  const topChromeTranslateY = 0;
-  const bottomChromeTranslateY = 0;
-  return {
-    "--detail-card-progress": String(progress),
-    "--detail-card-scale": String(scale),
-    "--detail-card-translate-x": `${translateX}px`,
-    "--detail-card-translate-y": `${translateY}px`,
-    "--detail-card-radius": `${Math.round(progress * 18)}px`,
-    "--detail-top-chrome-opacity": String(chromeOpacity),
-    "--detail-top-chrome-translate-y": `${topChromeTranslateY}px`,
-    "--detail-bottom-chrome-opacity": String(chromeOpacity),
-    "--detail-bottom-chrome-translate-y": `${bottomChromeTranslateY}px`,
-    "--feed-under-detail-opacity": String(feedOpacity),
-    "--feed-under-detail-scale": String(feedScale),
-  };
-});
-const cardTransitionStyle = computed(() => {
-  const snapshot = cardTransition.value;
-  if (!snapshot) return undefined;
-  return {
-    "--card-top": `${snapshot.rect.top}px`,
-    "--card-left": `${snapshot.rect.left}px`,
-    "--card-width": `${snapshot.rect.width}px`,
-    "--card-height": `${snapshot.rect.height}px`,
-  };
-});
-const canAutoLoadMore = computed(() => (
-  hasMore.value
-  && !loading.value
-  && !loadingMore.value
-  && !detailOpen.value
-));
 
 function updateViewport() {
   if (typeof window === "undefined") return;
@@ -193,102 +103,61 @@ function prefersReducedMotion() {
   return typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
 }
 
-function currentHistoryState() {
-  if (typeof window === "undefined") return {} as DetailHistoryState;
-  return (window.history.state || {}) as DetailHistoryState;
-}
-
-function pushDetailHistory(id: FeedItemId) {
-  if (typeof window === "undefined" || detailHistoryActive.value) return;
-  try {
-    window.history.pushState({ ...currentHistoryState(), lianDetail: true, tid: String(id) }, "", window.location.href);
-    detailHistoryActive.value = true;
-  } catch {
-    detailHistoryActive.value = false;
-  }
-}
-
-function clearDetailHistory() {
-  if (typeof window === "undefined" || !detailHistoryActive.value) return;
-  detailHistoryActive.value = false;
-  try {
-    if (currentHistoryState().lianDetail) {
-      ignoreNextPopState.value = true;
-      window.history.back();
-    }
-  } catch {
-    ignoreNextPopState.value = false;
-  }
-}
-
-// QUARANTINE: v1 card-camera overlay (issue #85 / #274). Temporary scaffolding; do not extend.
-function startCardTransition(payload?: CardOpenPayload) {
-  if (!payload || typeof window === "undefined" || prefersReducedMotion()) return;
-  cardTransition.value = payload;
-  lastOpenSnapshot.value = payload;
-  cardTransitionActive.value = false;
-  void nextTick(() => {
-    requestAnimationFrame(() => {
-      cardTransitionActive.value = true;
-      window.setTimeout(() => {
-        cardTransition.value = null;
-        cardTransitionActive.value = false;
-      }, 320);
+// Detail lifecycle composable: owns detail data, history, open/close/retry.
+const {
+  selectedPostId, selectedPost, detailLoading, detailError,
+  detailOpen, detailDragging, detailReturning,
+  detailDragX, detailPointerId, detailGestureLocked,
+  dragStartX, dragStartY,
+  detailCardifyProgress, detailDragStyle,
+  openItem, retryDetail, closeDetail,
+  closeDetailWithCardify, resetDetailState,
+} = useFeedDetail({
+  feedTabsChrome,
+  detailChrome,
+  emitChrome: (hidden) => emit("chrome", hidden),
+  // QUARANTINE: v1 card-camera overlay (issue #85 / #274). Temporary scaffolding; do not extend.
+  startCardTransition(payload) {
+    if (!payload || typeof window === "undefined" || prefersReducedMotion()) return;
+    cardTransition.value = payload;
+    cardTransitionActive.value = false;
+    void nextTick(() => {
+      requestAnimationFrame(() => {
+        cardTransitionActive.value = true;
+        window.setTimeout(() => {
+          cardTransition.value = null;
+          cardTransitionActive.value = false;
+        }, 320);
+      });
     });
-  });
-}
+  },
+  rememberReadItem,
+  updateViewport,
+  prefersReducedMotion,
+  viewportWidth,
+  viewportHeight,
+  cardifyDistance: CARDIFY_DISTANCE,
+  dragStageMinScale: DRAG_STAGE_MIN_SCALE,
+  returnAnimationMs: RETURN_ANIMATION_MS,
+});
 
-function resetDetailState() {
-  selectedPostId.value = null;
-  selectedPost.value = null;
-  detailLoading.value = false;
-  detailError.value = "";
-  detailDragX.value = 0;
-  detailDragging.value = false;
-  detailReturning.value = false;
-  detailPointerId.value = null;
-  detailGestureLocked.value = null;
-  detailHistoryActive.value = false;
-  detailChrome.hide();
-  feedTabsChrome.show();
-  emit("chrome", false);
-}
-
-function closeDetailWithCardify(options: { syncHistory?: boolean; direction?: number } = {}) {
-  const syncHistory = options.syncHistory !== false;
-  const direction = options.direction ?? (detailDragX.value < 0 ? -1 : 1);
-  if (syncHistory) clearDetailHistory();
-  if (prefersReducedMotion()) {
-    resetDetailState();
-    return;
-  }
-  updateViewport();
-  detailDragging.value = false;
-  detailReturning.value = true;
-  detailPointerId.value = null;
-  detailGestureLocked.value = null;
-
-  // Chrome handoff is immediate and has no motion:
-  // detail chrome hidden, feed tabs and app bottom bar visible in the same user action.
-  detailChrome.hide();
-  feedTabsChrome.show();
-  emit("chrome", false);
-
-  detailDragX.value = Math.sign(direction || 1) * CARDIFY_DISTANCE;
-  window.setTimeout(() => {
-    resetDetailState();
-  }, RETURN_ANIMATION_MS);
-}
-
-function onWindowPopState() {
-  if (ignoreNextPopState.value) {
-    ignoreNextPopState.value = false;
-    return;
-  }
-  if (!detailOpen.value && !detailHistoryActive.value) return;
-  detailHistoryActive.value = false;
-  closeDetailWithCardify({ syncHistory: false, direction: detailDragX.value || -1 });
-}
+const isEmpty = computed(() => !loading.value && !errorMessage.value && items.value.length === 0);
+const cardTransitionStyle = computed(() => {
+  const snapshot = cardTransition.value;
+  if (!snapshot) return undefined;
+  return {
+    "--card-top": `${snapshot.rect.top}px`,
+    "--card-left": `${snapshot.rect.left}px`,
+    "--card-width": `${snapshot.rect.width}px`,
+    "--card-height": `${snapshot.rect.height}px`,
+  };
+});
+const canAutoLoadMore = computed(() => (
+  hasMore.value
+  && !loading.value
+  && !loadingMore.value
+  && !detailOpen.value
+));
 
 async function loadFeed(reset = false) {
   if (loading.value || loadingMore.value) return;
@@ -344,51 +213,6 @@ function switchTab(tabId: string) {
 function triggerLoadMore() {
   if (!canAutoLoadMore.value) return;
   void loadFeed(false);
-}
-
-async function openItem(id: FeedItemId, payload?: CardOpenPayload) {
-  updateViewport();
-
-  // Chrome handoff is immediate and has no motion:
-  // feed tabs and app bottom bar hidden, detail chrome visible.
-  feedTabsChrome.hide();
-  emit("chrome", true);
-
-  startCardTransition(payload);
-  rememberReadItem(id);
-  selectedPostId.value = id;
-  selectedPost.value = null;
-  detailError.value = "";
-  detailLoading.value = true;
-  detailChrome.show();
-  detailDragX.value = 0;
-  detailDragging.value = false;
-  detailReturning.value = false;
-  pushDetailHistory(id);
-
-  try {
-    const detail = await fetchPostDetail(id);
-    if (Number(selectedPostId.value) === Number(id)) {
-      selectedPost.value = detail;
-    }
-  } catch (error) {
-    detailError.value = error instanceof Error
-      ? error.message
-      : "详情暂时没加载出来，可以稍后再试。";
-  } finally {
-    if (Number(selectedPostId.value) === Number(id)) {
-      detailLoading.value = false;
-    }
-  }
-}
-
-function retryDetail() {
-  if (selectedPostId.value == null) return;
-  void openItem(selectedPostId.value);
-}
-
-function closeDetail() {
-  closeDetailWithCardify();
 }
 
 function isInteractiveTarget(target: EventTarget | null) {
@@ -484,7 +308,6 @@ onMounted(() => {
     visible: true,
   });
   window.addEventListener("resize", updateViewport);
-  window.addEventListener("popstate", onWindowPopState);
   emit("chrome", false);
   openUpdateProbe();
   void loadFeed(true);
@@ -503,12 +326,10 @@ watch([tabs, activeTab, feedTabsChromeState], () => {
 });
 
 onBeforeUnmount(() => {
-  clearDetailHistory();
   setRegion("top", { tabs: null, onTabSelect: null, visible: false });
   feedTabsChrome.dispose();
   detailChrome.dispose();
   window.removeEventListener("resize", updateViewport);
-  window.removeEventListener("popstate", onWindowPopState);
 });
 </script>
 
