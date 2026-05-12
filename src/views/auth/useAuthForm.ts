@@ -1,6 +1,12 @@
 import { computed, onMounted, ref } from "vue";
 import { fetchAuthRules, loginAuth, registerAuth, sendEmailCode } from "../../api/auth";
 import type { AuthInterestOption, AuthMode, AuthRulesResponse } from "../../api/auth";
+import {
+  AUTH_MAX_INTEREST_SELECTIONS,
+  type AuthValidationFields,
+  toggleSelectedInterest as toggleSharedSelectedInterest,
+  validateAuthForm as validateSharedAuthForm,
+} from "../../domain/validation/forms";
 import type { ProfileUser } from "../../types/profile";
 
 export type AuthInterestStatus = "loading" | "ready" | "empty" | "unavailable";
@@ -11,45 +17,12 @@ export interface AuthInterestSettings {
   required: boolean;
 }
 
-export interface AuthFormFields {
-  mode: AuthMode;
-  login: string;
-  username: string;
-  email: string;
-  emailCode: string;
-  password: string;
-  inviteCode: string;
-  selectedInterests: string[];
-  interestSelectionRequired?: boolean;
-}
+export type AuthFormFields = AuthValidationFields;
 
-export function validateAuthForm(fields: AuthFormFields): string {
-  if (fields.password.length < 8) return "密码至少需要 8 位。";
-  if (fields.mode === "login") {
-    if (!fields.login.trim()) return "请填写邮箱或昵称。";
-    return "";
-  }
-  if (!fields.username.trim()) return "请填写昵称。";
-  if (!fields.email.trim() && !fields.inviteCode.trim()) {
-    return "请填写高校邮箱，或填写邀请码。";
-  }
-  if (fields.email.trim() && !fields.emailCode.trim()) {
-    return "高校邮箱注册需要填写验证码。";
-  }
-  if (fields.interestSelectionRequired && !fields.selectedInterests.length) {
-    return "至少选择一个兴趣，用来初始化推荐流。";
-  }
-  return "";
-}
+export const validateAuthForm = validateSharedAuthForm;
 
-export function toggleSelectedInterest(current: string[], id: string, max = 5): string[] {
-  if (current.includes(id)) {
-    return current.filter((item) => item !== id);
-  }
-  if (current.length >= max) {
-    return current;
-  }
-  return [...current, id];
+export function toggleSelectedInterest(current: string[], id: string, max = AUTH_MAX_INTEREST_SELECTIONS): string[] {
+  return toggleSharedSelectedInterest(current, id, max);
 }
 
 export async function loadAuthInterestSettings(
@@ -155,7 +128,7 @@ export function useAuthForm(onAuthenticated: (user: ProfileUser | null) => void)
   }
 
   function isInterestDisabled(id: string): boolean {
-    return selectedInterests.value.length >= 5 && !selectedInterests.value.includes(id);
+    return selectedInterests.value.length >= AUTH_MAX_INTEREST_SELECTIONS && !selectedInterests.value.includes(id);
   }
 
   function validate(): string {
