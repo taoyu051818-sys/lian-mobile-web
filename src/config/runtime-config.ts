@@ -136,6 +136,12 @@ export function getApiBase(): string {
   return validateAbsoluteOrEmpty(readRaw("LIAN_API_BASE_URL"), "LIAN_API_BASE_URL", isDevContext());
 }
 
+/** Shared builder so API modules do not each duplicate base-url joining. */
+export function buildApiUrl(path: string): string {
+  if (isAbsoluteUrl(path)) return path;
+  return path.startsWith("/") ? `${getApiBase()}${path}` : path;
+}
+
 /** Convenience accessor – prefer getRuntimeConfig() when both values are needed. */
 export function getImageProxyBase(): string {
   return validateAbsoluteRequired(readRaw("LIAN_IMAGE_PROXY_BASE_URL"), "LIAN_IMAGE_PROXY_BASE_URL", isDevContext());
