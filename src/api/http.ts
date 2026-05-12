@@ -14,7 +14,7 @@ export class LianApiError extends Error {
 
 type JsonRecord = Record<string, unknown>;
 
-function withApiBase(path: string) {
+export function withApiBase(path: string) {
   if (/^https?:\/\//i.test(path)) return path;
   return path.startsWith("/") ? `${getApiBase()}${path}` : path;
 }
@@ -29,7 +29,7 @@ function normalizeJsonOptions(options: RequestInit = {}) {
 }
 
 function asRecord(value: unknown): JsonRecord {
-  return value && typeof value === "object" && !Array.isArray(value) ? value as JsonRecord : {};
+  return value && typeof value === "object" && !Array.isArray(value) ? (value as JsonRecord) : {};
 }
 
 function extractApiError(data: unknown, status: number) {
@@ -50,19 +50,55 @@ function extractApiError(data: unknown, status: number) {
   return { message: `请求失败（状态码 ${status}）`, code };
 }
 
-export async function apiGet<T>(path: string, options: RequestInit = {}): Promise<T> {
+function buildApiError(data: unknown, status: number, fallbackMessage = "") {
+  const error = extractApiError(data, status);
+  if (fallbackMessage && error.message === `请求失败（状态码 ${status}）`) {
+    return new LianApiError(fallbackMessage, status, error.code);
+  }
+  return new LianApiError(error.message, status, error.code);
+}
+
+async function readJsonResponse<T>(response: Response): Promise<T> {
+  return response.json().catch(() => ({} as T));
+}
+
+async function apiRequest<T>(
+  path: string,
+  options: RequestInit = {},
+  fallbackMessage = "",
+): Promise<T> {
   const response = await fetch(withApiBase(path), {
     credentials: "include",
     ...normalizeJsonOptions(options),
   });
-  const data = await response.json().catch(() => ({} as JsonRecord));
+  const data = await readJsonResponse<T>(response);
   if (!response.ok) {
-    const error = extractApiError(data, response.status);
-    throw new LianApiError(error.message, response.status, error.code);
+    throw buildApiError(data, response.status, fallbackMessage);
   }
-  return data as T;
+  return data;
+}
+
+export async function apiGet<T>(path: string, options: RequestInit = {}): Promise<T> {
+  return apiRequest<T>(path, options);
 }
 
 export async function apiSend<T>(path: string, options: RequestInit = {}): Promise<T> {
-  return apiGet<T>(path, options);
+  return apiRequest<T>(path, options);
+}
+
+export async function apiUpload<T>(
+  path: string,
+  body: FormData,
+  fallbackMessage: string,
+  options: RequestInit = {},
+): Promise<T> {
+  return apiRequest<T>(
+    path,
+    {
+      method: "POST",
+      body,
+      ...options,
+    },
+    fallbackMessage,
+  );
 }
