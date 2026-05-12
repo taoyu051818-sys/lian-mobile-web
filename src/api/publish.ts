@@ -7,12 +7,7 @@ import type {
   PublishVisibility,
   UploadImageResponse,
 } from "../types/publish";
-import { getApiBase } from "../config/runtime-config";
-
-function withApiBase(path: string) {
-  if (/^https?:\/\//i.test(path)) return path;
-  return path.startsWith("/") ? `${getApiBase()}${path}` : path;
-}
+import { buildApiUrl } from "../config/runtime-config";
 
 export function normalizePublishTag(value = "") {
   const body = Array.from(String(value || "")
@@ -136,7 +131,7 @@ export async function uploadPublishImage(file: File): Promise<string> {
   const form = new FormData();
   form.append("image", file, file.name || "image.jpg");
 
-  const response = await fetch(withApiBase("/api/upload/image?purpose=publish-v2"), {
+  const response = await fetch(buildApiUrl("/api/upload/image?purpose=publish-v2"), {
     method: "POST",
     credentials: "include",
     body: form,
