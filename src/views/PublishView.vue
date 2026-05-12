@@ -2,6 +2,10 @@
 import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 import { fetchMapV2Items } from "../api/map";
 import { buildPublishPayload, createMapV2LocationDraft, normalizeIdentityTag, normalizePublishTag, publishPost, uploadPublishImage } from "../api/publish";
+import {
+  PUBLISH_MAX_IMAGE_COUNT,
+  validatePublishForm,
+} from "../domain/validation/forms";
 import { fetchAuthMe } from "../api/profile";
 import { GlassPanel, IdentityBadge, InlineError } from "../ui";
 import type { MapLocation } from "../types/map";
@@ -11,8 +15,6 @@ import PublishActionBar from "./publish/PublishActionBar.vue";
 import PublishComposer from "./publish/PublishComposer.vue";
 import PublishLocationControls from "./publish/PublishLocationControls.vue";
 import PublishMetaControls from "./publish/PublishMetaControls.vue";
-
-const MAX_IMAGE_COUNT = 9;
 
 const title = ref("");
 const body = ref("");
@@ -55,7 +57,7 @@ const locationToolLabel = computed(() => {
 });
 const visibilityLabel = computed(() => visibilityOptions.find((item) => item.value === visibility.value)?.label || "公开");
 const imageStatus = computed(() => {
-  if (!selectedFiles.value.length) return "最多 9 张";
+  if (!selectedFiles.value.length) return `最多 ${PUBLISH_MAX_IMAGE_COUNT} 张`;
   if (uploading.value) return `上传中 ${uploadedImageUrls.value.length}/${selectedFiles.value.length}`;
   return `已准备 ${uploadedImageUrls.value.length}/${selectedFiles.value.length} 张`;
 });
@@ -179,7 +181,7 @@ async function handleFiles(event: Event) {
 
   errorMessage.value = "";
   successMessage.value = "";
-  const remaining = Math.max(0, MAX_IMAGE_COUNT - selectedFiles.value.length);
+  const remaining = Math.max(0, PUBLISH_MAX_IMAGE_COUNT - selectedFiles.value.length);
   const nextFiles = files.slice(0, remaining);
   selectedFiles.value = [...selectedFiles.value, ...nextFiles];
   localPreviewUrls.value = [...localPreviewUrls.value, ...nextFiles.map((file) => URL.createObjectURL(file))];
@@ -212,13 +214,13 @@ function removeImage(index: number) {
 }
 
 function validate() {
-  if (!title.value.trim()) return "请填写标题。";
-  if (title.value.trim().length > 40) return "标题最多 40 个字。";
-  if (!body.value.trim()) return "请填写正文。";
-  if (body.value.trim().length > 300) return "正文最多 300 个字。";
-  if (uploading.value) return "图片还在上传，稍等一下再发布。";
-  if (selectedFiles.value.length !== uploadedImageUrls.value.length) return "还有图片没有上传成功，请重新选择或移除。";
-  return "";
+  return validatePublishForm({
+    title: title.value,
+    body: body.value,
+    uploading: uploading.value,
+    selectedFileCount: selectedFiles.value.length,
+    uploadedImageCount: uploadedImageUrls.value.length,
+  });
 }
 
 async function submitPublish() {
