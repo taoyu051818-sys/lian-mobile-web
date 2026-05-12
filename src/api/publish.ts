@@ -1,4 +1,4 @@
-import { apiSend } from "./http";
+import { apiSend, apiUpload } from "./http";
 import type { PlaceRef } from "../types/place";
 import type {
   PublishLocationDraft,
@@ -7,17 +7,13 @@ import type {
   PublishVisibility,
   UploadImageResponse,
 } from "../types/publish";
-import { getApiBase } from "../config/runtime-config";
-
-function withApiBase(path: string) {
-  if (/^https?:\/\//i.test(path)) return path;
-  return path.startsWith("/") ? `${getApiBase()}${path}` : path;
-}
 
 export function normalizePublishTag(value = "") {
-  const body = Array.from(String(value || "")
-    .trim()
-    .replace(/^#+/, ""))
+  const body = Array.from(
+    String(value || "")
+      .trim()
+      .replace(/^#+/, ""),
+  )
     .filter((char) => /[\p{L}\p{N}_-]/u.test(char))
     .join("")
     .slice(0, 15);
@@ -110,7 +106,9 @@ export function buildPublishPayload(input: {
   const metadata = {
     locationArea,
     visibility: input.visibility,
-    distribution: locationArea ? ["home", "map", "search", "detail"] : ["home", "search", "detail"],
+    distribution: locationArea
+      ? ["home", "map", "search", "detail"]
+      : ["home", "search", "detail"],
     primaryTag: tag,
     identityTag,
   };
@@ -136,15 +134,11 @@ export async function uploadPublishImage(file: File): Promise<string> {
   const form = new FormData();
   form.append("image", file, file.name || "image.jpg");
 
-  const response = await fetch(withApiBase("/api/upload/image?purpose=publish-v2"), {
-    method: "POST",
-    credentials: "include",
-    body: form,
-  });
-  const data = await response.json().catch(() => ({} as UploadImageResponse));
-  if (!response.ok) {
-    throw new Error((data as { error?: string }).error || "图片上传失败，可以换一张图片或稍后再试。");
-  }
+  const data = await apiUpload<UploadImageResponse>(
+    "/api/upload/image?purpose=publish-v2",
+    form,
+    "图片上传失败，可以换一张图片或稍后再试。",
+  );
   if (!data.url) throw new Error("图片上传成功但没有返回地址，请稍后再试。");
   return data.url;
 }
