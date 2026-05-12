@@ -1,12 +1,7 @@
 import { apiGet, apiSend } from "./http";
 import type { FeedItemId } from "../types/feed";
 import type { ProfileListResponse, ProfileTabKey, ProfileUser } from "../types/profile";
-import { getApiBase } from "../config/runtime-config";
-
-function withApiBase(path: string) {
-  if (/^https?:\/\//i.test(path)) return path;
-  return path.startsWith("/") ? `${getApiBase()}${path}` : path;
-}
+import { buildApiUrl } from "../config/runtime-config";
 
 export async function fetchAuthMe(): Promise<ProfileUser | null> {
   const data = await apiGet<{ user?: ProfileUser | null }>("/api/auth/me");
@@ -33,7 +28,7 @@ export async function uploadProfileAvatar(file: File): Promise<string> {
   const form = new FormData();
   form.append("image", file, file.name || "avatar.jpg");
 
-  const response = await fetch(withApiBase("/api/upload/image?purpose=avatar"), {
+  const response = await fetch(buildApiUrl("/api/upload/image?purpose=avatar"), {
     method: "POST",
     credentials: "include",
     body: form,
