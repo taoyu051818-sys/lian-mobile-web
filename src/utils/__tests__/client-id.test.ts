@@ -76,7 +76,7 @@ describe("ensureClientId", () => {
 
   it("falls back cleanly when crypto.randomUUID is unavailable", async () => {
     const { CLIENT_ID_KEY, ensureClientId } = await loadClientIdentityModule();
-    const cryptoWithOptionalRandomUUID = crypto as Crypto & { randomUUID?: typeof crypto.randomUUID };
+    const cryptoWithOptionalRandomUUID = crypto as unknown as { randomUUID?: () => string };
     const originalRandomUUID = cryptoWithOptionalRandomUUID.randomUUID;
     const storage = createMockStorage();
 
