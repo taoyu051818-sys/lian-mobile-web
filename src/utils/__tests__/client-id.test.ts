@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 function createMockStorage(initial: Record<string, string> = {}): Storage {
   const store = { ...initial };
@@ -44,7 +44,8 @@ function createThrowingStorage(): Storage {
 }
 
 async function loadClientIdentityModule() {
-  return import(`../../platform/clientIdentity.ts?case=${Math.random().toString(16).slice(2)}`);
+  vi.resetModules();
+  return import("../../platform/clientIdentity");
 }
 
 describe("ensureClientId", () => {
