@@ -12,6 +12,7 @@ defineProps<{
 
 const emit = defineEmits<{
   retry: [];
+  "open-item": [tid: number];
 }>();
 
 function actorDisplayName(actor?: DisplayActor | null, fallback = "") {
@@ -24,6 +25,11 @@ function isReplyNotification(item: NotificationItem) {
 
 function notificationActor(item: NotificationItem) {
   return actorDisplayName(item.actor, isReplyNotification(item) ? "回复" : "通知");
+}
+
+function openNotification(item: NotificationItem) {
+  const tid = Number(item.tid);
+  if (Number.isFinite(tid) && tid > 0) emit("open-item", tid);
 }
 </script>
 
@@ -41,7 +47,11 @@ function notificationActor(item: NotificationItem) {
         v-for="item in items"
         :key="String(item.id || item.tid || item.title)"
         class="messages-view__notification"
-        :class="{ 'is-unread': !item.read }"
+        :class="{ 'is-unread': !item.read, 'is-clickable': Number(item.tid) > 0 }"
+        role="button"
+        :tabindex="Number(item.tid) > 0 ? 0 : undefined"
+        @click="openNotification(item)"
+        @keydown.enter="openNotification(item)"
       >
         <header>
           <strong>{{ notificationActor(item) }}</strong>
@@ -97,6 +107,15 @@ function notificationActor(item: NotificationItem) {
 
 .messages-view__notification.is-unread {
   border-color: rgba(31, 167, 160, 0.28);
+}
+
+.messages-view__notification.is-clickable {
+  cursor: pointer;
+}
+
+.messages-view__notification.is-clickable:focus-visible {
+  outline: 2px solid var(--lian-primary, #1fa7a0);
+  outline-offset: 2px;
 }
 
 .inline-error button {

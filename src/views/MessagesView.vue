@@ -1,12 +1,15 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref } from "vue";
 import { fetchAuthMe } from "../api/profile";
+import { fetchPostDetail } from "../api/posts";
 import { buildPendingChannelMessage, fetchChannelMessages, fetchNotifications, markChannelMessagesRead, sendChannelMessage } from "../api/messages";
 import { useFloatingChromeController } from "../motion/floatingChrome";
 import { useVisualViewport } from "../composables/useVisualViewport";
-import type { DisplayActor } from "../types/feed";
+import type { DisplayActor, FeedItemId } from "../types/feed";
 import type { ChannelMessage, ChannelMessageActor, MessageTabKey, NotificationItem } from "../types/messages";
+import type { PostDetail } from "../types/post";
 import type { ProfileUser } from "../types/profile";
+import PostDetailPanel from "./detail/PostDetailPanel.vue";
 import { MessagesTabs, ChannelComposer, ChannelThread, NotificationList } from "./messages";
 
 const emit = defineEmits<{
@@ -29,6 +32,11 @@ const identityTags = ref<string[]>([]);
 const sending = ref(false);
 const sendError = ref("");
 const isNearBottom = ref(true);
+const selectedPostId = ref<FeedItemId | null>(null);
+const selectedPost = ref<PostDetail | null>(null);
+const detailLoading = ref(false);
+const detailError = ref("");
+const savedScrollY = ref(0);
 
 useVisualViewport();
 
@@ -93,6 +101,35 @@ function notificationActor(item: NotificationItem) {
 
 function isReplyNotification(item: NotificationItem) {
   return ["new-reply", "reply", "new-post", "post-reply"].includes(String(item.type || ""));
+}
+
+const detailOpen = computed(() => selectedPostId.value !== null);
+
+async function openNotification(tid: FeedItemId) {
+  savedScrollY.value = window.scrollY;
+  selectedPostId.value = tid;
+  selectedPost.value = null;
+  detailError.value = "";
+  detailLoading.value = true;
+  try {
+    selectedPost.value = await fetchPostDetail(tid);
+  } catch (error) {
+    detailError.value = error instanceof Error ? error.message : "帖子详情暂时没加载出来，可以稍后再试。";
+  } finally {
+    detailLoading.value = false;
+  }
+}
+
+function closeDetail() {
+  selectedPostId.value = null;
+  selectedPost.value = null;
+  detailLoading.value = false;
+  detailError.value = "";
+  requestAnimationFrame(() => window.scrollTo(0, savedScrollY.value));
+}
+
+function retryDetail() {
+  if (selectedPostId.value != null) void openNotification(selectedPostId.value);
 }
 
 const SCROLL_BOTTOM_THRESHOLD = 120;
@@ -344,6 +381,7 @@ onBeforeUnmount(() => {
       :loading="notificationLoading"
       :error="notificationError"
       @retry="loadNotifications"
+      @open-item="openNotification"
     />
 
     <ChannelComposer
@@ -364,6 +402,16 @@ onBeforeUnmount(() => {
       @update:identity-tag="composerIdentityTag = $event"
       @submit="submitMessage"
     />
+
+    <div v-if="detailOpen" class="messages-view__detail-overlay" role="dialog" aria-modal="true" aria-label="帖子详情">
+      <PostDetailPanel
+        :post="selectedPost"
+        :loading="detailLoading"
+        :error="detailError"
+        @close="closeDetail"
+        @retry="retryDetail"
+      />
+    </div>
   </section>
 </template>
 
@@ -406,5 +454,13 @@ onBeforeUnmount(() => {
   background: var(--glass-bg-strong);
   box-shadow: var(--shadow-floating);
   backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+}
+
+.messages-view__detail-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  overflow-y: auto;
+  background: var(--lian-surface, #fff);
 }
 </style>
