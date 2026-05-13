@@ -76,17 +76,18 @@ describe("ensureClientId", () => {
 
   it("falls back cleanly when crypto.randomUUID is unavailable", async () => {
     const { CLIENT_ID_KEY, ensureClientId } = await loadClientIdentityModule();
-    const originalRandomUUID = crypto.randomUUID;
+    const cryptoWithOptionalRandomUUID = crypto as Crypto & { randomUUID?: typeof crypto.randomUUID };
+    const originalRandomUUID = cryptoWithOptionalRandomUUID.randomUUID;
     const storage = createMockStorage();
 
-    delete crypto.randomUUID;
+    cryptoWithOptionalRandomUUID.randomUUID = undefined;
 
     try {
       const id = ensureClientId(storage);
       expect(id).toContain("-");
       expect(storage.getItem(CLIENT_ID_KEY)).toBe(id);
     } finally {
-      crypto.randomUUID = originalRandomUUID;
+      cryptoWithOptionalRandomUUID.randomUUID = originalRandomUUID;
     }
   });
 
