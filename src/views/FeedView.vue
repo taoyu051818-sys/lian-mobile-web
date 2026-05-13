@@ -9,6 +9,7 @@ import { InlineError, LianButton } from "../ui";
 import PostDetailPanel from "./detail/PostDetailPanel.vue";
 import FeedList from "./feed/FeedList.vue";
 import FeedLoadMore from "./feed/FeedLoadMore.vue";
+import { normalizeFeedItemId } from "./feed/feedItemId";
 import { useFeedDetail, type CardOpenPayload, type CardTransitionSnapshot } from "./feed/useFeedDetail";
 import { READ_HISTORY_KEY, HOME_UPDATE_PROBE_PREFIX } from "../platform/browser-storage";
 
@@ -57,10 +58,6 @@ function updateViewport() {
   if (typeof window === "undefined") return;
   viewportWidth.value = window.innerWidth || 390;
   viewportHeight.value = window.innerHeight || 844;
-}
-
-function normalizeFeedItemId(id: FeedItemId | string | number | null | undefined) {
-  return id == null ? "" : String(id);
 }
 
 function readHistoryQuery() {
