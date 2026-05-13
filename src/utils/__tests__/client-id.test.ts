@@ -18,6 +18,17 @@ function createMockStorage(initial: Record<string, string> = {}): Storage {
   };
 }
 
+function createThrowingStorage(): Storage {
+  return {
+    get length() { return 0; },
+    clear() {},
+    getItem() { throw new Error("storage blocked"); },
+    setItem() { throw new Error("storage blocked"); },
+    removeItem() {},
+    key() { return null; },
+  };
+}
+
 // exports correct key constant
 assertEqual(CLIENT_ID_KEY, "lian.clientId", "CLIENT_ID_KEY");
 
@@ -51,6 +62,16 @@ assertEqual(CLIENT_ID_KEY, "lian.clientId", "CLIENT_ID_KEY");
   } finally {
     crypto.randomUUID = origRandomUUID;
   }
+}
+
+// storage access failures fall back to a stable in-memory ID
+{
+  const storage = createThrowingStorage();
+  const first = ensureClientId(storage);
+  const second = ensureClientId(storage);
+  assertEqual(typeof first, "string", "throwing-storage id type");
+  assertEqual(first.length > 0, true, "throwing-storage id not empty");
+  assertEqual(first, second, "throwing-storage fallback stays stable");
 }
 
 // multiple calls return the same ID (idempotent)
