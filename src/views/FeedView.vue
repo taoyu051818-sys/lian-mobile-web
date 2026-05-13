@@ -59,10 +59,17 @@ function updateViewport() {
   viewportHeight.value = window.innerHeight || 844;
 }
 
+function normalizeFeedItemId(id: FeedItemId | string | number | null | undefined) {
+  return id == null ? "" : String(id);
+}
+
 function readHistoryQuery() {
   try {
-    const history = JSON.parse(localStorage.getItem(READ_HISTORY_KEY) || "[]") as Array<{ tid: FeedItemId }>;
-    return history.map((entry) => entry.tid).join(",");
+    const history = JSON.parse(localStorage.getItem(READ_HISTORY_KEY) || "[]") as Array<{ tid: FeedItemId | string }>;
+    return history
+      .map((entry) => normalizeFeedItemId(entry.tid))
+      .filter(Boolean)
+      .join(",");
   } catch {
     return "";
   }
@@ -70,9 +77,10 @@ function readHistoryQuery() {
 
 function rememberReadItem(id: FeedItemId) {
   try {
-    const history = JSON.parse(localStorage.getItem(READ_HISTORY_KEY) || "[]") as Array<{ tid: FeedItemId; lastViewedAt: string }>;
-    const nextHistory = history.filter((entry) => Number(entry.tid) !== Number(id));
-    nextHistory.push({ tid: id, lastViewedAt: new Date().toISOString() });
+    const normalizedId = normalizeFeedItemId(id);
+    const history = JSON.parse(localStorage.getItem(READ_HISTORY_KEY) || "[]") as Array<{ tid: FeedItemId | string; lastViewedAt: string }>;
+    const nextHistory = history.filter((entry) => normalizeFeedItemId(entry.tid) !== normalizedId);
+    nextHistory.push({ tid: normalizedId, lastViewedAt: new Date().toISOString() });
     localStorage.setItem(READ_HISTORY_KEY, JSON.stringify(nextHistory.slice(-500)));
   } catch {
     // Reading history should never block opening a card.
