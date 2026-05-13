@@ -2,6 +2,7 @@ import { computed, onBeforeUnmount, onMounted, ref, type Ref } from "vue";
 import { fetchPostDetail } from "../../api/posts";
 import type { FeedItem, FeedItemId } from "../../types/feed";
 import type { PostDetail } from "../../types/post";
+import { normalizeFeedItemId } from "./feedItemId";
 
 export interface CardOpenPayload {
   item: FeedItem;
@@ -100,10 +101,6 @@ export function useFeedDetail(deps: FeedDetailDeps) {
       "--feed-under-detail-scale": String(feedScale),
     };
   });
-
-  function normalizeFeedItemId(id: FeedItemId | string | number | null | undefined) {
-    return id == null ? "" : String(id);
-  }
 
   function currentHistoryState(): DetailHistoryState {
     if (typeof window === "undefined") return {} as DetailHistoryState;
