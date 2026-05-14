@@ -1,5 +1,5 @@
 import { apiGet, apiSend } from "./http";
-import { ensureClientId } from "../platform/browser-storage";
+import { ensureClientId } from "../platform/clientIdentity";
 import type { ChannelMessage, ChannelReadPayload, ChannelResponse, NotificationResponse, SendChannelMessagePayload } from "../types/messages";
 
 export function normalizeChannelMessage(raw: ChannelMessage): ChannelMessage {
