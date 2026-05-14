@@ -12,7 +12,7 @@ import { getApiBase } from "../config/runtime-config";
 export const MAX_PUBLISH_IMAGE_COUNT = 9;
 export const MAX_PUBLISH_IMAGE_BYTES = 10 * 1024 * 1024;
 export const PUBLISH_IMAGE_HELP_TEXT = `支持常见图片格式，单张不超过 ${formatPublishImageSize(MAX_PUBLISH_IMAGE_BYTES)}，最多 ${MAX_PUBLISH_IMAGE_COUNT} 张。`;
-export const PUBLISH_IMAGE_PRIVACY_NOTICE = "上传前请确认图片里没有住址、证件、课表或其他会直接暴露身份的信息。图片元数据清理由服务端负责，这一页只做基础格式和大小校验。";
+export const PUBLISH_IMAGE_PRIVACY_NOTICE = "上传前请确认图片里没有住址、证件、课表或其他会直接暴露身份的信息。当前页面只做基础格式和大小校验；图片元数据清理能力以后端已确认的上传 contract 为准。";
 
 function withApiBase(path: string) {
   if (/^https?:\/\//i.test(path)) return path;
