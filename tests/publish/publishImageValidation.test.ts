@@ -48,7 +48,8 @@ describe("publish image upload validation", () => {
   it("ships publish image help copy that explains the validation scope", () => {
     expect(PUBLISH_IMAGE_HELP_TEXT).toContain(`${MAX_PUBLISH_IMAGE_COUNT} 张`);
     expect(PUBLISH_IMAGE_HELP_TEXT).toContain("10 MB");
-    expect(PUBLISH_IMAGE_PRIVACY_NOTICE).toContain("元数据清理由服务端负责");
     expect(PUBLISH_IMAGE_PRIVACY_NOTICE).toContain("基础格式和大小校验");
+    expect(PUBLISH_IMAGE_PRIVACY_NOTICE).toContain("后端已确认的上传 contract");
+    expect(PUBLISH_IMAGE_PRIVACY_NOTICE).not.toContain("元数据清理由服务端负责");
   });
 });
