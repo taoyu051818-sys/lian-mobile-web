@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { placeTypeLabel } from "../../src/utils/placeTypeLabel";
+import { placeTypeLabel } from "../../src/domain/place";
 
 describe("placeTypeLabel", () => {
   it("maps known raw type values to stable Chinese labels", () => {

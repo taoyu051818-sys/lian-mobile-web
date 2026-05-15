@@ -4,7 +4,7 @@ import { fetchAuthMe } from "../api/profile";
 import { buildPendingChannelMessage, fetchChannelMessages, fetchNotifications, markChannelMessagesRead, mergeChannelMessagesChronologically, sendChannelMessage } from "../api/messages";
 import { usePostDetail } from "../composables/usePostDetail";
 import { useVisualViewport } from "../composables/useVisualViewport";
-import { actorAvatarText, actorDisplayName } from "../utils/actor";
+import { actorAvatarText, actorDisplayName } from "../domain/actor";
 import type { FeedItemId } from "../types/feed";
 import type { ChannelMessage, ChannelMessageActor, MessageTabKey, NotificationItem } from "../types/messages";
 import type { ProfileUser } from "../types/profile";

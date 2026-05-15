@@ -1,7 +1,7 @@
 import { computed, type ComputedRef, watch } from "vue";
-import { actorAvatarText, actorAvatarUrl, actorDisplayName } from "../../utils/actor";
+import { actorAvatarText, actorAvatarUrl, actorDisplayName } from "../../domain/actor";
 import { sanitizeHtml } from "../../utils/html";
-import { placeStatusLabel } from "../../utils/placeStatusLabel";
+import { placeStatusLabel } from "../../domain/place";
 import type { PlaceSheet } from "../../types/place";
 import type { PostDetail } from "../../types/post";
 import { formatTimestampLabel } from "../../utils/time";
