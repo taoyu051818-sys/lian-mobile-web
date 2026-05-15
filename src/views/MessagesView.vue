@@ -1,13 +1,13 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref } from "vue";
 import { fetchAuthMe } from "../api/profile";
-import { fetchPostDetail } from "../api/posts";
 import { buildPendingChannelMessage, fetchChannelMessages, fetchNotifications, markChannelMessagesRead, mergeChannelMessagesChronologically, sendChannelMessage } from "../api/messages";
 import { useFloatingChromeController } from "../motion/floatingChrome";
+import { usePostDetail } from "../composables/usePostDetail";
 import { useVisualViewport } from "../composables/useVisualViewport";
-import type { DisplayActor, FeedItemId } from "../types/feed";
+import { actorAvatarText, actorDisplayName } from "../utils/actor";
+import type { FeedItemId } from "../types/feed";
 import type { ChannelMessage, ChannelMessageActor, MessageTabKey, NotificationItem } from "../types/messages";
-import type { PostDetail } from "../types/post";
 import type { ProfileUser } from "../types/profile";
 import PostDetailPanel from "./detail/PostDetailPanel.vue";
 import { MessagesTabs, ChannelComposer, ChannelThread, NotificationList } from "./messages";
@@ -32,11 +32,10 @@ const identityTags = ref<string[]>([]);
 const sending = ref(false);
 const sendError = ref("");
 const isNearBottom = ref(true);
-const selectedPostId = ref<FeedItemId | null>(null);
-const selectedPost = ref<PostDetail | null>(null);
-const detailLoading = ref(false);
-const detailError = ref("");
-const savedScrollY = ref(0);
+const {
+  selectedPostId, selectedPost, detailLoading, detailError, detailOpen,
+  openDetail: openNotification, closeDetail, retryDetail,
+} = usePostDetail();
 
 useVisualViewport();
 
@@ -57,14 +56,6 @@ const activeAlias = computed(() => {
 const composerActorName = computed(() => activeAlias.value?.name || currentUser.value?.username || "同学");
 const composerAvatarText = computed(() => composerActorName.value.slice(0, 2) || "同");
 const composerSignalMeta = computed(() => composerIdentityTag.value ? `身份信号：${composerIdentityTag.value}` : "未选择身份信号");
-
-function actorDisplayName(actor?: DisplayActor | null, fallback = "") {
-  return actor?.displayName || actor?.username || actor?.name || fallback || "同学";
-}
-
-function actorAvatarText(actor?: DisplayActor | null, fallback = "") {
-  return actor?.avatarText || actorDisplayName(actor, fallback).slice(0, 2) || "同";
-}
 
 function messageText(item: ChannelMessage) {
   return item.plainText || item.content || "这条消息暂时没有内容。";
@@ -93,35 +84,6 @@ function notificationActor(item: NotificationItem) {
 
 function isReplyNotification(item: NotificationItem) {
   return ["new-reply", "reply", "new-post", "post-reply"].includes(String(item.type || ""));
-}
-
-const detailOpen = computed(() => selectedPostId.value !== null);
-
-async function openNotification(tid: FeedItemId) {
-  savedScrollY.value = window.scrollY;
-  selectedPostId.value = tid;
-  selectedPost.value = null;
-  detailError.value = "";
-  detailLoading.value = true;
-  try {
-    selectedPost.value = await fetchPostDetail(tid);
-  } catch (error) {
-    detailError.value = error instanceof Error ? error.message : "帖子详情暂时没加载出来，可以稍后再试。";
-  } finally {
-    detailLoading.value = false;
-  }
-}
-
-function closeDetail() {
-  selectedPostId.value = null;
-  selectedPost.value = null;
-  detailLoading.value = false;
-  detailError.value = "";
-  requestAnimationFrame(() => window.scrollTo(0, savedScrollY.value));
-}
-
-function retryDetail() {
-  if (selectedPostId.value != null) void openNotification(selectedPostId.value);
 }
 
 const SCROLL_BOTTOM_THRESHOLD = 120;
