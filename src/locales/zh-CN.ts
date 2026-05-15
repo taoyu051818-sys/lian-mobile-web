@@ -1,0 +1,57 @@
+export default {
+  app: {
+    name: "黎安屿你",
+  },
+  user: {
+    defaultLabel: "同学",
+    guestName: "未登录同学",
+  },
+  channel: {
+    defaultTag: "校园频道",
+  },
+  map: {
+    ariaLabel: "校园地图",
+  },
+  loading: {
+    profile: "正在加载个人资料…",
+    feed: "正在加载校园内容…",
+    map: "正在加载校园地图…",
+    list: "正在加载列表…",
+    detail: "正在加载详情…",
+    channel: "正在加载频道消息…",
+    notification: "正在加载通知…",
+    place: "正在加载地点…",
+  },
+  empty: {
+    history: "暂无浏览记录",
+    saved: "暂无收藏",
+    liked: "暂无点赞",
+    feed: "暂时没有内容",
+    channel: "暂无频道消息",
+    notification: "暂无通知",
+    replies: "暂无",
+  },
+  error: {
+    loadGeneric: "暂时没加载出来，可以稍后再试。",
+    sendGeneric: "没有发送成功，可以稍后再试。",
+    loadMap: "地图数据暂时没加载出来，可以稍后再试。",
+    loadPlace: "地点信息暂时没加载出来，可以稍后再试。",
+    loadDetail: "详情暂时没加载出来，可以稍后再试。",
+    loadChannel: "频道消息暂时没加载出来，可以稍后再试。",
+    loadNotification: "通知暂时没加载出来，可以稍后再试。",
+    sendMessage: "消息没有发送成功，可以稍后再试。",
+    sendReply: "回复没有发送成功，可以稍后再试。",
+    publishImage: "图片上传失败，可以换一张图片或稍后再试。",
+    publishLocation: "地图地点暂时没加载出来，可以手填地点发布。",
+    likeAction: "喜欢操作没有成功，可以稍后再试。",
+    saveAction: "收藏操作没有成功，可以稍后再试。",
+    authGeneric: "登录/注册没有成功，可以稍后再试。",
+    sendCode: "验证码没有发送成功，可以稍后再试。",
+    publishGeneric: "发布没有成功，可以稍后再试。",
+    logout: "退出登录没有成功，可以稍后再试。",
+  },
+  content: {
+    untitled: "未命名内容",
+    messageEmpty: "这条消息暂时没有内容。",
+  },
+} as const;
