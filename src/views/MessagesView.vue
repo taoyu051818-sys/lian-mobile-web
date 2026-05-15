@@ -2,7 +2,7 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, ref } from "vue";
 import { fetchAuthMe } from "../api/profile";
 import { fetchPostDetail } from "../api/posts";
-import { buildPendingChannelMessage, fetchChannelMessages, fetchNotifications, markChannelMessagesRead, sendChannelMessage } from "../api/messages";
+import { buildPendingChannelMessage, fetchChannelMessages, fetchNotifications, markChannelMessagesRead, mergeChannelMessagesChronologically, sendChannelMessage } from "../api/messages";
 import { useFloatingChromeController } from "../motion/floatingChrome";
 import { useVisualViewport } from "../composables/useVisualViewport";
 import type { DisplayActor, FeedItemId } from "../types/feed";
@@ -186,12 +186,12 @@ async function loadChannel(reset = true) {
 
   try {
     const response = await fetchChannelMessages(reset ? 0 : channelOffset.value, 30);
-    const nextItems = (response.items || []).slice().reverse();
-    const known = new Set(channelItems.value.map((item) => String(item.id)));
-    const uniqueItems = nextItems.filter((item) => !known.has(String(item.id)));
-    channelItems.value = reset ? uniqueItems : [...uniqueItems, ...channelItems.value];
+    const nextItems = response.items || [];
+    channelItems.value = reset
+      ? nextItems
+      : mergeChannelMessagesChronologically(channelItems.value, nextItems);
     channelHasMore.value = Boolean(response.hasMore);
-    channelOffset.value = response.nextOffset ?? channelOffset.value + (response.items?.length || 0);
+    channelOffset.value = response.nextOffset ?? channelOffset.value;
 
     if (!reset) {
       await nextTick();
@@ -217,7 +217,7 @@ async function loadChannel(reset = true) {
 async function replacePendingWithLatest(pendingId: string, retriesLeft = REPLACE_RETRY_LIMIT) {
   try {
     const response = await fetchChannelMessages(0, 30);
-    const latestItems = (response.items || []).slice().reverse();
+    const latestItems = response.items || [];
     const pendingItem = channelItems.value.find((item) => String(item.id) === pendingId);
     const pendingContent = pendingItem?.content || "";
 
