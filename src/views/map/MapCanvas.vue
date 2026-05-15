@@ -22,7 +22,6 @@ const GAODE_TILE_URL = "https://webrd0{s}.is.autonavi.com/appmaptile?lang=zh_cn&
 const DEFAULT_BOUNDS: MapBounds = { south: 18.37107, west: 109.98464, north: 18.41730, east: 110.04775 };
 const SCALED_ICON_SELECTOR = "[data-vue-map-scaled-icon]";
 const ICON_BASE_ZOOM = 16;
-const ZOOM_ANIMATION_MS = 250;
 
 const props = defineProps<{
   mapData: MapV2ItemsResponse | null;
@@ -78,7 +77,7 @@ function applyMapIconCounterScale(target: LeafletMapLike, zoom: number) {
   if (!markerPane) return;
   const counterScale = 1 / iconScaleForZoom(target, zoom);
   markerPane.querySelectorAll<HTMLElement>(SCALED_ICON_SELECTOR).forEach((element) => {
-    element.style.transition = `transform ${ZOOM_ANIMATION_MS}ms cubic-bezier(0.25, 0.46, 0.45, 0.94)`;
+    element.style.transition = "none";
     element.style.transform = `scale(${counterScale})`;
   });
 }
