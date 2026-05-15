@@ -79,7 +79,7 @@ function handleFilterToggle(filterId: string) {
       <slot />
     </template>
     <template v-else>
-      <div class="shell-chrome__inner">
+      <div class="shell-chrome__inner lian-floating-chrome lian-floating-chrome--top">
         <div v-if="identity" class="shell-chrome__identity" aria-label="当前身份">
           <span class="shell-chrome__identity-avatar" aria-hidden="true">{{ identity.avatarText }}</span>
           <span class="shell-chrome__identity-name">{{ identity.name }}</span>
