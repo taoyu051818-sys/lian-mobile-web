@@ -11,18 +11,27 @@ import { useMapSelection } from "./map/useMapSelection";
 
 defineOptions({ name: "MapLeafletView" });
 
-const { selectedPlace, filterActive, handlePlaceSelect, closePlaceSheet, toggleFilter, MAP_FILTERS } = useMapChrome();
+const { filterActive, toggleFilter, MAP_FILTERS } = useMapChrome();
 
 const { mapData, roadPreview, loading, errorMessage, loadMap } = useMapDataCache();
 
 const {
+  selectedTarget,
   selectedPost,
   detailLoading,
   detailError,
+  selectLocation,
+  closePlaceSheet,
   openPost,
   retryDetail,
   closeDetail,
 } = useMapSelection(() => mapData.value?.posts || []);
+
+const selectedPlace = computed<MapLocation | MapPost | null>(() => {
+  const target = selectedTarget.value;
+  if (target?.kind === "location") return target.item;
+  return null;
+});
 
 const visibleLayers = computed(() => ({
   locations: filterActive.value.locations,
@@ -33,11 +42,11 @@ function isMapPost(place: MapLocation | MapPost): place is MapPost {
   return "tid" in place;
 }
 
-function handlePlaceSelectWithDetail(place: MapLocation | MapPost) {
+function handlePlaceSelect(place: MapLocation | MapPost) {
   if (isMapPost(place)) {
     void openPost(place);
   } else {
-    handlePlaceSelect(place);
+    selectLocation(place);
   }
 }
 
@@ -63,7 +72,7 @@ onActivated(() => {
         :loading="loading"
         :visible-layers="visibleLayers"
         @load-error="onCanvasError"
-        @place-select="handlePlaceSelectWithDetail"
+        @place-select="handlePlaceSelect"
       />
       <MapStatus :loading="loading" :error-message="errorMessage" />
       <MapPlaceSheet :selected-place="selectedPlace" @close="closePlaceSheet" />
