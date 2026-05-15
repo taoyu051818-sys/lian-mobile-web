@@ -2,7 +2,7 @@
 import { computed, onMounted, ref, watch } from "vue";
 import { LianApiError } from "../api/http";
 import { activateProfileAlias, deactivateProfileAlias, fetchAuthMe, fetchProfileTab, logoutAuth } from "../api/profile";
-import { GUEST_DISPLAY_NAME, LOADING_PROFILE, LOADING_LIST, EMPTY_HISTORY, EMPTY_SAVED, EMPTY_LIKED, ERROR_LOAD_GENERIC } from "../config/brand";
+import { GUEST_DISPLAY_NAME, LOADING_PROFILE, LOADING_LIST, EMPTY_HISTORY, EMPTY_SAVED, EMPTY_LIKED, ERROR_LOAD_GENERIC, ERROR_LOGOUT } from "../config/brand";
 import { usePostDetail } from "../composables/usePostDetail";
 import { getRecentReadHistoryIds } from "../platform/browser-storage";
 import { InlineError } from "../ui";
@@ -189,7 +189,7 @@ async function logout() {
     enterGuestState();
   } catch (error) {
     if (isMissingSessionError(error)) enterGuestState();
-    else errorMessage.value = error instanceof Error ? error.message : "退出登录没有成功，可以稍后再试。";
+    else errorMessage.value = error instanceof Error ? error.message : ERROR_LOGOUT;
   } finally {
     loading.value = false;
   }

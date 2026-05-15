@@ -1,5 +1,6 @@
 import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 import { fetchAuthRules, loginAuth, registerAuth, sendEmailCode } from "../../api/auth";
+import { ERROR_AUTH_GENERIC, ERROR_SEND_CODE } from "../../config/brand";
 import { LianApiError } from "../../api/http";
 import type { AuthInterestOption, AuthMode, AuthRulesResponse } from "../../api/auth";
 import {
@@ -243,7 +244,7 @@ export function useAuthForm(onAuthenticated: (user: ProfileUser | null) => void)
       onAuthenticated(user);
     } catch (error) {
       errorMessage.value =
-        error instanceof Error ? error.message : "登录/注册没有成功，可以稍后再试。";
+        error instanceof Error ? error.message : ERROR_AUTH_GENERIC;
     } finally {
       submitting.value = false;
     }
@@ -279,7 +280,7 @@ export function useAuthForm(onAuthenticated: (user: ProfileUser | null) => void)
           : `如果服务端没有返回具体等待时间，页面会先按 ${AUTH_EMAIL_CODE_DEFAULT_COOLDOWN_SECONDS} 秒冷却处理。`;
       } else {
         errorMessage.value =
-          error instanceof Error ? error.message : "验证码没有发送成功，可以稍后再试。";
+          error instanceof Error ? error.message : ERROR_SEND_CODE;
       }
     } finally {
       sendingCode.value = false;

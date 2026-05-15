@@ -60,7 +60,7 @@ export interface ShellChromeState {
 }
 
 export function createEmptyRegionSpec(): ShellChromeRegionSpec {
-  return { buttons: [], visible: true };
+  return { buttons: [], visible: true, identity: null, tabs: null, filters: [] };
 }
 
 export function createDefaultChromeState(): ShellChromeState {

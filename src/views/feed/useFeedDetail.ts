@@ -2,6 +2,7 @@ import { computed, onBeforeUnmount, onMounted, ref, type Ref } from "vue";
 import { fetchPostDetail } from "../../api/posts";
 import type { FeedItem, FeedItemId } from "../../types/feed";
 import type { PostDetail } from "../../types/post";
+import { ERROR_LOAD_DETAIL } from "../../config/brand";
 import { normalizeFeedItemId } from "./feedItemId";
 
 export interface CardOpenPayload {
@@ -191,7 +192,7 @@ export function useFeedDetail(deps: FeedDetailDeps) {
     } catch (error) {
       detailError.value = error instanceof Error
         ? error.message
-        : "详情暂时没加载出来，可以稍后再试。";
+        : ERROR_LOAD_DETAIL;
     } finally {
       if (normalizeFeedItemId(selectedPostId.value) === normalizedId) {
         detailLoading.value = false;
