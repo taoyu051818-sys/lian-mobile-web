@@ -382,7 +382,18 @@ onBeforeUnmount(() => {
 }
 
 .messages-view__chrome-composer {
+  position: fixed;
+  right: max(var(--floating-bar-side-inset), env(safe-area-inset-right));
+  left: max(var(--floating-bar-side-inset), env(safe-area-inset-left));
   bottom: calc(var(--floating-bar-bottom-offset) + var(--floating-bar-height) + var(--space-2) + var(--keyboard-inset-bottom, 0px));
+  z-index: var(--floating-bar-z, 70);
+  width: min(calc(100vw - var(--space-6)), var(--floating-bar-max-width));
+  margin: 0 auto;
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-card);
+  background: var(--glass-bg-strong);
+  box-shadow: var(--shadow-floating);
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
 }
 
 .messages-view__detail-overlay {
