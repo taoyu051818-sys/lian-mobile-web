@@ -111,6 +111,7 @@ Use `contracts/` for split-era API inventory only after reading `references/CONT
 - `references/HANDOFFS_OVERRIDE_2026-05-05.md` - current handoff override and conflict list
 - `references/CONTRACTS_OVERRIDE_2026-05-05.md` - current contract override and conflict list
 - `references/DOC_REVIEW_FINDINGS_2026-05-05.md` - documentation review findings and stale-doc warning list
+- `references/PROFILE_PRIVACY_EXPLANATION_BRIEF_2026-05-15.md` - implementation-ready wording brief for issue #452 covering device identity, local history, logout, and clear-local-data language
 - `../design/LIAN-Campus-UI-UX-Guidelines-V0.1.md` - LIAN Campus UI / UX Guidelines V0.1
 - `references/GITHUB_RECENT_UPDATES_2026-05-05.md` - repo-split and GitHub orientation note
 - `references/RECENT_WORK_HANDOFF_2026-05-05.md` - repo-split and docs handoff
