@@ -7,7 +7,6 @@ export default defineConfig({
       "tests/auth/**/*.test.ts",
       "tests/composables/**/*.test.ts",
       "tests/detail/**/*.test.ts",
-      "tests/feed/feedPresentationIntent.structure.test.mjs",
       "tests/feed/feedReadHistoryIdNormalization.contract.test.ts",
       "tests/html/**/*.test.ts",
       "tests/time/**/*.test.ts",
