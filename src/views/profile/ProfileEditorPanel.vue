@@ -9,6 +9,7 @@ import {
 } from "../../api/profile";
 import { IdentityBadge, InlineError, LianButton, TypeChip } from "../../ui";
 import { DEFAULT_USER_LABEL } from "../../config/brand";
+import { extractErrorMessage } from "../../utils/extractErrorMessage";
 import type { ProfileUser } from "../../types/profile";
 
 const props = defineProps<{
@@ -58,7 +59,7 @@ function showSuccess(message: string) {
 
 function showError(error: unknown, fallback: string) {
   successMessage.value = "";
-  errorMessage.value = error instanceof Error ? error.message : fallback;
+  errorMessage.value = extractErrorMessage(error, fallback);
 }
 
 function revokePreview() {

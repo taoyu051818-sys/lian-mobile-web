@@ -1,6 +1,7 @@
 import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 import { fetchAuthRules, loginAuth, registerAuth, sendEmailCode } from "../../api/auth";
 import { ERROR_AUTH_GENERIC, ERROR_SEND_CODE } from "../../config/brand";
+import { extractErrorMessage } from "../../utils/extractErrorMessage";
 import { LianApiError } from "../../api/http";
 import type { AuthInterestOption, AuthMode, AuthRulesResponse } from "../../api/auth";
 import {
@@ -244,7 +245,7 @@ export function useAuthForm(onAuthenticated: (user: ProfileUser | null) => void)
       onAuthenticated(user);
     } catch (error) {
       errorMessage.value =
-        error instanceof Error ? error.message : ERROR_AUTH_GENERIC;
+        extractErrorMessage(error, ERROR_AUTH_GENERIC);
     } finally {
       submitting.value = false;
     }
@@ -279,8 +280,7 @@ export function useAuthForm(onAuthenticated: (user: ProfileUser | null) => void)
           ? `当前发送过于频繁，请在 ${retryAfterSeconds} 秒后重新获取验证码。`
           : `如果服务端没有返回具体等待时间，页面会先按 ${AUTH_EMAIL_CODE_DEFAULT_COOLDOWN_SECONDS} 秒冷却处理。`;
       } else {
-        errorMessage.value =
-          error instanceof Error ? error.message : ERROR_SEND_CODE;
+        errorMessage.value = extractErrorMessage(error, ERROR_SEND_CODE);
       }
     } finally {
       sendingCode.value = false;

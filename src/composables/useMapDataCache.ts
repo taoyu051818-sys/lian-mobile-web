@@ -2,6 +2,7 @@ import { ref } from "vue";
 import { fetchMapV2Items, fetchRoadNetworkPreview } from "../api/map";
 import type { MapRoadNetworkPreview, MapV2ItemsResponse } from "../types/map";
 import { ERROR_LOAD_MAP } from "../config/brand";
+import { extractErrorMessage } from "../utils/extractErrorMessage";
 
 const cachedData = ref<MapV2ItemsResponse | null>(null);
 const cachedRoadPreview = ref<MapRoadNetworkPreview | null>(null);
@@ -29,7 +30,7 @@ export function useMapDataCache() {
         cachedData.value = items;
         cachedRoadPreview.value = preview;
       } catch (error) {
-        errorMessage.value = error instanceof Error ? error.message : ERROR_LOAD_MAP;
+        errorMessage.value = extractErrorMessage(error, ERROR_LOAD_MAP);
       } finally {
         loading.value = false;
         fetchPromise = null;

@@ -32,7 +32,6 @@
   transition:
     width var(--motion-standard) var(--motion-ease-standard),
     transform var(--motion-standard) var(--motion-ease-standard);
-  overflow: hidden;
 }
 
 .shell-chrome__identity,

@@ -12,6 +12,7 @@ import type { PageChromeSpec } from "../shell/page-model";
 import PostDetailPanel from "./detail/PostDetailPanel.vue";
 import { ChannelComposer, ChannelThread, NotificationList } from "./messages";
 import { CHANNEL_DEFAULT_TAG, DEFAULT_USER_LABEL, ERROR_LOAD_CHANNEL, ERROR_LOAD_NOTIFICATION, ERROR_SEND_MESSAGE, MESSAGE_EMPTY_CONTENT } from "../config/brand";
+import { extractErrorMessage } from "../utils/extractErrorMessage";
 
 const emit = defineEmits<{
   chrome: [spec: PageChromeSpec];
@@ -180,7 +181,7 @@ async function loadChannel(reset = true) {
     }
     checkNearBottom();
   } catch (error) {
-    channelError.value = error instanceof Error ? error.message : ERROR_LOAD_CHANNEL;
+    channelError.value = extractErrorMessage(error, ERROR_LOAD_CHANNEL);
   } finally {
     channelLoading.value = false;
   }
@@ -238,7 +239,7 @@ async function loadNotifications() {
     const response = await fetchNotifications();
     notificationItems.value = response.items || [];
   } catch (error) {
-    notificationError.value = error instanceof Error ? error.message : ERROR_LOAD_NOTIFICATION;
+    notificationError.value = extractErrorMessage(error, ERROR_LOAD_NOTIFICATION);
   } finally {
     notificationLoading.value = false;
   }
@@ -275,7 +276,7 @@ async function submitMessage() {
       updated[idx] = { ...updated[idx], deliveryState: "failed" };
       channelItems.value = updated;
     }
-    sendError.value = error instanceof Error ? error.message : ERROR_SEND_MESSAGE;
+    sendError.value = extractErrorMessage(error, ERROR_SEND_MESSAGE);
   } finally {
     sending.value = false;
   }
@@ -305,7 +306,7 @@ async function retryMessage(pendingId: string) {
       updated[failIdx] = { ...updated[failIdx], deliveryState: "failed" };
       channelItems.value = updated;
     }
-    sendError.value = error instanceof Error ? error.message : ERROR_SEND_MESSAGE;
+    sendError.value = extractErrorMessage(error, ERROR_SEND_MESSAGE);
   } finally {
     sending.value = false;
   }

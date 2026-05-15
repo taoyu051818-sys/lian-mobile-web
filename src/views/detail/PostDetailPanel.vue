@@ -5,6 +5,7 @@ import { fetchPlaceSheet } from "../../api/places";
 import { reportPost, sendPostReply, togglePostLike, togglePostSave } from "../../api/posts";
 import { InlineError, LianButton } from "../../ui";
 import { ERROR_LOAD_PLACE, ERROR_SEND_REPLY, ERROR_LIKE_ACTION, ERROR_SAVE_ACTION, LOADING_DETAIL } from "../../config/brand";
+import { extractErrorMessage } from "../../utils/extractErrorMessage";
 import type { PlaceSheet } from "../../types/place";
 import type { PostDetail } from "../../types/post";
 import { sharePost } from "../../platform/share";
@@ -112,7 +113,7 @@ function showActionMessage(message: string) {
 
 function showActionError(error: unknown, fallback: string) {
   actionMessage.value = "";
-  actionError.value = error instanceof Error ? error.message : fallback;
+  actionError.value = extractErrorMessage(error, fallback);
 }
 
 function setActionError(message: string) {
@@ -157,7 +158,7 @@ async function openPlaceSheet() {
   try {
     placeSheet.value = await fetchPlaceSheet(placeId);
   } catch (error) {
-    placeSheetError.value = error instanceof Error ? error.message : ERROR_LOAD_PLACE;
+    placeSheetError.value = extractErrorMessage(error, ERROR_LOAD_PLACE);
   } finally {
     placeSheetLoading.value = false;
   }
