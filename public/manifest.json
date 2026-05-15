@@ -1,0 +1,10 @@
+{
+  "name": "黎安屿你",
+  "short_name": "黎安屿你",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f7f4ec",
+  "theme_color": "#1fa7a0",
+  "orientation": "portrait",
+  "icons": []
+}
