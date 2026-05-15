@@ -38,6 +38,74 @@
   flex-shrink: 0;
 }
 
+/* Identity badge */
+.shell-chrome__identity {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-shrink: 0;
+  min-width: 0;
+}
+
+.shell-chrome__identity-avatar {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--lian-primary-soft, rgba(31, 167, 160, 0.12));
+  color: var(--lian-accent, #1fa7a0);
+  font-size: 11px;
+  font-weight: 900;
+  flex-shrink: 0;
+}
+
+.shell-chrome__identity-name {
+  overflow: hidden;
+  max-width: 80px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--lian-ink);
+}
+
+.shell-chrome__identity-meta {
+  overflow: hidden;
+  max-width: 60px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: 11px;
+  color: var(--lian-muted);
+}
+
+/* Filter toggle buttons */
+.shell-chrome__filters {
+  display: flex;
+  gap: var(--space-1);
+  flex-shrink: 0;
+}
+
+.shell-chrome__filter {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--space-1) var(--space-3);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-chip);
+  background: rgba(255, 255, 255, 0.82);
+  color: var(--lian-muted);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--motion-fast) var(--motion-ease-standard), color var(--motion-fast) var(--motion-ease-standard);
+}
+
+.shell-chrome__filter.is-active {
+  background: rgba(31, 167, 160, 0.14);
+  color: var(--lian-accent, #1fa7a0);
+  border-color: rgba(31, 167, 160, 0.36);
+}
+
 .shell-chrome[aria-hidden="true"] {
   opacity: 0;
   pointer-events: none;

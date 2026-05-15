@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { computed, onActivated, onMounted } from "vue";
+import { computed, onActivated, onMounted, watch } from "vue";
 import type { MapLocation, MapPost } from "../types/map";
+import type { PageChromeSpec } from "../shell/page-model";
 import MapCanvas from "./map/MapCanvas.vue";
 import MapPlaceSheet from "./map/MapPlaceSheet.vue";
 import MapStatus from "./map/MapStatus.vue";
@@ -11,6 +12,10 @@ import { useMapSelection } from "./map/useMapSelection";
 import { MAP_ARIA_LABEL } from "../config/brand";
 
 defineOptions({ name: "MapLeafletView" });
+
+const emit = defineEmits<{
+  chrome: [spec: PageChromeSpec];
+}>();
 
 const { filterActive, toggleFilter, MAP_FILTERS } = useMapChrome();
 
@@ -55,7 +60,21 @@ function onCanvasError(message: string) {
   errorMessage.value = message;
 }
 
+const pageChrome = computed<PageChromeSpec>(() => ({
+  top: {
+    filters: MAP_FILTERS.map((f) => ({
+      id: f.id,
+      label: f.label,
+      active: filterActive.value[f.id] ?? false,
+    })),
+    onFilterToggle: toggleFilter,
+  },
+}));
+
+watch(pageChrome, (spec) => emit("chrome", spec), { deep: true });
+
 onMounted(() => {
+  emit("chrome", pageChrome.value);
   void loadMap();
 });
 
@@ -87,19 +106,6 @@ onActivated(() => {
         @retry="retryDetail"
       />
     </section>
-    <nav class="map-view__filter-bar" aria-label="图层筛选">
-      <button
-        v-for="f in MAP_FILTERS"
-        :key="f.id"
-        class="map-view__filter-btn"
-        :class="{ 'is-active': filterActive[f.id] }"
-        type="button"
-        :aria-pressed="filterActive[f.id]"
-        @click="toggleFilter(f.id)"
-      >
-        {{ filterActive[f.id] ? `✓ ${f.label}` : f.label }}
-      </button>
-    </nav>
   </section>
 </template>
 
@@ -109,8 +115,8 @@ onActivated(() => {
   display: block;
   width: 100vw;
   min-height: calc(100vh - 92px - env(safe-area-inset-bottom));
-  margin-block-start: calc(-1 * (var(--space-2) + env(safe-area-inset-top)));
   margin-inline-start: calc(50% - 50vw);
+  padding-top: calc(var(--floating-bar-height) + env(safe-area-inset-top));
 }
 
 .map-view__stage-wrap {
@@ -121,40 +127,6 @@ onActivated(() => {
   border: 0;
   border-radius: 0;
   background: rgba(255, 255, 255, 0.42);
-}
-
-.map-view__filter-bar {
-  position: absolute;
-  top: var(--space-3);
-  left: var(--space-3);
-  z-index: 800;
-  display: flex;
-  gap: var(--space-2);
-}
-
-.map-view__filter-btn {
-  display: inline-flex;
-  align-items: center;
-  padding: var(--space-1) var(--space-3);
-  border: 1px solid var(--glass-border);
-  border-radius: var(--radius-chip);
-  background: rgba(255, 255, 255, 0.92);
-  backdrop-filter: blur(12px);
-  color: var(--lian-muted);
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background var(--motion-fast) var(--motion-ease-standard), color var(--motion-fast) var(--motion-ease-standard);
-}
-
-.map-view__filter-btn.is-active {
-  background: rgba(31, 167, 160, 0.14);
-  color: var(--lian-accent, #1fa7a0);
-  border-color: rgba(31, 167, 160, 0.36);
-}
-
-.map-view__filter-btn:hover {
-  background: rgba(255, 255, 255, 0.94);
 }
 
 .map-view__post-detail {

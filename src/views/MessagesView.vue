@@ -62,6 +62,10 @@ const pageChrome = computed<PageChromeSpec>(() => ({
       activeKey: activeTab.value,
       ariaLabel: "消息分类",
     },
+    identity: currentUser.value ? {
+      avatarText: composerAvatarText.value,
+      name: composerActorName.value,
+    } : null,
     onTabSelect: (tabId: string) => { void switchTab(tabId as MessageTabKey); },
   },
   bottom: {

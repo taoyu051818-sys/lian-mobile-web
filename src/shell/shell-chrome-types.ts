@@ -21,6 +21,18 @@ export interface ChromeTabSpec {
   floatingState?: string;
 }
 
+export interface ChromeFilterSpec {
+  id: string;
+  label: string;
+  active: boolean;
+}
+
+export interface ChromeIdentitySpec {
+  avatarText: string;
+  name: string;
+  meta?: string;
+}
+
 export interface ShellChromeRegionSpec {
   buttons?: ChromeButtonSpec[];
   visible?: boolean;
@@ -28,10 +40,16 @@ export interface ShellChromeRegionSpec {
   slot?: string;
   /** Typed tab spec. When set, ShellChrome renders the tab nav directly. */
   tabs?: ChromeTabSpec | null;
+  /** Filter toggle buttons (e.g. map layers). */
+  filters?: ChromeFilterSpec[];
+  /** Compact identity display (avatar + name). */
+  identity?: ChromeIdentitySpec | null;
   /** Callback invoked when a tab is selected. */
   onTabSelect?: ((tabId: string) => void) | null;
   /** Callback invoked when a button is clicked. */
   onButtonClick?: ((buttonId: string) => void) | null;
+  /** Callback invoked when a filter is toggled. */
+  onFilterToggle?: ((id: string) => void) | null;
 }
 
 export type ShellChromeRegionMap = Partial<Record<ShellRegionKey, ShellChromeRegionSpec>>;

@@ -75,6 +75,11 @@ const pageChrome = computed<PageChromeSpec>(() => ({
   top: user.value
     ? {
         visible: true,
+        identity: {
+          avatarText: avatarText.value,
+          name: displayName.value,
+          meta: identityMeta.value,
+        },
         buttons: [
           { id: "profile:toggle-editor", label: editorOpen.value ? "收起编辑" : "编辑资料", variant: "tonal" },
           { id: "profile:logout", label: "退出登录", variant: "ghost" },
@@ -285,6 +290,7 @@ onMounted(() => {
   position: relative;
   display: grid;
   gap: var(--space-4);
+  padding-top: calc(var(--floating-bar-height) + env(safe-area-inset-top));
   padding-bottom: var(--space-6);
 }
 

@@ -26,8 +26,20 @@ function mergeRegion(target: ShellChromeRegionSpec, patch: ShellChromeRegionSpec
   if (patch.tabs !== undefined) {
     target.tabs = patch.tabs;
   }
+  if (patch.filters !== undefined) {
+    target.filters = patch.filters;
+  }
+  if (patch.identity !== undefined) {
+    target.identity = patch.identity;
+  }
   if (patch.onTabSelect !== undefined) {
     target.onTabSelect = patch.onTabSelect;
+  }
+  if (patch.onButtonClick !== undefined) {
+    target.onButtonClick = patch.onButtonClick;
+  }
+  if (patch.onFilterToggle !== undefined) {
+    target.onFilterToggle = patch.onFilterToggle;
   }
 }
 
