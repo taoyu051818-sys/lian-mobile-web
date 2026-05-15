@@ -1,5 +1,4 @@
 import { apiGet, apiSend } from "./http";
-import { ensureClientId } from "../platform/browser-storage";
 import {
   asBoolean,
   asNumber,
@@ -115,10 +114,8 @@ export async function reportPost(id: FeedItemId, payload: ReportPostPayload): Pr
 }
 
 export async function sendPostReply(id: FeedItemId, content: string): Promise<void> {
-  const clientId = ensureClientId();
   await apiSend(`/api/posts/${encodeURIComponent(String(id))}/replies`, {
     method: "POST",
-    headers: { "x-client-id": clientId },
     body: JSON.stringify({ content }),
   });
 }

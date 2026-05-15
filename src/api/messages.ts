@@ -107,10 +107,6 @@ export async function sendChannelMessage(payload: SendChannelMessagePayload): Pr
   const readerId = ensureClientId();
   await apiSend("/api/channel/messages", {
     method: "POST",
-    headers: {
-      "content-type": "application/json",
-      "x-client-id": readerId,
-    },
     body: JSON.stringify({
       readerId,
       content: payload.content,
@@ -128,10 +124,6 @@ export async function markChannelMessagesRead(messageIds: Array<string | number>
   const payload = buildChannelReadPayload(messageIds);
   await apiSend("/api/channel/read", {
     method: "POST",
-    headers: {
-      "content-type": "application/json",
-      "x-client-id": payload.readerId,
-    },
     body: JSON.stringify(payload),
   });
 }

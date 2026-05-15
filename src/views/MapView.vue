@@ -2,9 +2,10 @@
 import { computed, onMounted, ref } from "vue";
 import { fetchMapV2Items } from "../api/map";
 import { GlassPanel, InlineError, LianButton, LocationChip, TrustBadge } from "../ui";
-import type { DisplayActor } from "../types/feed";
+import { actorDisplayName } from "../utils/actor";
+import { placeStatusLabel } from "../utils/placeStatusLabel";
+import { formatRelativeTime } from "../utils/time";
 import type { MapBounds, MapLocation, MapV2ItemsResponse } from "../types/map";
-import type { PlaceStatus } from "../types/place";
 import PostDetailPanel from "./detail/PostDetailPanel.vue";
 import { hasStablePlaceRef, useMapSelection } from "./map/useMapSelection";
 
@@ -62,35 +63,6 @@ function areaPoints(points: Array<{ lat: number; lng: number }> = []) {
     const projected = projectPoint(point.lat, point.lng);
     return `${projected.left} ${projected.top}`;
   }).join(", ");
-}
-
-function placeStatusLabel(status?: PlaceStatus) {
-  const labels: Record<PlaceStatus, string> = {
-    confirmed: "已确认",
-    pending: "待确认",
-    disputed: "有争议",
-    expired: "可能过期",
-    "ai-organized": "AI 整理",
-    official: "官方",
-  };
-  return status ? labels[status] || "地点" : "地点";
-}
-
-function actorLabel(actor?: DisplayActor) {
-  return actor?.displayName || actor?.username || actor?.name || "同学";
-}
-
-function formatRelativeTime(value?: string) {
-  if (!value) return "";
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "";
-  const diff = Date.now() - date.getTime();
-  if (diff < 60_000) return "刚刚";
-  if (diff < 3_600_000) return `${Math.floor(diff / 60_000)}分钟前`;
-  if (diff < 86_400_000) return `${Math.floor(diff / 3_600_000)}小时前`;
-  if (diff < 172_800_000) return "昨天";
-  if (diff < 604_800_000) return `${Math.floor(diff / 86_400_000)}天前`;
-  return `${date.getMonth() + 1}月${date.getDate()}日`;
 }
 
 async function loadMap() {
@@ -231,7 +203,7 @@ onMounted(() => {
               <article v-for="post in selectedPlaceSheet.recentPosts.slice(0, 3)" :key="String(post.tid)">
                 <strong>{{ post.title || '相关内容' }}</strong>
                 <p v-if="post.excerpt">{{ post.excerpt }}</p>
-                <small>{{ actorLabel(post.actor) }} · {{ formatRelativeTime(post.timestampISO) || '刚刚' }}</small>
+                <small>{{ actorDisplayName(post.actor, "同学") }} · {{ formatRelativeTime(post.timestampISO) || '刚刚' }}</small>
               </article>
             </div>
           </template>

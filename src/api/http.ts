@@ -1,4 +1,6 @@
 import { buildApiUrl, getApiBase } from "../config/runtime-config";
+import { ensureClientId } from "../platform/clientIdentity";
+import { asRecord } from "../platform/api-normalizers";
 
 export class LianApiError extends Error {
   status: number;
@@ -14,8 +16,6 @@ export class LianApiError extends Error {
   }
 }
 
-type JsonRecord = Record<string, unknown>;
-
 export function withApiBase(path: string) {
   if (/^https?:\/\//i.test(path)) return path;
   return path.startsWith("/") ? `${getApiBase()}${path}` : path;
@@ -29,10 +29,6 @@ function normalizeJsonOptions(options: RequestInit = {}) {
     headers.set("content-type", "application/json; charset=utf-8");
   }
   return { ...options, headers };
-}
-
-function asRecord(value: unknown): JsonRecord {
-  return value && typeof value === "object" && !Array.isArray(value) ? (value as JsonRecord) : {};
 }
 
 function parseRetryAfterSeconds(value: string | null): number | null {
@@ -89,9 +85,13 @@ async function apiRequest<T>(
   options: RequestInit = {},
   fallbackMessage = "",
 ): Promise<T> {
+  const headers = new Headers(options.headers || {});
+  if (!headers.has("x-client-id")) {
+    headers.set("x-client-id", ensureClientId());
+  }
   const response = await fetch(buildApiUrl(path), {
     credentials: "include",
-    ...normalizeJsonOptions(options),
+    ...normalizeJsonOptions({ ...options, headers }),
   });
   const data = await readJsonResponse<T>(response);
   if (!response.ok) {

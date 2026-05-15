@@ -1,13 +1,12 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { LianApiError } from "../api/http";
-import { fetchPostDetail } from "../api/posts";
 import { activateProfileAlias, deactivateProfileAlias, fetchAuthMe, fetchProfileTab, logoutAuth } from "../api/profile";
+import { usePostDetail } from "../composables/usePostDetail";
 import { getRecentReadHistoryIds } from "../platform/browser-storage";
 import { useShellChrome } from "../shell/useShellChrome";
 import { InlineError } from "../ui";
 import type { FeedItemId } from "../types/feed";
-import type { PostDetail } from "../types/post";
 import type { ProfileListItem, ProfileTabKey, ProfileUser } from "../types/profile";
 import AuthPanel from "./auth/AuthPanel.vue";
 import PostDetailPanel from "./detail/PostDetailPanel.vue";
@@ -29,11 +28,10 @@ const profileItems = ref<ProfileListItem[]>([]);
 const editorOpen = ref(false);
 const aliasPickerOpen = ref(false);
 const aliasBusy = ref(false);
-const selectedPostId = ref<FeedItemId | null>(null);
-const selectedPost = ref<PostDetail | null>(null);
-const detailLoading = ref(false);
-const detailError = ref("");
-const savedScrollY = ref(0);
+const {
+  selectedPostId, selectedPost, detailLoading, detailError, detailOpen,
+  openDetail: openItem, closeDetail, retryDetail,
+} = usePostDetail();
 
 const tabs: Array<{ key: ProfileTabKey; label: string; empty: string }> = [
   { key: "history", label: "浏览", empty: "暂无浏览记录" },
@@ -70,7 +68,6 @@ const userTags = computed(() => {
 });
 const listEmptyText = computed(() => tabs.find((tab) => tab.key === activeTab.value)?.empty || "暂无内容");
 const aliases = computed(() => user.value?.aliases || []);
-const detailOpen = computed(() => selectedPostId.value !== null);
 
 function applyProfileChrome() {
   if (!user.value) {
@@ -195,33 +192,6 @@ async function handleAuthenticated(authenticatedUser: ProfileUser | null) {
 async function handleProfileUpdated() {
   aliasPickerOpen.value = false;
   await loadProfile();
-}
-
-async function openItem(tid: FeedItemId) {
-  savedScrollY.value = window.scrollY;
-  selectedPostId.value = tid;
-  selectedPost.value = null;
-  detailError.value = "";
-  detailLoading.value = true;
-  try {
-    selectedPost.value = await fetchPostDetail(tid);
-  } catch (error) {
-    detailError.value = error instanceof Error ? error.message : "详情暂时没加载出来，可以稍后再试。";
-  } finally {
-    detailLoading.value = false;
-  }
-}
-
-function closeDetail() {
-  selectedPostId.value = null;
-  selectedPost.value = null;
-  detailLoading.value = false;
-  detailError.value = "";
-  requestAnimationFrame(() => window.scrollTo(0, savedScrollY.value));
-}
-
-function retryDetail() {
-  if (selectedPostId.value != null) void openItem(selectedPostId.value);
 }
 
 async function switchAlias(aliasId: string) {

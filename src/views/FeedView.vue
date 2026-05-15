@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
-import { fetchFeed } from "../api/feed";
+import { DEFAULT_TABS, fetchFeed } from "../api/feed";
 import { useFloatingChromeController } from "../motion/floatingChrome";
 import { prefersReducedMotion } from "../motion/useReducedMotion";
 import { useShellChrome } from "../shell/useShellChrome";
@@ -13,10 +13,6 @@ import { normalizeFeedItemId } from "./feed/feedItemId";
 import { useFeedDetail, type CardOpenPayload, type CardTransitionSnapshot } from "./feed/useFeedDetail";
 import { READ_HISTORY_KEY } from "../platform/browser-storage";
 
-const DEFAULT_TABS: FeedTab[] = [
-  { id: "此刻", label: "此刻" },
-  { id: "精选", label: "精选" },
-];
 const PAGE_SIZE = 12;
 const SWIPE_THRESHOLD = 96;
 const SWIPE_VERTICAL_GUARD = 52;
