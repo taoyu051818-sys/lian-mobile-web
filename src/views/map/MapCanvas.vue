@@ -67,7 +67,7 @@ function applyMapIconScale(target: LeafletMapLike | null = map.value, zoom = tar
   if (!markerPane) return;
   const scale = iconScaleForZoom(target, zoom);
   markerPane.querySelectorAll<HTMLElement>(SCALED_ICON_SELECTOR).forEach((element) => {
-    element.style.transition = "none";
+    element.style.transition = "transform 150ms ease-out";
     element.style.transform = `scale(${scale})`;
   });
 }
