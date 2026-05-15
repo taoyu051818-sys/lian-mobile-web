@@ -62,7 +62,13 @@ function resetRegions() {
 }
 
 function applyPageChrome(spec: PageChromeSpec) {
-  if (spec.top) setRegion("top", spec.top);
+  // Reset top region before applying new spec so stale fields from previous
+  // view (tabs, buttons, identity, filters) don't persist.
+  if (spec.top) {
+    const defaults = createDefaultChromeState();
+    mergeRegion(state.top, defaults.top);
+    setRegion("top", spec.top);
+  }
   if (spec.bottom) setRegion("bottom", spec.bottom);
 
   if (spec.autoHideOnDetail !== undefined) {
