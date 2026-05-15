@@ -150,7 +150,7 @@ const hasMultipleAliases = computed(() => props.aliases.length > 0);
 
 .profile-header__alias-card--clickable {
   cursor: pointer;
-  transition: border-color 0.15s, background 0.15s;
+  transition: border-color var(--motion-fast) var(--motion-ease-standard), background var(--motion-fast) var(--motion-ease-standard);
 }
 
 .profile-header__alias-card--clickable:hover {
@@ -244,7 +244,7 @@ const hasMultipleAliases = computed(() => props.aliases.length > 0);
   font: inherit;
   cursor: pointer;
   text-align: left;
-  transition: border-color 0.15s, background 0.15s;
+  transition: border-color var(--motion-fast) var(--motion-ease-standard), background var(--motion-fast) var(--motion-ease-standard);
 }
 
 .profile-header__alias-option:hover {

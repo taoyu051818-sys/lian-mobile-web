@@ -465,11 +465,4 @@ onBeforeUnmount(() => {
   color: currentColor;
   font-weight: 900;
 }
-
-@media (prefers-reduced-motion: reduce) {
-  .feed-view__content,
-  .feed-view__card-transition {
-    transition: none;
-  }
-}
 </style>

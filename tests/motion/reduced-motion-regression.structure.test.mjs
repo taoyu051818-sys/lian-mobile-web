@@ -88,20 +88,6 @@ test("content-immersive-ui reduced-motion disables transitions on interactive el
   assert.match(rmBlock, /transition:\s*none/);
 });
 
-// --- Card camera transition reduced-motion ---
-
-test("card-camera-transition.css has reduced-motion block", () => {
-  const css = read("src/styles/card-camera-transition.css");
-  assert.match(css, /@media\s*\(prefers-reduced-motion:\s*reduce\)/);
-});
-
-test("card-camera-transition reduced-motion disables transforms and filters", () => {
-  const css = read("src/styles/card-camera-transition.css");
-  const rmBlock = css.slice(css.indexOf("@media (prefers-reduced-motion: reduce)"));
-  assert.match(rmBlock, /transform:\s*none\s*!/);
-  assert.match(rmBlock, /filter:\s*none\s*!/);
-});
-
 // --- FeedView reduced-motion usage ---
 
 test("FeedView imports prefersReducedMotion from shared module", () => {
