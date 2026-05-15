@@ -18,6 +18,13 @@ import {
   validatePublishForm,
 } from "../domain/validation/forms";
 import { fetchAuthMe } from "../api/profile";
+import {
+  clearPublishDraft,
+  hasMeaningfulPublishDraft,
+  readPublishDraft,
+  restorePublishDraftLocation,
+  savePublishDraft,
+} from "../platform/publish-draft";
 import { GlassPanel, InlineError } from "../ui";
 import type { MapLocation } from "../types/map";
 import type { PlaceRef } from "../types/place";
@@ -30,6 +37,8 @@ import PublishMetaControls from "./publish/PublishMetaControls.vue";
 const emit = defineEmits<{
   chrome: [spec: PageChromeSpec];
 }>();
+
+const RESET_CONFIRM_MESSAGE = "当前发布内容还没有提交，确认清空吗？已选择的图片需要重新添加。";
 
 const title = ref("");
 const body = ref("");
@@ -48,6 +57,7 @@ const uploading = ref(false);
 const publishing = ref(false);
 const errorMessage = ref("");
 const successMessage = ref("");
+const draftNotice = ref("");
 const lastTid = ref<string | number | null>(null);
 const mapLocations = ref<MapLocation[]>([]);
 const selectedMapLocation = ref<MapLocation | null>(null);
@@ -107,6 +117,15 @@ const postDetailUrl = computed(() => {
   if (!tid) return "";
   return `#/post/${tid}`;
 });
+const hasUnsavedDraft = computed(() => hasMeaningfulPublishDraft({
+  title: title.value,
+  body: body.value,
+  tagInput: tagInput.value,
+  placeName: placeName.value,
+  visibility: visibility.value,
+  selectedMapLocation: selectedMapLocation.value,
+  selectedFileCount: selectedFiles.value.length,
+}));
 
 const pageChrome = computed<PageChromeSpec>(() => ({
   top: {
@@ -119,6 +138,21 @@ const pageChrome = computed<PageChromeSpec>(() => ({
 }));
 
 watch(pageChrome, (spec) => emit("chrome", spec), { deep: true });
+
+watch(
+  [title, body, tagInput, placeName, visibility, selectedMapLocation, () => selectedFiles.value.length],
+  () => {
+    savePublishDraft({
+      title: title.value,
+      body: body.value,
+      tagInput: tagInput.value,
+      placeName: placeName.value,
+      visibility: visibility.value,
+      selectedMapLocation: selectedMapLocation.value,
+      selectedFileCount: selectedFiles.value.length,
+    });
+  },
+);
 
 const visibilityOptions: Array<{ value: PublishVisibility; label: string }> = [
   { value: "public", label: "公开" },
@@ -139,6 +173,40 @@ function placeRefForLocation(location: MapLocation): PlaceRef | undefined {
     name: location.name,
     type: location.type,
   };
+}
+
+function clearFormState() {
+  title.value = "";
+  body.value = "";
+  tagInput.value = "";
+  identityTag.value = "";
+  placeName.value = "";
+  visibility.value = "public";
+  selectedFiles.value = [];
+  uploadedImageUrls.value = [];
+  selectedMapLocation.value = null;
+  locationSearch.value = "";
+  locationPanelOpen.value = false;
+  tagPanelOpen.value = false;
+  visibilityPanelOpen.value = false;
+  revokePreviewUrls();
+}
+
+function restoreDraftFromSession() {
+  const draft = readPublishDraft();
+  if (!draft) return;
+
+  title.value = draft.title;
+  body.value = draft.body;
+  tagInput.value = draft.tagInput;
+  placeName.value = draft.placeName;
+  visibility.value = draft.visibility;
+  selectedMapLocation.value = restorePublishDraftLocation(draft.selectedMapLocation);
+  locationSearch.value = draft.selectedMapLocation?.name || draft.placeName;
+  locationPanelOpen.value = Boolean(draft.selectedMapLocation || draft.placeName.trim());
+  draftNotice.value = draft.pendingImageCount
+    ? `已恢复同一会话中的未发布内容，${draft.pendingImageCount} 张图片需要重新选择。`
+    : "已恢复同一会话中的未发布内容。";
 }
 
 async function loadIdentity() {
@@ -201,6 +269,12 @@ function revokePreviewUrls() {
   localPreviewUrls.value = [];
 }
 
+function handleBeforeUnload(event: BeforeUnloadEvent) {
+  if (!hasUnsavedDraft.value || publishing.value) return;
+  event.preventDefault();
+  event.returnValue = "";
+}
+
 async function handleFiles(event: Event) {
   const input = event.target as HTMLInputElement;
   const selection = validatePublishImageSelection(Array.from(input.files || []), selectedFiles.value.length);
@@ -211,6 +285,7 @@ async function handleFiles(event: Event) {
     return;
   }
 
+  draftNotice.value = "";
   errorMessage.value = selection.message;
   successMessage.value = "";
   selectedFiles.value = [...selectedFiles.value, ...selection.acceptedFiles];
@@ -242,6 +317,15 @@ function removeImage(index: number) {
   selectedFiles.value.splice(index, 1);
   localPreviewUrls.value.splice(index, 1);
   uploadedImageUrls.value.splice(index, 1);
+}
+
+function requestResetForm() {
+  if (hasUnsavedDraft.value && !window.confirm(RESET_CONFIRM_MESSAGE)) return;
+
+  clearFormState();
+  clearPublishDraft();
+  draftNotice.value = "";
+  errorMessage.value = "";
 }
 
 function validate() {
@@ -281,7 +365,9 @@ async function submitPublish() {
     successMessage.value = boundPlaceName && boundPlaceName !== "未绑定地点"
       ? `发布成功，已绑定到「${boundPlaceName}」。`
       : "发布成功，稍后可以在首页看到。";
-    resetForm();
+    clearFormState();
+    clearPublishDraft();
+    draftNotice.value = "";
   } catch (error) {
     errorMessage.value = extractErrorMessage(error, ERROR_PUBLISH_GENERIC);
   } finally {
@@ -289,30 +375,16 @@ async function submitPublish() {
   }
 }
 
-function resetForm() {
-  title.value = "";
-  body.value = "";
-  tagInput.value = "";
-  identityTag.value = "";
-  placeName.value = "";
-  visibility.value = "public";
-  selectedFiles.value = [];
-  uploadedImageUrls.value = [];
-  selectedMapLocation.value = null;
-  locationSearch.value = "";
-  locationPanelOpen.value = false;
-  tagPanelOpen.value = false;
-  visibilityPanelOpen.value = false;
-  revokePreviewUrls();
-}
-
 onMounted(() => {
   emit("chrome", pageChrome.value);
+  restoreDraftFromSession();
+  window.addEventListener("beforeunload", handleBeforeUnload);
   void loadIdentity();
   void loadMapLocations();
 });
 
 onBeforeUnmount(() => {
+  window.removeEventListener("beforeunload", handleBeforeUnload);
   revokePreviewUrls();
 });
 </script>
@@ -321,6 +393,7 @@ onBeforeUnmount(() => {
   <section class="publish-view keyboard-aware-surface" aria-label="发布">
     <GlassPanel class="publish-view__card">
       <InlineError v-if="errorMessage">{{ errorMessage }}</InlineError>
+      <p v-if="draftNotice" class="publish-view__draft-notice" data-testid="publish-draft-notice">{{ draftNotice }}</p>
       <div v-if="successMessage" class="publish-view__success-block">
         <p class="publish-view__success">{{ successMessage }}</p>
         <a
@@ -398,7 +471,7 @@ onBeforeUnmount(() => {
           :publishing="publishing"
           :uploading="uploading"
           :can-submit="canSubmit"
-          @reset-form="resetForm"
+          @reset-form="requestResetForm"
           @submit="submitPublish"
         />
       </form>
@@ -432,6 +505,15 @@ onBeforeUnmount(() => {
   gap: var(--space-5);
 }
 
+.publish-view__draft-notice {
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid rgba(31, 167, 160, 0.18);
+  border-radius: var(--radius-card);
+  background: rgba(31, 167, 160, 0.1);
+  color: var(--lian-ink);
+  font-size: 14px;
+  font-weight: 700;
+}
 
 .publish-view__success-block {
   display: grid;
