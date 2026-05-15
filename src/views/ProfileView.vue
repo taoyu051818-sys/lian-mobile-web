@@ -1,12 +1,15 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { LianApiError } from "../api/http";
-import { fetchAuthMe, fetchProfileTab, logoutAuth } from "../api/profile";
+import { fetchPostDetail } from "../api/posts";
+import { activateProfileAlias, deactivateProfileAlias, fetchAuthMe, fetchProfileTab, logoutAuth } from "../api/profile";
 import { useShellChrome } from "../shell/useShellChrome";
 import { InlineError } from "../ui";
 import type { FeedItemId } from "../types/feed";
+import type { PostDetail } from "../types/post";
 import type { ProfileListItem, ProfileTabKey, ProfileUser } from "../types/profile";
 import AuthPanel from "./auth/AuthPanel.vue";
+import PostDetailPanel from "./detail/PostDetailPanel.vue";
 import ProfileEditorPanel from "./profile/ProfileEditorPanel.vue";
 import ProfileHeader from "./profile/ProfileHeader.vue";
 import ProfileActions from "./profile/ProfileActions.vue";
@@ -23,6 +26,13 @@ const listError = ref("");
 const activeTab = ref<ProfileTabKey>("history");
 const profileItems = ref<ProfileListItem[]>([]);
 const editorOpen = ref(false);
+const aliasPickerOpen = ref(false);
+const aliasBusy = ref(false);
+const selectedPostId = ref<FeedItemId | null>(null);
+const selectedPost = ref<PostDetail | null>(null);
+const detailLoading = ref(false);
+const detailError = ref("");
+const savedScrollY = ref(0);
 
 const tabs: Array<{ key: ProfileTabKey; label: string; empty: string }> = [
   { key: "history", label: "浏览", empty: "暂无浏览记录" },
@@ -58,6 +68,8 @@ const userTags = computed(() => {
   return tags.slice(0, 5);
 });
 const listEmptyText = computed(() => tabs.find((tab) => tab.key === activeTab.value)?.empty || "暂无内容");
+const aliases = computed(() => user.value?.aliases || []);
+const detailOpen = computed(() => selectedPostId.value !== null);
 
 function applyProfileChrome() {
   if (!user.value) {
@@ -185,7 +197,50 @@ async function handleAuthenticated(authenticatedUser: ProfileUser | null) {
 }
 
 async function handleProfileUpdated() {
+  aliasPickerOpen.value = false;
   await loadProfile();
+}
+
+async function openItem(tid: FeedItemId) {
+  savedScrollY.value = window.scrollY;
+  selectedPostId.value = tid;
+  selectedPost.value = null;
+  detailError.value = "";
+  detailLoading.value = true;
+  try {
+    selectedPost.value = await fetchPostDetail(tid);
+  } catch (error) {
+    detailError.value = error instanceof Error ? error.message : "详情暂时没加载出来，可以稍后再试。";
+  } finally {
+    detailLoading.value = false;
+  }
+}
+
+function closeDetail() {
+  selectedPostId.value = null;
+  selectedPost.value = null;
+  detailLoading.value = false;
+  detailError.value = "";
+  requestAnimationFrame(() => window.scrollTo(0, savedScrollY.value));
+}
+
+function retryDetail() {
+  if (selectedPostId.value != null) void openItem(selectedPostId.value);
+}
+
+async function switchAlias(aliasId: string) {
+  if (aliasBusy.value || !user.value) return;
+  aliasBusy.value = true;
+  try {
+    if (aliasId) await activateProfileAlias(aliasId);
+    else await deactivateProfileAlias();
+    aliasPickerOpen.value = false;
+    await loadProfile();
+  } catch {
+    // error is non-critical; user can retry
+  } finally {
+    aliasBusy.value = false;
+  }
 }
 
 onMounted(() => {
@@ -215,9 +270,13 @@ onBeforeUnmount(() => {
         :display-name="displayName"
         :identity-meta="identityMeta"
         :user-tags="userTags"
+        :aliases="aliases"
         :active-alias="activeAlias"
         :active-alias-hint="activeAliasHint"
         :active-alias-summary="activeAliasSummary"
+        :alias-picker-open="aliasPickerOpen"
+        @toggle-alias-picker="aliasPickerOpen = !aliasPickerOpen"
+        @select-alias="switchAlias"
       />
 
       <ProfileActions :editor-open="editorOpen" @toggle-editor="editorOpen = !editorOpen" @logout="logout" />
@@ -232,7 +291,18 @@ onBeforeUnmount(() => {
         :empty-text="listEmptyText"
         :error="listError"
         @retry="loadProfileList(activeTab)"
+        @open-item="openItem"
       />
+
+      <div v-if="detailOpen" class="profile-view__detail-overlay" role="dialog" aria-modal="true" aria-label="帖子详情">
+        <PostDetailPanel
+          :post="selectedPost"
+          :loading="detailLoading"
+          :error="detailError"
+          @close="closeDetail"
+          @retry="retryDetail"
+        />
+      </div>
     </template>
 
     <section v-else class="profile-view__guest">
@@ -271,6 +341,14 @@ onBeforeUnmount(() => {
   display: grid;
   gap: var(--space-4);
   padding-top: var(--space-6);
+}
+
+.profile-view__detail-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  overflow-y: auto;
+  background: var(--lian-surface, #fff);
 }
 
 .inline-error button {

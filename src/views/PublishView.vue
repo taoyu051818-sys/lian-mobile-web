@@ -1,7 +1,21 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 import { fetchMapV2Items } from "../api/map";
-import { buildPublishPayload, createMapV2LocationDraft, normalizeIdentityTag, normalizePublishTag, publishPost, uploadPublishImage } from "../api/publish";
+import {
+  buildPublishPayload,
+  createMapV2LocationDraft,
+  MAX_PUBLISH_IMAGE_COUNT,
+  normalizeIdentityTag,
+  normalizePublishTag,
+  PUBLISH_IMAGE_HELP_TEXT,
+  PUBLISH_IMAGE_PRIVACY_NOTICE,
+  publishPost,
+  uploadPublishImage,
+  validatePublishImageSelection,
+} from "../api/publish";
+import {
+  validatePublishForm,
+} from "../domain/validation/forms";
 import { fetchAuthMe } from "../api/profile";
 import { GlassPanel, IdentityBadge, InlineError } from "../ui";
 import type { MapLocation } from "../types/map";
@@ -11,8 +25,6 @@ import PublishActionBar from "./publish/PublishActionBar.vue";
 import PublishComposer from "./publish/PublishComposer.vue";
 import PublishLocationControls from "./publish/PublishLocationControls.vue";
 import PublishMetaControls from "./publish/PublishMetaControls.vue";
-
-const MAX_IMAGE_COUNT = 9;
 
 const title = ref("");
 const body = ref("");
@@ -48,6 +60,8 @@ const publishIdentityCopy = computed(() => `你将以「${identityName.value} ·
 const canSubmit = computed(() => title.value.trim().length > 0 && body.value.trim().length > 0 && !uploading.value && !publishing.value);
 const titleCount = computed(() => title.value.length);
 const bodyCount = computed(() => body.value.length);
+const publishImageHelpText = PUBLISH_IMAGE_HELP_TEXT;
+const publishImagePrivacyNotice = PUBLISH_IMAGE_PRIVACY_NOTICE;
 const locationToolLabel = computed(() => {
   if (selectedMapLocation.value) return knownPlaceLabel.value;
   if (placeName.value.trim()) return placeName.value.trim();
@@ -55,7 +69,7 @@ const locationToolLabel = computed(() => {
 });
 const visibilityLabel = computed(() => visibilityOptions.find((item) => item.value === visibility.value)?.label || "公开");
 const imageStatus = computed(() => {
-  if (!selectedFiles.value.length) return "最多 9 张";
+  if (!selectedFiles.value.length) return `最多 ${MAX_PUBLISH_IMAGE_COUNT} 张`;
   if (uploading.value) return `上传中 ${uploadedImageUrls.value.length}/${selectedFiles.value.length}`;
   return `已准备 ${uploadedImageUrls.value.length}/${selectedFiles.value.length} 张`;
 });
@@ -85,6 +99,11 @@ const knownPlaceLabel = computed(() => {
 });
 const locationPreviewLabel = computed(() => knownPlaceLabel.value || placeName.value.trim() || "未绑定地点");
 const locationBindingMeta = computed(() => selectedMapLocation.value ? "已绑定已知地点" : "手填地点仅作为展示文本");
+const postDetailUrl = computed(() => {
+  const tid = lastTid.value;
+  if (!tid) return "";
+  return `#/post/${tid}`;
+});
 
 const visibilityOptions: Array<{ value: PublishVisibility; label: string }> = [
   { value: "public", label: "公开" },
@@ -169,23 +188,27 @@ function revokePreviewUrls() {
 
 async function handleFiles(event: Event) {
   const input = event.target as HTMLInputElement;
-  const files = Array.from(input.files || []).filter((file) => file.type.startsWith("image/"));
-  if (!files.length) return;
-
-  errorMessage.value = "";
-  successMessage.value = "";
-  const remaining = Math.max(0, MAX_IMAGE_COUNT - selectedFiles.value.length);
-  const nextFiles = files.slice(0, remaining);
-  selectedFiles.value = [...selectedFiles.value, ...nextFiles];
-  localPreviewUrls.value = [...localPreviewUrls.value, ...nextFiles.map((file) => URL.createObjectURL(file))];
+  const selection = validatePublishImageSelection(Array.from(input.files || []), selectedFiles.value.length);
   input.value = "";
+
+  if (!selection.acceptedFiles.length) {
+    if (selection.message) errorMessage.value = selection.message;
+    return;
+  }
+
+  errorMessage.value = selection.message;
+  successMessage.value = "";
+  selectedFiles.value = [...selectedFiles.value, ...selection.acceptedFiles];
+  localPreviewUrls.value = [
+    ...localPreviewUrls.value,
+    ...selection.acceptedFiles.map((file) => URL.createObjectURL(file)),
+  ];
   await uploadPendingImages();
 }
 
 async function uploadPendingImages() {
   if (uploading.value) return;
   uploading.value = true;
-  errorMessage.value = "";
   try {
     for (let index = uploadedImageUrls.value.length; index < selectedFiles.value.length; index += 1) {
       const url = await uploadPublishImage(selectedFiles.value[index]);
@@ -207,13 +230,13 @@ function removeImage(index: number) {
 }
 
 function validate() {
-  if (!title.value.trim()) return "请填写标题。";
-  if (title.value.trim().length > 40) return "标题最多 40 个字。";
-  if (!body.value.trim()) return "请填写正文。";
-  if (body.value.trim().length > 300) return "正文最多 300 个字。";
-  if (uploading.value) return "图片还在上传，稍等一下再发布。";
-  if (selectedFiles.value.length !== uploadedImageUrls.value.length) return "还有图片没有上传成功，请重新选择或移除。";
-  return "";
+  return validatePublishForm({
+    title: title.value,
+    body: body.value,
+    uploading: uploading.value,
+    selectedFileCount: selectedFiles.value.length,
+    uploadedImageCount: uploadedImageUrls.value.length,
+  });
 }
 
 async function submitPublish() {
@@ -279,7 +302,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <section class="publish-view" aria-label="发布">
+  <section class="publish-view keyboard-aware-surface" aria-label="发布">
     <GlassPanel class="publish-view__card">
       <section class="publish-view__identity" aria-label="当前发布身份">
         <IdentityBadge :avatar-text="avatarText" :label="identityName" :meta="identityMeta" />
@@ -289,10 +312,24 @@ onBeforeUnmount(() => {
         </div>
       </section>
 
-      <InlineError v-if="errorMessage">{{ errorMessage }}</InlineError>
-      <p v-if="successMessage" class="publish-view__success">{{ successMessage }}</p>
+      <section class="publish-view__image-guide" aria-label="图片上传提醒">
+        <p class="publish-view__image-guide-title">图片上传提醒</p>
+        <p>{{ publishImageHelpText }}</p>
+        <p>{{ publishImagePrivacyNotice }}</p>
+      </section>
 
-      <form class="publish-view__form" @submit.prevent="submitPublish">
+      <InlineError v-if="errorMessage">{{ errorMessage }}</InlineError>
+      <div v-if="successMessage" class="publish-view__success-block">
+        <p class="publish-view__success">{{ successMessage }}</p>
+        <a
+          v-if="postDetailUrl"
+          class="publish-view__view-post"
+          :href="postDetailUrl"
+          data-testid="publish-view-post-link"
+        >查看帖子</a>
+      </div>
+
+      <form class="publish-view__form keyboard-aware-surface" @submit.prevent="submitPublish">
         <PublishComposer
           :local-preview-urls="localPreviewUrls"
           :image-status="imageStatus"
@@ -375,6 +412,15 @@ onBeforeUnmount(() => {
   gap: var(--space-4);
 }
 
+.publish-view {
+  padding-bottom: calc(var(--space-8) + var(--keyboard-inset-bottom));
+  scroll-padding-bottom: calc(var(--space-8) + var(--keyboard-inset-bottom));
+}
+
+.publish-view__form {
+  scroll-padding-bottom: calc(var(--space-8) + var(--keyboard-inset-bottom));
+}
+
 .publish-view p {
   margin: 0;
 }
@@ -409,8 +455,43 @@ onBeforeUnmount(() => {
   font-weight: 700;
 }
 
+.publish-view__image-guide {
+  display: grid;
+  gap: 6px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: rgba(31, 41, 51, 0.04);
+  color: var(--lian-muted);
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.5;
+}
+
+.publish-view__image-guide-title {
+  color: var(--lian-foreground);
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.publish-view__success-block {
+  display: grid;
+  gap: var(--space-2);
+}
+
 .publish-view__success {
   color: var(--lian-primary);
   font-weight: 850;
+  margin: 0;
+}
+
+.publish-view__view-post {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--lian-primary);
+  font-size: 14px;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 </style>

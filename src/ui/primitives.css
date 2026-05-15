@@ -160,6 +160,14 @@
   font-size: 11px;
 }
 
+.keyboard-aware-surface {
+  scroll-padding-bottom: calc(var(--space-8) + var(--keyboard-inset-bottom));
+}
+
+.keyboard-aware-surface :is(input, textarea, select, [contenteditable="true"]) {
+  scroll-margin-bottom: calc(var(--space-8) + var(--keyboard-inset-bottom));
+}
+
 .top-bar,
 .bottom-tab-bar,
 .lian-sheet__panel,
@@ -258,7 +266,11 @@
   bottom: 0;
   left: 0;
   padding: var(--space-4);
+  padding-bottom: calc(var(--space-4) + env(safe-area-inset-bottom) + var(--keyboard-inset-bottom));
   border-radius: var(--radius-sheet) var(--radius-sheet) 0 0;
+  max-height: min(88vh, calc(100dvh - env(safe-area-inset-top) - var(--space-4)));
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .lian-sheet__header {

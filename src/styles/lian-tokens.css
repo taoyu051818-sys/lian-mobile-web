@@ -71,6 +71,7 @@
   --floating-bar-side-inset: var(--space-3);
   --floating-bar-top-offset: calc(var(--space-2) + env(safe-area-inset-top));
   --floating-bar-bottom-offset: max(var(--space-3), env(safe-area-inset-bottom));
+  --keyboard-inset-bottom: 0px;
   --floating-bar-height: 58px;
   --floating-bar-padding: var(--space-2);
   --floating-bar-radius: var(--radius-sheet);

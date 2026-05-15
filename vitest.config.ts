@@ -5,14 +5,17 @@ export default defineConfig({
     include: [
       "tests/api/**/*.test.ts",
       "tests/auth/**/*.test.ts",
+      "tests/composables/**/*.test.ts",
       "tests/detail/**/*.test.ts",
+      "tests/feed/feedPresentationIntent.structure.test.mjs",
+      "tests/feed/feedReadHistoryIdNormalization.contract.test.ts",
       "tests/html/**/*.test.ts",
       "tests/time/**/*.test.ts",
       "tests/shell/**/*.test.ts",
       "tests/publish/**/*.test.ts",
       "tests/profile/**/*.test.ts",
+      "src/utils/__tests__/**/*.test.ts",
       "tests/motion/**/*.test.ts",
-      "tests/feed/feedPresentationIntent.structure.test.mjs",
     ],
   },
 });

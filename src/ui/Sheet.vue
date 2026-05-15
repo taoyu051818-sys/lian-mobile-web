@@ -31,14 +31,27 @@ function unlockScroll() {
   document.body.style.removeProperty("overflow");
 }
 
+function keepFocusVisible(target: EventTarget | null) {
+  if (!(target instanceof HTMLElement)) return;
+  requestAnimationFrame(() => {
+    target.scrollIntoView({ block: "nearest", inline: "nearest" });
+  });
+}
+
 function focusFirst() {
   nextTick(() => {
     if (!overlayRef.value) return;
     const first = overlayRef.value.querySelector<HTMLElement>(
       'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
     );
-    (first ?? overlayRef.value).focus();
+    const focusTarget = first ?? overlayRef.value;
+    focusTarget.focus();
+    keepFocusVisible(focusTarget);
   });
+}
+
+function handleFocusIn(event: FocusEvent) {
+  keepFocusVisible(event.target);
 }
 
 watch(
@@ -65,9 +78,9 @@ onBeforeUnmount(() => {
 
 <template>
   <Teleport to="body">
-    <div v-if="open" ref="overlay" class="lian-sheet" role="dialog" aria-modal="true" :aria-label="title || '弹层'">
+    <div v-if="open" ref="overlay" class="lian-sheet" role="dialog" aria-modal="true" :aria-label="title || '弹层'" @focusin="handleFocusIn">
       <div class="lian-sheet__backdrop" @click="emit('close')"></div>
-      <section class="lian-sheet__panel">
+      <section class="lian-sheet__panel keyboard-aware-surface">
         <header v-if="title || $slots.actions" class="lian-sheet__header">
           <h2 v-if="title">{{ title }}</h2>
           <slot name="actions">

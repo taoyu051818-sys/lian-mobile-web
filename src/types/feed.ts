@@ -22,6 +22,7 @@ export interface SourceSignal {
 }
 
 export type FeedPresentationIntent = "image" | "text" | "activity" | "place" | "merchant" | "help";
+export type FeedItemCardTemplateSource = "server" | "content-type" | "cover-fallback";
 
 export interface FeedItem {
   tid: FeedItemId;
@@ -38,6 +39,8 @@ export interface FeedItem {
   locationArea: string;
   contentType: string;
   presentationIntent?: FeedPresentationIntent | string | null;
+  cardTemplate?: FeedPresentationIntent | null;
+  cardTemplateSource?: FeedItemCardTemplateSource;
 }
 
 export interface FeedResponse {

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
+import { useVisualViewport } from "../../composables/useVisualViewport";
 import { fetchPlaceSheet } from "../../api/places";
 import { reportPost, sendPostReply, togglePostLike, togglePostSave } from "../../api/posts";
 import { InlineError, LianButton } from "../../ui";
@@ -38,6 +39,8 @@ const emit = defineEmits<{
   close: [];
   retry: [];
 }>();
+
+useVisualViewport();
 
 const liked = ref(false);
 const saved = ref(false);
