@@ -585,7 +585,7 @@ defineExpose({ map });
 .map-canvas {
   width: 100%;
   min-height: inherit;
-  height: calc(100vh - 92px - env(safe-area-inset-bottom));
+  height: 100vh;
   background: rgba(247, 244, 236, 0.72);
 }
 
