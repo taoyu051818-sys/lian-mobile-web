@@ -1,13 +1,9 @@
 <script setup lang="ts">
-type FloatingChromePhase = "visible" | "exiting" | "hidden" | "entering" | "progress";
-
 defineProps<{
   authorLabel?: string;
   avatarUrl?: string;
   authorInitial?: string;
   hasAuthorIdentity?: boolean;
-  chromePhase?: FloatingChromePhase;
-  chromeStyle?: Record<string, string>;
 }>();
 
 const emit = defineEmits<{
@@ -20,8 +16,6 @@ const emit = defineEmits<{
   <header
     class="post-detail-topbar lian-floating-chrome lian-floating-chrome--top"
     data-floating-chrome="top"
-    :data-floating-state="chromePhase"
-    :style="chromeStyle"
   >
     <button class="post-detail-topbar__close" type="button" aria-label="关闭详情" @click="emit('close')">‹</button>
     <div v-if="hasAuthorIdentity" class="post-detail-topbar__author-chip">

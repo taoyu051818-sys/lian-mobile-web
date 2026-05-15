@@ -1,5 +1,6 @@
 :root {
   --bottom-chrome-visibility-progress: 1;
+  --detail-drag-visible-scale-loss: 0;
 }
 
 .lian-floating-chrome {
@@ -37,6 +38,7 @@
   /* layout and scrollbar hiding inherited from .lian-floating-chrome base and .shell-chrome__tabs */
 }
 
+/* Detail drag cardify transitions */
 .feed-view__content.is-under-detail {
   opacity: var(--feed-under-detail-opacity, 0.08) !important;
   transform: scale(var(--feed-under-detail-scale, 0.985)) !important;
@@ -65,119 +67,13 @@
   margin: 0 auto;
 }
 
-/* Floating chrome visual motion contract (epic #253, workchain #322).
-   Chrome transitions use the visible → exiting → swap → entering → visible
-   lifecycle (issue #278). Normal users get restrained opacity + directional
-   translate motion. Glass (backdrop-filter) stays stable -- no blur or scale.
-   Reduced-motion users get zero-duration, zero-transform overrides.
-*/
-:root {
-  --floating-chrome-motion-duration: var(--motion-fast);
-  --floating-chrome-top-exit-y: -10px;
-  --floating-chrome-bottom-exit-y: 10px;
-  --detail-drag-visible-scale-loss: 0;
+/* Shell chrome visibility */
+.shell-chrome[data-visible="false"] {
+  opacity: 0;
+  pointer-events: none;
 }
 
-/* --- Base transition for all floating chrome variants --- */
-
-.lian-floating-chrome,
-.shell-chrome__tabs.lian-floating-chrome,
-.post-detail-panel__topbar.lian-floating-chrome,
-.post-detail-panel__dock.lian-floating-chrome,
-.bottom-tab-bar.lian-floating-chrome,
-.vue-shell__bottom-tab.lian-floating-chrome {
-  transition:
-    opacity var(--floating-chrome-motion-duration) var(--motion-ease-standard),
-    transform var(--floating-chrome-motion-duration) var(--motion-ease-standard);
-}
-
-/* --- Directional exit transforms by chrome region --- */
-
-/* Top chrome exits/enters vertically from top */
-.lian-floating-chrome--top,
-.shell-chrome__tabs.lian-floating-chrome,
-.post-detail-panel__topbar.lian-floating-chrome {
-  --chrome-exit-y: var(--floating-chrome-top-exit-y);
-}
-
-/* Bottom chrome exits/enters vertically from bottom */
-.lian-floating-chrome--bottom,
-.post-detail-panel__dock.lian-floating-chrome,
-.bottom-tab-bar.lian-floating-chrome,
-.vue-shell__bottom-tab.lian-floating-chrome {
-  --chrome-exit-y: var(--floating-chrome-bottom-exit-y);
-}
-
-/* --- Hidden / exiting: fade out with directional translate --- */
-
-.lian-floating-chrome[data-floating-state="hidden"],
-.lian-floating-chrome[data-floating-state="exiting"],
-.lian-floating-chrome.is-hidden,
-.shell-chrome__tabs.lian-floating-chrome[data-floating-state="hidden"],
-.shell-chrome__tabs.lian-floating-chrome[data-floating-state="exiting"],
-.post-detail-panel__topbar.lian-floating-chrome[data-floating-state="hidden"],
-.post-detail-panel__topbar.lian-floating-chrome[data-floating-state="exiting"],
-.post-detail-panel__dock.lian-floating-chrome[data-floating-state="hidden"],
-.post-detail-panel__dock.lian-floating-chrome[data-floating-state="exiting"],
-.bottom-tab-bar.lian-floating-chrome[data-floating-state="hidden"],
-.bottom-tab-bar.lian-floating-chrome[data-floating-state="exiting"],
-.vue-shell__bottom-tab.lian-floating-chrome[data-floating-state="hidden"],
-.vue-shell__bottom-tab.lian-floating-chrome[data-floating-state="exiting"],
-.vue-shell__bottom-tab.lian-floating-chrome.is-hidden {
-  opacity: 0 !important;
-  pointer-events: none !important;
-  transform: translate3d(0, var(--chrome-exit-y, 0px), 0) !important;
-}
-
-/* --- Visible / entering / progress: full opacity, no offset --- */
-
-.lian-floating-chrome[data-floating-state="visible"],
-.lian-floating-chrome[data-floating-state="entering"],
-.lian-floating-chrome[data-floating-state="progress"],
-.shell-chrome__tabs.lian-floating-chrome[data-floating-state="visible"],
-.shell-chrome__tabs.lian-floating-chrome[data-floating-state="entering"],
-.shell-chrome__tabs.lian-floating-chrome[data-floating-state="progress"],
-.post-detail-panel__topbar.lian-floating-chrome[data-floating-state="visible"],
-.post-detail-panel__topbar.lian-floating-chrome[data-floating-state="entering"],
-.post-detail-panel__topbar.lian-floating-chrome[data-floating-state="progress"],
-.post-detail-panel__dock.lian-floating-chrome[data-floating-state="visible"],
-.post-detail-panel__dock.lian-floating-chrome[data-floating-state="entering"],
-.post-detail-panel__dock.lian-floating-chrome[data-floating-state="progress"],
-.bottom-tab-bar.lian-floating-chrome[data-floating-state="visible"],
-.bottom-tab-bar.lian-floating-chrome[data-floating-state="entering"],
-.bottom-tab-bar.lian-floating-chrome[data-floating-state="progress"],
-.vue-shell__bottom-tab.lian-floating-chrome[data-floating-state="visible"],
-.vue-shell__bottom-tab.lian-floating-chrome[data-floating-state="entering"],
-.vue-shell__bottom-tab.lian-floating-chrome[data-floating-state="progress"] {
-  opacity: 1 !important;
-  pointer-events: auto !important;
-  transform: translate3d(0, 0, 0) !important;
-}
-
-/* --- Entering phase: pointer events disabled until transition completes --- */
-
-.lian-floating-chrome[data-floating-state="entering"],
-.shell-chrome__tabs.lian-floating-chrome[data-floating-state="entering"],
-.post-detail-panel__topbar.lian-floating-chrome[data-floating-state="entering"],
-.post-detail-panel__dock.lian-floating-chrome[data-floating-state="entering"],
-.bottom-tab-bar.lian-floating-chrome[data-floating-state="entering"],
-.vue-shell__bottom-tab.lian-floating-chrome[data-floating-state="entering"] {
-  pointer-events: none !important;
-}
-
-/* --- Progress phase: gesture-driven, no CSS transition --- */
-
-.shell-chrome__tabs.lian-floating-chrome[data-floating-state="progress"],
-.post-detail-panel__topbar.lian-floating-chrome[data-floating-state="progress"],
-.post-detail-panel__dock.lian-floating-chrome[data-floating-state="progress"],
-.bottom-tab-bar.lian-floating-chrome[data-floating-state="progress"],
-.vue-shell__bottom-tab.lian-floating-chrome[data-floating-state="progress"] {
-  pointer-events: none !important;
-  transition: none !important;
-}
-
-/* --- Reduced-motion: strict no-transform/no-transition override --- */
-
+/* Reduced-motion: no transitions */
 @media (prefers-reduced-motion: reduce) {
   .lian-floating-chrome,
   .shell-chrome__tabs.lian-floating-chrome,
@@ -188,60 +84,5 @@
     transition: none !important;
     transform: none !important;
     filter: none !important;
-  }
-
-  .lian-floating-chrome[data-floating-state="hidden"],
-  .lian-floating-chrome[data-floating-state="exiting"],
-  .lian-floating-chrome.is-hidden,
-  .shell-chrome__tabs.lian-floating-chrome[data-floating-state="hidden"],
-  .shell-chrome__tabs.lian-floating-chrome[data-floating-state="exiting"],
-  .post-detail-panel__topbar.lian-floating-chrome[data-floating-state="hidden"],
-  .post-detail-panel__topbar.lian-floating-chrome[data-floating-state="exiting"],
-  .post-detail-panel__dock.lian-floating-chrome[data-floating-state="hidden"],
-  .post-detail-panel__dock.lian-floating-chrome[data-floating-state="exiting"],
-  .bottom-tab-bar.lian-floating-chrome[data-floating-state="hidden"],
-  .bottom-tab-bar.lian-floating-chrome[data-floating-state="exiting"],
-  .vue-shell__bottom-tab.lian-floating-chrome[data-floating-state="hidden"],
-  .vue-shell__bottom-tab.lian-floating-chrome[data-floating-state="exiting"],
-  .vue-shell__bottom-tab.lian-floating-chrome.is-hidden {
-    opacity: 0 !important;
-    pointer-events: none !important;
-    transform: none !important;
-    transition: none !important;
-    filter: none !important;
-  }
-
-  .lian-floating-chrome[data-floating-state="visible"],
-  .lian-floating-chrome[data-floating-state="entering"],
-  .lian-floating-chrome[data-floating-state="progress"],
-  .shell-chrome__tabs.lian-floating-chrome[data-floating-state="visible"],
-  .shell-chrome__tabs.lian-floating-chrome[data-floating-state="entering"],
-  .shell-chrome__tabs.lian-floating-chrome[data-floating-state="progress"],
-  .post-detail-panel__topbar.lian-floating-chrome[data-floating-state="visible"],
-  .post-detail-panel__topbar.lian-floating-chrome[data-floating-state="entering"],
-  .post-detail-panel__topbar.lian-floating-chrome[data-floating-state="progress"],
-  .post-detail-panel__dock.lian-floating-chrome[data-floating-state="visible"],
-  .post-detail-panel__dock.lian-floating-chrome[data-floating-state="entering"],
-  .post-detail-panel__dock.lian-floating-chrome[data-floating-state="progress"],
-  .bottom-tab-bar.lian-floating-chrome[data-floating-state="visible"],
-  .bottom-tab-bar.lian-floating-chrome[data-floating-state="entering"],
-  .bottom-tab-bar.lian-floating-chrome[data-floating-state="progress"],
-  .vue-shell__bottom-tab.lian-floating-chrome[data-floating-state="visible"],
-  .vue-shell__bottom-tab.lian-floating-chrome[data-floating-state="entering"],
-  .vue-shell__bottom-tab.lian-floating-chrome[data-floating-state="progress"] {
-    opacity: 1 !important;
-    pointer-events: auto !important;
-    transform: none !important;
-    transition: none !important;
-    filter: none !important;
-  }
-
-  .lian-floating-chrome[data-floating-state="entering"],
-  .shell-chrome__tabs.lian-floating-chrome[data-floating-state="entering"],
-  .post-detail-panel__topbar.lian-floating-chrome[data-floating-state="entering"],
-  .post-detail-panel__dock.lian-floating-chrome[data-floating-state="entering"],
-  .bottom-tab-bar.lian-floating-chrome[data-floating-state="entering"],
-  .vue-shell__bottom-tab.lian-floating-chrome[data-floating-state="entering"] {
-    pointer-events: none !important;
   }
 }
