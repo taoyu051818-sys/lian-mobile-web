@@ -67,28 +67,12 @@ function applyMapIconScale(target: LeafletMapLike | null = map.value, zoom = tar
   if (!markerPane) return;
   const scale = iconScaleForZoom(target, zoom);
   markerPane.querySelectorAll<HTMLElement>(SCALED_ICON_SELECTOR).forEach((element) => {
-    element.style.transition = "transform 150ms ease-out";
     element.style.transform = `scale(${scale})`;
-  });
-}
-
-function applyMapIconCounterScale(target: LeafletMapLike, zoom: number) {
-  const markerPane = target.getPane("markerPane");
-  if (!markerPane) return;
-  const counterScale = 1 / iconScaleForZoom(target, zoom);
-  markerPane.querySelectorAll<HTMLElement>(SCALED_ICON_SELECTOR).forEach((element) => {
-    element.style.transition = "none";
-    element.style.transform = `scale(${counterScale})`;
   });
 }
 
 function bindMapIconScale(target: LeafletMapLike) {
   if (iconScaleBoundMaps.has(target)) return;
-  target.on("zoom", (...args: unknown[]) => {
-    const event = args[0];
-    const zoom = (event && typeof event === "object" && "zoom" in event) ? Number((event as { zoom?: unknown }).zoom) : target.getZoom();
-    applyMapIconCounterScale(target, Number.isFinite(zoom) ? zoom : target.getZoom());
-  });
   target.on("zoomend viewreset moveend", (...args: unknown[]) => {
     const event = args[0];
     const zoom = (event && typeof event === "object" && "zoom" in event) ? Number((event as { zoom?: unknown }).zoom) : target.getZoom();
