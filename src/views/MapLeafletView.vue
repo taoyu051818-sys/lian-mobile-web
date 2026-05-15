@@ -1,20 +1,19 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from "vue";
-import { fetchMapV2Items, fetchRoadNetworkPreview } from "../api/map";
-import type { MapLocation, MapPost, MapRoadNetworkPreview, MapV2ItemsResponse } from "../types/map";
+import { computed, onActivated, onMounted } from "vue";
+import type { MapLocation, MapPost } from "../types/map";
 import MapCanvas from "./map/MapCanvas.vue";
 import MapPlaceSheet from "./map/MapPlaceSheet.vue";
 import MapStatus from "./map/MapStatus.vue";
 import PostDetailPanel from "./detail/PostDetailPanel.vue";
 import { useMapChrome } from "./map/useMapChrome";
+import { useMapDataCache } from "../composables/useMapDataCache";
 import { useMapSelection } from "./map/useMapSelection";
+
+defineOptions({ name: "MapLeafletView" });
 
 const { selectedPlace, filterActive, handlePlaceSelect, closePlaceSheet, toggleFilter, MAP_FILTERS } = useMapChrome();
 
-const mapData = ref<MapV2ItemsResponse | null>(null);
-const roadPreview = ref<MapRoadNetworkPreview | null>(null);
-const loading = ref(false);
-const errorMessage = ref("");
+const { mapData, roadPreview, loading, errorMessage, loadMap } = useMapDataCache();
 
 const {
   selectedPost,
@@ -42,29 +41,16 @@ function handlePlaceSelectWithDetail(place: MapLocation | MapPost) {
   }
 }
 
-async function loadMap() {
-  loading.value = true;
-  errorMessage.value = "";
-  try {
-    const [items, preview] = await Promise.all([
-      fetchMapV2Items(),
-      fetchRoadNetworkPreview().catch(() => null),
-    ]);
-    mapData.value = items;
-    roadPreview.value = preview;
-  } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : "地图数据暂时没加载出来，可以稍后再试。";
-  } finally {
-    loading.value = false;
-  }
-}
-
 function onCanvasError(message: string) {
   errorMessage.value = message;
 }
 
 onMounted(() => {
   void loadMap();
+});
+
+onActivated(() => {
+  if (!mapData.value) void loadMap();
 });
 </script>
 

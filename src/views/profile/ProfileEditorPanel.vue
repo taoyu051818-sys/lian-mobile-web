@@ -21,12 +21,27 @@ const emit = defineEmits<{
 const avatarFile = ref<File | null>(null);
 const avatarPreviewUrl = ref("");
 const avatarScale = ref(1);
+const avatarOffsetX = ref(0);
+const avatarOffsetY = ref(0);
+const avatarPreviewRef = ref<HTMLElement | null>(null);
 const avatarBusy = ref(false);
 const aliasBusy = ref(false);
 const inviteBusy = ref(false);
 const errorMessage = ref("");
 const successMessage = ref("");
 const inviteCode = ref("");
+
+const AVATAR_PREVIEW_SIZE = 96;
+const AVATAR_MIN_SCALE = 1;
+const AVATAR_MAX_SCALE = 2.4;
+
+const dragPointerId = ref<number | null>(null);
+const dragStartX = ref(0);
+const dragStartY = ref(0);
+const dragStartOffsetX = ref(0);
+const dragStartOffsetY = ref(0);
+const pinchStartDist = ref(0);
+const pinchStartScale = ref(1);
 
 const displayName = computed(() => props.user.username || "同学");
 const avatarText = computed(() => displayName.value.slice(0, 2) || "同");
@@ -59,11 +74,76 @@ function handleAvatarInput(event: Event) {
   avatarFile.value = file;
   avatarPreviewUrl.value = URL.createObjectURL(file);
   avatarScale.value = 1;
+  avatarOffsetX.value = 0;
+  avatarOffsetY.value = 0;
   errorMessage.value = "";
   successMessage.value = "";
 }
 
-async function createCroppedAvatarBlob(file: File, scale: number) {
+const avatarPreviewTransform = computed(
+  () => `translate(${avatarOffsetX.value}px, ${avatarOffsetY.value}px) scale(${avatarScale.value})`,
+);
+
+function avatarPreviewStyle() {
+  return {
+    transform: avatarPreviewTransform.value,
+    touchAction: "none",
+  } as Record<string, string>;
+}
+
+function clampAvatarOffset() {
+  const s = avatarScale.value;
+  const maxOffset = ((s - 1) / s) * (AVATAR_PREVIEW_SIZE / 2);
+  avatarOffsetX.value = Math.max(-maxOffset, Math.min(maxOffset, avatarOffsetX.value));
+  avatarOffsetY.value = Math.max(-maxOffset, Math.min(maxOffset, avatarOffsetY.value));
+}
+
+function handleAvatarPointerDown(event: PointerEvent) {
+  if (event.pointerType === "mouse" && event.button !== 0) return;
+  if (dragPointerId.value !== null) return;
+  dragPointerId.value = event.pointerId;
+  dragStartX.value = event.clientX;
+  dragStartY.value = event.clientY;
+  dragStartOffsetX.value = avatarOffsetX.value;
+  dragStartOffsetY.value = avatarOffsetY.value;
+  avatarPreviewRef.value?.setPointerCapture(event.pointerId);
+}
+
+function handleAvatarPointerMove(event: PointerEvent) {
+  if (dragPointerId.value !== event.pointerId) return;
+  event.preventDefault();
+  avatarOffsetX.value = dragStartOffsetX.value + (event.clientX - dragStartX.value);
+  avatarOffsetY.value = dragStartOffsetY.value + (event.clientY - dragStartY.value);
+  clampAvatarOffset();
+}
+
+function handleAvatarPointerUp(event: PointerEvent) {
+  if (dragPointerId.value === event.pointerId) dragPointerId.value = null;
+}
+
+function handleAvatarTouchMove(event: TouchEvent) {
+  if (event.touches.length < 2) return;
+  event.preventDefault();
+  const t0 = event.touches[0];
+  const t1 = event.touches[1];
+  const dist = Math.hypot(t1.clientX - t0.clientX, t1.clientY - t0.clientY);
+  if (pinchStartDist.value === 0) {
+    pinchStartDist.value = dist;
+    pinchStartScale.value = avatarScale.value;
+    return;
+  }
+  const nextScale = pinchStartScale.value * (dist / pinchStartDist.value);
+  avatarScale.value = Math.max(AVATAR_MIN_SCALE, Math.min(AVATAR_MAX_SCALE, nextScale));
+  clampAvatarOffset();
+}
+
+function handleAvatarTouchEnd(event: TouchEvent) {
+  if (event.touches.length < 2) {
+    pinchStartDist.value = 0;
+  }
+}
+
+async function createCroppedAvatarBlob(file: File, scale: number, offsetX: number, offsetY: number) {
   const bitmap = await createImageBitmap(file);
   const size = 512;
   const canvas = document.createElement("canvas");
@@ -72,9 +152,12 @@ async function createCroppedAvatarBlob(file: File, scale: number) {
   const context = canvas.getContext("2d");
   if (!context) throw new Error("浏览器暂时不能裁剪头像，请换一个浏览器再试。");
 
+  const previewScale = AVATAR_PREVIEW_SIZE / Math.min(bitmap.width, bitmap.height);
+  const bitmapOffsetX = offsetX / previewScale;
+  const bitmapOffsetY = offsetY / previewScale;
   const sourceSize = Math.min(bitmap.width, bitmap.height) / Math.max(1, scale);
-  const sourceX = (bitmap.width - sourceSize) / 2;
-  const sourceY = (bitmap.height - sourceSize) / 2;
+  const sourceX = (bitmap.width - sourceSize) / 2 - bitmapOffsetX;
+  const sourceY = (bitmap.height - sourceSize) / 2 - bitmapOffsetY;
   context.clearRect(0, 0, size, size);
   context.drawImage(bitmap, sourceX, sourceY, sourceSize, sourceSize, 0, 0, size, size);
   bitmap.close?.();
@@ -93,7 +176,7 @@ async function saveAvatar() {
   errorMessage.value = "";
   successMessage.value = "";
   try {
-    const croppedBlob = await createCroppedAvatarBlob(avatarFile.value, avatarScale.value);
+    const croppedBlob = await createCroppedAvatarBlob(avatarFile.value, avatarScale.value, avatarOffsetX.value, avatarOffsetY.value);
     const croppedFile = new File([croppedBlob], avatarFile.value.name || "avatar.jpg", { type: "image/jpeg" });
     const avatarUrl = await uploadProfileAvatar(croppedFile);
     await updateProfileAvatar(avatarUrl);
@@ -161,12 +244,22 @@ onBeforeUnmount(() => {
     <section class="profile-editor__block" aria-labelledby="profile-avatar-title">
       <div class="profile-editor__block-title">
         <strong id="profile-avatar-title">头像</strong>
-        <span>中心裁剪，支持缩放</span>
+        <span>拖拽调整位置，捏合或滑块缩放</span>
       </div>
       <div class="profile-editor__avatar-row">
         <IdentityBadge :avatar-text="avatarText" :label="displayName" :meta="activeAliasName" />
-        <div v-if="avatarPreviewUrl" class="profile-editor__avatar-preview" :style="{ '--avatar-scale': avatarScale }">
-          <img :src="avatarPreviewUrl" alt="头像裁剪预览" />
+        <div
+          v-if="avatarPreviewUrl"
+          ref="avatarPreviewRef"
+          class="profile-editor__avatar-preview"
+          @pointerdown="handleAvatarPointerDown"
+          @pointermove="handleAvatarPointerMove"
+          @pointerup="handleAvatarPointerUp"
+          @pointercancel="handleAvatarPointerUp"
+          @touchmove="handleAvatarTouchMove"
+          @touchend="handleAvatarTouchEnd"
+        >
+          <img :src="avatarPreviewUrl" alt="头像裁剪预览" :style="avatarPreviewStyle()" />
         </div>
       </div>
       <label class="profile-editor__upload">
@@ -178,7 +271,7 @@ onBeforeUnmount(() => {
         <input v-model.number="avatarScale" type="range" min="1" max="2.4" step="0.05" />
       </label>
       <div v-if="avatarPreviewUrl" class="profile-editor__actions">
-        <LianButton type="button" variant="ghost" :disabled="avatarBusy" @click="() => { avatarFile = null; revokePreview(); }">取消</LianButton>
+        <LianButton type="button" variant="ghost" :disabled="avatarBusy" @click="() => { avatarFile = null; avatarScale = 1; avatarOffsetX = 0; avatarOffsetY = 0; revokePreview(); }">取消</LianButton>
         <LianButton type="button" variant="tonal" :loading="avatarBusy" @click="saveAvatar">保存头像</LianButton>
       </div>
     </section>
@@ -286,13 +379,18 @@ onBeforeUnmount(() => {
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-orb);
   background: rgba(31, 41, 51, 0.06);
+  touch-action: none;
+  cursor: grab;
+  user-select: none;
 }
 
 .profile-editor__avatar-preview img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transform: scale(var(--avatar-scale));
+  transform-origin: center center;
+  pointer-events: none;
+  -webkit-user-drag: none;
 }
 
 .profile-editor__upload,

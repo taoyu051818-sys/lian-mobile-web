@@ -1,19 +1,17 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue";
-import { fetchMapV2Items } from "../api/map";
 import { GlassPanel, InlineError, LianButton, LocationChip, TrustBadge } from "../ui";
 import { actorDisplayName } from "../utils/actor";
 import { placeStatusLabel } from "../utils/placeStatusLabel";
 import { formatRelativeTime } from "../utils/time";
-import type { MapBounds, MapLocation, MapV2ItemsResponse } from "../types/map";
+import type { MapBounds, MapLocation } from "../types/map";
 import PostDetailPanel from "./detail/PostDetailPanel.vue";
+import { useMapDataCache } from "../composables/useMapDataCache";
 import { hasStablePlaceRef, useMapSelection } from "./map/useMapSelection";
 
 const DEFAULT_BOUNDS: MapBounds = { south: 18.37107, west: 109.98464, north: 18.41730, east: 110.04775 };
 
-const mapData = ref<MapV2ItemsResponse | null>(null);
-const loading = ref(false);
-const errorMessage = ref("");
+const { mapData, loading, errorMessage, loadMap } = useMapDataCache();
 const activeFilter = ref<"all" | "locations" | "posts">("all");
 
 const {
@@ -65,23 +63,15 @@ function areaPoints(points: Array<{ lat: number; lng: number }> = []) {
   }).join(", ");
 }
 
-async function loadMap() {
-  loading.value = true;
-  errorMessage.value = "";
-  try {
-    mapData.value = await fetchMapV2Items();
-    if (!selectedTarget.value && locations.value.length) {
-      selectedTarget.value = { kind: "location", item: locations.value[0] };
-    }
-  } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : "地图数据暂时没加载出来，可以稍后再试。";
-  } finally {
-    loading.value = false;
+async function loadMapView() {
+  await loadMap();
+  if (!selectedTarget.value && locations.value.length) {
+    selectedTarget.value = { kind: "location", item: locations.value[0] };
   }
 }
 
 onMounted(() => {
-  void loadMap();
+  void loadMapView();
 });
 </script>
 
@@ -92,12 +82,12 @@ onMounted(() => {
         <button type="button" :class="{ 'is-active': activeFilter === 'all' }" @click="activeFilter = 'all'">全部</button>
         <button type="button" :class="{ 'is-active': activeFilter === 'locations' }" @click="activeFilter = 'locations'">地点</button>
         <button type="button" :class="{ 'is-active': activeFilter === 'posts' }" @click="activeFilter = 'posts'">内容</button>
-        <LianButton size="sm" variant="ghost" :loading="loading" @click="loadMap">刷新</LianButton>
+        <LianButton size="sm" variant="ghost" :loading="loading" @click="loadMapView">刷新</LianButton>
       </div>
 
       <InlineError v-if="errorMessage">
         {{ errorMessage }}
-        <button type="button" @click="loadMap">重新加载</button>
+        <button type="button" @click="loadMapView">重新加载</button>
       </InlineError>
 
       <div v-if="loading" class="map-view__state" role="status">正在加载校园地图…</div>
