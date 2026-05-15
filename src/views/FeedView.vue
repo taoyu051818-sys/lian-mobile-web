@@ -9,6 +9,7 @@ import { InlineError } from "../ui";
 import PostDetailPanel from "./detail/PostDetailPanel.vue";
 import FeedList from "./feed/FeedList.vue";
 import FeedLoadMore from "./feed/FeedLoadMore.vue";
+import { normalizeFeedItemId } from "./feed/feedItemId";
 import { useFeedDetail, type CardOpenPayload, type CardTransitionSnapshot } from "./feed/useFeedDetail";
 import { READ_HISTORY_KEY } from "../platform/browser-storage";
 
@@ -57,8 +58,11 @@ function updateViewport() {
 
 function readHistoryQuery() {
   try {
-    const history = JSON.parse(localStorage.getItem(READ_HISTORY_KEY) || "[]") as Array<{ tid: FeedItemId }>;
-    return history.map((entry) => entry.tid).join(",");
+    const history = JSON.parse(localStorage.getItem(READ_HISTORY_KEY) || "[]") as Array<{ tid: FeedItemId | string }>;
+    return history
+      .map((entry) => normalizeFeedItemId(entry.tid))
+      .filter(Boolean)
+      .join(",");
   } catch {
     return "";
   }
@@ -66,9 +70,10 @@ function readHistoryQuery() {
 
 function rememberReadItem(id: FeedItemId) {
   try {
-    const history = JSON.parse(localStorage.getItem(READ_HISTORY_KEY) || "[]") as Array<{ tid: FeedItemId; lastViewedAt: string }>;
-    const nextHistory = history.filter((entry) => Number(entry.tid) !== Number(id));
-    nextHistory.push({ tid: id, lastViewedAt: new Date().toISOString() });
+    const normalizedId = normalizeFeedItemId(id);
+    const history = JSON.parse(localStorage.getItem(READ_HISTORY_KEY) || "[]") as Array<{ tid: FeedItemId | string; lastViewedAt: string }>;
+    const nextHistory = history.filter((entry) => normalizeFeedItemId(entry.tid) !== normalizedId);
+    nextHistory.push({ tid: normalizedId, lastViewedAt: new Date().toISOString() });
     localStorage.setItem(READ_HISTORY_KEY, JSON.stringify(nextHistory.slice(-500)));
   } catch {
     // Reading history should never block opening a card.

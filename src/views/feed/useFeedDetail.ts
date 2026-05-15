@@ -2,6 +2,7 @@ import { computed, onBeforeUnmount, onMounted, ref, type Ref } from "vue";
 import { fetchPostDetail } from "../../api/posts";
 import type { FeedItem, FeedItemId } from "../../types/feed";
 import type { PostDetail } from "../../types/post";
+import { normalizeFeedItemId } from "./feedItemId";
 
 export interface CardOpenPayload {
   item: FeedItem;
@@ -185,6 +186,7 @@ export function useFeedDetail(deps: FeedDetailDeps) {
 
   async function openItem(id: FeedItemId, payload?: CardOpenPayload) {
     deps.updateViewport();
+    const normalizedId = normalizeFeedItemId(id);
 
     // Chrome handoff is immediate and has no motion:
     // feed tabs and app bottom bar hidden, detail chrome visible.
@@ -208,7 +210,7 @@ export function useFeedDetail(deps: FeedDetailDeps) {
 
     try {
       const detail = await fetchPostDetail(id);
-      if (Number(selectedPostId.value) === Number(id)) {
+      if (normalizeFeedItemId(selectedPostId.value) === normalizedId) {
         selectedPost.value = detail;
       }
     } catch (error) {
@@ -216,7 +218,7 @@ export function useFeedDetail(deps: FeedDetailDeps) {
         ? error.message
         : "详情暂时没加载出来，可以稍后再试。";
     } finally {
-      if (Number(selectedPostId.value) === Number(id)) {
+      if (normalizeFeedItemId(selectedPostId.value) === normalizedId) {
         detailLoading.value = false;
       }
     }
