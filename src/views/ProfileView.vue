@@ -3,6 +3,7 @@ import { computed, onMounted, ref, watch } from "vue";
 import { LianApiError } from "../api/http";
 import { activateProfileAlias, deactivateProfileAlias, fetchAuthMe, fetchProfileTab, logoutAuth } from "../api/profile";
 import { GUEST_DISPLAY_NAME, LOADING_PROFILE, LOADING_LIST, EMPTY_HISTORY, EMPTY_SAVED, EMPTY_LIKED, ERROR_LOAD_GENERIC, ERROR_LOGOUT } from "../config/brand";
+import { extractErrorMessage } from "../utils/extractErrorMessage";
 import { usePostDetail } from "../composables/usePostDetail";
 import { getRecentReadHistoryIds } from "../platform/browser-storage";
 import { InlineError } from "../ui";
@@ -155,7 +156,7 @@ async function loadProfile() {
     if (isMissingSessionError(error)) {
       enterGuestState();
     } else {
-      errorMessage.value = error instanceof Error ? error.message : "个人资料" + ERROR_LOAD_GENERIC;
+      errorMessage.value = extractErrorMessage(error, "个人资料" + ERROR_LOAD_GENERIC);
     }
   } finally {
     loading.value = false;
@@ -173,7 +174,7 @@ async function loadProfileList(tab: ProfileTabKey) {
     if (isMissingSessionError(error)) {
       enterGuestState();
     } else {
-      listError.value = error instanceof Error ? error.message : "列表" + ERROR_LOAD_GENERIC;
+      listError.value = extractErrorMessage(error, "列表" + ERROR_LOAD_GENERIC);
       profileItems.value = [];
     }
   } finally {
@@ -189,7 +190,7 @@ async function logout() {
     enterGuestState();
   } catch (error) {
     if (isMissingSessionError(error)) enterGuestState();
-    else errorMessage.value = error instanceof Error ? error.message : ERROR_LOGOUT;
+    else errorMessage.value = extractErrorMessage(error, ERROR_LOGOUT);
   } finally {
     loading.value = false;
   }

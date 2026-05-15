@@ -6,6 +6,7 @@ import type { MapLocation, MapPost } from "../../types/map";
 import type { PlaceSheet } from "../../types/place";
 import type { PostDetail } from "../../types/post";
 import { ERROR_LOAD_PLACE, ERROR_LOAD_DETAIL } from "../../config/brand";
+import { extractErrorMessage } from "../../utils/extractErrorMessage";
 
 export type MapTarget = { kind: "location"; item: MapLocation } | { kind: "post"; item: MapPost };
 
@@ -49,7 +50,7 @@ export function useMapSelection(getPosts: () => MapPost[]) {
       }
     } catch (error) {
       if (openPlaceId.value === placeId) {
-        placeSheetError.value = error instanceof Error ? error.message : ERROR_LOAD_PLACE;
+        placeSheetError.value = extractErrorMessage(error, ERROR_LOAD_PLACE);
       }
     } finally {
       if (openPlaceId.value === placeId) {
@@ -73,7 +74,7 @@ export function useMapSelection(getPosts: () => MapPost[]) {
         selectedPost.value = detail;
       }
     } catch (error) {
-      detailError.value = error instanceof Error ? error.message : ERROR_LOAD_DETAIL;
+      detailError.value = extractErrorMessage(error, ERROR_LOAD_DETAIL);
     } finally {
       if (String(selectedPostId.value) === String(item.tid)) {
         detailLoading.value = false;

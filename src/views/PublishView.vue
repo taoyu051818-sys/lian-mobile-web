@@ -3,6 +3,7 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { fetchMapV2Items } from "../api/map";
 import type { PageChromeSpec } from "../shell/page-model";
 import { DEFAULT_USER_LABEL, ERROR_PUBLISH_IMAGE, ERROR_PUBLISH_LOCATION, ERROR_PUBLISH_GENERIC } from "../config/brand";
+import { extractErrorMessage } from "../utils/extractErrorMessage";
 import {
   buildPublishPayload,
   createMapV2LocationDraft,
@@ -164,7 +165,7 @@ async function loadMapLocations() {
     const data = await fetchMapV2Items();
     mapLocations.value = data.locations || [];
   } catch (error) {
-    mapLocationError.value = error instanceof Error ? error.message : ERROR_PUBLISH_LOCATION;
+    mapLocationError.value = extractErrorMessage(error, ERROR_PUBLISH_LOCATION);
   } finally {
     mapLocationLoading.value = false;
   }
@@ -230,7 +231,7 @@ async function uploadPendingImages() {
     }
     uploadedImageUrls.value = uploadedImageUrls.value.filter(Boolean);
   } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : ERROR_PUBLISH_IMAGE;
+    errorMessage.value = extractErrorMessage(error, ERROR_PUBLISH_IMAGE);
   } finally {
     uploading.value = false;
   }
@@ -282,7 +283,7 @@ async function submitPublish() {
       : "发布成功，稍后可以在首页看到。";
     resetForm();
   } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : ERROR_PUBLISH_GENERIC;
+    errorMessage.value = extractErrorMessage(error, ERROR_PUBLISH_GENERIC);
   } finally {
     publishing.value = false;
   }
