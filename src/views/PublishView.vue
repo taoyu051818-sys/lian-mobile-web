@@ -25,7 +25,7 @@ import {
   restorePublishDraftLocation,
   savePublishDraft,
 } from "../platform/publish-draft";
-import { GlassPanel, InlineError } from "../ui";
+import { GlassPanel, InlineError, LianButton } from "../ui";
 import type { MapLocation } from "../types/map";
 import type { PlaceRef } from "../types/place";
 import type { PublishLocationDraft, PublishVisibility } from "../types/publish";
@@ -58,6 +58,7 @@ const publishing = ref(false);
 const errorMessage = ref("");
 const successMessage = ref("");
 const draftNotice = ref("");
+const resetConfirmationVisible = ref(false);
 const lastTid = ref<string | number | null>(null);
 const mapLocations = ref<MapLocation[]>([]);
 const selectedMapLocation = ref<MapLocation | null>(null);
@@ -154,6 +155,10 @@ watch(
   },
 );
 
+watch(hasUnsavedDraft, (value) => {
+  if (!value) resetConfirmationVisible.value = false;
+});
+
 const visibilityOptions: Array<{ value: PublishVisibility; label: string }> = [
   { value: "public", label: "公开" },
   { value: "campus", label: "校园" },
@@ -189,6 +194,7 @@ function clearFormState() {
   locationPanelOpen.value = false;
   tagPanelOpen.value = false;
   visibilityPanelOpen.value = false;
+  resetConfirmationVisible.value = false;
   revokePreviewUrls();
 }
 
@@ -319,12 +325,24 @@ function removeImage(index: number) {
   uploadedImageUrls.value.splice(index, 1);
 }
 
-function requestResetForm() {
-  if (hasUnsavedDraft.value && !window.confirm(RESET_CONFIRM_MESSAGE)) return;
-
+function confirmResetForm() {
   clearFormState();
   clearPublishDraft();
   draftNotice.value = "";
+  errorMessage.value = "";
+}
+
+function cancelResetForm() {
+  resetConfirmationVisible.value = false;
+}
+
+function requestResetForm() {
+  if (!hasUnsavedDraft.value) {
+    confirmResetForm();
+    return;
+  }
+
+  resetConfirmationVisible.value = true;
   errorMessage.value = "";
 }
 
@@ -467,6 +485,19 @@ onBeforeUnmount(() => {
           @update:visibility="visibility = $event"
         />
 
+        <div
+          v-if="resetConfirmationVisible"
+          class="publish-view__reset-confirm"
+          aria-live="polite"
+          data-testid="publish-reset-confirm"
+        >
+          <p>{{ RESET_CONFIRM_MESSAGE }}</p>
+          <div class="publish-view__reset-confirm-actions">
+            <LianButton type="button" variant="ghost" @click="cancelResetForm">继续编辑</LianButton>
+            <LianButton type="button" variant="danger" @click="confirmResetForm">确认清空</LianButton>
+          </div>
+        </div>
+
         <PublishActionBar
           :publishing="publishing"
           :uploading="uploading"
@@ -535,5 +566,27 @@ onBeforeUnmount(() => {
   font-weight: 700;
   text-decoration: underline;
   text-underline-offset: 3px;
+}
+
+.publish-view__reset-confirm {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid rgba(214, 78, 58, 0.18);
+  border-radius: var(--radius-card);
+  background: rgba(214, 78, 58, 0.08);
+  color: var(--lian-ink);
+}
+
+.publish-view__reset-confirm p {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.publish-view__reset-confirm-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  justify-content: flex-end;
 }
 </style>
