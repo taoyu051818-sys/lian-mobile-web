@@ -19,12 +19,19 @@ const emit = defineEmits<{
   submit: [];
 }>();
 
+const composerRef = ref<HTMLElement | null>(null);
 const focused = ref(false);
 const isCompact = computed(() => !props.content.trim() && !focused.value);
+
+function handleFocusOut(event: FocusEvent) {
+  const next = event.relatedTarget as HTMLElement | null;
+  if (next && composerRef.value?.contains(next)) return;
+  focused.value = false;
+}
 </script>
 
 <template>
-  <form class="messages-view__composer" :class="{ 'is-compact': isCompact }" @submit.prevent="emit('submit')" @focusin="focused = true" @focusout="focused = false">
+  <form ref="composerRef" class="messages-view__composer" :class="{ 'is-compact': isCompact }" @submit.prevent="emit('submit')" @focusin="focused = true" @focusout="handleFocusOut">
     <IdentityBadge v-if="!isCompact" :avatar-text="avatarText" :label="actorName" :meta="signalMeta" />
     <label v-if="!isCompact && identityTags.length" class="messages-view__field">
       <span>身份信号</span>
