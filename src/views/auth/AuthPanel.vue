@@ -1,6 +1,12 @@
 <script setup lang="ts">
-import { InlineError, TypeChip } from "../../ui";
+import {
+  AUTH_EMAIL_CODE_LENGTH,
+  AUTH_MAX_INTEREST_SELECTIONS,
+  AUTH_PASSWORD_MIN_LENGTH,
+  AUTH_USERNAME_MAX_LENGTH,
+} from "../../domain/validation/forms";
 import type { ProfileUser } from "../../types/profile";
+import { InlineError, TypeChip } from "../../ui";
 import { useAuthForm } from "./useAuthForm";
 
 const emit = defineEmits<{
@@ -94,7 +100,7 @@ const inviteCodeHintId = "auth-invite-code-hint";
           <span>昵称</span>
           <input
             v-model="username"
-            maxlength="30"
+            :maxlength="AUTH_USERNAME_MAX_LENGTH"
             autocomplete="nickname"
             autocapitalize="words"
             autocorrect="off"
@@ -122,7 +128,7 @@ const inviteCodeHintId = "auth-invite-code-hint";
             :aria-describedby="[emailHintId, emailHasError ? formErrorId : null].filter(Boolean).join(' ')"
             placeholder="邀请码注册可不填"
           />
-          <small :id="emailHintId" class="auth-panel__hint">高校邮箱注册需要先获取 6 位验证码；邀请码注册时可以留空。</small>
+          <small :id="emailHintId" class="auth-panel__hint">高校邮箱注册需要先获取 {{ AUTH_EMAIL_CODE_LENGTH }} 位验证码；邀请码注册时可以留空。</small>
         </label>
         <label>
           <span>邮箱验证码</span>
@@ -130,7 +136,7 @@ const inviteCodeHintId = "auth-invite-code-hint";
             <input
               v-model="emailCode"
               inputmode="numeric"
-              maxlength="6"
+              :maxlength="AUTH_EMAIL_CODE_LENGTH"
               pattern="[0-9]*"
               autocomplete="one-time-code"
               autocapitalize="none"
@@ -139,7 +145,7 @@ const inviteCodeHintId = "auth-invite-code-hint";
               enterkeyhint="next"
               :aria-invalid="emailCodeHasError"
               :aria-describedby="[emailCodeHintId, emailCodeHasError ? formErrorId : null].filter(Boolean).join(' ')"
-              placeholder="6 位验证码"
+              :placeholder="`${AUTH_EMAIL_CODE_LENGTH} 位验证码`"
             />
             <button
               type="button"
@@ -159,7 +165,7 @@ const inviteCodeHintId = "auth-invite-code-hint";
               <strong>兴趣偏好</strong>
               <small class="auth-panel__hint">{{ interestHint }}</small>
             </div>
-            <span v-if="hasInterestChoices">{{ selectedInterests.length }}/5</span>
+            <span v-if="hasInterestChoices">{{ selectedInterests.length }}/{{ AUTH_MAX_INTEREST_SELECTIONS }}</span>
           </div>
 
           <div v-if="hasInterestChoices" class="auth-panel__interest-grid">
@@ -198,7 +204,7 @@ const inviteCodeHintId = "auth-invite-code-hint";
           v-model="password"
           type="password"
           required
-          minlength="8"
+          :minlength="AUTH_PASSWORD_MIN_LENGTH"
           autocapitalize="none"
           autocorrect="off"
           spellcheck="false"
@@ -206,9 +212,9 @@ const inviteCodeHintId = "auth-invite-code-hint";
           :enterkeyhint="passwordEnterKeyHint"
           :aria-invalid="passwordHasError"
           :aria-describedby="[passwordHintId, passwordHasError ? formErrorId : null].filter(Boolean).join(' ')"
-          placeholder="至少 8 位"
+          :placeholder="`至少 ${AUTH_PASSWORD_MIN_LENGTH} 位`"
         />
-        <small :id="passwordHintId" class="auth-panel__hint">至少 8 位，支持密码管理器自动填充。</small>
+        <small :id="passwordHintId" class="auth-panel__hint">至少 {{ AUTH_PASSWORD_MIN_LENGTH }} 位，支持密码管理器自动填充。</small>
       </label>
 
       <label v-if="mode === 'register'">

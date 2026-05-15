@@ -13,6 +13,9 @@ import {
   uploadPublishImage,
   validatePublishImageSelection,
 } from "../api/publish";
+import {
+  validatePublishForm,
+} from "../domain/validation/forms";
 import { fetchAuthMe } from "../api/profile";
 import { GlassPanel, IdentityBadge, InlineError } from "../ui";
 import type { MapLocation } from "../types/map";
@@ -227,13 +230,13 @@ function removeImage(index: number) {
 }
 
 function validate() {
-  if (!title.value.trim()) return "请填写标题。";
-  if (title.value.trim().length > 40) return "标题最多 40 个字。";
-  if (!body.value.trim()) return "请填写正文。";
-  if (body.value.trim().length > 300) return "正文最多 300 个字。";
-  if (uploading.value) return "图片还在上传，稍等一下再发布。";
-  if (selectedFiles.value.length !== uploadedImageUrls.value.length) return "还有图片没有上传成功，请重新选择或移除。";
-  return "";
+  return validatePublishForm({
+    title: title.value,
+    body: body.value,
+    uploading: uploading.value,
+    selectedFileCount: selectedFiles.value.length,
+    uploadedImageCount: uploadedImageUrls.value.length,
+  });
 }
 
 async function submitPublish() {
