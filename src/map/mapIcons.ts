@@ -17,7 +17,7 @@ export function scaledIconHtml(html: string, anchor: [number, number]): string {
     <span
       class="vue-map-scaled-icon-inner"
       data-vue-map-scaled-icon
-      style="width:100%;height:100%;transform-origin:${escapeHtml(String(x))}px ${escapeHtml(String(y))}px;will-change:transform"
+      style="width:100%;height:100%;transform-origin:${escapeHtml(String(x))}px ${escapeHtml(String(y))}px"
     >${html}</span>
   `;
 }

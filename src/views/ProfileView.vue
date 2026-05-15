@@ -2,7 +2,7 @@
 import { computed, onMounted, ref, watch } from "vue";
 import { LianApiError } from "../api/http";
 import { activateProfileAlias, deactivateProfileAlias, fetchAuthMe, fetchProfileTab, logoutAuth } from "../api/profile";
-import { GUEST_DISPLAY_NAME } from "../config/brand";
+import { GUEST_DISPLAY_NAME, LOADING_PROFILE, LOADING_LIST, EMPTY_HISTORY, EMPTY_SAVED, EMPTY_LIKED, ERROR_LOAD_GENERIC } from "../config/brand";
 import { usePostDetail } from "../composables/usePostDetail";
 import { getRecentReadHistoryIds } from "../platform/browser-storage";
 import { InlineError } from "../ui";
@@ -36,9 +36,9 @@ const {
 } = usePostDetail();
 
 const tabs: Array<{ key: ProfileTabKey; label: string; empty: string }> = [
-  { key: "history", label: "浏览", empty: "暂无浏览记录" },
-  { key: "saved", label: "收藏", empty: "暂无收藏" },
-  { key: "liked", label: "赞过", empty: "暂无点赞" },
+  { key: "history", label: "浏览", empty: EMPTY_HISTORY },
+  { key: "saved", label: "收藏", empty: EMPTY_SAVED },
+  { key: "liked", label: "赞过", empty: EMPTY_LIKED },
 ];
 
 const displayName = computed(() => user.value?.username || GUEST_DISPLAY_NAME);
@@ -155,7 +155,7 @@ async function loadProfile() {
     if (isMissingSessionError(error)) {
       enterGuestState();
     } else {
-      errorMessage.value = error instanceof Error ? error.message : "个人资料暂时没加载出来，可以稍后再试。";
+      errorMessage.value = error instanceof Error ? error.message : "个人资料" + ERROR_LOAD_GENERIC;
     }
   } finally {
     loading.value = false;
@@ -173,7 +173,7 @@ async function loadProfileList(tab: ProfileTabKey) {
     if (isMissingSessionError(error)) {
       enterGuestState();
     } else {
-      listError.value = error instanceof Error ? error.message : "列表暂时没加载出来，可以稍后再试。";
+      listError.value = error instanceof Error ? error.message : "列表" + ERROR_LOAD_GENERIC;
       profileItems.value = [];
     }
   } finally {
@@ -235,7 +235,7 @@ onMounted(() => {
       <button type="button" @click="loadProfile">重新加载</button>
     </InlineError>
 
-    <div v-if="loading" class="profile-view__state" role="status">正在加载个人资料…</div>
+    <div v-if="loading" class="profile-view__state" role="status">{{ LOADING_PROFILE }}</div>
 
     <template v-else-if="user">
       <div class="profile-view__hero-bg" aria-hidden="true"></div>
