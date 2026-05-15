@@ -1,4 +1,5 @@
 import { apiGet, apiSend } from "./http";
+import { DEFAULT_USER_LABEL } from "../config/brand";
 import { ensureClientId } from "../platform/clientIdentity";
 import type { ChannelMessage, ChannelReadPayload, ChannelResponse, NotificationResponse, SendChannelMessagePayload } from "../types/messages";
 
@@ -84,7 +85,7 @@ export function buildPendingChannelMessage(
 ): ChannelMessage {
   const id = `pending-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
   const now = new Date().toISOString();
-  const name = currentUser?.displayName || currentUser?.username || "同学";
+  const name = currentUser?.displayName || currentUser?.username || DEFAULT_USER_LABEL;
   return {
     id,
     content,

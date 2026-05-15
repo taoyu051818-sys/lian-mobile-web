@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, ref, watch } from "vue";
 import { togglePostLike } from "../../api/posts";
+import { DEFAULT_USER_LABEL, UNTITLED_CONTENT } from "../../config/brand";
 import { actorAvatarText, actorAvatarUrl, actorDisplayName } from "../../domain/actor";
 import type { FeedItem, FeedItemId, FeedPresentationIntent } from "../../types/feed";
 
@@ -36,13 +37,13 @@ function normalizePresentationIntent(value: FeedItem["cardTemplate"] | FeedItem[
   return typeof value === "string" && CARD_TEMPLATES.has(value as CardTemplate) ? value as CardTemplate : null;
 }
 
-const title = computed(() => props.item.title || "未命名内容");
+const title = computed(() => props.item.title || UNTITLED_CONTENT);
 const coverUrl = computed(() => props.item.cover || "");
 const primaryTag = computed(() => props.item.primaryTag || "");
 const placeLabel = computed(() => props.item.locationArea || "校园");
 const timeLabel = computed(() => props.item.timeLabel || "刚刚");
 const actor = computed(() => props.item.actor || {});
-const authorName = computed(() => actorDisplayName(actor.value, "同学"));
+const authorName = computed(() => actorDisplayName(actor.value, DEFAULT_USER_LABEL));
 const authorAvatarUrl = computed(() => actorAvatarUrl(actor.value));
 const authorInitial = computed(() => actorAvatarText(actor.value, authorName.value));
 const normalizedCardTemplate = computed(() => normalizePresentationIntent(props.item.cardTemplate));

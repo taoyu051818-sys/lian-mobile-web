@@ -1,4 +1,5 @@
 import { apiGet } from "./http";
+import { UNTITLED_CONTENT } from "../config/brand";
 import { asBoolean, asNumber, normalizeFeedItemId as normalizeFeedItemIdNum } from "../platform/api-normalizers";
 import type {
   FeedItem,
@@ -119,7 +120,7 @@ export function normalizeFeedItem(value: unknown): FeedItem | null {
 
   return {
     tid: normalizeFeedItemIdNum(record.tid || record.id),
-    title: readableText(record.title) || "未命名内容",
+    title: readableText(record.title) || UNTITLED_CONTENT,
     bodyPreview: readableText(record.bodyPreview || record.summary || record.excerpt || record.body),
     cover,
     primaryTag: readableText(record.primaryTag || record.tag),

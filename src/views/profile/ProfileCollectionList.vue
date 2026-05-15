@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { InlineError } from "../../ui";
+import { UNTITLED_CONTENT } from "../../config/brand";
 import type { FeedItemId } from "../../types/feed";
 import type { ProfileListItem } from "../../types/profile";
 import { formatRelativeTime } from "../../utils/time";
@@ -31,7 +32,7 @@ const emit = defineEmits<{
         <img v-if="item.cover" :src="item.cover" :alt="item.title || '内容封面'" loading="lazy" />
         <div v-else class="profile-collection__thumb" aria-hidden="true">{{ (item.title || '内').slice(0, 1) }}</div>
         <div>
-          <h3>{{ item.title || "未命名内容" }}</h3>
+          <h3>{{ item.title || UNTITLED_CONTENT }}</h3>
           <p>{{ formatRelativeTime(item.lastViewedAt || item.timestampISO) || "时间未知" }}</p>
         </div>
       </article>

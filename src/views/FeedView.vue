@@ -11,6 +11,7 @@ import FeedLoadMore from "./feed/FeedLoadMore.vue";
 import { normalizeFeedItemId } from "./feed/feedItemId";
 import { useFeedDetail, type CardOpenPayload, type CardTransitionSnapshot } from "./feed/useFeedDetail";
 import { READ_HISTORY_KEY } from "../platform/browser-storage";
+import { LOADING_FEED, EMPTY_FEED, ERROR_LOAD_GENERIC } from "../config/brand";
 
 const PAGE_SIZE = 12;
 const SWIPE_THRESHOLD = 96;
@@ -188,7 +189,7 @@ async function loadFeed(reset = false) {
   } catch (error) {
     errorMessage.value = error instanceof Error
       ? error.message
-      : "内容暂时没加载出来，可以稍后再试。";
+      : "内容" + ERROR_LOAD_GENERIC;
     if (reset) items.value = [];
   } finally {
     loading.value = false;
@@ -309,11 +310,11 @@ onBeforeUnmount(() => {
     </InlineError>
 
     <div v-if="loading" class="feed-view__state" role="status">
-      正在加载校园内容…
+      {{ LOADING_FEED }}
     </div>
 
     <div v-else-if="isEmpty" class="feed-view__state feed-view__state--empty">
-      <strong>暂时没有内容</strong>
+      <strong>{{ EMPTY_FEED }}</strong>
       <span>可以换个分类，或稍后再来看看。</span>
     </div>
 

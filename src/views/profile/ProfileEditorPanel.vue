@@ -8,6 +8,7 @@ import {
   uploadProfileAvatar,
 } from "../../api/profile";
 import { IdentityBadge, InlineError, LianButton, TypeChip } from "../../ui";
+import { DEFAULT_USER_LABEL } from "../../config/brand";
 import type { ProfileUser } from "../../types/profile";
 
 const props = defineProps<{
@@ -43,7 +44,7 @@ const dragStartOffsetY = ref(0);
 const pinchStartDist = ref(0);
 const pinchStartScale = ref(1);
 
-const displayName = computed(() => props.user.username || "同学");
+const displayName = computed(() => props.user.username || DEFAULT_USER_LABEL);
 const avatarText = computed(() => displayName.value.slice(0, 2) || "同");
 const aliases = computed(() => props.user.aliases || []);
 const activeAliasId = computed(() => props.user.activeAliasId || "");

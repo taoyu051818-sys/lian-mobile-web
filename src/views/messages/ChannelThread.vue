@@ -3,7 +3,7 @@ import { InlineError, LianButton } from "../../ui";
 import { actorAvatarText, actorDisplayName } from "../../domain/actor";
 import type { ChannelMessage, ChannelMessageActor } from "../../types/messages";
 import { formatRelativeTime } from "../../utils/time";
-import { CHANNEL_DEFAULT_TAG } from "../../config/brand";
+import { CHANNEL_DEFAULT_TAG, DEFAULT_USER_LABEL, MESSAGE_EMPTY_CONTENT, LOADING_CHANNEL, EMPTY_CHANNEL } from "../../config/brand";
 
 const props = defineProps<{
   items: ChannelMessage[];
@@ -27,7 +27,7 @@ function stripHtml(html?: string) {
 }
 
 function messageText(item: ChannelMessage) {
-  return item.content || stripHtml(item.contentHtml) || "这条消息暂时没有内容。";
+  return item.content || stripHtml(item.contentHtml) || MESSAGE_EMPTY_CONTENT;
 }
 
 function messageActor(item: ChannelMessage): ChannelMessageActor {
@@ -59,8 +59,8 @@ function messageMeta(item: ChannelMessage) {
       <LianButton v-if="hasMore" variant="ghost" :loading="loading" @click="emit('loadMore')">加载更早消息</LianButton>
     </div>
 
-    <div v-if="loading && !items.length" class="messages-view__state" role="status">正在加载频道消息…</div>
-    <div v-else-if="!items.length" class="messages-view__state">还没有消息</div>
+    <div v-if="loading && !items.length" class="messages-view__state" role="status">{{ LOADING_CHANNEL }}</div>
+    <div v-else-if="!items.length" class="messages-view__state">{{ EMPTY_CHANNEL }}</div>
     <div v-else class="messages-view__list" aria-live="polite">
       <article v-for="item in items" :key="String(item.id)" class="messages-view__message" :class="{ 'is-self': item.isSelf, 'is-pending': String(item.id).startsWith('pending-') }">
         <span v-if="!item.isSelf" class="messages-view__message-avatar identity-badge__avatar" aria-hidden="true">{{ messageAvatarText(item) }}</span>

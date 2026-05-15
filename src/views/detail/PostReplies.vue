@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { SafeHtml } from "../../ui";
+import { EMPTY_REPLIES } from "../../config/brand";
 import { actorDisplayName } from "../../domain/actor";
 import type { PostReply } from "../../types/post";
 import { formatRelativeTime } from "../../utils/time";
@@ -21,7 +22,7 @@ function sanitizeReplyHtml(value: string) {
   <section class="post-replies" aria-labelledby="post-detail-replies-title">
     <div class="post-replies__section-title">
       <h3 id="post-detail-replies-title">回复</h3>
-      <span>{{ replies?.length ? `${replies.length} 条` : "暂无" }}</span>
+      <span>{{ replies?.length ? `${replies.length} 条` : EMPTY_REPLIES }}</span>
     </div>
     <article v-for="reply in replies" :key="String(reply.id)" class="post-replies__item">
       <div class="post-replies__meta">

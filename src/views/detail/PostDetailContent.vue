@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { InlineError, LianButton, SafeHtml } from "../../ui";
+import { LOADING_PLACE } from "../../config/brand";
 import { actorDisplayName } from "../../domain/actor";
 import type { PlaceSheet, PlaceStatus } from "../../types/place";
 import { formatRelativeTime } from "../../utils/time";
@@ -95,7 +96,7 @@ const emit = defineEmits<{
         <h3>{{ placeSheet?.name || structuredPlace?.name || placeLabel }}</h3>
         <button type="button" @click="emit('update:placeSheetOpen', false)">收起</button>
       </div>
-      <p v-if="placeSheetLoading" class="post-detail-content__state">正在加载地点信息…</p>
+      <p v-if="placeSheetLoading" class="post-detail-content__state">{{ LOADING_PLACE }}</p>
       <InlineError v-else-if="placeSheetError">
         {{ placeSheetError }}
         <button type="button" @click="emit('openPlaceSheet')">重试</button>

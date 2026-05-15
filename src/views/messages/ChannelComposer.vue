@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
 import { IdentityBadge, InlineError, LianButton } from "../../ui";
+import { CHANNEL_DEFAULT_TAG } from "../../config/brand";
 
 const props = defineProps<{
   avatarText: string;
@@ -46,7 +47,7 @@ function handleFocusOut(event: FocusEvent) {
         <textarea
           :value="content"
           :rows="isCompact ? 1 : 3"
-          placeholder="发到校园频道…"
+          :placeholder="`发到${CHANNEL_DEFAULT_TAG}…`"
           @input="emit('update:content', ($event.target as HTMLTextAreaElement).value)"
         />
       </label>

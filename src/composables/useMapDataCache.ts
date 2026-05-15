@@ -1,6 +1,7 @@
 import { ref } from "vue";
 import { fetchMapV2Items, fetchRoadNetworkPreview } from "../api/map";
 import type { MapRoadNetworkPreview, MapV2ItemsResponse } from "../types/map";
+import { ERROR_LOAD_MAP } from "../config/brand";
 
 const cachedData = ref<MapV2ItemsResponse | null>(null);
 const cachedRoadPreview = ref<MapRoadNetworkPreview | null>(null);
@@ -28,7 +29,7 @@ export function useMapDataCache() {
         cachedData.value = items;
         cachedRoadPreview.value = preview;
       } catch (error) {
-        errorMessage.value = error instanceof Error ? error.message : "地图数据暂时没加载出来，可以稍后再试。";
+        errorMessage.value = error instanceof Error ? error.message : ERROR_LOAD_MAP;
       } finally {
         loading.value = false;
         fetchPromise = null;

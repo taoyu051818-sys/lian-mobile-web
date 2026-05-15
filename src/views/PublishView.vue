@@ -2,6 +2,7 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { fetchMapV2Items } from "../api/map";
 import type { PageChromeSpec } from "../shell/page-model";
+import { DEFAULT_USER_LABEL, ERROR_PUBLISH_IMAGE, ERROR_PUBLISH_LOCATION, ERROR_PUBLISH_GENERIC } from "../config/brand";
 import {
   buildPublishPayload,
   createMapV2LocationDraft,
@@ -16,7 +17,7 @@ import {
   validatePublishForm,
 } from "../domain/validation/forms";
 import { fetchAuthMe } from "../api/profile";
-import { GlassPanel, IdentityBadge, InlineError } from "../ui";
+import { GlassPanel, InlineError } from "../ui";
 import type { MapLocation } from "../types/map";
 import type { PlaceRef } from "../types/place";
 import type { PublishLocationDraft, PublishVisibility } from "../types/publish";
@@ -40,7 +41,7 @@ const selectedFiles = ref<File[]>([]);
 const localPreviewUrls = ref<string[]>([]);
 const uploadedImageUrls = ref<string[]>([]);
 const aliasId = ref<string | undefined>(undefined);
-const identityName = ref("同学");
+const identityName = ref(DEFAULT_USER_LABEL);
 const identityMeta = ref("当前身份");
 const uploading = ref(false);
 const publishing = ref(false);
@@ -59,7 +60,7 @@ const visibilityPanelOpen = ref(false);
 const normalizedTag = computed(() => normalizePublishTag(tagInput.value));
 const normalizedIdentityTag = computed(() => normalizeIdentityTag(identityTag.value));
 const avatarText = computed(() => identityName.value.slice(0, 2) || "同");
-const publishIdentityCopy = computed(() => `你将以「${identityName.value} · ${identityMeta.value}」发布`);
+
 const canSubmit = computed(() => title.value.trim().length > 0 && body.value.trim().length > 0 && !uploading.value && !publishing.value);
 const titleCount = computed(() => title.value.length);
 const bodyCount = computed(() => body.value.length);
@@ -142,14 +143,14 @@ function placeRefForLocation(location: MapLocation): PlaceRef | undefined {
 async function loadIdentity() {
   try {
     const user = await fetchAuthMe();
-    identityName.value = user?.username || "同学";
+    identityName.value = user?.username || DEFAULT_USER_LABEL;
     aliasId.value = user?.activeAliasId || undefined;
     identityTagOptions.value = user?.identityTags || [];
     identityTag.value = "";
     const activeAlias = aliasId.value ? user?.aliases?.find((alias) => alias.id === aliasId.value) : null;
     identityMeta.value = activeAlias?.name || user?.institution || "当前身份";
   } catch {
-    identityName.value = "同学";
+    identityName.value = DEFAULT_USER_LABEL;
     identityMeta.value = "未确认身份";
     identityTagOptions.value = [];
     identityTag.value = "";
@@ -163,7 +164,7 @@ async function loadMapLocations() {
     const data = await fetchMapV2Items();
     mapLocations.value = data.locations || [];
   } catch (error) {
-    mapLocationError.value = error instanceof Error ? error.message : "地图地点暂时没加载出来，可以手填地点发布。";
+    mapLocationError.value = error instanceof Error ? error.message : ERROR_PUBLISH_LOCATION;
   } finally {
     mapLocationLoading.value = false;
   }
@@ -229,7 +230,7 @@ async function uploadPendingImages() {
     }
     uploadedImageUrls.value = uploadedImageUrls.value.filter(Boolean);
   } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : "图片上传失败，可以换一张图片或稍后再试。";
+    errorMessage.value = error instanceof Error ? error.message : ERROR_PUBLISH_IMAGE;
   } finally {
     uploading.value = false;
   }
@@ -281,7 +282,7 @@ async function submitPublish() {
       : "发布成功，稍后可以在首页看到。";
     resetForm();
   } catch (error) {
-    errorMessage.value = error instanceof Error ? error.message : "发布没有成功，可以稍后再试。";
+    errorMessage.value = error instanceof Error ? error.message : ERROR_PUBLISH_GENERIC;
   } finally {
     publishing.value = false;
   }
@@ -318,14 +319,6 @@ onBeforeUnmount(() => {
 <template>
   <section class="publish-view keyboard-aware-surface" aria-label="发布">
     <GlassPanel class="publish-view__card">
-      <section class="publish-view__identity" aria-label="当前发布身份">
-        <IdentityBadge :avatar-text="avatarText" :label="identityName" :meta="identityMeta" />
-        <div class="publish-view__identity-copy">
-          <p>{{ publishIdentityCopy }}</p>
-          <span>正文是主角，其他信息按需要补充。</span>
-        </div>
-      </section>
-
       <InlineError v-if="errorMessage">{{ errorMessage }}</InlineError>
       <div v-if="successMessage" class="publish-view__success-block">
         <p class="publish-view__success">{{ successMessage }}</p>
@@ -438,31 +431,6 @@ onBeforeUnmount(() => {
   gap: var(--space-5);
 }
 
-.publish-view__identity {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-3);
-  align-items: center;
-  justify-content: space-between;
-  padding-bottom: var(--space-2);
-  border-bottom: 1px solid rgba(31, 41, 51, 0.08);
-}
-
-.publish-view__identity-copy {
-  display: grid;
-  gap: 4px;
-  justify-items: end;
-  color: var(--lian-muted);
-  font-size: 13px;
-  font-weight: 800;
-  line-height: 1.5;
-  text-align: right;
-}
-
-.publish-view__identity-copy span {
-  font-size: 12px;
-  font-weight: 700;
-}
 
 .publish-view__success-block {
   display: grid;

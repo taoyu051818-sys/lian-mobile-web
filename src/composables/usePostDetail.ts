@@ -2,6 +2,7 @@ import { computed, ref } from "vue";
 import { fetchPostDetail } from "../api/posts";
 import type { FeedItemId } from "../types/feed";
 import type { PostDetail } from "../types/post";
+import { ERROR_LOAD_DETAIL } from "../config/brand";
 
 export function usePostDetail() {
   const selectedPostId = ref<FeedItemId | null>(null);
@@ -23,7 +24,7 @@ export function usePostDetail() {
     } catch (error) {
       detailError.value = error instanceof Error
         ? error.message
-        : "详情暂时没加载出来，可以稍后再试。";
+        : ERROR_LOAD_DETAIL;
     } finally {
       detailLoading.value = false;
     }

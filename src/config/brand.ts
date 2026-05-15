@@ -45,6 +45,15 @@ export const ERROR_SEND_MESSAGE = "消息没有发送成功，可以稍后再试
 export const ERROR_SEND_REPLY = "回复没有发送成功，可以稍后再试。";
 export const ERROR_PUBLISH_IMAGE = "图片上传失败，可以换一张图片或稍后再试。";
 export const ERROR_PUBLISH_LOCATION = "地图地点暂时没加载出来，可以手填地点发布。";
+export const ERROR_LIKE_ACTION = "喜欢操作没有成功，可以稍后再试。";
+export const ERROR_SAVE_ACTION = "收藏操作没有成功，可以稍后再试。";
+export const ERROR_AUTH_GENERIC = "登录/注册没有成功，可以稍后再试。";
+export const ERROR_SEND_CODE = "验证码没有发送成功，可以稍后再试。";
+export const ERROR_PUBLISH_GENERIC = "发布没有成功，可以稍后再试。";
+export const ERROR_LOGOUT = "退出登录没有成功，可以稍后再试。";
+
+/** 内容占位 */
+export const UNTITLED_CONTENT = "未命名内容";
 
 /** 消息占位 */
 export const MESSAGE_EMPTY_CONTENT = "这条消息暂时没有内容。";

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { InlineError, TrustBadge } from "../../ui";
+import { LOADING_NOTIFICATION, EMPTY_NOTIFICATION } from "../../config/brand";
 import { actorDisplayName } from "../../domain/actor";
 import type { NotificationItem } from "../../types/messages";
 import { formatRelativeTime } from "../../utils/time";
@@ -36,8 +37,8 @@ function openNotification(item: NotificationItem) {
       <button type="button" @click="emit('retry')">重新加载</button>
     </InlineError>
 
-    <div v-if="loading && !items.length" class="messages-view__state" role="status">正在加载通知…</div>
-    <div v-else-if="!items.length" class="messages-view__state">暂无通知</div>
+    <div v-if="loading && !items.length" class="messages-view__state" role="status">{{ LOADING_NOTIFICATION }}</div>
+    <div v-else-if="!items.length" class="messages-view__state">{{ EMPTY_NOTIFICATION }}</div>
     <div v-else class="messages-view__list" aria-live="polite">
       <article
         v-for="item in items"

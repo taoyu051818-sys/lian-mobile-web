@@ -4,6 +4,7 @@ import { useVisualViewport } from "../../composables/useVisualViewport";
 import { fetchPlaceSheet } from "../../api/places";
 import { reportPost, sendPostReply, togglePostLike, togglePostSave } from "../../api/posts";
 import { InlineError, LianButton } from "../../ui";
+import { ERROR_LOAD_PLACE, ERROR_SEND_REPLY, ERROR_LIKE_ACTION, ERROR_SAVE_ACTION, LOADING_DETAIL } from "../../config/brand";
 import type { PlaceSheet } from "../../types/place";
 import type { PostDetail } from "../../types/post";
 import { sharePost } from "../../platform/share";
@@ -156,7 +157,7 @@ async function openPlaceSheet() {
   try {
     placeSheet.value = await fetchPlaceSheet(placeId);
   } catch (error) {
-    placeSheetError.value = error instanceof Error ? error.message : "地点信息暂时没有加载出来。";
+    placeSheetError.value = error instanceof Error ? error.message : ERROR_LOAD_PLACE;
   } finally {
     placeSheetLoading.value = false;
   }
@@ -190,7 +191,7 @@ async function handleLike() {
   } catch (error) {
     liked.value = previousLiked;
     likeCount.value = previousCount;
-    showActionError(error, "喜欢操作没有成功，可以稍后再试。");
+    showActionError(error, ERROR_LIKE_ACTION);
   } finally {
     likeBusy.value = false;
   }
@@ -209,7 +210,7 @@ async function handleSave() {
     saved.value = Boolean(response.saved);
   } catch (error) {
     saved.value = previousSaved;
-    showActionError(error, "收藏操作没有成功，可以稍后再试。");
+    showActionError(error, ERROR_SAVE_ACTION);
   } finally {
     saveBusy.value = false;
   }
@@ -271,7 +272,7 @@ async function submitReply() {
     showActionMessage("回复已发送，正在刷新详情。");
     emit("retry");
   } catch (error) {
-    showActionError(error, "回复没有发送成功，可以稍后再试。");
+    showActionError(error, ERROR_SEND_REPLY);
   } finally {
     replyBusy.value = false;
   }
@@ -290,7 +291,7 @@ async function submitReply() {
     />
 
     <div class="post-detail-panel__stage" @click="collapseReplyIfOpen">
-      <div v-if="loading" class="post-detail-panel__state" role="status">正在加载详情…</div>
+      <div v-if="loading" class="post-detail-panel__state" role="status">{{ LOADING_DETAIL }}</div>
 
       <InlineError v-else-if="error">
         {{ error }}
