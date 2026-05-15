@@ -9,49 +9,32 @@ const viewSource = fs.readFileSync(path.join(repoRoot, "src/views/MessagesView.v
 const tabsSource = fs.readFileSync(path.join(repoRoot, "src/views/messages/MessagesTabs.vue"), "utf8");
 const composerSource = fs.readFileSync(path.join(repoRoot, "src/views/messages/ChannelComposer.vue"), "utf8");
 
-test("MessagesView declares chrome emit for shell bottom tab bar control", () => {
+test("MessagesView declares chrome emit with PageChromeSpec type", () => {
   assert.match(viewSource, /defineEmits/);
-  assert.match(viewSource, /chrome:\s*\[hidden:\s*boolean\]/);
+  assert.match(viewSource, /chrome:\s*\[spec:\s*PageChromeSpec\]/);
 });
 
-test("MessagesView disposes floating chrome controller on unmount", () => {
-  assert.match(viewSource, /onBeforeUnmount/);
-  assert.match(viewSource, /composerChrome\.dispose\(\)/);
+test("MessagesView uses declarative pageChrome computed instead of floating chrome controller", () => {
+  assert.match(viewSource, /const pageChrome = computed<PageChromeSpec>/);
+  assert.doesNotMatch(viewSource, /useFloatingChromeController/);
 });
 
-test("MessagesView uses floating chrome controller for composer lifecycle", () => {
-  assert.match(viewSource, /useFloatingChromeController/);
-  assert.match(viewSource, /composerChrome/);
-  assert.match(viewSource, /composerChromePhase/);
-  assert.match(viewSource, /composerChromeStyle/);
+test("MessagesView declares tab spec with onTabSelect handler", () => {
+  assert.match(viewSource, /onTabSelect/);
+  assert.match(viewSource, /ariaLabel:\s*"消息分类"/);
 });
 
-test("MessagesView shows composer chrome when switching to channel tab", () => {
-  assert.match(viewSource, /composerChrome\.show\(\)/);
+test("MessagesView sets bottom visible based on active tab", () => {
+  assert.match(viewSource, /visible:\s*activeTab\.value\s*===\s*"channel"/);
 });
 
-test("MessagesView hides composer chrome when switching to notifications tab", () => {
-  assert.match(viewSource, /composerChrome\.hide\(\)/);
+test("MessagesView does not use floating chrome CSS attributes", () => {
+  assert.doesNotMatch(viewSource, /data-floating-chrome/);
+  assert.doesNotMatch(viewSource, /data-floating-state/);
+  assert.doesNotMatch(viewSource, /lian-floating-chrome/);
 });
 
-test("MessagesTabs renders as shell top chrome with floating chrome classes", () => {
-  assert.match(viewSource, /lian-floating-chrome\s+lian-floating-chrome--top/);
-  assert.match(viewSource, /data-floating-chrome="top"/);
-  assert.match(viewSource, /data-floating-state="visible"/);
-});
-
-test("ChannelComposer renders as shell bottom chrome with floating chrome classes", () => {
-  assert.match(viewSource, /lian-floating-chrome\s+lian-floating-chrome--bottom/);
-  assert.match(viewSource, /data-floating-chrome="bottom"/);
-  assert.match(viewSource, /:data-floating-state="composerChromePhase"/);
-});
-
-test("MessagesView positions MessagesTabs as fixed top chrome", () => {
-  assert.match(viewSource, /\.messages-view__chrome-tabs/);
-  assert.match(viewSource, /position:\s*fixed/);
-});
-
-test("MessagesView positions ChannelComposer as fixed bottom chrome", () => {
+test("MessagesView positions ChannelComposer with chrome-composer class", () => {
   assert.match(viewSource, /\.messages-view__chrome-composer/);
 });
 

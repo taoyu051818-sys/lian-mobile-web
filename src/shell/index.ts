@@ -12,6 +12,7 @@ export type {
   ShellChromeState,
 } from "./shell-chrome-types";
 export { createEmptyRegionSpec, createDefaultChromeState } from "./shell-chrome-types";
+export type { PageChromeSpec } from "./page-model";
 export type {
   DetailSheetKind,
   DetailSheetPostPayload,

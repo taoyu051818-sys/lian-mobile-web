@@ -103,7 +103,8 @@ test("FeedView short-circuits detail motion when reduced motion is active", () =
 
 // --- MessagesView reduced-motion awareness ---
 
-test("MessagesView floating chrome respects reduced-motion via CSS data attributes", () => {
+test("MessagesView uses declarative chrome (no floating chrome data attributes)", () => {
   const src = read("src/views/MessagesView.vue");
-  assert.match(src, /data-floating-state/);
+  assert.doesNotMatch(src, /data-floating-state/);
+  assert.match(src, /PageChromeSpec/);
 });

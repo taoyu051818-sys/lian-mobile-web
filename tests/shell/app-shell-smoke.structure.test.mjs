@@ -18,23 +18,17 @@ test("App wires AppShell tab changes through active view state", () => {
   assert.match(src, /<AppViewHost :active-view-key="activeViewKey" @chrome="onChrome" \/>/);
 });
 
-test("AppShell keeps bottom tabs on the floating chrome lane and re-shows chrome on tab change", () => {
+test("AppShell applies page chrome spec via useShellChrome", () => {
   const src = read("src/shell/AppShell.vue");
-  assert.match(src, /useFloatingChromeController\(\{ initialPhase: "visible" \}\)/);
+  assert.match(src, /applyPageChrome/);
   assert.match(src, /setRegion\("bottom", \{ slot: "tabs" \}\)/);
-  assert.match(src, /function handleViewChange\(key: string\) \{[\s\S]*appBottomChrome\.show\(\);[\s\S]*emit\("view-change", key\);[\s\S]*\}/);
-  assert.match(src, /data-floating-state="bottomChromeState"/);
-  assert.match(src, /data-floating-progress="bottomChromeState === 'progress' \? chromeProgress : undefined"/);
+  assert.match(src, /function handleChrome\(spec: PageChromeSpec\)/);
 });
 
-test("ShellChrome exposes floating-state data attributes for transition-safe tab chrome", () => {
+test("ShellChrome uses isVisible for data-visible attribute", () => {
   const src = read("src/shell/ShellChrome.vue");
-  assert.match(src, /const floatingState = computed\(/);
-  assert.match(src, /props\.chromePhase === "exiting"/);
-  assert.match(src, /props\.chromePhase === "entering"/);
-  assert.match(src, /props\.chromePhase === "progress"/);
-  assert.match(src, /:data-floating-state="floatingState"/);
-  assert.match(src, /:disabled="btn\.disabled \|\| isTransitioning"/);
+  assert.match(src, /:data-visible="isVisible"/);
+  assert.doesNotMatch(src, /chromePhase/);
 });
 
 test("DetailSheet owns overlay close behavior through body teleport, backdrop close, and Escape cleanup", () => {

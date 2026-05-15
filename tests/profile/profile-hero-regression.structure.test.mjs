@@ -51,11 +51,11 @@ test("ProfileView renders ProfileEditorPanel for logged-in users", () => {
 
 // --- ProfileView shell chrome contract ---
 
-test("ProfileView uses useShellChrome for top region", () => {
+test("ProfileView uses declarative PageChromeSpec for top region", () => {
   const src = read("src/views/ProfileView.vue");
-  assert.match(src, /useShellChrome/);
-  assert.match(src, /setRegion\("top"/);
-  assert.match(src, /resetRegions\(\)/);
+  assert.match(src, /PageChromeSpec/);
+  assert.match(src, /const pageChrome = computed<PageChromeSpec>/);
+  assert.doesNotMatch(src, /useShellChrome/);
 });
 
 test("ProfileView top chrome includes editor toggle and logout actions", () => {

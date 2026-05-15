@@ -1,11 +1,10 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount } from "vue";
 import { BottomTabBar, PageSurface } from "../ui";
 import type { LianIconName } from "../ui/icons/paths";
 import ShellChrome from "./ShellChrome.vue";
 import ContentFrame from "./ContentFrame.vue";
 import { useShellChrome } from "./useShellChrome";
-import { type FloatingChromeCommand, useFloatingChromeController } from "../motion/floatingChrome";
+import type { PageChromeSpec } from "./page-model";
 import type { AppViewKey, ShellLayoutMode } from "../app/view-types";
 
 export interface AppShellTab {
@@ -24,27 +23,17 @@ const emit = defineEmits<{
   "view-change": [key: string];
 }>();
 
-const { setRegion } = useShellChrome();
-const appBottomChrome = useFloatingChromeController({ initialPhase: "visible" });
+const { applyPageChrome, setRegion } = useShellChrome();
 
 setRegion("bottom", { slot: "tabs" });
 
-const bottomChromeState = computed(() => appBottomChrome.phase.value);
-const bottomChromeStyle = computed(() => appBottomChrome.style.value);
-const chromeProgress = computed(() => appBottomChrome.progress.value);
-
-function handleChromeChange(payload: FloatingChromeCommand) {
-  appBottomChrome.apply(payload);
+function handleChrome(spec: PageChromeSpec) {
+  applyPageChrome(spec);
 }
 
 function handleViewChange(key: string) {
-  appBottomChrome.show();
   emit("view-change", key);
 }
-
-onBeforeUnmount(() => {
-  appBottomChrome.dispose();
-});
 </script>
 
 <template>
@@ -52,17 +41,13 @@ onBeforeUnmount(() => {
     <ShellChrome region="top" />
     <ContentFrame :layout-mode="layoutMode">
       <PageSurface as="div" :padded="false">
-        <slot :on-chrome="handleChromeChange" />
+        <slot :on-chrome="handleChrome" />
       </PageSurface>
     </ContentFrame>
-    <ShellChrome region="bottom" :chrome-phase="bottomChromeState">
+    <ShellChrome region="bottom">
       <BottomTabBar
         class="vue-shell__bottom-tab lian-floating-chrome lian-floating-chrome--bottom"
-        :class="{ 'is-hidden': bottomChromeState === 'hidden' }"
         data-floating-chrome="bottom"
-        :data-floating-state="bottomChromeState"
-        :data-floating-progress="bottomChromeState === 'progress' ? chromeProgress : undefined"
-        :style="bottomChromeStyle"
         :items="tabs"
         :active-key="activeViewKey"
         @change="handleViewChange"

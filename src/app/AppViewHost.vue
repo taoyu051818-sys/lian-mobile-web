@@ -1,14 +1,10 @@
 <script setup lang="ts">
 import { defineAsyncComponent, KeepAlive, type Component, type PropType } from "vue";
 import type { AppViewKey } from "./view-types";
+import type { PageChromeSpec } from "../shell/page-model";
 import FeedView from "../views/FeedView.vue";
 import ViewAsyncError from "./ViewAsyncError.vue";
 import ViewLoadingFallback from "./ViewLoadingFallback.vue";
-
-export type ChromeStatePayload = boolean | {
-  hidden?: boolean;
-  progress?: number;
-};
 
 function asyncView(loader: () => Promise<{ default: Component }>) {
   return defineAsyncComponent({
@@ -32,7 +28,7 @@ const props = defineProps({
 });
 
 const emit = defineEmits<{
-  chrome: [payload: ChromeStatePayload];
+  chrome: [payload: PageChromeSpec];
 }>();
 </script>
 

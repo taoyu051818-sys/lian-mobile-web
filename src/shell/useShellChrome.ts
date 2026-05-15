@@ -6,8 +6,12 @@ import {
   type ShellChromeState,
   type ShellRegionKey,
 } from "./shell-chrome-types";
+import type { PageChromeSpec } from "./page-model";
 
 const state: ShellChromeState = reactive(createDefaultChromeState());
+let autoHideActive = false;
+let savedTopVisible: boolean | undefined;
+let savedBottomVisible: boolean | undefined;
 
 function mergeRegion(target: ShellChromeRegionSpec, patch: ShellChromeRegionSpec) {
   if (patch.buttons !== undefined) {
@@ -40,6 +44,30 @@ function resetRegions() {
   const defaults = createDefaultChromeState();
   mergeRegion(state.top, defaults.top);
   mergeRegion(state.bottom, defaults.bottom);
+  autoHideActive = false;
+  savedTopVisible = undefined;
+  savedBottomVisible = undefined;
+}
+
+function applyPageChrome(spec: PageChromeSpec) {
+  if (spec.top) setRegion("top", spec.top);
+  if (spec.bottom) setRegion("bottom", spec.bottom);
+
+  if (spec.autoHideOnDetail !== undefined) {
+    if (spec.autoHideOnDetail && !autoHideActive) {
+      savedTopVisible = state.top.visible;
+      savedBottomVisible = state.bottom.visible;
+      state.top.visible = false;
+      state.bottom.visible = false;
+      autoHideActive = true;
+    } else if (!spec.autoHideOnDetail && autoHideActive) {
+      state.top.visible = savedTopVisible ?? true;
+      state.bottom.visible = savedBottomVisible ?? true;
+      autoHideActive = false;
+      savedTopVisible = undefined;
+      savedBottomVisible = undefined;
+    }
+  }
 }
 
 export function useShellChrome(): {
@@ -47,11 +75,13 @@ export function useShellChrome(): {
   setRegion: (key: ShellRegionKey, spec: ShellChromeRegionSpec) => void;
   applyRegions: (map: ShellChromeRegionMap) => void;
   resetRegions: () => void;
+  applyPageChrome: (spec: PageChromeSpec) => void;
 } {
   return {
     state: readonly(state) as Readonly<ShellChromeState>,
     setRegion,
     applyRegions,
     resetRegions,
+    applyPageChrome,
   };
 }

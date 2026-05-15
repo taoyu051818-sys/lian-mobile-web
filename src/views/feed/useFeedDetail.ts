@@ -17,9 +17,6 @@ interface DetailHistoryState {
 }
 
 export interface FeedDetailDeps {
-  feedTabsChrome: { show(): void; hide(): void };
-  detailChrome: { show(): void; hide(): void };
-  emitChrome: (hidden: boolean) => void;
   startCardTransition: (payload?: CardOpenPayload) => void;
   rememberReadItem: (id: FeedItemId) => void;
   updateViewport: () => void;
@@ -84,19 +81,12 @@ export function useFeedDetail(deps: FeedDetailDeps) {
     const translateY = returning ? detailTargetY.value * progress : 0;
     const feedOpacity = detailOpen.value ? Math.max(0.1, progress * 0.9) : 1;
     const feedScale = detailOpen.value ? 0.985 + progress * 0.015 : 1;
-    const chromeOpacity = 1;
-    const topChromeTranslateY = 0;
-    const bottomChromeTranslateY = 0;
     return {
       "--detail-card-progress": String(progress),
       "--detail-card-scale": String(scale),
       "--detail-card-translate-x": `${translateX}px`,
       "--detail-card-translate-y": `${translateY}px`,
       "--detail-card-radius": `${Math.round(progress * 18)}px`,
-      "--detail-top-chrome-opacity": String(chromeOpacity),
-      "--detail-top-chrome-translate-y": `${topChromeTranslateY}px`,
-      "--detail-bottom-chrome-opacity": String(chromeOpacity),
-      "--detail-bottom-chrome-translate-y": `${bottomChromeTranslateY}px`,
       "--feed-under-detail-opacity": String(feedOpacity),
       "--feed-under-detail-scale": String(feedScale),
     };
@@ -141,9 +131,6 @@ export function useFeedDetail(deps: FeedDetailDeps) {
     detailPointerId.value = null;
     detailGestureLocked.value = null;
     detailHistoryActive.value = false;
-    deps.detailChrome.hide();
-    deps.feedTabsChrome.show();
-    deps.emitChrome(false);
   }
 
   function closeDetailWithCardify(options: { syncHistory?: boolean; direction?: number } = {}) {
@@ -160,12 +147,6 @@ export function useFeedDetail(deps: FeedDetailDeps) {
     detailReturning.value = true;
     detailPointerId.value = null;
     detailGestureLocked.value = null;
-
-    // Chrome handoff is immediate and has no motion:
-    // detail chrome hidden, feed tabs and app bottom bar visible in the same user action.
-    deps.detailChrome.hide();
-    deps.feedTabsChrome.show();
-    deps.emitChrome(false);
 
     detailDragX.value = Math.sign(direction || 1) * deps.cardifyDistance;
     pendingReturnTimer = window.setTimeout(() => {
@@ -188,11 +169,6 @@ export function useFeedDetail(deps: FeedDetailDeps) {
     deps.updateViewport();
     const normalizedId = normalizeFeedItemId(id);
 
-    // Chrome handoff is immediate and has no motion:
-    // feed tabs and app bottom bar hidden, detail chrome visible.
-    deps.feedTabsChrome.hide();
-    deps.emitChrome(true);
-
     if (payload && !deps.prefersReducedMotion()) {
       lastOpenSnapshot.value = payload;
     }
@@ -202,7 +178,6 @@ export function useFeedDetail(deps: FeedDetailDeps) {
     selectedPost.value = null;
     detailError.value = "";
     detailLoading.value = true;
-    deps.detailChrome.show();
     detailDragX.value = 0;
     detailDragging.value = false;
     detailReturning.value = false;

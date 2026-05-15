@@ -93,9 +93,10 @@ test("MessagesView applies safe-area bottom padding", () => {
   assert.match(src, /env\(safe-area-inset-bottom\)/);
 });
 
-test("MessagesView positions composer at safe-area-inset-bottom", () => {
+test("MessagesView positions composer with floating-bar-bottom-offset (includes safe-area)", () => {
   const src = read("src/views/MessagesView.vue");
-  assert.match(src, /bottom:\s*env\(safe-area-inset-bottom/);
+  assert.match(src, /--floating-bar-bottom-offset/);
+  assert.match(src, /--keyboard-inset-bottom/);
 });
 
 // --- ChannelThread: clears fixed composer with safe-area-aware padding ---

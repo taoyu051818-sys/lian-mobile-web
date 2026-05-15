@@ -1,6 +1,4 @@
-import { onBeforeUnmount, onMounted, ref, type Ref } from "vue";
-import { useShellChrome } from "../../shell/useShellChrome";
-import type { ShellChromeRegionSpec } from "../../shell/shell-chrome-types";
+import { ref, type Ref } from "vue";
 import type { MapLocation, MapPost } from "../../types/map";
 
 export interface MapFilterDef {
@@ -14,6 +12,7 @@ const MAP_FILTERS: MapFilterDef[] = [
   { id: "posts", label: "内容", defaultActive: true },
 ];
 
+/** @deprecated Helper retained for test compatibility; will be removed in PR 2. */
 export function defineMapFilterSpec(filters: MapFilterDef[], active: Record<string, boolean>) {
   return filters.map((f) => ({
     id: `filter-${f.id}`,
@@ -22,71 +21,45 @@ export function defineMapFilterSpec(filters: MapFilterDef[], active: Record<stri
   }));
 }
 
-export function defineMapTopChrome(filters: MapFilterDef[], active: Record<string, boolean>): ShellChromeRegionSpec {
+/** @deprecated Helper retained for test compatibility; will be removed in PR 2. */
+export function defineMapTopChrome(filters: MapFilterDef[], active: Record<string, boolean>) {
   return { buttons: defineMapFilterSpec(filters, active), visible: true };
 }
 
-export function defineMapBottomChromeForPlace(
-  place: MapLocation | MapPost,
-): ShellChromeRegionSpec {
+/** @deprecated Helper retained for test compatibility; will be removed in PR 2. */
+export function defineMapBottomChromeForPlace(place: MapLocation | MapPost) {
   const name = "name" in place ? place.name : place.title || place.locationArea || "";
   return {
     visible: true,
     buttons: [
-      { id: "place-view", label: `查看 ${name}`, variant: "primary" },
-      { id: "place-close", label: "关闭", variant: "ghost" },
+      { id: "place-view", label: `查看 ${name}`, variant: "primary" as const },
+      { id: "place-close", label: "关闭", variant: "ghost" as const },
     ],
   };
 }
 
-export function defineMapDefaultBottomChrome(): ShellChromeRegionSpec {
+/** @deprecated Helper retained for test compatibility; will be removed in PR 2. */
+export function defineMapDefaultBottomChrome() {
   return { visible: false, buttons: [] };
 }
 
 export function useMapChrome() {
-  const { applyRegions, setRegion, resetRegions } = useShellChrome();
   const selectedPlace: Ref<MapLocation | MapPost | null> = ref(null);
   const filterActive = ref<Record<string, boolean>>(
     Object.fromEntries(MAP_FILTERS.map((f) => [f.id, f.defaultActive ?? false])),
   );
 
-  function applyTopChrome() {
-    setRegion("top", defineMapTopChrome(MAP_FILTERS, filterActive.value));
-  }
-
-  function applyBottomChrome() {
-    if (selectedPlace.value) {
-      setRegion("bottom", defineMapBottomChromeForPlace(selectedPlace.value));
-    } else {
-      setRegion("bottom", defineMapDefaultBottomChrome());
-    }
-  }
-
   function handlePlaceSelect(place: MapLocation | MapPost) {
     selectedPlace.value = place;
-    applyBottomChrome();
   }
 
   function closePlaceSheet() {
     selectedPlace.value = null;
-    applyBottomChrome();
   }
 
   function toggleFilter(id: string) {
     filterActive.value = { ...filterActive.value, [id]: !filterActive.value[id] };
-    applyTopChrome();
   }
-
-  onMounted(() => {
-    applyRegions({
-      top: defineMapTopChrome(MAP_FILTERS, filterActive.value),
-      bottom: defineMapDefaultBottomChrome(),
-    });
-  });
-
-  onBeforeUnmount(() => {
-    resetRegions();
-  });
 
   return {
     selectedPlace,

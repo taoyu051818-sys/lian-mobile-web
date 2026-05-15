@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import { LianApiError } from "../api/http";
 import { activateProfileAlias, deactivateProfileAlias, fetchAuthMe, fetchProfileTab, logoutAuth } from "../api/profile";
 import { usePostDetail } from "../composables/usePostDetail";
 import { getRecentReadHistoryIds } from "../platform/browser-storage";
-import { useShellChrome } from "../shell/useShellChrome";
 import { InlineError } from "../ui";
 import type { FeedItemId } from "../types/feed";
+import type { PageChromeSpec } from "../shell/page-model";
 import type { ProfileListItem, ProfileTabKey, ProfileUser } from "../types/profile";
 import AuthPanel from "./auth/AuthPanel.vue";
 import PostDetailPanel from "./detail/PostDetailPanel.vue";
@@ -16,7 +16,9 @@ import ProfileActions from "./profile/ProfileActions.vue";
 import ProfileTabs from "./profile/ProfileTabs.vue";
 import ProfileCollectionList from "./profile/ProfileCollectionList.vue";
 
-const { setRegion, resetRegions } = useShellChrome();
+const emit = defineEmits<{
+  chrome: [spec: PageChromeSpec];
+}>();
 
 const user = ref<ProfileUser | null>(null);
 const loading = ref(false);
@@ -69,22 +71,19 @@ const userTags = computed(() => {
 const listEmptyText = computed(() => tabs.find((tab) => tab.key === activeTab.value)?.empty || "暂无内容");
 const aliases = computed(() => user.value?.aliases || []);
 
-function applyProfileChrome() {
-  if (!user.value) {
-    resetRegions();
-    return;
-  }
-  setRegion("top", {
-    visible: true,
-    slot: "tabs",
-    buttons: [
-      { id: "profile:toggle-editor", label: editorOpen.value ? "收起编辑" : "编辑资料", variant: "tonal" },
-      { id: "profile:logout", label: "退出登录", variant: "ghost" },
-    ],
-  });
-}
+const pageChrome = computed<PageChromeSpec>(() => ({
+  top: user.value
+    ? {
+        visible: true,
+        buttons: [
+          { id: "profile:toggle-editor", label: editorOpen.value ? "收起编辑" : "编辑资料", variant: "tonal" },
+          { id: "profile:logout", label: "退出登录", variant: "ghost" },
+        ],
+      }
+    : { visible: false },
+}));
 
-watch([user, editorOpen], applyProfileChrome);
+watch(pageChrome, (spec) => emit("chrome", spec), { deep: true });
 
 function readHistoryIds() {
   return getRecentReadHistoryIds(localStorage, 50);
@@ -210,11 +209,8 @@ async function switchAlias(aliasId: string) {
 }
 
 onMounted(() => {
+  emit("chrome", pageChrome.value);
   void loadProfile();
-});
-
-onBeforeUnmount(() => {
-  resetRegions();
 });
 </script>
 

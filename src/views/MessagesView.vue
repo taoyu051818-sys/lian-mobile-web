@@ -1,19 +1,19 @@
 <script setup lang="ts">
-import { computed, nextTick, onBeforeUnmount, onMounted, ref } from "vue";
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { fetchAuthMe } from "../api/profile";
 import { buildPendingChannelMessage, fetchChannelMessages, fetchNotifications, markChannelMessagesRead, mergeChannelMessagesChronologically, sendChannelMessage } from "../api/messages";
-import { useFloatingChromeController } from "../motion/floatingChrome";
 import { usePostDetail } from "../composables/usePostDetail";
 import { useVisualViewport } from "../composables/useVisualViewport";
 import { actorAvatarText, actorDisplayName } from "../utils/actor";
 import type { FeedItemId } from "../types/feed";
 import type { ChannelMessage, ChannelMessageActor, MessageTabKey, NotificationItem } from "../types/messages";
 import type { ProfileUser } from "../types/profile";
+import type { PageChromeSpec } from "../shell/page-model";
 import PostDetailPanel from "./detail/PostDetailPanel.vue";
 import { MessagesTabs, ChannelComposer, ChannelThread, NotificationList } from "./messages";
 
 const emit = defineEmits<{
-  chrome: [hidden: boolean];
+  chrome: [spec: PageChromeSpec];
 }>();
 
 const activeTab = ref<MessageTabKey>("channel");
@@ -39,14 +39,6 @@ const {
 
 useVisualViewport();
 
-const tabsChrome = useFloatingChromeController({ initialPhase: "visible" });
-const tabsChromePhase = tabsChrome.phase;
-const tabsChromeStyle = tabsChrome.style;
-
-const composerChrome = useFloatingChromeController({ initialPhase: "visible" });
-const composerChromePhase = composerChrome.phase;
-const composerChromeStyle = composerChrome.style;
-
 const tabs: Array<{ key: MessageTabKey; label: string }> = [
   { key: "channel", label: "频道" },
   { key: "notifications", label: "通知" },
@@ -60,6 +52,23 @@ const activeAlias = computed(() => {
 const composerActorName = computed(() => activeAlias.value?.name || currentUser.value?.username || "同学");
 const composerAvatarText = computed(() => composerActorName.value.slice(0, 2) || "同");
 const composerSignalMeta = computed(() => composerIdentityTag.value ? `身份信号：${composerIdentityTag.value}` : "未选择身份信号");
+
+const pageChrome = computed<PageChromeSpec>(() => ({
+  top: {
+    tabs: {
+      kind: "tabs",
+      items: tabs.map((t) => ({ id: t.key, label: t.label })),
+      activeKey: activeTab.value,
+      ariaLabel: "消息分类",
+    },
+    onTabSelect: (tabId: string) => { void switchTab(tabId as MessageTabKey); },
+  },
+  bottom: {
+    visible: activeTab.value === "channel",
+  },
+}));
+
+watch(pageChrome, (spec) => emit("chrome", spec), { deep: true });
 
 function messageText(item: ChannelMessage) {
   return item.plainText || item.content || "这条消息暂时没有内容。";
@@ -233,10 +242,8 @@ async function loadNotifications() {
 async function switchTab(tab: MessageTabKey) {
   activeTab.value = tab;
   if (tab === "channel") {
-    composerChrome.show();
     if (!channelItems.value.length) await loadChannel(true);
   } else {
-    composerChrome.hide();
     if (!notificationItems.value.length) await loadNotifications();
   }
 }
@@ -300,6 +307,7 @@ async function retryMessage(pendingId: string) {
 }
 
 onMounted(async () => {
+  emit("chrome", pageChrome.value);
   await loadCurrentUser();
   await loadChannel(true);
   window.addEventListener("scroll", checkNearBottom, { passive: true });
@@ -307,18 +315,12 @@ onMounted(async () => {
 
 onBeforeUnmount(() => {
   window.removeEventListener("scroll", checkNearBottom);
-  tabsChrome.dispose();
-  composerChrome.dispose();
 });
 </script>
 
 <template>
   <section class="messages-view" aria-label="消息">
     <MessagesTabs
-      class="lian-floating-chrome lian-floating-chrome--top"
-      data-floating-chrome="top"
-      :data-floating-state="tabsChromePhase"
-      :style="tabsChromeStyle"
       :tabs="tabs"
       :active-tab="activeTab"
       @switch="switchTab"
@@ -346,10 +348,7 @@ onBeforeUnmount(() => {
 
     <ChannelComposer
       v-if="activeTab === 'channel'"
-      class="messages-view__chrome-composer lian-floating-chrome lian-floating-chrome--bottom"
-      data-floating-chrome="bottom"
-      :data-floating-state="composerChromePhase"
-      :style="composerChromeStyle"
+      class="messages-view__chrome-composer"
       :avatar-text="composerAvatarText"
       :actor-name="composerActorName"
       :signal-meta="composerSignalMeta"
