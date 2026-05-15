@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { defineAsyncComponent, type Component, type PropType } from "vue";
+import { defineAsyncComponent, KeepAlive, type Component, type PropType } from "vue";
 import type { AppViewKey } from "./view-types";
 import FeedView from "../views/FeedView.vue";
 import ViewAsyncError from "./ViewAsyncError.vue";
@@ -38,6 +38,8 @@ const emit = defineEmits<{
 
 <template>
   <div class="app-view-host">
-    <component :is="viewComponents[props.activeViewKey]" @chrome="emit('chrome', $event)" />
+    <KeepAlive include="MapLeafletView">
+      <component :is="viewComponents[props.activeViewKey]" @chrome="emit('chrome', $event)" />
+    </KeepAlive>
   </div>
 </template>
