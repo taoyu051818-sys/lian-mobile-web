@@ -1,4 +1,5 @@
 import { buildApiUrl, getApiBase } from "../config/runtime-config";
+import { ERROR_RATE_LIMIT } from "../config/brand";
 import { ensureClientId } from "../platform/clientIdentity";
 import { asRecord } from "../platform/api-normalizers";
 
@@ -62,7 +63,7 @@ function extractApiError(data: unknown, status: number) {
   }
 
   if (status === 429) {
-    return { message: "发送太频繁，请稍后再试。", code };
+    return { message: ERROR_RATE_LIMIT, code };
   }
 
   return { message: `请求失败（状态码 ${status}）`, code };
