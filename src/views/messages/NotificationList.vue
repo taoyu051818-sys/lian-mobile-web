@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { InlineError, TrustBadge } from "../../ui";
+import { actorDisplayName } from "../../utils/actor";
 import type { NotificationItem } from "../../types/messages";
-import type { DisplayActor } from "../../types/feed";
 import { formatRelativeTime } from "../../utils/time";
 
 defineProps<{
@@ -14,10 +14,6 @@ const emit = defineEmits<{
   retry: [];
   "open-item": [tid: number];
 }>();
-
-function actorDisplayName(actor?: DisplayActor | null, fallback = "") {
-  return actor?.displayName || actor?.username || actor?.name || fallback || "同学";
-}
 
 function isReplyNotification(item: NotificationItem) {
   return ["new-reply", "reply", "new-post", "post-reply"].includes(String(item.type || ""));

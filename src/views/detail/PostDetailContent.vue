@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { InlineError, LianButton, SafeHtml } from "../../ui";
-import type { DisplayActor } from "../../types/feed";
+import { actorDisplayName } from "../../utils/actor";
 import type { PlaceSheet, PlaceStatus } from "../../types/place";
 import { formatRelativeTime } from "../../utils/time";
 
@@ -42,9 +42,6 @@ const emit = defineEmits<{
   "update:placeSheetOpen": [value: boolean];
 }>();
 
-function placeRecentPostActorLabel(actor?: DisplayActor) {
-  return actor?.displayName || actor?.username || actor?.name || "";
-}
 </script>
 
 <template>
@@ -120,9 +117,9 @@ function placeRecentPostActorLabel(actor?: DisplayActor) {
           <article v-for="recent in placeSheet.recentPosts.slice(0, 3)" :key="String(recent.tid)">
             <strong v-if="recent.title">{{ recent.title }}</strong>
             <p v-if="recent.excerpt">{{ recent.excerpt }}</p>
-            <small v-if="placeRecentPostActorLabel(recent.actor) || formatRelativeTime(recent.timestampISO || '')">
-              <span v-if="placeRecentPostActorLabel(recent.actor)">{{ placeRecentPostActorLabel(recent.actor) }}</span>
-              <span v-if="placeRecentPostActorLabel(recent.actor) && formatRelativeTime(recent.timestampISO || '')"> · </span>
+            <small v-if="actorDisplayName(recent.actor) || formatRelativeTime(recent.timestampISO || '')">
+              <span v-if="actorDisplayName(recent.actor)">{{ actorDisplayName(recent.actor) }}</span>
+              <span v-if="actorDisplayName(recent.actor) && formatRelativeTime(recent.timestampISO || '')"> · </span>
               <span v-if="formatRelativeTime(recent.timestampISO || '')">{{ formatRelativeTime(recent.timestampISO || '') }}</span>
             </small>
           </article>
