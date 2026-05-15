@@ -60,11 +60,10 @@ test("ProfileCollectionList cards use shadow instead of border", () => {
   assert.doesNotMatch(src, /border: 1px solid rgba\(31, 41, 51, 0\.08\)/);
 });
 
-test("ProfileView preserves shell chrome region contract", () => {
+test("ProfileView uses declarative PageChromeSpec for top region", () => {
   const src = read("src/views/ProfileView.vue");
-  assert.match(src, /useShellChrome/);
-  assert.match(src, /setRegion\("top"/);
-  assert.match(src, /resetRegions\(\)/);
+  assert.match(src, /PageChromeSpec/);
+  assert.match(src, /const pageChrome = computed<PageChromeSpec>/);
   assert.match(src, /profile:toggle-editor/);
   assert.match(src, /profile:logout/);
 });

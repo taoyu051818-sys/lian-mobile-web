@@ -12,7 +12,6 @@ import AuthPanel from "./auth/AuthPanel.vue";
 import PostDetailPanel from "./detail/PostDetailPanel.vue";
 import ProfileEditorPanel from "./profile/ProfileEditorPanel.vue";
 import ProfileHeader from "./profile/ProfileHeader.vue";
-import ProfileActions from "./profile/ProfileActions.vue";
 import ProfileTabs from "./profile/ProfileTabs.vue";
 import ProfileCollectionList from "./profile/ProfileCollectionList.vue";
 
@@ -79,9 +78,18 @@ const pageChrome = computed<PageChromeSpec>(() => ({
           { id: "profile:toggle-editor", label: editorOpen.value ? "收起编辑" : "编辑资料", variant: "tonal" },
           { id: "profile:logout", label: "退出登录", variant: "ghost" },
         ],
+        onButtonClick: handleChromeButtonClick,
       }
     : { visible: false },
 }));
+
+function handleChromeButtonClick(buttonId: string) {
+  if (buttonId === "profile:toggle-editor") {
+    editorOpen.value = !editorOpen.value;
+  } else if (buttonId === "profile:logout") {
+    void logout();
+  }
+}
 
 watch(pageChrome, (spec) => emit("chrome", spec), { deep: true });
 
@@ -240,8 +248,6 @@ onMounted(() => {
         @toggle-alias-picker="aliasPickerOpen = !aliasPickerOpen"
         @select-alias="switchAlias"
       />
-
-      <ProfileActions :editor-open="editorOpen" @toggle-editor="editorOpen = !editorOpen" @logout="logout" />
 
       <ProfileEditorPanel v-if="editorOpen" :user="user" @updated="handleProfileUpdated" />
 

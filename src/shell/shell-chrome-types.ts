@@ -30,6 +30,8 @@ export interface ShellChromeRegionSpec {
   tabs?: ChromeTabSpec | null;
   /** Callback invoked when a tab is selected. */
   onTabSelect?: ((tabId: string) => void) | null;
+  /** Callback invoked when a button is clicked. */
+  onButtonClick?: ((buttonId: string) => void) | null;
 }
 
 export type ShellChromeRegionMap = Partial<Record<ShellRegionKey, ShellChromeRegionSpec>>;
