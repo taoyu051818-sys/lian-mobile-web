@@ -5,6 +5,7 @@ export interface PageChromeTopSpec {
   buttons?: ChromeButtonSpec[];
   visible?: boolean;
   onTabSelect?: (tabId: string) => void;
+  onButtonClick?: (buttonId: string) => void;
 }
 
 export interface PageChromeBottomSpec {

@@ -24,6 +24,7 @@ const isSlottedTabs = computed(() => !hasTabs.value && regionSpec.value.slot ===
 
 function handleButtonClick(button: ChromeButtonSpec) {
   if (!button.disabled && isVisible.value) {
+    regionSpec.value.onButtonClick?.(button.id);
     emit("button-click", button.id, props.region);
   }
 }

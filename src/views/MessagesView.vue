@@ -10,7 +10,7 @@ import type { ChannelMessage, ChannelMessageActor, MessageTabKey, NotificationIt
 import type { ProfileUser } from "../types/profile";
 import type { PageChromeSpec } from "../shell/page-model";
 import PostDetailPanel from "./detail/PostDetailPanel.vue";
-import { MessagesTabs, ChannelComposer, ChannelThread, NotificationList } from "./messages";
+import { ChannelComposer, ChannelThread, NotificationList } from "./messages";
 
 const emit = defineEmits<{
   chrome: [spec: PageChromeSpec];
@@ -320,12 +320,6 @@ onBeforeUnmount(() => {
 
 <template>
   <section class="messages-view" aria-label="消息">
-    <MessagesTabs
-      :tabs="tabs"
-      :active-tab="activeTab"
-      @switch="switchTab"
-    />
-
     <ChannelThread
       v-if="activeTab === 'channel'"
       :items="channelItems"
