@@ -456,10 +456,15 @@
   }
 
   function displayImageUrl(url = "") {
-    const value = String(url || "");
-    if (/^https:\/\/res\.cloudinary\.com\/[^/]+\/image\/upload\//.test(value)) {
-      return `${LIAN_IMAGE_PROXY_BASE}/api/image-proxy?url=${encodeURIComponent(value)}`;
-    }
+    const value = String(url || "").trim();
+    if (!value) return "";
+    try {
+      const u = new URL(value, window.location.origin);
+      if (u.hostname.includes("cloudinary.com") && u.pathname.includes("/upload/")) {
+        u.pathname = u.pathname.replace(/\/upload\/[^/]+\//, "/upload/f_auto,q_auto/");
+        return u.toString();
+      }
+    } catch { /* not a valid URL, return as-is */ }
     return value;
   }
 

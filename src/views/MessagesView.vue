@@ -11,7 +11,7 @@ import type { ProfileUser } from "../types/profile";
 import type { PageChromeSpec } from "../shell/page-model";
 import PostDetailPanel from "./detail/PostDetailPanel.vue";
 import { ChannelComposer, ChannelThread, NotificationList } from "./messages";
-import { CHANNEL_DEFAULT_TAG } from "../config/brand";
+import { CHANNEL_DEFAULT_TAG, DEFAULT_USER_LABEL, ERROR_LOAD_CHANNEL, ERROR_LOAD_NOTIFICATION, ERROR_SEND_MESSAGE, MESSAGE_EMPTY_CONTENT } from "../config/brand";
 
 const emit = defineEmits<{
   chrome: [spec: PageChromeSpec];
@@ -50,7 +50,7 @@ const activeAlias = computed(() => {
   if (!user?.aliases?.length) return null;
   return user.aliases.find((alias) => alias.id === user.activeAliasId) || user.aliases[0] || null;
 });
-const composerActorName = computed(() => activeAlias.value?.name || currentUser.value?.username || "同学");
+const composerActorName = computed(() => activeAlias.value?.name || currentUser.value?.username || DEFAULT_USER_LABEL);
 const composerAvatarText = computed(() => composerActorName.value.slice(0, 2) || "同");
 const composerSignalMeta = computed(() => composerIdentityTag.value ? `身份信号：${composerIdentityTag.value}` : "未选择身份信号");
 
@@ -76,7 +76,7 @@ const pageChrome = computed<PageChromeSpec>(() => ({
 watch(pageChrome, (spec) => emit("chrome", spec), { deep: true });
 
 function messageText(item: ChannelMessage) {
-  return item.plainText || item.content || "这条消息暂时没有内容。";
+  return item.plainText || item.content || MESSAGE_EMPTY_CONTENT;
 }
 
 function messageActor(item: ChannelMessage): ChannelMessageActor {
@@ -180,7 +180,7 @@ async function loadChannel(reset = true) {
     }
     checkNearBottom();
   } catch (error) {
-    channelError.value = error instanceof Error ? error.message : "频道消息暂时没加载出来，可以稍后再试。";
+    channelError.value = error instanceof Error ? error.message : ERROR_LOAD_CHANNEL;
   } finally {
     channelLoading.value = false;
   }
@@ -238,7 +238,7 @@ async function loadNotifications() {
     const response = await fetchNotifications();
     notificationItems.value = response.items || [];
   } catch (error) {
-    notificationError.value = error instanceof Error ? error.message : "通知暂时没加载出来，可以稍后再试。";
+    notificationError.value = error instanceof Error ? error.message : ERROR_LOAD_NOTIFICATION;
   } finally {
     notificationLoading.value = false;
   }
@@ -275,7 +275,7 @@ async function submitMessage() {
       updated[idx] = { ...updated[idx], deliveryState: "failed" };
       channelItems.value = updated;
     }
-    sendError.value = error instanceof Error ? error.message : "消息没有发送成功，可以稍后再试。";
+    sendError.value = error instanceof Error ? error.message : ERROR_SEND_MESSAGE;
   } finally {
     sending.value = false;
   }
@@ -305,7 +305,7 @@ async function retryMessage(pendingId: string) {
       updated[failIdx] = { ...updated[failIdx], deliveryState: "failed" };
       channelItems.value = updated;
     }
-    sendError.value = error instanceof Error ? error.message : "消息没有发送成功，可以稍后再试。";
+    sendError.value = error instanceof Error ? error.message : ERROR_SEND_MESSAGE;
   } finally {
     sending.value = false;
   }
