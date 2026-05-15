@@ -1,5 +1,5 @@
 import { apiGet, apiSend } from "./http";
-import { ensureClientId } from "../platform/browser-storage";
+import { ensureClientId } from "../platform/clientIdentity";
 import type { ChannelMessage, ChannelReadPayload, ChannelResponse, NotificationResponse, SendChannelMessagePayload } from "../types/messages";
 
 export function normalizeChannelMessage(raw: ChannelMessage): ChannelMessage {
@@ -18,15 +18,45 @@ export function normalizeChannelMessage(raw: ChannelMessage): ChannelMessage {
   };
 }
 
-export async function fetchChannelMessages(offset = 0, limit = 30): Promise<ChannelResponse> {
-  const params = new URLSearchParams();
-  params.set("limit", String(limit));
-  params.set("offset", String(Math.max(0, offset)));
-  const response = await apiGet<ChannelResponse>(`/api/channel?${params.toString()}`);
+function channelMessageSortValue(item: ChannelMessage) {
+  return item.timestampISO || item.time || "";
+}
+
+function compareChannelMessagesChronologically(a: ChannelMessage, b: ChannelMessage) {
+  const aTime = channelMessageSortValue(a);
+  const bTime = channelMessageSortValue(b);
+  if (aTime !== bTime) {
+    if (!aTime) return -1;
+    if (!bTime) return 1;
+    return aTime < bTime ? -1 : 1;
+  }
+  return String(a.id).localeCompare(String(b.id));
+}
+
+export function mergeChannelMessagesChronologically(existing: ChannelMessage[], incoming: ChannelMessage[]): ChannelMessage[] {
+  const merged = new Map<string, ChannelMessage>();
+  for (const item of existing) merged.set(String(item.id), item);
+  for (const item of incoming) merged.set(String(item.id), item);
+  return Array.from(merged.values()).sort(compareChannelMessagesChronologically);
+}
+
+export function normalizeChannelResponse(response: ChannelResponse, requestedOffset = 0): ChannelResponse {
+  const rawItems = response.items || [];
+  const normalizedItems = mergeChannelMessagesChronologically([], rawItems.map(normalizeChannelMessage));
   return {
     ...response,
-    items: response.items?.map(normalizeChannelMessage),
+    items: normalizedItems,
+    nextOffset: response.nextOffset ?? Math.max(0, requestedOffset) + rawItems.length,
   };
+}
+
+export async function fetchChannelMessages(offset = 0, limit = 30): Promise<ChannelResponse> {
+  const params = new URLSearchParams();
+  const requestedOffset = Math.max(0, offset);
+  params.set("limit", String(limit));
+  params.set("offset", String(requestedOffset));
+  const response = await apiGet<ChannelResponse>(`/api/channel?${params.toString()}`);
+  return normalizeChannelResponse(response, requestedOffset);
 }
 
 export async function fetchNotifications(): Promise<NotificationResponse> {

@@ -31,6 +31,8 @@ const {
   primaryLabel,
   note,
   emailCodeHint,
+  emailCodeButtonLabel,
+  canRequestEmailCode,
   passwordEnterKeyHint,
   loginHasError,
   usernameHasError,
@@ -147,11 +149,11 @@ const inviteCodeHintId = "auth-invite-code-hint";
             />
             <button
               type="button"
-              :disabled="sendingCode"
+              :disabled="!canRequestEmailCode"
               :aria-describedby="emailCodeHintId"
               @click="requestEmailCode"
             >
-              {{ sendingCode ? "发送中" : "发送" }}
+              {{ emailCodeButtonLabel }}
             </button>
           </div>
           <small :id="emailCodeHintId" class="auth-panel__hint" aria-live="polite">{{ emailCodeHint }}</small>
