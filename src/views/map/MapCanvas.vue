@@ -47,6 +47,7 @@ const GAODE_TILE_URL = "https://webrd0{s}.is.autonavi.com/appmaptile?lang=zh_cn&
 const DEFAULT_BOUNDS: MapBounds = { south: 18.37107, west: 109.98464, north: 18.41730, east: 110.04775 };
 const SCALED_ICON_SELECTOR = "[data-vue-map-scaled-icon]";
 const ICON_BASE_ZOOM = 16;
+const ZOOM_ANIMATION_MS = 250;
 const MAX_RENDERED_LOCATIONS = 120;
 const MAX_RENDERED_POSTS = 60;
 const MAX_RENDERED_ASSETS = 120;
@@ -242,14 +243,31 @@ function applyMapIconScale(target: LeafletMapLike | null = map.value, zoom = tar
   if (!markerPane) return;
   const scale = iconScaleForZoom(target, zoom);
   markerPane.querySelectorAll<HTMLElement>(SCALED_ICON_SELECTOR).forEach((element) => {
+    element.style.transition = "none";
     element.style.transform = `scale(${scale})`;
+  });
+}
+
+function applyMapIconCounterScale(target: LeafletMapLike, zoom: number) {
+  const markerPane = target.getPane("markerPane");
+  if (!markerPane) return;
+  const counterScale = 1 / iconScaleForZoom(target, zoom);
+  markerPane.querySelectorAll<HTMLElement>(SCALED_ICON_SELECTOR).forEach((element) => {
+    element.style.transition = `transform ${ZOOM_ANIMATION_MS}ms cubic-bezier(0.25, 0.46, 0.45, 0.94)`;
+    element.style.transform = `scale(${counterScale})`;
   });
 }
 
 function bindMapIconScale(target: LeafletMapLike) {
   if (iconScaleBoundMaps.has(target)) return;
-  const update = (...args: unknown[]) => applyMapIconScale(target, zoomFromEvent(args[0]) ?? target.getZoom());
-  target.on("zoom zoomend viewreset moveend", update);
+  target.on("zoom", (...args: unknown[]) => {
+    const zoom = zoomFromEvent(args[0]) ?? target.getZoom();
+    applyMapIconCounterScale(target, zoom);
+  });
+  target.on("zoomend viewreset moveend", (...args: unknown[]) => {
+    const zoom = zoomFromEvent(args[0]) ?? target.getZoom();
+    applyMapIconScale(target, zoom);
+  });
   iconScaleBoundMaps.add(target);
 }
 
@@ -567,7 +585,7 @@ defineExpose({ map });
 .map-canvas {
   width: 100%;
   min-height: inherit;
-  height: calc(100vh - 92px - env(safe-area-inset-bottom));
+  height: 100vh;
   background: rgba(247, 244, 236, 0.72);
 }
 

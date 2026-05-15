@@ -47,6 +47,17 @@ The frontend verification path includes focused sanitizer/audit coverage for use
 
 Any PR that changes sanitizer verification scripts, package-level HTML safety checks, or safe-rendering guard coverage must update this inventory in the same branch.
 
+## Static asset preload contract
+
+`index.html` includes `<link rel="preload">` hints for map-critical static assets:
+
+- `/assets/campus-base-map.png` — campus map base image (preloaded as `image`)
+- `/assets/road-network-preview.json` — road network fallback data (preloaded as `fetch`, cross-origin)
+
+These hints cause the browser to start downloading map assets on initial app load, before the user navigates to the explore tab. This reduces first-visit map load latency by ~500-1000ms.
+
+Any PR that adds, removes, or modifies preload hints in `index.html` must keep this inventory updated.
+
 ## Leaflet bundled asset contract
 
 Leaflet JS and CSS are bundled through npm (`leaflet` dependency in `package.json`) and resolved by Vite at build time. The previous unpkg CDN `<link>` and `<script>` tags with SRI hashes have been removed from `index.html`.
