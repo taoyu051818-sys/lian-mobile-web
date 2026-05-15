@@ -1,8 +1,8 @@
 ﻿# Frontend Project Structure
 
-This document explains the current frontend folder structure, functional architecture, and page structure.
+This document explains the current frontend folder structure, ownership boundaries, and page map on `main`.
 
-It is a human-readable guide, not the final source of truth. The executable structure source is:
+It is a short guide, not the final executable source of truth. The structure guard remains:
 
 ```bash
 npm run check
@@ -14,7 +14,7 @@ which runs:
 node scripts/validate-project-structure.js
 ```
 
-When this document drifts from the repository, trust the script and update the document only as a short guide. Do not add broad hand-maintained indexes when a script can derive the information.
+When this document drifts from the repository, trust the scripts and the current runtime files first, then refresh the document as a concise architecture guide.
 
 ## Current folder structure
 
@@ -30,70 +30,81 @@ lian-mobile-web/
 `-- docs/
 ```
 
-## Root files
+## Root entry and runtime
 
-The root contains the Vue/Vite application entry and project configuration:
+The root contains the Vue/Vite app entry plus project configuration:
 
 - `index.html` is the Vite HTML entry.
 - `src/main.ts` creates the Vue app and mounts `App.vue` onto `#vue-root`.
 - `package.json` defines development, build, validation, and rehearsal commands.
-- `vite.config.ts` and `tsconfig.json` define frontend build and TypeScript behavior.
+- `vite.config.ts` and `tsconfig.json` define build and TypeScript behavior.
 
-## Runtime mode
+The active frontend runtime is Vue 3 + Vite.
 
-The frontend uses Vue 3 + Vite as the sole active web runtime. The legacy static runtime was removed in PR #282 and migrated to https://github.com/taoyu051818-sys/-lian-mobile-web-legacy.
+The old static runtime was removed in PR `#282` and migrated to `taoyu051818-sys/-lian-mobile-web-legacy`. `public/assets/` now mainly holds static assets used by the Vue runtime, while `public/tools/` holds standalone internal tools.
 
-`public/assets/` contains map resources used by the Vue map runtime. `public/tools/` contains standalone internal tools.
+`public/tools/task-board.html`, `public/tools/task-board.js`, and `public/tools/task-board.css` are a legacy/internal historical viewer. They are not the live LIAN coordination surface. For current coordination truth, use:
 
-`public/tools/task-board.html`, `public/tools/task-board.js`, and `public/tools/task-board.css` are a legacy/internal historical viewer for earlier LIAN task-board data. They are not the live development control plane. For current coordination truth, use `lian-platform-server` Control Room #112 plus the active GitHub issue and PR queues instead of treating this page as authoritative:
+- `taoyu051818-sys/lian-platform-server#112` as the canonical Control Room
+- the open issue and PR queues in GitHub
+- the active `agent:*` labels such as `agent:codex-action-needed`, `agent:review-needed`, and `agent:follow-up-needed`
 
-- Control Room: `https://github.com/taoyu051818-sys/lian-platform-server/issues/112`
-- Issue queue: `https://github.com/taoyu051818-sys/lian-mobile-web/issues?q=is%3Aopen+sort%3Aupdated-desc`
-- PR queue: `https://github.com/taoyu051818-sys/lian-mobile-web/pulls?q=is%3Aopen+sort%3Aupdated-desc`
-- Label queues: use the open GitHub `agent:*` labels such as `agent:codex-action-needed`, `agent:review-needed`, and `agent:follow-up-needed`
+That task-board downgrade was the narrower docs fix in `#249`; this document should stay aligned with it.
 
-### Vue 3 + Vite shell
+## Current runtime tree
 
 ```text
 src/
 |-- main.ts
 |-- App.vue
 |-- app/
-|-- views/
-|-- ui/
+|-- api/
+|-- platform/
+|-- shell/
 |-- styles/
+|-- ui/
+|-- views/
 `-- vite-env.d.ts
 ```
 
-The Vue shell is the long-term UI architecture direction.
+The important shift from older docs is that the app now has an explicit `src/shell/` layer. The current shell/content split is documented in more detail in `docs/frontend/shell-content-architecture.md`; this file stays at the project-structure level.
 
-`src/main.ts` creates the Vue application:
+## Top-level component ownership
 
-```ts
-const app = createApp(App);
-app.mount("#vue-root");
-```
-
-`src/App.vue` composes the top-level shell:
+The current high-level tree is:
 
 ```text
-TopBar
-AppViewHost
-BottomTabBar
-ToastHost
+App.vue
+|-- AppShell.vue
+|   |-- ShellChrome.vue [top region]
+|   |-- ContentFrame.vue
+|   |   `-- AppViewHost.vue
+|   |       |-- FeedView.vue
+|   |       |-- MapLeafletView.vue
+|   |       |-- PublishView.vue
+|   |       |-- MessagesView.vue
+|   |       `-- ProfileView.vue
+|   |-- ShellChrome.vue [bottom region]
+|   `-- DetailSheet.vue
+`-- ToastHost.vue
 ```
+
+That means the older shorthand of treating the shell as `TopBar` / `AppViewHost` / `BottomTabBar` is no longer the current architecture description. Those names may still appear in older issues or migration-era notes, but the current shell split is `AppShell` / `ShellChrome` / `ContentFrame`, with shared overlay infrastructure in `DetailSheet`.
+
+`src/App.vue` now mounts `AppShell`, passes the active view key, current layout mode, and tab definitions into the shell, and renders `ToastHost` alongside it. `src/app/AppViewHost.vue` remains the active-view switcher, but it now sits inside shell-owned framing rather than standing in for the whole shell model.
 
 ## Functional architecture
 
 ### `src/app/`
 
-Application orchestration layer.
+Application orchestration and view switching.
 
 Current responsibilities:
 
-- Define supported app views.
-- Track the active view.
-- Mount the active view component.
+- define the supported app views
+- define shell layout modes for each view
+- track the active view key
+- map view keys to page components in `AppViewHost.vue`
 
 Important files:
 
@@ -101,59 +112,88 @@ Important files:
 - `src/app/useActiveView.ts`
 - `src/app/AppViewHost.vue`
 
-### `src/views/`
-
-Page-level Vue views.
-
-Current page keys:
+The current app-view registry includes five primary views:
 
 ```text
 feed
 map
+publish
 messages
 profile
 ```
+
+The view mapping in `AppViewHost.vue` now points the map view at `MapLeafletView.vue`, not the older `MapView.vue` wording that still appears in stale docs.
+
+### `src/shell/`
+
+Shell-owned app structure and shared chrome/overlay infrastructure.
+
+Current responsibilities:
+
+- compose the app shell
+- render persistent top and bottom shell chrome
+- own content framing and layout mode behavior
+- provide shared detail-sheet infrastructure
+- expose typed shell/detail state helpers
+
+Representative files:
+
+```text
+src/shell/AppShell.vue
+src/shell/ShellChrome.vue
+src/shell/ContentFrame.vue
+src/shell/DetailSheet.vue
+src/shell/useShellChrome.ts
+src/shell/useDetailSheet.ts
+src/shell/shell-chrome-types.ts
+src/shell/detail-sheet-types.ts
+src/shell/index.ts
+```
+
+Rule of thumb: shell owns persistent app chrome, framing, and shared overlay infrastructure; pages own feature content and page-local interaction behavior.
+
+### `src/views/`
+
+Page-level feature surfaces.
 
 Current mapped view components:
 
 ```text
 feed     -> src/views/FeedView.vue
-map      -> src/views/MapView.vue
+map      -> src/views/MapLeafletView.vue
+publish  -> src/views/PublishView.vue
 messages -> src/views/MessagesView.vue
 profile  -> src/views/ProfileView.vue
 ```
 
-The view registry is declared in `src/app/view-types.ts`, and the component mapping lives in `src/app/AppViewHost.vue`.
+These views own feature workflows such as feed interactions, map selection, publish form behavior, messages layout/composer behavior, and profile content. They can describe shell intent through typed shell state, but they do not own the shell DOM structure itself.
 
 ### `src/ui/`
 
-Reusable UI primitives and shell components.
+Reusable UI primitives, shared feedback surfaces, and smaller presentation helpers.
 
-Current responsibilities:
-
-- Bottom tab navigation
-- Top bar
-- Glass/card primitives
-- Chips and badges
-- Sheet/modal-style containers
-- Toast feedback system
-
-Representative files:
+Representative files and areas:
 
 ```text
 src/ui/BottomTabBar.vue
-src/ui/TopBar.vue
-src/ui/GlassPanel.vue
-src/ui/LianButton.vue
-src/ui/Toast.vue
 src/ui/feedback/ToastHost.vue
 src/ui/feedback/toast-state.ts
 src/ui/feedback/useToast.ts
+src/ui/layout/
+src/ui/icons/
 ```
+
+A useful current distinction is that `BottomTabBar.vue` still exists, but it is now one shell-owned piece of global navigation rather than the main way to describe the whole shell architecture.
+
+### `src/api/` and `src/platform/`
+
+Runtime data access, normalization, and platform/browser helpers.
+
+These folders hold the API clients, runtime config helpers, browser-storage helpers, and related normalization/utilities that support the views and shell without belonging to a single page component.
 
 ### `src/styles/`
 
-Vue shell styling entry.
+Global styling entry for the Vue runtime.
 
 Important file:
 
@@ -169,35 +209,32 @@ Important scripts:
 
 - `scripts/validate-project-structure.js` checks required frontend files and backend-only exclusions.
 - `scripts/check-encoding-contamination.js` blocks encoding contamination.
-- `scripts/run-smoke-with-server.js` builds the Vue frontend, starts Vite preview, and runs smoke checks.
-- `scripts/guard-runtime-inventory.js` guards runtime inventory.
+- `scripts/run-smoke-with-server.js` builds the frontend, starts preview, and runs smoke checks.
+- `scripts/guard-runtime-inventory.js` guards runtime inventory expectations.
 
-## Page structure
+## Current page map
 
-### Main mobile shell
+The app now exposes five primary shell-mounted views:
 
-The Vue shell has four primary tabs:
+| Key | Label | Layout mode | Current surface |
+| --- | --- | --- | --- |
+| `feed` | `首页` | `content` | `src/views/FeedView.vue` |
+| `map` | `探索` | `full-bleed` | `src/views/MapLeafletView.vue` |
+| `publish` | `发布` | `content` | `src/views/PublishView.vue` |
+| `messages` | `消息` | `composer-safe` | `src/views/MessagesView.vue` |
+| `profile` | `我的` | `content` | `src/views/ProfileView.vue` |
 
-| Key | Label | Purpose |
-| `feed` | Home | Campus information feed and content distribution |
-| `map` | Explore | Places, location organization, and map-based exploration |
-| `messages` | Messages | Channels, notifications, and future private-message entry |
-| `profile` | Profile | Identity, contributions, and posting history |
-| `profile` | 鎴戠殑 | Identity, contributions, and posting history |
+The map row is the most important stale-doc correction in this lane: current runtime truth is centered on `MapLeafletView.vue` inside shell-owned framing, not an older `MapView.vue`-based structure description.
 
-### Legacy mobile pages (removed in PR #282)
+## Historical notes that are no longer current
 
-The legacy static runtime files (`public/index.html`, `public/app.js`, `public/styles.css`, and related split scripts) were removed in PR #282 and migrated to https://github.com/taoyu051818-sys/-lian-mobile-web-legacy. The Vue shell now owns all active user flows.
+Treat these as historical references only:
 
-### Internal tools pages
+- `TopBar` / `AppViewHost` / `BottomTabBar` as the current shell ownership model
+- `MapView.vue` as the current explore-view owner
+- `public/tools/task-board.*` as the live development dashboard or control plane
 
-Current internal tool page:
-
-```text
-public/tools/task-board.html
-```
-
-It is a legacy/internal historical viewer for the superseded task-board flow, not the authoritative development dashboard. Keep it as reference material only. For live LIAN coordination, use Control Room #112 and the GitHub issue/PR label queues instead of relying on this page for project status.
+Older issues and docs may still mention those names because they reflect migration-era structure. When they conflict with current `main`, prefer the current shell docs and runtime files.
 
 ## Validation commands
 
@@ -207,7 +244,7 @@ For normal frontend changes:
 npm run check
 ```
 
-For build-sensitive Vue shell changes:
+For build-sensitive frontend changes:
 
 ```bash
 npm run build
@@ -219,13 +256,10 @@ For full frontend verification:
 npm run verify
 ```
 
-The full verification path runs `verify:static` first, then `verify:smoke`.
-
 ## Maintenance rules
 
 - Treat `scripts/validate-project-structure.js` as the executable structure source.
-- Keep this document concise and explanatory.
-- Do not duplicate every file into multiple docs.
-- If structure needs frequent discovery, add an automatic inventory script instead of expanding this document.
-- When adding a new page, update the view registry or runtime inventory first, then update this guide only if the architecture meaning changes.
-
+- Treat `docs/frontend/shell-content-architecture.md` as the more detailed shell/content ownership reference.
+- Keep this document concise and structural rather than turning it into a full file inventory.
+- When the view registry, shell tree, or task-board authority wording changes, update this guide so it stays aligned with current `main`.
+- Do not use this document to imply that broader frontend migration, runtime cleanup, or umbrella issues are fully complete.
