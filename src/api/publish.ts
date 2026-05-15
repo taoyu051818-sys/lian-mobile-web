@@ -1,4 +1,4 @@
-import { apiSend } from "./http";
+import { apiSend, apiUpload } from "./http";
 import type { PlaceRef } from "../types/place";
 import type {
   PublishLocationDraft,
@@ -7,8 +7,6 @@ import type {
   PublishVisibility,
   UploadImageResponse,
 } from "../types/publish";
-import { buildApiUrl } from "../config/runtime-config";
-
 export const MAX_PUBLISH_IMAGE_COUNT = 9;
 export const MAX_PUBLISH_IMAGE_BYTES = 10 * 1024 * 1024;
 export const PUBLISH_IMAGE_HELP_TEXT = `支持常见图片格式，单张不超过 ${formatPublishImageSize(MAX_PUBLISH_IMAGE_BYTES)}，最多 ${MAX_PUBLISH_IMAGE_COUNT} 张。`;
@@ -23,9 +21,11 @@ function isPublishImageFile(file: Pick<File, "type">) {
 }
 
 export function normalizePublishTag(value = "") {
-  const body = Array.from(String(value || "")
-    .trim()
-    .replace(/^#+/, ""))
+  const body = Array.from(
+    String(value || "")
+      .trim()
+      .replace(/^#+/, ""),
+  )
     .filter((char) => /[\p{L}\p{N}_-]/u.test(char))
     .join("")
     .slice(0, 15);
@@ -160,7 +160,9 @@ export function buildPublishPayload(input: {
   const metadata = {
     locationArea,
     visibility: input.visibility,
-    distribution: locationArea ? ["home", "map", "search", "detail"] : ["home", "search", "detail"],
+    distribution: locationArea
+      ? ["home", "map", "search", "detail"]
+      : ["home", "search", "detail"],
     primaryTag: tag,
     identityTag,
   };
@@ -189,15 +191,11 @@ export async function uploadPublishImage(file: File): Promise<string> {
   const form = new FormData();
   form.append("image", file, file.name || "image.jpg");
 
-  const response = await fetch(buildApiUrl("/api/upload/image?purpose=publish-v2"), {
-    method: "POST",
-    credentials: "include",
-    body: form,
-  });
-  const data = await response.json().catch(() => ({} as UploadImageResponse));
-  if (!response.ok) {
-    throw new Error((data as { error?: string }).error || "图片上传失败，可以换一张图片或稍后再试。");
-  }
+  const data = await apiUpload<UploadImageResponse>(
+    "/api/upload/image?purpose=publish-v2",
+    form,
+    "图片上传失败，可以换一张图片或稍后再试。",
+  );
   if (!data.url) throw new Error("图片上传成功但没有返回地址，请稍后再试。");
   return data.url;
 }
