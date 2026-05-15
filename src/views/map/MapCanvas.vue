@@ -73,7 +73,13 @@ function applyMapIconScale(target: LeafletMapLike | null = map.value, zoom = tar
 
 function bindMapIconScale(target: LeafletMapLike) {
   if (iconScaleBoundMaps.has(target)) return;
-  target.on("zoomend viewreset moveend", (...args: unknown[]) => {
+  // Apply scale during zoom animation for smooth interpolation
+  target.on("zoomanim", (e: unknown) => {
+    const zoom = (e && typeof e === "object" && "zoom" in e) ? Number((e as { zoom?: unknown }).zoom) : target.getZoom();
+    applyMapIconScale(target, Number.isFinite(zoom) ? zoom : target.getZoom());
+  });
+  // Final update after animation completes
+  target.on("viewreset moveend", (...args: unknown[]) => {
     const event = args[0];
     const zoom = (event && typeof event === "object" && "zoom" in event) ? Number((event as { zoom?: unknown }).zoom) : target.getZoom();
     applyMapIconScale(target, Number.isFinite(zoom) ? zoom : target.getZoom());
@@ -236,6 +242,7 @@ defineExpose({ map });
 
 :deep(.vue-map-scaled-icon-inner) {
   display: block;
+  transition: transform 0.15s ease-out;
 }
 
 :deep(.vue-map-location-pin) {
