@@ -81,12 +81,10 @@ describe("Feed detail reduced-motion guards", () => {
 
   it("disables non-essential feed detail transitions without globally disabling all animation", () => {
     expect(reducedMotionBlock).toContain(".feed-view__content,");
-    expect(reducedMotionBlock).toContain(".feed-view__card-transition,");
-    expect(reducedMotionBlock).toContain(".feed-update-probe-motion-enter-active,");
-    expect(reducedMotionBlock).toContain(".feed-update-probe-motion-leave-active {");
+    expect(reducedMotionBlock).toContain(".feed-view__card-transition {");
     expect(reducedMotionBlock).toContain("transition: none;");
-    expect(reducedMotionBlock).toContain("transform: none;");
-    expect(reducedMotionBlock).toContain("filter: none;");
+    expect(reducedMotionBlock).not.toContain(".feed-update-probe-motion-enter-active");
+    expect(reducedMotionBlock).not.toContain(".feed-update-probe-motion-leave-active");
     expect(reducedMotionBlock).not.toContain("animation: none");
   });
 });

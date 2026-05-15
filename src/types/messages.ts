@@ -13,6 +13,7 @@ export interface ChannelMessage {
   id: string | number;
   content?: string;
   contentHtml?: string;
+  plainText?: string;
   actor?: ChannelMessageActor;
   source?: SourceSignal;
   time?: string;
