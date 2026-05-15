@@ -11,6 +11,7 @@ import type { ProfileUser } from "../types/profile";
 import type { PageChromeSpec } from "../shell/page-model";
 import PostDetailPanel from "./detail/PostDetailPanel.vue";
 import { ChannelComposer, ChannelThread, NotificationList } from "./messages";
+import { CHANNEL_DEFAULT_TAG } from "../config/brand";
 
 const emit = defineEmits<{
   chrome: [spec: PageChromeSpec];
@@ -88,7 +89,7 @@ function messageAvatarText(item: ChannelMessage) {
 
 function messageMeta(item: ChannelMessage) {
   const actor = messageActor(item);
-  return actor.identityTag || "校园频道";
+  return actor.identityTag || CHANNEL_DEFAULT_TAG;
 }
 
 function notificationActor(item: NotificationItem) {

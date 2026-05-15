@@ -3,6 +3,7 @@ import { InlineError, LianButton } from "../../ui";
 import { actorAvatarText, actorDisplayName } from "../../domain/actor";
 import type { ChannelMessage, ChannelMessageActor } from "../../types/messages";
 import { formatRelativeTime } from "../../utils/time";
+import { CHANNEL_DEFAULT_TAG } from "../../config/brand";
 
 const props = defineProps<{
   items: ChannelMessage[];
@@ -43,7 +44,7 @@ function messageAvatarText(item: ChannelMessage) {
 
 function messageMeta(item: ChannelMessage) {
   const actor = messageActor(item);
-  return actor.identityTag || "校园频道";
+  return actor.identityTag || CHANNEL_DEFAULT_TAG;
 }
 </script>
 
