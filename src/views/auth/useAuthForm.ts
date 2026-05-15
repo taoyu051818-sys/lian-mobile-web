@@ -1,6 +1,13 @@
-import { computed, onMounted, ref } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 import { fetchAuthRules, loginAuth, registerAuth, sendEmailCode } from "../../api/auth";
+import { LianApiError } from "../../api/http";
 import type { AuthInterestOption, AuthMode, AuthRulesResponse } from "../../api/auth";
+import {
+  AUTH_MAX_INTEREST_SELECTIONS,
+  type AuthValidationFields,
+  toggleSelectedInterest as toggleSharedSelectedInterest,
+  validateAuthForm as validateSharedAuthForm,
+} from "../../domain/validation/forms";
 import type { ProfileUser } from "../../types/profile";
 
 export type AuthInterestStatus = "loading" | "ready" | "empty" | "unavailable";
@@ -11,45 +18,35 @@ export interface AuthInterestSettings {
   required: boolean;
 }
 
-export interface AuthFormFields {
-  mode: AuthMode;
-  login: string;
-  username: string;
-  email: string;
-  emailCode: string;
-  password: string;
-  inviteCode: string;
-  selectedInterests: string[];
-  interestSelectionRequired?: boolean;
+export type AuthFormFields = AuthValidationFields;
+
+export const validateAuthForm = validateSharedAuthForm;
+
+export const AUTH_EMAIL_CODE_DEFAULT_COOLDOWN_SECONDS = 60;
+
+export function formatEmailCodeHint(message: string, remainingSeconds: number) {
+  if (remainingSeconds > 0) {
+    return message
+      ? `${message} ${remainingSeconds} 秒后可重新发送。`
+      : `验证码发送后会进入冷却，请在 ${remainingSeconds} 秒后重试。`;
+  }
+  return message || "验证码会发送到你的高校邮箱。邀请码注册时可以留空。";
 }
 
-export function validateAuthForm(fields: AuthFormFields): string {
-  if (fields.password.length < 8) return "密码至少需要 8 位。";
-  if (fields.mode === "login") {
-    if (!fields.login.trim()) return "请填写邮箱或昵称。";
-    return "";
+export function formatEmailCodeRateLimitMessage(retryAfterSeconds: number | null) {
+  if (retryAfterSeconds && retryAfterSeconds > 0) {
+    return `发送太频繁，请在 ${retryAfterSeconds} 秒后再试。`;
   }
-  if (!fields.username.trim()) return "请填写昵称。";
-  if (!fields.email.trim() && !fields.inviteCode.trim()) {
-    return "请填写高校邮箱，或填写邀请码。";
-  }
-  if (fields.email.trim() && !fields.emailCode.trim()) {
-    return "高校邮箱注册需要填写验证码。";
-  }
-  if (fields.interestSelectionRequired && !fields.selectedInterests.length) {
-    return "至少选择一个兴趣，用来初始化推荐流。";
-  }
-  return "";
+  return `发送太频繁，请稍后再试。页面会先按 ${AUTH_EMAIL_CODE_DEFAULT_COOLDOWN_SECONDS} 秒冷却处理。`;
 }
 
-export function toggleSelectedInterest(current: string[], id: string, max = 5): string[] {
-  if (current.includes(id)) {
-    return current.filter((item) => item !== id);
-  }
-  if (current.length >= max) {
-    return current;
-  }
-  return [...current, id];
+function normalizeCooldownSeconds(value: number | null | undefined) {
+  if (!value || !Number.isFinite(value) || value <= 0) return 0;
+  return Math.ceil(value);
+}
+
+export function toggleSelectedInterest(current: string[], id: string, max = AUTH_MAX_INTEREST_SELECTIONS): string[] {
+  return toggleSharedSelectedInterest(current, id, max);
 }
 
 export async function loadAuthInterestSettings(
@@ -88,6 +85,9 @@ export function useAuthForm(onAuthenticated: (user: ProfileUser | null) => void)
   const errorMessage = ref("");
   const successMessage = ref("");
   const codeMessage = ref("");
+  const emailCodeCooldownUntil = ref(0);
+  const emailCodeCooldownRemaining = ref(0);
+  let emailCodeCooldownTimer: ReturnType<typeof globalThis.setInterval> | null = null;
 
   const primaryLabel = computed(() => (mode.value === "login" ? "登录" : "注册并登录"));
   const note = computed(() =>
@@ -96,7 +96,15 @@ export function useAuthForm(onAuthenticated: (user: ProfileUser | null) => void)
       : "兴趣会帮助初始化首页推荐，可先跳过，之后再调整推荐偏好。",
   );
   const emailCodeHint = computed(
-    () => codeMessage.value || "验证码会发送到你的高校邮箱。邀请码注册时可以留空。",
+    () => formatEmailCodeHint(codeMessage.value, emailCodeCooldownRemaining.value),
+  );
+  const emailCodeButtonLabel = computed(() => {
+    if (sendingCode.value) return "发送中";
+    if (emailCodeCooldownRemaining.value > 0) return `重发 ${emailCodeCooldownRemaining.value}s`;
+    return "发送";
+  });
+  const canRequestEmailCode = computed(
+    () => !sendingCode.value && emailCodeCooldownRemaining.value === 0,
   );
   const passwordEnterKeyHint = computed(() => (mode.value === "login" ? "go" : "next"));
   const loginHasError = computed(
@@ -135,11 +143,37 @@ export function useAuthForm(onAuthenticated: (user: ProfileUser | null) => void)
     return "兴趣会帮助初始化首页推荐，可先跳过，之后再调整。";
   });
 
+  function stopEmailCodeCooldownTimer() {
+    if (emailCodeCooldownTimer !== null) {
+      globalThis.clearInterval(emailCodeCooldownTimer);
+      emailCodeCooldownTimer = null;
+    }
+  }
+
+  function syncEmailCodeCooldown() {
+    const remaining = Math.max(0, Math.ceil((emailCodeCooldownUntil.value - Date.now()) / 1000));
+    emailCodeCooldownRemaining.value = remaining;
+    if (!remaining) {
+      emailCodeCooldownUntil.value = 0;
+      stopEmailCodeCooldownTimer();
+    }
+  }
+
+  function startEmailCodeCooldown(seconds: number) {
+    const cooldownSeconds = normalizeCooldownSeconds(seconds);
+    if (!cooldownSeconds) return;
+
+    emailCodeCooldownUntil.value = Date.now() + cooldownSeconds * 1000;
+    syncEmailCodeCooldown();
+    if (emailCodeCooldownTimer === null) {
+      emailCodeCooldownTimer = globalThis.setInterval(syncEmailCodeCooldown, 1000);
+    }
+  }
+
   function switchMode(nextMode: AuthMode) {
     mode.value = nextMode;
     errorMessage.value = "";
     successMessage.value = "";
-    codeMessage.value = "";
   }
 
   function toggleInterest(id: string) {
@@ -155,7 +189,7 @@ export function useAuthForm(onAuthenticated: (user: ProfileUser | null) => void)
   }
 
   function isInterestDisabled(id: string): boolean {
-    return selectedInterests.value.length >= 5 && !selectedInterests.value.includes(id);
+    return selectedInterests.value.length >= AUTH_MAX_INTEREST_SELECTIONS && !selectedInterests.value.includes(id);
   }
 
   function validate(): string {
@@ -217,22 +251,36 @@ export function useAuthForm(onAuthenticated: (user: ProfileUser | null) => void)
 
   async function requestEmailCode() {
     const targetEmail = email.value.trim();
-    codeMessage.value = "";
     errorMessage.value = "";
     if (!targetEmail) {
       errorMessage.value = "请先填写高校邮箱。";
+      return;
+    }
+    if (!canRequestEmailCode.value) {
+      codeMessage.value = formatEmailCodeHint("", emailCodeCooldownRemaining.value);
       return;
     }
 
     sendingCode.value = true;
     try {
       const response = await sendEmailCode(targetEmail);
+      startEmailCodeCooldown(AUTH_EMAIL_CODE_DEFAULT_COOLDOWN_SECONDS);
       codeMessage.value = response.institution
         ? `验证码已发送，识别为 ${response.institution}。`
         : "验证码已发送，请查看邮箱。";
     } catch (error) {
-      errorMessage.value =
-        error instanceof Error ? error.message : "验证码没有发送成功，可以稍后再试。";
+      if (error instanceof LianApiError && error.status === 429) {
+        const retryAfterSeconds = normalizeCooldownSeconds(error.retryAfterSeconds)
+          || AUTH_EMAIL_CODE_DEFAULT_COOLDOWN_SECONDS;
+        startEmailCodeCooldown(retryAfterSeconds);
+        errorMessage.value = formatEmailCodeRateLimitMessage(error.retryAfterSeconds);
+        codeMessage.value = error.retryAfterSeconds
+          ? `当前发送过于频繁，请在 ${retryAfterSeconds} 秒后重新获取验证码。`
+          : `如果服务端没有返回具体等待时间，页面会先按 ${AUTH_EMAIL_CODE_DEFAULT_COOLDOWN_SECONDS} 秒冷却处理。`;
+      } else {
+        errorMessage.value =
+          error instanceof Error ? error.message : "验证码没有发送成功，可以稍后再试。";
+      }
     } finally {
       sendingCode.value = false;
     }
@@ -240,6 +288,10 @@ export function useAuthForm(onAuthenticated: (user: ProfileUser | null) => void)
 
   onMounted(() => {
     void refreshInterestSettings();
+  });
+
+  onBeforeUnmount(() => {
+    stopEmailCodeCooldownTimer();
   });
 
   return {
@@ -262,6 +314,8 @@ export function useAuthForm(onAuthenticated: (user: ProfileUser | null) => void)
     primaryLabel,
     note,
     emailCodeHint,
+    emailCodeButtonLabel,
+    canRequestEmailCode,
     passwordEnterKeyHint,
     loginHasError,
     usernameHasError,

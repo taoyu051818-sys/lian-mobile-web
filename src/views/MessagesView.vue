@@ -1,12 +1,15 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref } from "vue";
 import { fetchAuthMe } from "../api/profile";
-import { buildPendingChannelMessage, fetchChannelMessages, fetchNotifications, markChannelMessagesRead, sendChannelMessage } from "../api/messages";
+import { fetchPostDetail } from "../api/posts";
+import { buildPendingChannelMessage, fetchChannelMessages, fetchNotifications, markChannelMessagesRead, mergeChannelMessagesChronologically, sendChannelMessage } from "../api/messages";
 import { useFloatingChromeController } from "../motion/floatingChrome";
 import { useVisualViewport } from "../composables/useVisualViewport";
-import type { DisplayActor } from "../types/feed";
+import type { DisplayActor, FeedItemId } from "../types/feed";
 import type { ChannelMessage, ChannelMessageActor, MessageTabKey, NotificationItem } from "../types/messages";
+import type { PostDetail } from "../types/post";
 import type { ProfileUser } from "../types/profile";
+import PostDetailPanel from "./detail/PostDetailPanel.vue";
 import { MessagesTabs, ChannelComposer, ChannelThread, NotificationList } from "./messages";
 
 const emit = defineEmits<{
@@ -29,6 +32,11 @@ const identityTags = ref<string[]>([]);
 const sending = ref(false);
 const sendError = ref("");
 const isNearBottom = ref(true);
+const selectedPostId = ref<FeedItemId | null>(null);
+const selectedPost = ref<PostDetail | null>(null);
+const detailLoading = ref(false);
+const detailError = ref("");
+const savedScrollY = ref(0);
 
 useVisualViewport();
 
@@ -50,14 +58,6 @@ const composerActorName = computed(() => activeAlias.value?.name || currentUser.
 const composerAvatarText = computed(() => composerActorName.value.slice(0, 2) || "同");
 const composerSignalMeta = computed(() => composerIdentityTag.value ? `身份信号：${composerIdentityTag.value}` : "未选择身份信号");
 
-function stripHtml(html?: string) {
-  if (!html) return "";
-  return html
-    .replace(/<[^>]+>/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
 function actorDisplayName(actor?: DisplayActor | null, fallback = "") {
   return actor?.displayName || actor?.username || actor?.name || fallback || "同学";
 }
@@ -67,7 +67,7 @@ function actorAvatarText(actor?: DisplayActor | null, fallback = "") {
 }
 
 function messageText(item: ChannelMessage) {
-  return item.content || stripHtml(item.contentHtml) || "这条消息暂时没有内容。";
+  return item.plainText || item.content || "这条消息暂时没有内容。";
 }
 
 function messageActor(item: ChannelMessage): ChannelMessageActor {
@@ -93,6 +93,35 @@ function notificationActor(item: NotificationItem) {
 
 function isReplyNotification(item: NotificationItem) {
   return ["new-reply", "reply", "new-post", "post-reply"].includes(String(item.type || ""));
+}
+
+const detailOpen = computed(() => selectedPostId.value !== null);
+
+async function openNotification(tid: FeedItemId) {
+  savedScrollY.value = window.scrollY;
+  selectedPostId.value = tid;
+  selectedPost.value = null;
+  detailError.value = "";
+  detailLoading.value = true;
+  try {
+    selectedPost.value = await fetchPostDetail(tid);
+  } catch (error) {
+    detailError.value = error instanceof Error ? error.message : "帖子详情暂时没加载出来，可以稍后再试。";
+  } finally {
+    detailLoading.value = false;
+  }
+}
+
+function closeDetail() {
+  selectedPostId.value = null;
+  selectedPost.value = null;
+  detailLoading.value = false;
+  detailError.value = "";
+  requestAnimationFrame(() => window.scrollTo(0, savedScrollY.value));
+}
+
+function retryDetail() {
+  if (selectedPostId.value != null) void openNotification(selectedPostId.value);
 }
 
 const SCROLL_BOTTOM_THRESHOLD = 120;
@@ -149,12 +178,12 @@ async function loadChannel(reset = true) {
 
   try {
     const response = await fetchChannelMessages(reset ? 0 : channelOffset.value, 30);
-    const nextItems = (response.items || []).slice().reverse();
-    const known = new Set(channelItems.value.map((item) => String(item.id)));
-    const uniqueItems = nextItems.filter((item) => !known.has(String(item.id)));
-    channelItems.value = reset ? uniqueItems : [...uniqueItems, ...channelItems.value];
+    const nextItems = response.items || [];
+    channelItems.value = reset
+      ? nextItems
+      : mergeChannelMessagesChronologically(channelItems.value, nextItems);
     channelHasMore.value = Boolean(response.hasMore);
-    channelOffset.value = response.nextOffset ?? channelOffset.value + (response.items?.length || 0);
+    channelOffset.value = response.nextOffset ?? channelOffset.value;
 
     if (!reset) {
       await nextTick();
@@ -180,7 +209,7 @@ async function loadChannel(reset = true) {
 async function replacePendingWithLatest(pendingId: string, retriesLeft = REPLACE_RETRY_LIMIT) {
   try {
     const response = await fetchChannelMessages(0, 30);
-    const latestItems = (response.items || []).slice().reverse();
+    const latestItems = response.items || [];
     const pendingItem = channelItems.value.find((item) => String(item.id) === pendingId);
     const pendingContent = pendingItem?.content || "";
 
@@ -344,6 +373,7 @@ onBeforeUnmount(() => {
       :loading="notificationLoading"
       :error="notificationError"
       @retry="loadNotifications"
+      @open-item="openNotification"
     />
 
     <ChannelComposer
@@ -364,6 +394,16 @@ onBeforeUnmount(() => {
       @update:identity-tag="composerIdentityTag = $event"
       @submit="submitMessage"
     />
+
+    <div v-if="detailOpen" class="messages-view__detail-overlay" role="dialog" aria-modal="true" aria-label="帖子详情">
+      <PostDetailPanel
+        :post="selectedPost"
+        :loading="detailLoading"
+        :error="detailError"
+        @close="closeDetail"
+        @retry="retryDetail"
+      />
+    </div>
   </section>
 </template>
 
@@ -406,5 +446,13 @@ onBeforeUnmount(() => {
   background: var(--glass-bg-strong);
   box-shadow: var(--shadow-floating);
   backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+}
+
+.messages-view__detail-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  overflow-y: auto;
+  background: var(--lian-surface, #fff);
 }
 </style>

@@ -99,6 +99,16 @@ cover source-level contracts. This checklist covers runtime/visual behavior that
 | RM-7 | Reduced motion: probe/feed update animation | Disabled; probe appears/disappears instantly | |
 | RM-8 | Spinners exempt from reduced motion | `lian-spin` animation continues under reduced motion | |
 
+## 8. Mobile Keyboard Surfaces
+
+| ID | Scenario | Expected | Status |
+|----|----------|----------|--------|
+| MK-1 | Publish view title/body/location fields on mobile | Focused field stays visible and the publish actions remain reachable above the keyboard | |
+| MK-2 | Auth panel login/register fields on mobile | Login/register inputs and the primary submit action remain reachable when the keyboard is open | |
+| MK-3 | Profile editor avatar/invite controls on mobile | Focused slider, file chooser follow-up controls, and invite actions stay visible without overlapping the keyboard | |
+| MK-4 | Any Sheet-hosted input on mobile | Sheet panel scrolls independently, keeps safe-area spacing, and preserves focused field visibility above the keyboard | |
+| MK-5 | Desktop browser without `visualViewport` keyboard behavior | Publish/Auth/Profile/Sheet still feel usable with conservative fallback scrolling and no broken spacing | |
+
 ---
 
 ## Automated Test Coverage Map
@@ -112,6 +122,7 @@ cover source-level contracts. This checklist covers runtime/visual behavior that
 | Messages Composer | `tests/messages/messages-composer-regression.structure.test.mjs` | -- |
 | Profile Hero | `tests/profile/profile-hero-regression.structure.test.mjs` | `tests/profile/profile-chrome.test.ts` |
 | Reduced Motion | `tests/motion/reduced-motion-regression.structure.test.mjs` | `tests/motion/useReducedMotion.test.ts` |
+| Mobile Keyboard Surfaces | `tests/mobile/mobile-keyboard-secondary-surfaces.structure.test.mjs` | -- (manual mobile verify remains required) |
 
 ---
 

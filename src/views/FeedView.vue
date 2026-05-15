@@ -5,21 +5,19 @@ import { useFloatingChromeController } from "../motion/floatingChrome";
 import { prefersReducedMotion } from "../motion/useReducedMotion";
 import { useShellChrome } from "../shell/useShellChrome";
 import type { FeedItem, FeedItemId, FeedTab } from "../types/feed";
-import { InlineError, LianButton } from "../ui";
+import { InlineError } from "../ui";
 import PostDetailPanel from "./detail/PostDetailPanel.vue";
 import FeedList from "./feed/FeedList.vue";
 import FeedLoadMore from "./feed/FeedLoadMore.vue";
+import { normalizeFeedItemId } from "./feed/feedItemId";
 import { useFeedDetail, type CardOpenPayload, type CardTransitionSnapshot } from "./feed/useFeedDetail";
-import { READ_HISTORY_KEY, HOME_UPDATE_PROBE_PREFIX } from "../platform/browser-storage";
+import { READ_HISTORY_KEY } from "../platform/browser-storage";
 
 const DEFAULT_TABS: FeedTab[] = [
   { id: "此刻", label: "此刻" },
   { id: "精选", label: "精选" },
 ];
 const PAGE_SIZE = 12;
-const HOME_UPDATE_PROBE_VERSION = "home-ui-main-2026-05-05-01";
-const HOME_UPDATE_PROBE_KEY = `${HOME_UPDATE_PROBE_PREFIX}.${HOME_UPDATE_PROBE_VERSION}`;
-const UPDATE_PROBE_ENABLED = import.meta.env.DEV;
 const SWIPE_THRESHOLD = 96;
 const SWIPE_VERTICAL_GUARD = 52;
 const DETAIL_DRAG_EDGE_GUARD = 28;
@@ -40,7 +38,6 @@ const hasMore = ref(true);
 const loading = ref(false);
 const loadingMore = ref(false);
 const errorMessage = ref("");
-const showUpdateProbe = ref(false);
 const cardTransition = ref<CardTransitionSnapshot | null>(null);
 const cardTransitionActive = ref(false);
 const viewportWidth = ref(390);
@@ -61,8 +58,11 @@ function updateViewport() {
 
 function readHistoryQuery() {
   try {
-    const history = JSON.parse(localStorage.getItem(READ_HISTORY_KEY) || "[]") as Array<{ tid: FeedItemId }>;
-    return history.map((entry) => entry.tid).join(",");
+    const history = JSON.parse(localStorage.getItem(READ_HISTORY_KEY) || "[]") as Array<{ tid: FeedItemId | string }>;
+    return history
+      .map((entry) => normalizeFeedItemId(entry.tid))
+      .filter(Boolean)
+      .join(",");
   } catch {
     return "";
   }
@@ -70,33 +70,13 @@ function readHistoryQuery() {
 
 function rememberReadItem(id: FeedItemId) {
   try {
-    const history = JSON.parse(localStorage.getItem(READ_HISTORY_KEY) || "[]") as Array<{ tid: FeedItemId; lastViewedAt: string }>;
-    const nextHistory = history.filter((entry) => Number(entry.tid) !== Number(id));
-    nextHistory.push({ tid: id, lastViewedAt: new Date().toISOString() });
+    const normalizedId = normalizeFeedItemId(id);
+    const history = JSON.parse(localStorage.getItem(READ_HISTORY_KEY) || "[]") as Array<{ tid: FeedItemId | string; lastViewedAt: string }>;
+    const nextHistory = history.filter((entry) => normalizeFeedItemId(entry.tid) !== normalizedId);
+    nextHistory.push({ tid: normalizedId, lastViewedAt: new Date().toISOString() });
     localStorage.setItem(READ_HISTORY_KEY, JSON.stringify(nextHistory.slice(-500)));
   } catch {
     // Reading history should never block opening a card.
-  }
-}
-
-function openUpdateProbe() {
-  if (!UPDATE_PROBE_ENABLED) {
-    showUpdateProbe.value = false;
-    return;
-  }
-  try {
-    showUpdateProbe.value = localStorage.getItem(HOME_UPDATE_PROBE_KEY) !== "seen";
-  } catch {
-    showUpdateProbe.value = true;
-  }
-}
-
-function dismissUpdateProbe() {
-  showUpdateProbe.value = false;
-  try {
-    localStorage.setItem(HOME_UPDATE_PROBE_KEY, "seen");
-  } catch {
-    // The deploy probe should never block homepage browsing.
   }
 }
 
@@ -324,7 +304,6 @@ onMounted(() => {
   });
   window.addEventListener("resize", updateViewport);
   emit("chrome", false);
-  openUpdateProbe();
   void loadFeed(true);
 });
 
@@ -357,18 +336,6 @@ onBeforeUnmount(() => {
     aria-labelledby="feed-view-title"
   >
     <h1 id="feed-view-title" class="feed-view__sr-title">首页</h1>
-
-    <Transition name="feed-update-probe-motion">
-      <div v-if="showUpdateProbe && !detailOpen" class="feed-view__update-probe" role="dialog" aria-modal="true" aria-labelledby="feed-update-probe-title">
-        <div class="feed-view__update-probe-panel">
-          <p class="feed-view__update-probe-kicker">更新验证</p>
-          <h2 id="feed-update-probe-title">首页 UI 已进入当前构建</h2>
-          <p>版本标记：{{ HOME_UPDATE_PROBE_VERSION }}</p>
-          <p>看到这个弹窗，说明你当前打开的是这次 main 的首页版本。</p>
-          <LianButton size="sm" variant="tonal" @click="dismissUpdateProbe">知道了</LianButton>
-        </div>
-      </div>
-    </Transition>
 
     <InlineError v-if="errorMessage">
       {{ errorMessage }}
@@ -451,53 +418,6 @@ onBeforeUnmount(() => {
   white-space: nowrap;
 }
 
-.feed-view__update-probe {
-  position: fixed;
-  inset: 0;
-  z-index: 180;
-  display: grid;
-  place-items: center;
-  padding: var(--space-4);
-  background: rgba(15, 23, 20, 0.32);
-  backdrop-filter: blur(10px);
-}
-
-.feed-view__update-probe-panel {
-  display: grid;
-  gap: var(--space-3);
-  width: min(100%, 360px);
-  padding: var(--space-4);
-  border: 1px solid var(--glass-border);
-  border-radius: var(--radius-sheet);
-  background: var(--glass-bg-strong);
-  box-shadow: var(--shadow-floating);
-}
-
-.feed-view__update-probe-kicker,
-.feed-view__update-probe-panel h2,
-.feed-view__update-probe-panel p {
-  margin: 0;
-}
-
-.feed-view__update-probe-kicker {
-  color: var(--lian-primary-deep);
-  font-size: 12px;
-  font-weight: 900;
-}
-
-.feed-view__update-probe-panel h2 {
-  color: var(--lian-ink);
-  font-size: 18px;
-  line-height: 1.35;
-}
-
-.feed-view__update-probe-panel p {
-  color: var(--lian-muted);
-  font-size: 13px;
-  line-height: 1.55;
-  word-break: break-all;
-}
-
 .feed-view__content {
   display: grid;
   gap: var(--space-3);
@@ -536,18 +456,6 @@ onBeforeUnmount(() => {
   touch-action: none;
 }
 
-.feed-update-probe-motion-enter-active,
-.feed-update-probe-motion-leave-active {
-  transition: opacity 180ms ease, transform 180ms ease, filter 180ms ease;
-}
-
-.feed-update-probe-motion-enter-from,
-.feed-update-probe-motion-leave-to {
-  opacity: 0;
-  transform: scale(0.98);
-  filter: blur(6px);
-}
-
 .inline-error button {
   min-height: 32px;
   margin-left: var(--space-2);
@@ -560,17 +468,8 @@ onBeforeUnmount(() => {
 
 @media (prefers-reduced-motion: reduce) {
   .feed-view__content,
-  .feed-view__card-transition,
-  .feed-update-probe-motion-enter-active,
-  .feed-update-probe-motion-leave-active {
+  .feed-view__card-transition {
     transition: none;
-  }
-
-  .feed-update-probe-motion-enter-from,
-  .feed-update-probe-motion-leave-to {
-    opacity: 1;
-    transform: none;
-    filter: none;
   }
 }
 </style>

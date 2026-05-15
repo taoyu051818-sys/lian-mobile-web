@@ -8,20 +8,20 @@
 
 ## 1. Goals
 
-1. **Installability** -- allow users to add LIAN to the home screen on iOS Safari and Android Chrome, providing an app-like launch experience (standalone display, theme color, splash).
+1. **Installability** -- allow users to add LIAN to the home screen on iOS Safari and Android Chrome, providing an app-like launch experience.
 2. **Offline fallback** -- when the network is unavailable, show a friendly offline page instead of a browser error.
 3. **Controlled updates** -- ensure users do not remain on stale builds indefinitely; surface a "new version available" prompt and let them refresh on their own terms.
-4. **Dual-runtime safety** -- the legacy `public/` entry and the Vue/Vite shell must coexist without cache-version mismatches.
+4. **Same-origin safety** -- the Vue/Vite shell and any same-origin standalone internal tools must not create cache-version mismatches or misleading PWA promises.
 5. **Privacy-first caching** -- never cache sensitive APIs, messages, notifications, profile data, auth tokens, or precise location.
 
 ## 2. Non-Goals (Phase 1)
 
 - Offline posting, offline feed sync, or offline message composition.
-- Caching authenticated API responses (feed, messages, notifications, profile, auth tokens).
+- Caching authenticated API responses.
 - Caching precise geolocation data.
 - Complex background sync or periodic sync.
-- Caching legacy un-hashed JS/CSS as long-lived immutable resources.
-- Full offline map tiles (third-party tile caching deferred).
+- Caching standalone internal tool HTML / JS / CSS as long-lived immutable resources.
+- Full offline map tiles.
 
 ## 3. Manifest
 
@@ -33,11 +33,11 @@
 | `start_url` | `/` |
 | `scope` | `/` |
 | `display` | `standalone` |
-| `theme_color` | `#f7f4ec` (matches current `<meta name="theme-color">`) |
+| `theme_color` | `#f7f4ec` |
 | `background_color` | `#f7f4ec` |
-| `icons` | 192x192 PNG, 512x512 PNG; at least one maskable variant |
+| `icons` | 192x192 PNG, 512x512 PNG, and at least one maskable variant |
 
-Icons will be generated from existing brand assets and committed to `public/icons/`.
+Icons should live in `public/icons/`.
 
 ## 4. Service Worker Scope
 
@@ -46,18 +46,18 @@ Icons will be generated from existing brand assets and committed to `public/icon
 | Registration path | `/sw.js` at origin root |
 | Scope | `/` |
 | Vue/Vite entry | Covered |
-| `public/tools/*` | Covered but not pre-cached; runtime cache only if explicitly allowed |
-| Cache namespace | Single namespace with versioned cache names: `static-v{N}`, `runtime-v{N}` |
+| `public/tools/*` | In scope as same-origin pages, but not part of the installability promise and not pre-cached by default |
+| Cache namespace | Versioned cache names such as `static-v{N}` and `runtime-v{N}` |
 
-Legacy and Vue share one Service Worker. Cache names include a version segment so that a new release can purge old caches without ambiguity.
+One Service Worker at the origin root can technically see both the Vue shell and the standalone tool pages. The product promise, however, is centered on the Vue shell. Internal tools should stay out of optimistic pre-cache behavior unless they get their own explicit contract.
 
 ## 5. Cache Strategy
 
 ### 5.1 Phase 1 -- Installability only (no Service Worker)
 
 - Ship `manifest.webmanifest` and icons.
-- No Service Worker is registered.
-- Existing network behavior is unchanged.
+- Do not register a Service Worker yet.
+- Existing network behavior stays unchanged.
 
 ### 5.2 Phase 2+ -- Minimal Service Worker
 
@@ -65,154 +65,137 @@ Legacy and Vue share one Service Worker. Cache names include a version segment s
 |---|---|---|
 | HTML (`/`, `/index.html`) | Network-first | Never long-cached; always revalidate |
 | Vite hashed JS/CSS/assets (`/assets/*`) | Cache-first, long TTL | Immutable; keyed by content hash |
-| Legacy `public/*.js`, `public/*.css` | Network-first, short TTL | No immutable caching; these lack content hashes |
 | `manifest.webmanifest` | Stale-while-revalidate, short TTL | |
 | Icons | Cache-first | Static, versioned by filename |
 | Offline fallback page | Pre-cached | Minimal HTML + CSS shell |
 | API responses | **Not cached by default** | |
-| Images (`/api/image-proxy/*`) | Not cached initially; evaluate stale-while-revalidate later with capacity limit | |
-| Third-party tiles (`webrd*.is.autonavi.com`) | **Not cached** | Respect provider terms; avoid cache bloat |
-| External CDN (Leaflet via unpkg) | Evaluate in Phase 4; if kept external, cache with versioned key | See Section 8 |
+| Images (`/api/image-proxy/*`) | Not cached initially; evaluate later with explicit limits | |
+| Third-party tiles (`webrd*.is.autonavi.com`) | **Not cached** | Respect provider terms and avoid cache bloat |
+| Standalone internal tool HTML / JS / CSS | Network-first or no-cache | Not part of the PWA performance promise |
+| Tool-side external CDN assets | **Not pre-cached** | See Section 8 |
 
 ## 6. Update UX
 
 1. New Service Worker installs in the background (no `skipWaiting` by default).
 2. When the new SW is installed and waiting, the app shows a non-blocking banner: **"New version available. Refresh to update."**
 3. User taps the banner; the app sends `skipWaiting` to the waiting SW, then reloads.
-4. The app **never force-refreshes** a page the user is actively using.
-5. If the user dismisses the banner, it reappears on next navigation or after 24 hours.
+4. The app does not force-refresh a page the user is actively using.
+5. If the user dismisses the banner, it can reappear on a later navigation.
 
 ### Release checklist addition
 
-- Verify that an old build (previous release) upgrades cleanly to the new build: manifest loads, SW activates, old caches are purged, page renders correctly.
+- Verify that a previous build upgrades cleanly to the new build: manifest loads, SW activates, old caches are purged, and the page renders correctly.
 
 ## 7. Rollback and Kill Switch
 
 | Mechanism | How |
 |---|---|
-| Cache version bump | Increment the cache version constant in `sw.js`. Old caches are deleted on activate. |
-| SW unregister | Ship a one-line change: remove the `navigator.serviceWorker.register()` call. The browser will unregister the SW on next visit. |
-| Emergency kill switch | A runtime config flag (`enablePwa`) checked before SW registration. Set to `false` via runtime config injection to disable SW without a code deploy. |
-| Incident runbook | 1. Disable SW via kill switch. 2. Purge CDN cache. 3. Deploy fix. 4. Re-enable SW. 5. Verify via post-deploy smoke. |
+| Cache version bump | Increment a cache-version constant in `sw.js`; old caches are deleted on activate |
+| SW unregister | Remove or disable the registration path so browsers unregister on the next visit |
+| Emergency kill switch | Gate SW registration behind a runtime flag such as `enablePwa` |
+| Incident runbook | Disable SW, purge caches where needed, deploy fix, verify with smoke |
 
-Each release records the previous release id so rollback targets are explicit (see #134).
+Each release records the previous release ID so rollback targets stay explicit.
 
 ## 8. External CDN
 
-Current state: Leaflet CSS/JS is loaded from `unpkg.com` with SRI integrity attributes (`index.html`).
+Current repo truth is split:
+
+- the active Vue shell bundles Leaflet through `src/platform/leaflet.ts`
+- standalone internal map tools under `public/tools/` still load Leaflet CSS/JS from `unpkg`
+- Gaode tiles remain a third-party runtime dependency for map rendering
 
 | Decision | Details |
 |---|---|
-| Keep external CDN for now | Migrating to npm-bundled Leaflet is a separate effort (#152) |
-| SRI required | All external `<script>` and `<link>` must have `integrity` + `crossorigin` |
-| SRI update process | Leaflet version upgrades must update the SRI hash and run the map smoke test in the same PR |
-| External asset inventory | Maintain a table (URL, version, SRI hash, owner, upgrade process) in project docs |
-| SW treatment | External CDN assets are **not pre-cached**. If kept external long-term, evaluate runtime caching with a versioned key in Phase 4. |
-| Fallback | `MapLeafletView.vue` already shows a user-facing message when `window.L` is missing. This is the acceptable Phase 1-3 fallback. |
+| Keep bundled Leaflet for the Vue shell | The main user-facing runtime should continue using the reviewed build artifact rather than a runtime CDN dependency |
+| Internal tools may keep `unpkg` temporarily | This remains a separate follow-up under #152, not part of the PWA installability promise |
+| SRI required for any remaining external tags | Tool-side external `<script>` and `<link>` tags should gain `integrity` and `crossorigin` or be removed |
+| External asset inventory must stay current | Track URL, version, SRI state, owner, and upgrade path in docs or a manifest |
+| SW treatment | Do not pre-cache tool-side CDN assets by default |
+| User-facing fallback | Main-shell map fallback should focus on third-party tile failures or offline state, not on a missing `unpkg` Leaflet runtime |
 
 ### CSP alignment
 
-When CSP headers are introduced (#112), the allowlist must include:
-- `script-src`: `unpkg.com`
-- `style-src`: `unpkg.com`
-- `img-src`: `webrd*.is.autonavi.com` (tiles), same-origin (image proxy)
-- `connect-src`: same-origin (API), image proxy origin
+When CSP headers are introduced, the allowlist should include `unpkg.com` only as long as those standalone tools still depend on it. The active Vue shell should otherwise run from `'self'` plus the required map-tile origins.
 
 ## 9. Third-Party Tiles
 
 | Concern | Decision |
 |---|---|
-| Tile source | Gaode (`webrd{s}.is.autonavi.com`), hardcoded in `MapLeafletView.vue` |
+| Tile source | Gaode (`webrd{s}.is.autonavi.com`) |
 | Tile caching | **Not cached** by the Service Worker |
-| Attribution | `"(c) Gaode Map"` -- already present |
-| Offline behavior | Map tiles are unavailable offline; the map view degrades to showing cached location list if available |
-| Provider change | Requires updating tile URL, CSP `img-src`, coordinate system, and attribution simultaneously |
+| Attribution | Keep the provider attribution truthful in map surfaces |
+| Offline behavior | Tiles may be unavailable offline; the app should fall back gracefully rather than pretending full offline map support exists |
+| Provider change | Update tile URL, CSP `img-src`, and attribution together |
 
 ## 10. Runtime Config
 
-Runtime config (API base URL, image proxy base, feature flags) must be injected into the HTML **before** app entry scripts execute (see #119).
+Runtime config (API base URL, image proxy base, feature flags) must be injected before app entry scripts execute.
 
 | Field | Purpose |
 |---|---|
-| `LIAN_API_BASE_URL` | API base; empty string = same-origin |
+| `LIAN_API_BASE_URL` | API base; empty string means same-origin |
 | `LIAN_IMAGE_PROXY_BASE_URL` | Image proxy base |
-| `enablePwa` | Feature flag: controls SW registration |
-| `releaseId` | Build-time injected; git sha + build time |
+| `enablePwa` | Feature flag controlling SW registration |
+| `releaseId` | Build-time identifier from the release manifest |
 
-The Service Worker must **not** cache the HTML shell that contains runtime config. HTML is always network-first, ensuring config updates propagate on next load.
+The Service Worker must not long-cache the HTML shell that carries runtime config. HTML stays network-first so config updates propagate on the next load.
 
 ## 11. Privacy Boundaries
 
 **Never cached by the Service Worker:**
 
-- API responses containing user data (feed content, messages, notifications, profile, auth tokens)
+- API responses containing user data
 - Auth tokens, session cookies, or any credentials
 - Precise geolocation coordinates
-- Image URLs that could reveal user-uploaded content (unless explicitly allowlisted later)
+- User-sensitive image URLs unless they later pass an explicit allowlist review
 - localStorage or sessionStorage dumps
 
 **Allowed for caching:**
 
 - Static hashed assets (JS, CSS, icons, fonts)
-- The offline fallback page (no user data)
+- The offline fallback page
 - `manifest.webmanifest`
-- Anonymous, non-authenticated read-only API responses (only with an explicit allowlist, evaluated in Phase 4)
+- Explicitly allowlisted anonymous read-only API responses in a later phase
 
-**Telemetry alignment (see #126):**
+**Telemetry alignment:**
 
-- Error reporters and Web Vitals collectors must not upload: post body, message content, email, tokens, exact coordinates, or image URLs.
-- Allowed metadata: release id, route, error type, status code, browser info, network state.
+- Error reporters and Web Vitals collectors must not upload post bodies, message content, email, tokens, exact coordinates, or sensitive image URLs.
+- Allowed metadata includes release ID, route, error type, status code, browser info, and network state.
 
 ## 12. Phased Plan
 
 ### Phase 1 -- Installability only (no Service Worker)
 
-**Scope:** manifest, icons, theme color, Lighthouse installability audit.
-
-- [ ] Create `public/manifest.webmanifest` with fields from Section 3.
-- [ ] Generate and commit icons (192, 512, maskable) to `public/icons/`.
-- [ ] Add `<link rel="manifest">` to `index.html` and `public/index.html`.
-- [ ] Verify `<meta name="theme-color">` matches manifest `theme_color`.
-- [ ] Pass Lighthouse "installable" audit.
-- [ ] No Service Worker registration.
-
-**Linked issues:** #109
+- [ ] Create `public/manifest.webmanifest`
+- [ ] Generate and commit icons
+- [ ] Add `<link rel="manifest">` to the root HTML entry
+- [ ] Verify `<meta name="theme-color">` matches the manifest
+- [ ] Pass a basic installability audit
+- [ ] No Service Worker registration
 
 ### Phase 2 -- Minimal Service Worker
 
-**Scope:** register SW, pre-cache offline fallback, cache cleanup.
-
-- [ ] Create `sw.js` with versioned cache names.
-- [ ] Pre-cache only: offline fallback page, essential shell CSS.
-- [ ] Implement `activate` handler to purge old cache versions.
-- [ ] HTML: network-first. Vite hashed assets: cache-first. Legacy assets: network-first.
-- [ ] Default: do not cache any API response.
-- [ ] `enablePwa` flag gates SW registration.
-
-**Linked issues:** #109, #134
+- [ ] Create `sw.js` with versioned cache names
+- [ ] Pre-cache only the offline fallback and minimal shell assets
+- [ ] Purge old caches on activate
+- [ ] Keep HTML network-first and default API caching off
+- [ ] Gate registration behind `enablePwa`
 
 ### Phase 3 -- Update UX
 
-**Scope:** new-version prompt, user-initiated refresh, old-to-new upgrade verification.
-
-- [ ] Detect SW `updatefound` / `controllerchange` events.
-- [ ] Show "new version available" banner (non-blocking, dismissible).
-- [ ] On tap: send `skipWaiting` message to SW, reload.
-- [ ] Add upgrade path to release checklist: old build -> new build, verify caches purge.
-
-**Linked issues:** #109, #134
+- [ ] Detect waiting SW updates
+- [ ] Show a non-blocking update banner
+- [ ] Reload only after explicit user action
+- [ ] Verify the old-build to new-build upgrade path
 
 ### Phase 4 -- Selective runtime caching
 
-**Scope:** hashed assets, image cache evaluation, read-only API allowlist.
-
-- [ ] Cache Vite hashed assets with long TTL.
-- [ ] Evaluate image proxy caching with stale-while-revalidate, capped size.
-- [ ] If external CDN is still used, evaluate runtime caching Leaflet with versioned key.
-- [ ] Only cache read-only, non-authenticated API responses that pass an explicit allowlist.
-- [ ] Add CDN-unavailable and tile-failure smoke tests.
-
-**Linked issues:** #109, #152, #123, #125
+- [ ] Cache Vite hashed assets with long TTL
+- [ ] Evaluate image proxy caching with explicit size/age limits
+- [ ] Keep third-party tiles out of default caching unless terms and limits are clear
+- [ ] Decide separately whether standalone tool CDN assets should remain uncached, gain SRI, or be removed entirely
+- [ ] Add smoke coverage for tile failure and offline fallback behavior
 
 ---
 
@@ -220,7 +203,7 @@ The Service Worker must **not** cache the HTML shell that contains runtime confi
 
 | Issue | Topic |
 |---|---|
-| #109 | PWA / Service Worker RFC (this document) |
+| #109 | PWA / Service Worker RFC |
 | #119 | Runtime config, proxies, feature flags |
 | #123 | Browser support matrix and progressive enhancement |
 | #125 | Dependency supply chain and GitHub Actions hardening |

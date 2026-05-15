@@ -7,25 +7,16 @@
  * is the single authority for the Vue surface.
  */
 
+export { CLIENT_ID_KEY, ensureClientId } from "./clientIdentity";
+
 import type { FeedItemId } from "../types/feed";
 
-export const CLIENT_ID_KEY = "lian.clientId";
 export const READ_HISTORY_KEY = "lian.readHistory";
 export const HOME_UPDATE_PROBE_PREFIX = "lian.homeUpdateProbe";
 
 export interface ReadHistoryEntry {
   tid: FeedItemId;
   lastViewedAt?: string;
-}
-
-export function ensureClientId(storage: Storage = localStorage): string {
-  const existing = storage.getItem(CLIENT_ID_KEY);
-  if (existing) return existing;
-  const next = crypto.randomUUID
-    ? crypto.randomUUID()
-    : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
-  storage.setItem(CLIENT_ID_KEY, next);
-  return next;
 }
 
 function normalizeReadHistoryEntry(value: unknown): ReadHistoryEntry | null {
