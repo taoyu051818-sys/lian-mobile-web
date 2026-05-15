@@ -39,6 +39,10 @@ const {
 
 useVisualViewport();
 
+const tabsChrome = useFloatingChromeController({ initialPhase: "visible" });
+const tabsChromePhase = tabsChrome.phase;
+const tabsChromeStyle = tabsChrome.style;
+
 const composerChrome = useFloatingChromeController({ initialPhase: "visible" });
 const composerChromePhase = composerChrome.phase;
 const composerChromeStyle = composerChrome.style;
@@ -303,6 +307,7 @@ onMounted(async () => {
 
 onBeforeUnmount(() => {
   window.removeEventListener("scroll", checkNearBottom);
+  tabsChrome.dispose();
   composerChrome.dispose();
 });
 </script>
@@ -310,9 +315,10 @@ onBeforeUnmount(() => {
 <template>
   <section class="messages-view" aria-label="消息">
     <MessagesTabs
-      class="messages-view__chrome-tabs lian-floating-chrome lian-floating-chrome--top"
+      class="lian-floating-chrome lian-floating-chrome--top"
       data-floating-chrome="top"
-      data-floating-state="visible"
+      :data-floating-state="tabsChromePhase"
+      :style="tabsChromeStyle"
       :tabs="tabs"
       :active-tab="activeTab"
       @switch="switchTab"
@@ -377,37 +383,8 @@ onBeforeUnmount(() => {
   padding-bottom: calc(var(--space-8) + env(safe-area-inset-bottom) + var(--keyboard-inset-bottom));
 }
 
-.messages-view__chrome-tabs {
-  position: fixed;
-  top: var(--floating-bar-top-offset);
-  right: max(var(--floating-bar-side-inset), env(safe-area-inset-right));
-  left: max(var(--floating-bar-side-inset), env(safe-area-inset-left));
-  z-index: var(--floating-bar-z);
-  width: min(calc(100vw - var(--space-6)), var(--floating-bar-max-width));
-  min-height: var(--floating-bar-height);
-  margin: 0 auto;
-  padding: var(--floating-bar-padding);
-  border: 1px solid var(--glass-border);
-  border-radius: var(--floating-bar-radius);
-  background: var(--glass-bg-strong);
-  box-shadow: var(--shadow-floating);
-  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
-}
-
 .messages-view__chrome-composer {
-  position: fixed;
   bottom: calc(env(safe-area-inset-bottom, 0px) + var(--keyboard-inset-bottom));
-  right: max(var(--floating-bar-side-inset), env(safe-area-inset-right));
-  left: max(var(--floating-bar-side-inset), env(safe-area-inset-left));
-  z-index: var(--floating-bar-z);
-  width: min(calc(100vw - var(--space-6)), var(--floating-bar-max-width));
-  margin: 0 auto;
-  padding: var(--floating-bar-padding);
-  border: 1px solid var(--glass-border);
-  border-radius: var(--floating-bar-radius);
-  background: var(--glass-bg-strong);
-  box-shadow: var(--shadow-floating);
-  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
 }
 
 .messages-view__detail-overlay {
