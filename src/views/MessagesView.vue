@@ -384,7 +384,7 @@ onBeforeUnmount(() => {
 }
 
 .messages-view__chrome-composer {
-  bottom: calc(env(safe-area-inset-bottom, 0px) + var(--keyboard-inset-bottom));
+  bottom: calc(var(--floating-bar-bottom-offset) + var(--floating-bar-height) + var(--space-2) + var(--keyboard-inset-bottom, 0px));
 }
 
 .messages-view__detail-overlay {
