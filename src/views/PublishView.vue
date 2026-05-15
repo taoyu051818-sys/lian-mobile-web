@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { fetchMapV2Items } from "../api/map";
+import type { PageChromeSpec } from "../shell/page-model";
 import {
   buildPublishPayload,
   createMapV2LocationDraft,
@@ -23,6 +24,10 @@ import PublishActionBar from "./publish/PublishActionBar.vue";
 import PublishComposer from "./publish/PublishComposer.vue";
 import PublishLocationControls from "./publish/PublishLocationControls.vue";
 import PublishMetaControls from "./publish/PublishMetaControls.vue";
+
+const emit = defineEmits<{
+  chrome: [spec: PageChromeSpec];
+}>();
 
 const title = ref("");
 const body = ref("");
@@ -100,6 +105,18 @@ const postDetailUrl = computed(() => {
   if (!tid) return "";
   return `#/post/${tid}`;
 });
+
+const pageChrome = computed<PageChromeSpec>(() => ({
+  top: {
+    identity: {
+      avatarText: avatarText.value,
+      name: identityName.value,
+      meta: identityMeta.value,
+    },
+  },
+}));
+
+watch(pageChrome, (spec) => emit("chrome", spec), { deep: true });
 
 const visibilityOptions: Array<{ value: PublishVisibility; label: string }> = [
   { value: "public", label: "公开" },
@@ -288,6 +305,7 @@ function resetForm() {
 }
 
 onMounted(() => {
+  emit("chrome", pageChrome.value);
   void loadIdentity();
   void loadMapLocations();
 });
@@ -403,6 +421,7 @@ onBeforeUnmount(() => {
 }
 
 .publish-view {
+  padding-top: calc(var(--floating-bar-height) + env(safe-area-inset-top));
   padding-bottom: calc(var(--space-8) + var(--keyboard-inset-bottom));
   scroll-padding-bottom: calc(var(--space-8) + var(--keyboard-inset-bottom));
 }

@@ -19,6 +19,8 @@ const { state } = useShellChrome();
 const regionSpec = computed(() => state[props.region]);
 const isVisible = computed(() => regionSpec.value.visible !== false);
 const buttons = computed(() => regionSpec.value.buttons ?? []);
+const filters = computed(() => regionSpec.value.filters ?? []);
+const identity = computed(() => regionSpec.value.identity ?? null);
 const hasTabs = computed(() => regionSpec.value.tabs != null);
 const isSlottedTabs = computed(() => !hasTabs.value && regionSpec.value.slot === "tabs");
 
@@ -33,6 +35,12 @@ function handleTabSelect(tabId: string) {
   if (isVisible.value) {
     regionSpec.value.onTabSelect?.(tabId);
     emit("tab-select", tabId, props.region);
+  }
+}
+
+function handleFilterToggle(filterId: string) {
+  if (isVisible.value) {
+    regionSpec.value.onFilterToggle?.(filterId);
   }
 }
 </script>
@@ -72,9 +80,27 @@ function handleTabSelect(tabId: string) {
     </template>
     <template v-else>
       <div class="shell-chrome__inner">
+        <div v-if="identity" class="shell-chrome__identity" aria-label="当前身份">
+          <span class="shell-chrome__identity-avatar" aria-hidden="true">{{ identity.avatarText }}</span>
+          <span class="shell-chrome__identity-name">{{ identity.name }}</span>
+          <span v-if="identity.meta" class="shell-chrome__identity-meta">{{ identity.meta }}</span>
+        </div>
         <div class="shell-chrome__slot">
           <slot />
         </div>
+        <nav v-if="filters.length" class="shell-chrome__filters" aria-label="筛选">
+          <button
+            v-for="f in filters"
+            :key="f.id"
+            type="button"
+            class="shell-chrome__filter"
+            :class="{ 'is-active': f.active }"
+            :aria-pressed="f.active"
+            @click="handleFilterToggle(f.id)"
+          >
+            {{ f.active ? `✓ ${f.label}` : f.label }}
+          </button>
+        </nav>
         <div v-if="buttons.length" class="shell-chrome__buttons">
           <button
             v-for="btn in buttons"

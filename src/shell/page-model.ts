@@ -1,11 +1,14 @@
-import type { ChromeButtonSpec, ChromeTabSpec } from "./shell-chrome-types";
+import type { ChromeButtonSpec, ChromeFilterSpec, ChromeIdentitySpec, ChromeTabSpec } from "./shell-chrome-types";
 
 export interface PageChromeTopSpec {
   tabs?: ChromeTabSpec | null;
   buttons?: ChromeButtonSpec[];
+  filters?: ChromeFilterSpec[];
+  identity?: ChromeIdentitySpec | null;
   visible?: boolean;
   onTabSelect?: (tabId: string) => void;
   onButtonClick?: (buttonId: string) => void;
+  onFilterToggle?: (id: string) => void;
 }
 
 export interface PageChromeBottomSpec {
