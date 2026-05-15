@@ -1,4 +1,5 @@
 import { apiGet } from "./http";
+import { asBoolean, asNumber, normalizeFeedItemId as normalizeFeedItemIdNum } from "../platform/api-normalizers";
 import type {
   FeedItem,
   FeedItemCardTemplateSource,
@@ -8,7 +9,7 @@ import type {
   FeedTab,
 } from "../types/feed";
 
-const DEFAULT_TABS: FeedTab[] = [
+export const DEFAULT_TABS: FeedTab[] = [
   { id: "此刻", label: "此刻" },
   { id: "精选", label: "精选" },
 ];
@@ -73,20 +74,6 @@ function normalizeFeedContentType(value: unknown): string {
   return readableText(value).toLowerCase();
 }
 
-function normalizeFeedItemId(value: unknown): number {
-  const numericValue = typeof value === "number" ? value : Number(value);
-  return Number.isFinite(numericValue) ? numericValue : 0;
-}
-
-function normalizeBoolean(value: unknown): boolean {
-  return value === true || value === "true" || value === 1 || value === "1";
-}
-
-function normalizeCount(value: unknown): number {
-  const numericValue = typeof value === "number" ? value : Number(value);
-  return Number.isFinite(numericValue) ? Math.max(0, numericValue) : 0;
-}
-
 export function normalizeFeedCardTemplate(item: Pick<FeedItem, "cover" | "contentType" | "presentationIntent" | "cardTemplate">): {
   cardTemplate: FeedPresentationIntent;
   cardTemplateSource: FeedItemCardTemplateSource;
@@ -131,7 +118,7 @@ export function normalizeFeedItem(value: unknown): FeedItem | null {
   });
 
   return {
-    tid: normalizeFeedItemId(record.tid || record.id),
+    tid: normalizeFeedItemIdNum(record.tid || record.id),
     title: readableText(record.title) || "未命名内容",
     bodyPreview: readableText(record.bodyPreview || record.summary || record.excerpt || record.body),
     cover,
@@ -140,8 +127,8 @@ export function normalizeFeedItem(value: unknown): FeedItem | null {
     source: typeof record.source === "object" && record.source ? record.source as FeedItem["source"] : undefined,
     timeLabel: readableText(record.timeLabel || record.timeAgo) || "刚刚",
     timestampISO: readableText(record.timestampISO || record.timestamp || record.createdAt),
-    likeCount: normalizeCount(record.likeCount || record.likes),
-    liked: normalizeBoolean(record.liked),
+    likeCount: Math.max(0, asNumber(record.likeCount || record.likes, 0)),
+    liked: asBoolean(record.liked),
     locationArea: readableText(record.locationArea || record.placeLabel || record.location) || "校园",
     contentType,
     presentationIntent,

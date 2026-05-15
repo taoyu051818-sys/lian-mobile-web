@@ -1,7 +1,8 @@
 import { computed, type ComputedRef, watch } from "vue";
+import { actorAvatarText, actorAvatarUrl, actorDisplayName } from "../../utils/actor";
 import { sanitizeHtml } from "../../utils/html";
-import type { DisplayActor } from "../../types/feed";
-import type { PlaceSheet, PlaceStatus } from "../../types/place";
+import { placeStatusLabel } from "../../utils/placeStatusLabel";
+import type { PlaceSheet } from "../../types/place";
 import type { PostDetail } from "../../types/post";
 import { formatTimestampLabel } from "../../utils/time";
 
@@ -44,18 +45,6 @@ export function usePostDetailPresentation(post: ComputedRef<PostDetail | null>, 
     timeLabel,
     placeStatusText,
   };
-}
-
-function actorDisplayName(actor?: DisplayActor | null) {
-  return actor?.displayName || actor?.username || actor?.name || "";
-}
-
-function actorAvatarUrl(actor?: DisplayActor | null) {
-  return actor?.avatarUrl || "";
-}
-
-function actorAvatarText(actor?: DisplayActor | null, labelFallback = "") {
-  return actor?.avatarText || labelFallback.slice(0, 1) || "";
 }
 
 function normalizePostTag(value: string) {
@@ -128,14 +117,3 @@ function stripDecorativeContentFromHtml(value: string) {
     .trim();
 }
 
-function placeStatusLabel(status?: PlaceStatus) {
-  const labels: Record<PlaceStatus, string> = {
-    confirmed: "已确认",
-    pending: "待确认",
-    disputed: "有争议",
-    expired: "可能过期",
-    "ai-organized": "AI 整理",
-    official: "官方",
-  };
-  return status ? labels[status] || "地点" : "地点";
-}
