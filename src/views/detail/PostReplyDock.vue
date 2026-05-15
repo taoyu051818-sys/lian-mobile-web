@@ -1,6 +1,4 @@
 <script setup lang="ts">
-type FloatingChromePhase = "visible" | "exiting" | "hidden" | "entering" | "progress";
-
 const props = defineProps<{
   liked?: boolean;
   saved?: boolean;
@@ -11,8 +9,6 @@ const props = defineProps<{
   replyExpanded?: boolean;
   replyContent?: string;
   replyIdentityLabel?: string;
-  chromePhase?: FloatingChromePhase;
-  chromeStyle?: Record<string, string>;
 }>();
 
 const emit = defineEmits<{
@@ -29,8 +25,6 @@ const emit = defineEmits<{
     class="post-reply-dock lian-floating-chrome lian-floating-chrome--bottom"
     :class="{ 'is-expanded': replyExpanded }"
     data-floating-chrome="bottom"
-    :data-floating-state="chromePhase"
-    :style="chromeStyle"
     @submit.prevent="emit('submitReply')"
     @click.stop
   >

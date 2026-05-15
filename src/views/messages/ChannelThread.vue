@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { InlineError, LianButton } from "../../ui";
-import { actorAvatarText, actorDisplayName } from "../../utils/actor";
+import { actorAvatarText, actorDisplayName } from "../../domain/actor";
 import type { ChannelMessage, ChannelMessageActor } from "../../types/messages";
 import { formatRelativeTime } from "../../utils/time";
 

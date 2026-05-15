@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { InlineError, TrustBadge } from "../../ui";
-import { actorDisplayName } from "../../utils/actor";
+import { actorDisplayName } from "../../domain/actor";
 import type { NotificationItem } from "../../types/messages";
 import { formatRelativeTime } from "../../utils/time";
 

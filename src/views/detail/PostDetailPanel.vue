@@ -20,19 +20,13 @@ import {
 } from "./reportFlow";
 import { usePostDetailPresentation } from "./usePostDetailPresentation";
 
-type FloatingChromePhase = "visible" | "exiting" | "hidden" | "entering" | "progress";
-
 const props = withDefaults(defineProps<{
   post: PostDetail | null;
   loading?: boolean;
   error?: string;
-  chromePhase?: FloatingChromePhase;
-  chromeStyle?: Record<string, string>;
 }>(), {
   loading: false,
   error: "",
-  chromePhase: "visible",
-  chromeStyle: () => ({}),
 });
 
 const emit = defineEmits<{
@@ -291,8 +285,6 @@ async function submitReply() {
       :avatar-url="authorAvatarUrl"
       :author-initial="authorInitial"
       :has-author-identity="hasAuthorIdentity"
-      :chrome-phase="chromePhase"
-      :chrome-style="chromeStyle"
       @close="emit('close')"
       @share="handleShare"
     />
@@ -369,8 +361,6 @@ async function submitReply() {
       :reply-expanded="replyExpanded"
       :reply-content="replyContent"
       :reply-identity-label="replyIdentityLabel"
-      :chrome-phase="chromePhase"
-      :chrome-style="chromeStyle"
       @like="handleLike"
       @save="handleSave"
       @submit-reply="submitReply"

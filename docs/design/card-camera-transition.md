@@ -84,7 +84,7 @@ The first implementation stage uses a transition overlay (quarantined v1 scaffol
 
 - `useFeedDetail.ts` owns detail data lifecycle, history/popstate, close orchestration (`closeDetailWithCardify`), and chrome handoff.
 - `FeedView.vue` still owns the v1 card overlay DOM, the `startCardTransition` injection (rAF + setTimeout scaffolding), and scoped card-transition CSS.
-- Floating chrome lifecycle exists (phase controller in `useFloatingChromeController`), but visual motion remains suppressed by the no-motion CSS contract (`--floating-chrome-motion-duration: 0ms`).
-- Visual chrome restoration is a serial follow-up after runtime timer cleanup (see D-12 in motion-contract.md).
+- Chrome visibility is declarative: `FeedView` emits `PageChromeSpec` with `autoHideOnDetail`, and the shell's `applyPageChrome` handles hiding/showing chrome.
+- The old floating chrome phase controller (`useFloatingChromeController`) has been retired. Chrome visibility is now driven by the shell's `applyPageChrome` and `ShellChrome`'s `data-visible` attribute.
 
 Future stages should replace pseudo-elements with real DOM morph targets and connect values from the selected feed item rather than static placeholder text.

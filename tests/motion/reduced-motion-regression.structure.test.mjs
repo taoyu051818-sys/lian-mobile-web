@@ -50,16 +50,9 @@ test("floating-chrome reduced-motion enforces transition:none, transform:none, f
   assert.match(rmBlock, /filter:\s*none\s*!/);
 });
 
-test("floating-chrome reduced-motion sets hidden states to opacity:0", () => {
+test("floating-chrome CSS does not use data-floating-state selectors (declarative pattern)", () => {
   const css = read("src/styles/floating-chrome.css");
-  const rmBlock = css.slice(css.indexOf("@media (prefers-reduced-motion: reduce)"));
-  assert.match(rmBlock, /\[data-floating-state="hidden"\][\s\S]*?opacity:\s*0\s*!/);
-});
-
-test("floating-chrome reduced-motion sets visible states to opacity:1", () => {
-  const css = read("src/styles/floating-chrome.css");
-  const rmBlock = css.slice(css.indexOf("@media (prefers-reduced-motion: reduce)"));
-  assert.match(rmBlock, /\[data-floating-state="visible"\][\s\S]*?opacity:\s*1\s*!/);
+  assert.doesNotMatch(css, /\[data-floating-state/);
 });
 
 // --- Shell chrome CSS reduced-motion ---
