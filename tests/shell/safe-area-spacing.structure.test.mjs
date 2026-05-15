@@ -108,7 +108,7 @@ test("ChannelThread bottom padding accounts for safe-area-inset-bottom", () => {
 
 // --- Map view: post detail safe-area clearance ---
 
-test("MapView post-detail panel uses safe-area-inset-bottom for clearance", () => {
-  const src = read("src/views/MapView.vue");
+test("MapLeafletView post-detail panel uses safe-area-inset-bottom for clearance", () => {
+  const src = read("src/views/MapLeafletView.vue");
   assert.match(src, /env\(safe-area-inset-bottom\)/);
 });

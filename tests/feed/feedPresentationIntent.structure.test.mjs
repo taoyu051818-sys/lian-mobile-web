@@ -1,4 +1,5 @@
-import { describe, expect, it } from "vitest";
+import test from "node:test";
+import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -8,30 +9,28 @@ const feedTypeSource = fs.readFileSync(path.join(repoRoot, "src/types/feed.ts"),
 const feedApiSource = fs.readFileSync(path.join(repoRoot, "src/api/feed.ts"), "utf8");
 const feedItemCardSource = fs.readFileSync(path.join(repoRoot, "src/views/feed/FeedItemCard.vue"), "utf8");
 
-describe("Feed presentationIntent contract", () => {
-  it("types the normalized card template fields", () => {
-    expect(feedTypeSource).toMatch(/export type FeedPresentationIntent = "image" \| "text" \| "activity" \| "place" \| "merchant" \| "help";/);
-    expect(feedTypeSource).toMatch(/export type FeedItemCardTemplateSource = "server" \| "content-type" \| "cover-fallback";/);
-    expect(feedTypeSource).toMatch(/presentationIntent\?: FeedPresentationIntent \| string \| null;/);
-    expect(feedTypeSource).toMatch(/cardTemplate\?: FeedPresentationIntent \| null;/);
-    expect(feedTypeSource).toMatch(/cardTemplateSource\?: FeedItemCardTemplateSource;/);
-  });
+test("Feed presentationIntent: types the normalized card template fields", () => {
+  assert.match(feedTypeSource, /export type FeedPresentationIntent = "image" \| "text" \| "activity" \| "place" \| "merchant" \| "help";/);
+  assert.match(feedTypeSource, /export type FeedItemCardTemplateSource = "server" \| "content-type" \| "cover-fallback";/);
+  assert.match(feedTypeSource, /presentationIntent\?: FeedPresentationIntent \| string \| null;/);
+  assert.match(feedTypeSource, /cardTemplate\?: FeedPresentationIntent \| null;/);
+  assert.match(feedTypeSource, /cardTemplateSource\?: FeedItemCardTemplateSource;/);
+});
 
-  it("normalizes card templates in the feed adapter before rendering", () => {
-    expect(feedApiSource).toMatch(/export function normalizeFeedCardTemplate\(/);
-    expect(feedApiSource).toMatch(/const normalizedServerTemplate = normalizeFeedPresentationIntent\(item\.cardTemplate\) \|\| normalizeFeedPresentationIntent\(item\.presentationIntent\);/);
-    expect(feedApiSource).toMatch(/cardTemplateSource: "content-type"/);
-    expect(feedApiSource).toMatch(/cardTemplate: item\.cover \? "image" : "text"/);
-    expect(feedApiSource).toMatch(/items: Array\.isArray\(data\.items\)/);
-    expect(feedApiSource).toMatch(/normalizeFeedItem\(item\)/);
-  });
+test("Feed presentationIntent: normalizes card templates in the feed adapter before rendering", () => {
+  assert.match(feedApiSource, /export function normalizeFeedCardTemplate\(/);
+  assert.match(feedApiSource, /const normalizedServerTemplate = normalizeFeedPresentationIntent\(item\.cardTemplate\) \|\| normalizeFeedPresentationIntent\(item\.presentationIntent\);/);
+  assert.match(feedApiSource, /cardTemplateSource: "content-type"/);
+  assert.match(feedApiSource, /cardTemplate: item\.cover \? "image" : "text"/);
+  assert.match(feedApiSource, /items: Array\.isArray\(data\.items\)/);
+  assert.match(feedApiSource, /normalizeFeedItem\(item\)/);
+});
 
-  it("keeps FeedItemCard on normalized template inputs and safe fallback rendering", () => {
-    expect(feedItemCardSource).toMatch(/function normalizePresentationIntent\(value: FeedItem\["cardTemplate"\] \| FeedItem\["presentationIntent"\]\): CardTemplate \| null/);
-    expect(feedItemCardSource).toMatch(/const normalizedCardTemplate = computed\(\(\) => normalizePresentationIntent\(props\.item\.cardTemplate\)\);/);
-    expect(feedItemCardSource).toMatch(/if \(normalizedCardTemplate\.value\) return normalizedCardTemplate\.value;/);
-    expect(feedItemCardSource).toMatch(/return coverUrl\.value \? "image" : "text";/);
-    expect(feedItemCardSource).not.toMatch(/const searchText = computed/);
-    expect(feedItemCardSource).not.toMatch(/raw\.includes\(/);
-  });
+test("Feed presentationIntent: keeps FeedItemCard on normalized template inputs and safe fallback rendering", () => {
+  assert.match(feedItemCardSource, /function normalizePresentationIntent\(value: FeedItem\["cardTemplate"\] \| FeedItem\["presentationIntent"\]\): CardTemplate \| null/);
+  assert.match(feedItemCardSource, /const normalizedCardTemplate = computed\(\(\) => normalizePresentationIntent\(props\.item\.cardTemplate\)\);/);
+  assert.match(feedItemCardSource, /if \(normalizedCardTemplate\.value\) return normalizedCardTemplate\.value;/);
+  assert.match(feedItemCardSource, /return coverUrl\.value \? "image" : "text";/);
+  assert.doesNotMatch(feedItemCardSource, /const searchText = computed/);
+  assert.doesNotMatch(feedItemCardSource, /raw\.includes\(/);
 });

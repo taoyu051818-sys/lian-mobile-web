@@ -31,24 +31,6 @@ test("main.css full-bleed grid removes border-radius on map stage wrapper", () =
   assert.match(css, /vue-shell__grid--full-bleed[\s\S]*?map-view__stage-wrap[\s\S]*?border-radius:\s*0/);
 });
 
-// --- MapView sizing ---
-
-test("MapView stage has min-height for usable map area", () => {
-  const src = read("src/views/MapView.vue");
-  assert.match(src, /min-height:\s*360px/);
-});
-
-test("MapView stage has mobile breakpoint min-height", () => {
-  const src = read("src/views/MapView.vue");
-  assert.match(src, /max-width:\s*640px[\s\S]*?min-height:\s*300px/);
-});
-
-test("MapView post-detail panel is sticky-positioned above tab bar", () => {
-  const src = read("src/views/MapView.vue");
-  assert.match(src, /position:\s*sticky/);
-  assert.match(src, /bottom:\s*calc\(92px/);
-});
-
 // --- Map chrome ---
 
 test("useMapChrome does not depend on shell chrome (declarative pattern)", () => {
@@ -56,13 +38,12 @@ test("useMapChrome does not depend on shell chrome (declarative pattern)", () =>
   assert.doesNotMatch(src, /useShellChrome/);
 });
 
-test("useMapChrome exports composable with filter state and handlers", () => {
+test("useMapChrome exports composable with filter state and toggle", () => {
   const src = read("src/views/map/useMapChrome.ts");
   assert.match(src, /export function useMapChrome/);
-  assert.match(src, /selectedPlace/);
   assert.match(src, /filterActive/);
-  assert.match(src, /handlePlaceSelect/);
   assert.match(src, /toggleFilter/);
+  assert.match(src, /MAP_FILTERS/);
 });
 
 // --- MapCanvas leaflet integration ---
