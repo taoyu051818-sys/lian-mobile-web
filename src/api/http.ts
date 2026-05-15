@@ -3,12 +3,14 @@ import { getApiBase } from "../config/runtime-config";
 export class LianApiError extends Error {
   status: number;
   code: string;
+  retryAfterSeconds: number | null;
 
-  constructor(message: string, status = 0, code = "") {
+  constructor(message: string, status = 0, code = "", retryAfterSeconds: number | null = null) {
     super(message);
     this.name = "LianApiError";
     this.status = status;
     this.code = code;
+    this.retryAfterSeconds = retryAfterSeconds;
   }
 }
 
@@ -32,6 +34,21 @@ function asRecord(value: unknown): JsonRecord {
   return value && typeof value === "object" && !Array.isArray(value) ? value as JsonRecord : {};
 }
 
+function parseRetryAfterSeconds(value: string | null): number | null {
+  if (!value) return null;
+
+  const numericSeconds = Number(value);
+  if (Number.isFinite(numericSeconds) && numericSeconds > 0) {
+    return Math.ceil(numericSeconds);
+  }
+
+  const retryAt = Date.parse(value);
+  if (Number.isNaN(retryAt)) return null;
+
+  const secondsUntilRetry = Math.ceil((retryAt - Date.now()) / 1000);
+  return secondsUntilRetry > 0 ? secondsUntilRetry : null;
+}
+
 function extractApiError(data: unknown, status: number) {
   const record = asRecord(data);
   if (typeof record.error === "string" && record.error.trim()) {
@@ -47,6 +64,10 @@ function extractApiError(data: unknown, status: number) {
     return { message: statusRecord.message.trim(), code };
   }
 
+  if (status === 429) {
+    return { message: "发送太频繁，请稍后再试。", code };
+  }
+
   return { message: `请求失败（状态码 ${status}）`, code };
 }
 
@@ -58,7 +79,12 @@ export async function apiGet<T>(path: string, options: RequestInit = {}): Promis
   const data = await response.json().catch(() => ({} as JsonRecord));
   if (!response.ok) {
     const error = extractApiError(data, response.status);
-    throw new LianApiError(error.message, response.status, error.code);
+    throw new LianApiError(
+      error.message,
+      response.status,
+      error.code,
+      parseRetryAfterSeconds(response.headers.get("retry-after")),
+    );
   }
   return data as T;
 }
