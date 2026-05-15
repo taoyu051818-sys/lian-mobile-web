@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { placeTypeLabel } from "../../utils/placeTypeLabel";
+import { placeTypeLabel } from "../../domain/place";
 import { InlineError, LianButton, LocationChip } from "../../ui";
 import type { MapLocation } from "../../types/map";
 

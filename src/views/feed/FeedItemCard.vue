@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, ref, watch } from "vue";
+import { computed, nextTick, onBeforeUnmount, ref, watch } from "vue";
 import { togglePostLike } from "../../api/posts";
-import { actorAvatarText, actorAvatarUrl, actorDisplayName } from "../../utils/actor";
+import { actorAvatarText, actorAvatarUrl, actorDisplayName } from "../../domain/actor";
 import type { FeedItem, FeedItemId, FeedPresentationIntent } from "../../types/feed";
 
 type CardTemplate = FeedPresentationIntent;
@@ -68,6 +68,27 @@ const templateMark = computed(() => ({
 })[cardTemplate.value]);
 
 const likeLabel = computed(() => `${liked.value ? "取消喜欢" : "喜欢"}，当前 ${likeCount.value} 个喜欢`);
+
+const bodyPreview = computed(() => props.item.bodyPreview || "");
+const bodyExpanded = ref(false);
+const needsBodyClamp = ref(false);
+const bodyPreviewEl = ref<HTMLParagraphElement | null>(null);
+
+function checkBodyClamp() {
+  const el = bodyPreviewEl.value;
+  if (!el) { needsBodyClamp.value = false; return; }
+  needsBodyClamp.value = el.scrollHeight > el.clientHeight + 2;
+}
+
+function toggleBody() {
+  bodyExpanded.value = !bodyExpanded.value;
+  if (!bodyExpanded.value) nextTick(checkBodyClamp);
+}
+
+watch(() => props.item.tid, () => {
+  bodyExpanded.value = false;
+  nextTick(checkBodyClamp);
+});
 
 watch(() => props.item, (item) => {
   liked.value = Boolean(item.liked);
@@ -233,6 +254,20 @@ onBeforeUnmount(() => {
 
       <h3 :title="title" data-motion-role="title">{{ title }}</h3>
 
+      <template v-if="cardTemplate === 'text' && bodyPreview">
+        <p
+          ref="bodyPreviewEl"
+          class="feed-item-card__body-preview"
+          :class="{ 'is-expanded': bodyExpanded }"
+        >{{ bodyPreview }}</p>
+        <button
+          v-if="needsBodyClamp || bodyExpanded"
+          class="feed-item-card__body-toggle"
+          type="button"
+          @click.stop="toggleBody"
+        >{{ bodyExpanded ? '收起' : '展开' }}</button>
+      </template>
+
       <footer class="feed-item-card__footer" data-motion-role="meta-row">
         <div class="feed-item-card__author" data-motion-role="author">
           <img v-if="authorAvatarUrl" :src="authorAvatarUrl" :alt="authorName" loading="lazy" data-motion-role="avatar" draggable="false" />
@@ -395,21 +430,42 @@ onBeforeUnmount(() => {
 }
 
 .feed-item-card h3 {
-  display: -webkit-box;
-  overflow: hidden;
-  min-height: calc(15px * 1.34 * 2);
   margin: 0;
   color: var(--lian-ink);
   font-size: 15px;
   line-height: 1.34;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
 }
 
 .feed-item-card--text h3 {
-  min-height: calc(16px * 1.42 * 2);
   font-size: 16px;
   line-height: 1.42;
+}
+
+.feed-item-card__body-preview {
+  display: -webkit-box;
+  overflow: hidden;
+  margin: 0;
+  color: var(--lian-muted);
+  font-size: 13px;
+  line-height: 1.5;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+}
+
+.feed-item-card__body-preview.is-expanded {
+  display: block;
+  -webkit-line-clamp: unset;
+}
+
+.feed-item-card__body-toggle {
+  justify-self: start;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--lian-primary-deep);
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
 }
 
 .feed-item-card__footer {

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { SafeHtml } from "../../ui";
-import { actorDisplayName } from "../../utils/actor";
+import { actorDisplayName } from "../../domain/actor";
 import type { PostReply } from "../../types/post";
 import { formatRelativeTime } from "../../utils/time";
 

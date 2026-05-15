@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { InlineError, LianButton, SafeHtml } from "../../ui";
-import { actorDisplayName } from "../../utils/actor";
+import { actorDisplayName } from "../../domain/actor";
 import type { PlaceSheet, PlaceStatus } from "../../types/place";
 import { formatRelativeTime } from "../../utils/time";
 

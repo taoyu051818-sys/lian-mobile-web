@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue";
 import { GlassPanel, InlineError, LianButton, LocationChip, TrustBadge } from "../ui";
-import { actorDisplayName } from "../utils/actor";
-import { placeStatusLabel } from "../utils/placeStatusLabel";
+import { actorDisplayName } from "../domain/actor";
+import { placeStatusLabel } from "../domain/place";
 import { formatRelativeTime } from "../utils/time";
 import type { MapBounds, MapLocation } from "../types/map";
 import PostDetailPanel from "./detail/PostDetailPanel.vue";
