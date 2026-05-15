@@ -6,6 +6,7 @@ import {
   getRuntimeConfig,
   getApiBase,
   getImageProxyBase,
+  buildApiUrl,
 } from "../../src/config/runtime-config.ts";
 
 // ---------------------------------------------------------------------------
@@ -123,6 +124,25 @@ test("getRuntimeConfig allows empty apiBaseUrl (same-origin)", () => {
   clearWindow();
 });
 
+test("buildApiUrl prefixes root-relative API paths with the injected base", () => {
+  setWindow({ LIAN_API_BASE_URL: "https://api.example.com" });
+  assert.equal(buildApiUrl("/api/me"), "https://api.example.com/api/me");
+  clearWindow();
+});
+
+test("buildApiUrl keeps same-origin root-relative paths when api base is empty", () => {
+  setWindow({});
+  assert.equal(buildApiUrl("/api/me"), "/api/me");
+  clearWindow();
+});
+
+test("buildApiUrl passes through absolute and non-root-relative paths", () => {
+  setWindow({ LIAN_API_BASE_URL: "https://api.example.com" });
+  assert.equal(buildApiUrl("https://cdn.example.com/image.jpg"), "https://cdn.example.com/image.jpg");
+  assert.equal(buildApiUrl("api/me"), "api/me");
+  clearWindow();
+});
+
 // ---------------------------------------------------------------------------
 // Non-dev rejection: malformed and missing values
 // ---------------------------------------------------------------------------
@@ -172,6 +192,7 @@ test("accessor returns empty strings when window is undefined (SSR)", () => {
   clearWindow();
   // getApiBase should not throw — same-origin default
   assert.equal(getApiBase(), "");
+  assert.equal(buildApiUrl("/api/me"), "/api/me");
   // getImageProxyBase throws because empty is rejected outside dev
   assert.throws(() => getImageProxyBase(), /LIAN_IMAGE_PROXY_BASE_URL/);
 });

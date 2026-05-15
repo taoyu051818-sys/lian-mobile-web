@@ -1,4 +1,4 @@
-import { getApiBase } from "../config/runtime-config";
+import { buildApiUrl } from "../config/runtime-config";
 
 export class LianApiError extends Error {
   status: number;
@@ -20,6 +20,7 @@ export function withApiBase(path: string) {
   if (/^https?:\/\//i.test(path)) return path;
   return path.startsWith("/") ? `${getApiBase()}${path}` : path;
 }
+
 
 function normalizeJsonOptions(options: RequestInit = {}) {
   if (!options.body) return options;
@@ -88,7 +89,7 @@ async function apiRequest<T>(
   options: RequestInit = {},
   fallbackMessage = "",
 ): Promise<T> {
-  const response = await fetch(withApiBase(path), {
+  const response = await fetch(buildApiUrl(path), {
     credentials: "include",
     ...normalizeJsonOptions(options),
   });
