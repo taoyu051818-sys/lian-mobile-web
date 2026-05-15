@@ -11,15 +11,14 @@ const feedListSource = fs.readFileSync(path.join(repoRoot, "src/views/feed/FeedL
 const sentinelComponentSource = fs.readFileSync(path.join(repoRoot, "src/views/feed/FeedAutoLoadSentinel.vue"), "utf8");
 const sentinelComposableSource = fs.readFileSync(path.join(repoRoot, "src/composables/useAutoLoadSentinel.ts"), "utf8");
 
-test("FeedView delegates top tabs to shell chrome via typed tabs spec", () => {
-  assert.match(feedViewSource, /import \{ useShellChrome \} from "\.\.\/shell\/useShellChrome";/);
-  assert.match(feedViewSource, /const \{ setRegion \} = useShellChrome\(\);/);
+test("FeedView delegates top tabs to shell chrome via declarative pageChrome spec", () => {
+  assert.match(feedViewSource, /PageChromeSpec/);
+  assert.match(feedViewSource, /const pageChrome = computed<PageChromeSpec>/);
   assert.match(feedViewSource, /kind:\s*"tabs"/);
   assert.match(feedViewSource, /items:\s*tabs\.value/);
   assert.match(feedViewSource, /activeKey:\s*activeTab\.value/);
   assert.match(feedViewSource, /onTabSelect:\s*switchTab/);
-  assert.match(feedViewSource, /tabs:\s*null/);
-  assert.doesNotMatch(feedViewSource, /<Teleport/);
+  assert.doesNotMatch(feedViewSource, /useShellChrome/);
 });
 
 test("FeedView delegates content list to FeedList and FeedLoadMore", () => {

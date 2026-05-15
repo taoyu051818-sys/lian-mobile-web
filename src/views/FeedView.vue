@@ -1,9 +1,8 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { DEFAULT_TABS, fetchFeed } from "../api/feed";
-import { useFloatingChromeController } from "../motion/floatingChrome";
 import { prefersReducedMotion } from "../motion/useReducedMotion";
-import { useShellChrome } from "../shell/useShellChrome";
+import type { PageChromeSpec } from "../shell/page-model";
 import type { FeedItem, FeedItemId, FeedTab } from "../types/feed";
 import { InlineError } from "../ui";
 import PostDetailPanel from "./detail/PostDetailPanel.vue";
@@ -19,11 +18,10 @@ const SWIPE_VERTICAL_GUARD = 52;
 const DETAIL_DRAG_EDGE_GUARD = 28;
 const CARDIFY_DISTANCE = 320;
 const DRAG_STAGE_MIN_SCALE = 0.9;
-const CHROME_EXIT_DISTANCE = 0;
 const RETURN_ANIMATION_MS = 380;
 
 const emit = defineEmits<{
-  chrome: [hidden: boolean];
+  chrome: [spec: PageChromeSpec];
 }>();
 
 const tabs = ref<FeedTab[]>(DEFAULT_TABS);
@@ -38,13 +36,6 @@ const cardTransition = ref<CardTransitionSnapshot | null>(null);
 const cardTransitionActive = ref(false);
 const viewportWidth = ref(390);
 const viewportHeight = ref(844);
-
-const { setRegion } = useShellChrome();
-const feedTabsChrome = useFloatingChromeController({ initialPhase: "visible" });
-const detailChrome = useFloatingChromeController({ initialPhase: "hidden" });
-const detailChromePhase = detailChrome.phase;
-const detailChromeStyle = detailChrome.style;
-const feedTabsChromeState = feedTabsChrome.phase;
 
 function updateViewport() {
   if (typeof window === "undefined") return;
@@ -101,9 +92,6 @@ const {
   openItem, retryDetail, closeDetail,
   closeDetailWithCardify, resetDetailState,
 } = useFeedDetail({
-  feedTabsChrome,
-  detailChrome,
-  emitChrome: (hidden) => emit("chrome", hidden),
   // QUARANTINE: v1 card-camera overlay (issue #85 / #274). Temporary scaffolding; do not extend.
   startCardTransition(payload) {
     if (!payload || typeof window === "undefined" || prefersReducedMotion()) return;
@@ -149,6 +137,22 @@ const canAutoLoadMore = computed(() => (
   && !loadingMore.value
   && !detailOpen.value
 ));
+
+// Declarative chrome: emit spec whenever relevant state changes.
+const pageChrome = computed<PageChromeSpec>(() => ({
+  top: {
+    tabs: {
+      kind: "tabs",
+      items: tabs.value,
+      activeKey: activeTab.value,
+      ariaLabel: "信息分类",
+    },
+    onTabSelect: switchTab,
+  },
+  autoHideOnDetail: detailOpen.value,
+}));
+
+watch(pageChrome, (spec) => emit("chrome", spec), { deep: true });
 
 async function loadFeed(reset = false) {
   if (loading.value || loadingMore.value) return;
@@ -216,15 +220,11 @@ function isInsideDetailDragBand(x: number) {
   return x >= DETAIL_DRAG_EDGE_GUARD && x <= viewportWidth.value - DETAIL_DRAG_EDGE_GUARD;
 }
 
-function abortDetailDrag(event: PointerEvent, restoreChrome = true) {
+function abortDetailDrag(event: PointerEvent) {
   detailDragging.value = false;
   detailPointerId.value = null;
   detailGestureLocked.value = null;
   detailDragX.value = 0;
-  if (restoreChrome && detailOpen.value) {
-    detailChrome.show();
-    emit("chrome", true);
-  }
   (event.currentTarget as HTMLElement | null)?.releasePointerCapture?.(event.pointerId);
 }
 
@@ -239,7 +239,6 @@ function onDetailPointerDown(event: PointerEvent) {
   detailDragging.value = true;
   detailPointerId.value = event.pointerId;
   detailGestureLocked.value = null;
-  detailChrome.setProgress(1);
   (event.currentTarget as HTMLElement | null)?.setPointerCapture?.(event.pointerId);
 }
 
@@ -250,7 +249,7 @@ function onDetailPointerMove(event: PointerEvent) {
   if (!detailGestureLocked.value) {
     if (Math.abs(deltaY) > SWIPE_VERTICAL_GUARD && Math.abs(deltaY) > Math.abs(deltaX)) {
       detailGestureLocked.value = "vertical";
-      abortDetailDrag(event, true);
+      abortDetailDrag(event);
       return;
     }
     if (Math.abs(deltaX) > 8 && Math.abs(deltaX) > Math.abs(deltaY) * 1.05) {
@@ -261,7 +260,6 @@ function onDetailPointerMove(event: PointerEvent) {
   event.preventDefault();
   const nextDragX = Math.max(-CARDIFY_DISTANCE, Math.min(CARDIFY_DISTANCE, deltaX));
   detailDragX.value = nextDragX;
-  detailChrome.setProgress(1 - Math.min(1, Math.abs(nextDragX) / CARDIFY_DISTANCE));
 }
 
 function onDetailPointerUp(event: PointerEvent) {
@@ -276,50 +274,22 @@ function onDetailPointerUp(event: PointerEvent) {
     return;
   }
   detailDragX.value = 0;
-  detailChrome.show();
-  emit("chrome", true);
 }
 
 function onDetailPointerCancel(event: PointerEvent) {
   if (detailPointerId.value !== event.pointerId) return;
-  abortDetailDrag(event, true);
+  abortDetailDrag(event);
 }
 
 onMounted(() => {
   updateViewport();
-  setRegion("top", {
-    tabs: {
-      kind: "tabs",
-      items: tabs.value,
-      activeKey: activeTab.value,
-      ariaLabel: "信息分类",
-      floatingState: feedTabsChromeState.value,
-    },
-    onTabSelect: switchTab,
-    visible: true,
-  });
   window.addEventListener("resize", updateViewport);
-  emit("chrome", false);
+  emit("chrome", pageChrome.value);
   void loadFeed(true);
-});
-
-watch([tabs, activeTab, feedTabsChromeState], () => {
-  setRegion("top", {
-    tabs: {
-      kind: "tabs",
-      items: tabs.value,
-      activeKey: activeTab.value,
-      ariaLabel: "信息分类",
-      floatingState: feedTabsChromeState.value,
-    },
-  });
 });
 
 onBeforeUnmount(() => {
   cancelCardTransitionTimers();
-  setRegion("top", { tabs: null, onTabSelect: null, visible: false });
-  feedTabsChrome.dispose();
-  detailChrome.dispose();
   window.removeEventListener("resize", updateViewport);
 });
 </script>
@@ -368,8 +338,6 @@ onBeforeUnmount(() => {
       :post="selectedPost"
       :loading="detailLoading"
       :error="detailError"
-      :chrome-phase="detailChromePhase"
-      :chrome-style="detailChromeStyle"
       @close="closeDetail"
       @retry="retryDetail"
       @pointerdown="onDetailPointerDown"

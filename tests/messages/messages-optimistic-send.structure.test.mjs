@@ -170,9 +170,10 @@ test("ChannelThread preserves bottom padding clearing fixed composer", () => {
   assert.match(threadSource, /env\(safe-area-inset-bottom\)/);
 });
 
-test("MessagesView preserves floating chrome controller lifecycle", () => {
-  assert.match(viewSource, /useFloatingChromeController/);
-  assert.match(viewSource, /composerChrome\.dispose\(\)/);
+test("MessagesView uses declarative page chrome spec", () => {
+  assert.match(viewSource, /PageChromeSpec/);
+  assert.match(viewSource, /pageChrome/);
+  assert.doesNotMatch(viewSource, /useFloatingChromeController/);
 });
 
 test("ChannelComposer preserves compact state with button radius", () => {

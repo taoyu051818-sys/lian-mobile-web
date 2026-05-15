@@ -29,12 +29,12 @@ test("MessagesView composer bottom includes keyboard-inset-bottom token", () => 
   assert.match(viewSource, /--keyboard-inset-bottom/);
 });
 
-test("MessagesView composer bottom calc adds keyboard inset to safe area", () => {
+test("MessagesView composer bottom calc includes keyboard inset", () => {
   const composerMatch = viewSource.match(/\.messages-view__chrome-composer\s*\{[^}]*bottom:\s*([^;]+)/);
   assert.ok(composerMatch, "composer should have bottom property");
   const bottom = composerMatch[1];
-  assert.match(bottom, /safe-area-inset-bottom/);
   assert.match(bottom, /--keyboard-inset-bottom/);
+  assert.match(bottom, /--floating-bar/);
 });
 
 // --- Message list padding accounts for raised composer ---
@@ -51,8 +51,8 @@ test("ChannelThread pane padding includes keyboard-inset-bottom", () => {
 
 // --- Preserved existing contracts ---
 
-test("MessagesView preserves composer safe-area-inset-bottom in bottom calc", () => {
-  assert.match(viewSource, /env\(safe-area-inset-bottom,\s*0px\)/);
+test("MessagesView preserves safe-area-inset-bottom in padding", () => {
+  assert.match(viewSource, /env\(safe-area-inset-bottom\)/);
 });
 
 test("MessagesView preserves safe-area-inset-bottom in view padding", () => {

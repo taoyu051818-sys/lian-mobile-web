@@ -1,6 +1,5 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { useFloatingChromeController } from "../../src/motion/floatingChrome";
 
 function readRepoFile(relativePath: string) {
   return readFileSync(new URL(relativePath, import.meta.url), "utf8").replace(/\r\n/g, "\n");
@@ -12,38 +11,9 @@ function getReducedMotionBlock(source: string) {
   return match![1];
 }
 
-describe("floating chrome reduced-motion contract", () => {
-  it("switches visible and hidden states immediately", () => {
-    const chrome = useFloatingChromeController({ initialPhase: "visible" });
-
-    chrome.hide();
-    expect(chrome.phase.value).toBe("hidden");
-    expect(chrome.style.value["--floating-chrome-visibility-progress"]).toBe("0");
-    expect(chrome.style.value["--bottom-chrome-visibility-progress"]).toBe("0");
-
-    chrome.show();
-    expect(chrome.phase.value).toBe("visible");
-    expect(chrome.style.value["--floating-chrome-visibility-progress"]).toBe("1");
-    expect(chrome.style.value["--bottom-chrome-visibility-progress"]).toBe("1");
-  });
-
-  it("keeps drag progress explicit without introducing transition phases", () => {
-    const chrome = useFloatingChromeController({ initialPhase: "hidden" });
-
-    chrome.setProgress(0.35);
-    expect(chrome.phase.value).toBe("progress");
-    expect(chrome.progress.value).toBeCloseTo(0.35, 5);
-    expect(chrome.style.value["--floating-chrome-drag-progress"]).toBe("0.35");
-  });
-
-  it("uses restrained visual motion with strict reduced-motion fallback for floating chrome surfaces", () => {
+describe("floating chrome reduced-motion", () => {
+  it("floating-chrome.css has reduced-motion block", () => {
     const source = readRepoFile("../../src/styles/floating-chrome.css");
-
-    // Normal motion uses tokenized duration
-    expect(source).toContain("--floating-chrome-motion-duration: var(--motion-fast)");
-    // Progress state selector exists
-    expect(source).toContain('.lian-floating-chrome[data-floating-state="progress"]');
-    // Reduced-motion block enforces strict no-motion
     expect(source).toContain("@media (prefers-reduced-motion: reduce)");
     const rmBlock = source.slice(source.indexOf("@media (prefers-reduced-motion: reduce)"));
     expect(rmBlock).toContain("transition: none !important");

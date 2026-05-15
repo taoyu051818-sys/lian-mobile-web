@@ -36,8 +36,8 @@ test("NotificationList has cursor pointer style for clickable notifications", ()
   assert.match(listSource, /cursor:\s*pointer/);
 });
 
-test("MessagesView imports fetchPostDetail from api/posts", () => {
-  assert.match(viewSource, /import.*fetchPostDetail.*from\s*"\.\.\/api\/posts"/);
+test("MessagesView uses usePostDetail composable for notification detail", () => {
+  assert.match(viewSource, /usePostDetail/);
 });
 
 test("MessagesView imports PostDetailPanel component", () => {
@@ -50,33 +50,30 @@ test("MessagesView imports FeedItemId and PostDetail types", () => {
 });
 
 test("MessagesView declares detail state refs for notification deep-link", () => {
-  assert.match(viewSource, /selectedPostId\s*=\s*ref/);
-  assert.match(viewSource, /selectedPost\s*=\s*ref/);
-  assert.match(viewSource, /detailLoading\s*=\s*ref/);
-  assert.match(viewSource, /detailError\s*=\s*ref/);
-  assert.match(viewSource, /savedScrollY\s*=\s*ref/);
+  assert.match(viewSource, /selectedPostId/);
+  assert.match(viewSource, /selectedPost/);
+  assert.match(viewSource, /detailLoading/);
+  assert.match(viewSource, /detailError/);
+  assert.match(viewSource, /usePostDetail/);
 });
 
-test("MessagesView has detailOpen computed from selectedPostId", () => {
-  assert.match(viewSource, /detailOpen\s*=\s*computed\(\(\)\s*=>\s*selectedPostId\.value\s*!==\s*null\)/);
+test("MessagesView has detailOpen from usePostDetail composable", () => {
+  assert.match(viewSource, /detailOpen/);
+  assert.match(viewSource, /usePostDetail/);
 });
 
-test("MessagesView openNotification calls fetchPostDetail and handles errors", () => {
-  assert.match(viewSource, /async\s+function\s+openNotification/);
-  assert.match(viewSource, /fetchPostDetail\(tid\)/);
-  assert.match(viewSource, /detailError\.value\s*=\s*error\s+instanceof\s+Error/);
+test("MessagesView aliases openDetail as openNotification from composable", () => {
+  assert.match(viewSource, /openDetail:\s*openNotification/);
 });
 
-test("MessagesView closeDetail resets detail state and restores scroll", () => {
-  assert.match(viewSource, /function\s+closeDetail/);
-  assert.match(viewSource, /selectedPostId\.value\s*=\s*null/);
-  assert.match(viewSource, /selectedPost\.value\s*=\s*null/);
-  assert.match(viewSource, /requestAnimationFrame\(\(\)\s*=>\s*window\.scrollTo\(0,\s*savedScrollY\.value\)\)/);
+test("MessagesView uses closeDetail from usePostDetail composable", () => {
+  assert.match(viewSource, /closeDetail/);
+  assert.match(viewSource, /@close="closeDetail"/);
 });
 
-test("MessagesView retryDetail re-calls openNotification with selectedPostId", () => {
-  assert.match(viewSource, /function\s+retryDetail/);
-  assert.match(viewSource, /openNotification\(selectedPostId\.value\)/);
+test("MessagesView uses retryDetail from usePostDetail composable", () => {
+  assert.match(viewSource, /retryDetail/);
+  assert.match(viewSource, /@retry="retryDetail"/);
 });
 
 test("MessagesView passes @open-item handler to NotificationList", () => {
@@ -110,7 +107,7 @@ test("MessagesView preserves existing optimistic send and keyboard inset behavio
   assert.match(viewSource, /useVisualViewport/);
 });
 
-test("MessagesView preserves existing chrome emit for shell control", () => {
-  assert.match(viewSource, /chrome:\s*\[hidden:\s*boolean\]/);
-  assert.match(viewSource, /composerChrome\.dispose\(\)/);
+test("MessagesView uses declarative PageChromeSpec for shell control", () => {
+  assert.match(viewSource, /chrome:\s*\[spec:\s*PageChromeSpec\]/);
+  assert.match(viewSource, /pageChrome/);
 });

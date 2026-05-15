@@ -29,26 +29,27 @@ test("AppShell wraps view content in ContentFrame > PageSurface", () => {
   assert.match(src, /<PageSurface/);
 });
 
-test("AppShell binds floating chrome data attributes on bottom region", () => {
+test("AppShell applies page chrome spec via handleChrome", () => {
   const src = read("src/shell/AppShell.vue");
-  assert.match(src, /data-floating-state="bottomChromeState"/);
+  assert.match(src, /applyPageChrome/);
+  assert.match(src, /function handleChrome\(spec: PageChromeSpec\)/);
 });
 
-test("AppShell re-shows bottom chrome on tab change to prevent stale hidden state", () => {
+test("AppShell does not use floating chrome controller", () => {
   const src = read("src/shell/AppShell.vue");
-  assert.match(src, /appBottomChrome\.show\(\)/);
+  assert.doesNotMatch(src, /useFloatingChromeController/);
 });
 
 // --- ShellChrome structure ---
 
-test("ShellChrome computes floatingState from chromePhase prop", () => {
+test("ShellChrome uses isVisible for data-visible attribute", () => {
   const src = read("src/shell/ShellChrome.vue");
-  assert.match(src, /const floatingState = computed\(/);
+  assert.match(src, /:data-visible="isVisible"/);
 });
 
-test("ShellChrome disables buttons during transition to prevent ghost taps", () => {
+test("ShellChrome does not use chromePhase prop", () => {
   const src = read("src/shell/ShellChrome.vue");
-  assert.match(src, /:disabled="btn\.disabled \|\| isTransitioning"/);
+  assert.doesNotMatch(src, /chromePhase/);
 });
 
 test("ShellChrome renders bottom tab bar in bottom region", () => {

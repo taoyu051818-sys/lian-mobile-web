@@ -49,23 +49,20 @@ test("MapView post-detail panel is sticky-positioned above tab bar", () => {
   assert.match(src, /bottom:\s*calc\(92px/);
 });
 
-// --- Map chrome integration ---
+// --- Map chrome ---
 
-test("useMapChrome uses useShellChrome for map filter and place chrome", () => {
+test("useMapChrome does not depend on shell chrome (declarative pattern)", () => {
   const src = read("src/views/map/useMapChrome.ts");
-  assert.match(src, /useShellChrome/);
+  assert.doesNotMatch(src, /useShellChrome/);
 });
 
-test("useMapChrome exports filter spec builder for map top chrome", () => {
+test("useMapChrome exports composable with filter state and handlers", () => {
   const src = read("src/views/map/useMapChrome.ts");
-  assert.match(src, /export function defineMapFilterSpec/);
-  assert.match(src, /export function defineMapTopChrome/);
-});
-
-test("useMapChrome exports place bottom chrome builder", () => {
-  const src = read("src/views/map/useMapChrome.ts");
-  assert.match(src, /export function defineMapBottomChromeForPlace/);
-  assert.match(src, /export function defineMapDefaultBottomChrome/);
+  assert.match(src, /export function useMapChrome/);
+  assert.match(src, /selectedPlace/);
+  assert.match(src, /filterActive/);
+  assert.match(src, /handlePlaceSelect/);
+  assert.match(src, /toggleFilter/);
 });
 
 // --- MapCanvas leaflet integration ---
