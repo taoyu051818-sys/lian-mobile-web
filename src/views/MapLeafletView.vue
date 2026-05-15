@@ -147,7 +147,7 @@ onMounted(() => {
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
-  transition: background 0.18s, color 0.18s;
+  transition: background var(--motion-fast) var(--motion-ease-standard), color var(--motion-fast) var(--motion-ease-standard);
 }
 
 .map-view__filter-btn.is-active {

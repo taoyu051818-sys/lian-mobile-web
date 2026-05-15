@@ -1,4 +1,4 @@
-import { buildApiUrl } from "../config/runtime-config";
+import { buildApiUrl, getApiBase } from "../config/runtime-config";
 
 export class LianApiError extends Error {
   status: number;

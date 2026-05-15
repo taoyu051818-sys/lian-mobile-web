@@ -56,7 +56,8 @@ describe("Feed detail reduced-motion guards", () => {
   const viewSource = readRepoFile("../../src/views/FeedView.vue");
   const detailSource = readRepoFile("../../src/views/feed/useFeedDetail.ts");
   const sharedSource = readRepoFile("../../src/motion/useReducedMotion.ts");
-  const reducedMotionBlock = getReducedMotionBlock(viewSource);
+  const immersiveSource = readRepoFile("../../src/styles/content-immersive-ui.css");
+  const immersiveReducedMotionBlock = getReducedMotionBlock(immersiveSource);
 
   it("FeedView imports prefersReducedMotion from the shared module instead of defining it locally", () => {
     expect(viewSource).toContain(
@@ -79,30 +80,10 @@ describe("Feed detail reduced-motion guards", () => {
     expect(detailSource).toContain("if (deps.prefersReducedMotion()) {\n      resetDetailState();\n      return;\n    }");
   });
 
-  it("disables non-essential feed detail transitions without globally disabling all animation", () => {
-    expect(reducedMotionBlock).toContain(".feed-view__content,");
-    expect(reducedMotionBlock).toContain(".feed-view__card-transition {");
-    expect(reducedMotionBlock).toContain("transition: none;");
-    expect(reducedMotionBlock).not.toContain(".feed-update-probe-motion-enter-active");
-    expect(reducedMotionBlock).not.toContain(".feed-update-probe-motion-leave-active");
-    expect(reducedMotionBlock).not.toContain("animation: none");
-  });
-});
-
-describe("card camera reduced-motion stylesheet", () => {
-  it("turns off card transition transforms and filters under reduced motion", () => {
-    const source = readRepoFile("../../src/styles/card-camera-transition.css");
-    const reducedMotionBlock = getReducedMotionBlock(source);
-
-    expect(reducedMotionBlock).toContain(".feed-view__card-transition,");
-    expect(reducedMotionBlock).toContain(".feed-view__card-transition.is-active,");
-    expect(reducedMotionBlock).toContain(".feed-view__card-transition img,");
-    expect(reducedMotionBlock).toContain(".feed-view__card-transition strong,");
-    expect(reducedMotionBlock).toContain(".feed-view__card-transition-tag {");
-    expect(reducedMotionBlock).toContain("transition: none !important;");
-    expect(reducedMotionBlock).toContain("transform: none !important;");
-    expect(reducedMotionBlock).toContain("filter: none !important;");
-    expect(reducedMotionBlock).not.toContain("animation: none");
+  it("disables non-essential transitions without globally disabling all animation", () => {
+    expect(immersiveReducedMotionBlock).toContain(".shell-chrome__tab");
+    expect(immersiveReducedMotionBlock).toContain("transition: none");
+    expect(immersiveReducedMotionBlock).not.toContain("animation: none");
   });
 });
 

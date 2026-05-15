@@ -72,7 +72,7 @@
   font-size: 13px;
   font-weight: 850;
   white-space: nowrap;
-  transition: background 160ms ease, color 160ms ease, transform 160ms ease;
+  transition: background var(--motion-fast) var(--motion-ease-standard), color var(--motion-fast) var(--motion-ease-standard), transform var(--motion-fast) var(--motion-ease-standard);
 }
 
 .shell-chrome__tab.is-active {

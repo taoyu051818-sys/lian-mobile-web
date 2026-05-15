@@ -53,8 +53,8 @@
   transform: translate3d(var(--detail-card-translate-x, 0px), var(--detail-card-translate-y, 0px), 0)
     scale(var(--detail-card-scale, 1)) !important;
   transition:
-    transform 380ms var(--motion-ease-standard),
-    border-radius 380ms var(--motion-ease-standard) !important;
+    transform var(--motion-return) var(--motion-ease-standard),
+    border-radius var(--motion-return) var(--motion-ease-standard) !important;
 }
 
 .post-detail-panel__topbar.lian-floating-chrome,
