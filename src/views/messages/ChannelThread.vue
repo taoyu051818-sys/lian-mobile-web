@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { InlineError, LianButton } from "../../ui";
-import type { DisplayActor } from "../../types/feed";
+import { actorAvatarText, actorDisplayName } from "../../utils/actor";
 import type { ChannelMessage, ChannelMessageActor } from "../../types/messages";
 import { formatRelativeTime } from "../../utils/time";
 
@@ -23,14 +23,6 @@ function stripHtml(html?: string) {
     .replace(/<[^>]+>/g, " ")
     .replace(/\s+/g, " ")
     .trim();
-}
-
-function actorDisplayName(actor?: DisplayActor | null, fallback = "") {
-  return actor?.displayName || actor?.username || actor?.name || fallback || "同学";
-}
-
-function actorAvatarText(actor?: DisplayActor | null, fallback = "") {
-  return actor?.avatarText || actorDisplayName(actor, fallback).slice(0, 2) || "同";
 }
 
 function messageText(item: ChannelMessage) {

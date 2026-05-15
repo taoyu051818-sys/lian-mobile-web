@@ -1,15 +1,12 @@
 <script setup lang="ts">
 import { SafeHtml } from "../../ui";
+import { actorDisplayName } from "../../utils/actor";
 import type { PostReply } from "../../types/post";
 import { formatRelativeTime } from "../../utils/time";
 
 defineProps<{
   replies?: PostReply[];
 }>();
-
-function replyAuthorLabel(reply: PostReply) {
-  return reply.actor?.displayName || reply.actor?.username || reply.actor?.name || "";
-}
 
 function sanitizeReplyHtml(value: string) {
   return String(value || "")
@@ -28,7 +25,7 @@ function sanitizeReplyHtml(value: string) {
     </div>
     <article v-for="reply in replies" :key="String(reply.id)" class="post-replies__item">
       <div class="post-replies__meta">
-        <strong v-if="replyAuthorLabel(reply)">{{ replyAuthorLabel(reply) }}</strong>
+        <strong v-if="actorDisplayName(reply.actor)">{{ actorDisplayName(reply.actor) }}</strong>
         <span v-if="formatRelativeTime(reply.timestampISO)">{{ formatRelativeTime(reply.timestampISO) }}</span>
       </div>
       <SafeHtml
