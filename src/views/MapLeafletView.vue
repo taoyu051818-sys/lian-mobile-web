@@ -114,6 +114,7 @@ onActivated(() => {
 
 .map-view__stage-wrap {
   position: relative;
+  z-index: 0;
   overflow: hidden;
   min-height: calc(100vh - 92px - env(safe-area-inset-bottom));
   border: 0;
@@ -136,8 +137,8 @@ onActivated(() => {
   padding: var(--space-1) var(--space-3);
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-chip);
-  background: rgba(255, 255, 255, 0.82);
-  backdrop-filter: blur(8px);
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(12px);
   color: var(--lian-muted);
   font-size: 13px;
   font-weight: 600;
