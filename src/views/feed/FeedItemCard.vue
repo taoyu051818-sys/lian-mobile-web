@@ -497,14 +497,4 @@ onBeforeUnmount(() => {
 .feed-item-card__like:disabled {
   opacity: 0.64;
 }
-
-@media (prefers-reduced-motion: reduce) {
-  .feed-item-card {
-    transition: none;
-  }
-
-  .feed-item-card:hover {
-    transform: none;
-  }
-}
 </style>

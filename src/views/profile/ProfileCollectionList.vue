@@ -74,7 +74,7 @@ const emit = defineEmits<{
   background: rgba(255, 255, 255, 0.6);
   box-shadow: var(--shadow-card);
   cursor: pointer;
-  transition: box-shadow 0.15s, transform 0.15s;
+  transition: box-shadow var(--motion-fast) var(--motion-ease-standard), transform var(--motion-fast) var(--motion-ease-standard);
 }
 
 .profile-collection__item:hover {

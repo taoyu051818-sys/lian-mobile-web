@@ -7,8 +7,6 @@ import {
   MAX_PUBLISH_IMAGE_COUNT,
   normalizeIdentityTag,
   normalizePublishTag,
-  PUBLISH_IMAGE_HELP_TEXT,
-  PUBLISH_IMAGE_PRIVACY_NOTICE,
   publishPost,
   uploadPublishImage,
   validatePublishImageSelection,
@@ -60,8 +58,6 @@ const publishIdentityCopy = computed(() => `你将以「${identityName.value} ·
 const canSubmit = computed(() => title.value.trim().length > 0 && body.value.trim().length > 0 && !uploading.value && !publishing.value);
 const titleCount = computed(() => title.value.length);
 const bodyCount = computed(() => body.value.length);
-const publishImageHelpText = PUBLISH_IMAGE_HELP_TEXT;
-const publishImagePrivacyNotice = PUBLISH_IMAGE_PRIVACY_NOTICE;
 const locationToolLabel = computed(() => {
   if (selectedMapLocation.value) return knownPlaceLabel.value;
   if (placeName.value.trim()) return placeName.value.trim();
@@ -312,12 +308,6 @@ onBeforeUnmount(() => {
         </div>
       </section>
 
-      <section class="publish-view__image-guide" aria-label="图片上传提醒">
-        <p class="publish-view__image-guide-title">图片上传提醒</p>
-        <p>{{ publishImageHelpText }}</p>
-        <p>{{ publishImagePrivacyNotice }}</p>
-      </section>
-
       <InlineError v-if="errorMessage">{{ errorMessage }}</InlineError>
       <div v-if="successMessage" class="publish-view__success-block">
         <p class="publish-view__success">{{ successMessage }}</p>
@@ -453,24 +443,6 @@ onBeforeUnmount(() => {
 .publish-view__identity-copy span {
   font-size: 12px;
   font-weight: 700;
-}
-
-.publish-view__image-guide {
-  display: grid;
-  gap: 6px;
-  padding: 12px 14px;
-  border-radius: 14px;
-  background: rgba(31, 41, 51, 0.04);
-  color: var(--lian-muted);
-  font-size: 13px;
-  font-weight: 700;
-  line-height: 1.5;
-}
-
-.publish-view__image-guide-title {
-  color: var(--lian-foreground);
-  font-size: 14px;
-  font-weight: 800;
 }
 
 .publish-view__success-block {

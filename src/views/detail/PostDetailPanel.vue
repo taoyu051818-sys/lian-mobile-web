@@ -405,7 +405,7 @@ async function submitReply() {
 }
 
 .post-detail-panel.is-returning .post-detail-panel__stage {
-  transition: transform 380ms var(--motion-ease-standard), border-radius 380ms var(--motion-ease-standard);
+  transition: transform var(--motion-return) var(--motion-ease-standard), border-radius var(--motion-return) var(--motion-ease-standard);
 }
 
 .post-detail-panel__state {
