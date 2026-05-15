@@ -2,6 +2,7 @@
 import { computed, onMounted, ref, watch } from "vue";
 import { LianApiError } from "../api/http";
 import { activateProfileAlias, deactivateProfileAlias, fetchAuthMe, fetchProfileTab, logoutAuth } from "../api/profile";
+import { GUEST_DISPLAY_NAME } from "../config/brand";
 import { usePostDetail } from "../composables/usePostDetail";
 import { getRecentReadHistoryIds } from "../platform/browser-storage";
 import { InlineError } from "../ui";
@@ -40,7 +41,7 @@ const tabs: Array<{ key: ProfileTabKey; label: string; empty: string }> = [
   { key: "liked", label: "赞过", empty: "暂无点赞" },
 ];
 
-const displayName = computed(() => user.value?.username || "未登录同学");
+const displayName = computed(() => user.value?.username || GUEST_DISPLAY_NAME);
 const avatarText = computed(() => displayName.value.slice(0, 2) || "同");
 const activeAlias = computed(() => {
   if (!user.value?.activeAliasId) return null;

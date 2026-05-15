@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { InlineError } from "../../ui";
+import { LOADING_MAP } from "../../config/brand";
 
 defineProps<{
   loading: boolean;
@@ -8,7 +9,7 @@ defineProps<{
 </script>
 
 <template>
-  <div v-if="loading" class="map-status__loading" role="status">正在加载校园地图…</div>
+  <div v-if="loading" class="map-status__loading" role="status">{{ LOADING_MAP }}</div>
   <InlineError v-if="errorMessage" class="map-status__error">{{ errorMessage }}</InlineError>
 </template>
 

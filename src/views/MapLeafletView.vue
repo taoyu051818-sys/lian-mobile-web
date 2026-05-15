@@ -8,6 +8,7 @@ import PostDetailPanel from "./detail/PostDetailPanel.vue";
 import { useMapChrome } from "./map/useMapChrome";
 import { useMapDataCache } from "../composables/useMapDataCache";
 import { useMapSelection } from "./map/useMapSelection";
+import { MAP_ARIA_LABEL } from "../config/brand";
 
 defineOptions({ name: "MapLeafletView" });
 
@@ -64,8 +65,8 @@ onActivated(() => {
 </script>
 
 <template>
-  <section class="map-view" aria-label="校园地图">
-    <section class="map-view__stage-wrap" aria-label="校园地图">
+  <section class="map-view" :aria-label="MAP_ARIA_LABEL">
+    <section class="map-view__stage-wrap" :aria-label="MAP_ARIA_LABEL">
       <MapCanvas
         :map-data="mapData"
         :road-preview="roadPreview"

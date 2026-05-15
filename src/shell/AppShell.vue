@@ -6,6 +6,7 @@ import ContentFrame from "./ContentFrame.vue";
 import { useShellChrome } from "./useShellChrome";
 import type { PageChromeSpec } from "./page-model";
 import type { AppViewKey, ShellLayoutMode } from "../app/view-types";
+import { APP_NAME } from "../config/brand";
 
 export interface AppShellTab {
   key: string;
@@ -37,7 +38,7 @@ function handleViewChange(key: string) {
 </script>
 
 <template>
-  <main class="vue-shell" aria-label="LIAN 主内容">
+  <main class="vue-shell" :aria-label="`${APP_NAME} 主内容`">
     <ShellChrome region="top" />
     <ContentFrame :layout-mode="layoutMode">
       <PageSurface as="div" :padded="false">
