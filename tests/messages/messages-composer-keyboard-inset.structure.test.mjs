@@ -18,7 +18,7 @@ const threadSource = read("src/features/messages/ChannelThread.vue");
 test("MessagesView imports useVisualViewport composable", () => {
   assert.match(
     viewSource,
-    /import\s*\{[^}]*useVisualViewport[^}]*\}\s*from\s*"[\./]*composables\/useVisualViewport"/,
+    /import\s*\{[^}]*useVisualViewport[^}]*\}\s*from\s*"[./]*composables\/useVisualViewport"/,
   );
 });
 

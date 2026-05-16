@@ -4,7 +4,6 @@ import {
   createMapV2LocationDraft,
   buildPublishPayload,
 } from "../../src/api/publish";
-import type { PublishLocationDraft } from "../../src/types/publish";
 
 describe("createManualLocationDraft", () => {
   it("produces manual source with explicit mapVersion when name is provided", () => {

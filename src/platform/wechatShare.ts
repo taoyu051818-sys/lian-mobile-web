@@ -25,7 +25,7 @@ interface WxSignResponse {
   signature: string;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+ 
 type WxInstance = any;
 
 declare global {

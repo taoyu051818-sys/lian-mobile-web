@@ -29,7 +29,7 @@ export interface ChannelResponse {
   nextOffset?: number;
 }
 
-export interface NotificationActor extends DisplayActor {}
+export type NotificationActor = DisplayActor;
 
 export interface NotificationItem {
   id?: string | number;

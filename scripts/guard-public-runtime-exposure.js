@@ -106,7 +106,7 @@ function findMatches(text, pattern) {
 
 function checkFile(relativePath) {
   const fullPath = repoPath(relativePath);
-  let text = "";
+  let text;
   try {
     text = fs.readFileSync(fullPath, "utf8");
   } catch (error) {
