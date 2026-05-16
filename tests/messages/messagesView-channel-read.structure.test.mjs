@@ -5,25 +5,25 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
-const viewSource = fs.readFileSync(path.join(repoRoot, "src/features/messages/MessagesView.vue"), "utf8");
+const channelSource = fs.readFileSync(path.join(repoRoot, "src/features/messages/useChannelMessages.ts"), "utf8");
 const apiSource = fs.readFileSync(path.join(repoRoot, "src/api/messages.ts"), "utf8");
 const typesSource = fs.readFileSync(path.join(repoRoot, "src/types/messages.ts"), "utf8");
 
-test("MessagesView uses ?? for nextOffset fallback so 0 is preserved", () => {
-  assert.match(viewSource, /response\.nextOffset \?\? channelOffset\.value/);
-  assert.doesNotMatch(viewSource, /response\.nextOffset \|\| channelOffset\.value/);
+test("useChannelMessages uses ?? for nextOffset fallback so 0 is preserved", () => {
+  assert.match(channelSource, /response\.nextOffset \?\? channelOffset\.value/);
+  assert.doesNotMatch(channelSource, /response\.nextOffset \|\| channelOffset\.value/);
 });
 
-test("MessagesView imports markChannelMessagesRead from the API module", () => {
-  assert.match(viewSource, /import \{[^}]*markChannelMessagesRead[^}]*\} from "\.\.\/api\/messages"/);
+test("useChannelMessages imports markChannelMessagesRead from the API module", () => {
+  assert.match(channelSource, /import \{[^}]*markChannelMessagesRead[^}]*\} from "\.\.\/\.\.\/api\/messages"/);
 });
 
-test("MessagesView fires markChannelMessagesRead after a reset channel load", () => {
-  assert.match(viewSource, /markChannelMessagesRead\(ids\)\.catch\(\(\) => \{\}\)/);
+test("useChannelMessages fires markChannelMessagesRead after a reset channel load", () => {
+  assert.match(channelSource, /markChannelMessagesRead\(ids\)\.catch\(\(\) => \{\}\)/);
 });
 
 test("markChannelMessagesRead is only called on reset loads, not pagination", () => {
-  assert.match(viewSource, /if \(reset && channelItems\.value\.length\)/);
+  assert.match(channelSource, /if \(reset && channelItems\.value\.length\)/);
 });
 
 test("API module exports buildChannelReadPayload and markChannelMessagesRead", () => {
