@@ -2,7 +2,7 @@
 
 Frontend/mobile web workspace for LIAN.
 
-This repository owns the Vue 3 + Vite frontend, design tokens, frontend assets, task-board UI, and frontend documentation. The legacy static runtime has been migrated to `taoyu051818-sys/-lian-mobile-web-legacy`. The active backend implementation for APIs, runtime data, authentication, uploads, image proxy, Redis state, and NodeBB integration now lives in `taoyu051818-sys/lian-nest-server`. Keep `taoyu051818-sys/lian-platform-server` for governance, parity review, and migration-tracking documentation.
+This repository owns the Vue 3 + Vite frontend, design tokens, frontend assets, task-board UI, and frontend documentation. The legacy static runtime has been migrated to `taoyu051818-sys/-lian-mobile-web-legacy`. The active backend implementation direction for APIs, runtime data, authentication, uploads, image proxy, Redis state, and NodeBB integration lives in `taoyu051818-sys/lian-nest-server`, but current backend contract truth can still land in `taoyu051818-sys/lian-platform-server` when live routes or merged PRs say so. Recent Profile `/api/me/*` contract work, for example, landed there through merged PRs `#303` and `#304`, and the corresponding frontend consumer lane is tracked in `#534`.
 
 ## Runtime model
 
@@ -14,7 +14,7 @@ backend API:       http://127.0.0.1:4200
 image proxy:       http://127.0.0.1:4201
 ```
 
-Start the backend separately from `lian-nest-server` when smoke tests need live `/api/*` responses. Use `lian-platform-server` when you need governance or migration-tracking context for the backend split.
+Start the backend separately from `lian-nest-server` when smoke tests need live `/api/*` responses. Also check `lian-platform-server` whenever a frontend lane depends on the latest merged or in-flight backend contract truth rather than governance history alone.
 
 ## Toolchain baseline
 
