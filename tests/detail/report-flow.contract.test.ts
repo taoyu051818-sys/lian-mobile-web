@@ -56,7 +56,7 @@ describe("report flow helper", () => {
 describe("report flow detail wiring", () => {
   const panelSource = readRepoFile("../../src/features/detail/PostDetailPanel.vue");
   const reportComposableSource = readRepoFile("../../src/features/detail/usePostReport.ts");
-  const contentSource = readRepoFile("../../src/features/detail/PostDetailContent.vue");
+  const reportBlockSource = readRepoFile("../../src/features/detail/PostReportBlock.vue");
 
   it("keeps report helper logic in a dedicated detail helper module", () => {
     expect(reportComposableSource).toContain("from \"./reportFlow\"");
@@ -70,9 +70,9 @@ describe("report flow detail wiring", () => {
   });
 
   it("adds optional free-text context and a reversible local hide path", () => {
-    expect(contentSource).toContain("补充说明（可选）");
-    expect(contentSource).toContain("<textarea");
-    expect(contentSource).toContain("暂时隐藏");
+    expect(reportBlockSource).toContain("补充说明（可选）");
+    expect(reportBlockSource).toContain("<textarea");
+    expect(reportBlockSource).toContain("暂时隐藏");
     expect(panelSource).toContain("这条内容已在当前会话中隐藏");
     expect(panelSource).toContain("撤销隐藏");
   });
