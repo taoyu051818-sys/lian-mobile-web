@@ -16,3 +16,10 @@ export const EMPTY_FEED = "暂时没有内容";
 export const EMPTY_CHANNEL = "暂无频道消息";
 export const EMPTY_NOTIFICATION = "暂无通知";
 export const EMPTY_REPLIES = "暂无";
+
+/** 页面级加载/错误态 */
+export const PAGE_LOADING = "页面加载中…";
+export const PAGE_LOADING_LABEL = "页面加载中";
+export const PAGE_ERROR = "页面加载失败，请稍后再试。";
+export const PAGE_ERROR_LABEL = "页面加载失败";
+export const PAGE_RELOAD = "重新加载";

@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { PAGE_ERROR, PAGE_ERROR_LABEL, PAGE_RELOAD } from "../config/brand";
+
 defineProps<{
   error: Error;
   retry: () => void;
@@ -6,9 +8,9 @@ defineProps<{
 </script>
 
 <template>
-  <section class="view-async-error" role="alert" aria-label="页面加载失败">
-    <p>页面加载失败，请稍后再试。</p>
-    <button type="button" class="view-async-error__retry" @click="retry">重新加载</button>
+  <section class="view-async-error" role="alert" :aria-label="PAGE_ERROR_LABEL">
+    <p>{{ PAGE_ERROR }}</p>
+    <button type="button" class="view-async-error__retry" @click="retry">{{ PAGE_RELOAD }}</button>
   </section>
 </template>
 

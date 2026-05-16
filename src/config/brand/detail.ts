@@ -28,3 +28,16 @@ export const REPORT_REASON_HINT = "补充说明只会跟随这次举报一起提
 export const REPORT_SUBMIT = "提交举报";
 export const REPORT_HIDE_LABEL = "暂时隐藏";
 export const REPORT_HIDE_HINT = "如果你现在不想继续看到这条内容，可以先在当前会话里把它隐藏。";
+
+/** 隐藏状态 UI */
+export const HIDDEN_STATE_LABEL = "当前会话已隐藏内容";
+export const HIDDEN_STATE_TITLE = "这条内容已在当前会话中隐藏";
+export const HIDDEN_STATE_DESCRIPTION =
+  "这只是当前设备上的临时隐藏，不会替代平台审核，也不会同步到其他设备。";
+export const HIDDEN_STATE_UNDO = "撤销隐藏";
+
+/** 地点弹层 UI */
+export const PLACE_SHEET_COLLAPSE = "收起";
+export const PLACE_SHEET_RETRY = "重试";
+export const PLACE_SHEET_SETTLING = "这个地点还在沉淀信息。";
+export const DETAIL_RELOAD = "重新加载";

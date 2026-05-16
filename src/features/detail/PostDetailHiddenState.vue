@@ -1,16 +1,24 @@
 <script setup lang="ts">
 import { LianButton } from "../../ui";
+import {
+  HIDDEN_STATE_LABEL,
+  HIDDEN_STATE_TITLE,
+  HIDDEN_STATE_DESCRIPTION,
+  HIDDEN_STATE_UNDO,
+} from "../../config/brand";
 
-defineEmits<{
+const emit = defineEmits<{
   undoHide: [];
 }>();
 </script>
 
 <template>
-  <section class="post-detail-hidden-state" aria-label="当前会话已隐藏内容" @click.stop>
-    <h2>这条内容已在当前会话中隐藏</h2>
-    <p>这只是当前设备上的临时隐藏，不会替代平台审核，也不会同步到其他设备。</p>
-    <LianButton size="sm" variant="ghost" @click="$emit('undoHide')">撤销隐藏</LianButton>
+  <section class="post-detail-hidden-state" :aria-label="HIDDEN_STATE_LABEL" @click.stop>
+    <h2>{{ HIDDEN_STATE_TITLE }}</h2>
+    <p>{{ HIDDEN_STATE_DESCRIPTION }}</p>
+    <LianButton size="sm" variant="ghost" @click="emit('undoHide')">{{
+      HIDDEN_STATE_UNDO
+    }}</LianButton>
   </section>
 </template>
 

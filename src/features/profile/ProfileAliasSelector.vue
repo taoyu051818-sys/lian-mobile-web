@@ -1,6 +1,12 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import type { ProfileUser } from "../../types/profile";
+import {
+  PROFILE_REAL_IDENTITY,
+  PROFILE_OFFICIAL_ALIAS,
+  PROFILE_ALIAS_TITLE,
+  PROFILE_ALIAS_EMPTY,
+} from "../../config/brand";
 import { useProfileAliasSwitch } from "./useProfileAliasSwitch";
 
 const props = defineProps<{
@@ -18,7 +24,8 @@ const { busy, switchAlias } = useProfileAliasSwitch();
 const aliases = computed(() => props.user.aliases || []);
 const activeAliasId = computed(() => props.user.activeAliasId || "");
 const activeAliasName = computed(
-  () => aliases.value.find((alias) => alias.id === activeAliasId.value)?.name || "真实身份",
+  () =>
+    aliases.value.find((alias) => alias.id === activeAliasId.value)?.name || PROFILE_REAL_IDENTITY,
 );
 
 function handleSwitch(aliasId: string) {
@@ -35,7 +42,7 @@ defineExpose({ activeAliasName });
 <template>
   <section class="profile-editor__block" aria-labelledby="profile-alias-title">
     <div class="profile-editor__block-title">
-      <strong id="profile-alias-title">发布身份</strong>
+      <strong id="profile-alias-title">{{ PROFILE_ALIAS_TITLE }}</strong>
       <span>{{ activeAliasName }}</span>
     </div>
     <div class="profile-editor__alias-list">
@@ -49,7 +56,7 @@ defineExpose({ activeAliasName });
           @change="handleSwitch('')"
         />
         <span>{{ displayName }}</span>
-        <small>真实身份</small>
+        <small>{{ PROFILE_REAL_IDENTITY }}</small>
       </label>
       <label
         v-for="alias in aliases"
@@ -66,11 +73,11 @@ defineExpose({ activeAliasName });
           @change="handleSwitch(alias.id)"
         />
         <span>{{ alias.name }}</span>
-        <small>官方马甲</small>
+        <small>{{ PROFILE_OFFICIAL_ALIAS }}</small>
       </label>
     </div>
     <p v-if="!aliases.length" class="profile-editor__hint">
-      暂无可用官方马甲，当前使用真实身份发布。
+      {{ PROFILE_ALIAS_EMPTY }}
     </p>
   </section>
 </template>

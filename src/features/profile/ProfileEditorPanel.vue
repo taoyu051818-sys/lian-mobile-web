@@ -1,7 +1,13 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
 import { InlineError, TypeChip } from "../../ui";
-import { DEFAULT_USER_LABEL } from "../../config/brand";
+import {
+  DEFAULT_USER_LABEL,
+  USER_AVATAR_FALLBACK,
+  PROFILE_REAL_IDENTITY,
+  PROFILE_EDITOR_CHIP,
+  PROFILE_EDIT,
+} from "../../config/brand";
 import type { ProfileUser } from "../../types/profile";
 import ProfileAliasSelector from "./ProfileAliasSelector.vue";
 import ProfileAvatarEditor from "./ProfileAvatarEditor.vue";
@@ -20,8 +26,10 @@ const successMessage = ref("");
 const aliasSelectorRef = ref<InstanceType<typeof ProfileAliasSelector> | null>(null);
 
 const displayName = computed(() => props.user.username || DEFAULT_USER_LABEL);
-const avatarText = computed(() => displayName.value.slice(0, 2) || "同");
-const activeAliasName = computed(() => aliasSelectorRef.value?.activeAliasName || "真实身份");
+const avatarText = computed(() => displayName.value.slice(0, 2) || USER_AVATAR_FALLBACK);
+const activeAliasName = computed(
+  () => aliasSelectorRef.value?.activeAliasName || PROFILE_REAL_IDENTITY,
+);
 
 function showSuccess(message: string) {
   errorMessage.value = "";
@@ -64,8 +72,8 @@ function handleInviteError(message: string) {
   <section class="profile-editor keyboard-aware-surface" aria-labelledby="profile-editor-title">
     <header class="profile-editor__header">
       <div>
-        <TypeChip type="official">资料管理</TypeChip>
-        <h3 id="profile-editor-title">编辑资料</h3>
+        <TypeChip type="official">{{ PROFILE_EDITOR_CHIP }}</TypeChip>
+        <h3 id="profile-editor-title">{{ PROFILE_EDIT }}</h3>
       </div>
     </header>
 

@@ -1,6 +1,17 @@
 <script setup lang="ts">
 import { IdentityBadge, LianButton } from "../../ui";
 import { updateProfileAvatar, uploadProfileAvatar } from "../../api/profile";
+import {
+  PROFILE_AVATAR_TITLE,
+  PROFILE_AVATAR_CROP_HINT,
+  PROFILE_AVATAR_CROP_ALT,
+  PROFILE_AVATAR_SELECT,
+  PROFILE_AVATAR_RESELECT,
+  PROFILE_AVATAR_SCALE,
+  PROFILE_AVATAR_SAVE,
+  PROFILE_AVATAR_ERROR,
+  PROFILE_CANCEL,
+} from "../../config/brand";
 import { useAvatarCropper } from "./useAvatarCropper";
 
 const props = defineProps<{
@@ -46,7 +57,7 @@ async function saveAvatar() {
     revokePreview();
     emit("updated");
   } catch (error: unknown) {
-    const msg = error instanceof Error ? error.message : "头像没有更新成功，可以稍后再试。";
+    const msg = error instanceof Error ? error.message : PROFILE_AVATAR_ERROR;
     emit("error", msg);
   } finally {
     busy.value = false;
@@ -57,8 +68,8 @@ async function saveAvatar() {
 <template>
   <section class="profile-editor__block" aria-labelledby="profile-avatar-title">
     <div class="profile-editor__block-title">
-      <strong id="profile-avatar-title">头像</strong>
-      <span>拖拽调整位置，捏合或滑块缩放</span>
+      <strong id="profile-avatar-title">{{ PROFILE_AVATAR_TITLE }}</strong>
+      <span>{{ PROFILE_AVATAR_CROP_HINT }}</span>
     </div>
     <div class="profile-editor__avatar-row">
       <IdentityBadge
@@ -77,22 +88,24 @@ async function saveAvatar() {
         @touchmove="handleTouchMove"
         @touchend="handleTouchEnd"
       >
-        <img :src="previewUrl" alt="头像裁剪预览" :style="previewStyle()" />
+        <img :src="previewUrl" :alt="PROFILE_AVATAR_CROP_ALT" :style="previewStyle()" />
       </div>
     </div>
     <label class="profile-editor__upload">
-      <span>{{ previewUrl ? "重新选择图片" : "选择头像图片" }}</span>
+      <span>{{ previewUrl ? PROFILE_AVATAR_RESELECT : PROFILE_AVATAR_SELECT }}</span>
       <input type="file" accept="image/*" @change="handleInput" />
     </label>
     <label v-if="previewUrl" class="profile-editor__range">
-      <span>缩放</span>
+      <span>{{ PROFILE_AVATAR_SCALE }}</span>
       <input v-model.number="scale" type="range" min="1" max="2.4" step="0.05" />
     </label>
     <div v-if="previewUrl" class="profile-editor__actions">
-      <LianButton type="button" variant="ghost" :disabled="busy" @click="cancel">取消</LianButton>
-      <LianButton type="button" variant="tonal" :loading="busy" @click="saveAvatar"
-        >保存头像</LianButton
-      >
+      <LianButton type="button" variant="ghost" :disabled="busy" @click="cancel">{{
+        PROFILE_CANCEL
+      }}</LianButton>
+      <LianButton type="button" variant="tonal" :loading="busy" @click="saveAvatar">{{
+        PROFILE_AVATAR_SAVE
+      }}</LianButton>
     </div>
   </section>
 </template>

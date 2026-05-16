@@ -1,5 +1,12 @@
 <script setup lang="ts">
 import { GlassPanel, IdentityBadge, LianButton, TagChip, TrustBadge } from "../../ui";
+import {
+  PROFILE_SUMMARY_TITLE,
+  PROFILE_MIGRATION_TITLE,
+  PROFILE_MIGRATION_DESCRIPTION,
+  PROFILE_PUBLISH_DISABLED,
+  PROFILE_EDIT_DISABLED,
+} from "../../config/brand";
 
 interface ProfileMetric {
   label: string;
@@ -38,7 +45,7 @@ const profile = {
 
       <div class="profile-summary__copy">
         <p class="profile-summary__eyebrow">Profile Migration Pilot</p>
-        <h2 id="profile-summary-title">我的校园身份</h2>
+        <h2 id="profile-summary-title">{{ PROFILE_SUMMARY_TITLE }}</h2>
         <p>{{ profile.summary }}</p>
       </div>
 
@@ -55,15 +62,15 @@ const profile = {
       </dl>
 
       <section class="profile-summary__notice" aria-labelledby="profile-summary-notice-title">
-        <h3 id="profile-summary-notice-title">迁移边界</h3>
+        <h3 id="profile-summary-notice-title">{{ PROFILE_MIGRATION_TITLE }}</h3>
         <p>
-          当前只迁移低风险展示层。资料编辑、头像上传裁剪、历史发布列表和账号状态仍不在这个试点里接管。
+          {{ PROFILE_MIGRATION_DESCRIPTION }}
         </p>
       </section>
 
       <div class="vue-shell__row">
-        <LianButton variant="tonal" disabled>查看我的发布稍后接入</LianButton>
-        <LianButton variant="ghost" disabled>编辑资料仍走 legacy</LianButton>
+        <LianButton variant="tonal" disabled>{{ PROFILE_PUBLISH_DISABLED }}</LianButton>
+        <LianButton variant="ghost" disabled>{{ PROFILE_EDIT_DISABLED }}</LianButton>
       </div>
     </GlassPanel>
   </section>

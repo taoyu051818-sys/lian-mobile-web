@@ -1,7 +1,11 @@
+<script setup lang="ts">
+import { PAGE_LOADING, PAGE_LOADING_LABEL } from "../config/brand";
+</script>
+
 <template>
-  <section class="view-loading-fallback" role="status" aria-label="页面加载中">
+  <section class="view-loading-fallback" role="status" :aria-label="PAGE_LOADING_LABEL">
     <div class="view-loading-fallback__spinner" aria-hidden="true"></div>
-    <p>页面加载中…</p>
+    <p>{{ PAGE_LOADING }}</p>
   </section>
 </template>
 
