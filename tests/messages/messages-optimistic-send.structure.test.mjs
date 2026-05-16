@@ -13,7 +13,6 @@ function read(rel) {
 const apiSource = read("src/api/messages.ts");
 const viewSource = read("src/features/messages/MessagesView.vue");
 const channelSource = read("src/features/messages/useChannelMessages.ts");
-const composerSource = read("src/features/messages/useMessageComposer.ts");
 const threadSource = read("src/features/messages/ChannelThread.vue");
 const composerVueSource = read("src/features/messages/ChannelComposer.vue");
 

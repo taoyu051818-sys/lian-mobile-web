@@ -83,7 +83,7 @@ await runGuardFixture(
 await runGuardFixture(
   "internal tool path fixture",
   {
-    "index.html": '<!doctype html><html><body><a href="\/tools\/debug">debug</a></body></html>',
+    "index.html": '<!doctype html><html><body><a href="/tools/debug">debug</a></body></html>',
   },
   "fail",
   /internal\/debug path/,

@@ -54,7 +54,7 @@ await checkPage(`${baseUrl}/`, "GET /", [
   ["has Vue root", (html) => html.includes('id="vue-root"')],
   [
     "loads src/main.ts or built asset",
-    (html) => html.includes("/src/main.ts") || /\/assets\/[^\"']+\.js/.test(html),
+    (html) => html.includes("/src/main.ts") || /\/assets\/[^"']+\.js/.test(html),
   ],
 ]);
 
