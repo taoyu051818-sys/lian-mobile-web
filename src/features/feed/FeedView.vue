@@ -1,22 +1,17 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
-import { DEFAULT_TABS, fetchFeed } from "../../api/feed";
 import { prefersReducedMotion } from "../../composables/useReducedMotion";
 import type { PageChromeSpec } from "../../shell/page-model";
-import type { FeedItem, FeedItemId, FeedTab } from "../../types/feed";
+import type { FeedItemId } from "../../types/feed";
 import { InlineError } from "../../ui";
 import PostDetailPanel from "../detail/PostDetailPanel.vue";
 import FeedList from "./FeedList.vue";
 import FeedLoadMore from "./FeedLoadMore.vue";
-import { normalizeFeedItemId } from "./feedItemId";
 import { useFeedDetail, type CardOpenPayload, type CardTransitionSnapshot } from "./useFeedDetail";
-import { READ_HISTORY_KEY } from "../../platform/browser-storage";
-import { LOADING_FEED, EMPTY_FEED, ERROR_LOAD_GENERIC, FEED_VIEW_TITLE, FEED_FILTER_LABEL, FEED_EMPTY_HINT, CHANNEL_RELOAD } from "../../config/brand";
+import { useFeedData } from "./useFeedData";
+import { useDetailDragGesture } from "./useDetailDragGesture";
+import { CHANNEL_RELOAD, FEED_FILTER_LABEL, FEED_VIEW_TITLE } from "../../config/brand";
 
-const PAGE_SIZE = 12;
-const SWIPE_THRESHOLD = 96;
-const SWIPE_VERTICAL_GUARD = 52;
-const DETAIL_DRAG_EDGE_GUARD = 28;
 const CARDIFY_DISTANCE = 320;
 const DRAG_STAGE_MIN_SCALE = 0.9;
 const RETURN_ANIMATION_MS = 380;
@@ -25,16 +20,6 @@ const emit = defineEmits<{
   chrome: [spec: PageChromeSpec];
 }>();
 
-const tabs = ref<FeedTab[]>(DEFAULT_TABS);
-const activeTab = ref(DEFAULT_TABS[0].id);
-const items = ref<FeedItem[]>([]);
-const page = ref(1);
-const hasMore = ref(true);
-const loading = ref(false);
-const loadingMore = ref(false);
-const errorMessage = ref("");
-const cardTransition = ref<CardTransitionSnapshot | null>(null);
-const cardTransitionActive = ref(false);
 const viewportWidth = ref(390);
 const viewportHeight = ref(844);
 
@@ -44,31 +29,9 @@ function updateViewport() {
   viewportHeight.value = window.innerHeight || 844;
 }
 
-function readHistoryQuery() {
-  try {
-    const history = JSON.parse(localStorage.getItem(READ_HISTORY_KEY) || "[]") as Array<{ tid: FeedItemId | string }>;
-    return history
-      .map((entry) => normalizeFeedItemId(entry.tid))
-      .filter(Boolean)
-      .join(",");
-  } catch {
-    return "";
-  }
-}
-
-function rememberReadItem(id: FeedItemId) {
-  try {
-    const normalizedId = normalizeFeedItemId(id);
-    const history = JSON.parse(localStorage.getItem(READ_HISTORY_KEY) || "[]") as Array<{ tid: FeedItemId | string; lastViewedAt: string }>;
-    const nextHistory = history.filter((entry) => normalizeFeedItemId(entry.tid) !== normalizedId);
-    nextHistory.push({ tid: normalizedId, lastViewedAt: new Date().toISOString() });
-    localStorage.setItem(READ_HISTORY_KEY, JSON.stringify(nextHistory.slice(-500)));
-  } catch {
-    // Reading history should never block opening a card.
-  }
-}
-
 // QUARANTINE: v1 card-camera overlay timer handles (issue #85 / #274).
+const cardTransition = ref<CardTransitionSnapshot | null>(null);
+const cardTransitionActive = ref(false);
 let pendingCardRaf = 0;
 let pendingCardTimer: ReturnType<typeof setTimeout> | undefined;
 
@@ -83,7 +46,7 @@ function cancelCardTransitionTimers() {
   }
 }
 
-// Detail lifecycle composable: owns detail data, history, open/close/retry.
+// Detail lifecycle composable
 const {
   selectedPostId, selectedPost, detailLoading, detailError,
   detailOpen, detailDragging, detailReturning,
@@ -93,7 +56,6 @@ const {
   openItem, retryDetail, closeDetail,
   closeDetailWithCardify, resetDetailState,
 } = useFeedDetail({
-  // QUARANTINE: v1 card-camera overlay (issue #85 / #274). Temporary scaffolding; do not extend.
   startCardTransition(payload) {
     if (!payload || typeof window === "undefined" || prefersReducedMotion()) return;
     cancelCardTransitionTimers();
@@ -111,7 +73,7 @@ const {
       });
     });
   },
-  rememberReadItem,
+  rememberReadItem(id: FeedItemId) { feedData.rememberReadItem(id); },
   updateViewport,
   prefersReducedMotion,
   viewportWidth,
@@ -121,7 +83,23 @@ const {
   returnAnimationMs: RETURN_ANIMATION_MS,
 });
 
-const isEmpty = computed(() => !loading.value && !errorMessage.value && items.value.length === 0);
+// Feed data composable
+const feedData = useFeedData({
+  detailOpen: () => detailOpen.value,
+  closeDetailWithCardify: () => closeDetailWithCardify(),
+  resetDetailState,
+});
+
+// Detail drag gesture composable
+const { onDetailPointerDown, onDetailPointerMove, onDetailPointerUp, onDetailPointerCancel } = useDetailDragGesture({
+  detailOpen, detailLoading, detailReturning,
+  detailDragging, detailDragX, detailPointerId, detailGestureLocked,
+  dragStartX, dragStartY, viewportWidth,
+  updateViewport,
+  closeDetailWithCardify,
+  cardifyDistance: CARDIFY_DISTANCE,
+});
+
 const cardTransitionStyle = computed(() => {
   const snapshot = cardTransition.value;
   if (!snapshot) return undefined;
@@ -132,161 +110,27 @@ const cardTransitionStyle = computed(() => {
     "--card-height": `${snapshot.rect.height}px`,
   };
 });
-const canAutoLoadMore = computed(() => (
-  hasMore.value
-  && !loading.value
-  && !loadingMore.value
-  && !detailOpen.value
-));
 
-// Declarative chrome: emit spec whenever relevant state changes.
 const pageChrome = computed<PageChromeSpec>(() => ({
   top: {
     tabs: {
       kind: "tabs",
-      items: tabs.value,
-      activeKey: activeTab.value,
+      items: feedData.tabs.value,
+      activeKey: feedData.activeTab.value,
       ariaLabel: FEED_FILTER_LABEL,
     },
-    onTabSelect: switchTab,
+    onTabSelect: feedData.switchTab,
   },
   autoHideOnDetail: detailOpen.value,
 }));
 
 watch(pageChrome, (spec) => emit("chrome", spec), { deep: true });
 
-async function loadFeed(reset = false) {
-  if (loading.value || loadingMore.value) return;
-  if (!reset && !hasMore.value) return;
-
-  errorMessage.value = "";
-  if (reset) {
-    loading.value = true;
-    page.value = 1;
-    hasMore.value = true;
-    if (detailOpen.value) {
-      closeDetailWithCardify();
-    } else {
-      resetDetailState();
-    }
-  } else {
-    loadingMore.value = true;
-  }
-
-  try {
-    const response = await fetchFeed({
-      tab: activeTab.value,
-      page: reset ? 1 : page.value,
-      limit: PAGE_SIZE,
-      read: readHistoryQuery(),
-    });
-
-    tabs.value = response.tabs.length ? response.tabs : DEFAULT_TABS;
-    const nextItems = response.items || [];
-    items.value = reset ? nextItems : [...items.value, ...nextItems];
-    hasMore.value = Boolean(response.hasMore);
-    page.value = response.nextPage || (reset ? 2 : page.value + 1);
-  } catch (error) {
-    errorMessage.value = error instanceof Error
-      ? error.message
-      : ERROR_LOAD_GENERIC;
-    if (reset) items.value = [];
-  } finally {
-    loading.value = false;
-    loadingMore.value = false;
-  }
-}
-
-function switchTab(tabId: string) {
-  if (activeTab.value === tabId) {
-    void loadFeed(true);
-    return;
-  }
-  activeTab.value = tabId;
-  void loadFeed(true);
-}
-
-function triggerLoadMore() {
-  if (!canAutoLoadMore.value) return;
-  void loadFeed(false);
-}
-
-function isInteractiveTarget(target: EventTarget | null) {
-  if (!(target instanceof HTMLElement)) return false;
-  if (target.closest(".post-detail-panel__gallery, .post-detail-panel__gallery-item")) return false;
-  return Boolean(target.closest(".post-detail-panel__topbar, .post-detail-panel__dock, .post-detail-panel__report, .post-detail-panel__lightbox, a, button, input, textarea, select, [role='button']"));
-}
-
-function isInsideDetailDragBand(x: number) {
-  return x >= DETAIL_DRAG_EDGE_GUARD && x <= viewportWidth.value - DETAIL_DRAG_EDGE_GUARD;
-}
-
-function abortDetailDrag(event: PointerEvent) {
-  detailDragging.value = false;
-  detailPointerId.value = null;
-  detailGestureLocked.value = null;
-  detailDragX.value = 0;
-  (event.currentTarget as HTMLElement | null)?.releasePointerCapture?.(event.pointerId);
-}
-
-function onDetailPointerDown(event: PointerEvent) {
-  if (!detailOpen.value || detailLoading.value || detailReturning.value || isInteractiveTarget(event.target)) return;
-  if (event.pointerType === "mouse" && event.button !== 0) return;
-  updateViewport();
-  if (!isInsideDetailDragBand(event.clientX)) return;
-  dragStartX.value = event.clientX;
-  dragStartY.value = event.clientY;
-  detailDragX.value = 0;
-  detailDragging.value = true;
-  detailPointerId.value = event.pointerId;
-  detailGestureLocked.value = null;
-  (event.currentTarget as HTMLElement | null)?.setPointerCapture?.(event.pointerId);
-}
-
-function onDetailPointerMove(event: PointerEvent) {
-  if (!detailDragging.value || detailPointerId.value !== event.pointerId) return;
-  const deltaX = event.clientX - dragStartX.value;
-  const deltaY = event.clientY - dragStartY.value;
-  if (!detailGestureLocked.value) {
-    if (Math.abs(deltaY) > SWIPE_VERTICAL_GUARD && Math.abs(deltaY) > Math.abs(deltaX)) {
-      detailGestureLocked.value = "vertical";
-      abortDetailDrag(event);
-      return;
-    }
-    if (Math.abs(deltaX) > 8 && Math.abs(deltaX) > Math.abs(deltaY) * 1.05) {
-      detailGestureLocked.value = "horizontal";
-    }
-  }
-  if (detailGestureLocked.value !== "horizontal") return;
-  event.preventDefault();
-  const nextDragX = Math.max(-CARDIFY_DISTANCE, Math.min(CARDIFY_DISTANCE, deltaX));
-  detailDragX.value = nextDragX;
-}
-
-function onDetailPointerUp(event: PointerEvent) {
-  if (!detailDragging.value || detailPointerId.value !== event.pointerId) return;
-  const finalX = detailDragX.value;
-  detailDragging.value = false;
-  detailPointerId.value = null;
-  detailGestureLocked.value = null;
-  (event.currentTarget as HTMLElement | null)?.releasePointerCapture?.(event.pointerId);
-  if (Math.abs(finalX) > SWIPE_THRESHOLD) {
-    closeDetailWithCardify({ direction: finalX < 0 ? -1 : 1 });
-    return;
-  }
-  detailDragX.value = 0;
-}
-
-function onDetailPointerCancel(event: PointerEvent) {
-  if (detailPointerId.value !== event.pointerId) return;
-  abortDetailDrag(event);
-}
-
 onMounted(() => {
   updateViewport();
   window.addEventListener("resize", updateViewport);
   emit("chrome", pageChrome.value);
-  void loadFeed(true);
+  void feedData.loadFeed(true);
 });
 
 onBeforeUnmount(() => {
@@ -304,29 +148,29 @@ onBeforeUnmount(() => {
   >
     <h1 id="feed-view-title" class="feed-view__sr-title">{{ FEED_VIEW_TITLE }}</h1>
 
-    <InlineError v-if="errorMessage">
-      {{ errorMessage }}
-      <button type="button" @click="loadFeed(true)">{{ CHANNEL_RELOAD }}</button>
+    <InlineError v-if="feedData.errorMessage.value">
+      {{ feedData.errorMessage.value }}
+      <button type="button" @click="feedData.loadFeed(true)">{{ CHANNEL_RELOAD }}</button>
     </InlineError>
 
-    <div v-if="loading" class="feed-view__state" role="status">
-      {{ LOADING_FEED }}
+    <div v-if="feedData.loading.value" class="feed-view__state" role="status">
+      {{ feedData.LOADING_FEED }}
     </div>
 
-    <div v-else-if="isEmpty" class="feed-view__state feed-view__state--empty">
-      <strong>{{ EMPTY_FEED }}</strong>
-      <span>{{ FEED_EMPTY_HINT }}</span>
+    <div v-else-if="feedData.isEmpty.value" class="feed-view__state feed-view__state--empty">
+      <strong>{{ feedData.EMPTY_FEED }}</strong>
+      <span>{{ feedData.FEED_EMPTY_HINT }}</span>
     </div>
 
     <div v-show="!detailOpen || detailReturning || detailDragging" class="feed-view__content" :class="{ 'is-under-detail': detailOpen }">
-      <FeedList v-if="!loading && !isEmpty" :items="items" @open="openItem" />
+      <FeedList v-if="!feedData.loading.value && !feedData.isEmpty.value" :items="feedData.items.value" @open="openItem" />
 
       <FeedLoadMore
-        v-if="items.length"
-        :has-more="hasMore"
-        :loading-more="loadingMore"
-        :can-auto-load-more="canAutoLoadMore"
-        @load-more="triggerLoadMore"
+        v-if="feedData.items.value.length"
+        :has-more="feedData.hasMore.value"
+        :loading-more="feedData.loadingMore.value"
+        :can-auto-load-more="feedData.canAutoLoadMore.value"
+        @load-more="feedData.triggerLoadMore"
       />
     </div>
 
