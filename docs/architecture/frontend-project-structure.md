@@ -16,6 +16,8 @@ node scripts/validate-project-structure.js
 
 When this document drifts from the repository, trust the scripts and the current runtime files first, then refresh the document as a concise architecture guide. Current code and structure guard scripts (`scripts/validate-project-structure.js`, `scripts/guard-runtime-inventory.js`) are authoritative when older docs or issues disagree.
 
+For a file-by-file ownership map, read `docs/architecture/current-file-ownership.md`.
+
 ## Current folder structure
 
 ```text
@@ -283,6 +285,7 @@ npm run verify
 
 - Treat `scripts/validate-project-structure.js` as the executable structure source.
 - Treat `docs/frontend/shell-content-architecture.md` as the more detailed shell/content ownership reference.
+- Treat `docs/architecture/current-file-ownership.md` as the current file-by-file cleanup map.
 - Keep this document concise and structural rather than turning it into a full file inventory.
 - When the view registry, shell tree, or task-board authority wording changes, update this guide so it stays aligned with current `main`.
 - Do not use this document to imply that broader frontend migration, runtime cleanup, or umbrella issues are fully complete.

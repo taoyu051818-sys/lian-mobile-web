@@ -1,6 +1,6 @@
 # Agent Rules Quick Reference
 
-Every Agent session must read this file before making changes, but this file is not above current code, merged GitHub PRs, root README, or dated override files.
+Every Agent session must read this file before making changes.
 
 ## Startup checklist
 
@@ -9,21 +9,8 @@ Read these files at the start of every task, in this order:
 1. Current code on `main` and the relevant root `README.md` / `package.json`.
 2. Recent merged GitHub PRs for the repo and task area.
 3. `docs/agent/README.md` - source-of-truth order and docs index.
-4. `docs/agent/references/PR_DERIVED_STATUS_2026-05-05.md`.
-5. Current dated override files relevant to the task:
-   - `docs/agent/references/DECISIONS_OVERRIDE_2026-05-05.md`
-   - `docs/agent/references/ARCHITECTURE_WORKPLAN_OVERRIDE_2026-05-05.md`
-   - `docs/agent/references/TASK_BOARD_OVERRIDE_2026-05-05.md`
-   - `docs/agent/references/FILE_OWNERSHIP_OVERRIDE_2026-05-05.md`
-   - `docs/agent/references/PROJECT_FILE_INDEX_OVERRIDE_2026-05-05.md`
-   - `docs/agent/references/DOMAIN_DOCS_OVERRIDE_2026-05-05.md`
-   - `docs/agent/references/TASK_DOCS_OVERRIDE_2026-05-05.md`
-   - `docs/agent/references/HANDOFFS_OVERRIDE_2026-05-05.md`
-   - `docs/agent/references/CONTRACTS_OVERRIDE_2026-05-05.md`
-6. `docs/agent/00_AGENT_RULES.md` - this file.
-7. Older numbered docs, domain docs, task docs, and handoffs only as historical/context material after override checks.
-
-Do not start from `ARCHITECTURE_WORKPLAN.md`, `05_TASK_BOARD.md`, `03_FILE_OWNERSHIP.md`, `04_DECISIONS.md`, `tasks/*`, `handoffs/*`, or `contracts/*` without checking the override chain first.
+4. `docs/agent/00_AGENT_RULES.md` - this file.
+5. Task-specific docs in `references/`, `tasks/`, or `handoffs/` as needed.
 
 ## Current repo facts
 
@@ -57,7 +44,6 @@ Rules:
 - Do NOT add frameworks or dependencies without approval.
 - Do NOT commit `.env`, API keys, or secrets.
 - Do NOT add backend/API/runtime implementation back into `lian-mobile-web`.
-- Do NOT treat old task docs, handoffs, contracts, or split manifests as current truth without override and code checks.
 - Do NOT do large rewrites unless the task explicitly says so.
 - Do NOT mark a lane as accepted from the executor thread. Only reviewer validation can move it to accepted.
 
@@ -108,7 +94,6 @@ npm run check
 npm run ops:guard
 npm run build
 npm run test
-npm run test:vue-canary
 npm run verify
 ```
 

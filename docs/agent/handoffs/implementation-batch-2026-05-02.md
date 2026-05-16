@@ -23,7 +23,6 @@ This batch translates Pro review feedback into implementation lanes. The main de
 - `docs/agent/tasks/channel-messages-audience-filtering.md`
 - `docs/agent/tasks/map-v2-bounds-picker-validation.md`
 - `docs/agent/tasks/publish-v2-page.md`
-- `docs/agent/05_TASK_BOARD.md`
 - `docs/agent/handoffs/implementation-batch-2026-05-02.md`
 
 ## Work distribution
