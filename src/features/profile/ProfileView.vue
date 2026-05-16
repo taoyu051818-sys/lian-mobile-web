@@ -1,6 +1,13 @@
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
-import { fetchAuthMe, logoutAuth } from "../../api/profile";
+import { computed, onMounted, ref } from "vue";
+import {
+  DEFAULT_PROFILE_SETTINGS,
+  DEFAULT_PROFILE_STATS,
+  fetchAuthMe,
+  fetchProfileSettings,
+  fetchProfileStats,
+  logoutAuth,
+} from "../../api/profile";
 import {
   LOADING_PROFILE,
   ERROR_LOAD_GENERIC,
@@ -8,15 +15,17 @@ import {
   PROFILE_SECTION_LABEL,
   PROFILE_LOAD_ERROR_PREFIX,
   PROFILE_RELOAD,
+  PROFILE_SUMMARY_ERROR_PREFIX,
 } from "../../config/brand";
 import { extractErrorMessage } from "../../utils/extractErrorMessage";
 import { usePostDetail } from "../detail/usePostDetail";
 import type { PageChromeSpec } from "../../shell/page-model";
-import type { ProfileUser } from "../../types/profile";
+import type { ProfileSettings, ProfileStats, ProfileUser } from "../../types/profile";
 import { InlineError } from "../../ui";
 import AuthPanel from "../auth/AuthPanel.vue";
 import ProfileEditorPanel from "./ProfileEditorPanel.vue";
 import ProfileHeader from "./ProfileHeader.vue";
+import ProfileSummary from "./ProfileSummary.vue";
 import ProfileTabs from "./ProfileTabs.vue";
 import ProfileCollectionList from "./ProfileCollectionList.vue";
 import ProfileDetailOverlay from "./ProfileDetailOverlay.vue";
@@ -33,6 +42,11 @@ const { user, loading, errorMessage, isMissingSessionError, refreshCurrentSessio
   useProfileSession();
 
 const editorOpen = ref(false);
+const summaryLoading = ref(false);
+const summaryError = ref("");
+const profileStats = ref<ProfileStats>({ ...DEFAULT_PROFILE_STATS });
+const profileSettings = ref<ProfileSettings>({ ...DEFAULT_PROFILE_SETTINGS });
+const hasForumLink = computed(() => Boolean(user.value?.nodebbUid));
 
 const {
   listLoading,
@@ -42,7 +56,7 @@ const {
   tabs,
   listEmptyText,
   loadProfileList,
-  resetList: _resetList,
+  resetList,
 } = useProfileTabs({
   user,
   enterGuestState: () => enterGuestState(),
@@ -84,12 +98,71 @@ const { displayName, avatarText, pageChrome } = useProfileChrome({
   onChromeChange: (spec) => emit("chrome", spec),
 });
 
+function resetProfileOverview() {
+  summaryLoading.value = false;
+  summaryError.value = "";
+  profileStats.value = { ...DEFAULT_PROFILE_STATS };
+  profileSettings.value = { ...DEFAULT_PROFILE_SETTINGS };
+}
+
 function enterGuestState() {
   user.value = null;
   profileItems.value = [];
   editorOpen.value = false;
   errorMessage.value = "";
   listError.value = "";
+  resetProfileOverview();
+  resetList();
+}
+
+async function fetchProfileOverviewWithSessionRefresh() {
+  try {
+    return await Promise.all([fetchProfileStats(), fetchProfileSettings()]);
+  } catch (error) {
+    if (!isMissingSessionError(error)) throw error;
+    const sessionStillValid = await refreshCurrentSession();
+    if (!sessionStillValid) throw error;
+
+    try {
+      return await Promise.all([fetchProfileStats(), fetchProfileSettings()]);
+    } catch (retryError) {
+      if (isMissingSessionError(retryError)) {
+        throw new Error(
+          "登录状态已刷新，但个人概览接口仍返回未授权。请稍后重试，或重新登录后再打开个人主页。",
+          { cause: retryError },
+        );
+      }
+      throw retryError;
+    }
+  }
+}
+
+async function loadProfileOverview() {
+  if (!user.value) {
+    resetProfileOverview();
+    return;
+  }
+
+  summaryLoading.value = true;
+  summaryError.value = "";
+  try {
+    const [stats, settings] = await fetchProfileOverviewWithSessionRefresh();
+    profileStats.value = stats;
+    profileSettings.value = settings;
+  } catch (error) {
+    if (isMissingSessionError(error)) {
+      enterGuestState();
+    } else {
+      summaryError.value = extractErrorMessage(
+        error,
+        PROFILE_SUMMARY_ERROR_PREFIX + ERROR_LOAD_GENERIC,
+      );
+      profileStats.value = { ...DEFAULT_PROFILE_STATS };
+      profileSettings.value = { ...DEFAULT_PROFILE_SETTINGS };
+    }
+  } finally {
+    summaryLoading.value = false;
+  }
 }
 
 async function loadProfile() {
@@ -97,7 +170,12 @@ async function loadProfile() {
   errorMessage.value = "";
   try {
     user.value = await fetchAuthMe();
-    if (user.value) await loadProfileList(activeTab.value);
+    if (user.value) {
+      await Promise.all([loadProfileOverview(), loadProfileList(activeTab.value)]);
+    } else {
+      resetProfileOverview();
+      resetList();
+    }
   } catch (error) {
     if (isMissingSessionError(error)) {
       enterGuestState();
@@ -164,6 +242,15 @@ onMounted(() => {
         :alias-picker-open="aliasPickerOpen"
         @toggle-alias-picker="aliasPickerOpen = !aliasPickerOpen"
         @select-alias="switchAlias"
+      />
+
+      <ProfileSummary
+        :stats="profileStats"
+        :settings="profileSettings"
+        :loading="summaryLoading"
+        :error="summaryError"
+        :has-forum-link="hasForumLink"
+        @retry="loadProfileOverview"
       />
 
       <ProfileEditorPanel v-if="editorOpen" :user="user" @updated="handleProfileUpdated" />
