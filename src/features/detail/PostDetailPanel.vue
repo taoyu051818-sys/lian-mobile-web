@@ -2,7 +2,7 @@
 import { computed, ref, watch } from "vue";
 import { useVisualViewport } from "../../composables/useVisualViewport";
 import { InlineError } from "../../ui";
-import { LOADING_DETAIL } from "../../config/brand";
+import { LOADING_DETAIL, DETAIL_RELOAD } from "../../config/brand";
 import { extractErrorMessage } from "../../utils/extractErrorMessage";
 import type { PostDetail } from "../../types/post";
 import PostDetailTopbar from "./PostDetailTopbar.vue";
@@ -136,6 +136,7 @@ const { replyBusy, replyExpanded, replyContent, collapseReplyIfOpen, submitReply
 const { handleShare } = usePostShare({
   postId,
   title,
+  post,
   showActionMessage,
   showError: showActionError,
 });
@@ -188,7 +189,7 @@ watch(
 
       <InlineError v-else-if="error">
         {{ error }}
-        <button type="button" @click="emit('retry')">重新加载</button>
+        <button type="button" @click="emit('retry')">{{ DETAIL_RELOAD }}</button>
       </InlineError>
 
       <template v-else-if="post">
