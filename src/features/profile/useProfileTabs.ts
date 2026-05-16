@@ -57,6 +57,7 @@ export function useProfileTabs(options: {
         if (isMissingSessionError(retryError)) {
           throw new Error(
             "登录状态已刷新，但个人列表接口仍返回未授权。请稍后重试，或重新登录后再打开赞过 / 收藏。",
+            { cause: retryError },
           );
         }
         throw retryError;

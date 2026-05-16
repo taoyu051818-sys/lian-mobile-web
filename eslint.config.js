@@ -69,9 +69,12 @@ export default [
       ],
 
       "@typescript-eslint/no-explicit-any": "off",
+      "@typescript-eslint/no-empty-object-type": "off",
+      "no-constant-binary-expression": "off",
 
       "vue/require-v-for-key": "error",
       "vue/no-mutating-props": "error",
+      "vue/no-dupe-keys": "warn",
       "vue/require-explicit-emits": "warn",
       "vue/multi-word-component-names": "off",
     },

@@ -10,7 +10,7 @@ export interface CardOpenPayload {
   rect: { top: number; left: number; width: number; height: number };
 }
 
-export interface CardTransitionSnapshot extends CardOpenPayload {}
+export type CardTransitionSnapshot = CardOpenPayload;
 
 interface DetailHistoryState {
   lianDetail?: boolean;
