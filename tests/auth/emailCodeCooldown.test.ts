@@ -28,13 +28,18 @@ describe("auth email-code cooldown copy", () => {
 });
 
 describe("AuthPanel cooldown wiring", () => {
-  const source = readRepoFile("../../src/features/auth/AuthPanel.vue");
+  const panelSource = readRepoFile("../../src/features/auth/AuthPanel.vue");
+  const codeFieldSource = readRepoFile("../../src/features/auth/AuthEmailCodeField.vue");
 
   it("uses the cooldown-aware resend label", () => {
-    expect(source).toContain("emailCodeButtonLabel");
+    expect(panelSource).toContain("emailCodeButtonLabel");
+  });
+
+  it("passes cooldown state to the email code field component", () => {
+    expect(panelSource).toContain(":can-request-email-code");
   });
 
   it("disables the send button when cooldown or in-flight state blocks retry", () => {
-    expect(source).toContain(':disabled="!canRequestEmailCode"');
+    expect(codeFieldSource).toContain(':disabled="!canRequest"');
   });
 });
