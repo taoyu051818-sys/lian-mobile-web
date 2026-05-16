@@ -169,7 +169,6 @@ High-level rules:
 | -------------------- | ------------------------------------------------------------------------------- |
 | `MapLeafletView.vue` | Map page composition, shell chrome intent, map data cache and selection wiring. |
 | `MapCanvas.vue`      | Leaflet map rendering surface, layer mounting, selection events.                |
-| `map-canvas.css`     | Leaflet/map marker deep styles imported by MapCanvas.vue scoped style.          |
 | `MapPlaceholder.vue` | Map fallback/demo presentation.                                                 |
 | `MapPlaceSheet.vue`  | Map selected place/post sheet presentation.                                     |
 | `MapStatus.vue`      | Map loading/error status surface.                                               |

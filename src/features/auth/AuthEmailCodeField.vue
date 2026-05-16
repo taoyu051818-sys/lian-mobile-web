@@ -12,7 +12,7 @@ defineProps<{
   hintId: string;
 }>();
 
-const emit = defineEmits<{
+defineEmits<{
   "update:modelValue": [value: string];
   requestCode: [];
 }>();
@@ -35,13 +35,13 @@ const emit = defineEmits<{
         :aria-invalid="hasError"
         :aria-describedby="[hintId, hasError ? formErrorId : null].filter(Boolean).join(' ')"
         :placeholder="`${AUTH_EMAIL_CODE_LENGTH}${AUTH_CODE_SUFFIX}`"
-        @input="emit('update:modelValue', ($event.target as HTMLInputElement).value)"
+        @input="$emit('update:modelValue', ($event.target as HTMLInputElement).value)"
       />
       <button
         type="button"
         :disabled="!canRequest"
         :aria-describedby="hintId"
-        @click="emit('requestCode')"
+        @click="$emit('requestCode')"
       >
         {{ buttonLabel }}
       </button>

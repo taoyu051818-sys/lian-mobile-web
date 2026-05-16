@@ -2,12 +2,12 @@
 import { InlineError } from "../../ui";
 import { LOADING_PLACE } from "../../config/brand";
 import { actorDisplayName } from "../../domain/actor";
-import type { PlaceRef, PlaceSheet } from "../../types/place";
+import type { PlaceSheet, PlaceStatus } from "../../types/place";
 import { formatRelativeTime } from "../../utils/time";
 
 defineProps<{
   placeSheetOpen?: boolean;
-  structuredPlace?: PlaceRef | null;
+  structuredPlace?: { id?: string; name?: string; type?: string; status?: PlaceStatus } | null;
   placeSheet?: PlaceSheet | null;
   placeSheetLoading?: boolean;
   placeSheetError?: string;
