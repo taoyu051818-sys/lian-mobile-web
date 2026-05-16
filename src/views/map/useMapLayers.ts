@@ -1,4 +1,5 @@
 import { type ComputedRef, type Ref, computed, watch } from "vue";
+import { MAP_CONTENT_FALLBACK } from "../../config/brand";
 import { resolveRoads } from "../../map/roads";
 import { renderRoads } from "../../map/useMapRoads";
 import { locationIcon, postIcon, assetIcon } from "../../map/mapIcons";
@@ -128,7 +129,7 @@ export function useMapLayers(
       if (!position) return;
       const m = getLeaflet().marker(position, { icon: postIcon(post), title: post.title || post.locationArea || "", zIndexOffset: 120, interactive: true, keyboard: true });
       m.on("click", () => onPlaceSelect(post));
-      m.bindTooltip(post.title || post.locationArea || "地图内容", { sticky: true }).addTo(layers!.posts);
+      m.bindTooltip(post.title || post.locationArea || MAP_CONTENT_FALLBACK, { sticky: true }).addTo(layers!.posts);
     });
   }
 

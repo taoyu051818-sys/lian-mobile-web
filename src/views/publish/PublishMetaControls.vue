@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { TagChip } from "../../ui";
+import { PUBLISH_TAG_SETTINGS, PUBLISH_TAG_LABEL, PUBLISH_TAG_HINT, PUBLISH_POST_TAG, PUBLISH_TAG_PLACEHOLDER, PUBLISH_TAG_PREVIEW, PUBLISH_IDENTITY_TAG, PUBLISH_NO_IDENTITY_TAG, PUBLISH_VISIBILITY } from "../../config/brand";
 import type { PublishVisibility } from "../../types/publish";
 
 defineProps<{
@@ -25,26 +26,26 @@ const emit = defineEmits<{
   <section
     v-if="tagPanelOpen || normalizedTag || identityTag"
     class="publish-meta__panel"
-    aria-label="标签设置"
+    :aria-label="PUBLISH_TAG_SETTINGS"
   >
     <div class="publish-meta__panel-header">
-      <strong>标签</strong>
-      <span>让内容更好被理解</span>
+      <strong>{{ PUBLISH_TAG_LABEL }}</strong>
+      <span>{{ PUBLISH_TAG_HINT }}</span>
     </div>
 
     <label class="publish-meta__field publish-meta__field--compact">
-      <span>帖子标签</span>
-      <input :value="tagInput" maxlength="18" placeholder="一个标签，例如 #晚霞" @input="emit('update:tagInput', ($event.target as HTMLInputElement).value)" />
+      <span>{{ PUBLISH_POST_TAG }}</span>
+      <input :value="tagInput" maxlength="18" :placeholder="PUBLISH_TAG_PLACEHOLDER" @input="emit('update:tagInput', ($event.target as HTMLInputElement).value)" />
     </label>
 
-    <div v-if="normalizedTag" class="publish-meta__tags" aria-label="帖子标签预览">
+    <div v-if="normalizedTag" class="publish-meta__tags" :aria-label="PUBLISH_TAG_PREVIEW">
       <TagChip :tag="normalizedTag" />
     </div>
 
     <label v-if="identityTagOptions.length" class="publish-meta__field publish-meta__field--compact">
-      <span>身份标签</span>
+      <span>{{ PUBLISH_IDENTITY_TAG }}</span>
       <select :value="identityTag" @change="emit('update:identityTag', ($event.target as HTMLSelectElement).value)">
-        <option value="">不使用身份标签</option>
+        <option value="">{{ PUBLISH_NO_IDENTITY_TAG }}</option>
         <option v-for="tag in identityTagOptions" :key="tag" :value="tag">{{ tag }}</option>
       </select>
     </label>
@@ -56,7 +57,7 @@ const emit = defineEmits<{
     aria-labelledby="publish-visibility-title"
   >
     <div class="publish-meta__panel-header">
-      <strong id="publish-visibility-title">可见范围</strong>
+      <strong id="publish-visibility-title">{{ PUBLISH_VISIBILITY }}</strong>
       <span>{{ visibilityLabel }}</span>
     </div>
     <div class="publish-meta__visibility-grid">

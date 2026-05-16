@@ -11,7 +11,7 @@ import FeedLoadMore from "./feed/FeedLoadMore.vue";
 import { normalizeFeedItemId } from "./feed/feedItemId";
 import { useFeedDetail, type CardOpenPayload, type CardTransitionSnapshot } from "./feed/useFeedDetail";
 import { READ_HISTORY_KEY } from "../platform/browser-storage";
-import { LOADING_FEED, EMPTY_FEED, ERROR_LOAD_GENERIC } from "../config/brand";
+import { LOADING_FEED, EMPTY_FEED, ERROR_LOAD_GENERIC, FEED_VIEW_TITLE, FEED_FILTER_LABEL, FEED_EMPTY_HINT, CHANNEL_RELOAD } from "../config/brand";
 
 const PAGE_SIZE = 12;
 const SWIPE_THRESHOLD = 96;
@@ -146,7 +146,7 @@ const pageChrome = computed<PageChromeSpec>(() => ({
       kind: "tabs",
       items: tabs.value,
       activeKey: activeTab.value,
-      ariaLabel: "信息分类",
+      ariaLabel: FEED_FILTER_LABEL,
     },
     onTabSelect: switchTab,
   },
@@ -189,7 +189,7 @@ async function loadFeed(reset = false) {
   } catch (error) {
     errorMessage.value = error instanceof Error
       ? error.message
-      : "内容" + ERROR_LOAD_GENERIC;
+      : ERROR_LOAD_GENERIC;
     if (reset) items.value = [];
   } finally {
     loading.value = false;
@@ -302,11 +302,11 @@ onBeforeUnmount(() => {
     :style="detailDragStyle"
     aria-labelledby="feed-view-title"
   >
-    <h1 id="feed-view-title" class="feed-view__sr-title">首页</h1>
+    <h1 id="feed-view-title" class="feed-view__sr-title">{{ FEED_VIEW_TITLE }}</h1>
 
     <InlineError v-if="errorMessage">
       {{ errorMessage }}
-      <button type="button" @click="loadFeed(true)">重新加载</button>
+      <button type="button" @click="loadFeed(true)">{{ CHANNEL_RELOAD }}</button>
     </InlineError>
 
     <div v-if="loading" class="feed-view__state" role="status">
@@ -315,7 +315,7 @@ onBeforeUnmount(() => {
 
     <div v-else-if="isEmpty" class="feed-view__state feed-view__state--empty">
       <strong>{{ EMPTY_FEED }}</strong>
-      <span>可以换个分类，或稍后再来看看。</span>
+      <span>{{ FEED_EMPTY_HINT }}</span>
     </div>
 
     <div v-show="!detailOpen || detailReturning || detailDragging" class="feed-view__content" :class="{ 'is-under-detail': detailOpen }">

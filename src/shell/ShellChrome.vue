@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import { useShellChrome } from "./useShellChrome";
+import { SHELL_TOP_REGION, SHELL_BOTTOM_REGION, SHELL_TAB_SWITCH, SHELL_CURRENT_IDENTITY, SHELL_FILTER } from "../config/brand";
 import type { ShellRegionKey, ChromeButtonSpec } from "./shell-chrome-types";
 
 const props = withDefaults(defineProps<{
@@ -51,14 +52,14 @@ function handleFilterToggle(filterId: string) {
     :class="[`shell-chrome--${region}`, { 'shell-chrome--tabs': hasTabs || isSlottedTabs }]"
     :aria-hidden="hasTabs || isSlottedTabs ? undefined : !isVisible"
     role="complementary"
-    :aria-label="region === 'top' ? '顶部操作区' : '底部操作区'"
+    :aria-label="region === 'top' ? SHELL_TOP_REGION : SHELL_BOTTOM_REGION"
     :data-visible="isVisible"
   >
     <template v-if="hasTabs">
       <nav
         class="shell-chrome__tabs lian-floating-chrome"
         :class="[`lian-floating-chrome--${region}`]"
-        :aria-label="regionSpec.tabs?.ariaLabel ?? '标签切换'"
+        :aria-label="regionSpec.tabs?.ariaLabel ?? SHELL_TAB_SWITCH"
         :aria-hidden="!isVisible"
         data-floating-chrome="top"
       >
@@ -80,7 +81,7 @@ function handleFilterToggle(filterId: string) {
     </template>
     <template v-else>
       <div class="shell-chrome__inner lian-floating-chrome lian-floating-chrome--top">
-        <div v-if="identity" class="shell-chrome__identity" aria-label="当前身份">
+        <div v-if="identity" class="shell-chrome__identity" :aria-label="SHELL_CURRENT_IDENTITY">
           <span class="shell-chrome__identity-avatar" aria-hidden="true">{{ identity.avatarText }}</span>
           <span class="shell-chrome__identity-name">{{ identity.name }}</span>
           <span v-if="identity.meta" class="shell-chrome__identity-meta">{{ identity.meta }}</span>
@@ -88,7 +89,7 @@ function handleFilterToggle(filterId: string) {
         <div class="shell-chrome__slot">
           <slot />
         </div>
-        <nav v-if="filters.length" class="shell-chrome__filters" aria-label="筛选">
+        <nav v-if="filters.length" class="shell-chrome__filters" :aria-label="SHELL_FILTER">
           <button
             v-for="f in filters"
             :key="f.id"

@@ -1,5 +1,20 @@
 import { LianApiError } from "../../api/http";
 import type { ReportPostPayload } from "../../api/posts";
+import {
+  REPORT_CAT_PRIVACY,
+  REPORT_CAT_FALSE_INFO,
+  REPORT_CAT_ABUSE,
+  REPORT_CAT_WRONG_LOCATION,
+  REPORT_CAT_EXPIRED,
+  REPORT_CAT_OTHER,
+  REPORT_PLACEHOLDER_PRIVACY,
+  REPORT_PLACEHOLDER_ABUSE,
+  REPORT_PLACEHOLDER_OTHER,
+  REPORT_DUPLICATE,
+  REPORT_RATE_LIMIT,
+  REPORT_AUTH_REQUIRED,
+  REPORT_GENERIC,
+} from "../../config/brand";
 
 export interface ReportCategoryOption {
   value: string;
@@ -7,12 +22,12 @@ export interface ReportCategoryOption {
 }
 
 export const REPORT_CATEGORIES: ReportCategoryOption[] = [
-  { value: "privacy", label: "隐私问题" },
-  { value: "false_info", label: "虚假信息" },
-  { value: "abuse", label: "违规内容" },
-  { value: "wrong_location", label: "位置错误" },
-  { value: "expired", label: "过期内容" },
-  { value: "other", label: "其他" },
+  { value: "privacy", label: REPORT_CAT_PRIVACY },
+  { value: "false_info", label: REPORT_CAT_FALSE_INFO },
+  { value: "abuse", label: REPORT_CAT_ABUSE },
+  { value: "wrong_location", label: REPORT_CAT_WRONG_LOCATION },
+  { value: "expired", label: REPORT_CAT_EXPIRED },
+  { value: "other", label: REPORT_CAT_OTHER },
 ];
 
 const REPORT_DETAIL_ENABLED = new Set(["privacy", "abuse", "other"]);
@@ -28,11 +43,11 @@ export function shouldShowReportReasonField(category: string) {
 export function getReportReasonPlaceholder(category: string) {
   switch (category) {
     case "privacy":
-      return "可以补充说明泄露了哪些隐私信息，帮助平台更快处理。";
+      return REPORT_PLACEHOLDER_PRIVACY;
     case "abuse":
-      return "可以补充说明骚扰、攻击或违规的具体情况。";
+      return REPORT_PLACEHOLDER_ABUSE;
     case "other":
-      return "可以补充说明你想反馈的问题。";
+      return REPORT_PLACEHOLDER_OTHER;
     default:
       return "";
   }
@@ -53,17 +68,17 @@ export function getReportSubmissionMessage(error: unknown) {
     const code = `${error.code || ""}`.toLowerCase();
 
     if (error.status === 409 || code.includes("duplicate") || message.includes("duplicate") || message.includes("已举报")) {
-      return "这条内容已经提交过举报了，我们会继续跟进。";
+      return REPORT_DUPLICATE;
     }
 
     if (error.status === 429 || code.includes("rate") || message.includes("too many") || message.includes("过于频繁")) {
-      return "提交太频繁了，请稍后再试。";
+      return REPORT_RATE_LIMIT;
     }
 
     if (error.status === 401 || error.status === 403) {
-      return "需要先登录后才能举报这条内容。";
+      return REPORT_AUTH_REQUIRED;
     }
   }
 
-  return "举报没有提交成功，可以稍后再试。";
+  return REPORT_GENERIC;
 }

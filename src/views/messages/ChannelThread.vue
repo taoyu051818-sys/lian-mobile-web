@@ -3,7 +3,7 @@ import { InlineError, LianButton } from "../../ui";
 import { actorAvatarText, actorDisplayName } from "../../domain/actor";
 import type { ChannelMessage, ChannelMessageActor } from "../../types/messages";
 import { formatRelativeTime } from "../../utils/time";
-import { CHANNEL_DEFAULT_TAG, DEFAULT_USER_LABEL, MESSAGE_EMPTY_CONTENT, LOADING_CHANNEL, EMPTY_CHANNEL } from "../../config/brand";
+import { CHANNEL_DEFAULT_TAG, DEFAULT_USER_LABEL, MESSAGE_EMPTY_CONTENT, LOADING_CHANNEL, EMPTY_CHANNEL, CHANNEL_RELOAD, CHANNEL_LOAD_MORE, CHANNEL_SENDING, CHANNEL_SEND_FAILED, CHANNEL_RETRY, CHANNEL_READ_COUNT, CHANNEL_THREAD_LABEL, FEED_TIME_JUST_NOW } from "../../config/brand";
 
 const props = defineProps<{
   items: ChannelMessage[];
@@ -49,14 +49,14 @@ function messageMeta(item: ChannelMessage) {
 </script>
 
 <template>
-  <section class="messages-view__pane" aria-label="校园频道">
+  <section class="messages-view__pane" :aria-label="CHANNEL_THREAD_LABEL">
     <InlineError v-if="error">
       {{ error }}
-      <button type="button" @click="emit('retry')">重新加载</button>
+      <button type="button" @click="emit('retry')">{{ CHANNEL_RELOAD }}</button>
     </InlineError>
 
     <div class="messages-view__load-more">
-      <LianButton v-if="hasMore" variant="ghost" :loading="loading" @click="emit('loadMore')">加载更早消息</LianButton>
+      <LianButton v-if="hasMore" variant="ghost" :loading="loading" @click="emit('loadMore')">{{ CHANNEL_LOAD_MORE }}</LianButton>
     </div>
 
     <div v-if="loading && !items.length" class="messages-view__state" role="status">{{ LOADING_CHANNEL }}</div>
@@ -72,13 +72,13 @@ function messageMeta(item: ChannelMessage) {
           <div class="messages-view__bubble">
             <p>{{ messageText(item) }}</p>
             <footer>
-              <span>{{ formatRelativeTime(item.timestampISO || item.time) || "刚刚" }}</span>
-              <span v-if="item.isSelf && item.deliveryState === 'sending'">发送中…</span>
+              <span>{{ formatRelativeTime(item.timestampISO || item.time) || FEED_TIME_JUST_NOW }}</span>
+              <span v-if="item.isSelf && item.deliveryState === 'sending'">{{ CHANNEL_SENDING }}</span>
               <span v-else-if="item.isSelf && item.deliveryState === 'failed'">
-                发送失败
-                <button type="button" class="messages-view__retry-btn" @click="emit('retryMessage', String(item.id))">重试</button>
+                {{ CHANNEL_SEND_FAILED }}
+                <button type="button" class="messages-view__retry-btn" @click="emit('retryMessage', String(item.id))">{{ CHANNEL_RETRY }}</button>
               </span>
-              <span v-else-if="item.readCount">{{ item.readCount }} 次已读</span>
+              <span v-else-if="item.readCount">{{ item.readCount }} {{ CHANNEL_READ_COUNT }}</span>
             </footer>
           </div>
         </div>

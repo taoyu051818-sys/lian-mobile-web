@@ -2,7 +2,15 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { fetchMapV2Items } from "../api/map";
 import type { PageChromeSpec } from "../shell/page-model";
-import { DEFAULT_USER_LABEL, ERROR_PUBLISH_IMAGE, ERROR_PUBLISH_LOCATION, ERROR_PUBLISH_GENERIC } from "../config/brand";
+import {
+  DEFAULT_USER_LABEL, ERROR_PUBLISH_IMAGE, ERROR_PUBLISH_LOCATION, ERROR_PUBLISH_GENERIC,
+  PUBLISH_IDENTITY_META, PUBLISH_IDENTITY_UNCONFIRMED, PUBLISH_OPTIONAL,
+  PUBLISH_VIS_PUBLIC, PUBLISH_VIS_CAMPUS, PUBLISH_VIS_SCHOOL, PUBLISH_VIS_PRIVATE,
+  PUBLISH_LOCATION_UNBOUND, PUBLISH_LOCATION_MANUAL_HINT, PUBLISH_LOCATION_BOUND,
+  PUBLISH_IMAGE_MAX, PUBLISH_IMAGE_UPLOADING, PUBLISH_IMAGE_READY, PUBLISH_IMAGE_COUNT_SUFFIX,
+  PUBLISH_SUCCESS, PUBLISH_SUCCESS_BOUND, PUBLISH_SECTION_LABEL, PUBLISH_VIEW_POST,
+  USER_AVATAR_FALLBACK, CHANNEL_RELOAD,
+} from "../config/brand";
 import { extractErrorMessage } from "../utils/extractErrorMessage";
 import {
   buildPublishPayload,
@@ -43,7 +51,7 @@ const localPreviewUrls = ref<string[]>([]);
 const uploadedImageUrls = ref<string[]>([]);
 const aliasId = ref<string | undefined>(undefined);
 const identityName = ref(DEFAULT_USER_LABEL);
-const identityMeta = ref("当前身份");
+const identityMeta = ref(PUBLISH_IDENTITY_META);
 const uploading = ref(false);
 const publishing = ref(false);
 const errorMessage = ref("");
@@ -60,7 +68,7 @@ const visibilityPanelOpen = ref(false);
 
 const normalizedTag = computed(() => normalizePublishTag(tagInput.value));
 const normalizedIdentityTag = computed(() => normalizeIdentityTag(identityTag.value));
-const avatarText = computed(() => identityName.value.slice(0, 2) || "同");
+const avatarText = computed(() => identityName.value.slice(0, 2) || USER_AVATAR_FALLBACK);
 
 const canSubmit = computed(() => title.value.trim().length > 0 && body.value.trim().length > 0 && !uploading.value && !publishing.value);
 const titleCount = computed(() => title.value.length);
@@ -68,13 +76,13 @@ const bodyCount = computed(() => body.value.length);
 const locationToolLabel = computed(() => {
   if (selectedMapLocation.value) return knownPlaceLabel.value;
   if (placeName.value.trim()) return placeName.value.trim();
-  return "可选";
+  return PUBLISH_OPTIONAL;
 });
-const visibilityLabel = computed(() => visibilityOptions.find((item) => item.value === visibility.value)?.label || "公开");
+const visibilityLabel = computed(() => visibilityOptions.find((item) => item.value === visibility.value)?.label || PUBLISH_VIS_PUBLIC);
 const imageStatus = computed(() => {
-  if (!selectedFiles.value.length) return `最多 ${MAX_PUBLISH_IMAGE_COUNT} 张`;
-  if (uploading.value) return `上传中 ${uploadedImageUrls.value.length}/${selectedFiles.value.length}`;
-  return `已准备 ${uploadedImageUrls.value.length}/${selectedFiles.value.length} 张`;
+  if (!selectedFiles.value.length) return PUBLISH_IMAGE_MAX.replace("{n}", String(MAX_PUBLISH_IMAGE_COUNT));
+  if (uploading.value) return `${PUBLISH_IMAGE_UPLOADING} ${uploadedImageUrls.value.length}/${selectedFiles.value.length}`;
+  return `${PUBLISH_IMAGE_READY} ${uploadedImageUrls.value.length}/${selectedFiles.value.length} ${PUBLISH_IMAGE_COUNT_SUFFIX}`;
 });
 const filteredMapLocations = computed(() => {
   const keyword = locationSearch.value.trim().toLowerCase();
@@ -100,8 +108,8 @@ const knownPlaceLabel = computed(() => {
   if (!location) return "";
   return placeRefForLocation(location)?.name || location.name;
 });
-const locationPreviewLabel = computed(() => knownPlaceLabel.value || placeName.value.trim() || "未绑定地点");
-const locationBindingMeta = computed(() => selectedMapLocation.value ? "已绑定已知地点" : "手填地点仅作为展示文本");
+const locationPreviewLabel = computed(() => knownPlaceLabel.value || placeName.value.trim() || PUBLISH_LOCATION_UNBOUND);
+const locationBindingMeta = computed(() => selectedMapLocation.value ? PUBLISH_LOCATION_BOUND : PUBLISH_LOCATION_MANUAL_HINT);
 const postDetailUrl = computed(() => {
   const tid = lastTid.value;
   if (!tid) return "";
@@ -121,10 +129,10 @@ const pageChrome = computed<PageChromeSpec>(() => ({
 watch(pageChrome, (spec) => emit("chrome", spec), { deep: true });
 
 const visibilityOptions: Array<{ value: PublishVisibility; label: string }> = [
-  { value: "public", label: "公开" },
-  { value: "campus", label: "校园" },
-  { value: "school", label: "本校" },
-  { value: "private", label: "仅自己" },
+  { value: "public", label: PUBLISH_VIS_PUBLIC },
+  { value: "campus", label: PUBLISH_VIS_CAMPUS },
+  { value: "school", label: PUBLISH_VIS_SCHOOL },
+  { value: "private", label: PUBLISH_VIS_PRIVATE },
 ];
 
 function placeIdForLocation(location: MapLocation) {
@@ -149,10 +157,10 @@ async function loadIdentity() {
     identityTagOptions.value = user?.identityTags || [];
     identityTag.value = "";
     const activeAlias = aliasId.value ? user?.aliases?.find((alias) => alias.id === aliasId.value) : null;
-    identityMeta.value = activeAlias?.name || user?.institution || "当前身份";
+    identityMeta.value = activeAlias?.name || user?.institution || PUBLISH_IDENTITY_META;
   } catch {
     identityName.value = DEFAULT_USER_LABEL;
-    identityMeta.value = "未确认身份";
+    identityMeta.value = PUBLISH_IDENTITY_UNCONFIRMED;
     identityTagOptions.value = [];
     identityTag.value = "";
   }
@@ -278,9 +286,9 @@ async function submitPublish() {
     const response = await publishPost(payload);
     lastTid.value = response.tid || null;
     const boundPlaceName = response.place?.name || publishedLocationLabel;
-    successMessage.value = boundPlaceName && boundPlaceName !== "未绑定地点"
-      ? `发布成功，已绑定到「${boundPlaceName}」。`
-      : "发布成功，稍后可以在首页看到。";
+    successMessage.value = boundPlaceName && boundPlaceName !== PUBLISH_LOCATION_UNBOUND
+      ? PUBLISH_SUCCESS_BOUND.replace("{n}", boundPlaceName)
+      : PUBLISH_SUCCESS;
     resetForm();
   } catch (error) {
     errorMessage.value = extractErrorMessage(error, ERROR_PUBLISH_GENERIC);
@@ -318,7 +326,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <section class="publish-view keyboard-aware-surface" aria-label="发布">
+  <section class="publish-view keyboard-aware-surface" :aria-label="PUBLISH_SECTION_LABEL">
     <GlassPanel class="publish-view__card">
       <InlineError v-if="errorMessage">{{ errorMessage }}</InlineError>
       <div v-if="successMessage" class="publish-view__success-block">
@@ -328,7 +336,7 @@ onBeforeUnmount(() => {
           class="publish-view__view-post"
           :href="postDetailUrl"
           data-testid="publish-view-post-link"
-        >查看帖子</a>
+        >{{ PUBLISH_VIEW_POST }}</a>
       </div>
 
       <form class="publish-view__form keyboard-aware-surface" @submit.prevent="submitPublish">

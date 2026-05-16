@@ -1,4 +1,5 @@
 import { ref } from "vue";
+import { MAP_FILTER_LOCATIONS, MAP_FILTER_POSTS } from "../../config/brand";
 
 export interface MapFilterDef {
   id: string;
@@ -7,8 +8,8 @@ export interface MapFilterDef {
 }
 
 export const MAP_FILTERS: MapFilterDef[] = [
-  { id: "locations", label: "地点", defaultActive: true },
-  { id: "posts", label: "内容", defaultActive: true },
+  { id: "locations", label: MAP_FILTER_LOCATIONS, defaultActive: true },
+  { id: "posts", label: MAP_FILTER_POSTS, defaultActive: true },
 ];
 
 export function useMapChrome() {

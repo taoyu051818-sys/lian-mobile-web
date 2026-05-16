@@ -6,6 +6,8 @@
  * - Falls back to clipboard copy when the Web Share API is unavailable.
  */
 
+import { SHARE_ERROR_NO_URL, SHARE_ERROR_SHARE_FAILED, SHARE_ERROR_NO_CLIPBOARD, SHARE_ERROR_COPY_FAILED } from "../config/brand";
+
 export interface SharePostInput {
   tid: number;
   title: string;
@@ -43,7 +45,7 @@ export function buildCanonicalPostUrl(tid: number): string {
  */
 export async function sharePost(input: SharePostInput): Promise<SharePostResult> {
   const shareUrl = buildCanonicalPostUrl(input.tid);
-  if (!shareUrl) return { outcome: "failed", message: "无法生成分享链接。" };
+  if (!shareUrl) return { outcome: "failed", message: SHARE_ERROR_NO_URL };
 
   const nav = typeof navigator !== "undefined" ? navigator : null;
   const shareData: ShareData = { title: input.title, text: input.text ?? input.title, url: shareUrl };
@@ -54,18 +56,18 @@ export async function sharePost(input: SharePostInput): Promise<SharePostResult>
       return { outcome: "shared" };
     } catch (err: unknown) {
       if (isAbortError(err)) return { outcome: "cancelled" };
-      return { outcome: "failed", message: "分享没有完成，可以稍后再试。" };
+      return { outcome: "failed", message: SHARE_ERROR_SHARE_FAILED };
     }
   }
 
   // Clipboard fallback
   try {
     const clipboard = nav?.clipboard;
-    if (!clipboard) return { outcome: "failed", message: "当前浏览器不支持复制链接。" };
+    if (!clipboard) return { outcome: "failed", message: SHARE_ERROR_NO_CLIPBOARD };
     await clipboard.writeText(shareUrl);
     return { outcome: "copied" };
   } catch {
-    return { outcome: "failed", message: "复制链接失败，可以稍后再试。" };
+    return { outcome: "failed", message: SHARE_ERROR_COPY_FAILED };
   }
 }
 

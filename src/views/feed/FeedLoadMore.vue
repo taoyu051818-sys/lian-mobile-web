@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { LianButton } from "../../ui";
+import { FEED_LOAD_MORE, FEED_SEEN_ALL } from "../../config/brand";
 import FeedAutoLoadSentinel from "./FeedAutoLoadSentinel.vue";
 
 defineProps<{
@@ -22,7 +23,7 @@ const emit = defineEmits<{
           variant="ghost"
           @click="emit('loadMore')"
         >
-          加载更多
+          {{ FEED_LOAD_MORE }}
         </LianButton>
         <FeedAutoLoadSentinel
           class="feed-load-more__sentinel"
@@ -31,7 +32,7 @@ const emit = defineEmits<{
         />
       </div>
     </template>
-    <span v-else>已经看到这里啦</span>
+    <span v-else>{{ FEED_SEEN_ALL }}</span>
   </div>
 </template>
 

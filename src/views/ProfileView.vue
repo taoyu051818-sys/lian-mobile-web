@@ -2,7 +2,16 @@
 import { computed, onMounted, ref, watch } from "vue";
 import { LianApiError } from "../api/http";
 import { activateProfileAlias, deactivateProfileAlias, fetchAuthMe, fetchProfileTab, logoutAuth } from "../api/profile";
-import { GUEST_DISPLAY_NAME, LOADING_PROFILE, LOADING_LIST, EMPTY_HISTORY, EMPTY_SAVED, EMPTY_LIKED, ERROR_LOAD_GENERIC, ERROR_LOGOUT } from "../config/brand";
+import {
+  GUEST_DISPLAY_NAME, LOADING_PROFILE, LOADING_LIST, EMPTY_HISTORY, EMPTY_SAVED, EMPTY_LIKED,
+  ERROR_LOAD_GENERIC, ERROR_LOGOUT, PROFILE_SECTION_LABEL, PROFILE_TAB_HISTORY, PROFILE_TAB_SAVED,
+  PROFILE_TAB_LIKED, PROFILE_IDENTITY_FALLBACK, PROFILE_ALIAS_TYPE, PROFILE_ALIAS_SIGNAL,
+  PROFILE_ALIAS_PERSONA, PROFILE_ALIAS_DESCRIPTION, PROFILE_REAL_IDENTITY_HINT,
+  PROFILE_ALIAS_DEFAULT_HINT, PROFILE_ALIAS_MORE_HINT, PROFILE_EMPTY_CONTENT,
+  PROFILE_LOAD_ERROR_PREFIX, PROFILE_LIST_ERROR_PREFIX, PROFILE_RELOAD,
+  POST_DETAIL_DIALOG_LABEL, USER_AVATAR_FALLBACK, CHANNEL_RELOAD,
+  PROFILE_COLLAPSE_EDITOR, PROFILE_EDIT, PROFILE_LOGOUT,
+} from "../config/brand";
 import { extractErrorMessage } from "../utils/extractErrorMessage";
 import { usePostDetail } from "../composables/usePostDetail";
 import { getRecentReadHistoryIds } from "../platform/browser-storage";
@@ -37,39 +46,39 @@ const {
 } = usePostDetail();
 
 const tabs: Array<{ key: ProfileTabKey; label: string; empty: string }> = [
-  { key: "history", label: "浏览", empty: EMPTY_HISTORY },
-  { key: "saved", label: "收藏", empty: EMPTY_SAVED },
-  { key: "liked", label: "赞过", empty: EMPTY_LIKED },
+  { key: "history", label: PROFILE_TAB_HISTORY, empty: EMPTY_HISTORY },
+  { key: "saved", label: PROFILE_TAB_SAVED, empty: EMPTY_SAVED },
+  { key: "liked", label: PROFILE_TAB_LIKED, empty: EMPTY_LIKED },
 ];
 
 const displayName = computed(() => user.value?.username || GUEST_DISPLAY_NAME);
-const avatarText = computed(() => displayName.value.slice(0, 2) || "同");
+const avatarText = computed(() => displayName.value.slice(0, 2) || USER_AVATAR_FALLBACK);
 const activeAlias = computed(() => {
   if (!user.value?.activeAliasId) return null;
   return user.value.aliases?.find((alias) => alias.id === user.value?.activeAliasId) || null;
 });
-const identityMeta = computed(() => activeAlias.value?.name || user.value?.identityTags?.[0] || user.value?.institution || "校园身份");
+const identityMeta = computed(() => activeAlias.value?.name || user.value?.identityTags?.[0] || user.value?.institution || PROFILE_IDENTITY_FALLBACK);
 const activeAliasSummary = computed(() => {
   const alias = activeAlias.value;
   if (!alias) return [];
   return [
-    alias.categoryLabel ? { label: "类型", value: alias.categoryLabel } : null,
-    alias.identitySignal ? { label: "信号", value: alias.identitySignal } : null,
-    alias.persona ? { label: "人格", value: alias.persona } : null,
-    alias.description ? { label: "说明", value: alias.description } : null,
+    alias.categoryLabel ? { label: PROFILE_ALIAS_TYPE, value: alias.categoryLabel } : null,
+    alias.identitySignal ? { label: PROFILE_ALIAS_SIGNAL, value: alias.identitySignal } : null,
+    alias.persona ? { label: PROFILE_ALIAS_PERSONA, value: alias.persona } : null,
+    alias.description ? { label: PROFILE_ALIAS_DESCRIPTION, value: alias.description } : null,
   ].filter(Boolean) as Array<{ label: string; value: string }>;
 });
 const activeAliasHint = computed(() => {
-  if (!activeAlias.value) return "当前使用真实身份。";
+  if (!activeAlias.value) return PROFILE_REAL_IDENTITY_HINT;
   return activeAliasSummary.value.length
-    ? "这个马甲会作为你在 LIAN 中出现的默认身份。"
-    : "这个马甲会作为你在 LIAN 中出现的默认身份，更多身份说明会在后续补齐。";
+    ? PROFILE_ALIAS_DEFAULT_HINT
+    : PROFILE_ALIAS_MORE_HINT;
 });
 const userTags = computed(() => {
   const tags = user.value?.tags || user.value?.identityTags || [];
   return tags.slice(0, 5);
 });
-const listEmptyText = computed(() => tabs.find((tab) => tab.key === activeTab.value)?.empty || "暂无内容");
+const listEmptyText = computed(() => tabs.find((tab) => tab.key === activeTab.value)?.empty || PROFILE_EMPTY_CONTENT);
 const aliases = computed(() => user.value?.aliases || []);
 
 const pageChrome = computed<PageChromeSpec>(() => ({
@@ -82,8 +91,8 @@ const pageChrome = computed<PageChromeSpec>(() => ({
           meta: identityMeta.value,
         },
         buttons: [
-          { id: "profile:toggle-editor", label: editorOpen.value ? "收起编辑" : "编辑资料", variant: "tonal" },
-          { id: "profile:logout", label: "退出登录", variant: "ghost" },
+          { id: "profile:toggle-editor", label: editorOpen.value ? PROFILE_COLLAPSE_EDITOR : PROFILE_EDIT, variant: "tonal" },
+          { id: "profile:logout", label: PROFILE_LOGOUT, variant: "ghost" },
         ],
         onButtonClick: handleChromeButtonClick,
       }
@@ -156,7 +165,7 @@ async function loadProfile() {
     if (isMissingSessionError(error)) {
       enterGuestState();
     } else {
-      errorMessage.value = extractErrorMessage(error, "个人资料" + ERROR_LOAD_GENERIC);
+      errorMessage.value = extractErrorMessage(error, PROFILE_LOAD_ERROR_PREFIX + ERROR_LOAD_GENERIC);
     }
   } finally {
     loading.value = false;
@@ -174,7 +183,7 @@ async function loadProfileList(tab: ProfileTabKey) {
     if (isMissingSessionError(error)) {
       enterGuestState();
     } else {
-      listError.value = extractErrorMessage(error, "列表" + ERROR_LOAD_GENERIC);
+      listError.value = extractErrorMessage(error, PROFILE_LIST_ERROR_PREFIX + ERROR_LOAD_GENERIC);
       profileItems.value = [];
     }
   } finally {
@@ -230,10 +239,10 @@ onMounted(() => {
 </script>
 
 <template>
-  <section class="profile-view" aria-label="我的">
+  <section class="profile-view" :aria-label="PROFILE_SECTION_LABEL">
     <InlineError v-if="errorMessage">
       {{ errorMessage }}
-      <button type="button" @click="loadProfile">重新加载</button>
+      <button type="button" @click="loadProfile">{{ PROFILE_RELOAD }}</button>
     </InlineError>
 
     <div v-if="loading" class="profile-view__state" role="status">{{ LOADING_PROFILE }}</div>
@@ -269,7 +278,7 @@ onMounted(() => {
         @open-item="openItem"
       />
 
-      <div v-if="detailOpen" class="profile-view__detail-overlay" role="dialog" aria-modal="true" aria-label="帖子详情">
+      <div v-if="detailOpen" class="profile-view__detail-overlay" role="dialog" aria-modal="true" :aria-label="POST_DETAIL_DIALOG_LABEL">
         <PostDetailPanel
           :post="selectedPost"
           :loading="detailLoading"

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { MESSAGE_TAB_LABEL } from "../../config/brand";
 import type { MessageTabKey } from "../../types/messages";
 
 defineProps<{
@@ -12,7 +13,7 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <nav class="messages-view__tabs" aria-label="消息分类">
+  <nav class="messages-view__tabs" :aria-label="MESSAGE_TAB_LABEL">
     <button
       v-for="tab in tabs"
       :key="tab.key"

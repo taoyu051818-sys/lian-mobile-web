@@ -56,20 +56,32 @@ function resetRegions() {
   const defaults = createDefaultChromeState();
   mergeRegion(state.top, defaults.top);
   mergeRegion(state.bottom, defaults.bottom);
+  // Preserve the shell-owned tab slot set once by AppShell.
+  state.bottom.slot = "tabs";
   autoHideActive = false;
   savedTopVisible = undefined;
   savedBottomVisible = undefined;
 }
 
 function applyPageChrome(spec: PageChromeSpec) {
-  // Reset top region before applying new spec so stale fields from previous
-  // view (tabs, buttons, identity, filters) don't persist.
+  // Reset both regions before applying new spec so stale fields from previous
+  // view (tabs, buttons, identity, filters, visible) don't persist.
+  // Also clear any stale autoHide state from a previous view.
+  autoHideActive = false;
+  savedTopVisible = undefined;
+  savedBottomVisible = undefined;
+
+  const defaults = createDefaultChromeState();
   if (spec.top) {
-    const defaults = createDefaultChromeState();
     mergeRegion(state.top, defaults.top);
     setRegion("top", spec.top);
   }
-  if (spec.bottom) setRegion("bottom", spec.bottom);
+  if (spec.bottom) {
+    mergeRegion(state.bottom, defaults.bottom);
+    // Preserve the shell-owned tab slot set once by AppShell.
+    state.bottom.slot = "tabs";
+    setRegion("bottom", spec.bottom);
+  }
 
   if (spec.autoHideOnDetail !== undefined) {
     if (spec.autoHideOnDetail && !autoHideActive) {

@@ -7,6 +7,16 @@ import {
 } from "../../domain/validation/forms";
 import type { ProfileUser } from "../../types/profile";
 import { InlineError, TypeChip } from "../../ui";
+import {
+  AUTH_PANEL_TITLE, AUTH_TAB_LOGIN, AUTH_TAB_REGISTER, AUTH_ACCOUNT_CHIP, AUTH_MODE_LABEL, AUTH_CODE_SUFFIX,
+  AUTH_EMAIL_OR_NICKNAME, AUTH_EMAIL_OR_NICKNAME_HINT,
+  AUTH_NICKNAME, AUTH_NICKNAME_PLACEHOLDER, AUTH_NICKNAME_HINT,
+  AUTH_EMAIL_LABEL, AUTH_EMAIL_PLACEHOLDER, AUTH_EMAIL_HINT_FULL,
+  AUTH_EMAIL_CODE_LABEL, AUTH_INTEREST_SECTION, AUTH_INTEREST_RELOAD,
+  AUTH_INTEREST_SKIP, AUTH_PASSWORD_LABEL, AUTH_PASSWORD_PLACEHOLDER,
+  AUTH_PASSWORD_HINT, AUTH_INVITE_CODE, AUTH_INVITE_CODE_PLACEHOLDER,
+  AUTH_INVITE_CODE_HINT, AUTH_PROCESSING,
+} from "../../config/brand";
 import { useAuthForm } from "./useAuthForm";
 
 const emit = defineEmits<{
@@ -65,21 +75,21 @@ const inviteCodeHintId = "auth-invite-code-hint";
   <section class="auth-panel keyboard-aware-surface" aria-labelledby="auth-panel-title">
     <div class="auth-panel__header">
       <div>
-        <TypeChip type="official">账号</TypeChip>
-        <h3 id="auth-panel-title">登录 / 注册</h3>
+        <TypeChip type="official">{{ AUTH_ACCOUNT_CHIP }}</TypeChip>
+        <h3 id="auth-panel-title">{{ AUTH_PANEL_TITLE }}</h3>
       </div>
     </div>
 
     <p>{{ note }}</p>
 
-    <nav class="auth-panel__tabs" aria-label="认证模式">
-      <button type="button" :class="{ 'is-active': mode === 'login' }" @click="switchMode('login')">登录</button>
-      <button type="button" :class="{ 'is-active': mode === 'register' }" @click="switchMode('register')">注册</button>
+    <nav class="auth-panel__tabs" :aria-label="AUTH_MODE_LABEL">
+      <button type="button" :class="{ 'is-active': mode === 'login' }" @click="switchMode('login')">{{ AUTH_TAB_LOGIN }}</button>
+      <button type="button" :class="{ 'is-active': mode === 'register' }" @click="switchMode('register')">{{ AUTH_TAB_REGISTER }}</button>
     </nav>
 
     <form class="auth-panel__form keyboard-aware-surface" @submit.prevent="submitAuth">
       <label v-if="mode === 'login'">
-        <span>邮箱或昵称</span>
+        <span>{{ AUTH_EMAIL_OR_NICKNAME }}</span>
         <input
           v-model="login"
           autocomplete="username"
@@ -90,14 +100,14 @@ const inviteCodeHintId = "auth-invite-code-hint";
           required
           :aria-invalid="loginHasError"
           :aria-describedby="[loginHintId, loginHasError ? formErrorId : null].filter(Boolean).join(' ')"
-          placeholder="邮箱或昵称"
+          :placeholder="AUTH_EMAIL_OR_NICKNAME"
         />
-        <small :id="loginHintId" class="auth-panel__hint">支持邮箱或昵称登录。</small>
+        <small :id="loginHintId" class="auth-panel__hint">{{ AUTH_EMAIL_OR_NICKNAME_HINT }}</small>
       </label>
 
       <template v-else>
         <label>
-          <span>昵称</span>
+          <span>{{ AUTH_NICKNAME }}</span>
           <input
             v-model="username"
             :maxlength="AUTH_USERNAME_MAX_LENGTH"
@@ -109,12 +119,12 @@ const inviteCodeHintId = "auth-invite-code-hint";
             required
             :aria-invalid="usernameHasError"
             :aria-describedby="[usernameHintId, usernameHasError ? formErrorId : null].filter(Boolean).join(' ')"
-            placeholder="怎么称呼你"
+            :placeholder="AUTH_NICKNAME_PLACEHOLDER"
           />
-          <small :id="usernameHintId" class="auth-panel__hint">这个昵称会用于你的初始身份展示。</small>
+          <small :id="usernameHintId" class="auth-panel__hint">{{ AUTH_NICKNAME_HINT }}</small>
         </label>
         <label>
-          <span>高校邮箱</span>
+          <span>{{ AUTH_EMAIL_LABEL }}</span>
           <input
             v-model="email"
             type="email"
@@ -126,12 +136,12 @@ const inviteCodeHintId = "auth-invite-code-hint";
             inputmode="email"
             :aria-invalid="emailHasError"
             :aria-describedby="[emailHintId, emailHasError ? formErrorId : null].filter(Boolean).join(' ')"
-            placeholder="邀请码注册可不填"
+            :placeholder="AUTH_EMAIL_PLACEHOLDER"
           />
-          <small :id="emailHintId" class="auth-panel__hint">高校邮箱注册需要先获取 {{ AUTH_EMAIL_CODE_LENGTH }} 位验证码；邀请码注册时可以留空。</small>
+          <small :id="emailHintId" class="auth-panel__hint">{{ AUTH_EMAIL_HINT_FULL.replace('{n}', String(AUTH_EMAIL_CODE_LENGTH)) }}</small>
         </label>
         <label>
-          <span>邮箱验证码</span>
+          <span>{{ AUTH_EMAIL_CODE_LABEL }}</span>
           <div class="auth-panel__code-row">
             <input
               v-model="emailCode"
@@ -145,7 +155,7 @@ const inviteCodeHintId = "auth-invite-code-hint";
               enterkeyhint="next"
               :aria-invalid="emailCodeHasError"
               :aria-describedby="[emailCodeHintId, emailCodeHasError ? formErrorId : null].filter(Boolean).join(' ')"
-              :placeholder="`${AUTH_EMAIL_CODE_LENGTH} 位验证码`"
+              :placeholder="`${AUTH_EMAIL_CODE_LENGTH}${AUTH_CODE_SUFFIX}`"
             />
             <button
               type="button"
@@ -159,10 +169,10 @@ const inviteCodeHintId = "auth-invite-code-hint";
           <small :id="emailCodeHintId" class="auth-panel__hint" aria-live="polite">{{ emailCodeHint }}</small>
         </label>
 
-        <section class="auth-panel__interests" aria-label="兴趣偏好">
+        <section class="auth-panel__interests" :aria-label="AUTH_INTEREST_SECTION">
           <div class="auth-panel__section-title">
             <div class="auth-panel__section-copy">
-              <strong>兴趣偏好</strong>
+              <strong>{{ AUTH_INTEREST_SECTION }}</strong>
               <small class="auth-panel__hint">{{ interestHint }}</small>
             </div>
             <span v-if="hasInterestChoices">{{ selectedInterests.length }}/{{ AUTH_MAX_INTEREST_SELECTIONS }}</span>
@@ -186,20 +196,20 @@ const inviteCodeHintId = "auth-invite-code-hint";
 
           <div v-else-if="interestStatus === 'unavailable'" class="auth-panel__interest-state">
             <button type="button" class="auth-panel__secondary-action" @click="refreshInterestSettings">
-              重新加载兴趣选项
+              {{ AUTH_INTEREST_RELOAD }}
             </button>
           </div>
 
           <div v-if="showInterestSkip" class="auth-panel__interest-actions">
             <button type="button" class="auth-panel__secondary-action" @click="skipInterestSelection">
-              暂时跳过
+              {{ AUTH_INTEREST_SKIP }}
             </button>
           </div>
         </section>
       </template>
 
       <label>
-        <span>密码</span>
+        <span>{{ AUTH_PASSWORD_LABEL }}</span>
         <input
           v-model="password"
           type="password"
@@ -212,13 +222,13 @@ const inviteCodeHintId = "auth-invite-code-hint";
           :enterkeyhint="passwordEnterKeyHint"
           :aria-invalid="passwordHasError"
           :aria-describedby="[passwordHintId, passwordHasError ? formErrorId : null].filter(Boolean).join(' ')"
-          :placeholder="`至少 ${AUTH_PASSWORD_MIN_LENGTH} 位`"
+          :placeholder="AUTH_PASSWORD_PLACEHOLDER.replace('{n}', String(AUTH_PASSWORD_MIN_LENGTH))"
         />
-        <small :id="passwordHintId" class="auth-panel__hint">至少 {{ AUTH_PASSWORD_MIN_LENGTH }} 位，支持密码管理器自动填充。</small>
+        <small :id="passwordHintId" class="auth-panel__hint">{{ AUTH_PASSWORD_HINT.replace('{n}', String(AUTH_PASSWORD_MIN_LENGTH)) }}</small>
       </label>
 
       <label v-if="mode === 'register'">
-        <span>邀请码</span>
+        <span>{{ AUTH_INVITE_CODE }}</span>
         <input
           v-model="inviteCode"
           autocomplete="off"
@@ -228,16 +238,16 @@ const inviteCodeHintId = "auth-invite-code-hint";
           enterkeyhint="done"
           :aria-invalid="inviteCodeHasError"
           :aria-describedby="[inviteCodeHintId, inviteCodeHasError ? formErrorId : null].filter(Boolean).join(' ')"
-          placeholder="非高校邮箱时填写"
+          :placeholder="AUTH_INVITE_CODE_PLACEHOLDER"
         />
-        <small :id="inviteCodeHintId" class="auth-panel__hint">没有高校邮箱时，可以改用邀请码注册。</small>
+        <small :id="inviteCodeHintId" class="auth-panel__hint">{{ AUTH_INVITE_CODE_HINT }}</small>
       </label>
 
       <InlineError v-if="errorMessage" :id="formErrorId">{{ errorMessage }}</InlineError>
       <p v-if="successMessage" class="auth-panel__success">{{ successMessage }}</p>
 
       <button class="auth-panel__submit" type="submit" :disabled="submitting">
-        {{ submitting ? "处理中…" : primaryLabel }}
+        {{ submitting ? AUTH_PROCESSING : primaryLabel }}
       </button>
     </form>
   </section>

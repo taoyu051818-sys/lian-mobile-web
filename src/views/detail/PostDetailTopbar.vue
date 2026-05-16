@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { POST_DETAIL_CLOSE, POST_DETAIL_AUTHOR_AVATAR, POST_DETAIL_SHARE } from "../../config/brand";
+
 defineProps<{
   authorLabel?: string;
   avatarUrl?: string;
@@ -17,14 +19,14 @@ const emit = defineEmits<{
     class="post-detail-topbar lian-floating-chrome lian-floating-chrome--top"
     data-floating-chrome="top"
   >
-    <button class="post-detail-topbar__close" type="button" aria-label="关闭详情" @click="emit('close')">‹</button>
+    <button class="post-detail-topbar__close" type="button" :aria-label="POST_DETAIL_CLOSE" @click="emit('close')">‹</button>
     <div v-if="hasAuthorIdentity" class="post-detail-topbar__author-chip">
-      <img v-if="avatarUrl" :src="avatarUrl" :alt="authorLabel || '作者头像'" loading="lazy" />
+      <img v-if="avatarUrl" :src="avatarUrl" :alt="authorLabel || POST_DETAIL_AUTHOR_AVATAR" loading="lazy" />
       <span v-else-if="authorInitial" class="post-detail-topbar__avatar-text" aria-hidden="true">{{ authorInitial }}</span>
       <strong v-if="authorLabel">{{ authorLabel }}</strong>
     </div>
     <div v-else class="post-detail-topbar__author-chip post-detail-topbar__author-chip--empty" aria-hidden="true"></div>
-    <button class="post-detail-topbar__share" type="button" aria-label="分享" @click="emit('share')">分享</button>
+    <button class="post-detail-topbar__share" type="button" :aria-label="POST_DETAIL_SHARE" @click="emit('share')">{{ POST_DETAIL_SHARE }}</button>
   </header>
 </template>
 

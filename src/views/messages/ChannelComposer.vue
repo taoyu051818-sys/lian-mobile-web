@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
 import { IdentityBadge, InlineError, LianButton } from "../../ui";
-import { CHANNEL_DEFAULT_TAG } from "../../config/brand";
+import { CHANNEL_DEFAULT_TAG, COMPOSER_IDENTITY_SIGNAL, COMPOSER_NO_IDENTITY_SIGNAL, COMPOSER_SAY_SOMETHING, COMPOSER_SEND } from "../../config/brand";
 
 const props = defineProps<{
   avatarText: string;
@@ -35,15 +35,15 @@ function handleFocusOut(event: FocusEvent) {
   <form ref="composerRef" class="messages-view__composer" :class="{ 'is-compact': isCompact }" @submit.prevent="emit('submit')" @focusin="focused = true" @focusout="handleFocusOut">
     <IdentityBadge v-if="!isCompact" :avatar-text="avatarText" :label="actorName" :meta="signalMeta" />
     <label v-if="!isCompact && identityTags.length" class="messages-view__field">
-      <span>身份信号</span>
+      <span>{{ COMPOSER_IDENTITY_SIGNAL }}</span>
       <select :value="identityTag" @input="emit('update:identityTag', ($event.target as HTMLSelectElement).value)">
-        <option value="">不使用身份信号</option>
+        <option value="">{{ COMPOSER_NO_IDENTITY_SIGNAL }}</option>
         <option v-for="tag in identityTags" :key="tag" :value="tag">{{ tag }}</option>
       </select>
     </label>
     <div class="messages-view__input-row">
       <label class="messages-view__field messages-view__field--content">
-        <span v-if="!isCompact">说点什么</span>
+        <span v-if="!isCompact">{{ COMPOSER_SAY_SOMETHING }}</span>
         <textarea
           :value="content"
           :rows="isCompact ? 1 : 3"
@@ -51,7 +51,7 @@ function handleFocusOut(event: FocusEvent) {
           @input="emit('update:content', ($event.target as HTMLTextAreaElement).value)"
         />
       </label>
-      <LianButton type="submit" :loading="sending">发送</LianButton>
+      <LianButton type="submit" :loading="sending">{{ COMPOSER_SEND }}</LianButton>
     </div>
     <InlineError v-if="sendError">{{ sendError }}</InlineError>
   </form>

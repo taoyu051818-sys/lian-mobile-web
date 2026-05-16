@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { PROFILE_TABS_LABEL } from "../../config/brand";
 import type { ProfileTabKey } from "../../types/profile";
 
 defineProps<{
@@ -12,7 +13,7 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <nav class="profile-tabs" role="tablist" aria-label="个人内容分类">
+  <nav class="profile-tabs" role="tablist" :aria-label="PROFILE_TABS_LABEL">
     <button
       v-for="tab in tabs"
       :key="tab.key"
