@@ -123,7 +123,10 @@ describe("publish draft session helpers", () => {
       pendingImageCount: 1,
     });
 
-    storage.setItem(PUBLISH_DRAFT_SESSION_KEY, JSON.stringify({ title: "测试", visibility: "everyone" }));
+    storage.setItem(
+      PUBLISH_DRAFT_SESSION_KEY,
+      JSON.stringify({ title: "测试", visibility: "everyone" }),
+    );
     expect(readPublishDraft(storage)).toEqual({
       title: "测试",
       body: "",
