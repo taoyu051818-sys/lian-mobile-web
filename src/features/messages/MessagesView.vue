@@ -53,7 +53,7 @@ const {
 });
 
 const {
-  selectedPostId,
+  selectedPostId: _selectedPostId,
   selectedPost,
   detailLoading,
   detailError,

@@ -42,7 +42,7 @@ const {
   tabs,
   listEmptyText,
   loadProfileList,
-  resetList,
+  resetList: _resetList,
 } = useProfileTabs({
   user,
   enterGuestState: () => enterGuestState(),
@@ -51,7 +51,7 @@ const {
 });
 
 const {
-  selectedPostId,
+  selectedPostId: _selectedPostId,
   selectedPost,
   detailLoading,
   detailError,

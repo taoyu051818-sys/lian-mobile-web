@@ -1,4 +1,3 @@
-import type { ComputedRef, Ref } from "vue";
 import type { LeafletLayerGroupLike, LeafletMapLike } from "../../platform/leaflet";
 import { getLeaflet, tryGetLeaflet } from "../../platform/leaflet";
 import type { MapRoad } from "../../types/map";

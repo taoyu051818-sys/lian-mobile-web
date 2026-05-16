@@ -22,7 +22,7 @@ export function useProfileTabs(options: {
   isMissingSessionError: (error: unknown) => boolean;
   refreshCurrentSession: () => Promise<boolean>;
 }) {
-  const { user, enterGuestState, isMissingSessionError, refreshCurrentSession } = options;
+  const { enterGuestState, isMissingSessionError, refreshCurrentSession } = options;
 
   const listLoading = ref(false);
   const listError = ref("");

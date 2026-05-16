@@ -5,7 +5,6 @@ import type { ChannelMessage, ChannelMessageActor } from "../../types/messages";
 import { formatRelativeTime } from "../../utils/time";
 import {
   CHANNEL_DEFAULT_TAG,
-  DEFAULT_USER_LABEL,
   MESSAGE_EMPTY_CONTENT,
   LOADING_CHANNEL,
   EMPTY_CHANNEL,
@@ -19,7 +18,7 @@ import {
   FEED_TIME_JUST_NOW,
 } from "../../config/brand";
 
-const props = defineProps<{
+defineProps<{
   items: ChannelMessage[];
   loading: boolean;
   error: string;

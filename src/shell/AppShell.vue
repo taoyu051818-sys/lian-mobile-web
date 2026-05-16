@@ -14,7 +14,7 @@ export interface AppShellTab {
   icon: LianIconName;
 }
 
-const props = defineProps<{
+defineProps<{
   activeViewKey: AppViewKey;
   layoutMode: ShellLayoutMode;
   tabs: AppShellTab[];
