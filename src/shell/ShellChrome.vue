@@ -1,14 +1,23 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import { useShellChrome } from "./useShellChrome";
-import { SHELL_TOP_REGION, SHELL_BOTTOM_REGION, SHELL_TAB_SWITCH, SHELL_CURRENT_IDENTITY, SHELL_FILTER } from "../config/brand";
+import {
+  SHELL_TOP_REGION,
+  SHELL_BOTTOM_REGION,
+  SHELL_TAB_SWITCH,
+  SHELL_CURRENT_IDENTITY,
+  SHELL_FILTER,
+} from "../config/brand";
 import type { ShellRegionKey, ChromeButtonSpec } from "./shell-chrome-types";
 
-const props = withDefaults(defineProps<{
-  region: ShellRegionKey;
-}>(), {
-  region: "top",
-});
+const props = withDefaults(
+  defineProps<{
+    region: ShellRegionKey;
+  }>(),
+  {
+    region: "top",
+  },
+);
 
 const emit = defineEmits<{
   "button-click": [id: string, region: ShellRegionKey];
@@ -82,7 +91,9 @@ function handleFilterToggle(filterId: string) {
     <template v-else>
       <div class="shell-chrome__inner lian-floating-chrome lian-floating-chrome--top">
         <div v-if="identity" class="shell-chrome__identity" :aria-label="SHELL_CURRENT_IDENTITY">
-          <span class="shell-chrome__identity-avatar" aria-hidden="true">{{ identity.avatarText }}</span>
+          <span class="shell-chrome__identity-avatar" aria-hidden="true">{{
+            identity.avatarText
+          }}</span>
           <span class="shell-chrome__identity-name">{{ identity.name }}</span>
           <span v-if="identity.meta" class="shell-chrome__identity-meta">{{ identity.meta }}</span>
         </div>

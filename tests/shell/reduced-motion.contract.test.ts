@@ -31,7 +31,7 @@ describe("Feed detail reduced-motion guards", () => {
 
   it("FeedView imports prefersReducedMotion from the shared module instead of defining it locally", () => {
     expect(viewSource).toContain(
-      'import { prefersReducedMotion } from "../../composables/useReducedMotion"'
+      'import { prefersReducedMotion } from "../../composables/useReducedMotion"',
     );
     // Local function definition must be gone
     expect(viewSource).not.toContain("function prefersReducedMotion()");
@@ -45,9 +45,11 @@ describe("Feed detail reduced-motion guards", () => {
 
   it("short-circuits detail open and close motion when reduced motion is enabled", () => {
     expect(viewSource).toContain(
-      'if (!payload || typeof window === "undefined" || prefersReducedMotion()) return;'
+      'if (!payload || typeof window === "undefined" || prefersReducedMotion()) return;',
     );
-    expect(detailSource).toContain("if (deps.prefersReducedMotion()) {\n      resetDetailState();\n      return;\n    }");
+    expect(detailSource).toContain(
+      "if (deps.prefersReducedMotion()) {\n      resetDetailState();\n      return;\n    }",
+    );
   });
 
   it("disables non-essential transitions without globally disabling all animation", () => {

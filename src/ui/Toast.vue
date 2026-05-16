@@ -1,9 +1,12 @@
 <script setup lang="ts">
-withDefaults(defineProps<{
-  tone?: "info" | "success" | "warning" | "error";
-}>(), {
-  tone: "info"
-});
+withDefaults(
+  defineProps<{
+    tone?: "info" | "success" | "warning" | "error";
+  }>(),
+  {
+    tone: "info",
+  },
+);
 </script>
 
 <template>

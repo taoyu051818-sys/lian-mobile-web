@@ -9,7 +9,9 @@ const PAGE_SIZE = 12;
 
 function readHistoryQuery() {
   try {
-    const history = JSON.parse(localStorage.getItem(READ_HISTORY_KEY) || "[]") as Array<{ tid: FeedItemId | string }>;
+    const history = JSON.parse(localStorage.getItem(READ_HISTORY_KEY) || "[]") as Array<{
+      tid: FeedItemId | string;
+    }>;
     return history
       .map((entry) => normalizeFeedItemId(entry.tid))
       .filter(Boolean)
@@ -22,7 +24,10 @@ function readHistoryQuery() {
 function rememberReadItem(id: FeedItemId) {
   try {
     const normalizedId = normalizeFeedItemId(id);
-    const history = JSON.parse(localStorage.getItem(READ_HISTORY_KEY) || "[]") as Array<{ tid: FeedItemId | string; lastViewedAt: string }>;
+    const history = JSON.parse(localStorage.getItem(READ_HISTORY_KEY) || "[]") as Array<{
+      tid: FeedItemId | string;
+      lastViewedAt: string;
+    }>;
     const nextHistory = history.filter((entry) => normalizeFeedItemId(entry.tid) !== normalizedId);
     nextHistory.push({ tid: normalizedId, lastViewedAt: new Date().toISOString() });
     localStorage.setItem(READ_HISTORY_KEY, JSON.stringify(nextHistory.slice(-500)));
@@ -46,12 +51,9 @@ export function useFeedData(options: {
   const errorMessage = ref("");
 
   const isEmpty = computed(() => !loading.value && !errorMessage.value && items.value.length === 0);
-  const canAutoLoadMore = computed(() => (
-    hasMore.value
-    && !loading.value
-    && !loadingMore.value
-    && !options.detailOpen()
-  ));
+  const canAutoLoadMore = computed(
+    () => hasMore.value && !loading.value && !loadingMore.value && !options.detailOpen(),
+  );
 
   async function loadFeed(reset = false) {
     if (loading.value || loadingMore.value) return;
@@ -85,9 +87,7 @@ export function useFeedData(options: {
       hasMore.value = Boolean(response.hasMore);
       page.value = response.nextPage || (reset ? 2 : page.value + 1);
     } catch (error) {
-      errorMessage.value = error instanceof Error
-        ? error.message
-        : ERROR_LOAD_GENERIC;
+      errorMessage.value = error instanceof Error ? error.message : ERROR_LOAD_GENERIC;
       if (reset) items.value = [];
     } finally {
       loading.value = false;
@@ -110,10 +110,22 @@ export function useFeedData(options: {
   }
 
   return {
-    tabs, activeTab, items, page, hasMore, loading, loadingMore, errorMessage,
-    isEmpty, canAutoLoadMore,
-    loadFeed, switchTab, triggerLoadMore,
+    tabs,
+    activeTab,
+    items,
+    page,
+    hasMore,
+    loading,
+    loadingMore,
+    errorMessage,
+    isEmpty,
+    canAutoLoadMore,
+    loadFeed,
+    switchTab,
+    triggerLoadMore,
     rememberReadItem,
-    LOADING_FEED, EMPTY_FEED, FEED_EMPTY_HINT,
+    LOADING_FEED,
+    EMPTY_FEED,
+    FEED_EMPTY_HINT,
   };
 }

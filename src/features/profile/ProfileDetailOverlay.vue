@@ -16,7 +16,12 @@ defineEmits<{
 </script>
 
 <template>
-  <div class="profile-view__detail-overlay" role="dialog" aria-modal="true" :aria-label="POST_DETAIL_DIALOG_LABEL">
+  <div
+    class="profile-view__detail-overlay"
+    role="dialog"
+    aria-modal="true"
+    :aria-label="POST_DETAIL_DIALOG_LABEL"
+  >
     <PostDetailPanel
       :post="post"
       :loading="loading"

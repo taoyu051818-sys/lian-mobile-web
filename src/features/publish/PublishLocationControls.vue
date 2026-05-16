@@ -2,10 +2,16 @@
 import { placeTypeLabel } from "../../domain/place";
 import { InlineError, LianButton, LocationChip } from "../../ui";
 import {
-  PUBLISH_LOCATION_LABEL, PUBLISH_LOCATION_BOUND, PUBLISH_LOCATION_HINT,
-  PUBLISH_LOCATION_MANUAL, PUBLISH_LOCATION_MANUAL_PLACEHOLDER,
-  PUBLISH_LOCATION_SEARCH, PUBLISH_LOCATION_SEARCH_PLACEHOLDER,
-  CHANNEL_RELOAD, LOADING_PLACE, PUBLISH_LOCATION_NO_MATCH,
+  PUBLISH_LOCATION_LABEL,
+  PUBLISH_LOCATION_BOUND,
+  PUBLISH_LOCATION_HINT,
+  PUBLISH_LOCATION_MANUAL,
+  PUBLISH_LOCATION_MANUAL_PLACEHOLDER,
+  PUBLISH_LOCATION_SEARCH,
+  PUBLISH_LOCATION_SEARCH_PLACEHOLDER,
+  CHANNEL_RELOAD,
+  LOADING_PLACE,
+  PUBLISH_LOCATION_NO_MATCH,
   PUBLISH_LOCATION_SWITCH_MANUAL,
 } from "../../config/brand";
 import type { MapLocation } from "../../types/map";
@@ -50,12 +56,24 @@ const emit = defineEmits<{
 
     <label class="publish-location__field publish-location__field--compact">
       <span>{{ PUBLISH_LOCATION_MANUAL }}</span>
-      <input :value="placeName" maxlength="40" :placeholder="PUBLISH_LOCATION_MANUAL_PLACEHOLDER" @input="emit('update:placeName', ($event.target as HTMLInputElement).value)" />
+      <input
+        :value="placeName"
+        maxlength="40"
+        :placeholder="PUBLISH_LOCATION_MANUAL_PLACEHOLDER"
+        @input="emit('update:placeName', ($event.target as HTMLInputElement).value)"
+      />
     </label>
 
-    <label class="publish-location__field publish-location__field--compact publish-location__map-search">
+    <label
+      class="publish-location__field publish-location__field--compact publish-location__map-search"
+    >
       <span>{{ PUBLISH_LOCATION_SEARCH }}</span>
-      <input :value="locationSearch" maxlength="40" :placeholder="PUBLISH_LOCATION_SEARCH_PLACEHOLDER" @input="emit('update:locationSearch', ($event.target as HTMLInputElement).value)" />
+      <input
+        :value="locationSearch"
+        maxlength="40"
+        :placeholder="PUBLISH_LOCATION_SEARCH_PLACEHOLDER"
+        @input="emit('update:locationSearch', ($event.target as HTMLInputElement).value)"
+      />
     </label>
 
     <InlineError v-if="mapLocationError">
@@ -63,8 +81,14 @@ const emit = defineEmits<{
       <button type="button" @click="emit('loadMapLocations')">{{ CHANNEL_RELOAD }}</button>
     </InlineError>
 
-    <div v-if="mapLocationLoading" class="publish-location__mini-state" role="status">{{ LOADING_PLACE }}</div>
-    <div v-else-if="filteredMapLocations.length" class="publish-location__list" :aria-label="PUBLISH_LOCATION_LABEL">
+    <div v-if="mapLocationLoading" class="publish-location__mini-state" role="status">
+      {{ LOADING_PLACE }}
+    </div>
+    <div
+      v-else-if="filteredMapLocations.length"
+      class="publish-location__list"
+      :aria-label="PUBLISH_LOCATION_LABEL"
+    >
       <button
         v-for="location in filteredMapLocations"
         :key="location.id"
@@ -82,9 +106,13 @@ const emit = defineEmits<{
     <div v-if="selectedMapLocation" class="publish-location__selected">
       <div>
         <LocationChip>{{ knownPlaceLabel }}</LocationChip>
-        <span>{{ placeTypeLabel(selectedMapLocation?.place?.type, selectedMapLocation?.type) }}</span>
+        <span>{{
+          placeTypeLabel(selectedMapLocation?.place?.type, selectedMapLocation?.type)
+        }}</span>
       </div>
-      <LianButton type="button" size="sm" variant="ghost" @click="emit('clearMapLocation')">{{ PUBLISH_LOCATION_SWITCH_MANUAL }}</LianButton>
+      <LianButton type="button" size="sm" variant="ghost" @click="emit('clearMapLocation')">{{
+        PUBLISH_LOCATION_SWITCH_MANUAL
+      }}</LianButton>
     </div>
   </section>
 </template>

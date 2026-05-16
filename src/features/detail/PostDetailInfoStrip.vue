@@ -21,7 +21,11 @@ const emit = defineEmits<{
 <template>
   <section class="post-detail-info-strip" aria-label="帖子属性">
     <div class="post-detail-info-strip__left">
-      <span v-if="primaryTag" class="post-detail-info-strip__pill post-detail-info-strip__pill--tag">{{ primaryTag }}</span>
+      <span
+        v-if="primaryTag"
+        class="post-detail-info-strip__pill post-detail-info-strip__pill--tag"
+        >{{ primaryTag }}</span
+      >
       <span v-if="timeLabel" class="post-detail-info-strip__pill">{{ timeLabel }}</span>
       <button
         v-if="structuredPlace?.id"
@@ -34,7 +38,12 @@ const emit = defineEmits<{
       </button>
       <span v-else-if="placeLabel" class="post-detail-info-strip__pill">{{ placeLabel }}</span>
     </div>
-    <button class="post-detail-info-strip__report-entry" type="button" :disabled="reportBusy" @click.stop="emit('toggleReport')">
+    <button
+      class="post-detail-info-strip__report-entry"
+      type="button"
+      :disabled="reportBusy"
+      @click.stop="emit('toggleReport')"
+    >
       {{ reportOpen ? "收起" : "举报" }}
     </button>
   </section>

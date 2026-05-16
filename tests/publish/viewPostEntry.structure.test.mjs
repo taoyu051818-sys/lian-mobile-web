@@ -25,18 +25,12 @@ test("PublishView template has view-post link with data-testid", () => {
 test("PublishView template guards view-post link with v-if on postDetailUrl", () => {
   const src = read("src/features/publish/PublishView.vue");
   // The <a> element must be conditionally rendered only when postDetailUrl is truthy
-  assert.match(
-    src,
-    /v-if="postDetailUrl"[\s\S]*?data-testid="publish-view-post-link"/,
-  );
+  assert.match(src, /v-if="postDetailUrl"[\s\S]*?data-testid="publish-view-post-link"/);
 });
 
 test("PublishView template binds href to postDetailUrl on view-post link", () => {
   const src = read("src/features/publish/PublishView.vue");
-  assert.match(
-    src,
-    /:href="postDetailUrl"[\s\S]*?data-testid="publish-view-post-link"/,
-  );
+  assert.match(src, /:href="postDetailUrl"[\s\S]*?data-testid="publish-view-post-link"/);
 });
 
 test("PublishView template renders view-post link inside success block", () => {

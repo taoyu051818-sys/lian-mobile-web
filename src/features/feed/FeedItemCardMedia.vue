@@ -9,12 +9,31 @@ defineProps<{
 </script>
 
 <template>
-  <div v-if="cardTemplate !== 'text' || coverUrl" class="feed-item-card__media" data-motion-role="image-frame">
-    <img v-if="coverUrl" class="feed-item-card__cover" :src="coverUrl" :alt="title" loading="lazy" data-motion-role="image" draggable="false" />
-    <div v-else class="feed-item-card__placeholder" aria-hidden="true" data-motion-role="image-placeholder">
+  <div
+    v-if="cardTemplate !== 'text' || coverUrl"
+    class="feed-item-card__media"
+    data-motion-role="image-frame"
+  >
+    <img
+      v-if="coverUrl"
+      class="feed-item-card__cover"
+      :src="coverUrl"
+      :alt="title"
+      loading="lazy"
+      data-motion-role="image"
+      draggable="false"
+    />
+    <div
+      v-else
+      class="feed-item-card__placeholder"
+      aria-hidden="true"
+      data-motion-role="image-placeholder"
+    >
       <span>{{ templateMark }}</span>
     </div>
-    <span v-if="primaryTag" class="feed-item-card__floating-tag" data-motion-role="tag">{{ primaryTag }}</span>
+    <span v-if="primaryTag" class="feed-item-card__floating-tag" data-motion-role="tag">{{
+      primaryTag
+    }}</span>
   </div>
 </template>
 

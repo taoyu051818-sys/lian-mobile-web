@@ -1,11 +1,14 @@
 <script setup lang="ts">
-withDefaults(defineProps<{
-  as?: string;
-  title?: string;
-  description?: string;
-}>(), {
-  as: "section",
-});
+withDefaults(
+  defineProps<{
+    as?: string;
+    title?: string;
+    description?: string;
+  }>(),
+  {
+    as: "section",
+  },
+);
 </script>
 
 <template>

@@ -93,7 +93,9 @@ function normalizeFeedItem(value) {
   if (!value || typeof value !== "object") return null;
   const record = value;
   const cover = readableText(record.cover || record.coverUrl || record.image || record.imageUrl);
-  const contentType = normalizeFeedContentType(record.contentType || record.category || record.type);
+  const contentType = normalizeFeedContentType(
+    record.contentType || record.category || record.type,
+  );
   const { cardTemplate, cardTemplateSource, presentationIntent } = normalizeFeedCardTemplate({
     cover,
     contentType,
@@ -104,7 +106,9 @@ function normalizeFeedItem(value) {
   return {
     tid: normalizeFeedItemId(record.tid || record.id),
     title: readableText(record.title) || "未命名内容",
-    bodyPreview: readableText(record.bodyPreview || record.summary || record.excerpt || record.body),
+    bodyPreview: readableText(
+      record.bodyPreview || record.summary || record.excerpt || record.body,
+    ),
     cover,
     primaryTag: readableText(record.primaryTag || record.tag),
     actor: typeof record.actor === "object" && record.actor ? record.actor : undefined,
@@ -113,7 +117,8 @@ function normalizeFeedItem(value) {
     timestampISO: readableText(record.timestampISO || record.timestamp || record.createdAt),
     likeCount: normalizeCount(record.likeCount || record.likes),
     liked: normalizeBoolean(record.liked),
-    locationArea: readableText(record.locationArea || record.placeLabel || record.location) || "校园",
+    locationArea:
+      readableText(record.locationArea || record.placeLabel || record.location) || "校园",
     contentType,
     presentationIntent,
     cardTemplate,

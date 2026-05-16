@@ -2,11 +2,20 @@
 import { ref } from "vue";
 import { LocationChip, TagChip } from "../../ui";
 import {
-  PUBLISH_COMPOSER_LABEL, PUBLISH_TITLE_LABEL, PUBLISH_TITLE_PLACEHOLDER,
-  PUBLISH_BODY_LABEL, PUBLISH_BODY_PLACEHOLDER, PUBLISH_SUMMARY_LABEL,
-  PUBLISH_IMAGE_PILL_SUFFIX, PUBLISH_IDENTITY_PILL_PREFIX, PUBLISH_SETTINGS_LABEL,
-  PUBLISH_IMAGE_TOOLBAR, PUBLISH_LOCATION_TOOLBAR, PUBLISH_TAG_TOOLBAR,
-  PUBLISH_VISIBILITY, PUBLISH_OPTIONAL,
+  PUBLISH_COMPOSER_LABEL,
+  PUBLISH_TITLE_LABEL,
+  PUBLISH_TITLE_PLACEHOLDER,
+  PUBLISH_BODY_LABEL,
+  PUBLISH_BODY_PLACEHOLDER,
+  PUBLISH_SUMMARY_LABEL,
+  PUBLISH_IMAGE_PILL_SUFFIX,
+  PUBLISH_IDENTITY_PILL_PREFIX,
+  PUBLISH_SETTINGS_LABEL,
+  PUBLISH_IMAGE_TOOLBAR,
+  PUBLISH_LOCATION_TOOLBAR,
+  PUBLISH_TAG_TOOLBAR,
+  PUBLISH_VISIBILITY,
+  PUBLISH_OPTIONAL,
 } from "../../config/brand";
 import PublishImagePreview from "./PublishImagePreview.vue";
 import type { MapLocation } from "../../types/map";
@@ -58,24 +67,47 @@ function openFilePicker() {
     <label class="publish-composer__headline">
       <span>{{ PUBLISH_TITLE_LABEL }}</span>
       <strong>{{ titleCount }}/{{ MAX_TITLE_LENGTH }}</strong>
-      <input :value="title" maxlength="40" :placeholder="PUBLISH_TITLE_PLACEHOLDER" @input="emit('update:title', ($event.target as HTMLInputElement).value)" />
+      <input
+        :value="title"
+        maxlength="40"
+        :placeholder="PUBLISH_TITLE_PLACEHOLDER"
+        @input="emit('update:title', ($event.target as HTMLInputElement).value)"
+      />
     </label>
 
     <label class="publish-composer__body-field">
       <span class="publish-composer__body-label">{{ PUBLISH_BODY_LABEL }}</span>
-      <textarea :value="body" rows="7" maxlength="300" :placeholder="PUBLISH_BODY_PLACEHOLDER" @input="emit('update:body', ($event.target as HTMLTextAreaElement).value)" />
+      <textarea
+        :value="body"
+        rows="7"
+        maxlength="300"
+        :placeholder="PUBLISH_BODY_PLACEHOLDER"
+        @input="emit('update:body', ($event.target as HTMLTextAreaElement).value)"
+      />
       <strong>{{ bodyCount }}/{{ MAX_BODY_LENGTH }}</strong>
     </label>
 
     <div
-      v-if="selectedFilesCount || selectedMapLocation || placeName.trim() || normalizedTag || normalizedIdentityTag"
+      v-if="
+        selectedFilesCount ||
+        selectedMapLocation ||
+        placeName.trim() ||
+        normalizedTag ||
+        normalizedIdentityTag
+      "
       class="publish-composer__summary-row"
       :aria-label="PUBLISH_SUMMARY_LABEL"
     >
-      <span v-if="selectedFilesCount" class="publish-composer__summary-pill">{{ selectedFilesCount }} {{ PUBLISH_IMAGE_PILL_SUFFIX }}</span>
-      <LocationChip v-if="selectedMapLocation || placeName.trim()">{{ locationPreviewLabel }}</LocationChip>
+      <span v-if="selectedFilesCount" class="publish-composer__summary-pill"
+        >{{ selectedFilesCount }} {{ PUBLISH_IMAGE_PILL_SUFFIX }}</span
+      >
+      <LocationChip v-if="selectedMapLocation || placeName.trim()">{{
+        locationPreviewLabel
+      }}</LocationChip>
       <TagChip v-if="normalizedTag" :tag="normalizedTag" />
-      <span v-if="normalizedIdentityTag" class="publish-composer__summary-pill">{{ PUBLISH_IDENTITY_PILL_PREFIX }}{{ normalizedIdentityTag }}</span>
+      <span v-if="normalizedIdentityTag" class="publish-composer__summary-pill"
+        >{{ PUBLISH_IDENTITY_PILL_PREFIX }}{{ normalizedIdentityTag }}</span
+      >
     </div>
 
     <div class="publish-composer__toolbar" :aria-label="PUBLISH_SETTINGS_LABEL">
@@ -110,7 +142,14 @@ function openFilePicker() {
         <strong>{{ PUBLISH_VISIBILITY }}</strong>
         <span>{{ visibilityLabel }}</span>
       </button>
-      <input ref="fileInputRef" type="file" accept="image/*" multiple class="publish-composer__hidden-input" @change="emit('handleFiles', $event)" />
+      <input
+        ref="fileInputRef"
+        type="file"
+        accept="image/*"
+        multiple
+        class="publish-composer__hidden-input"
+        @change="emit('handleFiles', $event)"
+      />
     </div>
   </section>
 
@@ -250,5 +289,4 @@ function openFilePicker() {
   opacity: 0;
   pointer-events: none;
 }
-
 </style>

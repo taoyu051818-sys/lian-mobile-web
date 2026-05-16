@@ -30,17 +30,45 @@ const emit = defineEmits<{
     @submit.prevent="emit('submitReply')"
     @click.stop
   >
-    <button v-if="!replyExpanded" class="post-reply-dock__action" :class="{ 'is-active': liked }" type="button" :disabled="likeBusy" @click="emit('like')">
+    <button
+      v-if="!replyExpanded"
+      class="post-reply-dock__action"
+      :class="{ 'is-active': liked }"
+      type="button"
+      :disabled="likeBusy"
+      @click="emit('like')"
+    >
       {{ liked ? "♥" : "♡" }} {{ likeCount }}
     </button>
-    <button v-if="!replyExpanded" class="post-reply-dock__action" :class="{ 'is-active': saved }" type="button" :disabled="saveBusy" @click="emit('save')">
+    <button
+      v-if="!replyExpanded"
+      class="post-reply-dock__action"
+      :class="{ 'is-active': saved }"
+      type="button"
+      :disabled="saveBusy"
+      @click="emit('save')"
+    >
       {{ saved ? "★" : "☆" }}
     </button>
     <div class="post-reply-dock__reply-box" @click="emit('update:replyExpanded', true)">
-      <span v-if="!replyExpanded" class="post-reply-dock__reply-placeholder">{{ REPLY_DOCK_PLACEHOLDER }}</span>
-      <textarea v-else :value="replyContent" rows="3" maxlength="2000" :placeholder="replyIdentityLabel" autofocus @input="emit('update:replyContent', ($event.target as HTMLTextAreaElement).value)" />
+      <span v-if="!replyExpanded" class="post-reply-dock__reply-placeholder">{{
+        REPLY_DOCK_PLACEHOLDER
+      }}</span>
+      <textarea
+        v-else
+        :value="replyContent"
+        rows="3"
+        maxlength="2000"
+        :placeholder="replyIdentityLabel"
+        autofocus
+        @input="emit('update:replyContent', ($event.target as HTMLTextAreaElement).value)"
+      />
     </div>
-    <button class="post-reply-dock__send" type="submit" :disabled="replyBusy || (replyExpanded && !replyContent?.trim())">
+    <button
+      class="post-reply-dock__send"
+      type="submit"
+      :disabled="replyBusy || (replyExpanded && !replyContent?.trim())"
+    >
       {{ replyExpanded ? REPLY_DOCK_SEND : REPLY_DOCK_REPLY }}
     </button>
   </form>
@@ -58,7 +86,8 @@ const emit = defineEmits<{
   border-radius: var(--floating-bar-radius);
   background: var(--glass-bg-strong);
   box-shadow: var(--shadow-floating);
-  transition: transform var(--floating-chrome-motion-duration, 260ms) var(--motion-ease-standard),
+  transition:
+    transform var(--floating-chrome-motion-duration, 260ms) var(--motion-ease-standard),
     opacity var(--floating-chrome-motion-duration, 260ms) var(--motion-ease-standard),
     filter var(--floating-chrome-motion-duration, 260ms) var(--motion-ease-standard),
     bottom 200ms ease,

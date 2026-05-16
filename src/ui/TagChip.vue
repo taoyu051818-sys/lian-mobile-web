@@ -1,9 +1,12 @@
 <script setup lang="ts">
-const props = withDefaults(defineProps<{
-  tag: string;
-}>(), {
-  tag: ""
-});
+const props = withDefaults(
+  defineProps<{
+    tag: string;
+  }>(),
+  {
+    tag: "",
+  },
+);
 
 function displayTag(value: string) {
   const trimmed = String(value || "").trim();

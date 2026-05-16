@@ -1,9 +1,12 @@
 <script setup lang="ts">
-withDefaults(defineProps<{
-  icon?: string;
-}>(), {
-  icon: "⌖"
-});
+withDefaults(
+  defineProps<{
+    icon?: string;
+  }>(),
+  {
+    icon: "⌖",
+  },
+);
 </script>
 
 <template>

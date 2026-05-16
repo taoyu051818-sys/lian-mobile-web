@@ -1,6 +1,12 @@
 import { computed, ref, type Ref } from "vue";
 import { fetchMapV2Items } from "../../api/map";
-import { ERROR_PUBLISH_LOCATION, PUBLISH_LOCATION_UNBOUND, PUBLISH_LOCATION_MANUAL_HINT, PUBLISH_LOCATION_BOUND, PUBLISH_OPTIONAL } from "../../config/brand";
+import {
+  ERROR_PUBLISH_LOCATION,
+  PUBLISH_LOCATION_UNBOUND,
+  PUBLISH_LOCATION_MANUAL_HINT,
+  PUBLISH_LOCATION_BOUND,
+  PUBLISH_OPTIONAL,
+} from "../../config/brand";
 import { extractErrorMessage } from "../../utils/extractErrorMessage";
 import { createMapV2LocationDraft } from "../../api/publish";
 import type { MapLocation } from "../../types/map";
@@ -22,17 +28,23 @@ export function usePublishLocationOptions(placeName: Ref<string>) {
   function placeRefForLocation(location: MapLocation): PlaceRef | undefined {
     const id = placeIdForLocation(location);
     if (!id) return undefined;
-    return location.place || {
-      id,
-      name: location.name,
-      type: location.type,
-    };
+    return (
+      location.place || {
+        id,
+        name: location.name,
+        type: location.type,
+      }
+    );
   }
 
   const filteredMapLocations = computed(() => {
     const keyword = locationSearch.value.trim().toLowerCase();
     const list = keyword
-      ? mapLocations.value.filter((location) => `${location.name} ${location.type || ""} ${location.place?.name || ""} ${location.place?.type || ""}`.toLowerCase().includes(keyword))
+      ? mapLocations.value.filter((location) =>
+          `${location.name} ${location.type || ""} ${location.place?.name || ""} ${location.place?.type || ""}`
+            .toLowerCase()
+            .includes(keyword),
+        )
       : mapLocations.value;
     return list.slice(0, 18);
   });
@@ -56,8 +68,12 @@ export function usePublishLocationOptions(placeName: Ref<string>) {
     return placeRefForLocation(location)?.name || location.name;
   });
 
-  const locationPreviewLabel = computed(() => knownPlaceLabel.value || placeName.value.trim() || PUBLISH_LOCATION_UNBOUND);
-  const locationBindingMeta = computed(() => selectedMapLocation.value ? PUBLISH_LOCATION_BOUND : PUBLISH_LOCATION_MANUAL_HINT);
+  const locationPreviewLabel = computed(
+    () => knownPlaceLabel.value || placeName.value.trim() || PUBLISH_LOCATION_UNBOUND,
+  );
+  const locationBindingMeta = computed(() =>
+    selectedMapLocation.value ? PUBLISH_LOCATION_BOUND : PUBLISH_LOCATION_MANUAL_HINT,
+  );
   const locationToolLabel = computed(() => {
     if (selectedMapLocation.value) return knownPlaceLabel.value;
     if (placeName.value.trim()) return placeName.value.trim();
@@ -101,11 +117,22 @@ export function usePublishLocationOptions(placeName: Ref<string>) {
   }
 
   return {
-    mapLocations, selectedMapLocation, mapLocationLoading, mapLocationError,
-    locationSearch, locationPanelOpen,
-    filteredMapLocations, selectedLocationDraft, knownPlaceLabel,
-    locationPreviewLabel, locationBindingMeta, locationToolLabel,
-    loadMapLocations, selectMapLocation, clearMapLocation,
-    toggleLocationPanel, clearLocationState,
+    mapLocations,
+    selectedMapLocation,
+    mapLocationLoading,
+    mapLocationError,
+    locationSearch,
+    locationPanelOpen,
+    filteredMapLocations,
+    selectedLocationDraft,
+    knownPlaceLabel,
+    locationPreviewLabel,
+    locationBindingMeta,
+    locationToolLabel,
+    loadMapLocations,
+    selectMapLocation,
+    clearMapLocation,
+    toggleLocationPanel,
+    clearLocationState,
   };
 }

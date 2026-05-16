@@ -22,9 +22,7 @@ export function usePostDetail() {
     try {
       selectedPost.value = await fetchPostDetail(tid);
     } catch (error) {
-      detailError.value = error instanceof Error
-        ? error.message
-        : ERROR_LOAD_DETAIL;
+      detailError.value = error instanceof Error ? error.message : ERROR_LOAD_DETAIL;
     } finally {
       detailLoading.value = false;
     }

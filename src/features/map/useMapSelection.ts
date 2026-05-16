@@ -104,7 +104,13 @@ export function useMapSelection(getPosts: () => MapPost[]) {
   function selectNearestPostForLocation(location: MapLocation) {
     const posts = getPosts();
     const nearby = posts
-      .map((post) => ({ post, distance: Math.hypot((post.lat - location.lat) * 100000, (post.lng - location.lng) * 100000) }))
+      .map((post) => ({
+        post,
+        distance: Math.hypot(
+          (post.lat - location.lat) * 100000,
+          (post.lng - location.lng) * 100000,
+        ),
+      }))
       .sort((a, b) => a.distance - b.distance)[0]?.post;
     if (nearby) void openPost(nearby);
   }

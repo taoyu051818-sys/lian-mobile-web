@@ -35,24 +35,44 @@ const emit = defineEmits<{
     <template v-else>
       <div class="post-place-sheet__meta">
         <span>{{ placeStatusText }}</span>
-        <span v-if="placeSheet?.type || structuredPlace?.type">{{ placeSheet?.type || structuredPlace?.type }}</span>
-        <span v-if="placeSheet?.updatedAt">更新于 {{ formatRelativeTime(placeSheet.updatedAt) || placeSheet.updatedAt }}</span>
+        <span v-if="placeSheet?.type || structuredPlace?.type">{{
+          placeSheet?.type || structuredPlace?.type
+        }}</span>
+        <span v-if="placeSheet?.updatedAt"
+          >更新于 {{ formatRelativeTime(placeSheet.updatedAt) || placeSheet.updatedAt }}</span
+        >
       </div>
-      <p v-if="placeSheet?.summary?.text" class="post-place-sheet__summary">{{ placeSheet.summary.text }}</p>
+      <p v-if="placeSheet?.summary?.text" class="post-place-sheet__summary">
+        {{ placeSheet.summary.text }}
+      </p>
       <p v-else class="post-place-sheet__empty">这个地点还在沉淀信息。</p>
       <div v-if="placeSheet?.stats" class="post-place-sheet__stats" aria-label="地点统计">
-        <span v-if="placeSheet.stats.postCount != null">{{ placeSheet.stats.postCount }} 条内容</span>
-        <span v-if="placeSheet.stats.correctionCount != null">{{ placeSheet.stats.correctionCount }} 条修正</span>
-        <span v-if="placeSheet.stats.savedCount != null">{{ placeSheet.stats.savedCount }} 次收藏</span>
+        <span v-if="placeSheet.stats.postCount != null"
+          >{{ placeSheet.stats.postCount }} 条内容</span
+        >
+        <span v-if="placeSheet.stats.correctionCount != null"
+          >{{ placeSheet.stats.correctionCount }} 条修正</span
+        >
+        <span v-if="placeSheet.stats.savedCount != null"
+          >{{ placeSheet.stats.savedCount }} 次收藏</span
+        >
       </div>
       <div v-if="placeSheet?.recentPosts?.length" class="post-place-sheet__posts">
         <article v-for="recent in placeSheet.recentPosts.slice(0, 3)" :key="String(recent.tid)">
           <strong v-if="recent.title">{{ recent.title }}</strong>
           <p v-if="recent.excerpt">{{ recent.excerpt }}</p>
-          <small v-if="actorDisplayName(recent.actor) || formatRelativeTime(recent.timestampISO || '')">
+          <small
+            v-if="actorDisplayName(recent.actor) || formatRelativeTime(recent.timestampISO || '')"
+          >
             <span v-if="actorDisplayName(recent.actor)">{{ actorDisplayName(recent.actor) }}</span>
-            <span v-if="actorDisplayName(recent.actor) && formatRelativeTime(recent.timestampISO || '')"> · </span>
-            <span v-if="formatRelativeTime(recent.timestampISO || '')">{{ formatRelativeTime(recent.timestampISO || '') }}</span>
+            <span
+              v-if="actorDisplayName(recent.actor) && formatRelativeTime(recent.timestampISO || '')"
+            >
+              ·
+            </span>
+            <span v-if="formatRelativeTime(recent.timestampISO || '')">{{
+              formatRelativeTime(recent.timestampISO || "")
+            }}</span>
           </small>
         </article>
       </div>

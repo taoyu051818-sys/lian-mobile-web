@@ -21,12 +21,18 @@ const liked = ref(false);
 const likeCount = ref(0);
 const likeBusy = ref(false);
 
-const likeLabel = computed(() => `${liked.value ? FEED_UNLIKE : FEED_LIKE}，当前 ${likeCount.value} 个喜欢`);
+const likeLabel = computed(
+  () => `${liked.value ? FEED_UNLIKE : FEED_LIKE}，当前 ${likeCount.value} 个喜欢`,
+);
 
-watch(() => [props.liked, props.likeCount], () => {
-  liked.value = Boolean(props.liked);
-  likeCount.value = Math.max(0, Number(props.likeCount || 0));
-}, { immediate: true });
+watch(
+  () => [props.liked, props.likeCount],
+  () => {
+    liked.value = Boolean(props.liked);
+    likeCount.value = Math.max(0, Number(props.likeCount || 0));
+  },
+  { immediate: true },
+);
 
 async function handleLike() {
   if (likeBusy.value) return;
@@ -53,12 +59,27 @@ async function handleLike() {
 <template>
   <footer class="feed-item-card__footer" data-motion-role="meta-row">
     <div class="feed-item-card__author" data-motion-role="author">
-      <img v-if="authorAvatarUrl" :src="authorAvatarUrl" :alt="authorName" loading="lazy" data-motion-role="avatar" draggable="false" />
-      <span v-else class="feed-item-card__avatar-text" aria-hidden="true" data-motion-role="avatar">{{ authorInitial }}</span>
+      <img
+        v-if="authorAvatarUrl"
+        :src="authorAvatarUrl"
+        :alt="authorName"
+        loading="lazy"
+        data-motion-role="avatar"
+        draggable="false"
+      />
+      <span
+        v-else
+        class="feed-item-card__avatar-text"
+        aria-hidden="true"
+        data-motion-role="avatar"
+        >{{ authorInitial }}</span
+      >
       <span class="feed-item-card__author-name" :title="authorName">{{ authorName }}</span>
     </div>
 
-    <span class="feed-item-card__motion-time" data-motion-role="time" aria-hidden="true">{{ timeLabel }}</span>
+    <span class="feed-item-card__motion-time" data-motion-role="time" aria-hidden="true">{{
+      timeLabel
+    }}</span>
 
     <button
       class="feed-item-card__like"

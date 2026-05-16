@@ -33,7 +33,10 @@ export const REPORT_CATEGORIES: ReportCategoryOption[] = [
 const REPORT_DETAIL_ENABLED = new Set(["privacy", "abuse", "other"]);
 
 export function getReportCategory(category: string): ReportCategoryOption {
-  return REPORT_CATEGORIES.find((item) => item.value === category) || REPORT_CATEGORIES[REPORT_CATEGORIES.length - 1];
+  return (
+    REPORT_CATEGORIES.find((item) => item.value === category) ||
+    REPORT_CATEGORIES[REPORT_CATEGORIES.length - 1]
+  );
 }
 
 export function shouldShowReportReasonField(category: string) {
@@ -67,11 +70,21 @@ export function getReportSubmissionMessage(error: unknown) {
     const message = `${error.message || ""}`.toLowerCase();
     const code = `${error.code || ""}`.toLowerCase();
 
-    if (error.status === 409 || code.includes("duplicate") || message.includes("duplicate") || message.includes("已举报")) {
+    if (
+      error.status === 409 ||
+      code.includes("duplicate") ||
+      message.includes("duplicate") ||
+      message.includes("已举报")
+    ) {
       return REPORT_DUPLICATE;
     }
 
-    if (error.status === 429 || code.includes("rate") || message.includes("too many") || message.includes("过于频繁")) {
+    if (
+      error.status === 429 ||
+      code.includes("rate") ||
+      message.includes("too many") ||
+      message.includes("过于频繁")
+    ) {
       return REPORT_RATE_LIMIT;
     }
 

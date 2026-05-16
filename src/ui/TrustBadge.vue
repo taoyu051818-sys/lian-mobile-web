@@ -1,11 +1,14 @@
 <script setup lang="ts">
 type TrustTone = "confirmed" | "pending" | "disputed" | "expired" | "ai" | "official";
 
-withDefaults(defineProps<{
-  tone?: TrustTone;
-}>(), {
-  tone: "pending"
-});
+withDefaults(
+  defineProps<{
+    tone?: TrustTone;
+  }>(),
+  {
+    tone: "pending",
+  },
+);
 </script>
 
 <template>

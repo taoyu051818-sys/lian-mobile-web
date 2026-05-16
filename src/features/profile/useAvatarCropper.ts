@@ -136,10 +136,14 @@ export function useAvatarCropper(options: UseAvatarCropperOptions = {}) {
     bitmap.close?.();
 
     return new Promise<Blob>((resolve, reject) => {
-      canvas.toBlob((blob) => {
-        if (blob) resolve(blob);
-        else reject(new Error("头像裁剪失败，请换一张图片再试。"));
-      }, "image/jpeg", 0.9);
+      canvas.toBlob(
+        (blob) => {
+          if (blob) resolve(blob);
+          else reject(new Error("头像裁剪失败，请换一张图片再试。"));
+        },
+        "image/jpeg",
+        0.9,
+      );
     });
   }
 

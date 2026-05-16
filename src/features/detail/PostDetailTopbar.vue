@@ -1,5 +1,9 @@
 <script setup lang="ts">
-import { POST_DETAIL_CLOSE, POST_DETAIL_AUTHOR_AVATAR, POST_DETAIL_SHARE } from "../../config/brand";
+import {
+  POST_DETAIL_CLOSE,
+  POST_DETAIL_AUTHOR_AVATAR,
+  POST_DETAIL_SHARE,
+} from "../../config/brand";
 
 defineProps<{
   authorLabel?: string;
@@ -19,14 +23,39 @@ const emit = defineEmits<{
     class="post-detail-topbar lian-floating-chrome lian-floating-chrome--top"
     data-floating-chrome="top"
   >
-    <button class="post-detail-topbar__close" type="button" :aria-label="POST_DETAIL_CLOSE" @click="emit('close')">‹</button>
+    <button
+      class="post-detail-topbar__close"
+      type="button"
+      :aria-label="POST_DETAIL_CLOSE"
+      @click="emit('close')"
+    >
+      ‹
+    </button>
     <div v-if="hasAuthorIdentity" class="post-detail-topbar__author-chip">
-      <img v-if="avatarUrl" :src="avatarUrl" :alt="authorLabel || POST_DETAIL_AUTHOR_AVATAR" loading="lazy" />
-      <span v-else-if="authorInitial" class="post-detail-topbar__avatar-text" aria-hidden="true">{{ authorInitial }}</span>
+      <img
+        v-if="avatarUrl"
+        :src="avatarUrl"
+        :alt="authorLabel || POST_DETAIL_AUTHOR_AVATAR"
+        loading="lazy"
+      />
+      <span v-else-if="authorInitial" class="post-detail-topbar__avatar-text" aria-hidden="true">{{
+        authorInitial
+      }}</span>
       <strong v-if="authorLabel">{{ authorLabel }}</strong>
     </div>
-    <div v-else class="post-detail-topbar__author-chip post-detail-topbar__author-chip--empty" aria-hidden="true"></div>
-    <button class="post-detail-topbar__share" type="button" :aria-label="POST_DETAIL_SHARE" @click="emit('share')">{{ POST_DETAIL_SHARE }}</button>
+    <div
+      v-else
+      class="post-detail-topbar__author-chip post-detail-topbar__author-chip--empty"
+      aria-hidden="true"
+    ></div>
+    <button
+      class="post-detail-topbar__share"
+      type="button"
+      :aria-label="POST_DETAIL_SHARE"
+      @click="emit('share')"
+    >
+      {{ POST_DETAIL_SHARE }}
+    </button>
   </header>
 </template>
 
@@ -42,7 +71,8 @@ const emit = defineEmits<{
   border-radius: var(--floating-bar-radius);
   background: var(--glass-bg-strong);
   box-shadow: var(--shadow-floating);
-  transition: transform var(--floating-chrome-motion-duration, 260ms) var(--motion-ease-standard),
+  transition:
+    transform var(--floating-chrome-motion-duration, 260ms) var(--motion-ease-standard),
     opacity var(--floating-chrome-motion-duration, 260ms) var(--motion-ease-standard),
     filter var(--floating-chrome-motion-duration, 260ms) var(--motion-ease-standard),
     min-height 180ms ease,

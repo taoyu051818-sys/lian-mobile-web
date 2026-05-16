@@ -1,7 +1,10 @@
 import { computed, watch, type Ref } from "vue";
 import {
-  GUEST_DISPLAY_NAME, USER_AVATAR_FALLBACK,
-  PROFILE_COLLAPSE_EDITOR, PROFILE_EDIT, PROFILE_LOGOUT,
+  GUEST_DISPLAY_NAME,
+  USER_AVATAR_FALLBACK,
+  PROFILE_COLLAPSE_EDITOR,
+  PROFILE_EDIT,
+  PROFILE_LOGOUT,
 } from "../../config/brand";
 import type { PageChromeSpec } from "../../shell/page-model";
 import type { ProfileUser } from "../../types/profile";
@@ -28,7 +31,11 @@ export function useProfileChrome(options: {
             meta: identityMeta.value,
           },
           buttons: [
-            { id: "profile:toggle-editor", label: editorOpen.value ? PROFILE_COLLAPSE_EDITOR : PROFILE_EDIT, variant: "tonal" },
+            {
+              id: "profile:toggle-editor",
+              label: editorOpen.value ? PROFILE_COLLAPSE_EDITOR : PROFILE_EDIT,
+              variant: "tonal",
+            },
             { id: "profile:logout", label: PROFILE_LOGOUT, variant: "ghost" },
           ],
           onButtonClick: handleChromeButtonClick,

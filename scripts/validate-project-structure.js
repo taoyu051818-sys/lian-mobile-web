@@ -37,18 +37,15 @@ const requiredFiles = [
   "scripts/guard-public-runtime-exposure.js",
   "scripts/test-guard-public-runtime-exposure.js",
   "package.json",
-  "README.md"
+  "README.md",
 ];
 
-const jsonFiles = [
-  "package.json",
-  "tsconfig.json"
-];
+const jsonFiles = ["package.json", "tsconfig.json"];
 
 const frontendJsFiles = [
   "scripts/guard-unsafe-dom-sinks.js",
   "scripts/guard-public-runtime-exposure.js",
-  "scripts/test-guard-public-runtime-exposure.js"
+  "scripts/test-guard-public-runtime-exposure.js",
 ];
 
 const backendOnlyPaths = [
@@ -56,7 +53,7 @@ const backendOnlyPaths = [
   "src/server",
   "scripts/test-routes.js",
   "scripts/prepare-backend-repo-export.js",
-  "test/audience-regression.test.mjs"
+  "test/audience-regression.test.mjs",
 ];
 
 let passed = 0;
@@ -166,7 +163,12 @@ function normalizePath(p) {
 }
 
 async function fileExists(p) {
-  try { await fs.access(p); return true; } catch { return false; }
+  try {
+    await fs.access(p);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 async function readTextFile(p) {
@@ -177,7 +179,11 @@ async function collectSourceFiles(dir, extensions) {
   const results = [];
   async function walk(d) {
     let entries;
-    try { entries = await fs.readdir(d, { withFileTypes: true }); } catch { return; }
+    try {
+      entries = await fs.readdir(d, { withFileTypes: true });
+    } catch {
+      return;
+    }
     for (const entry of entries) {
       const full = path.join(d, entry.name);
       if (entry.isDirectory()) {
@@ -232,31 +238,51 @@ async function parseBarrelReExports(barrelPath) {
   try {
     const content = await readTextFile(barrelPath);
     const reExportRe = /export\s+.*\s+from\s+["']\.\/([^"']+)["']/g;
-    const reExportDefaultRe = /export\s*\{\s*default\s+as\s+\w+\s*\}\s*from\s+["']\.\/([^"']+)["']/g;
+    const reExportDefaultRe =
+      /export\s*\{\s*default\s+as\s+\w+\s*\}\s*from\s+["']\.\/([^"']+)["']/g;
     const files = new Set();
     let m;
     while ((m = reExportRe.exec(content)) !== null) {
       const target = m[1];
       const barrelDir = path.dirname(barrelPath);
       const resolved = path.resolve(barrelDir, target);
-      const candidates = [resolved + ".ts", resolved + ".vue", resolved + ".js", path.join(resolved, "index.ts")];
-      for (const c of candidates) { files.add(normalizePath(c)); }
+      const candidates = [
+        resolved + ".ts",
+        resolved + ".vue",
+        resolved + ".js",
+        path.join(resolved, "index.ts"),
+      ];
+      for (const c of candidates) {
+        files.add(normalizePath(c));
+      }
     }
     while ((m = reExportDefaultRe.exec(content)) !== null) {
       const target = m[1];
       const barrelDir = path.dirname(barrelPath);
       const resolved = path.resolve(barrelDir, target);
-      const candidates = [resolved + ".ts", resolved + ".vue", resolved + ".js", path.join(resolved, "index.ts")];
-      for (const c of candidates) { files.add(normalizePath(c)); }
+      const candidates = [
+        resolved + ".ts",
+        resolved + ".vue",
+        resolved + ".js",
+        path.join(resolved, "index.ts"),
+      ];
+      for (const c of candidates) {
+        files.add(normalizePath(c));
+      }
     }
     return files;
-  } catch { return new Set(); }
+  } catch {
+    return new Set();
+  }
 }
 
 async function checkNoViewsDirectory() {
   const viewsDir = path.join(rootDir, "src", "views");
   if (await fileExists(viewsDir)) {
-    fail("src/views/ must not exist", "src/views/ directory detected — views were migrated to src/features/");
+    fail(
+      "src/views/ must not exist",
+      "src/views/ directory detected — views were migrated to src/features/",
+    );
   } else {
     ok("src/views/ does not exist");
   }
@@ -309,7 +335,11 @@ async function checkDomainPurity() {
       for (const forbidden of forbiddenPrefixes) {
         if (resolvedNorm.startsWith(forbidden)) {
           const relFile = normalizePath(path.relative(rootDir, file));
-          const layer = forbidden.endsWith("api/") ? "api" : forbidden.endsWith("ui/") ? "ui" : "features";
+          const layer = forbidden.endsWith("api/")
+            ? "api"
+            : forbidden.endsWith("ui/")
+              ? "ui"
+              : "features";
           fail("domain purity", `${relFile} imports from ${layer} (${imp})`);
           violations++;
           break;
@@ -368,7 +398,9 @@ async function checkFeatureCrossImports() {
         }
       }
     }
-  } catch { return; }
+  } catch {
+    return;
+  }
 
   let violations = 0;
   for (const file of files) {
@@ -398,7 +430,10 @@ async function checkFeatureCrossImports() {
         // Feature without barrel is implicitly open — no violation.
       } else if (!isBarrelImport && !isReExported) {
         const relFile = normalizePath(path.relative(rootDir, file));
-        fail("feature cross-import", `${relFile} imports private ${targetFeature} code (${imp}) — use barrel or re-exported symbol`);
+        fail(
+          "feature cross-import",
+          `${relFile} imports private ${targetFeature} code (${imp}) — use barrel or re-exported symbol`,
+        );
         violations++;
       }
     }

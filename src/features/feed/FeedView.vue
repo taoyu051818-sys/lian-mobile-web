@@ -48,13 +48,25 @@ function cancelCardTransitionTimers() {
 
 // Detail lifecycle composable
 const {
-  selectedPostId, selectedPost, detailLoading, detailError,
-  detailOpen, detailDragging, detailReturning,
-  detailDragX, detailPointerId, detailGestureLocked,
-  dragStartX, dragStartY,
-  detailCardifyProgress, detailDragStyle,
-  openItem, retryDetail, closeDetail,
-  closeDetailWithCardify, resetDetailState,
+  selectedPostId,
+  selectedPost,
+  detailLoading,
+  detailError,
+  detailOpen,
+  detailDragging,
+  detailReturning,
+  detailDragX,
+  detailPointerId,
+  detailGestureLocked,
+  dragStartX,
+  dragStartY,
+  detailCardifyProgress,
+  detailDragStyle,
+  openItem,
+  retryDetail,
+  closeDetail,
+  closeDetailWithCardify,
+  resetDetailState,
 } = useFeedDetail({
   startCardTransition(payload) {
     if (!payload || typeof window === "undefined" || prefersReducedMotion()) return;
@@ -73,7 +85,9 @@ const {
       });
     });
   },
-  rememberReadItem(id: FeedItemId) { feedData.rememberReadItem(id); },
+  rememberReadItem(id: FeedItemId) {
+    feedData.rememberReadItem(id);
+  },
   updateViewport,
   prefersReducedMotion,
   viewportWidth,
@@ -91,14 +105,22 @@ const feedData = useFeedData({
 });
 
 // Detail drag gesture composable
-const { onDetailPointerDown, onDetailPointerMove, onDetailPointerUp, onDetailPointerCancel } = useDetailDragGesture({
-  detailOpen, detailLoading, detailReturning,
-  detailDragging, detailDragX, detailPointerId, detailGestureLocked,
-  dragStartX, dragStartY, viewportWidth,
-  updateViewport,
-  closeDetailWithCardify,
-  cardifyDistance: CARDIFY_DISTANCE,
-});
+const { onDetailPointerDown, onDetailPointerMove, onDetailPointerUp, onDetailPointerCancel } =
+  useDetailDragGesture({
+    detailOpen,
+    detailLoading,
+    detailReturning,
+    detailDragging,
+    detailDragX,
+    detailPointerId,
+    detailGestureLocked,
+    dragStartX,
+    dragStartY,
+    viewportWidth,
+    updateViewport,
+    closeDetailWithCardify,
+    cardifyDistance: CARDIFY_DISTANCE,
+  });
 
 const cardTransitionStyle = computed(() => {
   const snapshot = cardTransition.value;
@@ -142,7 +164,11 @@ onBeforeUnmount(() => {
 <template>
   <section
     class="feed-view"
-    :class="{ 'is-detail-open': detailOpen, 'is-detail-dragging': detailDragging, 'is-detail-returning': detailReturning }"
+    :class="{
+      'is-detail-open': detailOpen,
+      'is-detail-dragging': detailDragging,
+      'is-detail-returning': detailReturning,
+    }"
     :style="detailDragStyle"
     aria-labelledby="feed-view-title"
   >
@@ -162,8 +188,16 @@ onBeforeUnmount(() => {
       <span>{{ feedData.FEED_EMPTY_HINT }}</span>
     </div>
 
-    <div v-show="!detailOpen || detailReturning || detailDragging" class="feed-view__content" :class="{ 'is-under-detail': detailOpen }">
-      <FeedList v-if="!feedData.loading.value && !feedData.isEmpty.value" :items="feedData.items.value" @open="openItem" />
+    <div
+      v-show="!detailOpen || detailReturning || detailDragging"
+      class="feed-view__content"
+      :class="{ 'is-under-detail': detailOpen }"
+    >
+      <FeedList
+        v-if="!feedData.loading.value && !feedData.isEmpty.value"
+        :items="feedData.items.value"
+        @open="openItem"
+      />
 
       <FeedLoadMore
         v-if="feedData.items.value.length"
@@ -199,8 +233,14 @@ onBeforeUnmount(() => {
       :style="cardTransitionStyle"
       aria-hidden="true"
     >
-      <img v-if="cardTransition.item.cover" :src="cardTransition.item.cover" :alt="cardTransition.item.title" />
-      <span v-if="cardTransition.item.primaryTag" class="feed-view__card-transition-tag">{{ cardTransition.item.primaryTag }}</span>
+      <img
+        v-if="cardTransition.item.cover"
+        :src="cardTransition.item.cover"
+        :alt="cardTransition.item.title"
+      />
+      <span v-if="cardTransition.item.primaryTag" class="feed-view__card-transition-tag">{{
+        cardTransition.item.primaryTag
+      }}</span>
       <strong>{{ cardTransition.item.title }}</strong>
     </div>
   </section>
@@ -230,7 +270,10 @@ onBeforeUnmount(() => {
 .feed-view__content {
   display: grid;
   gap: var(--space-3);
-  transition: opacity var(--motion-standard) var(--motion-ease-standard), transform var(--motion-standard) var(--motion-ease-standard), filter var(--motion-standard) var(--motion-ease-standard);
+  transition:
+    opacity var(--motion-standard) var(--motion-ease-standard),
+    transform var(--motion-standard) var(--motion-ease-standard),
+    filter var(--motion-standard) var(--motion-ease-standard);
 }
 
 .feed-view__content.is-under-detail {

@@ -24,12 +24,18 @@ export function createMapIconScale(getMap: () => LeafletMapLike | null) {
   function bindMapIconScale(target: LeafletMapLike) {
     if (iconScaleBoundMaps.has(target)) return;
     target.on("zoomanim", (e: unknown) => {
-      const zoom = (e && typeof e === "object" && "zoom" in e) ? Number((e as { zoom?: unknown }).zoom) : target.getZoom();
+      const zoom =
+        e && typeof e === "object" && "zoom" in e
+          ? Number((e as { zoom?: unknown }).zoom)
+          : target.getZoom();
       applyMapIconScale(target, Number.isFinite(zoom) ? zoom : target.getZoom());
     });
     target.on("viewreset moveend", (...args: unknown[]) => {
       const event = args[0];
-      const zoom = (event && typeof event === "object" && "zoom" in event) ? Number((event as { zoom?: unknown }).zoom) : target.getZoom();
+      const zoom =
+        event && typeof event === "object" && "zoom" in event
+          ? Number((event as { zoom?: unknown }).zoom)
+          : target.getZoom();
       applyMapIconScale(target, Number.isFinite(zoom) ? zoom : target.getZoom());
     });
     iconScaleBoundMaps.add(target);

@@ -1,9 +1,6 @@
 <script setup lang="ts">
 import { AUTH_EMAIL_CODE_LENGTH } from "../../domain/validation/forms";
-import {
-  AUTH_EMAIL_CODE_LABEL,
-  AUTH_CODE_SUFFIX,
-} from "../../config/brand";
+import { AUTH_EMAIL_CODE_LABEL, AUTH_CODE_SUFFIX } from "../../config/brand";
 
 defineProps<{
   modelValue: string;

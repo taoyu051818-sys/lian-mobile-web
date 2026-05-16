@@ -102,7 +102,10 @@ test("detail-sheet.css supports reduced motion", () => {
 
 test("shell/index.ts exports DetailSheet", () => {
   const indexSrc = fs.readFileSync(path.join(repoRoot, "src/shell/index.ts"), "utf8");
-  assert.match(indexSrc, /export\s*\{\s*default\s+as\s+DetailSheet\s*\}\s*from\s*"\.\/DetailSheet\.vue"/);
+  assert.match(
+    indexSrc,
+    /export\s*\{\s*default\s+as\s+DetailSheet\s*\}\s*from\s*"\.\/DetailSheet\.vue"/,
+  );
 });
 
 test("shell/index.ts exports useDetailSheet", () => {
@@ -112,7 +115,10 @@ test("shell/index.ts exports useDetailSheet", () => {
 
 test("shell/index.ts exports createDefaultDetailSheetState", () => {
   const indexSrc = fs.readFileSync(path.join(repoRoot, "src/shell/index.ts"), "utf8");
-  assert.match(indexSrc, /export\s*\{\s*createDefaultDetailSheetState\s*\}\s*from\s*"\.\/detail-sheet-types"/);
+  assert.match(
+    indexSrc,
+    /export\s*\{\s*createDefaultDetailSheetState\s*\}\s*from\s*"\.\/detail-sheet-types"/,
+  );
 });
 
 test("shell/index.ts exports DetailSheetKind type", () => {

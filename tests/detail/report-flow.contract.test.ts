@@ -46,9 +46,15 @@ describe("report flow helper", () => {
   });
 
   it("maps duplicate, rate-limit, and auth failures to stable user-facing copy", () => {
-    expect(getReportSubmissionMessage(new LianApiError("already reported", 409, "duplicate_report"))).toContain("已经提交过举报");
-    expect(getReportSubmissionMessage(new LianApiError("too many requests", 429, "rate_limit"))).toContain("太频繁");
-    expect(getReportSubmissionMessage(new LianApiError("unauthorized", 401, "auth_required"))).toContain("先登录");
+    expect(
+      getReportSubmissionMessage(new LianApiError("already reported", 409, "duplicate_report")),
+    ).toContain("已经提交过举报");
+    expect(
+      getReportSubmissionMessage(new LianApiError("too many requests", 429, "rate_limit")),
+    ).toContain("太频繁");
+    expect(
+      getReportSubmissionMessage(new LianApiError("unauthorized", 401, "auth_required")),
+    ).toContain("先登录");
     expect(getReportSubmissionMessage(new Error("boom"))).toContain("没有提交成功");
   });
 });
@@ -60,13 +66,15 @@ describe("report flow detail wiring", () => {
   const hiddenStateSource = readRepoFile("../../src/features/detail/PostDetailHiddenState.vue");
 
   it("keeps report helper logic in a dedicated detail helper module", () => {
-    expect(reportComposableSource).toContain("from \"./reportFlow\"");
-    expect(reportComposableSource).toContain("buildReportPayload(reportCategory.value, reportReason.value)");
+    expect(reportComposableSource).toContain('from "./reportFlow"');
+    expect(reportComposableSource).toContain(
+      "buildReportPayload(reportCategory.value, reportReason.value)",
+    );
     expect(reportComposableSource).toContain("getReportSubmissionMessage(error)");
   });
 
   it("wires report composable through PostDetailPanel", () => {
-    expect(panelSource).toContain("from \"./usePostReport\"");
+    expect(panelSource).toContain('from "./usePostReport"');
     expect(panelSource).toContain("usePostReport(");
   });
 

@@ -24,10 +24,11 @@ body {
   -webkit-touch-callout: none;
   background:
     radial-gradient(circle at 12% 10%, rgba(31, 167, 160, 0.16), transparent 28%),
-    radial-gradient(circle at 88% 0%, rgba(91, 184, 214, 0.14), transparent 30%),
-    var(--lian-bg);
+    radial-gradient(circle at 88% 0%, rgba(91, 184, 214, 0.14), transparent 30%), var(--lian-bg);
   color: var(--lian-ink);
-  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", "Noto Sans CJK SC", "SF Pro Text", "Segoe UI", sans-serif;
+  font-family:
+    -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", "Noto Sans CJK SC",
+    "SF Pro Text", "Segoe UI", sans-serif;
 }
 
 button,
@@ -57,11 +58,14 @@ svg {
 .vue-shell {
   min-height: 100vh;
   overscroll-behavior: none;
-  padding: calc(var(--space-2) + env(safe-area-inset-top)) var(--space-3) calc(92px + env(safe-area-inset-bottom));
+  padding: calc(var(--space-2) + env(safe-area-inset-top)) var(--space-3)
+    calc(92px + env(safe-area-inset-bottom));
 }
 
 .vue-shell .feed-view:not(.is-detail-open) {
-  padding-top: calc(var(--floating-bar-top-offset) + var(--floating-bar-height) + 6px + env(safe-area-inset-top)) !important;
+  padding-top: calc(
+    var(--floating-bar-top-offset) + var(--floating-bar-height) + 6px + env(safe-area-inset-top)
+  ) !important;
 }
 
 .vue-shell__grid {

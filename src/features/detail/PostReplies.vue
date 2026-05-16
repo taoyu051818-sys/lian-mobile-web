@@ -1,6 +1,11 @@
 <script setup lang="ts">
 import { SafeHtml } from "../../ui";
-import { EMPTY_REPLIES, REPLY_SECTION_TITLE, REPLY_COUNT_LABEL, REPLY_EMPTY_PROMPT } from "../../config/brand";
+import {
+  EMPTY_REPLIES,
+  REPLY_SECTION_TITLE,
+  REPLY_COUNT_LABEL,
+  REPLY_EMPTY_PROMPT,
+} from "../../config/brand";
 import { actorDisplayName } from "../../domain/actor";
 import type { PostReply } from "../../types/post";
 import { formatRelativeTime } from "../../utils/time";
@@ -27,7 +32,9 @@ function sanitizeReplyHtml(value: string) {
     <article v-for="reply in replies" :key="String(reply.id)" class="post-replies__item">
       <div class="post-replies__meta">
         <strong v-if="actorDisplayName(reply.actor)">{{ actorDisplayName(reply.actor) }}</strong>
-        <span v-if="formatRelativeTime(reply.timestampISO)">{{ formatRelativeTime(reply.timestampISO) }}</span>
+        <span v-if="formatRelativeTime(reply.timestampISO)">{{
+          formatRelativeTime(reply.timestampISO)
+        }}</span>
       </div>
       <SafeHtml
         :html="sanitizeReplyHtml(reply.content || '')"

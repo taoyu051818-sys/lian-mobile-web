@@ -74,7 +74,10 @@ test("content-frame.css uses CSS custom properties", () => {
 
 test("shell/index.ts exports ContentFrame", () => {
   const indexSrc = fs.readFileSync(path.join(repoRoot, "src/shell/index.ts"), "utf8");
-  assert.match(indexSrc, /export\s*\{\s*default\s+as\s+ContentFrame\s*\}\s*from\s*"\.\/ContentFrame\.vue"/);
+  assert.match(
+    indexSrc,
+    /export\s*\{\s*default\s+as\s+ContentFrame\s*\}\s*from\s*"\.\/ContentFrame\.vue"/,
+  );
 });
 
 // -- main.css imports content-frame.css --

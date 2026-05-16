@@ -19,7 +19,13 @@ function placeName(place: MapLocation | MapPost): string {
   <div v-if="selectedPlace" class="map-place-sheet" role="dialog" :aria-label="PLACE_SHEET_LABEL">
     <div class="map-place-sheet__header">
       <span class="map-place-sheet__title">{{ placeName(selectedPlace) }}</span>
-      <button class="map-place-sheet__close" :aria-label="CLOSE_BUTTON_LABEL" @click="$emit('close')">×</button>
+      <button
+        class="map-place-sheet__close"
+        :aria-label="CLOSE_BUTTON_LABEL"
+        @click="$emit('close')"
+      >
+        ×
+      </button>
     </div>
   </div>
 </template>

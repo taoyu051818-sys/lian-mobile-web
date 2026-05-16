@@ -43,7 +43,7 @@ describe("useVisualViewport source contract (#130)", () => {
   });
 
   it("removes the CSS custom property on cleanup", () => {
-    expect(source).toContain("removeProperty(\"--keyboard-inset-bottom\")");
+    expect(source).toContain('removeProperty("--keyboard-inset-bottom")');
   });
 
   it("clamps the inset to a non-negative value", () => {

@@ -5,7 +5,8 @@ import { spawn } from "node:child_process";
 const portArgIndex = process.argv.indexOf("--port");
 const port = portArgIndex !== -1 ? Number(process.argv[portArgIndex + 1]) : 4301;
 const separatorIndex = process.argv.indexOf("--");
-const smokeCommand = separatorIndex !== -1 ? process.argv.slice(separatorIndex + 1) : ["npm", "run", "test:vue"];
+const smokeCommand =
+  separatorIndex !== -1 ? process.argv.slice(separatorIndex + 1) : ["npm", "run", "test:vue"];
 const baseUrl = `http://127.0.0.1:${port}`;
 
 function wait(ms) {
@@ -34,7 +35,7 @@ function spawnLogged(command, args, options = {}) {
   return spawn(command, args, {
     stdio: "inherit",
     shell: process.platform === "win32",
-    ...options
+    ...options,
   });
 }
 
@@ -51,13 +52,17 @@ const buildCode = await run("npm", ["run", "build"]);
 if (buildCode !== 0) process.exit(buildCode);
 
 console.log(`[smoke] starting Vite preview on ${baseUrl}`);
-const server = spawn("npm", ["run", "preview", "--", "--host", "0.0.0.0", "--port", String(port), "--strictPort"], {
-  stdio: "inherit",
-  shell: process.platform === "win32",
-  env: {
-    ...process.env
-  }
-});
+const server = spawn(
+  "npm",
+  ["run", "preview", "--", "--host", "0.0.0.0", "--port", String(port), "--strictPort"],
+  {
+    stdio: "inherit",
+    shell: process.platform === "win32",
+    env: {
+      ...process.env,
+    },
+  },
+);
 
 let shuttingDown = false;
 function shutdown() {
@@ -87,8 +92,8 @@ const [command, ...args] = smokeCommand;
 const smokeCode = await run(command, args, {
   env: {
     ...process.env,
-    LIAN_SMOKE_BASE_URL: baseUrl
-  }
+    LIAN_SMOKE_BASE_URL: baseUrl,
+  },
 });
 
 shutdown();

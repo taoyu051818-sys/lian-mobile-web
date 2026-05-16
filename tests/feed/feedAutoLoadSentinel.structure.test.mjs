@@ -5,11 +5,26 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
-const feedViewSource = fs.readFileSync(path.join(repoRoot, "src/features/feed/FeedView.vue"), "utf8");
-const feedLoadMoreSource = fs.readFileSync(path.join(repoRoot, "src/features/feed/FeedLoadMore.vue"), "utf8");
-const feedListSource = fs.readFileSync(path.join(repoRoot, "src/features/feed/FeedList.vue"), "utf8");
-const sentinelComponentSource = fs.readFileSync(path.join(repoRoot, "src/features/feed/FeedAutoLoadSentinel.vue"), "utf8");
-const sentinelComposableSource = fs.readFileSync(path.join(repoRoot, "src/composables/useAutoLoadSentinel.ts"), "utf8");
+const feedViewSource = fs.readFileSync(
+  path.join(repoRoot, "src/features/feed/FeedView.vue"),
+  "utf8",
+);
+const feedLoadMoreSource = fs.readFileSync(
+  path.join(repoRoot, "src/features/feed/FeedLoadMore.vue"),
+  "utf8",
+);
+const feedListSource = fs.readFileSync(
+  path.join(repoRoot, "src/features/feed/FeedList.vue"),
+  "utf8",
+);
+const sentinelComponentSource = fs.readFileSync(
+  path.join(repoRoot, "src/features/feed/FeedAutoLoadSentinel.vue"),
+  "utf8",
+);
+const sentinelComposableSource = fs.readFileSync(
+  path.join(repoRoot, "src/composables/useAutoLoadSentinel.ts"),
+  "utf8",
+);
 
 test("FeedView delegates top tabs to shell chrome via declarative pageChrome spec", () => {
   assert.match(feedViewSource, /PageChromeSpec/);
@@ -37,7 +52,10 @@ test("FeedView delegates content list to FeedList and FeedLoadMore", () => {
 });
 
 test("FeedLoadMore wires the auto-load sentinel and emits loadMore", () => {
-  assert.match(feedLoadMoreSource, /import FeedAutoLoadSentinel from "\.\/FeedAutoLoadSentinel\.vue";/);
+  assert.match(
+    feedLoadMoreSource,
+    /import FeedAutoLoadSentinel from "\.\/FeedAutoLoadSentinel\.vue";/,
+  );
   assert.match(feedLoadMoreSource, /import \{ LianButton \} from "\.\.\/\.\.\/ui";/);
   assert.match(feedLoadMoreSource, /const emit = defineEmits/);
   assert.match(feedLoadMoreSource, /loadMore/);
@@ -55,7 +73,10 @@ test("FeedList renders FeedItemCard in a masonry layout", () => {
 });
 
 test("FeedAutoLoadSentinel component wraps the composable", () => {
-  assert.match(sentinelComponentSource, /import \{ useAutoLoadSentinel \} from "\.\.\/\.\.\/composables\/useAutoLoadSentinel";/);
+  assert.match(
+    sentinelComponentSource,
+    /import \{ useAutoLoadSentinel \} from "\.\.\/\.\.\/composables\/useAutoLoadSentinel";/,
+  );
   assert.match(sentinelComponentSource, /const targetRef = ref<HTMLElement \| null>\(null\);/);
   assert.match(sentinelComponentSource, /useAutoLoadSentinel\(targetRef/);
   assert.match(sentinelComponentSource, /emit\("intersect"\);/);
@@ -66,8 +87,14 @@ test("the shared sentinel composable keeps observer setup and cleanup explicit",
   assert.match(sentinelComposableSource, /let observer: IntersectionObserver \| null = null;/);
   assert.match(sentinelComposableSource, /function disconnect\(\) \{/);
   assert.match(sentinelComposableSource, /observer\?\.disconnect\(\);/);
-  assert.match(sentinelComposableSource, /function observeTarget\(target: HTMLElement \| null\) \{/);
-  assert.match(sentinelComposableSource, /if \(!target \|\| typeof IntersectionObserver === "undefined"\) return;/);
+  assert.match(
+    sentinelComposableSource,
+    /function observeTarget\(target: HTMLElement \| null\) \{/,
+  );
+  assert.match(
+    sentinelComposableSource,
+    /if \(!target \|\| typeof IntersectionObserver === "undefined"\) return;/,
+  );
   assert.match(sentinelComposableSource, /observer = new IntersectionObserver/);
   assert.match(sentinelComposableSource, /observer\.observe\(target\);/);
   assert.match(sentinelComposableSource, /stopWatchingTarget = watch\(targetRef,/);

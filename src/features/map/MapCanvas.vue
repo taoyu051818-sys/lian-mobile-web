@@ -19,8 +19,14 @@ import type {
 import { useMapLayers } from "./useMapLayers";
 import { createMapIconScale } from "./useMapIconScale";
 
-const GAODE_TILE_URL = "https://webrd0{s}.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=8&x={x}&y={y}&z={z}";
-const DEFAULT_BOUNDS: MapBounds = { south: 18.37107, west: 109.98464, north: 18.41730, east: 110.04775 };
+const GAODE_TILE_URL =
+  "https://webrd0{s}.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=8&x={x}&y={y}&z={z}";
+const DEFAULT_BOUNDS: MapBounds = {
+  south: 18.37107,
+  west: 109.98464,
+  north: 18.4173,
+  east: 110.04775,
+};
 
 const props = defineProps<{
   mapData: MapV2ItemsResponse | null;
@@ -53,7 +59,10 @@ const { setLayers, renderMap } = useMapLayers(
 const { applyMapIconScale, bindMapIconScale } = createMapIconScale(() => map.value);
 
 function mapBounds(): [number, number][] {
-  return [[bounds.value.south, bounds.value.west], [bounds.value.north, bounds.value.east]];
+  return [
+    [bounds.value.south, bounds.value.west],
+    [bounds.value.north, bounds.value.east],
+  ];
 }
 
 function attachZoomControl(mapInstance: LeafletMapLike) {
@@ -62,7 +71,11 @@ function attachZoomControl(mapInstance: LeafletMapLike) {
 }
 
 function detachZoomControl() {
-  if (zoomControl && "remove" in zoomControl && typeof (zoomControl as { remove(): void }).remove === "function") {
+  if (
+    zoomControl &&
+    "remove" in zoomControl &&
+    typeof (zoomControl as { remove(): void }).remove === "function"
+  ) {
     (zoomControl as { remove(): void }).remove();
   }
   zoomControl = null;
@@ -132,9 +145,12 @@ async function refreshMap() {
   initMap();
 }
 
-watch(() => props.mapData, (next) => {
-  if (next) void refreshMap();
-});
+watch(
+  () => props.mapData,
+  (next) => {
+    if (next) void refreshMap();
+  },
+);
 
 onBeforeUnmount(() => {
   detachZoomControl();

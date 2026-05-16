@@ -3,9 +3,14 @@ import { fetchProfileTab } from "../../api/profile";
 import { getRecentReadHistoryIds } from "../../platform/browser-storage";
 import { extractErrorMessage } from "../../utils/extractErrorMessage";
 import {
-  EMPTY_HISTORY, EMPTY_SAVED, EMPTY_LIKED,
-  ERROR_LOAD_GENERIC, PROFILE_TAB_HISTORY, PROFILE_TAB_SAVED,
-  PROFILE_TAB_LIKED, PROFILE_EMPTY_CONTENT,
+  EMPTY_HISTORY,
+  EMPTY_SAVED,
+  EMPTY_LIKED,
+  ERROR_LOAD_GENERIC,
+  PROFILE_TAB_HISTORY,
+  PROFILE_TAB_SAVED,
+  PROFILE_TAB_LIKED,
+  PROFILE_EMPTY_CONTENT,
   PROFILE_LIST_ERROR_PREFIX,
 } from "../../config/brand";
 import type { FeedItemId } from "../../types/feed";
@@ -30,7 +35,9 @@ export function useProfileTabs(options: {
     { key: "liked", label: PROFILE_TAB_LIKED, empty: EMPTY_LIKED },
   ];
 
-  const listEmptyText = computed(() => tabs.find((tab) => tab.key === activeTab.value)?.empty || PROFILE_EMPTY_CONTENT);
+  const listEmptyText = computed(
+    () => tabs.find((tab) => tab.key === activeTab.value)?.empty || PROFILE_EMPTY_CONTENT,
+  );
 
   function readHistoryIds() {
     return getRecentReadHistoryIds(localStorage, 50);
@@ -48,7 +55,9 @@ export function useProfileTabs(options: {
         return await fetchProfileTab(tab, tids);
       } catch (retryError) {
         if (isMissingSessionError(retryError)) {
-          throw new Error("登录状态已刷新，但个人列表接口仍返回未授权。请稍后重试，或重新登录后再打开赞过 / 收藏。");
+          throw new Error(
+            "登录状态已刷新，但个人列表接口仍返回未授权。请稍后重试，或重新登录后再打开赞过 / 收藏。",
+          );
         }
         throw retryError;
       }
@@ -60,13 +69,19 @@ export function useProfileTabs(options: {
     listLoading.value = true;
     listError.value = "";
     try {
-      const response = await fetchProfileTabWithSessionRefresh(tab, tab === "history" ? readHistoryIds() : []);
+      const response = await fetchProfileTabWithSessionRefresh(
+        tab,
+        tab === "history" ? readHistoryIds() : [],
+      );
       profileItems.value = response.items || [];
     } catch (error) {
       if (isMissingSessionError(error)) {
         enterGuestState();
       } else {
-        listError.value = extractErrorMessage(error, PROFILE_LIST_ERROR_PREFIX + ERROR_LOAD_GENERIC);
+        listError.value = extractErrorMessage(
+          error,
+          PROFILE_LIST_ERROR_PREFIX + ERROR_LOAD_GENERIC,
+        );
         profileItems.value = [];
       }
     } finally {
@@ -79,5 +94,14 @@ export function useProfileTabs(options: {
     listError.value = "";
   }
 
-  return { listLoading, listError, activeTab, profileItems, tabs, listEmptyText, loadProfileList, resetList };
+  return {
+    listLoading,
+    listError,
+    activeTab,
+    profileItems,
+    tabs,
+    listEmptyText,
+    loadProfileList,
+    resetList,
+  };
 }

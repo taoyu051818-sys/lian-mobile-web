@@ -16,8 +16,16 @@ const emit = defineEmits<{
 
 <template>
   <div class="publish-action__bar">
-    <LianButton type="button" variant="ghost" :disabled="publishing || uploading" @click="emit('resetForm')">{{ PUBLISH_CLEAR }}</LianButton>
-    <LianButton type="submit" variant="primary" :loading="publishing" :disabled="!canSubmit">{{ PUBLISH_SUBMIT }}</LianButton>
+    <LianButton
+      type="button"
+      variant="ghost"
+      :disabled="publishing || uploading"
+      @click="emit('resetForm')"
+      >{{ PUBLISH_CLEAR }}</LianButton
+    >
+    <LianButton type="submit" variant="primary" :loading="publishing" :disabled="!canSubmit">{{
+      PUBLISH_SUBMIT
+    }}</LianButton>
   </div>
 </template>
 

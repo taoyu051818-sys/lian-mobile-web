@@ -25,8 +25,18 @@ const emit = defineEmits<{
     <section v-if="reportOpen" class="post-report-block__form" aria-label="举报原因" @click.stop>
       <label>
         <span>举报原因</span>
-        <select :value="reportCategory" :disabled="reportBusy" @input="emit('update:reportCategory', ($event.target as HTMLSelectElement).value)">
-          <option v-for="category in reportCategories || []" :key="category.value" :value="category.value">{{ category.label }}</option>
+        <select
+          :value="reportCategory"
+          :disabled="reportBusy"
+          @input="emit('update:reportCategory', ($event.target as HTMLSelectElement).value)"
+        >
+          <option
+            v-for="category in reportCategories || []"
+            :key="category.value"
+            :value="category.value"
+          >
+            {{ category.label }}
+          </option>
         </select>
       </label>
       <label v-if="reportReasonVisible">
@@ -40,8 +50,12 @@ const emit = defineEmits<{
           @input="emit('update:reportReason', ($event.target as HTMLTextAreaElement).value)"
         ></textarea>
       </label>
-      <p v-if="reportReasonVisible" class="post-report-block__hint">补充说明只会跟随这次举报一起提交，不会公开显示。</p>
-      <LianButton size="sm" variant="danger" :loading="reportBusy" @click="emit('submitReport')">提交举报</LianButton>
+      <p v-if="reportReasonVisible" class="post-report-block__hint">
+        补充说明只会跟随这次举报一起提交，不会公开显示。
+      </p>
+      <LianButton size="sm" variant="danger" :loading="reportBusy" @click="emit('submitReport')"
+        >提交举报</LianButton
+      >
     </section>
 
     <div v-if="reportFollowUpVisible" class="post-report-block__follow-up">

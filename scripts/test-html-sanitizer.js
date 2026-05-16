@@ -38,10 +38,18 @@ const cases = [
 for (const testCase of cases) {
   const output = sanitizeHtml(testCase.input);
   for (const value of testCase.required || []) {
-    assert.match(output, new RegExp(escapeRegExp(value)), `${testCase.name}: expected ${value} in ${output}`);
+    assert.match(
+      output,
+      new RegExp(escapeRegExp(value)),
+      `${testCase.name}: expected ${value} in ${output}`,
+    );
   }
   for (const value of testCase.forbidden || []) {
-    assert.doesNotMatch(output, new RegExp(escapeRegExp(value), "i"), `${testCase.name}: did not expect ${value} in ${output}`);
+    assert.doesNotMatch(
+      output,
+      new RegExp(escapeRegExp(value), "i"),
+      `${testCase.name}: did not expect ${value} in ${output}`,
+    );
   }
 }
 

@@ -238,13 +238,13 @@ Important scripts:
 
 The app now exposes five primary shell-mounted views:
 
-| Key | Label | Layout mode | Current surface |
-| --- | --- | --- | --- |
-| `feed` | `首页` | `content` | `src/features/feed/FeedView.vue` |
-| `map` | `探索` | `full-bleed` | `src/features/map/MapLeafletView.vue` |
-| `publish` | `发布` | `content` | `src/features/publish/PublishView.vue` |
+| Key        | Label  | Layout mode     | Current surface                          |
+| ---------- | ------ | --------------- | ---------------------------------------- |
+| `feed`     | `首页` | `content`       | `src/features/feed/FeedView.vue`         |
+| `map`      | `探索` | `full-bleed`    | `src/features/map/MapLeafletView.vue`    |
+| `publish`  | `发布` | `content`       | `src/features/publish/PublishView.vue`   |
 | `messages` | `消息` | `composer-safe` | `src/features/messages/MessagesView.vue` |
-| `profile` | `我的` | `content` | `src/features/profile/ProfileView.vue` |
+| `profile`  | `我的` | `content`       | `src/features/profile/ProfileView.vue`   |
 
 The map row is the most important stale-doc correction in this lane: current runtime truth is centered on `MapLeafletView.vue` inside shell-owned framing, not an older `MapView.vue`-based structure description.
 

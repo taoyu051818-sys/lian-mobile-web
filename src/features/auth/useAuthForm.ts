@@ -15,10 +15,7 @@ export {
   loadAuthInterestSettings,
 } from "./useAuthInterests";
 
-export {
-  type AuthFormFields,
-  validateAuthForm,
-} from "./useAuthSubmit";
+export { type AuthFormFields, validateAuthForm } from "./useAuthSubmit";
 
 import { useEmailCodeCooldown } from "./useEmailCodeCooldown";
 import { useAuthInterests } from "./useAuthInterests";
@@ -54,13 +51,17 @@ export function useAuthForm(onAuthenticated: (user: ProfileUser | null) => void)
   function toggleInterest(id: string) {
     interests.toggleInterest(id);
     if (interests.selectedInterests.value.length) {
-      submit.errorMessage.value = submit.errorMessage.value.includes("兴趣") ? "" : submit.errorMessage.value;
+      submit.errorMessage.value = submit.errorMessage.value.includes("兴趣")
+        ? ""
+        : submit.errorMessage.value;
     }
   }
 
   function skipInterestSelection() {
     interests.skipInterestSelection();
-    submit.errorMessage.value = submit.errorMessage.value.includes("兴趣") ? "" : submit.errorMessage.value;
+    submit.errorMessage.value = submit.errorMessage.value.includes("兴趣")
+      ? ""
+      : submit.errorMessage.value;
   }
 
   return {

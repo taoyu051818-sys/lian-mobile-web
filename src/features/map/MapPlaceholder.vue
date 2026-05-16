@@ -7,22 +7,22 @@ const places = [
     name: "三食堂",
     category: "饭堂",
     signal: "晚餐排队缩短",
-    status: "高相关"
+    status: "高相关",
   },
   {
     id: "library",
     name: "图书馆",
     category: "学习",
     signal: "东侧插座紧张",
-    status: "待确认"
+    status: "待确认",
   },
   {
     id: "gate",
     name: "北门",
     category: "出行",
     signal: "晚高峰拥堵",
-    status: "实时线索"
-  }
+    status: "实时线索",
+  },
 ] as const;
 </script>
 
@@ -34,7 +34,10 @@ const places = [
         <TrustBadge tone="confirmed">Vue 替换中</TrustBadge>
       </div>
       <h2 id="map-view-title">按地点探索校园信息</h2>
-      <p>旧 Map placeholder 已替换为 Vue 地点视图骨架。下一步接入 MapV2 数据、地图容器和地点详情抽屉。</p>
+      <p>
+        旧 Map placeholder 已替换为 Vue 地点视图骨架。下一步接入 MapV2
+        数据、地图容器和地点详情抽屉。
+      </p>
       <div class="vue-shell__row">
         <LianButton variant="primary">定位附近</LianButton>
         <LianButton variant="ghost">筛选地点</LianButton>
@@ -56,7 +59,9 @@ const places = [
         <div class="vue-shell__row">
           <LocationChip>{{ place.name }}</LocationChip>
           <TypeChip type="place">{{ place.category }}</TypeChip>
-          <TrustBadge :tone="place.status === '待确认' ? 'pending' : 'confirmed'">{{ place.status }}</TrustBadge>
+          <TrustBadge :tone="place.status === '待确认' ? 'pending' : 'confirmed'">{{
+            place.status
+          }}</TrustBadge>
         </div>
         <p>{{ place.signal }}</p>
       </GlassPanel>
@@ -89,8 +94,7 @@ const places = [
   overflow: hidden;
   background:
     linear-gradient(135deg, rgba(31, 167, 160, 0.12), transparent 40%),
-    linear-gradient(45deg, rgba(91, 184, 214, 0.16), transparent 46%),
-    rgba(255, 255, 255, 0.5);
+    linear-gradient(45deg, rgba(91, 184, 214, 0.16), transparent 46%), rgba(255, 255, 255, 0.5);
 }
 
 .map-view__grid {

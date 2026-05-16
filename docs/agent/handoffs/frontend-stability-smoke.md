@@ -10,8 +10,8 @@ Added `scripts/smoke-frontend.js` — a browserless HTTP smoke test for the spli
 
 ## Files changed
 
-| File | Change |
-|---|---|
+| File                        | Change                                                                                                        |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------- |
 | `scripts/smoke-frontend.js` | New. 21 checks: homepage HTML, static JS reachable, API endpoints JSON valid, frontend syntax, CSS reachable. |
 
 ## Behavior

@@ -31,19 +31,27 @@ async function createFixtureRepo(files) {
 async function runGuardFixture(name, files, expectedStatus, expectedNeedle) {
   const repoDir = await createFixtureRepo(files);
   try {
-    const result = await execFileAsync(process.execPath, ["scripts/guard-public-runtime-exposure.js"], {
-      cwd: repoDir
-    }).then(
+    const result = await execFileAsync(
+      process.execPath,
+      ["scripts/guard-public-runtime-exposure.js"],
+      {
+        cwd: repoDir,
+      },
+    ).then(
       ({ stdout, stderr }) => ({ status: "pass", stdout, stderr }),
       (error) => ({
         status: "fail",
         stdout: error.stdout || "",
         stderr: error.stderr || "",
-        code: error.code
-      })
+        code: error.code,
+      }),
     );
 
-    assert.equal(result.status, expectedStatus, `${name} expected ${expectedStatus} but saw ${result.status}`);
+    assert.equal(
+      result.status,
+      expectedStatus,
+      `${name} expected ${expectedStatus} but saw ${result.status}`,
+    );
     const combinedOutput = `${result.stdout}${result.stderr}`;
     assert.match(combinedOutput, expectedNeedle, `${name} output should mention ${expectedNeedle}`);
     console.log(`PASS ${name}`);
@@ -55,27 +63,28 @@ async function runGuardFixture(name, files, expectedStatus, expectedNeedle) {
 await runGuardFixture(
   "clean production fixture",
   {
-    "index.html": "<!doctype html><html><body><div id=\"vue-root\"></div><script type=\"module\" src=\"/src/main.ts\"></script></body></html>",
-    "src/main.ts": "console.log('ok');"
+    "index.html":
+      '<!doctype html><html><body><div id="vue-root"></div><script type="module" src="/src/main.ts"></script></body></html>',
+    "src/main.ts": "console.log('ok');",
   },
   "pass",
-  /Result: \d+ passed, 0 failed/
+  /Result: \d+ passed, 0 failed/,
 );
 
 await runGuardFixture(
   "rehearsal marker fixture",
   {
-    "index.html": "<!doctype html><html><body>LIAN_STATIC_REHEARSAL</body></html>"
+    "index.html": "<!doctype html><html><body>LIAN_STATIC_REHEARSAL</body></html>",
   },
   "fail",
-  /rehearsal marker/
+  /rehearsal marker/,
 );
 
 await runGuardFixture(
   "internal tool path fixture",
   {
-    "index.html": "<!doctype html><html><body><a href=\"\/tools\/debug\">debug</a></body></html>"
+    "index.html": '<!doctype html><html><body><a href="\/tools\/debug">debug</a></body></html>',
   },
   "fail",
-  /internal\/debug path/
+  /internal\/debug path/,
 );

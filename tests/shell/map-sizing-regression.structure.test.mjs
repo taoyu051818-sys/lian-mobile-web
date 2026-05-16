@@ -28,7 +28,10 @@ test("content-frame.css full-bleed modifier removes max-width constraint", () =>
 
 test("main.css full-bleed grid removes border-radius on map stage wrapper", () => {
   const css = read("src/styles/main.css");
-  assert.match(css, /vue-shell__grid--full-bleed[\s\S]*?map-view__stage-wrap[\s\S]*?border-radius:\s*0/);
+  assert.match(
+    css,
+    /vue-shell__grid--full-bleed[\s\S]*?map-view__stage-wrap[\s\S]*?border-radius:\s*0/,
+  );
 });
 
 // --- Map chrome ---

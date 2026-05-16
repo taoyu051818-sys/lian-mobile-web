@@ -14,19 +14,19 @@ Date: 2026-05-02
 
 ### 加载顺序
 
-| # | 文件 | 类型 | 行数 |
-|---|---|---|---|
-| 1 | `leaflet.js` | 外部库 | — |
-| 2 | `map-v2.js` | IIFE，导出 `window.MapV2` | ~390 |
-| 3 | `app-state.js` | 纯数据，定义 `state` 等全局变量 | ~80 |
-| 4 | `app-utils.js` | 工具函数：`$`, `$$`, `api`, `uploadImage` 等 | ~200 |
-| 5 | `app-auth-avatar.js` | 认证 + 头像裁剪 | ~150 |
-| 6 | `app-feed.js` | Feed 渲染 + 详情页 | ~500 |
-| 7 | `app-legacy-map.js` | 校园手绘地图 | ~300 |
-| 8 | `app-ai-publish.js` | AI 发布（旧版弹窗流） | ~350 |
-| 9 | `publish-page.js` | 发布页（新版专用页面） | ~415 |
-| 10 | `app-messages-profile.js` | 消息 + 个人中心 | ~350 |
-| 11 | `app.js` | 事件绑定 + `initApp()` 启动 | ~300 |
+| #   | 文件                      | 类型                                         | 行数 |
+| --- | ------------------------- | -------------------------------------------- | ---- |
+| 1   | `leaflet.js`              | 外部库                                       | —    |
+| 2   | `map-v2.js`               | IIFE，导出 `window.MapV2`                    | ~390 |
+| 3   | `app-state.js`            | 纯数据，定义 `state` 等全局变量              | ~80  |
+| 4   | `app-utils.js`            | 工具函数：`$`, `$$`, `api`, `uploadImage` 等 | ~200 |
+| 5   | `app-auth-avatar.js`      | 认证 + 头像裁剪                              | ~150 |
+| 6   | `app-feed.js`             | Feed 渲染 + 详情页                           | ~500 |
+| 7   | `app-legacy-map.js`       | 校园手绘地图                                 | ~300 |
+| 8   | `app-ai-publish.js`       | AI 发布（旧版弹窗流）                        | ~350 |
+| 9   | `publish-page.js`         | 发布页（新版专用页面）                       | ~415 |
+| 10  | `app-messages-profile.js` | 消息 + 个人中心                              | ~350 |
+| 11  | `app.js`                  | 事件绑定 + `initApp()` 启动                  | ~300 |
 
 ### 依赖图
 
@@ -46,15 +46,15 @@ Leaflet
 
 ### 前向引用（安全，仅在事件处理器中调用）
 
-| 调用方 | 引用 | 定义在 |
-|---|---|---|
-| `app-auth-avatar.js` | `changeAvatar()` | `app-messages-profile.js` |
-| `app-feed.js` | `loadMessages()`, `loadProfile()` | `app-messages-profile.js` |
-| `app-feed.js` | `renderAiPublishSheet()` | `app-ai-publish.js` |
-| `app-legacy-map.js` | `updatePublishLocationNote()` | `app-ai-publish.js` |
-| `map-v2.js` | `window.openDetail()` | `app-feed.js` |
+| 调用方               | 引用                              | 定义在                    |
+| -------------------- | --------------------------------- | ------------------------- |
+| `app-auth-avatar.js` | `changeAvatar()`                  | `app-messages-profile.js` |
+| `app-feed.js`        | `loadMessages()`, `loadProfile()` | `app-messages-profile.js` |
+| `app-feed.js`        | `renderAiPublishSheet()`          | `app-ai-publish.js`       |
+| `app-legacy-map.js`  | `updatePublishLocationNote()`     | `app-ai-publish.js`       |
+| `map-v2.js`          | `window.openDetail()`             | `app-feed.js`             |
 
-### window.* 显式导出
+### window.\* 显式导出
 
 - `map-v2.js`: `window.MapV2`
 - `app-feed.js`: `window.openDetail`
@@ -81,42 +81,42 @@ Leaflet
 
 ### 评分函数
 
-| 函数 | 行号 | 用途 |
-|---|---|---|
-| `legacyScoreItem` | 256 | 基础评分（enhancedScoring 关闭时使用） |
-| `scoreItem` | 307 | 增强评分 = legacy + 多维度加权 |
-| `scoreBreakdown` | 335 | 与 `scoreItem` 相同逻辑，返回分项明细（DRY 违规） |
-| `momentScoreItem` | 423 | "此刻" Tab 独立评分器 |
+| 函数              | 行号 | 用途                                              |
+| ----------------- | ---- | ------------------------------------------------- |
+| `legacyScoreItem` | 256  | 基础评分（enhancedScoring 关闭时使用）            |
+| `scoreItem`       | 307  | 增强评分 = legacy + 多维度加权                    |
+| `scoreBreakdown`  | 335  | 与 `scoreItem` 相同逻辑，返回分项明细（DRY 违规） |
+| `momentScoreItem` | 423  | "此刻" Tab 独立评分器                             |
 
 ### scoreItem 各维度权重
 
-| 维度 | 公式 | 默认权重 |
-|---|---|---|
-| pinned | 1000 - index*5 | — |
-| tagWeight | `tagWeights[tag]` | "报名机会"=92, "校园活动"=86 |
-| recency | `60 * 0.5^(age/96h)` | 半衰期 96h |
-| cover | 有图 +9 | 9 |
-| quality | `qualityScore * 40` | 40 |
-| imageImpact | `imageImpactScore * 24` | 24 |
-| risk | `riskScore * -220` | -220 |
-| official | `officialScore * -35` | -35（仅首页） |
-| contentType | `contentTypeWeights[ct]` | campus_moment=180, food=76, activity_archive=-180 |
-| locationArea | 无位置 -26 | -26 |
-| read | 已读 -60 | -60 |
-| vibe | `vibeWeights[tag]` | "真实"=30, "在地"=24 |
-| scene | `sceneWeights[tag]` | "饭点"=18, "夜宵"=18 |
+| 维度         | 公式                     | 默认权重                                          |
+| ------------ | ------------------------ | ------------------------------------------------- |
+| pinned       | 1000 - index\*5          | —                                                 |
+| tagWeight    | `tagWeights[tag]`        | "报名机会"=92, "校园活动"=86                      |
+| recency      | `60 * 0.5^(age/96h)`     | 半衰期 96h                                        |
+| cover        | 有图 +9                  | 9                                                 |
+| quality      | `qualityScore * 40`      | 40                                                |
+| imageImpact  | `imageImpactScore * 24`  | 24                                                |
+| risk         | `riskScore * -220`       | -220                                              |
+| official     | `officialScore * -35`    | -35（仅首页）                                     |
+| contentType  | `contentTypeWeights[ct]` | campus_moment=180, food=76, activity_archive=-180 |
+| locationArea | 无位置 -26               | -26                                               |
+| read         | 已读 -60                 | -60                                               |
+| vibe         | `vibeWeights[tag]`       | "真实"=30, "在地"=24                              |
+| scene        | `sceneWeights[tag]`      | "饭点"=18, "夜宵"=18                              |
 
 ### momentScoreItem（此刻 Tab）
 
 独立评分器，部分权重硬编码：
 
-| 维度 | 来源 |
-|---|---|
-| recency | `90 * 0.5^(age/48h)`，半衰期 48h |
-| quality | `qualityScore * 35`（硬编码） |
-| imageImpact | `imageImpactScore * 30`（硬编码） |
-| replies | `replyCount * 4`（硬编码） |
-| vibe | 匹配标签 +12（硬编码列表） |
+| 维度        | 来源                                         |
+| ----------- | -------------------------------------------- |
+| recency     | `90 * 0.5^(age/48h)`，半衰期 48h             |
+| quality     | `qualityScore * 35`（硬编码）                |
+| imageImpact | `imageImpactScore * 30`（硬编码）            |
+| replies     | `replyCount * 4`（硬编码）                   |
+| vibe        | 匹配标签 +12（硬编码列表）                   |
 | contentType | `momentContentTypeWeights[ct]`（rules.json） |
 
 ### handleFeed 分支逻辑（496-610 行）
@@ -155,31 +155,31 @@ else
 
 ### 导出函数
 
-| 函数 | 行号 | 用途 |
-|---|---|---|
-| `nodebbFetch(apiPath, options)` | 15 | 通用 HTTP 客户端 |
-| `withNodebbUid(apiPath, uid)` | 9 | 构建带 `_uid` 的路径 |
-| `retryApi(task, attempts)` | 60 | 重试包装器（3 次，450/900ms 间隔） |
-| `fetchNodebbTopicIndex(maxPages)` | 73 | 分页获取最新帖子列表 |
+| 函数                              | 行号 | 用途                               |
+| --------------------------------- | ---- | ---------------------------------- |
+| `nodebbFetch(apiPath, options)`   | 15   | 通用 HTTP 客户端                   |
+| `withNodebbUid(apiPath, uid)`     | 9    | 构建带 `_uid` 的路径               |
+| `retryApi(task, attempts)`        | 60   | 重试包装器（3 次，450/900ms 间隔） |
+| `fetchNodebbTopicIndex(maxPages)` | 73   | 分页获取最新帖子列表               |
 
 ### 认证模式
 
-| 操作类型 | `_uid` | Auth Header |
-|---|---|---|
-| 公共读取（feed, tags） | `config.nodebbUid`（自动） | `x-api-token`（自动） |
-| 用户读取（bookmarks, profile） | `withNodebbUid(uid)` | `x-api-token`（自动） |
-| 用户写入（create, vote, flag, reply） | `withNodebbUid(uid)` | `authorization: Bearer <token>`（显式） |
+| 操作类型                              | `_uid`                     | Auth Header                             |
+| ------------------------------------- | -------------------------- | --------------------------------------- |
+| 公共读取（feed, tags）                | `config.nodebbUid`（自动） | `x-api-token`（自动）                   |
+| 用户读取（bookmarks, profile）        | `withNodebbUid(uid)`       | `x-api-token`（自动）                   |
+| 用户写入（create, vote, flag, reply） | `withNodebbUid(uid)`       | `authorization: Bearer <token>`（显式） |
 
 ### nodebbFetch 调用点（共 19 处）
 
-| 文件 | 调用数 | 主要用途 |
-|---|---|---|
-| `post-service.js` | 9 | create, vote, bookmark, flag, reply, history |
-| `channel-service.js` | 3 | markRead, channelMessage, notifications |
-| `feed-service.js` | 3 | getTopicDetail, getRecentTopics, detail for bookmark |
-| `auth-service.js` | 2 | findNodebbUser, createNodebbUser |
-| `auth-routes.js` | 1 | /api/me fallback |
-| `api-router.js` | 1 | proxy /api/tags |
+| 文件                 | 调用数 | 主要用途                                             |
+| -------------------- | ------ | ---------------------------------------------------- |
+| `post-service.js`    | 9      | create, vote, bookmark, flag, reply, history         |
+| `channel-service.js` | 3      | markRead, channelMessage, notifications              |
+| `feed-service.js`    | 3      | getTopicDetail, getRecentTopics, detail for bookmark |
+| `auth-service.js`    | 2      | findNodebbUser, createNodebbUser                     |
+| `auth-routes.js`     | 1      | /api/me fallback                                     |
+| `api-router.js`      | 1      | proxy /api/tags                                      |
 
 ### createNodebbTopicFromPayload（post-service.js:136-185）
 
@@ -208,15 +208,15 @@ else
 
 ### 核心函数
 
-| 类别 | 函数 | 行号 |
-|---|---|---|
-| 用户查找 | `findInstitutionByEmail`, `findUserByLogin`, `normalizeLogin` | 42-54 |
-| NodeBB 映射 | `ensureNodebbUid`, `findNodebbUserByUsername`, `createNodebbUserForLian` | 56-122 |
-| 密码 | `hashPassword` (scrypt), `verifyPassword` (timingSafeEqual) | 250-259 |
-| 邮箱验证 | `createEmailCode`, `hashEmailCode`, `sendMail`, `sendSmtpMail`, `verifyEmailCode` | 124-248 |
-| 会话 | `parseCookies`, `sessionCookie`, `getCurrentUser`, `requireUser` | 261-298 |
-| 邀请码 | `createInviteCode`, `applyInviteViolation` | 300-318 |
-| 身份展示 | `allowedIdentityTags`, `selectIdentityTag`, `publicAuthUser` | 9-40 |
+| 类别        | 函数                                                                              | 行号    |
+| ----------- | --------------------------------------------------------------------------------- | ------- |
+| 用户查找    | `findInstitutionByEmail`, `findUserByLogin`, `normalizeLogin`                     | 42-54   |
+| NodeBB 映射 | `ensureNodebbUid`, `findNodebbUserByUsername`, `createNodebbUserForLian`          | 56-122  |
+| 密码        | `hashPassword` (scrypt), `verifyPassword` (timingSafeEqual)                       | 250-259 |
+| 邮箱验证    | `createEmailCode`, `hashEmailCode`, `sendMail`, `sendSmtpMail`, `verifyEmailCode` | 124-248 |
+| 会话        | `parseCookies`, `sessionCookie`, `getCurrentUser`, `requireUser`                  | 261-298 |
+| 邀请码      | `createInviteCode`, `applyInviteViolation`                                        | 300-318 |
+| 身份展示    | `allowedIdentityTags`, `selectIdentityTag`, `publicAuthUser`                      | 9-40    |
 
 ### 会话生命周期
 
@@ -246,21 +246,22 @@ requireUser(req) → getCurrentUser + 401/403 守卫
 ### 邀请码级联封禁
 
 `applyInviteViolation(bannedUserId)`:
+
 1. 撤销邀请人的 `invitePermission`
 2. 将邀请人邀请的所有其他用户标记为 `limited`
 
 ### 调用方耦合
 
-| 调用方 | 导入的函数 |
-|---|---|
-| `auth-routes.js` | 大部分函数 |
-| `post-service.js` | `getCurrentUser`, `ensureNodebbUid`, `requireUser`, `selectIdentityTag` |
-| `feed-service.js` | `ensureNodebbUid`, `getCurrentUser` |
-| `channel-service.js` | `ensureNodebbUid`, `requireUser`, `selectIdentityTag` |
-| `alias-service.js` | `requireUser`, `publicAuthUser` |
-| `admin-routes.js` | `applyInviteViolation`, `publicAuthUser` |
-| `map-v2-service.js` | `getCurrentUser` |
-| `ai-light-publish.js` | `requireUser` |
+| 调用方                | 导入的函数                                                              |
+| --------------------- | ----------------------------------------------------------------------- |
+| `auth-routes.js`      | 大部分函数                                                              |
+| `post-service.js`     | `getCurrentUser`, `ensureNodebbUid`, `requireUser`, `selectIdentityTag` |
+| `feed-service.js`     | `ensureNodebbUid`, `getCurrentUser`                                     |
+| `channel-service.js`  | `ensureNodebbUid`, `requireUser`, `selectIdentityTag`                   |
+| `alias-service.js`    | `requireUser`, `publicAuthUser`                                         |
+| `admin-routes.js`     | `applyInviteViolation`, `publicAuthUser`                                |
+| `map-v2-service.js`   | `getCurrentUser`                                                        |
+| `ai-light-publish.js` | `requireUser`                                                           |
 
 最高耦合：`requireUser`（5 处）、`getCurrentUser`（4 处）、`ensureNodebbUid`（4 处）
 
@@ -281,20 +282,20 @@ requireUser(req) → getCurrentUser + 401/403 守卫
 
 ### 读写函数
 
-| 函数 | 文件 | 用途 |
-|---|---|---|
-| `loadMetadata()` | `data-store.js` | 读取完整 JSON |
+| 函数                       | 文件            | 用途                      |
+| -------------------------- | --------------- | ------------------------- |
+| `loadMetadata()`           | `data-store.js` | 读取完整 JSON             |
 | `patchPostMetadata(patch)` | `data-store.js` | 合并写入（Object.assign） |
 
 ### 调用方
 
-| 文件 | 读 | 写 |
-|---|---|---|
-| `feed-service.js` | loadMetadata | — |
-| `post-service.js` | loadMetadata | patchPostMetadata |
-| `ai-light-publish.js` | — | patchPostMetadata |
-| `admin-routes.js` | loadMetadata | patchPostMetadata |
-| `map-v2-service.js` | loadMetadata | — |
+| 文件                  | 读           | 写                |
+| --------------------- | ------------ | ----------------- |
+| `feed-service.js`     | loadMetadata | —                 |
+| `post-service.js`     | loadMetadata | patchPostMetadata |
+| `ai-light-publish.js` | —            | patchPostMetadata |
+| `admin-routes.js`     | loadMetadata | patchPostMetadata |
+| `map-v2-service.js`   | loadMetadata | —                 |
 
 ### 数据结构
 
@@ -392,11 +393,11 @@ GET  /api/profile/:uid/:tab → handleProfileTab
 
 ## 重构建议优先级
 
-| 优先级 | 区域 | 建议 |
-|---|---|---|
-| 1 | api-router.js | 添加路由前先写路径匹配测试，逐步迁移到框架路由 |
-| 2 | post-metadata.json | 添加并发写入锁或 WAL，防止数据丢失 |
-| 3 | feed-service.js | 将 scoreBreakdown 改为调用 scoreItem + 分解，消除 DRY 违规 |
-| 4 | frontend | 添加脚本加载顺序断言，防止静默失败 |
-| 5 | auth-service.js | 将 sendSmtpMail 抽为独立模块，便于测试 |
-| 6 | nodebb-client.js | 添加端点健康检查和降级策略 |
+| 优先级 | 区域               | 建议                                                       |
+| ------ | ------------------ | ---------------------------------------------------------- |
+| 1      | api-router.js      | 添加路由前先写路径匹配测试，逐步迁移到框架路由             |
+| 2      | post-metadata.json | 添加并发写入锁或 WAL，防止数据丢失                         |
+| 3      | feed-service.js    | 将 scoreBreakdown 改为调用 scoreItem + 分解，消除 DRY 违规 |
+| 4      | frontend           | 添加脚本加载顺序断言，防止静默失败                         |
+| 5      | auth-service.js    | 将 sendSmtpMail 抽为独立模块，便于测试                     |
+| 6      | nodebb-client.js   | 添加端点健康检查和降级策略                                 |

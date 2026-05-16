@@ -1,6 +1,10 @@
 import { apiGet } from "./http";
 import { UNTITLED_CONTENT } from "../config/brand";
-import { asBoolean, asNumber, normalizeFeedItemId as normalizeFeedItemIdNum } from "../platform/api-normalizers";
+import {
+  asBoolean,
+  asNumber,
+  normalizeFeedItemId as normalizeFeedItemIdNum,
+} from "../platform/api-normalizers";
 import type {
   FeedItem,
   FeedItemCardTemplateSource,
@@ -15,7 +19,14 @@ export const DEFAULT_TABS: FeedTab[] = [
   { id: "精选", label: "精选" },
 ];
 
-const CARD_TEMPLATES: ReadonlySet<FeedPresentationIntent> = new Set(["image", "text", "activity", "place", "merchant", "help"]);
+const CARD_TEMPLATES: ReadonlySet<FeedPresentationIntent> = new Set([
+  "image",
+  "text",
+  "activity",
+  "place",
+  "merchant",
+  "help",
+]);
 const CONTENT_TYPE_CARD_TEMPLATES: Readonly<Record<string, FeedPresentationIntent>> = {
   image: "image",
   photo: "image",
@@ -55,9 +66,10 @@ function normalizeTabs(value: unknown): FeedTab[] {
   const tabs = value
     .map((entry) => {
       const label = readableText(entry);
-      const id = typeof entry === "object" && entry
-        ? readableText((entry as Record<string, unknown>).id) || label
-        : label;
+      const id =
+        typeof entry === "object" && entry
+          ? readableText((entry as Record<string, unknown>).id) || label
+          : label;
       return id && label ? { id, label } : null;
     })
     .filter((tab): tab is FeedTab => Boolean(tab));
@@ -67,7 +79,7 @@ function normalizeTabs(value: unknown): FeedTab[] {
 
 function normalizeFeedPresentationIntent(value: unknown): FeedPresentationIntent | null {
   return typeof value === "string" && CARD_TEMPLATES.has(value as FeedPresentationIntent)
-    ? value as FeedPresentationIntent
+    ? (value as FeedPresentationIntent)
     : null;
 }
 
@@ -75,12 +87,16 @@ function normalizeFeedContentType(value: unknown): string {
   return readableText(value).toLowerCase();
 }
 
-export function normalizeFeedCardTemplate(item: Pick<FeedItem, "cover" | "contentType" | "presentationIntent" | "cardTemplate">): {
+export function normalizeFeedCardTemplate(
+  item: Pick<FeedItem, "cover" | "contentType" | "presentationIntent" | "cardTemplate">,
+): {
   cardTemplate: FeedPresentationIntent;
   cardTemplateSource: FeedItemCardTemplateSource;
   presentationIntent: FeedPresentationIntent | null;
 } {
-  const normalizedServerTemplate = normalizeFeedPresentationIntent(item.cardTemplate) || normalizeFeedPresentationIntent(item.presentationIntent);
+  const normalizedServerTemplate =
+    normalizeFeedPresentationIntent(item.cardTemplate) ||
+    normalizeFeedPresentationIntent(item.presentationIntent);
   if (normalizedServerTemplate) {
     return {
       cardTemplate: normalizedServerTemplate,
@@ -110,27 +126,42 @@ export function normalizeFeedItem(value: unknown): FeedItem | null {
   if (!value || typeof value !== "object") return null;
   const record = value as Record<string, unknown>;
   const cover = readableText(record.cover || record.coverUrl || record.image || record.imageUrl);
-  const contentType = normalizeFeedContentType(record.contentType || record.category || record.type);
+  const contentType = normalizeFeedContentType(
+    record.contentType || record.category || record.type,
+  );
   const { cardTemplate, cardTemplateSource, presentationIntent } = normalizeFeedCardTemplate({
     cover,
     contentType,
-    presentationIntent: record.presentationIntent as FeedPresentationIntent | string | null | undefined,
+    presentationIntent: record.presentationIntent as
+      | FeedPresentationIntent
+      | string
+      | null
+      | undefined,
     cardTemplate: record.cardTemplate as FeedPresentationIntent | null | undefined,
   });
 
   return {
     tid: normalizeFeedItemIdNum(record.tid || record.id),
     title: readableText(record.title) || UNTITLED_CONTENT,
-    bodyPreview: readableText(record.bodyPreview || record.summary || record.excerpt || record.body),
+    bodyPreview: readableText(
+      record.bodyPreview || record.summary || record.excerpt || record.body,
+    ),
     cover,
     primaryTag: readableText(record.primaryTag || record.tag),
-    actor: typeof record.actor === "object" && record.actor ? record.actor as FeedItem["actor"] : undefined,
-    source: typeof record.source === "object" && record.source ? record.source as FeedItem["source"] : undefined,
+    actor:
+      typeof record.actor === "object" && record.actor
+        ? (record.actor as FeedItem["actor"])
+        : undefined,
+    source:
+      typeof record.source === "object" && record.source
+        ? (record.source as FeedItem["source"])
+        : undefined,
     timeLabel: readableText(record.timeLabel || record.timeAgo) || "刚刚",
     timestampISO: readableText(record.timestampISO || record.timestamp || record.createdAt),
     likeCount: Math.max(0, asNumber(record.likeCount || record.likes, 0)),
     liked: asBoolean(record.liked),
-    locationArea: readableText(record.locationArea || record.placeLabel || record.location) || "校园",
+    locationArea:
+      readableText(record.locationArea || record.placeLabel || record.location) || "校园",
     contentType,
     presentationIntent,
     cardTemplate,
@@ -150,7 +181,9 @@ export async function fetchFeed(query: FeedQuery): Promise<FeedResponse> {
   return {
     tabs: normalizeTabs(data.tabs),
     items: Array.isArray(data.items)
-      ? data.items.map((item) => normalizeFeedItem(item)).filter((item): item is FeedItem => Boolean(item))
+      ? data.items
+          .map((item) => normalizeFeedItem(item))
+          .filter((item): item is FeedItem => Boolean(item))
       : [],
     hasMore: Boolean(data.hasMore),
     nextPage: typeof data.nextPage === "number" ? data.nextPage : null,

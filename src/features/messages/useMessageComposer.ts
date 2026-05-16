@@ -26,9 +26,17 @@ export function useMessageComposer(options: {
     if (!user?.aliases?.length) return null;
     return user.aliases.find((alias) => alias.id === user.activeAliasId) || user.aliases[0] || null;
   });
-  const composerActorName = computed(() => activeAlias.value?.name || currentUser.value?.username || DEFAULT_USER_LABEL);
-  const composerAvatarText = computed(() => composerActorName.value.slice(0, 2) || USER_AVATAR_FALLBACK);
-  const composerSignalMeta = computed(() => composerIdentityTag.value ? `${MESSAGE_IDENTITY_SIGNAL_PREFIX}${composerIdentityTag.value}` : MESSAGE_NO_IDENTITY_SIGNAL);
+  const composerActorName = computed(
+    () => activeAlias.value?.name || currentUser.value?.username || DEFAULT_USER_LABEL,
+  );
+  const composerAvatarText = computed(
+    () => composerActorName.value.slice(0, 2) || USER_AVATAR_FALLBACK,
+  );
+  const composerSignalMeta = computed(() =>
+    composerIdentityTag.value
+      ? `${MESSAGE_IDENTITY_SIGNAL_PREFIX}${composerIdentityTag.value}`
+      : MESSAGE_NO_IDENTITY_SIGNAL,
+  );
 
   async function loadCurrentUser() {
     try {
