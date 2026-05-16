@@ -141,7 +141,9 @@ function handleBeforeUnload(event: BeforeUnloadEvent) {
   event.returnValue = "";
 }
 
-watch(draft.pageChrome, (spec) => emit("chrome", spec), { deep: true });
+watch(draft.pageChrome, (spec) => emit("chrome", spec), {
+  deep: true,
+});
 
 watch(
   [
@@ -178,9 +180,14 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <section class="publish-view keyboard-aware-surface" :aria-label="PUBLISH_SECTION_LABEL">
+  <section
+    class="publish-view keyboard-aware-surface"
+    :aria-label="PUBLISH_SECTION_LABEL"
+  >
     <GlassPanel class="publish-view__card">
-      <InlineError v-if="draft.errorMessage.value">{{ draft.errorMessage.value }}</InlineError>
+      <InlineError v-if="draft.errorMessage.value">
+        {{ draft.errorMessage.value }}
+      </InlineError>
       <p
         v-if="draftNotice"
         class="publish-view__draft-notice"
@@ -188,7 +195,10 @@ onBeforeUnmount(() => {
       >
         {{ draftNotice }}
       </p>
-      <div v-if="draft.successMessage.value" class="publish-view__success-block">
+      <div
+        v-if="draft.successMessage.value"
+        class="publish-view__success-block"
+      >
         <p class="publish-view__success">{{ draft.successMessage.value }}</p>
         <a
           v-if="postDetailUrl"
@@ -200,7 +210,10 @@ onBeforeUnmount(() => {
         </a>
       </div>
 
-      <form class="publish-view__form keyboard-aware-surface" @submit.prevent="submitPublish">
+      <form
+        class="publish-view__form keyboard-aware-surface"
+        @submit.prevent="submitPublish"
+      >
         <PublishComposer
           :local-preview-urls="draft.localPreviewUrls.value"
           :image-status="draft.imageStatus.value"
