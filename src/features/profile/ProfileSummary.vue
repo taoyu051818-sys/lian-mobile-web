@@ -99,8 +99,8 @@ const forumLinkText = computed(() =>
         </div>
       </dl>
 
-      <section class="profile-summary__settings" :aria-labelledby="PROFILE_SETTINGS_TITLE">
-        <h3>{{ PROFILE_SETTINGS_TITLE }}</h3>
+      <section class="profile-summary__settings" aria-labelledby="profile-settings-title">
+        <h3 id="profile-settings-title">{{ PROFILE_SETTINGS_TITLE }}</h3>
         <dl class="profile-summary__settings-grid">
           <div v-for="row in settingsRows" :key="row.label" class="profile-summary__setting-row">
             <dt>{{ row.label }}</dt>
@@ -109,8 +109,8 @@ const forumLinkText = computed(() =>
         </dl>
       </section>
 
-      <section class="profile-summary__forum-note" :aria-labelledby="PROFILE_FORUM_LINK_NOTICE">
-        <h3>{{ PROFILE_FORUM_LINK_NOTICE }}</h3>
+      <section class="profile-summary__forum-note" aria-labelledby="profile-forum-title">
+        <h3 id="profile-forum-title">{{ PROFILE_FORUM_LINK_NOTICE }}</h3>
         <p>{{ forumLinkText }}</p>
       </section>
     </template>
