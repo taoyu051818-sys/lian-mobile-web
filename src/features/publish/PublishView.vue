@@ -22,8 +22,7 @@ const emit = defineEmits<{
   chrome: [spec: PageChromeSpec];
 }>();
 
-const RESET_CONFIRM_MESSAGE =
-  "当前发布内容还没有提交，确认清空吗？已选择的图片需要重新添加。";
+const RESET_CONFIRM_MESSAGE = "当前发布内容还没有提交，确认清空吗？已选择的图片需要重新添加。";
 
 const draft = usePublishDraft();
 const locationOptions = usePublishLocationOptions(draft.placeName);
@@ -92,11 +91,8 @@ function restoreDraftFromSession() {
   draft.tagInput.value = snapshot.tagInput;
   draft.placeName.value = snapshot.placeName;
   draft.visibility.value = snapshot.visibility;
-  locationOptions.selectedMapLocation.value = restorePublishDraftLocation(
-    snapshot.selectedMapLocation,
-  );
-  locationOptions.locationSearch.value =
-    snapshot.selectedMapLocation?.name || snapshot.placeName;
+  locationOptions.selectedMapLocation.value = restorePublishDraftLocation(snapshot.selectedMapLocation);
+  locationOptions.locationSearch.value = snapshot.selectedMapLocation?.name || snapshot.placeName;
   locationOptions.locationPanelOpen.value = Boolean(
     snapshot.selectedMapLocation || snapshot.placeName.trim(),
   );
@@ -171,11 +167,7 @@ onBeforeUnmount(() => {
   <section class="publish-view keyboard-aware-surface" :aria-label="PUBLISH_SECTION_LABEL">
     <GlassPanel class="publish-view__card">
       <InlineError v-if="draft.errorMessage.value">{{ draft.errorMessage.value }}</InlineError>
-      <p
-        v-if="draftNotice"
-        class="publish-view__draft-notice"
-        data-testid="publish-draft-notice"
-      >
+      <p v-if="draftNotice" class="publish-view__draft-notice" data-testid="publish-draft-notice">
         {{ draftNotice }}
       </p>
       <div v-if="draft.successMessage.value" class="publish-view__success-block">
@@ -260,12 +252,8 @@ onBeforeUnmount(() => {
         >
           <p>{{ RESET_CONFIRM_MESSAGE }}</p>
           <div class="publish-view__reset-confirm-actions">
-            <LianButton type="button" variant="ghost" @click="cancelResetForm">
-              继续编辑
-            </LianButton>
-            <LianButton type="button" variant="danger" @click="confirmResetForm">
-              确认清空
-            </LianButton>
+            <LianButton type="button" variant="ghost" @click="cancelResetForm">继续编辑</LianButton>
+            <LianButton type="button" variant="danger" @click="confirmResetForm">确认清空</LianButton>
           </div>
         </div>
 
