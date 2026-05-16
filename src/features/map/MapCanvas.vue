@@ -17,11 +17,10 @@ import type {
   MapRoadNetworkPreview,
 } from "../../types/map";
 import { useMapLayers } from "./useMapLayers";
+import { createMapIconScale } from "./useMapIconScale";
 
 const GAODE_TILE_URL = "https://webrd0{s}.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=8&x={x}&y={y}&z={z}";
 const DEFAULT_BOUNDS: MapBounds = { south: 18.37107, west: 109.98464, north: 18.41730, east: 110.04775 };
-const SCALED_ICON_SELECTOR = "[data-vue-map-scaled-icon]";
-const ICON_BASE_ZOOM = 16;
 
 const props = defineProps<{
   mapData: MapV2ItemsResponse | null;
@@ -39,7 +38,6 @@ const stageEl = ref<HTMLElement | null>(null);
 const map = shallowRef<LeafletMapLike | null>(null);
 let baseOverlay: LeafletImageOverlayLike | null = null;
 let zoomControl: LeafletZoomControlLike | null = null;
-const iconScaleBoundMaps = new WeakSet<LeafletMapLike>();
 
 const visibleLayersComputed = computed(() => props.visibleLayers || {});
 const bounds = computed(() => props.mapData?.bounds || DEFAULT_BOUNDS);
@@ -52,39 +50,10 @@ const { setLayers, renderMap } = useMapLayers(
   (place) => emit("place-select", place),
 );
 
+const { applyMapIconScale, bindMapIconScale } = createMapIconScale(() => map.value);
+
 function mapBounds(): [number, number][] {
   return [[bounds.value.south, bounds.value.west], [bounds.value.north, bounds.value.east]];
-}
-
-function iconScaleForZoom(target: LeafletMapLike | null = map.value, zoom = target?.getZoom?.()) {
-  if (!target) return 1;
-  const nextZoom = Number.isFinite(Number(zoom)) ? Number(zoom) : ICON_BASE_ZOOM;
-  return Math.pow(2, nextZoom - ICON_BASE_ZOOM);
-}
-
-function applyMapIconScale(target: LeafletMapLike | null = map.value, zoom = target?.getZoom?.()) {
-  const markerPane = target?.getPane("markerPane");
-  if (!markerPane) return;
-  const scale = iconScaleForZoom(target, zoom);
-  markerPane.querySelectorAll<HTMLElement>(SCALED_ICON_SELECTOR).forEach((element) => {
-    element.style.transform = `scale(${scale})`;
-  });
-}
-
-function bindMapIconScale(target: LeafletMapLike) {
-  if (iconScaleBoundMaps.has(target)) return;
-  // Apply scale during zoom animation for smooth interpolation
-  target.on("zoomanim", (e: unknown) => {
-    const zoom = (e && typeof e === "object" && "zoom" in e) ? Number((e as { zoom?: unknown }).zoom) : target.getZoom();
-    applyMapIconScale(target, Number.isFinite(zoom) ? zoom : target.getZoom());
-  });
-  // Final update after animation completes
-  target.on("viewreset moveend", (...args: unknown[]) => {
-    const event = args[0];
-    const zoom = (event && typeof event === "object" && "zoom" in event) ? Number((event as { zoom?: unknown }).zoom) : target.getZoom();
-    applyMapIconScale(target, Number.isFinite(zoom) ? zoom : target.getZoom());
-  });
-  iconScaleBoundMaps.add(target);
 }
 
 function attachZoomControl(mapInstance: LeafletMapLike) {

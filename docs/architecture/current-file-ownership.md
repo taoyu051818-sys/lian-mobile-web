@@ -130,6 +130,8 @@ High-level rules:
 | `PostPlaceSheetBlock.vue` | Expanded place sheet with meta/stats/recent posts. |
 | `PostReportBlock.vue` | Report form + follow-up hide prompt. |
 | `PostActionFeedback.vue` | Action error/success display. |
+| `PostDetailHiddenState.vue` | Hidden-state card with undo-hide action. |
+| `PostDetailLightbox.vue` | Fullscreen image overlay. |
 | `PostDetailTopbar.vue` | Detail topbar presentation and top actions. |
 | `PostReplies.vue` | Reply list presentation. |
 | `PostReplyDock.vue` | Reply composer dock. |
@@ -150,6 +152,7 @@ High-level rules:
 | `FeedView.vue` | Feed page composition, shell tab intent, feed list/detail wiring, drag state application. |
 | `FeedList.vue` | Feed list presentation and item event forwarding. |
 | `FeedItemCard.vue` | Feed card presentation, card-level like state, card open interaction. |
+| `FeedItemCardMedia.vue` | Feed card media section (cover, placeholder, floating tag). |
 | `FeedItemCardFooter.vue` | Feed card footer actions and counters. |
 | `FeedAutoLoadSentinel.vue` | Feed-local auto-load sentinel component. |
 | `FeedLoadMore.vue` | Manual load-more/end-of-feed UI. |
@@ -174,6 +177,7 @@ High-level rules:
 | `useMapChrome.ts` | Map shell chrome filter intent. |
 | `useMapDataCache.ts` | Map item and road preview loading/cache state. |
 | `useMapLayers.ts` | Leaflet marker/layer creation and updates. |
+| `useMapIconScale.ts` | Map icon scaling logic for zoom-dependent marker sizing. |
 | `useMapRoads.ts` | Leaflet road layer creation and lifecycle. |
 | `useMapSelection.ts` | Map-local selection state, place/post detail loading and errors. |
 
@@ -222,6 +226,7 @@ High-level rules:
 | --- | --- |
 | `PublishView.vue` | Publish page composition: draft, location options, submit state and child components. |
 | `PublishComposer.vue` | Main publish text/image/identity UI. |
+| `PublishImagePreview.vue` | Publish image preview grid and remove actions. |
 | `PublishLocationControls.vue` | Location selection controls and location validation display. |
 | `PublishMetaControls.vue` | Tag and visibility controls. |
 | `PublishActionBar.vue` | Clear and submit action row. |
@@ -328,17 +333,18 @@ High-level rules:
 
 ## Cleanup Hotspots
 
-Current largest remaining source files (post-refactor wave #539):
+All `.vue` files are under 300 lines (verified by `check:large-vue`).
 
-1. `src/features/detail/PostDetailPanel.vue` — detail panel container.
-2. `src/features/feed/FeedItemCard.vue` — feed card presentation.
-
-Completed refactorings (waves #513–#539):
+Completed refactorings (waves #513–#545):
 - `ProfileEditorPanel.vue` — split into avatar/alias/invite sub-components and composables.
 - `PostDetailPanel.vue` — split into reactions/place/report/reply/share/gallery composables.
 - `PostDetailContent.vue` — split into 6 presentational sub-components (gallery/main-body/info-strip/place-sheet/report/feedback).
+- `PostDetailPanel.vue` — extracted hidden-state and lightbox sub-components.
 - `AuthPanel.vue` — split into 6 template block components and 3 composables.
 - `useAuthForm.ts` — split into useEmailCodeCooldown, useAuthInterests, useAuthSubmit.
 - `ProfileView.vue` — split into session/tabs/chrome/alias composables.
 - `FeedView.vue` — split into useFeedData, useDetailDragGesture composables.
 - `src/config/brand.ts` — split into 15 domain modules under `src/config/brand/`.
+- `FeedItemCard.vue` — extracted FeedItemCardMedia sub-component.
+- `MapCanvas.vue` — extracted useMapIconScale composable.
+- `PublishComposer.vue` — extracted PublishImagePreview sub-component.
