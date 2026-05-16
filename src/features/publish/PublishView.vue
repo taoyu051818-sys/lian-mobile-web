@@ -1,7 +1,16 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
+import {
+  computed,
+  onBeforeUnmount,
+  onMounted,
+  ref,
+  watch,
+} from "vue";
 import type { PageChromeSpec } from "../../shell/page-model";
-import { PUBLISH_SECTION_LABEL, PUBLISH_VIEW_POST } from "../../config/brand";
+import {
+  PUBLISH_SECTION_LABEL,
+  PUBLISH_VIEW_POST,
+} from "../../config/brand";
 import { GlassPanel, InlineError, LianButton } from "../../ui";
 import PublishActionBar from "./PublishActionBar.vue";
 import PublishComposer from "./PublishComposer.vue";
@@ -22,7 +31,10 @@ const emit = defineEmits<{
   chrome: [spec: PageChromeSpec];
 }>();
 
-const RESET_CONFIRM_MESSAGE = "当前发布内容还没有提交，确认清空吗？已选择的图片需要重新添加。";
+const RESET_CONFIRM_MESSAGE = [
+  "当前发布内容还没有提交，确认清空吗？",
+  "已选择的图片需要重新添加。",
+].join("");
 
 const draft = usePublishDraft();
 const locationOptions = usePublishLocationOptions(draft.placeName);
