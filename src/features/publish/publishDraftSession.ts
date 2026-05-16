@@ -64,7 +64,9 @@ function normalizeLocation(value: unknown): PublishDraftLocationSnapshot | null 
   const lat = Number((value as { lat?: unknown }).lat);
   const lng = Number((value as { lng?: unknown }).lng);
 
-  if (!id || !name || !Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+  if (!id || !name || !Number.isFinite(lat) || !Number.isFinite(lng)) {
+    return null;
+  }
 
   const type =
     normalizeText((value as { type?: unknown }).type).trim() || undefined;
@@ -85,6 +87,12 @@ function normalizeLocation(value: unknown): PublishDraftLocationSnapshot | null 
 export function hasMeaningfulPublishDraft(
   input: PublishDraftInput | PublishDraftSnapshot,
 ): boolean {
+  const pendingImageCount = normalizeImageCount(
+    "pendingImageCount" in input
+      ? input.pendingImageCount
+      : input.selectedFileCount,
+  );
+
   return Boolean(
     normalizeText(input.title).trim() ||
       normalizeText(input.body).trim() ||
@@ -92,11 +100,7 @@ export function hasMeaningfulPublishDraft(
       normalizeText(input.placeName).trim() ||
       input.visibility !== DEFAULT_VISIBILITY ||
       input.selectedMapLocation ||
-      normalizeImageCount(
-        "pendingImageCount" in input
-          ? input.pendingImageCount
-          : input.selectedFileCount,
-      ) > 0,
+      pendingImageCount > 0,
   );
 }
 
@@ -116,7 +120,9 @@ export function buildPublishDraftSnapshot(
           id: input.selectedMapLocation.id,
           name: input.selectedMapLocation.name,
           type: input.selectedMapLocation.type,
-          placeId: input.selectedMapLocation.placeId || input.selectedMapLocation.place?.id,
+          placeId:
+            input.selectedMapLocation.placeId ||
+            input.selectedMapLocation.place?.id,
           lat: input.selectedMapLocation.lat,
           lng: input.selectedMapLocation.lng,
         }
@@ -140,7 +146,9 @@ export function readPublishDraft(
       body: normalizeText((parsed as { body?: unknown }).body),
       tagInput: normalizeText((parsed as { tagInput?: unknown }).tagInput),
       placeName: normalizeText((parsed as { placeName?: unknown }).placeName),
-      visibility: normalizeVisibility((parsed as { visibility?: unknown }).visibility),
+      visibility: normalizeVisibility(
+        (parsed as { visibility?: unknown }).visibility,
+      ),
       selectedMapLocation: normalizeLocation(
         (parsed as { selectedMapLocation?: unknown }).selectedMapLocation,
       ),
@@ -174,7 +182,7 @@ export function savePublishDraft(
   }
 }
 
-export function clearPublishDraft(storage: Storage = sessionStorage) {
+export function clearPublishDraft(storage: Storage = sessionStorage): void {
   try {
     storage.removeItem(PUBLISH_DRAFT_SESSION_KEY);
   } catch {
