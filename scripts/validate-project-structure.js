@@ -159,6 +159,270 @@ console.log("\n▶ Directory structure");
 await checkPublicDir();
 await checkSrcDir();
 
+// ═══ Architecture boundary guards ═══
+
+function normalizePath(p) {
+  return p.replace(/\\/g, "/");
+}
+
+async function fileExists(p) {
+  try { await fs.access(p); return true; } catch { return false; }
+}
+
+async function readTextFile(p) {
+  return fs.readFile(p, "utf8");
+}
+
+async function collectSourceFiles(dir, extensions) {
+  const results = [];
+  async function walk(d) {
+    let entries;
+    try { entries = await fs.readdir(d, { withFileTypes: true }); } catch { return; }
+    for (const entry of entries) {
+      const full = path.join(d, entry.name);
+      if (entry.isDirectory()) {
+        await walk(full);
+      } else if (extensions.some((ext) => entry.name.endsWith(ext))) {
+        results.push(full);
+      }
+    }
+  }
+  await walk(dir);
+  return results;
+}
+
+function extractImports(content) {
+  const imports = [];
+  const importRe = /\bimport\s+(?:type\s+)?(?:[\s\S]*?\s+from\s+)?["']([^"']+)["']/g;
+  let match;
+  while ((match = importRe.exec(content)) !== null) {
+    imports.push(match[1]);
+  }
+  return imports;
+}
+
+function resolveImportPath(importSpecifier, fromFile) {
+  if (!importSpecifier.startsWith(".")) return null;
+  const fromDir = path.dirname(fromFile);
+  let resolved = path.resolve(fromDir, importSpecifier);
+  const normalized = normalizePath(resolved);
+  if (normalized.match(/\.(ts|vue|js|tsx|jsx|mjs)$/)) return resolved;
+  const candidates = [
+    resolved + ".ts",
+    resolved + ".vue",
+    resolved + ".js",
+    resolved + ".tsx",
+    resolved + ".jsx",
+    path.join(resolved, "index.ts"),
+    path.join(resolved, "index.js"),
+  ];
+  return candidates[0];
+}
+
+function getFeatureName(filePath) {
+  const rel = normalizePath(path.relative(rootDir, filePath));
+  const prefix = "src/features/";
+  if (!rel.startsWith(prefix)) return null;
+  const rest = rel.slice(prefix.length);
+  const slashIdx = rest.indexOf("/");
+  return slashIdx === -1 ? null : rest.slice(0, slashIdx);
+}
+
+async function parseBarrelReExports(barrelPath) {
+  try {
+    const content = await readTextFile(barrelPath);
+    const reExportRe = /export\s+.*\s+from\s+["']\.\/([^"']+)["']/g;
+    const reExportDefaultRe = /export\s*\{\s*default\s+as\s+\w+\s*\}\s*from\s+["']\.\/([^"']+)["']/g;
+    const files = new Set();
+    let m;
+    while ((m = reExportRe.exec(content)) !== null) {
+      const target = m[1];
+      const barrelDir = path.dirname(barrelPath);
+      const resolved = path.resolve(barrelDir, target);
+      const candidates = [resolved + ".ts", resolved + ".vue", resolved + ".js", path.join(resolved, "index.ts")];
+      for (const c of candidates) { files.add(normalizePath(c)); }
+    }
+    while ((m = reExportDefaultRe.exec(content)) !== null) {
+      const target = m[1];
+      const barrelDir = path.dirname(barrelPath);
+      const resolved = path.resolve(barrelDir, target);
+      const candidates = [resolved + ".ts", resolved + ".vue", resolved + ".js", path.join(resolved, "index.ts")];
+      for (const c of candidates) { files.add(normalizePath(c)); }
+    }
+    return files;
+  } catch { return new Set(); }
+}
+
+async function checkNoViewsDirectory() {
+  const viewsDir = path.join(rootDir, "src", "views");
+  if (await fileExists(viewsDir)) {
+    fail("src/views/ must not exist", "src/views/ directory detected — views were migrated to src/features/");
+  } else {
+    ok("src/views/ does not exist");
+  }
+}
+
+async function checkUiNoFeatureImports() {
+  const uiDir = path.join(rootDir, "src", "ui");
+  const files = await collectSourceFiles(uiDir, [".ts", ".vue"]);
+  let violations = 0;
+  for (const file of files) {
+    const content = await readTextFile(file);
+    const imports = extractImports(content);
+    for (const imp of imports) {
+      const resolved = resolveImportPath(imp, file);
+      if (!resolved) continue;
+      const resolvedNorm = normalizePath(resolved);
+      const featuresPrefix = normalizePath(path.join(rootDir, "src", "features")) + "/";
+      if (resolvedNorm.startsWith(featuresPrefix)) {
+        const relFile = normalizePath(path.relative(rootDir, file));
+        fail("ui → features boundary", `${relFile} imports ${imp}`);
+        violations++;
+      }
+    }
+  }
+  if (violations === 0) ok("src/ui/** has no imports from src/features/**");
+}
+
+async function checkDomainPurity() {
+  const domainDir = path.join(rootDir, "src", "domain");
+  const files = await collectSourceFiles(domainDir, [".ts", ".vue"]);
+  const forbiddenPrefixes = [
+    normalizePath(path.join(rootDir, "src", "api")) + "/",
+    normalizePath(path.join(rootDir, "src", "ui")) + "/",
+    normalizePath(path.join(rootDir, "src", "features")) + "/",
+  ];
+  let violations = 0;
+  for (const file of files) {
+    const content = await readTextFile(file);
+    const imports = extractImports(content);
+    for (const imp of imports) {
+      if (imp === "vue" || imp.startsWith("vue/")) {
+        const relFile = normalizePath(path.relative(rootDir, file));
+        fail("domain purity", `${relFile} imports Vue (${imp})`);
+        violations++;
+        continue;
+      }
+      const resolved = resolveImportPath(imp, file);
+      if (!resolved) continue;
+      const resolvedNorm = normalizePath(resolved);
+      for (const forbidden of forbiddenPrefixes) {
+        if (resolvedNorm.startsWith(forbidden)) {
+          const relFile = normalizePath(path.relative(rootDir, file));
+          const layer = forbidden.endsWith("api/") ? "api" : forbidden.endsWith("ui/") ? "ui" : "features";
+          fail("domain purity", `${relFile} imports from ${layer} (${imp})`);
+          violations++;
+          break;
+        }
+      }
+    }
+  }
+  if (violations === 0) ok("src/domain/** is pure (no Vue, API, UI, or feature imports)");
+}
+
+async function checkPlatformNoFeatureImports() {
+  const platformDir = path.join(rootDir, "src", "platform");
+  const files = await collectSourceFiles(platformDir, [".ts", ".vue"]);
+  const forbiddenPrefixes = [
+    normalizePath(path.join(rootDir, "src", "features")) + "/",
+    normalizePath(path.join(rootDir, "src", "pages")) + "/",
+  ];
+  let violations = 0;
+  for (const file of files) {
+    const content = await readTextFile(file);
+    const imports = extractImports(content);
+    for (const imp of imports) {
+      const resolved = resolveImportPath(imp, file);
+      if (!resolved) continue;
+      const resolvedNorm = normalizePath(resolved);
+      for (const forbidden of forbiddenPrefixes) {
+        if (resolvedNorm.startsWith(forbidden)) {
+          const relFile = normalizePath(path.relative(rootDir, file));
+          const layer = forbidden.endsWith("features/") ? "features" : "pages";
+          fail("platform boundary", `${relFile} imports from ${layer} (${imp})`);
+          violations++;
+          break;
+        }
+      }
+    }
+  }
+  if (violations === 0) ok("src/platform/** has no feature/page component imports");
+}
+
+async function checkFeatureCrossImports() {
+  const featuresDir = path.join(rootDir, "src", "features");
+  const files = await collectSourceFiles(featuresDir, [".ts", ".vue"]);
+
+  const featureBarrelPaths = new Map();
+  const featureBarrelReExports = new Map();
+  const featureDirs = [];
+  try {
+    const entries = await fs.readdir(featuresDir, { withFileTypes: true });
+    for (const entry of entries) {
+      if (entry.isDirectory()) {
+        featureDirs.push(entry.name);
+        const barrelPath = path.join(featuresDir, entry.name, "index.ts");
+        if (await fileExists(barrelPath)) {
+          featureBarrelPaths.set(entry.name, barrelPath);
+          featureBarrelReExports.set(entry.name, await parseBarrelReExports(barrelPath));
+        }
+      }
+    }
+  } catch { return; }
+
+  let violations = 0;
+  for (const file of files) {
+    const sourceFeature = getFeatureName(file);
+    if (!sourceFeature) continue;
+
+    const content = await readTextFile(file);
+    const imports = extractImports(content);
+
+    for (const imp of imports) {
+      const resolved = resolveImportPath(imp, file);
+      if (!resolved) continue;
+      const resolvedNorm = normalizePath(resolved);
+      const featuresPrefix = normalizePath(path.join(rootDir, "src", "features")) + "/";
+      if (!resolvedNorm.startsWith(featuresPrefix)) continue;
+
+      const targetFeature = getFeatureName(resolved);
+      if (!targetFeature || targetFeature === sourceFeature) continue;
+
+      const hasBarrel = featureBarrelPaths.has(targetFeature);
+      const barrelNorm = hasBarrel ? normalizePath(featureBarrelPaths.get(targetFeature)) : null;
+      const isBarrelImport = resolvedNorm === barrelNorm;
+      const reExports = featureBarrelReExports.get(targetFeature) || new Set();
+      const isReExported = reExports.has(resolvedNorm);
+
+      if (!hasBarrel) {
+        // Feature without barrel is implicitly open — no violation.
+      } else if (!isBarrelImport && !isReExported) {
+        const relFile = normalizePath(path.relative(rootDir, file));
+        fail("feature cross-import", `${relFile} imports private ${targetFeature} code (${imp}) — use barrel or re-exported symbol`);
+        violations++;
+      }
+    }
+  }
+  if (violations === 0) ok("feature-to-feature imports use public entrypoints");
+}
+
+console.log("\n═══ Architecture boundary guards ═══\n");
+
+console.log("▶ src/views/ ban");
+await checkNoViewsDirectory();
+
+console.log("\n▶ src/ui → src/features boundary");
+await checkUiNoFeatureImports();
+
+console.log("\n▶ src/domain purity");
+await checkDomainPurity();
+
+console.log("\n▶ src/platform → features/pages boundary");
+await checkPlatformNoFeatureImports();
+
+console.log("\n▶ Feature cross-import boundaries");
+await checkFeatureCrossImports();
+
 console.log(`\n═══ Result: ${passed} passed, ${failed} failed ═══\n`);
 
 if (failed > 0) process.exit(1);

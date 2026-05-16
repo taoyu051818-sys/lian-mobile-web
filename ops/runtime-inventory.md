@@ -66,6 +66,18 @@ This ensures the map runtime loads from the same origin as the app bundle, elimi
 
 Any PR that changes the Leaflet dependency version, adds or removes Leaflet plugins, or alters how Leaflet assets are imported must keep this inventory updated.
 
+## Architecture boundary guards
+
+`scripts/validate-project-structure.js` includes architecture boundary guards that enforce the `src/features/` directory structure after migration. The guards check:
+
+1. `src/views/` ban — the legacy directory must not exist
+2. `src/ui/**` → `src/features/**` — UI layer must not import feature code
+3. `src/domain/**` purity — domain must not import Vue, API, UI, or feature code
+4. `src/platform/**` boundary — platform must not import feature/page components
+5. Feature cross-imports — if a feature has a barrel (`index.ts`), cross-feature imports must go through it
+
+The guards run as part of `npm run check` and are verified by `tests/architecture/project-structure-guard.mjs`. Any PR that modifies `scripts/validate-project-structure.js` or the architecture guard tests must keep this inventory updated.
+
 ## Operational rule
 
 Any PR that changes dependency preflight behavior, the runtime config accessor/env-validation contract, unsafe DOM sink guard coverage, public runtime exposure checks, frontend project-structure validation, frontend verify/test wiring, or UGC HTML sanitizer verification must update this document or another runtime inventory artifact in the same PR.
