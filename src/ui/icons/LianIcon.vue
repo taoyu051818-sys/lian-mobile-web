@@ -9,12 +9,13 @@ const props = withDefaults(
     strokeWidth?: number;
     title?: string;
   }>(),
-  { size: 24, strokeWidth: 0 },
+  { size: 24, strokeWidth: 0, title: undefined },
 );
 
 const icon = computed(() => {
   const entry = (iconPaths as Record<string, (typeof iconPaths)[LianIconName]>)[props.name];
   if (!entry && import.meta.env.DEV) {
+    // eslint-disable-next-line no-console -- dev-only diagnostic for missing icons
     console.warn(`[LianIcon] unknown icon name: "${props.name}"`);
   }
   return entry;

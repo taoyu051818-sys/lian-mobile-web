@@ -8,6 +8,9 @@ withDefaults(
   }>(),
   {
     as: "div",
+    icon: undefined,
+    title: undefined,
+    description: undefined,
   },
 );
 </script>
