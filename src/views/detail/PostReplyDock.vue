@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { REPLY_DOCK_PLACEHOLDER, REPLY_DOCK_SEND, REPLY_DOCK_REPLY } from "../../config/brand";
+
 const props = defineProps<{
   liked?: boolean;
   saved?: boolean;
@@ -35,11 +37,11 @@ const emit = defineEmits<{
       {{ saved ? "★" : "☆" }}
     </button>
     <div class="post-reply-dock__reply-box" @click="emit('update:replyExpanded', true)">
-      <span v-if="!replyExpanded" class="post-reply-dock__reply-placeholder">写回复</span>
+      <span v-if="!replyExpanded" class="post-reply-dock__reply-placeholder">{{ REPLY_DOCK_PLACEHOLDER }}</span>
       <textarea v-else :value="replyContent" rows="3" maxlength="2000" :placeholder="replyIdentityLabel" autofocus @input="emit('update:replyContent', ($event.target as HTMLTextAreaElement).value)" />
     </div>
     <button class="post-reply-dock__send" type="submit" :disabled="replyBusy || (replyExpanded && !replyContent?.trim())">
-      {{ replyExpanded ? "发送" : "回复" }}
+      {{ replyExpanded ? REPLY_DOCK_SEND : REPLY_DOCK_REPLY }}
     </button>
   </form>
 </template>

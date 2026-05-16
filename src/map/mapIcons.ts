@@ -1,5 +1,6 @@
 import type { LeafletDivIconLike } from "../platform/leaflet";
 import { getLeaflet } from "../platform/leaflet";
+import { MAP_POST_AVATAR_FALLBACK, MAP_CONTENT_FALLBACK } from "../config/brand";
 import type { MapAsset, MapLocation, MapPost } from "../types/map";
 
 export function escapeHtml(value = ""): string {
@@ -56,10 +57,10 @@ export function locationIcon(location: MapLocation): LeafletDivIconLike {
 }
 
 export function postIcon(post: MapPost): LeafletDivIconLike {
-  const image = post.imageUrl ? `<img src="${escapeHtml(post.imageUrl)}" alt="">` : "<strong>帖</strong>";
+  const image = post.imageUrl ? `<img src="${escapeHtml(post.imageUrl)}" alt="">` : `<strong>${MAP_POST_AVATAR_FALLBACK}</strong>`;
   return htmlIcon(
     "vue-map-marker vue-map-marker--post",
-    `<span class="vue-map-post-card">${image}<span>${escapeHtml(post.title || post.locationArea || "地图内容")}</span></span>`,
+    `<span class="vue-map-post-card">${image}<span>${escapeHtml(post.title || post.locationArea || MAP_CONTENT_FALLBACK)}</span></span>`,
     [72, 78],
     [36, 78],
   );

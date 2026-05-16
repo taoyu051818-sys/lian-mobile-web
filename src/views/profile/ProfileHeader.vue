@@ -1,6 +1,11 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import { TagChip } from "../../ui";
+import {
+  PROFILE_CAMPUS_USER, PROFILE_INVITE_USER, PROFILE_IDENTITY_TAGS,
+  PROFILE_ALIAS_DESC, PROFILE_REAL_IDENTITY, PROFILE_ALIAS_COUNT_SUFFIX,
+  PROFILE_SELECT_IDENTITY, PROFILE_OFFICIAL_ALIAS,
+} from "../../config/brand";
 import type { ProfileAlias, ProfileUser } from "../../types/profile";
 
 const props = defineProps<{
@@ -30,19 +35,19 @@ const hasMultipleAliases = computed(() => props.aliases.length > 0);
       <div class="profile-header__avatar" aria-hidden="true">{{ avatarText }}</div>
       <h1 class="profile-header__name">{{ displayName }}</h1>
       <p class="profile-header__meta">{{ identityMeta }}</p>
-      <p class="profile-header__sub">{{ user.institution || "校园用户" }} · {{ user.email || "邀请码用户" }}</p>
+      <p class="profile-header__sub">{{ user.institution || PROFILE_CAMPUS_USER }} · {{ user.email || PROFILE_INVITE_USER }}</p>
     </div>
 
-    <div v-if="userTags.length" class="profile-header__chips" aria-label="身份标签">
+    <div v-if="userTags.length" class="profile-header__chips" :aria-label="PROFILE_IDENTITY_TAGS">
       <TagChip v-for="tag in userTags" :key="tag" :tag="tag" />
     </div>
 
-    <section v-if="activeAlias || activeAliasSummary.length" class="profile-header__alias-card" :class="{ 'profile-header__alias-card--clickable': hasMultipleAliases }" aria-label="马甲身份说明" v-bind="hasMultipleAliases ? { role: 'button', tabindex: 0, 'aria-expanded': aliasPickerOpen, 'aria-haspopup': 'listbox' } : {}" @click="hasMultipleAliases ? emit('toggle-alias-picker') : undefined" @keydown.enter="hasMultipleAliases ? emit('toggle-alias-picker') : undefined" @keydown.space.prevent="hasMultipleAliases ? emit('toggle-alias-picker') : undefined">
+    <section v-if="activeAlias || activeAliasSummary.length" class="profile-header__alias-card" :class="{ 'profile-header__alias-card--clickable': hasMultipleAliases }" :aria-label="PROFILE_ALIAS_DESC" v-bind="hasMultipleAliases ? { role: 'button', tabindex: 0, 'aria-expanded': aliasPickerOpen, 'aria-haspopup': 'listbox' } : {}" @click="hasMultipleAliases ? emit('toggle-alias-picker') : undefined" @keydown.enter="hasMultipleAliases ? emit('toggle-alias-picker') : undefined" @keydown.space.prevent="hasMultipleAliases ? emit('toggle-alias-picker') : undefined">
       <div class="profile-header__alias-head">
-        <strong>{{ activeAlias ? activeAlias.name : "真实身份" }}</strong>
+        <strong>{{ activeAlias ? activeAlias.name : PROFILE_REAL_IDENTITY }}</strong>
         <span class="profile-header__alias-head-row">
           <span>{{ activeAliasHint }}</span>
-          <span v-if="hasMultipleAliases" class="profile-header__alias-count">{{ aliases.length }}个身份</span>
+          <span v-if="hasMultipleAliases" class="profile-header__alias-count">{{ aliases.length }}{{ PROFILE_ALIAS_COUNT_SUFFIX }}</span>
         </span>
       </div>
       <dl v-if="activeAliasSummary.length" class="profile-header__alias-grid">
@@ -53,7 +58,7 @@ const hasMultipleAliases = computed(() => props.aliases.length > 0);
       </dl>
     </section>
 
-    <div v-if="aliasPickerOpen && aliases.length" class="profile-header__alias-picker" role="listbox" aria-label="选择发布身份">
+    <div v-if="aliasPickerOpen && aliases.length" class="profile-header__alias-picker" role="listbox" :aria-label="PROFILE_SELECT_IDENTITY">
       <button
         type="button"
         class="profile-header__alias-option"
@@ -63,7 +68,7 @@ const hasMultipleAliases = computed(() => props.aliases.length > 0);
         @click.stop="emit('select-alias', '')"
       >
         <span>{{ displayName }}</span>
-        <small>真实身份</small>
+        <small>{{ PROFILE_REAL_IDENTITY }}</small>
       </button>
       <button
         v-for="alias in aliases"
@@ -76,7 +81,7 @@ const hasMultipleAliases = computed(() => props.aliases.length > 0);
         @click.stop="emit('select-alias', alias.id)"
       >
         <span>{{ alias.name }}</span>
-        <small>{{ alias.categoryLabel || "官方马甲" }}</small>
+        <small>{{ alias.categoryLabel || PROFILE_OFFICIAL_ALIAS }}</small>
       </button>
     </div>
   </div>

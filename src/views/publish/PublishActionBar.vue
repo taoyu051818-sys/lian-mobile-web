@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { LianButton } from "../../ui";
+import { PUBLISH_CLEAR, PUBLISH_SUBMIT } from "../../config/brand";
 
 defineProps<{
   publishing: boolean;
@@ -15,8 +16,8 @@ const emit = defineEmits<{
 
 <template>
   <div class="publish-action__bar">
-    <LianButton type="button" variant="ghost" :disabled="publishing || uploading" @click="emit('resetForm')">清空</LianButton>
-    <LianButton type="submit" variant="primary" :loading="publishing" :disabled="!canSubmit">发布</LianButton>
+    <LianButton type="button" variant="ghost" :disabled="publishing || uploading" @click="emit('resetForm')">{{ PUBLISH_CLEAR }}</LianButton>
+    <LianButton type="submit" variant="primary" :loading="publishing" :disabled="!canSubmit">{{ PUBLISH_SUBMIT }}</LianButton>
   </div>
 </template>
 

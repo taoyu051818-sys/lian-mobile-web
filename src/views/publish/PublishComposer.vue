@@ -1,6 +1,14 @@
 <script setup lang="ts">
 import { ref } from "vue";
 import { LocationChip, TagChip } from "../../ui";
+import {
+  PUBLISH_COMPOSER_LABEL, PUBLISH_TITLE_LABEL, PUBLISH_TITLE_PLACEHOLDER,
+  PUBLISH_BODY_LABEL, PUBLISH_BODY_PLACEHOLDER, PUBLISH_SUMMARY_LABEL,
+  PUBLISH_IMAGE_PILL_SUFFIX, PUBLISH_IDENTITY_PILL_PREFIX, PUBLISH_SETTINGS_LABEL,
+  PUBLISH_IMAGE_TOOLBAR, PUBLISH_LOCATION_TOOLBAR, PUBLISH_TAG_TOOLBAR,
+  PUBLISH_VISIBILITY, PUBLISH_OPTIONAL, PUBLISH_IMAGE_PREVIEW_LABEL,
+  PUBLISH_IMAGE_PREVIEW_ALT, PUBLISH_IMAGE_REMOVE_LABEL,
+} from "../../config/brand";
 import type { MapLocation } from "../../types/map";
 
 const MAX_TITLE_LENGTH = 40;
@@ -46,33 +54,33 @@ function openFilePicker() {
 </script>
 
 <template>
-  <section class="publish-composer" aria-label="发布内容">
+  <section class="publish-composer" :aria-label="PUBLISH_COMPOSER_LABEL">
     <label class="publish-composer__headline">
-      <span>标题</span>
+      <span>{{ PUBLISH_TITLE_LABEL }}</span>
       <strong>{{ titleCount }}/{{ MAX_TITLE_LENGTH }}</strong>
-      <input :value="title" maxlength="40" placeholder="发生了什么？" @input="emit('update:title', ($event.target as HTMLInputElement).value)" />
+      <input :value="title" maxlength="40" :placeholder="PUBLISH_TITLE_PLACEHOLDER" @input="emit('update:title', ($event.target as HTMLInputElement).value)" />
     </label>
 
     <label class="publish-composer__body-field">
-      <span class="publish-composer__body-label">正文</span>
-      <textarea :value="body" rows="7" maxlength="300" placeholder="写清楚内容、时间、限制或下一步。" @input="emit('update:body', ($event.target as HTMLTextAreaElement).value)" />
+      <span class="publish-composer__body-label">{{ PUBLISH_BODY_LABEL }}</span>
+      <textarea :value="body" rows="7" maxlength="300" :placeholder="PUBLISH_BODY_PLACEHOLDER" @input="emit('update:body', ($event.target as HTMLTextAreaElement).value)" />
       <strong>{{ bodyCount }}/{{ MAX_BODY_LENGTH }}</strong>
     </label>
 
     <div
       v-if="selectedFilesCount || selectedMapLocation || placeName.trim() || normalizedTag || normalizedIdentityTag"
       class="publish-composer__summary-row"
-      aria-label="发布摘要"
+      :aria-label="PUBLISH_SUMMARY_LABEL"
     >
-      <span v-if="selectedFilesCount" class="publish-composer__summary-pill">{{ selectedFilesCount }} 张图片</span>
+      <span v-if="selectedFilesCount" class="publish-composer__summary-pill">{{ selectedFilesCount }} {{ PUBLISH_IMAGE_PILL_SUFFIX }}</span>
       <LocationChip v-if="selectedMapLocation || placeName.trim()">{{ locationPreviewLabel }}</LocationChip>
       <TagChip v-if="normalizedTag" :tag="normalizedTag" />
-      <span v-if="normalizedIdentityTag" class="publish-composer__summary-pill">身份：{{ normalizedIdentityTag }}</span>
+      <span v-if="normalizedIdentityTag" class="publish-composer__summary-pill">{{ PUBLISH_IDENTITY_PILL_PREFIX }}{{ normalizedIdentityTag }}</span>
     </div>
 
-    <div class="publish-composer__toolbar" aria-label="发布附加设置">
+    <div class="publish-composer__toolbar" :aria-label="PUBLISH_SETTINGS_LABEL">
       <button type="button" class="publish-composer__tool" @click="openFilePicker">
-        <strong>图片</strong>
+        <strong>{{ PUBLISH_IMAGE_TOOLBAR }}</strong>
         <span>{{ imageStatus }}</span>
       </button>
       <button
@@ -81,7 +89,7 @@ function openFilePicker() {
         :class="{ 'is-active': locationPanelOpen || !!selectedMapLocation || !!placeName.trim() }"
         @click="emit('toggleLocationPanel')"
       >
-        <strong>地点</strong>
+        <strong>{{ PUBLISH_LOCATION_TOOLBAR }}</strong>
         <span>{{ locationToolLabel }}</span>
       </button>
       <button
@@ -90,8 +98,8 @@ function openFilePicker() {
         :class="{ 'is-active': tagPanelOpen || !!normalizedTag || !!normalizedIdentityTag }"
         @click="emit('toggleTagPanel')"
       >
-        <strong>标签</strong>
-        <span>{{ normalizedTag || normalizedIdentityTag || "可选" }}</span>
+        <strong>{{ PUBLISH_TAG_TOOLBAR }}</strong>
+        <span>{{ normalizedTag || normalizedIdentityTag || PUBLISH_OPTIONAL }}</span>
       </button>
       <button
         type="button"
@@ -99,22 +107,22 @@ function openFilePicker() {
         :class="{ 'is-active': visibilityPanelOpen }"
         @click="emit('toggleVisibilityPanel')"
       >
-        <strong>可见范围</strong>
+        <strong>{{ PUBLISH_VISIBILITY }}</strong>
         <span>{{ visibilityLabel }}</span>
       </button>
       <input ref="fileInputRef" type="file" accept="image/*" multiple class="publish-composer__hidden-input" @change="emit('handleFiles', $event)" />
     </div>
   </section>
 
-  <section v-if="localPreviewUrls.length" class="publish-composer__image-panel" aria-label="图片预览">
+  <section v-if="localPreviewUrls.length" class="publish-composer__image-panel" :aria-label="PUBLISH_IMAGE_PREVIEW_LABEL">
     <div class="publish-composer__panel-header">
-      <strong>图片</strong>
+      <strong>{{ PUBLISH_IMAGE_TOOLBAR }}</strong>
       <span>{{ imageStatus }}</span>
     </div>
     <div class="publish-composer__image-grid">
       <div v-for="(url, index) in localPreviewUrls" :key="url" class="publish-composer__image">
-        <img :src="url" alt="待发布图片" />
-        <button type="button" aria-label="移除图片" @click="emit('removeImage', index)">&times;</button>
+        <img :src="url" :alt="PUBLISH_IMAGE_PREVIEW_ALT" />
+        <button type="button" :aria-label="PUBLISH_IMAGE_REMOVE_LABEL" @click="emit('removeImage', index)">&times;</button>
       </div>
     </div>
   </section>

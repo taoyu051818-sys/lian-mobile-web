@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { watch, onBeforeUnmount } from "vue";
 import { useDetailSheet } from "./useDetailSheet";
+import { DETAIL_SHEET_LABEL, DETAIL_SHEET_TITLE, CLOSE_BUTTON_LABEL } from "../config/brand";
 
 const emit = defineEmits<{
   close: [];
@@ -57,18 +58,18 @@ onBeforeUnmount(() => {
       class="detail-sheet-overlay"
       role="dialog"
       aria-modal="true"
-      aria-label="详情弹层"
+      :aria-label="DETAIL_SHEET_LABEL"
     >
       <div class="detail-sheet__backdrop" @click="handleClose" />
       <section class="detail-sheet__panel">
         <header class="detail-sheet__header">
           <slot name="header">
-            <h2 class="detail-sheet__title">详情</h2>
+            <h2 class="detail-sheet__title">{{ DETAIL_SHEET_TITLE }}</h2>
           </slot>
           <button
             class="detail-sheet__close"
             type="button"
-            aria-label="关闭"
+            :aria-label="CLOSE_BUTTON_LABEL"
             @click="handleClose"
           >
             ×

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { PLACE_SHEET_LABEL, CLOSE_BUTTON_LABEL } from "../../config/brand";
 import type { MapLocation, MapPost } from "../../types/map";
 
 defineProps<{
@@ -15,10 +16,10 @@ function placeName(place: MapLocation | MapPost): string {
 </script>
 
 <template>
-  <div v-if="selectedPlace" class="map-place-sheet" role="dialog" aria-label="地点详情">
+  <div v-if="selectedPlace" class="map-place-sheet" role="dialog" :aria-label="PLACE_SHEET_LABEL">
     <div class="map-place-sheet__header">
       <span class="map-place-sheet__title">{{ placeName(selectedPlace) }}</span>
-      <button class="map-place-sheet__close" aria-label="关闭" @click="$emit('close')">×</button>
+      <button class="map-place-sheet__close" :aria-label="CLOSE_BUTTON_LABEL" @click="$emit('close')">×</button>
     </div>
   </div>
 </template>

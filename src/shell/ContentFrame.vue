@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { ShellLayoutMode } from "../app/view-types";
+import { CONTENT_FRAME_LABEL } from "../config/brand";
 
 withDefaults(
   defineProps<{
@@ -19,7 +20,7 @@ withDefaults(
       layoutMode !== 'content' && `vue-shell__grid--${layoutMode}`,
     ]"
     role="region"
-    aria-label="页面内容"
+    :aria-label="CONTENT_FRAME_LABEL"
   >
     <slot />
   </div>

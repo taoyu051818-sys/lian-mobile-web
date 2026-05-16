@@ -11,7 +11,13 @@ import type { ProfileUser } from "../types/profile";
 import type { PageChromeSpec } from "../shell/page-model";
 import PostDetailPanel from "./detail/PostDetailPanel.vue";
 import { ChannelComposer, ChannelThread, NotificationList } from "./messages";
-import { CHANNEL_DEFAULT_TAG, DEFAULT_USER_LABEL, ERROR_LOAD_CHANNEL, ERROR_LOAD_NOTIFICATION, ERROR_SEND_MESSAGE, MESSAGE_EMPTY_CONTENT } from "../config/brand";
+import {
+  CHANNEL_DEFAULT_TAG, DEFAULT_USER_LABEL, ERROR_LOAD_CHANNEL, ERROR_LOAD_NOTIFICATION,
+  ERROR_SEND_MESSAGE, MESSAGE_EMPTY_CONTENT, MESSAGE_TAB_CHANNEL, MESSAGE_TAB_NOTIFICATION,
+  MESSAGE_SECTION_LABEL, MESSAGE_TAB_LABEL, MESSAGE_IDENTITY_SIGNAL_PREFIX,
+  MESSAGE_NO_IDENTITY_SIGNAL, POST_DETAIL_DIALOG_LABEL, USER_AVATAR_FALLBACK,
+  NOTIFICATION_REPLY_LABEL, NOTIFICATION_ACTOR_LABEL,
+} from "../config/brand";
 import { extractErrorMessage } from "../utils/extractErrorMessage";
 
 const emit = defineEmits<{
@@ -42,8 +48,8 @@ const {
 useVisualViewport();
 
 const tabs: Array<{ key: MessageTabKey; label: string }> = [
-  { key: "channel", label: "频道" },
-  { key: "notifications", label: "通知" },
+  { key: "channel", label: MESSAGE_TAB_CHANNEL },
+  { key: "notifications", label: MESSAGE_TAB_NOTIFICATION },
 ];
 
 const activeAlias = computed(() => {
@@ -52,8 +58,8 @@ const activeAlias = computed(() => {
   return user.aliases.find((alias) => alias.id === user.activeAliasId) || user.aliases[0] || null;
 });
 const composerActorName = computed(() => activeAlias.value?.name || currentUser.value?.username || DEFAULT_USER_LABEL);
-const composerAvatarText = computed(() => composerActorName.value.slice(0, 2) || "同");
-const composerSignalMeta = computed(() => composerIdentityTag.value ? `身份信号：${composerIdentityTag.value}` : "未选择身份信号");
+const composerAvatarText = computed(() => composerActorName.value.slice(0, 2) || USER_AVATAR_FALLBACK);
+const composerSignalMeta = computed(() => composerIdentityTag.value ? `${MESSAGE_IDENTITY_SIGNAL_PREFIX}${composerIdentityTag.value}` : MESSAGE_NO_IDENTITY_SIGNAL);
 
 const pageChrome = computed<PageChromeSpec>(() => ({
   top: {
@@ -61,7 +67,7 @@ const pageChrome = computed<PageChromeSpec>(() => ({
       kind: "tabs",
       items: tabs.map((t) => ({ id: t.key, label: t.label })),
       activeKey: activeTab.value,
-      ariaLabel: "消息分类",
+      ariaLabel: MESSAGE_TAB_LABEL,
     },
     identity: currentUser.value ? {
       avatarText: composerAvatarText.value,
@@ -98,7 +104,7 @@ function messageMeta(item: ChannelMessage) {
 }
 
 function notificationActor(item: NotificationItem) {
-  return actorDisplayName(item.actor, isReplyNotification(item) ? "回复" : "通知");
+  return actorDisplayName(item.actor, isReplyNotification(item) ? NOTIFICATION_REPLY_LABEL : NOTIFICATION_ACTOR_LABEL);
 }
 
 function isReplyNotification(item: NotificationItem) {
@@ -325,7 +331,7 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <section class="messages-view" aria-label="消息">
+  <section class="messages-view" :aria-label="MESSAGE_SECTION_LABEL">
     <ChannelThread
       v-if="activeTab === 'channel'"
       :items="channelItems"
@@ -362,7 +368,7 @@ onBeforeUnmount(() => {
       @submit="submitMessage"
     />
 
-    <div v-if="detailOpen" class="messages-view__detail-overlay" role="dialog" aria-modal="true" aria-label="帖子详情">
+    <div v-if="detailOpen" class="messages-view__detail-overlay" role="dialog" aria-modal="true" :aria-label="POST_DETAIL_DIALOG_LABEL">
       <PostDetailPanel
         :post="selectedPost"
         :loading="detailLoading"

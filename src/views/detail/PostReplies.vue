@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { SafeHtml } from "../../ui";
-import { EMPTY_REPLIES } from "../../config/brand";
+import { EMPTY_REPLIES, REPLY_SECTION_TITLE, REPLY_COUNT_LABEL, REPLY_EMPTY_PROMPT } from "../../config/brand";
 import { actorDisplayName } from "../../domain/actor";
 import type { PostReply } from "../../types/post";
 import { formatRelativeTime } from "../../utils/time";
@@ -21,8 +21,8 @@ function sanitizeReplyHtml(value: string) {
 <template>
   <section class="post-replies" aria-labelledby="post-detail-replies-title">
     <div class="post-replies__section-title">
-      <h3 id="post-detail-replies-title">回复</h3>
-      <span>{{ replies?.length ? `${replies.length} 条` : EMPTY_REPLIES }}</span>
+      <h3 id="post-detail-replies-title">{{ REPLY_SECTION_TITLE }}</h3>
+      <span>{{ replies?.length ? `${replies.length} ${REPLY_COUNT_LABEL}` : EMPTY_REPLIES }}</span>
     </div>
     <article v-for="reply in replies" :key="String(reply.id)" class="post-replies__item">
       <div class="post-replies__meta">
@@ -35,7 +35,7 @@ function sanitizeReplyHtml(value: string) {
         class="post-replies__content"
       />
     </article>
-    <p v-if="!replies?.length" class="post-replies__empty">还没有回复，来写第一条。</p>
+    <p v-if="!replies?.length" class="post-replies__empty">{{ REPLY_EMPTY_PROMPT }}</p>
   </section>
 </template>
 

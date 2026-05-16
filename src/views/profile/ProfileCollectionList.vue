@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { InlineError } from "../../ui";
-import { UNTITLED_CONTENT } from "../../config/brand";
+import { UNTITLED_CONTENT, CHANNEL_RELOAD, LOADING_LIST, CONTENT_COVER_ALT, CONTENT_AVATAR_FALLBACK, TIME_UNKNOWN } from "../../config/brand";
 import type { FeedItemId } from "../../types/feed";
 import type { ProfileListItem } from "../../types/profile";
 import { formatRelativeTime } from "../../utils/time";
@@ -22,18 +22,18 @@ const emit = defineEmits<{
   <div class="profile-collection">
     <InlineError v-if="error">
       {{ error }}
-      <button type="button" @click="emit('retry')">重新加载</button>
+      <button type="button" @click="emit('retry')">{{ CHANNEL_RELOAD }}</button>
     </InlineError>
 
-    <div v-if="loading" class="profile-collection__state" role="status">正在加载列表…</div>
+    <div v-if="loading" class="profile-collection__state" role="status">{{ LOADING_LIST }}</div>
     <div v-else-if="!items.length" class="profile-collection__state">{{ emptyText }}</div>
     <div v-else class="profile-collection__list" aria-live="polite">
       <article v-for="item in items" :key="String(item.tid)" class="profile-collection__item" role="button" tabindex="0" @click="emit('open-item', item.tid)" @keydown.enter="emit('open-item', item.tid)" @keydown.space.prevent="emit('open-item', item.tid)">
-        <img v-if="item.cover" :src="item.cover" :alt="item.title || '内容封面'" loading="lazy" />
-        <div v-else class="profile-collection__thumb" aria-hidden="true">{{ (item.title || '内').slice(0, 1) }}</div>
+        <img v-if="item.cover" :src="item.cover" :alt="item.title || CONTENT_COVER_ALT" loading="lazy" />
+        <div v-else class="profile-collection__thumb" aria-hidden="true">{{ (item.title || CONTENT_AVATAR_FALLBACK).slice(0, 1) }}</div>
         <div>
           <h3>{{ item.title || UNTITLED_CONTENT }}</h3>
-          <p>{{ formatRelativeTime(item.lastViewedAt || item.timestampISO) || "时间未知" }}</p>
+          <p>{{ formatRelativeTime(item.lastViewedAt || item.timestampISO) || TIME_UNKNOWN }}</p>
         </div>
       </article>
     </div>

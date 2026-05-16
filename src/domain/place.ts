@@ -1,48 +1,66 @@
 import type { PlaceStatus } from "../types/place";
+import {
+  PLACE_STATUS_CONFIRMED,
+  PLACE_STATUS_PENDING,
+  PLACE_STATUS_DISPUTED,
+  PLACE_STATUS_EXPIRED,
+  PLACE_STATUS_AI_ORGANIZED,
+  PLACE_STATUS_OFFICIAL,
+  PLACE_FALLBACK_LABEL,
+  PLACE_TYPE_CANTEEN,
+  PLACE_TYPE_LIBRARY,
+  PLACE_TYPE_BUILDING,
+  PLACE_TYPE_DORMITORY,
+  PLACE_TYPE_TRANSIT,
+  PLACE_TYPE_SPORTS,
+  PLACE_TYPE_LAB,
+  PLACE_TYPE_OFFICE,
+  PLACE_TYPE_GARDEN,
+  PLACE_TYPE_SHOP,
+  PLACE_TYPE_FALLBACK,
+} from "../config/brand";
 
 const PLACE_STATUS_LABELS: Record<PlaceStatus, string> = {
-  confirmed: "已确认",
-  pending: "待确认",
-  disputed: "有争议",
-  expired: "可能过期",
-  "ai-organized": "AI 整理",
-  official: "官方",
+  confirmed: PLACE_STATUS_CONFIRMED,
+  pending: PLACE_STATUS_PENDING,
+  disputed: PLACE_STATUS_DISPUTED,
+  expired: PLACE_STATUS_EXPIRED,
+  "ai-organized": PLACE_STATUS_AI_ORGANIZED,
+  official: PLACE_STATUS_OFFICIAL,
 };
 
 export function placeStatusLabel(status?: PlaceStatus): string {
-  return status ? PLACE_STATUS_LABELS[status] || "地点" : "地点";
+  return status ? PLACE_STATUS_LABELS[status] || PLACE_FALLBACK_LABEL : PLACE_FALLBACK_LABEL;
 }
 
 const PLACE_TYPE_LABELS: Record<string, string> = {
-  canteen: "食堂",
-  cafeteria: "食堂",
-  food_court: "食堂",
-  dining: "食堂",
-  library: "图书馆",
-  building: "教学楼",
-  academic: "教学楼",
-  classroom: "教学楼",
-  dormitory: "宿舍",
-  dorm: "宿舍",
-  residence: "宿舍",
-  transit: "交通站点",
-  transportation: "交通站点",
-  stop: "交通站点",
-  sports: "体育场馆",
-  gym: "体育场馆",
-  stadium: "体育场馆",
-  lab: "实验室",
-  laboratory: "实验室",
-  office: "办公楼",
-  garden: "校园绿地",
-  park: "校园绿地",
-  green: "校园绿地",
-  shop: "商店",
-  store: "商店",
-  market: "商店",
+  canteen: PLACE_TYPE_CANTEEN,
+  cafeteria: PLACE_TYPE_CANTEEN,
+  food_court: PLACE_TYPE_CANTEEN,
+  dining: PLACE_TYPE_CANTEEN,
+  library: PLACE_TYPE_LIBRARY,
+  building: PLACE_TYPE_BUILDING,
+  academic: PLACE_TYPE_BUILDING,
+  classroom: PLACE_TYPE_BUILDING,
+  dormitory: PLACE_TYPE_DORMITORY,
+  dorm: PLACE_TYPE_DORMITORY,
+  residence: PLACE_TYPE_DORMITORY,
+  transit: PLACE_TYPE_TRANSIT,
+  transportation: PLACE_TYPE_TRANSIT,
+  stop: PLACE_TYPE_TRANSIT,
+  sports: PLACE_TYPE_SPORTS,
+  gym: PLACE_TYPE_SPORTS,
+  stadium: PLACE_TYPE_SPORTS,
+  lab: PLACE_TYPE_LAB,
+  laboratory: PLACE_TYPE_LAB,
+  office: PLACE_TYPE_OFFICE,
+  garden: PLACE_TYPE_GARDEN,
+  park: PLACE_TYPE_GARDEN,
+  green: PLACE_TYPE_GARDEN,
+  shop: PLACE_TYPE_SHOP,
+  store: PLACE_TYPE_SHOP,
+  market: PLACE_TYPE_SHOP,
 };
-
-const PLACE_TYPE_FALLBACK = "校园地点";
 
 export function placeTypeLabel(primary?: string | null, secondary?: string | null): string {
   const raw = primary?.trim() || secondary?.trim() || "";

@@ -1,6 +1,13 @@
 <script setup lang="ts">
 import { placeTypeLabel } from "../../domain/place";
 import { InlineError, LianButton, LocationChip } from "../../ui";
+import {
+  PUBLISH_LOCATION_LABEL, PUBLISH_LOCATION_BOUND, PUBLISH_LOCATION_HINT,
+  PUBLISH_LOCATION_MANUAL, PUBLISH_LOCATION_MANUAL_PLACEHOLDER,
+  PUBLISH_LOCATION_SEARCH, PUBLISH_LOCATION_SEARCH_PLACEHOLDER,
+  CHANNEL_RELOAD, LOADING_PLACE, PUBLISH_LOCATION_NO_MATCH,
+  PUBLISH_LOCATION_SWITCH_MANUAL,
+} from "../../config/brand";
 import type { MapLocation } from "../../types/map";
 
 defineProps<{
@@ -32,8 +39,8 @@ const emit = defineEmits<{
     aria-labelledby="publish-map-title"
   >
     <div class="publish-location__panel-header">
-      <strong id="publish-map-title">地点</strong>
-      <span>{{ selectedMapLocation ? "已绑定已知地点" : "默认收起，按需展开" }}</span>
+      <strong id="publish-map-title">{{ PUBLISH_LOCATION_LABEL }}</strong>
+      <span>{{ selectedMapLocation ? PUBLISH_LOCATION_BOUND : PUBLISH_LOCATION_HINT }}</span>
     </div>
 
     <div v-if="selectedMapLocation || placeName.trim()" class="publish-location__preview">
@@ -42,22 +49,22 @@ const emit = defineEmits<{
     </div>
 
     <label class="publish-location__field publish-location__field--compact">
-      <span>手填地点</span>
-      <input :value="placeName" maxlength="40" placeholder="例如 图书馆、食堂、教学楼，也可以留空" @input="emit('update:placeName', ($event.target as HTMLInputElement).value)" />
+      <span>{{ PUBLISH_LOCATION_MANUAL }}</span>
+      <input :value="placeName" maxlength="40" :placeholder="PUBLISH_LOCATION_MANUAL_PLACEHOLDER" @input="emit('update:placeName', ($event.target as HTMLInputElement).value)" />
     </label>
 
     <label class="publish-location__field publish-location__field--compact publish-location__map-search">
-      <span>搜索已知地点</span>
-      <input :value="locationSearch" maxlength="40" placeholder="搜索图书馆、食堂、教学楼…" @input="emit('update:locationSearch', ($event.target as HTMLInputElement).value)" />
+      <span>{{ PUBLISH_LOCATION_SEARCH }}</span>
+      <input :value="locationSearch" maxlength="40" :placeholder="PUBLISH_LOCATION_SEARCH_PLACEHOLDER" @input="emit('update:locationSearch', ($event.target as HTMLInputElement).value)" />
     </label>
 
     <InlineError v-if="mapLocationError">
       {{ mapLocationError }}
-      <button type="button" @click="emit('loadMapLocations')">重新加载</button>
+      <button type="button" @click="emit('loadMapLocations')">{{ CHANNEL_RELOAD }}</button>
     </InlineError>
 
-    <div v-if="mapLocationLoading" class="publish-location__mini-state" role="status">正在加载地点…</div>
-    <div v-else-if="filteredMapLocations.length" class="publish-location__list" aria-label="地点列表">
+    <div v-if="mapLocationLoading" class="publish-location__mini-state" role="status">{{ LOADING_PLACE }}</div>
+    <div v-else-if="filteredMapLocations.length" class="publish-location__list" :aria-label="PUBLISH_LOCATION_LABEL">
       <button
         v-for="location in filteredMapLocations"
         :key="location.id"
@@ -70,14 +77,14 @@ const emit = defineEmits<{
         <span>{{ placeTypeLabel(location.place?.type, location.type) }}</span>
       </button>
     </div>
-    <div v-else class="publish-location__mini-state">没有匹配地点，可以手填地点发布。</div>
+    <div v-else class="publish-location__mini-state">{{ PUBLISH_LOCATION_NO_MATCH }}</div>
 
     <div v-if="selectedMapLocation" class="publish-location__selected">
       <div>
         <LocationChip>{{ knownPlaceLabel }}</LocationChip>
         <span>{{ placeTypeLabel(selectedMapLocation?.place?.type, selectedMapLocation?.type) }}</span>
       </div>
-      <LianButton type="button" size="sm" variant="ghost" @click="emit('clearMapLocation')">改用手填</LianButton>
+      <LianButton type="button" size="sm" variant="ghost" @click="emit('clearMapLocation')">{{ PUBLISH_LOCATION_SWITCH_MANUAL }}</LianButton>
     </div>
   </section>
 </template>

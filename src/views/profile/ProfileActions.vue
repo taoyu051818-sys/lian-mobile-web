@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { PROFILE_COLLAPSE_EDITOR, PROFILE_EDIT, PROFILE_LOGOUT } from "../../config/brand";
+
 defineProps<{
   editorOpen: boolean;
 }>();
@@ -12,11 +14,11 @@ const emit = defineEmits<{
 <template>
   <div class="profile-actions">
     <button type="button" class="profile-actions__btn" @click="emit('toggle-editor')">
-      {{ editorOpen ? "收起编辑" : "编辑资料" }}
+      {{ editorOpen ? PROFILE_COLLAPSE_EDITOR : PROFILE_EDIT }}
     </button>
     <span class="profile-actions__divider" aria-hidden="true">·</span>
     <button type="button" class="profile-actions__btn profile-actions__btn--muted" @click="emit('logout')">
-      退出登录
+      {{ PROFILE_LOGOUT }}
     </button>
   </div>
 </template>

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, ref, watch } from "vue";
 import { togglePostLike } from "../../api/posts";
-import { DEFAULT_USER_LABEL, UNTITLED_CONTENT } from "../../config/brand";
+import { DEFAULT_USER_LABEL, UNTITLED_CONTENT, FEED_PLACE_CAMPUS, FEED_TIME_JUST_NOW, FEED_LIKE, FEED_UNLIKE, FEED_COLLAPSE, FEED_EXPAND } from "../../config/brand";
 import { actorAvatarText, actorAvatarUrl, actorDisplayName } from "../../domain/actor";
 import type { FeedItem, FeedItemId, FeedPresentationIntent } from "../../types/feed";
 
@@ -40,8 +40,8 @@ function normalizePresentationIntent(value: FeedItem["cardTemplate"] | FeedItem[
 const title = computed(() => props.item.title || UNTITLED_CONTENT);
 const coverUrl = computed(() => props.item.cover || "");
 const primaryTag = computed(() => props.item.primaryTag || "");
-const placeLabel = computed(() => props.item.locationArea || "校园");
-const timeLabel = computed(() => props.item.timeLabel || "刚刚");
+const placeLabel = computed(() => props.item.locationArea || FEED_PLACE_CAMPUS);
+const timeLabel = computed(() => props.item.timeLabel || FEED_TIME_JUST_NOW);
 const actor = computed(() => props.item.actor || {});
 const authorName = computed(() => actorDisplayName(actor.value, DEFAULT_USER_LABEL));
 const authorAvatarUrl = computed(() => actorAvatarUrl(actor.value));
@@ -68,7 +68,7 @@ const templateMark = computed(() => ({
   help: "＋",
 })[cardTemplate.value]);
 
-const likeLabel = computed(() => `${liked.value ? "取消喜欢" : "喜欢"}，当前 ${likeCount.value} 个喜欢`);
+const likeLabel = computed(() => `${liked.value ? FEED_UNLIKE : FEED_LIKE}，当前 ${likeCount.value} 个喜欢`);
 
 const bodyPreview = computed(() => props.item.bodyPreview || "");
 const bodyExpanded = ref(false);
@@ -266,7 +266,7 @@ onBeforeUnmount(() => {
           class="feed-item-card__body-toggle"
           type="button"
           @click.stop="toggleBody"
-        >{{ bodyExpanded ? '收起' : '展开' }}</button>
+        >{{ bodyExpanded ? FEED_COLLAPSE : FEED_EXPAND }}</button>
       </template>
 
       <footer class="feed-item-card__footer" data-motion-role="meta-row">

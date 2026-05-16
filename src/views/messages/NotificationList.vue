@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { InlineError, TrustBadge } from "../../ui";
-import { LOADING_NOTIFICATION, EMPTY_NOTIFICATION } from "../../config/brand";
+import { LOADING_NOTIFICATION, EMPTY_NOTIFICATION, NOTIFICATION_SECTION_LABEL, CHANNEL_RELOAD, NOTIFICATION_READ, NOTIFICATION_UNREAD, NOTIFICATION_DEFAULT_TITLE, NOTIFICATION_REPLY_LABEL, NOTIFICATION_ACTOR_LABEL } from "../../config/brand";
 import { actorDisplayName } from "../../domain/actor";
 import type { NotificationItem } from "../../types/messages";
 import { formatRelativeTime } from "../../utils/time";
@@ -21,7 +21,7 @@ function isReplyNotification(item: NotificationItem) {
 }
 
 function notificationActor(item: NotificationItem) {
-  return actorDisplayName(item.actor, isReplyNotification(item) ? "回复" : "通知");
+  return actorDisplayName(item.actor, isReplyNotification(item) ? NOTIFICATION_REPLY_LABEL : NOTIFICATION_ACTOR_LABEL);
 }
 
 function openNotification(item: NotificationItem) {
@@ -31,10 +31,10 @@ function openNotification(item: NotificationItem) {
 </script>
 
 <template>
-  <section class="messages-view__pane" aria-label="通知">
+  <section class="messages-view__pane" :aria-label="NOTIFICATION_SECTION_LABEL">
     <InlineError v-if="error">
       {{ error }}
-      <button type="button" @click="emit('retry')">重新加载</button>
+      <button type="button" @click="emit('retry')">{{ CHANNEL_RELOAD }}</button>
     </InlineError>
 
     <div v-if="loading && !items.length" class="messages-view__state" role="status">{{ LOADING_NOTIFICATION }}</div>
@@ -52,9 +52,9 @@ function openNotification(item: NotificationItem) {
       >
         <header>
           <strong>{{ notificationActor(item) }}</strong>
-          <TrustBadge :tone="item.read ? 'confirmed' : 'pending'">{{ item.read ? "已读" : "未读" }}</TrustBadge>
+          <TrustBadge :tone="item.read ? 'confirmed' : 'pending'">{{ item.read ? NOTIFICATION_READ : NOTIFICATION_UNREAD }}</TrustBadge>
         </header>
-        <h3>{{ item.title || "新通知" }}</h3>
+        <h3>{{ item.title || NOTIFICATION_DEFAULT_TITLE }}</h3>
         <p v-if="item.excerpt && item.excerpt !== item.title">{{ item.excerpt }}</p>
         <time>{{ formatRelativeTime(item.timestampISO || item.time) }}</time>
       </article>

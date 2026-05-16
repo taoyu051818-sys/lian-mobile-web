@@ -1,6 +1,16 @@
 import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 import { fetchAuthRules, loginAuth, registerAuth, sendEmailCode } from "../../api/auth";
-import { ERROR_AUTH_GENERIC, ERROR_SEND_CODE } from "../../config/brand";
+import {
+  ERROR_AUTH_GENERIC, ERROR_SEND_CODE,
+  AUTH_SENDING, AUTH_RESEND, AUTH_SEND, AUTH_LOGIN, AUTH_REGISTER_AND_LOGIN,
+  AUTH_EMAIL_HINT, AUTH_LOGIN_PLACEHOLDER, AUTH_INTEREST_SKIP_HINT,
+  AUTH_INTEREST_LOADING, AUTH_INTEREST_EMPTY, AUTH_INTEREST_ERROR,
+  AUTH_INTEREST_PICK_HINT, AUTH_INTEREST_SKIP_DEFAULT,
+  AUTH_LOGGED_IN_REFRESH, AUTH_EMAIL_REQUIRED, AUTH_CODE_SENT,
+  AUTH_CODE_RESEND_HINT, AUTH_CODE_COOLDOWN_HINT, AUTH_CODE_RATE_LIMIT,
+  AUTH_CODE_RATE_LIMIT_DEFAULT, AUTH_CODE_SENT_INST, AUTH_CODE_RATE_LIMIT_RESEND,
+  AUTH_CODE_RATE_LIMIT_FALLBACK,
+} from "../../config/brand";
 import { extractErrorMessage } from "../../utils/extractErrorMessage";
 import { LianApiError } from "../../api/http";
 import type { AuthInterestOption, AuthMode, AuthRulesResponse } from "../../api/auth";
@@ -29,17 +39,17 @@ export const AUTH_EMAIL_CODE_DEFAULT_COOLDOWN_SECONDS = 60;
 export function formatEmailCodeHint(message: string, remainingSeconds: number) {
   if (remainingSeconds > 0) {
     return message
-      ? `${message} ${remainingSeconds} 秒后可重新发送。`
-      : `验证码发送后会进入冷却，请在 ${remainingSeconds} 秒后重试。`;
+      ? `${message} ${AUTH_CODE_RESEND_HINT.replace("{n}", String(remainingSeconds))}`
+      : AUTH_CODE_COOLDOWN_HINT.replace("{n}", String(remainingSeconds));
   }
-  return message || "验证码会发送到你的高校邮箱。邀请码注册时可以留空。";
+  return message || AUTH_EMAIL_HINT;
 }
 
 export function formatEmailCodeRateLimitMessage(retryAfterSeconds: number | null) {
   if (retryAfterSeconds && retryAfterSeconds > 0) {
-    return `发送太频繁，请在 ${retryAfterSeconds} 秒后再试。`;
+    return AUTH_CODE_RATE_LIMIT.replace("{n}", String(retryAfterSeconds));
   }
-  return `发送太频繁，请稍后再试。页面会先按 ${AUTH_EMAIL_CODE_DEFAULT_COOLDOWN_SECONDS} 秒冷却处理。`;
+  return AUTH_CODE_RATE_LIMIT_DEFAULT.replace("{n}", String(AUTH_EMAIL_CODE_DEFAULT_COOLDOWN_SECONDS));
 }
 
 function normalizeCooldownSeconds(value: number | null | undefined) {
@@ -91,19 +101,19 @@ export function useAuthForm(onAuthenticated: (user: ProfileUser | null) => void)
   const emailCodeCooldownRemaining = ref(0);
   let emailCodeCooldownTimer: ReturnType<typeof globalThis.setInterval> | null = null;
 
-  const primaryLabel = computed(() => (mode.value === "login" ? "登录" : "注册并登录"));
+  const primaryLabel = computed(() => (mode.value === "login" ? AUTH_LOGIN : AUTH_REGISTER_AND_LOGIN));
   const note = computed(() =>
     mode.value === "login"
-      ? "使用邮箱或昵称登录。"
-      : "兴趣会帮助初始化首页推荐，可先跳过，之后再调整推荐偏好。",
+      ? AUTH_LOGIN_PLACEHOLDER
+      : AUTH_INTEREST_SKIP_HINT,
   );
   const emailCodeHint = computed(
     () => formatEmailCodeHint(codeMessage.value, emailCodeCooldownRemaining.value),
   );
   const emailCodeButtonLabel = computed(() => {
-    if (sendingCode.value) return "发送中";
-    if (emailCodeCooldownRemaining.value > 0) return `重发 ${emailCodeCooldownRemaining.value}s`;
-    return "发送";
+    if (sendingCode.value) return AUTH_SENDING;
+    if (emailCodeCooldownRemaining.value > 0) return `${AUTH_RESEND} ${emailCodeCooldownRemaining.value}s`;
+    return AUTH_SEND;
   });
   const canRequestEmailCode = computed(
     () => !sendingCode.value && emailCodeCooldownRemaining.value === 0,
@@ -131,18 +141,18 @@ export function useAuthForm(onAuthenticated: (user: ProfileUser | null) => void)
   const showInterestSkip = computed(() => mode.value === "register" && !interestsRequired.value);
   const interestHint = computed(() => {
     if (interestStatus.value === "loading") {
-      return "正在加载首页推荐偏好选项。";
+      return AUTH_INTEREST_LOADING;
     }
     if (interestStatus.value === "empty") {
-      return "当前没有可选兴趣，也可以先完成注册，之后再调整首页推荐偏好。";
+      return AUTH_INTEREST_EMPTY;
     }
     if (interestStatus.value === "unavailable") {
-      return "兴趣选项暂时加载失败，也可以先完成注册，之后再调整首页推荐偏好。";
+      return AUTH_INTEREST_ERROR;
     }
     if (interestsRequired.value) {
-      return "选择至少 1 个兴趣，用于初始化首页推荐；之后仍可以再调整。";
+      return AUTH_INTEREST_PICK_HINT;
     }
-    return "兴趣会帮助初始化首页推荐，可先跳过，之后再调整。";
+    return AUTH_INTEREST_SKIP_DEFAULT;
   });
 
   function stopEmailCodeCooldownTimer() {
@@ -241,7 +251,7 @@ export function useAuthForm(onAuthenticated: (user: ProfileUser | null) => void)
               inviteCode: inviteCode.value.trim() || undefined,
               interests: selectedInterests.value.length ? selectedInterests.value : undefined,
             });
-      successMessage.value = "已登录，正在刷新个人资料。";
+      successMessage.value = AUTH_LOGGED_IN_REFRESH;
       onAuthenticated(user);
     } catch (error) {
       errorMessage.value =
@@ -255,7 +265,7 @@ export function useAuthForm(onAuthenticated: (user: ProfileUser | null) => void)
     const targetEmail = email.value.trim();
     errorMessage.value = "";
     if (!targetEmail) {
-      errorMessage.value = "请先填写高校邮箱。";
+      errorMessage.value = AUTH_EMAIL_REQUIRED;
       return;
     }
     if (!canRequestEmailCode.value) {
@@ -268,8 +278,8 @@ export function useAuthForm(onAuthenticated: (user: ProfileUser | null) => void)
       const response = await sendEmailCode(targetEmail);
       startEmailCodeCooldown(AUTH_EMAIL_CODE_DEFAULT_COOLDOWN_SECONDS);
       codeMessage.value = response.institution
-        ? `验证码已发送，识别为 ${response.institution}。`
-        : "验证码已发送，请查看邮箱。";
+        ? AUTH_CODE_SENT_INST.replace("{n}", response.institution)
+        : AUTH_CODE_SENT;
     } catch (error) {
       if (error instanceof LianApiError && error.status === 429) {
         const retryAfterSeconds = normalizeCooldownSeconds(error.retryAfterSeconds)
@@ -277,8 +287,8 @@ export function useAuthForm(onAuthenticated: (user: ProfileUser | null) => void)
         startEmailCodeCooldown(retryAfterSeconds);
         errorMessage.value = formatEmailCodeRateLimitMessage(error.retryAfterSeconds);
         codeMessage.value = error.retryAfterSeconds
-          ? `当前发送过于频繁，请在 ${retryAfterSeconds} 秒后重新获取验证码。`
-          : `如果服务端没有返回具体等待时间，页面会先按 ${AUTH_EMAIL_CODE_DEFAULT_COOLDOWN_SECONDS} 秒冷却处理。`;
+          ? AUTH_CODE_RATE_LIMIT_RESEND.replace("{n}", String(retryAfterSeconds))
+          : AUTH_CODE_RATE_LIMIT_FALLBACK.replace("{n}", String(AUTH_EMAIL_CODE_DEFAULT_COOLDOWN_SECONDS));
       } else {
         errorMessage.value = extractErrorMessage(error, ERROR_SEND_CODE);
       }
