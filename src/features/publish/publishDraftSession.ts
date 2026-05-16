@@ -4,12 +4,7 @@ import type { PublishVisibility } from "../../types/publish";
 export const PUBLISH_DRAFT_SESSION_KEY = "lian.publishDraft.sameSession";
 
 const DEFAULT_VISIBILITY: PublishVisibility = "public";
-const VALID_VISIBILITIES: PublishVisibility[] = [
-  "public",
-  "campus",
-  "school",
-  "private",
-];
+const VALID_VISIBILITIES: PublishVisibility[] = ["public", "campus", "school", "private"];
 
 export interface PublishDraftLocationSnapshot {
   id: string;
@@ -67,8 +62,7 @@ function normalizeLocation(value: unknown): PublishDraftLocationSnapshot | null 
   if (!id || !name || !Number.isFinite(lat) || !Number.isFinite(lng)) return null;
 
   const type = normalizeText((value as { type?: unknown }).type).trim() || undefined;
-  const placeId =
-    normalizeText((value as { placeId?: unknown }).placeId).trim() || undefined;
+  const placeId = normalizeText((value as { placeId?: unknown }).placeId).trim() || undefined;
 
   return {
     id,
@@ -96,9 +90,7 @@ export function hasMeaningfulPublishDraft(
   );
 }
 
-export function buildPublishDraftSnapshot(
-  input: PublishDraftInput,
-): PublishDraftSnapshot | null {
+export function buildPublishDraftSnapshot(input: PublishDraftInput): PublishDraftSnapshot | null {
   if (!hasMeaningfulPublishDraft(input)) return null;
 
   return {
@@ -112,9 +104,7 @@ export function buildPublishDraftSnapshot(
           id: input.selectedMapLocation.id,
           name: input.selectedMapLocation.name,
           type: input.selectedMapLocation.type,
-          placeId:
-            input.selectedMapLocation.placeId ||
-            input.selectedMapLocation.place?.id,
+          placeId: input.selectedMapLocation.placeId || input.selectedMapLocation.place?.id,
           lat: input.selectedMapLocation.lat,
           lng: input.selectedMapLocation.lng,
         }
@@ -123,9 +113,7 @@ export function buildPublishDraftSnapshot(
   };
 }
 
-export function readPublishDraft(
-  storage: Storage = sessionStorage,
-): PublishDraftSnapshot | null {
+export function readPublishDraft(storage: Storage = sessionStorage): PublishDraftSnapshot | null {
   try {
     const raw = storage.getItem(PUBLISH_DRAFT_SESSION_KEY);
     if (!raw) return null;
