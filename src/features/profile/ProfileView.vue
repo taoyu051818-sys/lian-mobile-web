@@ -1,151 +1,63 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from "vue";
-import { LianApiError } from "../../api/http";
-import { activateProfileAlias, deactivateProfileAlias, fetchAuthMe, fetchProfileTab, logoutAuth } from "../../api/profile";
+import { onMounted, ref } from "vue";
+import { fetchAuthMe, logoutAuth } from "../../api/profile";
 import {
-  GUEST_DISPLAY_NAME, LOADING_PROFILE, LOADING_LIST, EMPTY_HISTORY, EMPTY_SAVED, EMPTY_LIKED,
-  ERROR_LOAD_GENERIC, ERROR_LOGOUT, PROFILE_SECTION_LABEL, PROFILE_TAB_HISTORY, PROFILE_TAB_SAVED,
-  PROFILE_TAB_LIKED, PROFILE_IDENTITY_FALLBACK, PROFILE_ALIAS_TYPE, PROFILE_ALIAS_SIGNAL,
-  PROFILE_ALIAS_PERSONA, PROFILE_ALIAS_DESCRIPTION, PROFILE_REAL_IDENTITY_HINT,
-  PROFILE_ALIAS_DEFAULT_HINT, PROFILE_ALIAS_MORE_HINT, PROFILE_EMPTY_CONTENT,
-  PROFILE_LOAD_ERROR_PREFIX, PROFILE_LIST_ERROR_PREFIX, PROFILE_RELOAD,
-  POST_DETAIL_DIALOG_LABEL, USER_AVATAR_FALLBACK, CHANNEL_RELOAD,
-  PROFILE_COLLAPSE_EDITOR, PROFILE_EDIT, PROFILE_LOGOUT,
+  LOADING_PROFILE, ERROR_LOAD_GENERIC, ERROR_LOGOUT, PROFILE_SECTION_LABEL,
+  PROFILE_LOAD_ERROR_PREFIX, PROFILE_RELOAD,
 } from "../../config/brand";
 import { extractErrorMessage } from "../../utils/extractErrorMessage";
 import { usePostDetail } from "../detail/usePostDetail";
-import { getRecentReadHistoryIds } from "../../platform/browser-storage";
-import { InlineError } from "../../ui";
-import type { FeedItemId } from "../../types/feed";
 import type { PageChromeSpec } from "../../shell/page-model";
-import type { ProfileListItem, ProfileTabKey, ProfileUser } from "../../types/profile";
+import type { ProfileUser } from "../../types/profile";
+import { InlineError } from "../../ui";
 import AuthPanel from "../auth/AuthPanel.vue";
-import PostDetailPanel from "../detail/PostDetailPanel.vue";
 import ProfileEditorPanel from "./ProfileEditorPanel.vue";
 import ProfileHeader from "./ProfileHeader.vue";
 import ProfileTabs from "./ProfileTabs.vue";
 import ProfileCollectionList from "./ProfileCollectionList.vue";
+import ProfileDetailOverlay from "./ProfileDetailOverlay.vue";
+import { useProfileSession } from "./useProfileSession";
+import { useProfileTabs } from "./useProfileTabs";
+import { useProfileChrome } from "./useProfileChrome";
+import { useProfileAliasPicker } from "./useProfileAliasPicker";
 
 const emit = defineEmits<{
   chrome: [spec: PageChromeSpec];
 }>();
 
-const user = ref<ProfileUser | null>(null);
-const loading = ref(false);
-const listLoading = ref(false);
-const errorMessage = ref("");
-const listError = ref("");
-const activeTab = ref<ProfileTabKey>("history");
-const profileItems = ref<ProfileListItem[]>([]);
+const { user, loading, errorMessage, isMissingSessionError, refreshCurrentSession } = useProfileSession();
+
 const editorOpen = ref(false);
-const aliasPickerOpen = ref(false);
-const aliasBusy = ref(false);
+
+const {
+  listLoading, listError, activeTab, profileItems, tabs, listEmptyText, loadProfileList, resetList,
+} = useProfileTabs({
+  user,
+  enterGuestState: () => enterGuestState(),
+  isMissingSessionError,
+  refreshCurrentSession,
+});
+
 const {
   selectedPostId, selectedPost, detailLoading, detailError, detailOpen,
   openDetail: openItem, closeDetail, retryDetail,
 } = usePostDetail();
 
-const tabs: Array<{ key: ProfileTabKey; label: string; empty: string }> = [
-  { key: "history", label: PROFILE_TAB_HISTORY, empty: EMPTY_HISTORY },
-  { key: "saved", label: PROFILE_TAB_SAVED, empty: EMPTY_SAVED },
-  { key: "liked", label: PROFILE_TAB_LIKED, empty: EMPTY_LIKED },
-];
-
-const displayName = computed(() => user.value?.username || GUEST_DISPLAY_NAME);
-const avatarText = computed(() => displayName.value.slice(0, 2) || USER_AVATAR_FALLBACK);
-const activeAlias = computed(() => {
-  if (!user.value?.activeAliasId) return null;
-  return user.value.aliases?.find((alias) => alias.id === user.value?.activeAliasId) || null;
+const {
+  aliasPickerOpen, activeAlias, activeAliasSummary, activeAliasHint,
+  identityMeta, userTags, aliases, handleProfileUpdated, switchAlias,
+} = useProfileAliasPicker({
+  user,
+  loadProfile: () => loadProfile(),
 });
-const identityMeta = computed(() => activeAlias.value?.name || user.value?.identityTags?.[0] || user.value?.institution || PROFILE_IDENTITY_FALLBACK);
-const activeAliasSummary = computed(() => {
-  const alias = activeAlias.value;
-  if (!alias) return [];
-  return [
-    alias.categoryLabel ? { label: PROFILE_ALIAS_TYPE, value: alias.categoryLabel } : null,
-    alias.identitySignal ? { label: PROFILE_ALIAS_SIGNAL, value: alias.identitySignal } : null,
-    alias.persona ? { label: PROFILE_ALIAS_PERSONA, value: alias.persona } : null,
-    alias.description ? { label: PROFILE_ALIAS_DESCRIPTION, value: alias.description } : null,
-  ].filter(Boolean) as Array<{ label: string; value: string }>;
+
+const { displayName, avatarText, pageChrome } = useProfileChrome({
+  user,
+  editorOpen,
+  identityMeta,
+  onLogout: () => logout(),
+  onChromeChange: (spec) => emit("chrome", spec),
 });
-const activeAliasHint = computed(() => {
-  if (!activeAlias.value) return PROFILE_REAL_IDENTITY_HINT;
-  return activeAliasSummary.value.length
-    ? PROFILE_ALIAS_DEFAULT_HINT
-    : PROFILE_ALIAS_MORE_HINT;
-});
-const userTags = computed(() => {
-  const tags = user.value?.tags || user.value?.identityTags || [];
-  return tags.slice(0, 5);
-});
-const listEmptyText = computed(() => tabs.find((tab) => tab.key === activeTab.value)?.empty || PROFILE_EMPTY_CONTENT);
-const aliases = computed(() => user.value?.aliases || []);
-
-const pageChrome = computed<PageChromeSpec>(() => ({
-  top: user.value
-    ? {
-        visible: true,
-        identity: {
-          avatarText: avatarText.value,
-          name: displayName.value,
-          meta: identityMeta.value,
-        },
-        buttons: [
-          { id: "profile:toggle-editor", label: editorOpen.value ? PROFILE_COLLAPSE_EDITOR : PROFILE_EDIT, variant: "tonal" },
-          { id: "profile:logout", label: PROFILE_LOGOUT, variant: "ghost" },
-        ],
-        onButtonClick: handleChromeButtonClick,
-      }
-    : { visible: false },
-}));
-
-function handleChromeButtonClick(buttonId: string) {
-  if (buttonId === "profile:toggle-editor") {
-    editorOpen.value = !editorOpen.value;
-  } else if (buttonId === "profile:logout") {
-    void logout();
-  }
-}
-
-watch(pageChrome, (spec) => emit("chrome", spec), { deep: true });
-
-function readHistoryIds() {
-  return getRecentReadHistoryIds(localStorage, 50);
-}
-
-function isMissingSessionError(error: unknown) {
-  return error instanceof LianApiError && (error.code === "not-authorised" || error.status === 401 || error.status === 403);
-}
-
-async function refreshCurrentSession() {
-  try {
-    const refreshedUser = await fetchAuthMe();
-    if (!refreshedUser) return false;
-    user.value = refreshedUser;
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-async function fetchProfileTabWithSessionRefresh(tab: ProfileTabKey, tids: FeedItemId[] = []) {
-  try {
-    return await fetchProfileTab(tab, tids);
-  } catch (error) {
-    if (!isMissingSessionError(error)) throw error;
-    const sessionStillValid = await refreshCurrentSession();
-    if (!sessionStillValid) throw error;
-
-    try {
-      return await fetchProfileTab(tab, tids);
-    } catch (retryError) {
-      if (isMissingSessionError(retryError)) {
-        throw new Error("登录状态已刷新，但个人列表接口仍返回未授权。请稍后重试，或重新登录后再打开赞过 / 收藏。");
-      }
-      throw retryError;
-    }
-  }
-}
 
 function enterGuestState() {
   user.value = null;
@@ -172,25 +84,6 @@ async function loadProfile() {
   }
 }
 
-async function loadProfileList(tab: ProfileTabKey) {
-  activeTab.value = tab;
-  listLoading.value = true;
-  listError.value = "";
-  try {
-    const response = await fetchProfileTabWithSessionRefresh(tab, tab === "history" ? readHistoryIds() : []);
-    profileItems.value = response.items || [];
-  } catch (error) {
-    if (isMissingSessionError(error)) {
-      enterGuestState();
-    } else {
-      listError.value = extractErrorMessage(error, PROFILE_LIST_ERROR_PREFIX + ERROR_LOAD_GENERIC);
-      profileItems.value = [];
-    }
-  } finally {
-    listLoading.value = false;
-  }
-}
-
 async function logout() {
   loading.value = true;
   errorMessage.value = "";
@@ -210,26 +103,6 @@ async function handleAuthenticated(authenticatedUser: ProfileUser | null) {
     user.value = authenticatedUser;
   }
   await loadProfile();
-}
-
-async function handleProfileUpdated() {
-  aliasPickerOpen.value = false;
-  await loadProfile();
-}
-
-async function switchAlias(aliasId: string) {
-  if (aliasBusy.value || !user.value) return;
-  aliasBusy.value = true;
-  try {
-    if (aliasId) await activateProfileAlias(aliasId);
-    else await deactivateProfileAlias();
-    aliasPickerOpen.value = false;
-    await loadProfile();
-  } catch {
-    // error is non-critical; user can retry
-  } finally {
-    aliasBusy.value = false;
-  }
 }
 
 onMounted(() => {
@@ -278,15 +151,14 @@ onMounted(() => {
         @open-item="openItem"
       />
 
-      <div v-if="detailOpen" class="profile-view__detail-overlay" role="dialog" aria-modal="true" :aria-label="POST_DETAIL_DIALOG_LABEL">
-        <PostDetailPanel
-          :post="selectedPost"
-          :loading="detailLoading"
-          :error="detailError"
-          @close="closeDetail"
-          @retry="retryDetail"
-        />
-      </div>
+      <ProfileDetailOverlay
+        v-if="detailOpen"
+        :post="selectedPost"
+        :loading="detailLoading"
+        :error="detailError"
+        @close="closeDetail"
+        @retry="retryDetail"
+      />
     </template>
 
     <section v-else class="profile-view__guest">
@@ -326,14 +198,6 @@ onMounted(() => {
   display: grid;
   gap: var(--space-4);
   padding-top: var(--space-6);
-}
-
-.profile-view__detail-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 30;
-  overflow-y: auto;
-  background: var(--lian-surface, #fff);
 }
 
 .inline-error button {

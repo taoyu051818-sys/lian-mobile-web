@@ -60,8 +60,14 @@ test("ProfileCollectionList cards use shadow instead of border", () => {
   assert.doesNotMatch(src, /border: 1px solid rgba\(31, 41, 51, 0\.08\)/);
 });
 
-test("ProfileView uses declarative PageChromeSpec for top region", () => {
+test("ProfileView imports useProfileChrome composable", () => {
   const src = read("src/features/profile/ProfileView.vue");
+  assert.match(src, /import.*useProfileChrome/);
+  assert.match(src, /from.*\.\/useProfileChrome/);
+});
+
+test("useProfileChrome computes declarative PageChromeSpec with actions", () => {
+  const src = read("src/features/profile/useProfileChrome.ts");
   assert.match(src, /PageChromeSpec/);
   assert.match(src, /const pageChrome = computed<PageChromeSpec>/);
   assert.match(src, /profile:toggle-editor/);
