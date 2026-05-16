@@ -1,5 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256" role="img" aria-label="深夜猫头鹰">
-  <rect width="256" height="256" rx="64" fill="#E0E7FF"/>
-  <circle cx="128" cy="128" r="88" fill="#fff" opacity="0.72"/>
-  <path d="M158 62c-30 8-52 35-52 68 0 31 20 58 48 68-9 3-18 4-28 4-41 0-74-33-74-74s33-74 74-74c11 0 22 3 32 8Z" fill="#111827"/><circle cx="168" cy="92" r="8" fill="#4338CA"/><circle cx="190" cy="130" r="6" fill="#4338CA"/>
-</svg>
