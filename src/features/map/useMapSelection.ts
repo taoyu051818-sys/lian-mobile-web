@@ -1,4 +1,4 @@
-import { ref, type Ref } from "vue";
+import { ref } from "vue";
 import { fetchPlaceSheet } from "../../api/places";
 import { fetchPostDetail } from "../../api/posts";
 import type { FeedItemId } from "../../types/feed";

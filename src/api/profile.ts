@@ -1,7 +1,6 @@
 import { apiGet, apiSend, apiUpload } from "./http";
 import type { FeedItemId } from "../types/feed";
 import type { ProfileListResponse, ProfileTabKey, ProfileUser } from "../types/profile";
-import { buildApiUrl } from "../config/runtime-config";
 
 export async function fetchAuthMe(): Promise<ProfileUser | null> {
   const data = await apiGet<{ user?: ProfileUser | null }>("/api/auth/me");

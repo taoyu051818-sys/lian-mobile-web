@@ -10,7 +10,6 @@ import {
   tryGetLeaflet,
 } from "../../platform/leaflet";
 import type {
-  MapAsset,
   MapLayerPoint,
   MapLocation,
   MapPost,

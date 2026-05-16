@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { REPLY_DOCK_PLACEHOLDER, REPLY_DOCK_SEND, REPLY_DOCK_REPLY } from "../../config/brand";
 
-const props = defineProps<{
+defineProps<{
   liked?: boolean;
   saved?: boolean;
   likeCount?: number;
