@@ -1,16 +1,15 @@
 <script setup lang="ts">
-import { computed, nextTick, onBeforeUnmount, ref, watch } from "vue";
-import { togglePostLike } from "../../api/posts";
-import { DEFAULT_USER_LABEL, UNTITLED_CONTENT, FEED_PLACE_CAMPUS, FEED_TIME_JUST_NOW, FEED_LIKE, FEED_UNLIKE, FEED_COLLAPSE, FEED_EXPAND } from "../../config/brand";
+import { computed, nextTick, ref, watch } from "vue";
+import { DEFAULT_USER_LABEL, UNTITLED_CONTENT, FEED_PLACE_CAMPUS, FEED_TIME_JUST_NOW, FEED_COLLAPSE, FEED_EXPAND } from "../../config/brand";
 import { actorAvatarText, actorAvatarUrl, actorDisplayName } from "../../domain/actor";
 import type { FeedItem, FeedItemId, FeedPresentationIntent } from "../../types/feed";
+import FeedItemCardFooter from "./FeedItemCardFooter.vue";
+import { useCardPointerInteraction } from "./useCardPointerInteraction";
 
 type CardTemplate = FeedPresentationIntent;
 
 const MAX_VISIBLE_TITLE_CHARS = 42;
 const MAX_VISIBLE_AUTHOR_CHARS = 10;
-const CARD_CLICK_MAX_DURATION_MS = 360;
-const CARD_CLICK_MOVE_TOLERANCE_PX = 8;
 
 const props = defineProps<{ item: FeedItem }>();
 const emit = defineEmits<{
@@ -19,17 +18,6 @@ const emit = defineEmits<{
     rect: { top: number; left: number; width: number; height: number };
   }];
 }>();
-
-const liked = ref(false);
-const likeCount = ref(0);
-const likeBusy = ref(false);
-const pointerDownAt = ref(0);
-const pointerDownX = ref(0);
-const pointerDownY = ref(0);
-const pointerMoved = ref(false);
-const pointerWasLongPress = ref(false);
-const pointerCandidateId = ref<number | null>(null);
-let longPressTimer = 0;
 
 const CARD_TEMPLATES: ReadonlySet<CardTemplate> = new Set(["image", "text", "activity", "place", "merchant", "help"]);
 
@@ -68,8 +56,6 @@ const templateMark = computed(() => ({
   help: "＋",
 })[cardTemplate.value]);
 
-const likeLabel = computed(() => `${liked.value ? FEED_UNLIKE : FEED_LIKE}，当前 ${likeCount.value} 个喜欢`);
-
 const bodyPreview = computed(() => props.item.bodyPreview || "");
 const bodyExpanded = ref(false);
 const needsBodyClamp = ref(false);
@@ -91,11 +77,6 @@ watch(() => props.item.tid, () => {
   nextTick(checkBodyClamp);
 });
 
-watch(() => props.item, (item) => {
-  liked.value = Boolean(item.liked);
-  likeCount.value = Math.max(0, Number(item.likeCount || 0));
-}, { immediate: true });
-
 function emitOpen(target: HTMLElement | null) {
   const bounds = target?.getBoundingClientRect();
   emit("open", props.item.tid, bounds ? {
@@ -109,115 +90,15 @@ function emitOpen(target: HTMLElement | null) {
   } : undefined);
 }
 
-function isControlTarget(target: EventTarget | null) {
-  return target instanceof HTMLElement && Boolean(target.closest("button, a, input, textarea, select, [data-card-control]"));
-}
-
-function clearLongPressTimer() {
-  if (!longPressTimer || typeof window === "undefined") return;
-  window.clearTimeout(longPressTimer);
-  longPressTimer = 0;
-}
-
-function startLongPressTimer(pointerId: number) {
-  clearLongPressTimer();
-  if (typeof window === "undefined") return;
-  longPressTimer = window.setTimeout(() => {
-    if (pointerCandidateId.value === pointerId) {
-      pointerWasLongPress.value = true;
-    }
-    longPressTimer = 0;
-  }, CARD_CLICK_MAX_DURATION_MS);
-}
-
-function resetPointerIntent() {
-  clearLongPressTimer();
-  pointerCandidateId.value = null;
-  pointerDownAt.value = 0;
-  pointerDownX.value = 0;
-  pointerDownY.value = 0;
-  pointerMoved.value = false;
-  pointerWasLongPress.value = false;
-}
-
-function handlePointerDown(event: PointerEvent) {
-  if (isControlTarget(event.target)) return;
-  if (event.pointerType === "mouse" && event.button !== 0) return;
-  pointerCandidateId.value = event.pointerId;
-  pointerDownAt.value = performance.now();
-  pointerDownX.value = event.clientX;
-  pointerDownY.value = event.clientY;
-  pointerMoved.value = false;
-  pointerWasLongPress.value = false;
-  startLongPressTimer(event.pointerId);
-}
-
-function handlePointerMove(event: PointerEvent) {
-  if (pointerCandidateId.value !== event.pointerId) return;
-  const deltaX = Math.abs(event.clientX - pointerDownX.value);
-  const deltaY = Math.abs(event.clientY - pointerDownY.value);
-  if (deltaX > CARD_CLICK_MOVE_TOLERANCE_PX || deltaY > CARD_CLICK_MOVE_TOLERANCE_PX) {
-    pointerMoved.value = true;
-    clearLongPressTimer();
-  }
-}
-
-function handlePointerUp(event: PointerEvent) {
-  if (pointerCandidateId.value !== event.pointerId) return;
-  clearLongPressTimer();
-  pointerWasLongPress.value = performance.now() - pointerDownAt.value > CARD_CLICK_MAX_DURATION_MS;
-}
-
-function handlePointerCancel(event: PointerEvent) {
-  if (pointerCandidateId.value === event.pointerId) resetPointerIntent();
-}
-
-function handleContextMenu(event: MouseEvent) {
-  if (isControlTarget(event.target)) return;
-  pointerWasLongPress.value = true;
-  clearLongPressTimer();
-  event.preventDefault();
-}
-
-function openCard(event?: MouseEvent) {
-  if (isControlTarget(event?.target || null)) return;
-  const shouldSuppress = pointerMoved.value || pointerWasLongPress.value;
-  const target = event?.currentTarget instanceof HTMLElement ? event.currentTarget : null;
-  resetPointerIntent();
-  if (shouldSuppress) return;
-  emitOpen(target);
-}
-
-function openCardFromKeyboard(event: KeyboardEvent) {
-  if (isControlTarget(event.target)) return;
-  const target = event.currentTarget instanceof HTMLElement ? event.currentTarget : null;
-  resetPointerIntent();
-  emitOpen(target);
-}
-
-async function handleLike() {
-  if (likeBusy.value) return;
-  const previousLiked = liked.value;
-  const previousCount = likeCount.value;
-  const nextLiked = !previousLiked;
-  liked.value = nextLiked;
-  likeCount.value = Math.max(0, previousCount + (nextLiked ? 1 : -1));
-  likeBusy.value = true;
-  try {
-    const response = await togglePostLike(props.item.tid, nextLiked);
-    liked.value = Boolean(response.liked);
-    likeCount.value = Math.max(0, Number(response.likeCount || 0));
-  } catch {
-    liked.value = previousLiked;
-    likeCount.value = previousCount;
-  } finally {
-    likeBusy.value = false;
-  }
-}
-
-onBeforeUnmount(() => {
-  clearLongPressTimer();
-});
+const {
+  handlePointerDown,
+  handlePointerMove,
+  handlePointerUp,
+  handlePointerCancel,
+  handleContextMenu,
+  openCard,
+  openCardFromKeyboard,
+} = useCardPointerInteraction(emitOpen);
 </script>
 
 <template>
@@ -269,34 +150,15 @@ onBeforeUnmount(() => {
         >{{ bodyExpanded ? FEED_COLLAPSE : FEED_EXPAND }}</button>
       </template>
 
-      <footer class="feed-item-card__footer" data-motion-role="meta-row">
-        <div class="feed-item-card__author" data-motion-role="author">
-          <img v-if="authorAvatarUrl" :src="authorAvatarUrl" :alt="authorName" loading="lazy" data-motion-role="avatar" draggable="false" />
-          <span v-else class="feed-item-card__avatar-text" aria-hidden="true" data-motion-role="avatar">{{ authorInitial }}</span>
-          <span class="feed-item-card__author-name" :title="authorName">{{ authorName }}</span>
-        </div>
-
-        <span class="feed-item-card__motion-time" data-motion-role="time" aria-hidden="true">{{ timeLabel }}</span>
-
-        <button
-          class="feed-item-card__like"
-          :class="{ 'is-liked': liked }"
-          type="button"
-          :aria-label="likeLabel"
-          :aria-pressed="liked"
-          :disabled="likeBusy"
-          data-card-control="like"
-          data-motion-role="like"
-          @click.stop="handleLike"
-          @pointerdown.stop
-          @pointerup.stop
-          @keydown.enter.stop
-          @keydown.space.stop
-        >
-          <span aria-hidden="true">{{ liked ? "♥" : "♡" }}</span>
-          <span>{{ likeCount }}</span>
-        </button>
-      </footer>
+      <FeedItemCardFooter
+        :tid="props.item.tid"
+        :author-name="authorName"
+        :author-avatar-url="authorAvatarUrl"
+        :author-initial="authorInitial"
+        :time-label="timeLabel"
+        :liked="Boolean(props.item.liked)"
+        :like-count="Math.max(0, Number(props.item.likeCount || 0))"
+      />
     </div>
   </article>
 </template>
@@ -467,92 +329,5 @@ onBeforeUnmount(() => {
   font-size: 12px;
   font-weight: 800;
   cursor: pointer;
-}
-
-.feed-item-card__footer {
-  display: flex;
-  min-width: 0;
-  gap: var(--space-2);
-  align-items: center;
-  justify-content: space-between;
-}
-
-.feed-item-card__author {
-  display: flex;
-  flex: 1 1 auto;
-  min-width: 0;
-  max-width: calc(100% - 50px);
-  gap: var(--space-1);
-  align-items: center;
-  color: var(--lian-muted);
-  font-size: 11px;
-  line-height: 1.2;
-}
-
-.feed-item-card__author img,
-.feed-item-card__avatar-text {
-  display: grid;
-  width: 20px;
-  min-width: 20px;
-  height: 20px;
-  place-items: center;
-  border-radius: var(--radius-orb);
-  object-fit: cover;
-  background: var(--lian-primary-soft);
-  color: var(--lian-primary-deep);
-  font-size: 10px;
-  font-weight: 900;
-}
-
-.feed-item-card__author img {
-  pointer-events: none;
-  -webkit-user-drag: none;
-}
-
-.feed-item-card__author-name {
-  overflow: hidden;
-  min-width: 0;
-  max-width: min(10ch, 100%);
-  color: var(--lian-ink);
-  font-weight: 850;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.feed-item-card__motion-time {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip: rect(0 0 0 0);
-  color: var(--lian-muted);
-  font-size: 11px;
-  white-space: nowrap;
-}
-
-.feed-item-card__like {
-  display: inline-flex;
-  flex: 0 0 auto;
-  gap: 3px;
-  align-items: center;
-  justify-content: center;
-  min-width: 42px;
-  min-height: 30px;
-  padding: 0 8px;
-  border: 1px solid rgba(31, 41, 51, 0.08);
-  border-radius: var(--radius-chip);
-  background: rgba(255, 255, 255, 0.62);
-  color: var(--lian-muted);
-  font-size: 11px;
-  font-weight: 900;
-}
-
-.feed-item-card__like.is-liked {
-  background: rgba(255, 236, 236, 0.82);
-  color: #c2410c;
-}
-
-.feed-item-card__like:disabled {
-  opacity: 0.64;
 }
 </style>
