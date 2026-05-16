@@ -92,6 +92,27 @@ Three warning-only guard scripts are wired into `npm run check` (PR #538, 2026-0
 
 All three always exit 0 (warning only, never fail build). Changes to these scripts or their wiring in `package.json` must update this inventory.
 
+## ESLint and Prettier baseline
+
+Prettier and ESLint are added as dev tooling (PR #545, 2026-05-16):
+
+- `npm run format` — auto-format all files with Prettier
+- `npm run format:check` — verify formatting without writing
+- `npm run lint` — run ESLint on the codebase
+- `npm run lint:fix` — auto-fix ESLint issues
+
+ESLint config (`eslint.config.js`) uses flat config with:
+- `@eslint/js` recommended rules
+- `typescript-eslint` recommended rules
+- `eslint-plugin-vue` flat/recommended rules
+- `eslint-config-prettier` to disable format-conflicting rules
+- `no-explicit-any` turned off (Phase 1: gentle baseline)
+- `no-undef` disabled for `.ts`/`.vue` files (TypeScript handles this)
+
+Node.js globals are provided for `scripts/**/*.js` and `tests/**/*.mjs` files.
+
+Phase 1 baseline: format:check and lint are NOT yet wired into `npm run check`. They run as standalone scripts until the first lint debt is cleared.
+
 ## Operational rule
 
 Any PR that changes dependency preflight behavior, the runtime config accessor/env-validation contract, unsafe DOM sink guard coverage, public runtime exposure checks, frontend project-structure validation, frontend verify/test wiring, or UGC HTML sanitizer verification must update this document or another runtime inventory artifact in the same PR.
