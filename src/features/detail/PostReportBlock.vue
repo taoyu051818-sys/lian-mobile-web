@@ -1,5 +1,14 @@
 <script setup lang="ts">
 import { LianButton } from "../../ui";
+import {
+  REPORT_SECTION_LABEL,
+  REPORT_REASON_LABEL,
+  REPORT_REASON_NOTE,
+  REPORT_REASON_HINT,
+  REPORT_SUBMIT,
+  REPORT_HIDE_LABEL,
+  REPORT_HIDE_HINT,
+} from "../../config/brand";
 
 defineProps<{
   reportOpen?: boolean;
@@ -22,9 +31,14 @@ const emit = defineEmits<{
 
 <template>
   <div class="post-report-block">
-    <section v-if="reportOpen" class="post-report-block__form" aria-label="举报原因" @click.stop>
+    <section
+      v-if="reportOpen"
+      class="post-report-block__form"
+      :aria-label="REPORT_SECTION_LABEL"
+      @click.stop
+    >
       <label>
-        <span>举报原因</span>
+        <span>{{ REPORT_REASON_LABEL }}</span>
         <select
           :value="reportCategory"
           :disabled="reportBusy"
@@ -40,7 +54,7 @@ const emit = defineEmits<{
         </select>
       </label>
       <label v-if="reportReasonVisible">
-        <span>补充说明（可选）</span>
+        <span>{{ REPORT_REASON_NOTE }}</span>
         <textarea
           :value="reportReason"
           :disabled="reportBusy"
@@ -51,16 +65,18 @@ const emit = defineEmits<{
         ></textarea>
       </label>
       <p v-if="reportReasonVisible" class="post-report-block__hint">
-        补充说明只会跟随这次举报一起提交，不会公开显示。
+        {{ REPORT_REASON_HINT }}
       </p>
-      <LianButton size="sm" variant="danger" :loading="reportBusy" @click="emit('submitReport')"
-        >提交举报</LianButton
-      >
+      <LianButton size="sm" variant="danger" :loading="reportBusy" @click="emit('submitReport')">{{
+        REPORT_SUBMIT
+      }}</LianButton>
     </section>
 
     <div v-if="reportFollowUpVisible" class="post-report-block__follow-up">
-      <p>如果你现在不想继续看到这条内容，可以先在当前会话里把它隐藏。</p>
-      <LianButton size="sm" variant="ghost" @click="emit('hideReportedPost')">暂时隐藏</LianButton>
+      <p>{{ REPORT_HIDE_HINT }}</p>
+      <LianButton size="sm" variant="ghost" @click="emit('hideReportedPost')">{{
+        REPORT_HIDE_LABEL
+      }}</LianButton>
     </div>
   </div>
 </template>

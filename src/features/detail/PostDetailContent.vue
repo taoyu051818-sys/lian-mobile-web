@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { PlaceSheet, PlaceStatus } from "../../types/place";
+import type { PlaceRef, PlaceSheet } from "../../types/place";
 import PostDetailGallery from "./PostDetailGallery.vue";
 import PostDetailMainBody from "./PostDetailMainBody.vue";
 import PostDetailInfoStrip from "./PostDetailInfoStrip.vue";
@@ -15,7 +15,7 @@ defineProps<{
   timeLabel?: string;
   placeLabel?: string;
   placeStatusText?: string;
-  structuredPlace?: { id?: string; name?: string; type?: string; status?: PlaceStatus } | null;
+  structuredPlace?: PlaceRef | null;
   placeSheetOpen?: boolean;
   placeSheet?: PlaceSheet | null;
   placeSheetLoading?: boolean;
