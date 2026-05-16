@@ -25,7 +25,6 @@ interface WxSignResponse {
   signature: string;
 }
 
- 
 type WxInstance = any;
 
 declare global {
