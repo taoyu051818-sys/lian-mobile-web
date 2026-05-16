@@ -9,6 +9,8 @@ import { extractErrorMessage } from "../../utils/extractErrorMessage";
 import type { PlaceSheet } from "../../types/place";
 import type { PostDetail } from "../../types/post";
 import { sharePost } from "../../platform/share";
+import { configureWeChatShare } from "../../platform/wechatShare";
+import { buildCanonicalPostUrl } from "../../platform/share";
 import PostDetailTopbar from "./PostDetailTopbar.vue";
 import PostDetailContent from "./PostDetailContent.vue";
 import PostReplies from "./PostReplies.vue";
@@ -105,6 +107,18 @@ watch(post, (nextPost) => {
   placeSheetLoading.value = false;
   placeSheetError.value = "";
 }, { immediate: true });
+
+// Configure WeChat share card when post data loads
+watch(post, (nextPost) => {
+  if (!nextPost?.tid) return;
+  const plainBody = (nextPost.contentHtml || "").replace(/<[^>]+>/g, "").trim();
+  configureWeChatShare({
+    title: nextPost.title || "黎安屿你",
+    desc: plainBody.slice(0, 100) || undefined,
+    link: buildCanonicalPostUrl(nextPost.tid),
+    imgUrl: nextPost.cover || nextPost.imageUrls?.[0] || undefined,
+  });
+});
 
 function showActionMessage(message: string) {
   actionError.value = "";
