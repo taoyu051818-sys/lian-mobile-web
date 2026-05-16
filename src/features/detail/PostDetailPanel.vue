@@ -1,12 +1,10 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
 import { useVisualViewport } from "../../composables/useVisualViewport";
-import { fetchPlaceSheet } from "../../api/places";
-import { reportPost, sendPostReply, togglePostLike, togglePostSave } from "../../api/posts";
+import { reportPost, sendPostReply } from "../../api/posts";
 import { InlineError, LianButton } from "../../ui";
-import { ERROR_LOAD_PLACE, ERROR_SEND_REPLY, ERROR_LIKE_ACTION, ERROR_SAVE_ACTION, LOADING_DETAIL } from "../../config/brand";
+import { ERROR_SEND_REPLY, LOADING_DETAIL } from "../../config/brand";
 import { extractErrorMessage } from "../../utils/extractErrorMessage";
-import type { PlaceSheet } from "../../types/place";
 import type { PostDetail } from "../../types/post";
 import { sharePost } from "../../platform/share";
 import { configureWeChatShare } from "../../platform/wechatShare";
@@ -23,6 +21,8 @@ import {
   shouldShowReportReasonField,
 } from "./reportFlow";
 import { usePostDetailPresentation } from "./usePostDetailPresentation";
+import { usePostReactions } from "./usePostReactions";
+import { usePlaceSheetLoader } from "./usePlaceSheetLoader";
 
 const props = withDefaults(defineProps<{
   post: PostDetail | null;
@@ -40,11 +40,6 @@ const emit = defineEmits<{
 
 useVisualViewport();
 
-const liked = ref(false);
-const saved = ref(false);
-const likeCount = ref(0);
-const likeBusy = ref(false);
-const saveBusy = ref(false);
 const reportBusy = ref(false);
 const reportOpen = ref(false);
 const reportReason = ref("");
@@ -60,13 +55,33 @@ const replyContent = ref("");
 const galleryPointerDownX = ref(0);
 const galleryPointerDownY = ref(0);
 const galleryPointerMoved = ref(false);
-const placeSheet = ref<PlaceSheet | null>(null);
-const placeSheetOpen = ref(false);
-const placeSheetLoading = ref(false);
-const placeSheetError = ref("");
 
 const post = computed(() => props.post);
-const placeSheetState = computed(() => placeSheet.value);
+
+function clearMessages() {
+  actionError.value = "";
+  actionMessage.value = "";
+}
+
+function showActionError(error: unknown, fallback: string) {
+  actionMessage.value = "";
+  actionError.value = extractErrorMessage(error, fallback);
+}
+
+const {
+  liked, saved, likeCount, likeBusy, saveBusy,
+  handleLike: rawHandleLike,
+  handleSave: rawHandleSave,
+  resetReactions,
+} = usePostReactions({ clearMessages, showError: showActionError });
+
+const {
+  placeSheet, placeSheetOpen, placeSheetLoading, placeSheetError,
+  placeSheetState,
+  openPlaceSheet,
+  resetPlaceSheet,
+} = usePlaceSheetLoader(post);
+
 const reportReasonVisible = computed(() => shouldShowReportReasonField(reportCategory.value));
 const reportReasonPlaceholder = computed(() => getReportReasonPlaceholder(reportCategory.value));
 const {
@@ -88,10 +103,12 @@ const {
 } = usePostDetailPresentation(post, placeSheetState);
 const replyIdentityLabel = "以当前身份回复";
 
+function handleLike() { return rawHandleLike(postId.value); }
+function handleSave() { return rawHandleSave(postId.value); }
+
 watch(post, (nextPost) => {
-  liked.value = Boolean(nextPost?.liked);
-  saved.value = Boolean(nextPost?.bookmarked);
-  likeCount.value = Math.max(0, Number(nextPost?.likeCount || 0));
+  resetReactions(nextPost);
+  resetPlaceSheet();
   actionError.value = "";
   actionMessage.value = "";
   reportOpen.value = false;
@@ -102,10 +119,6 @@ watch(post, (nextPost) => {
   replyContent.value = "";
   fullscreenImage.value = "";
   galleryPointerMoved.value = false;
-  placeSheet.value = null;
-  placeSheetOpen.value = false;
-  placeSheetLoading.value = false;
-  placeSheetError.value = "";
 }, { immediate: true });
 
 // Configure WeChat share card when post data loads
@@ -123,11 +136,6 @@ watch(post, (nextPost) => {
 function showActionMessage(message: string) {
   actionError.value = "";
   actionMessage.value = message;
-}
-
-function showActionError(error: unknown, fallback: string) {
-  actionMessage.value = "";
-  actionError.value = extractErrorMessage(error, fallback);
 }
 
 function setActionError(message: string) {
@@ -162,22 +170,6 @@ function openGalleryImage(index: number) {
   fullscreenImage.value = fullResolutionImages.value[index] || images.value[index] || "";
 }
 
-async function openPlaceSheet() {
-  const placeId = structuredPlace.value?.id;
-  if (!placeId) return;
-  placeSheetOpen.value = true;
-  placeSheetError.value = "";
-  if (placeSheet.value?.id === placeId) return;
-  placeSheetLoading.value = true;
-  try {
-    placeSheet.value = await fetchPlaceSheet(placeId);
-  } catch (error) {
-    placeSheetError.value = extractErrorMessage(error, ERROR_LOAD_PLACE);
-  } finally {
-    placeSheetLoading.value = false;
-  }
-}
-
 async function handleShare() {
   if (postId.value == null) return;
   const result = await sharePost({ tid: postId.value, title: title.value });
@@ -187,48 +179,6 @@ async function handleShare() {
     return;
   }
   showActionError(null, result.message);
-}
-
-async function handleLike() {
-  if (postId.value == null || likeBusy.value) return;
-  const previousLiked = liked.value;
-  const previousCount = likeCount.value;
-  const nextLiked = !previousLiked;
-  liked.value = nextLiked;
-  likeCount.value = Math.max(0, previousCount + (nextLiked ? 1 : -1));
-  likeBusy.value = true;
-  actionError.value = "";
-  actionMessage.value = "";
-  try {
-    const response = await togglePostLike(postId.value, nextLiked);
-    liked.value = Boolean(response.liked);
-    likeCount.value = Math.max(0, Number(response.likeCount || 0));
-  } catch (error) {
-    liked.value = previousLiked;
-    likeCount.value = previousCount;
-    showActionError(error, ERROR_LIKE_ACTION);
-  } finally {
-    likeBusy.value = false;
-  }
-}
-
-async function handleSave() {
-  if (postId.value == null || saveBusy.value) return;
-  const previousSaved = saved.value;
-  const nextSaved = !previousSaved;
-  saved.value = nextSaved;
-  saveBusy.value = true;
-  actionError.value = "";
-  actionMessage.value = "";
-  try {
-    const response = await togglePostSave(postId.value, nextSaved);
-    saved.value = Boolean(response.saved);
-  } catch (error) {
-    saved.value = previousSaved;
-    showActionError(error, ERROR_SAVE_ACTION);
-  } finally {
-    saveBusy.value = false;
-  }
 }
 
 function toggleReport() {
