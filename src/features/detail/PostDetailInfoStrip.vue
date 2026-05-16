@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import type { PlaceStatus } from "../../types/place";
+import type { PlaceRef } from "../../types/place";
 
 defineProps<{
   primaryTag?: string;
   timeLabel?: string;
   placeLabel?: string;
   placeStatusText?: string;
-  structuredPlace?: { id?: string; name?: string; type?: string; status?: PlaceStatus } | null;
+  structuredPlace?: PlaceRef | null;
   placeSheetOpen?: boolean;
   reportOpen?: boolean;
   reportBusy?: boolean;
