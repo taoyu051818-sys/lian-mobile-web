@@ -151,6 +151,8 @@ defineExpose({ map });
 </template>
 
 <style scoped>
+@import "./map-canvas.css";
+
 .map-canvas {
   width: 100%;
   min-height: inherit;
@@ -160,132 +162,5 @@ defineExpose({ map });
 
 .map-canvas.is-loading {
   filter: saturate(0.9) blur(0.5px);
-}
-
-:deep(.leaflet-container) {
-  width: 100%;
-  height: 100%;
-  min-height: inherit;
-  font-family: inherit;
-  background: rgba(247, 244, 236, 0.72);
-}
-
-:deep(.leaflet-control-zoom) {
-  overflow: hidden;
-  border: 1px solid var(--glass-border);
-  border-radius: var(--radius-chip);
-  box-shadow: var(--shadow-soft);
-}
-
-:deep(.leaflet-control-zoom a) {
-  border: 0;
-  color: var(--lian-ink);
-  font-weight: 900;
-}
-
-:deep(.vue-map-marker),
-:deep(.vue-map-asset) {
-  background: transparent;
-  border: 0;
-}
-
-:deep(.vue-map-marker) {
-  cursor: pointer;
-}
-
-:deep(.vue-map-asset) {
-  pointer-events: none;
-}
-
-:deep(.vue-map-road-shadow),
-:deep(.vue-map-road-edge),
-:deep(.vue-map-road-asphalt),
-:deep(.vue-map-road-asphalt-highlight),
-:deep(.vue-map-road-centerline) {
-  vector-effect: non-scaling-stroke;
-}
-
-:deep(.vue-map-road-centerline) {
-  stroke-linecap: butt;
-}
-
-:deep(.vue-map-scaled-icon-inner) {
-  display: block;
-  transition: transform 0.15s ease-out;
-}
-
-:deep(.vue-map-location-pin) {
-  display: grid;
-  place-items: center;
-  width: 100%;
-  height: 100%;
-  border: 1px solid var(--glass-border);
-  border-radius: var(--radius-orb);
-  background: rgba(255, 255, 255, 0.9);
-  box-shadow: var(--shadow-soft);
-  color: var(--lian-ink);
-}
-
-:deep(.vue-map-location-card) {
-  display: block;
-  overflow: hidden;
-  width: 100%;
-  height: 100%;
-  border: 1px solid var(--glass-border);
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.92);
-  box-shadow: var(--shadow-soft);
-}
-
-:deep(.vue-map-location-card img),
-:deep(.vue-map-post-card img) {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-:deep(.vue-map-post-card) {
-  position: relative;
-  display: grid;
-  place-items: center;
-  overflow: hidden;
-  width: 100%;
-  height: 100%;
-  border: 1px solid var(--glass-border);
-  border-radius: 20px;
-  background: rgba(31, 41, 51, 0.86);
-  box-shadow: var(--shadow-soft);
-  color: #fff;
-  font-size: 11px;
-  font-weight: 900;
-}
-
-:deep(.vue-map-post-card > span) {
-  position: absolute;
-  left: 6px;
-  right: 6px;
-  bottom: 5px;
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.45);
-}
-
-:deep(.vue-map-asset img) {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  pointer-events: none;
-}
-
-:deep(.vue-map-sr-only) {
-  position: absolute;
-  overflow: hidden;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border: 0;
 }
 </style>
