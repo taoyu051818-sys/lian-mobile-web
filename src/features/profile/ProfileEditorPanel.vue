@@ -1,15 +1,11 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
-import {
-  activateProfileAlias,
-  createInviteCode,
-  deactivateProfileAlias,
-} from "../../api/profile";
-import { InlineError, LianButton, TypeChip } from "../../ui";
+import { InlineError, TypeChip } from "../../ui";
 import { DEFAULT_USER_LABEL } from "../../config/brand";
-import { extractErrorMessage } from "../../utils/extractErrorMessage";
 import type { ProfileUser } from "../../types/profile";
+import ProfileAliasSelector from "./ProfileAliasSelector.vue";
 import ProfileAvatarEditor from "./ProfileAvatarEditor.vue";
+import ProfileInviteCodePanel from "./ProfileInviteCodePanel.vue";
 
 const props = defineProps<{
   user: ProfileUser;
@@ -19,27 +15,22 @@ const emit = defineEmits<{
   updated: [];
 }>();
 
-const aliasBusy = ref(false);
-const inviteBusy = ref(false);
 const errorMessage = ref("");
 const successMessage = ref("");
-const inviteCode = ref("");
+const aliasSelectorRef = ref<InstanceType<typeof ProfileAliasSelector> | null>(null);
 
 const displayName = computed(() => props.user.username || DEFAULT_USER_LABEL);
 const avatarText = computed(() => displayName.value.slice(0, 2) || "同");
-const aliases = computed(() => props.user.aliases || []);
-const activeAliasId = computed(() => props.user.activeAliasId || "");
-const activeAliasName = computed(() => aliases.value.find((alias) => alias.id === activeAliasId.value)?.name || "真实身份");
-const canCreateInvite = computed(() => Boolean(props.user.invitePermission));
+const activeAliasName = computed(() => aliasSelectorRef.value?.activeAliasName || "真实身份");
 
 function showSuccess(message: string) {
   errorMessage.value = "";
   successMessage.value = message;
 }
 
-function showError(error: unknown, fallback: string) {
+function showError(message: string) {
   successMessage.value = "";
-  errorMessage.value = extractErrorMessage(error, fallback);
+  errorMessage.value = message;
 }
 
 function handleAvatarUpdated() {
@@ -48,43 +39,25 @@ function handleAvatarUpdated() {
 }
 
 function handleAvatarError(message: string) {
-  successMessage.value = "";
-  errorMessage.value = message;
+  showError(message);
 }
 
-async function switchAlias(aliasId: string) {
-  if (aliasBusy.value) return;
-  aliasBusy.value = true;
-  errorMessage.value = "";
-  successMessage.value = "";
-  try {
-    if (aliasId) await activateProfileAlias(aliasId);
-    else await deactivateProfileAlias();
-    showSuccess("发布身份已切换。");
-    emit("updated");
-  } catch (error) {
-    showError(error, "发布身份没有切换成功，可以稍后再试。");
-  } finally {
-    aliasBusy.value = false;
-  }
+function handleAliasSwitched() {
+  showSuccess("发布身份已切换。");
+  emit("updated");
 }
 
-async function generateInviteCode() {
-  if (inviteBusy.value) return;
-  inviteBusy.value = true;
-  errorMessage.value = "";
-  successMessage.value = "";
-  try {
-    const response = await createInviteCode();
-    inviteCode.value = response.code || "";
-    showSuccess(inviteCode.value ? "邀请码已生成。" : "邀请码请求已提交。");
-  } catch (error) {
-    showError(error, "邀请码没有生成成功，可以稍后再试。");
-  } finally {
-    inviteBusy.value = false;
-  }
+function handleAliasError(message: string) {
+  showError(message);
 }
 
+function handleInviteSuccess(message: string) {
+  showSuccess(message);
+}
+
+function handleInviteError(message: string) {
+  showError(message);
+}
 </script>
 
 <template>
@@ -107,44 +80,19 @@ async function generateInviteCode() {
       @error="handleAvatarError"
     />
 
-    <section class="profile-editor__block" aria-labelledby="profile-alias-title">
-      <div class="profile-editor__block-title">
-        <strong id="profile-alias-title">发布身份</strong>
-        <span>{{ activeAliasName }}</span>
-      </div>
-      <div class="profile-editor__alias-list">
-        <label class="profile-editor__alias" :class="{ 'is-active': !activeAliasId }">
-          <input type="radio" name="profileAlias" value="" :checked="!activeAliasId" :disabled="aliasBusy" @change="switchAlias('')" />
-          <span>{{ displayName }}</span>
-          <small>真实身份</small>
-        </label>
-        <label
-          v-for="alias in aliases"
-          :key="alias.id"
-          class="profile-editor__alias"
-          :class="{ 'is-active': alias.id === activeAliasId }"
-        >
-          <input type="radio" name="profileAlias" :value="alias.id" :checked="alias.id === activeAliasId" :disabled="aliasBusy" @change="switchAlias(alias.id)" />
-          <span>{{ alias.name }}</span>
-          <small>官方马甲</small>
-        </label>
-      </div>
-      <p v-if="!aliases.length" class="profile-editor__hint">暂无可用官方马甲，当前使用真实身份发布。</p>
-    </section>
+    <ProfileAliasSelector
+      ref="aliasSelectorRef"
+      :user="user"
+      :display-name="displayName"
+      @switched="handleAliasSwitched"
+      @error="handleAliasError"
+    />
 
-    <section class="profile-editor__block" aria-labelledby="profile-invite-title">
-      <div class="profile-editor__block-title">
-        <strong id="profile-invite-title">邀请码</strong>
-        <span>{{ canCreateInvite ? "可生成" : "暂无权限" }}</span>
-      </div>
-      <div class="profile-editor__invite-row">
-        <LianButton type="button" variant="ghost" :disabled="!canCreateInvite" :loading="inviteBusy" @click="generateInviteCode">
-          生成邀请码
-        </LianButton>
-        <code v-if="inviteCode">{{ inviteCode }}</code>
-      </div>
-      <p class="profile-editor__hint">邀请码用于非高校邮箱注册场景。</p>
-    </section>
+    <ProfileInviteCodePanel
+      :user="user"
+      @success="handleInviteSuccess"
+      @error="handleInviteError"
+    />
   </section>
 </template>
 
