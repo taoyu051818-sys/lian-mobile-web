@@ -72,7 +72,7 @@ test("ProfileHeader alias picker options have option role and aria-selected", ()
 
 test("ProfileHeader alias picker includes real identity option", () => {
   const src = read("src/features/profile/ProfileHeader.vue");
-  assert.match(src, /真实身份/);
+  assert.match(src, /PROFILE_REAL_IDENTITY/);
   assert.match(src, /emit\('select-alias',\s*''\)/);
 });
 
@@ -104,21 +104,27 @@ test("ProfileCollectionList items have interactive hover and focus styles", () =
   assert.match(src, /profile-collection__item:focus-visible/);
 });
 
-// --- ProfileView detail panel integration ---
+// --- ProfileView detail overlay integration ---
 
-test("ProfileView imports PostDetailPanel for detail entry", () => {
+test("ProfileView imports ProfileDetailOverlay component", () => {
   const src = read("src/features/profile/ProfileView.vue");
+  assert.match(src, /import ProfileDetailOverlay/);
+  assert.match(src, /from.*\.\/ProfileDetailOverlay\.vue/);
+});
+
+test("ProfileDetailOverlay imports PostDetailPanel", () => {
+  const src = read("src/features/profile/ProfileDetailOverlay.vue");
   assert.match(src, /import PostDetailPanel/);
   assert.match(src, /from.*\.\/detail\/PostDetailPanel\.vue/);
 });
 
-test("ProfileView imports fetchPostDetail API", () => {
+test("ProfileView uses usePostDetail composable", () => {
   const src = read("src/features/profile/ProfileView.vue");
-  assert.match(src, /import.*fetchPostDetail/);
-  assert.match(src, /from.*\.\.\/api\/posts/);
+  assert.match(src, /import.*usePostDetail/);
+  assert.match(src, /from.*\.\/detail\/usePostDetail/);
 });
 
-test("ProfileView manages detail open/close state", () => {
+test("ProfileView destructures detail state from usePostDetail", () => {
   const src = read("src/features/profile/ProfileView.vue");
   assert.match(src, /selectedPostId/);
   assert.match(src, /selectedPost/);
@@ -127,13 +133,13 @@ test("ProfileView manages detail open/close state", () => {
   assert.match(src, /detailOpen/);
 });
 
-test("ProfileView renders PostDetailPanel conditionally when detail is open", () => {
+test("ProfileView renders ProfileDetailOverlay conditionally when detail is open", () => {
   const src = read("src/features/profile/ProfileView.vue");
-  assert.match(src, /<PostDetailPanel/);
+  assert.match(src, /<ProfileDetailOverlay/);
   assert.match(src, /v-if="detailOpen"/);
 });
 
-test("ProfileView passes detail state to PostDetailPanel", () => {
+test("ProfileView passes detail state to ProfileDetailOverlay", () => {
   const src = read("src/features/profile/ProfileView.vue");
   assert.match(src, /:post="selectedPost"/);
   assert.match(src, /:loading="detailLoading"/);
@@ -147,51 +153,51 @@ test("ProfileView wires collection list open-item to detail opener", () => {
   assert.match(src, /@open-item="openItem"/);
 });
 
-test("ProfileView has openItem function that calls fetchPostDetail", () => {
-  const src = read("src/features/profile/ProfileView.vue");
-  assert.match(src, /async function openItem/);
-  assert.match(src, /await fetchPostDetail\(tid\)/);
+test("usePostDetail has openDetail function that calls fetchPostDetail", () => {
+  const src = read("src/features/detail/usePostDetail.ts");
+  assert.match(src, /async function openDetail/);
+  assert.match(src, /await fetchPostDetail\(/);
 });
 
-// --- ProfileView detail overlay and scroll preservation ---
+// --- ProfileDetailOverlay wrapper ---
 
-test("ProfileView wraps PostDetailPanel in a dialog overlay", () => {
-  const src = read("src/features/profile/ProfileView.vue");
+test("ProfileDetailOverlay wraps PostDetailPanel in a dialog overlay", () => {
+  const src = read("src/features/profile/ProfileDetailOverlay.vue");
   assert.match(src, /class="profile-view__detail-overlay"/);
   assert.match(src, /role="dialog"/);
   assert.match(src, /aria-modal="true"/);
-  assert.match(src, /aria-label="帖子详情"/);
+  assert.match(src, /aria-label/);
 });
 
-test("ProfileView overlay has fixed positioning CSS", () => {
-  const src = read("src/features/profile/ProfileView.vue");
+test("ProfileDetailOverlay has fixed positioning CSS", () => {
+  const src = read("src/features/profile/ProfileDetailOverlay.vue");
   assert.match(src, /\.profile-view__detail-overlay/);
   assert.match(src, /position:\s*fixed/);
   assert.match(src, /inset:\s*0/);
   assert.match(src, /z-index:\s*30/);
 });
 
-test("ProfileView saves scroll position when opening detail", () => {
-  const src = read("src/features/profile/ProfileView.vue");
+test("usePostDetail saves scroll position when opening detail", () => {
+  const src = read("src/features/detail/usePostDetail.ts");
   assert.match(src, /savedScrollY/);
   assert.match(src, /window\.scrollY/);
 });
 
-test("ProfileView restores scroll position when closing detail", () => {
-  const src = read("src/features/profile/ProfileView.vue");
+test("usePostDetail restores scroll position when closing detail", () => {
+  const src = read("src/features/detail/usePostDetail.ts");
   assert.match(src, /requestAnimationFrame/);
   assert.match(src, /window\.scrollTo.*savedScrollY/);
 });
 
-test("ProfileView initializes savedScrollY ref", () => {
-  const src = read("src/features/profile/ProfileView.vue");
+test("usePostDetail initializes savedScrollY ref", () => {
+  const src = read("src/features/detail/usePostDetail.ts");
   assert.match(src, /const savedScrollY = ref\(0\)/);
 });
 
 // --- ProfileView alias switching ---
 
-test("ProfileView imports alias activation API functions", () => {
-  const src = read("src/features/profile/ProfileView.vue");
+test("useProfileAliasPicker imports alias activation API functions", () => {
+  const src = read("src/features/profile/useProfileAliasPicker.ts");
   assert.match(src, /activateProfileAlias/);
   assert.match(src, /deactivateProfileAlias/);
 });
@@ -213,8 +219,8 @@ test("ProfileView wires alias picker toggle and select events", () => {
   assert.match(src, /@select-alias="switchAlias"/);
 });
 
-test("ProfileView has switchAlias function that calls activate/deactivate API", () => {
-  const src = read("src/features/profile/ProfileView.vue");
+test("useProfileAliasPicker has switchAlias function that calls activate/deactivate API", () => {
+  const src = read("src/features/profile/useProfileAliasPicker.ts");
   assert.match(src, /async function switchAlias/);
   assert.match(src, /await activateProfileAlias/);
   assert.match(src, /await deactivateProfileAlias/);
@@ -235,11 +241,14 @@ test("ProfileView preserves three states: loading, logged-in, guest", () => {
   assert.match(src, /v-else/);
 });
 
-test("ProfileView preserves shell chrome contract", () => {
+test("ProfileView preserves chrome spec via useProfileChrome composable", () => {
   const src = read("src/features/profile/ProfileView.vue");
-  assert.match(src, /useShellChrome/);
-  assert.match(src, /setRegion\("top"/);
-  assert.match(src, /resetRegions\(\)/);
+  assert.match(src, /import.*useProfileChrome/);
+  assert.match(src, /useProfileChrome\(/);
+});
+
+test("useProfileChrome preserves editor toggle and logout actions", () => {
+  const src = read("src/features/profile/useProfileChrome.ts");
   assert.match(src, /profile:toggle-editor/);
   assert.match(src, /profile:logout/);
 });
