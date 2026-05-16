@@ -1,12 +1,14 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
 import { useVisualViewport } from "../../composables/useVisualViewport";
-import { InlineError, LianButton } from "../../ui";
+import { InlineError } from "../../ui";
 import { LOADING_DETAIL } from "../../config/brand";
 import { extractErrorMessage } from "../../utils/extractErrorMessage";
 import type { PostDetail } from "../../types/post";
 import PostDetailTopbar from "./PostDetailTopbar.vue";
 import PostDetailContent from "./PostDetailContent.vue";
+import PostDetailHiddenState from "./PostDetailHiddenState.vue";
+import PostDetailLightbox from "./PostDetailLightbox.vue";
 import PostReplies from "./PostReplies.vue";
 import PostReplyDock from "./PostReplyDock.vue";
 import { usePostDetailPresentation } from "./usePostDetailPresentation";
@@ -35,7 +37,6 @@ useVisualViewport();
 
 const actionError = ref("");
 const actionMessage = ref("");
-
 const post = computed(() => props.post);
 
 function clearMessages() {
@@ -146,12 +147,10 @@ const {
   images,
   fullResolutionImages,
 });
-
 const replyIdentityLabel = "以当前身份回复";
 
 function handleLike() { return rawHandleLike(postId.value); }
 function handleSave() { return rawHandleSave(postId.value); }
-
 watch(post, (nextPost) => {
   resetReactions(nextPost);
   resetPlaceSheet();
@@ -182,16 +181,10 @@ watch(post, (nextPost) => {
       </InlineError>
 
       <template v-else-if="post">
-        <section
+        <PostDetailHiddenState
           v-if="locallyHidden"
-          class="post-detail-panel__hidden-state"
-          aria-label="当前会话已隐藏内容"
-          @click.stop
-        >
-          <h2>这条内容已在当前会话中隐藏</h2>
-          <p>这只是当前设备上的临时隐藏，不会替代平台审核，也不会同步到其他设备。</p>
-          <LianButton size="sm" variant="ghost" @click="undoHideReportedPost">撤销隐藏</LianButton>
-        </section>
+          @undo-hide="undoHideReportedPost"
+        />
 
         <template v-else>
           <PostDetailContent
@@ -252,9 +245,11 @@ watch(post, (nextPost) => {
       @update:reply-content="replyContent = $event"
     />
 
-    <div v-if="fullscreenImage" class="post-detail-panel__lightbox" role="dialog" aria-modal="true" aria-label="查看图片" @click="fullscreenImage = ''">
-      <img :src="fullscreenImage" :alt="title" />
-    </div>
+    <PostDetailLightbox
+      :src="fullscreenImage"
+      :alt="title"
+      @close="fullscreenImage = ''"
+    />
   </aside>
 </template>
 
@@ -287,42 +282,6 @@ watch(post, (nextPost) => {
   text-align: center;
 }
 
-.post-detail-panel__hidden-state {
-  display: grid;
-  gap: var(--space-3);
-  padding: var(--space-4);
-  border: 1px solid rgba(239, 68, 68, 0.18);
-  border-radius: var(--radius-card);
-  background: rgba(239, 68, 68, 0.06);
-}
-
-.post-detail-panel__hidden-state h2,
-.post-detail-panel__hidden-state p {
-  margin: 0;
-}
-
-.post-detail-panel__hidden-state p {
-  color: var(--lian-muted);
-  line-height: 1.6;
-}
-
-.post-detail-panel__lightbox {
-  position: fixed;
-  inset: 0;
-  z-index: 80;
-  display: grid;
-  place-items: center;
-  padding: var(--space-4);
-  background: rgba(0, 0, 0, 0.82);
-}
-
-.post-detail-panel__lightbox img {
-  max-width: 100%;
-  max-height: 92vh;
-  border-radius: var(--radius-card);
-  object-fit: contain;
-}
-
 .inline-error button {
   min-height: 32px;
   margin-left: var(--space-2);
@@ -334,8 +293,6 @@ watch(post, (nextPost) => {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .post-detail-panel__stage {
-    transition: none;
-  }
+  .post-detail-panel__stage { transition: none; }
 }
 </style>
