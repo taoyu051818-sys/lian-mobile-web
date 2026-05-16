@@ -16,6 +16,7 @@
   background: var(--glass-bg-strong);
   box-shadow: var(--shadow-floating);
   opacity: 1;
+  pointer-events: auto;
   backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
 }
 
@@ -70,6 +71,10 @@
 /* Shell chrome visibility */
 .shell-chrome[data-visible="false"] {
   opacity: 0;
+  pointer-events: none;
+}
+
+.shell-chrome[data-visible="false"] .lian-floating-chrome {
   pointer-events: none;
 }
 

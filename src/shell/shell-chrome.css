@@ -147,6 +147,7 @@
   overflow-x: auto;
   padding: var(--floating-bar-padding);
   scrollbar-width: none;
+  pointer-events: auto;
 }
 
 .shell-chrome__tabs::-webkit-scrollbar {
