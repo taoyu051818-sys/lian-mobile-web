@@ -7,7 +7,13 @@
  * 3. No Web Share support → copy URL to clipboard
  */
 
-import { SHARE_ERROR_NO_URL, SHARE_ERROR_SHARE_FAILED, SHARE_ERROR_NO_CLIPBOARD, SHARE_ERROR_COPY_FAILED, SHARE_USE_WECHAT_MENU } from "../config/brand";
+import {
+  SHARE_ERROR_NO_URL,
+  SHARE_ERROR_SHARE_FAILED,
+  SHARE_ERROR_NO_CLIPBOARD,
+  SHARE_ERROR_COPY_FAILED,
+  SHARE_USE_WECHAT_MENU,
+} from "../config/brand";
 
 export interface SharePostInput {
   tid: number;
@@ -61,7 +67,11 @@ export async function sharePost(input: SharePostInput): Promise<SharePostResult>
   }
 
   const nav = typeof navigator !== "undefined" ? navigator : null;
-  const shareData: ShareData = { title: input.title, text: input.text ?? input.title, url: shareUrl };
+  const shareData: ShareData = {
+    title: input.title,
+    text: input.text ?? input.title,
+    url: shareUrl,
+  };
 
   if (nav && "share" in nav && typeof nav.share === "function") {
     try {
