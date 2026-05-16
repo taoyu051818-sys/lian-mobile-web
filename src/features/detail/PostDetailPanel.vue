@@ -136,7 +136,6 @@ const { replyBusy, replyExpanded, replyContent, collapseReplyIfOpen, submitReply
 const { handleShare } = usePostShare({
   postId,
   title,
-  post,
   showActionMessage,
   showError: showActionError,
 });
