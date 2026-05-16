@@ -56,11 +56,11 @@ export default [
   {
     files: ["src/**/*.{ts,vue}", "tests/**/*.{ts,mjs,js}", "scripts/**/*.js"],
     rules: {
-      "no-console": "warn",
+      "no-console": "error",
       "no-debugger": "error",
 
       "@typescript-eslint/no-unused-vars": [
-        "warn",
+        "error",
         {
           argsIgnorePattern: "^_",
           varsIgnorePattern: "^_",

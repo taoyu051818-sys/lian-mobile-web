@@ -2,6 +2,13 @@
 import { computed } from "vue";
 import { LianButton } from "../../ui";
 import type { ProfileUser } from "../../types/profile";
+import {
+  PROFILE_INVITE_TITLE,
+  PROFILE_INVITE_GENERATE,
+  PROFILE_INVITE_HINT,
+  PROFILE_INVITE_AVAILABLE,
+  PROFILE_INVITE_UNAVAILABLE,
+} from "../../config/brand";
 import { useInviteCode } from "./useInviteCode";
 
 const props = defineProps<{
@@ -27,8 +34,8 @@ function handleGenerate() {
 <template>
   <section class="profile-editor__block" aria-labelledby="profile-invite-title">
     <div class="profile-editor__block-title">
-      <strong id="profile-invite-title">邀请码</strong>
-      <span>{{ canCreateInvite ? "可生成" : "暂无权限" }}</span>
+      <strong id="profile-invite-title">{{ PROFILE_INVITE_TITLE }}</strong>
+      <span>{{ canCreateInvite ? PROFILE_INVITE_AVAILABLE : PROFILE_INVITE_UNAVAILABLE }}</span>
     </div>
     <div class="profile-editor__invite-row">
       <LianButton
@@ -38,10 +45,10 @@ function handleGenerate() {
         :loading="busy"
         @click="handleGenerate"
       >
-        生成邀请码
+        {{ PROFILE_INVITE_GENERATE }}
       </LianButton>
       <code v-if="inviteCode">{{ inviteCode }}</code>
     </div>
-    <p class="profile-editor__hint">邀请码用于非高校邮箱注册场景。</p>
+    <p class="profile-editor__hint">{{ PROFILE_INVITE_HINT }}</p>
   </section>
 </template>

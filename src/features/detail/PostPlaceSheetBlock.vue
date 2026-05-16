@@ -1,6 +1,11 @@
 <script setup lang="ts">
 import { InlineError } from "../../ui";
-import { LOADING_PLACE } from "../../config/brand";
+import {
+  LOADING_PLACE,
+  PLACE_SHEET_COLLAPSE,
+  PLACE_SHEET_RETRY,
+  PLACE_SHEET_SETTLING,
+} from "../../config/brand";
 import { actorDisplayName } from "../../domain/actor";
 import type { PlaceRef, PlaceSheet } from "../../types/place";
 import { formatRelativeTime } from "../../utils/time";
@@ -25,12 +30,14 @@ const emit = defineEmits<{
   <section v-if="placeSheetOpen" class="post-place-sheet" aria-label="地点信息" @click.stop>
     <div class="post-place-sheet__title">
       <h3>{{ placeSheet?.name || structuredPlace?.name || placeLabel }}</h3>
-      <button type="button" @click="emit('update:placeSheetOpen', false)">收起</button>
+      <button type="button" @click="emit('update:placeSheetOpen', false)">
+        {{ PLACE_SHEET_COLLAPSE }}
+      </button>
     </div>
     <p v-if="placeSheetLoading" class="post-place-sheet__state">{{ LOADING_PLACE }}</p>
     <InlineError v-else-if="placeSheetError">
       {{ placeSheetError }}
-      <button type="button" @click="emit('openPlaceSheet')">重试</button>
+      <button type="button" @click="emit('openPlaceSheet')">{{ PLACE_SHEET_RETRY }}</button>
     </InlineError>
     <template v-else>
       <div class="post-place-sheet__meta">
@@ -45,7 +52,7 @@ const emit = defineEmits<{
       <p v-if="placeSheet?.summary?.text" class="post-place-sheet__summary">
         {{ placeSheet.summary.text }}
       </p>
-      <p v-else class="post-place-sheet__empty">这个地点还在沉淀信息。</p>
+      <p v-else class="post-place-sheet__empty">{{ PLACE_SHEET_SETTLING }}</p>
       <div v-if="placeSheet?.stats" class="post-place-sheet__stats" aria-label="地点统计">
         <span v-if="placeSheet.stats.postCount != null"
           >{{ placeSheet.stats.postCount }} 条内容</span
