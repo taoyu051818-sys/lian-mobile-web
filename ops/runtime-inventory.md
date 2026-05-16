@@ -78,6 +78,10 @@ Any PR that changes the Leaflet dependency version, adds or removes Leaflet plug
 
 The guards run as part of `npm run check` and are verified by `tests/architecture/project-structure-guard.mjs`. Any PR that modifies `scripts/validate-project-structure.js` or the architecture guard tests must keep this inventory updated.
 
+## Ops doc cleanup
+
+Stale `docs/ops/` files removed in PR #535 (2026-05-16): `2026-05-05-bad-smell-cleanup-summary.md`, `motion-integration-lane.md`. These were historical-only docs with no runtime behavior impact.
+
 ## Operational rule
 
 Any PR that changes dependency preflight behavior, the runtime config accessor/env-validation contract, unsafe DOM sink guard coverage, public runtime exposure checks, frontend project-structure validation, frontend verify/test wiring, or UGC HTML sanitizer verification must update this document or another runtime inventory artifact in the same PR.
