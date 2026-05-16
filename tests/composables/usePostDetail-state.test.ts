@@ -4,7 +4,7 @@ vi.mock("../../src/api/posts", () => ({
   fetchPostDetail: vi.fn(),
 }));
 
-import { usePostDetail } from "../../src/composables/usePostDetail";
+import { usePostDetail } from "../../src/features/detail/usePostDetail";
 import { fetchPostDetail } from "../../src/api/posts";
 
 const mockFetchPostDetail = vi.mocked(fetchPostDetail);

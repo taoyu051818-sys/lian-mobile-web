@@ -6,7 +6,7 @@ function readRepoFile(relativePath: string) {
 }
 
 describe("useReducedMotion shared module (#254)", () => {
-  const source = readRepoFile("../../src/motion/useReducedMotion.ts");
+  const source = readRepoFile("../../src/composables/useReducedMotion.ts");
 
   it("exports a reactive composable and a one-shot helper", () => {
     expect(source).toContain("export function useReducedMotion()");
@@ -45,7 +45,7 @@ describe("useReducedMotion runtime behavior", () => {
 
   it("prefersReducedMotion returns false in non-browser context", async () => {
     // Temporarily remove window to simulate SSR
-    const { prefersReducedMotion } = await import("../../src/motion/useReducedMotion");
+    const { prefersReducedMotion } = await import("../../src/composables/useReducedMotion");
     // In vitest, window exists, so this tests the guard logic structure
     // The actual SSR safety is verified by the source-level checks above
     expect(typeof prefersReducedMotion()).toBe("boolean");

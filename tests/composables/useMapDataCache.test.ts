@@ -11,7 +11,7 @@ const mockFetchItems = vi.mocked(fetchMapV2Items);
 const mockFetchPreview = vi.mocked(fetchRoadNetworkPreview);
 
 async function freshCache() {
-  const mod = await import("../../src/composables/useMapDataCache");
+  const mod = await import("../../src/features/map/useMapDataCache");
   return mod.useMapDataCache();
 }
 

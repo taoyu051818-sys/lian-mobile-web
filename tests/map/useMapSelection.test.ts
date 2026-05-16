@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 import {
   placeIdForLocation,
   hasStablePlaceRef,
-} from "../../src/views/map/useMapSelection.ts";
+} from "../../src/features/map/useMapSelection.ts";
 import type { MapLocation } from "../../src/types/map.ts";
 
 function makeLocation(overrides: Partial<MapLocation> = {}): MapLocation {

@@ -34,12 +34,12 @@ test("main.css full-bleed grid removes border-radius on map stage wrapper", () =
 // --- Map chrome ---
 
 test("useMapChrome does not depend on shell chrome (declarative pattern)", () => {
-  const src = read("src/views/map/useMapChrome.ts");
+  const src = read("src/features/map/useMapChrome.ts");
   assert.doesNotMatch(src, /useShellChrome/);
 });
 
 test("useMapChrome exports composable with filter state and toggle", () => {
-  const src = read("src/views/map/useMapChrome.ts");
+  const src = read("src/features/map/useMapChrome.ts");
   assert.match(src, /export function useMapChrome/);
   assert.match(src, /filterActive/);
   assert.match(src, /toggleFilter/);
@@ -49,6 +49,6 @@ test("useMapChrome exports composable with filter state and toggle", () => {
 // --- MapCanvas leaflet integration ---
 
 test("MapCanvas.vue exists for leaflet rendering", () => {
-  const src = read("src/views/map/MapCanvas.vue");
+  const src = read("src/features/map/MapCanvas.vue");
   assert.ok(src.length > 0, "MapCanvas.vue should not be empty");
 });

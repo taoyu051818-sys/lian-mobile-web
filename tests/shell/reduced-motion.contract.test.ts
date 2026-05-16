@@ -23,15 +23,15 @@ describe("floating chrome reduced-motion", () => {
 });
 
 describe("Feed detail reduced-motion guards", () => {
-  const viewSource = readRepoFile("../../src/views/FeedView.vue");
-  const detailSource = readRepoFile("../../src/views/feed/useFeedDetail.ts");
-  const sharedSource = readRepoFile("../../src/motion/useReducedMotion.ts");
+  const viewSource = readRepoFile("../../src/features/feed/FeedView.vue");
+  const detailSource = readRepoFile("../../src/features/feed/useFeedDetail.ts");
+  const sharedSource = readRepoFile("../../src/composables/useReducedMotion.ts");
   const immersiveSource = readRepoFile("../../src/styles/content-immersive-ui.css");
   const immersiveReducedMotionBlock = getReducedMotionBlock(immersiveSource);
 
   it("FeedView imports prefersReducedMotion from the shared module instead of defining it locally", () => {
     expect(viewSource).toContain(
-      'import { prefersReducedMotion } from "../motion/useReducedMotion"'
+      'import { prefersReducedMotion } from "../../composables/useReducedMotion"'
     );
     // Local function definition must be gone
     expect(viewSource).not.toContain("function prefersReducedMotion()");
@@ -69,7 +69,7 @@ describe("shell chrome tabs reduced-motion stylesheet", () => {
 });
 
 describe("card camera timer hygiene (#254)", () => {
-  const viewSource = readRepoFile("../../src/views/FeedView.vue");
+  const viewSource = readRepoFile("../../src/features/feed/FeedView.vue");
 
   it("FeedView saves and cancels card transition rAF handle", () => {
     expect(viewSource).toContain("let pendingCardRaf = 0");
@@ -94,7 +94,7 @@ describe("card camera timer hygiene (#254)", () => {
 });
 
 describe("detail return timer hygiene (#254)", () => {
-  const detailSource = readRepoFile("../../src/views/feed/useFeedDetail.ts");
+  const detailSource = readRepoFile("../../src/features/feed/useFeedDetail.ts");
 
   it("useFeedDetail saves and cancels return animation timeout handle", () => {
     expect(detailSource).toContain("let pendingReturnTimer: ReturnType<typeof setTimeout>");

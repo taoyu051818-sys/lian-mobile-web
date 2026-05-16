@@ -5,9 +5,9 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
-const viewSource = fs.readFileSync(path.join(repoRoot, "src/views/MessagesView.vue"), "utf8");
-const tabsSource = fs.readFileSync(path.join(repoRoot, "src/views/messages/MessagesTabs.vue"), "utf8");
-const composerSource = fs.readFileSync(path.join(repoRoot, "src/views/messages/ChannelComposer.vue"), "utf8");
+const viewSource = fs.readFileSync(path.join(repoRoot, "src/features/messages/MessagesView.vue"), "utf8");
+const tabsSource = fs.readFileSync(path.join(repoRoot, "src/features/messages/MessagesTabs.vue"), "utf8");
+const composerSource = fs.readFileSync(path.join(repoRoot, "src/features/messages/ChannelComposer.vue"), "utf8");
 
 test("MessagesView declares chrome emit with PageChromeSpec type", () => {
   assert.match(viewSource, /defineEmits/);

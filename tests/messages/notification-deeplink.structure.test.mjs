@@ -5,8 +5,8 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
-const viewSource = fs.readFileSync(path.join(repoRoot, "src/views/MessagesView.vue"), "utf8");
-const listSource = fs.readFileSync(path.join(repoRoot, "src/views/messages/NotificationList.vue"), "utf8");
+const viewSource = fs.readFileSync(path.join(repoRoot, "src/features/messages/MessagesView.vue"), "utf8");
+const listSource = fs.readFileSync(path.join(repoRoot, "src/features/messages/NotificationList.vue"), "utf8");
 
 test("NotificationList emits open-item with tid when notification is clicked", () => {
   assert.match(listSource, /"open-item":\s*\[tid:\s*number\]/);

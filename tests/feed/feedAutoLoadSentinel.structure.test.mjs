@@ -5,10 +5,10 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
-const feedViewSource = fs.readFileSync(path.join(repoRoot, "src/views/FeedView.vue"), "utf8");
-const feedLoadMoreSource = fs.readFileSync(path.join(repoRoot, "src/views/feed/FeedLoadMore.vue"), "utf8");
-const feedListSource = fs.readFileSync(path.join(repoRoot, "src/views/feed/FeedList.vue"), "utf8");
-const sentinelComponentSource = fs.readFileSync(path.join(repoRoot, "src/views/feed/FeedAutoLoadSentinel.vue"), "utf8");
+const feedViewSource = fs.readFileSync(path.join(repoRoot, "src/features/feed/FeedView.vue"), "utf8");
+const feedLoadMoreSource = fs.readFileSync(path.join(repoRoot, "src/features/feed/FeedLoadMore.vue"), "utf8");
+const feedListSource = fs.readFileSync(path.join(repoRoot, "src/features/feed/FeedList.vue"), "utf8");
+const sentinelComponentSource = fs.readFileSync(path.join(repoRoot, "src/features/feed/FeedAutoLoadSentinel.vue"), "utf8");
 const sentinelComposableSource = fs.readFileSync(path.join(repoRoot, "src/composables/useAutoLoadSentinel.ts"), "utf8");
 
 test("FeedView delegates top tabs to shell chrome via declarative pageChrome spec", () => {

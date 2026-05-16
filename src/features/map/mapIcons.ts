@@ -1,7 +1,7 @@
-import type { LeafletDivIconLike } from "../platform/leaflet";
-import { getLeaflet } from "../platform/leaflet";
-import { MAP_POST_AVATAR_FALLBACK, MAP_CONTENT_FALLBACK } from "../config/brand";
-import type { MapAsset, MapLocation, MapPost } from "../types/map";
+import type { LeafletDivIconLike } from "../../platform/leaflet";
+import { getLeaflet } from "../../platform/leaflet";
+import { MAP_POST_AVATAR_FALLBACK, MAP_CONTENT_FALLBACK } from "../../config/brand";
+import type { MapAsset, MapLocation, MapPost } from "../../types/map";
 
 export function escapeHtml(value = ""): string {
   return String(value)

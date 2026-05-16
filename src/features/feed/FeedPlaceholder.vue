@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { GlassPanel, IdentityBadge, LianButton, LocationChip, TagChip, TrustBadge, TypeChip } from "../ui";
+import { GlassPanel, IdentityBadge, LianButton, LocationChip, TagChip, TrustBadge, TypeChip } from "../../ui";
 
 const cards = [
   {

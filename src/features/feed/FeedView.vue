@@ -1,17 +1,17 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
-import { DEFAULT_TABS, fetchFeed } from "../api/feed";
-import { prefersReducedMotion } from "../motion/useReducedMotion";
-import type { PageChromeSpec } from "../shell/page-model";
-import type { FeedItem, FeedItemId, FeedTab } from "../types/feed";
-import { InlineError } from "../ui";
-import PostDetailPanel from "./detail/PostDetailPanel.vue";
-import FeedList from "./feed/FeedList.vue";
-import FeedLoadMore from "./feed/FeedLoadMore.vue";
-import { normalizeFeedItemId } from "./feed/feedItemId";
-import { useFeedDetail, type CardOpenPayload, type CardTransitionSnapshot } from "./feed/useFeedDetail";
-import { READ_HISTORY_KEY } from "../platform/browser-storage";
-import { LOADING_FEED, EMPTY_FEED, ERROR_LOAD_GENERIC, FEED_VIEW_TITLE, FEED_FILTER_LABEL, FEED_EMPTY_HINT, CHANNEL_RELOAD } from "../config/brand";
+import { DEFAULT_TABS, fetchFeed } from "../../api/feed";
+import { prefersReducedMotion } from "../../composables/useReducedMotion";
+import type { PageChromeSpec } from "../../shell/page-model";
+import type { FeedItem, FeedItemId, FeedTab } from "../../types/feed";
+import { InlineError } from "../../ui";
+import PostDetailPanel from "../detail/PostDetailPanel.vue";
+import FeedList from "./FeedList.vue";
+import FeedLoadMore from "./FeedLoadMore.vue";
+import { normalizeFeedItemId } from "./feedItemId";
+import { useFeedDetail, type CardOpenPayload, type CardTransitionSnapshot } from "./useFeedDetail";
+import { READ_HISTORY_KEY } from "../../platform/browser-storage";
+import { LOADING_FEED, EMPTY_FEED, ERROR_LOAD_GENERIC, FEED_VIEW_TITLE, FEED_FILTER_LABEL, FEED_EMPTY_HINT, CHANNEL_RELOAD } from "../../config/brand";
 
 const PAGE_SIZE = 12;
 const SWIPE_THRESHOLD = 96;

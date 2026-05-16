@@ -11,9 +11,9 @@ function read(rel) {
 }
 
 const apiSource = read("src/api/messages.ts");
-const viewSource = read("src/views/MessagesView.vue");
-const threadSource = read("src/views/messages/ChannelThread.vue");
-const composerSource = read("src/views/messages/ChannelComposer.vue");
+const viewSource = read("src/features/messages/MessagesView.vue");
+const threadSource = read("src/features/messages/ChannelThread.vue");
+const composerSource = read("src/features/messages/ChannelComposer.vue");
 
 // --- buildPendingChannelMessage contract ---
 
