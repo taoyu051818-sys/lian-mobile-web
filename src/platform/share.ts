@@ -48,7 +48,14 @@ export async function sharePost(input: SharePostInput): Promise<SharePostResult>
   if (!shareUrl) return { outcome: "failed", message: SHARE_ERROR_NO_URL };
 
   const nav = typeof navigator !== "undefined" ? navigator : null;
-  const shareData: ShareData = { title: input.title, text: input.text ?? input.title, url: shareUrl };
+
+  const shareText = input.text ?? input.title;
+
+  // WeChat WebView opens navigator.share() but strips the `url` field when
+  // forwarding to a conversation — the recipient sees no link.  Embedding
+  // the URL in the `text` body works around this: WeChat preserves the full
+  // text content even when it discards the dedicated URL field.
+  const shareData: ShareData = { title: input.title, text: `${shareText}\n${shareUrl}`, url: shareUrl };
 
   if (nav && "share" in nav && typeof nav.share === "function") {
     try {
