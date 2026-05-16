@@ -1,78 +1,94 @@
 <script setup lang="ts">
-import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
-import { fetchAuthMe } from "../../api/profile";
-import { buildPendingChannelMessage, fetchChannelMessages, fetchNotifications, markChannelMessagesRead, mergeChannelMessagesChronologically, sendChannelMessage } from "../../api/messages";
+import { computed, onMounted, ref, watch } from "vue";
 import { usePostDetail } from "../detail/usePostDetail";
 import { useVisualViewport } from "../../composables/useVisualViewport";
-import { actorAvatarText, actorDisplayName } from "../../domain/actor";
-import type { FeedItemId } from "../../types/feed";
-import type { ChannelMessage, ChannelMessageActor, MessageTabKey, NotificationItem } from "../../types/messages";
-import type { ProfileUser } from "../../types/profile";
+import type { MessageTabKey } from "../../types/messages";
 import type { PageChromeSpec } from "../../shell/page-model";
 import PostDetailPanel from "../detail/PostDetailPanel.vue";
 import { ChannelComposer, ChannelThread, NotificationList } from "./";
 import {
-  CHANNEL_DEFAULT_TAG, DEFAULT_USER_LABEL, ERROR_LOAD_CHANNEL, ERROR_LOAD_NOTIFICATION,
-  ERROR_SEND_MESSAGE, MESSAGE_EMPTY_CONTENT, MESSAGE_TAB_CHANNEL, MESSAGE_TAB_NOTIFICATION,
-  MESSAGE_SECTION_LABEL, MESSAGE_TAB_LABEL, MESSAGE_IDENTITY_SIGNAL_PREFIX,
-  MESSAGE_NO_IDENTITY_SIGNAL, POST_DETAIL_DIALOG_LABEL, USER_AVATAR_FALLBACK,
-  NOTIFICATION_REPLY_LABEL, NOTIFICATION_ACTOR_LABEL,
+  MESSAGE_SECTION_LABEL,
+  MESSAGE_TAB_CHANNEL,
+  MESSAGE_TAB_LABEL,
+  MESSAGE_TAB_NOTIFICATION,
+  POST_DETAIL_DIALOG_LABEL,
 } from "../../config/brand";
-import { extractErrorMessage } from "../../utils/extractErrorMessage";
+import { useChannelMessages } from "./useChannelMessages";
+import { useMessageComposer } from "./useMessageComposer";
+import { useNotifications } from "./useNotifications";
 
 const emit = defineEmits<{
   chrome: [spec: PageChromeSpec];
 }>();
 
 const activeTab = ref<MessageTabKey>("channel");
-const channelItems = ref<ChannelMessage[]>([]);
-const notificationItems = ref<NotificationItem[]>([]);
-const channelLoading = ref(false);
-const notificationLoading = ref(false);
-const channelError = ref("");
-const notificationError = ref("");
-const channelHasMore = ref(false);
-const channelOffset = ref(0);
-const composerContent = ref("");
-const composerIdentityTag = ref("");
-const currentUser = ref<ProfileUser | null>(null);
-const identityTags = ref<string[]>([]);
-const sending = ref(false);
-const sendError = ref("");
-const isNearBottom = ref(true);
-const {
-  selectedPostId, selectedPost, detailLoading, detailError, detailOpen,
-  openDetail: openNotification, closeDetail, retryDetail,
-} = usePostDetail();
-
-useVisualViewport();
-
 const tabs: Array<{ key: MessageTabKey; label: string }> = [
   { key: "channel", label: MESSAGE_TAB_CHANNEL },
   { key: "notifications", label: MESSAGE_TAB_NOTIFICATION },
 ];
 
-const activeAlias = computed(() => {
-  const user = currentUser.value;
-  if (!user?.aliases?.length) return null;
-  return user.aliases.find((alias) => alias.id === user.activeAliasId) || user.aliases[0] || null;
+const {
+  composerContent,
+  composerIdentityTag,
+  currentUser,
+  identityTags,
+  sending,
+  sendError,
+  composerActorName,
+  composerAvatarText,
+  composerSignalMeta,
+  loadCurrentUser,
+} = useMessageComposer();
+
+const {
+  channelItems,
+  channelLoading,
+  channelError,
+  channelHasMore,
+  loadChannel,
+  retryMessage,
+  submitMessage,
+} = useChannelMessages({
+  currentUser,
+  composerContent,
+  composerIdentityTag,
+  sending,
+  sendError,
 });
-const composerActorName = computed(() => activeAlias.value?.name || currentUser.value?.username || DEFAULT_USER_LABEL);
-const composerAvatarText = computed(() => composerActorName.value.slice(0, 2) || USER_AVATAR_FALLBACK);
-const composerSignalMeta = computed(() => composerIdentityTag.value ? `${MESSAGE_IDENTITY_SIGNAL_PREFIX}${composerIdentityTag.value}` : MESSAGE_NO_IDENTITY_SIGNAL);
+
+const {
+  notificationItems,
+  notificationLoading,
+  notificationError,
+  loadNotifications,
+} = useNotifications();
+
+const {
+  selectedPost,
+  detailLoading,
+  detailError,
+  detailOpen,
+  openDetail: openNotification,
+  closeDetail,
+  retryDetail,
+} = usePostDetail();
+
+useVisualViewport();
 
 const pageChrome = computed<PageChromeSpec>(() => ({
   top: {
     tabs: {
       kind: "tabs",
-      items: tabs.map((t) => ({ id: t.key, label: t.label })),
+      items: tabs.map((tab) => ({ id: tab.key, label: tab.label })),
       activeKey: activeTab.value,
       ariaLabel: MESSAGE_TAB_LABEL,
     },
-    identity: currentUser.value ? {
-      avatarText: composerAvatarText.value,
-      name: composerActorName.value,
-    } : null,
+    identity: currentUser.value
+      ? {
+          avatarText: composerAvatarText.value,
+          name: composerActorName.value,
+        }
+      : null,
     onTabSelect: (tabId: string) => { void switchTab(tabId as MessageTabKey); },
   },
   bottom: {
@@ -82,239 +98,15 @@ const pageChrome = computed<PageChromeSpec>(() => ({
 
 watch(pageChrome, (spec) => emit("chrome", spec), { deep: true });
 
-function messageText(item: ChannelMessage) {
-  return item.plainText || item.content || MESSAGE_EMPTY_CONTENT;
-}
-
-function messageActor(item: ChannelMessage): ChannelMessageActor {
-  return item.actor || { id: "" };
-}
-
-function messageAuthor(item: ChannelMessage) {
-  return actorDisplayName(messageActor(item));
-}
-
-function messageAvatarText(item: ChannelMessage) {
-  return actorAvatarText(messageActor(item), messageAuthor(item));
-}
-
-function messageMeta(item: ChannelMessage) {
-  const actor = messageActor(item);
-  return actor.identityTag || CHANNEL_DEFAULT_TAG;
-}
-
-function notificationActor(item: NotificationItem) {
-  return actorDisplayName(item.actor, isReplyNotification(item) ? NOTIFICATION_REPLY_LABEL : NOTIFICATION_ACTOR_LABEL);
-}
-
-function isReplyNotification(item: NotificationItem) {
-  return ["new-reply", "reply", "new-post", "post-reply"].includes(String(item.type || ""));
-}
-
-const SCROLL_BOTTOM_THRESHOLD = 120;
-const REPLACE_RETRY_LIMIT = 2;
-const REPLACE_RETRY_DELAY_MS = 1200;
-
-function checkNearBottom() {
-  const doc = document.documentElement;
-  isNearBottom.value = doc.scrollHeight - window.scrollY - window.innerHeight < SCROLL_BOTTOM_THRESHOLD;
-}
-
-async function scrollToBottom() {
-  await nextTick();
-  window.scrollTo(0, document.documentElement.scrollHeight);
-}
-
-function resolvePendingState(pendingId: string, deliveryState: "sent" | "failed") {
-  const idx = channelItems.value.findIndex((item) => String(item.id) === pendingId);
-  if (idx === -1) return;
-  const updated = [...channelItems.value];
-  updated[idx] = { ...updated[idx], deliveryState };
-  channelItems.value = updated;
-}
-
-async function loadCurrentUser() {
-  try {
-    const user = await fetchAuthMe();
-    currentUser.value = user || null;
-    identityTags.value = user?.identityTags?.length ? user.identityTags : [];
-    composerIdentityTag.value = "";
-  } catch {
-    currentUser.value = null;
-    identityTags.value = [];
-    composerIdentityTag.value = "";
-  }
-}
-
-async function loadChannel(reset = true) {
-  if (channelLoading.value) return;
-  channelLoading.value = true;
-  channelError.value = "";
-
-  let prevScrollHeight = 0;
-  let prevScrollTop = 0;
-  if (!reset) {
-    prevScrollHeight = document.documentElement.scrollHeight;
-    prevScrollTop = window.scrollY;
-  }
-
-  if (reset) {
-    channelItems.value = [];
-    channelOffset.value = 0;
-  }
-
-  try {
-    const response = await fetchChannelMessages(reset ? 0 : channelOffset.value, 30);
-    const nextItems = response.items || [];
-    channelItems.value = reset
-      ? nextItems
-      : mergeChannelMessagesChronologically(channelItems.value, nextItems);
-    channelHasMore.value = Boolean(response.hasMore);
-    channelOffset.value = response.nextOffset ?? channelOffset.value;
-
-    if (!reset) {
-      await nextTick();
-      const delta = document.documentElement.scrollHeight - prevScrollHeight;
-      if (delta > 0) {
-        window.scrollTo(0, prevScrollTop + delta);
-      }
-    }
-
-    if (reset && channelItems.value.length) {
-      const ids = channelItems.value.map((item) => item.id);
-      markChannelMessagesRead(ids).catch(() => {});
-      await scrollToBottom();
-    }
-    checkNearBottom();
-  } catch (error) {
-    channelError.value = extractErrorMessage(error, ERROR_LOAD_CHANNEL);
-  } finally {
-    channelLoading.value = false;
-  }
-}
-
-async function replacePendingWithLatest(pendingId: string, retriesLeft = REPLACE_RETRY_LIMIT) {
-  try {
-    const response = await fetchChannelMessages(0, 30);
-    const latestItems = response.items || [];
-    const pendingItem = channelItems.value.find((item) => String(item.id) === pendingId);
-    const pendingContent = pendingItem?.content || "";
-
-    const confirmedFound = latestItems.some(
-      (serverItem) => serverItem.content === pendingContent && serverItem.isSelf && !String(serverItem.id).startsWith("pending-"),
-    );
-
-    if (confirmedFound) {
-      channelItems.value = channelItems.value
-        .filter((item) => String(item.id) !== pendingId)
-        .concat(latestItems.filter((serverItem) => {
-          const existingIds = new Set(channelItems.value.map((i) => String(i.id)));
-          if (existingIds.has(String(serverItem.id))) return false;
-          if (serverItem.content === pendingContent && !serverItem.isSelf) return false;
-          return true;
-        }));
-
-      channelItems.value = channelItems.value.slice().sort((a, b) => {
-        const aPending = String(a.id).startsWith("pending-");
-        const bPending = String(b.id).startsWith("pending-");
-        if (aPending !== bPending) return aPending ? 1 : -1;
-        const ta = a.timestampISO || a.time || "";
-        const tb = b.timestampISO || b.time || "";
-        return ta < tb ? -1 : ta > tb ? 1 : 0;
-      });
-    } else if (retriesLeft > 0) {
-      await new Promise((r) => setTimeout(r, REPLACE_RETRY_DELAY_MS));
-      await replacePendingWithLatest(pendingId, retriesLeft - 1);
-      return;
-    } else {
-      resolvePendingState(pendingId, "sent");
-    }
-
-    if (isNearBottom.value) await scrollToBottom();
-  } catch {
-    resolvePendingState(pendingId, "failed");
-  }
-}
-
-async function loadNotifications() {
-  if (notificationLoading.value) return;
-  notificationLoading.value = true;
-  notificationError.value = "";
-
-  try {
-    const response = await fetchNotifications();
-    notificationItems.value = response.items || [];
-  } catch (error) {
-    notificationError.value = extractErrorMessage(error, ERROR_LOAD_NOTIFICATION);
-  } finally {
-    notificationLoading.value = false;
-  }
-}
-
 async function switchTab(tab: MessageTabKey) {
   activeTab.value = tab;
   if (tab === "channel") {
     if (!channelItems.value.length) await loadChannel(true);
-  } else {
-    if (!notificationItems.value.length) await loadNotifications();
-  }
-}
-
-async function submitMessage() {
-  const content = composerContent.value.trim();
-  if (!content || sending.value) return;
-
-  sending.value = true;
-  sendError.value = "";
-
-  const pending = buildPendingChannelMessage(content, composerIdentityTag.value || undefined, currentUser.value);
-  channelItems.value = [...channelItems.value, pending];
-  composerContent.value = "";
-  await scrollToBottom();
-
-  try {
-    await sendChannelMessage({ content, identityTag: composerIdentityTag.value });
-    await replacePendingWithLatest(String(pending.id));
-  } catch (error) {
-    const idx = channelItems.value.findIndex((item) => String(item.id) === String(pending.id));
-    if (idx !== -1) {
-      const updated = [...channelItems.value];
-      updated[idx] = { ...updated[idx], deliveryState: "failed" };
-      channelItems.value = updated;
-    }
-    sendError.value = extractErrorMessage(error, ERROR_SEND_MESSAGE);
-  } finally {
-    sending.value = false;
-  }
-}
-
-async function retryMessage(pendingId: string) {
-  const pending = channelItems.value.find((item) => String(item.id) === pendingId);
-  if (!pending || sending.value) return;
-
-  sending.value = true;
-  sendError.value = "";
-
-  const idx = channelItems.value.findIndex((item) => String(item.id) === pendingId);
-  if (idx !== -1) {
-    const updated = [...channelItems.value];
-    updated[idx] = { ...updated[idx], deliveryState: "sending" };
-    channelItems.value = updated;
+    return;
   }
 
-  try {
-    await sendChannelMessage({ content: pending.content || "", identityTag: composerIdentityTag.value || "" });
-    await replacePendingWithLatest(pendingId);
-  } catch (error) {
-    const failIdx = channelItems.value.findIndex((item) => String(item.id) === pendingId);
-    if (failIdx !== -1) {
-      const updated = [...channelItems.value];
-      updated[failIdx] = { ...updated[failIdx], deliveryState: "failed" };
-      channelItems.value = updated;
-    }
-    sendError.value = extractErrorMessage(error, ERROR_SEND_MESSAGE);
-  } finally {
-    sending.value = false;
+  if (!notificationItems.value.length) {
+    await loadNotifications();
   }
 }
 
@@ -322,11 +114,6 @@ onMounted(async () => {
   emit("chrome", pageChrome.value);
   await loadCurrentUser();
   await loadChannel(true);
-  window.addEventListener("scroll", checkNearBottom, { passive: true });
-});
-
-onBeforeUnmount(() => {
-  window.removeEventListener("scroll", checkNearBottom);
 });
 </script>
 
@@ -368,7 +155,13 @@ onBeforeUnmount(() => {
       @submit="submitMessage"
     />
 
-    <div v-if="detailOpen" class="messages-view__detail-overlay" role="dialog" aria-modal="true" :aria-label="POST_DETAIL_DIALOG_LABEL">
+    <div
+      v-if="detailOpen"
+      class="messages-view__detail-overlay"
+      role="dialog"
+      aria-modal="true"
+      :aria-label="POST_DETAIL_DIALOG_LABEL"
+    >
       <PostDetailPanel
         :post="selectedPost"
         :loading="detailLoading"
