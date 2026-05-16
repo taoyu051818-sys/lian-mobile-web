@@ -45,12 +45,12 @@ describe("PostDetailPanel keyboard-inset activation (#130)", () => {
     expect(panelSource).toMatch(/useVisualViewport\(\s*\)/);
   });
 
-  it("calls useVisualViewport before reply state setup", () => {
+  it("calls useVisualViewport before reply composable setup", () => {
     const viewportPos = panelSource.indexOf("useVisualViewport()");
-    const replyStatePos = panelSource.indexOf("const replyBusy");
+    const replyComposablePos = panelSource.indexOf("usePostReplyComposer(");
     expect(viewportPos).toBeGreaterThan(-1);
-    expect(replyStatePos).toBeGreaterThan(-1);
-    expect(viewportPos).toBeLessThan(replyStatePos);
+    expect(replyComposablePos).toBeGreaterThan(-1);
+    expect(viewportPos).toBeLessThan(replyComposablePos);
   });
 });
 

@@ -55,12 +55,18 @@ describe("report flow helper", () => {
 
 describe("report flow detail wiring", () => {
   const panelSource = readRepoFile("../../src/features/detail/PostDetailPanel.vue");
+  const reportComposableSource = readRepoFile("../../src/features/detail/usePostReport.ts");
   const contentSource = readRepoFile("../../src/features/detail/PostDetailContent.vue");
 
   it("keeps report helper logic in a dedicated detail helper module", () => {
-    expect(panelSource).toContain("from \"./reportFlow\"");
-    expect(panelSource).toContain("buildReportPayload(reportCategory.value, reportReason.value)");
-    expect(panelSource).toContain("getReportSubmissionMessage(error)");
+    expect(reportComposableSource).toContain("from \"./reportFlow\"");
+    expect(reportComposableSource).toContain("buildReportPayload(reportCategory.value, reportReason.value)");
+    expect(reportComposableSource).toContain("getReportSubmissionMessage(error)");
+  });
+
+  it("wires report composable through PostDetailPanel", () => {
+    expect(panelSource).toContain("from \"./usePostReport\"");
+    expect(panelSource).toContain("usePostReport(");
   });
 
   it("adds optional free-text context and a reversible local hide path", () => {
