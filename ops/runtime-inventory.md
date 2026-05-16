@@ -112,7 +112,7 @@ ESLint config (`eslint.config.js`) uses flat config with:
 
 Node.js globals are provided for `scripts/**/*.js` and `tests/**/*.mjs` files.
 
-Phase 1 baseline: format:check and lint are NOT yet wired into `npm run check`. They run as standalone scripts until the first lint debt is cleared.
+Phase 1 baseline: format:check and lint are now wired into `npm run check` (PR #548, 2026-05-16). ESLint runs with 0 errors; remaining warnings are `no-console` and `no-unused-vars`.
 
 ## Operational rule
 
