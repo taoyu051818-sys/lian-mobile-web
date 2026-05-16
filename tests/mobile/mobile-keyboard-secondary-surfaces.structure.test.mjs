@@ -11,7 +11,7 @@ function read(relativePath) {
 }
 
 test("PublishView opts into the shared keyboard-aware surface contract", () => {
-  const src = read("src/views/PublishView.vue");
+  const src = read("src/features/publish/PublishView.vue");
   assert.match(src, /publish-view keyboard-aware-surface/);
   assert.match(src, /publish-view__form keyboard-aware-surface/);
   assert.match(src, /padding-bottom: calc\(var\(--space-8\) \+ var\(--keyboard-inset-bottom\)\)/);
@@ -19,7 +19,7 @@ test("PublishView opts into the shared keyboard-aware surface contract", () => {
 });
 
 test("AuthPanel opts into the shared keyboard-aware surface contract", () => {
-  const src = read("src/views/auth/AuthPanel.vue");
+  const src = read("src/features/auth/AuthPanel.vue");
   assert.match(src, /auth-panel keyboard-aware-surface/);
   assert.match(src, /auth-panel__form keyboard-aware-surface/);
   assert.match(src, /padding-bottom: calc\(var\(--space-3\) \+ min\(var\(--keyboard-inset-bottom\), 240px\)\)/);
@@ -27,7 +27,7 @@ test("AuthPanel opts into the shared keyboard-aware surface contract", () => {
 });
 
 test("ProfileEditorPanel opts into the shared keyboard-aware surface contract", () => {
-  const src = read("src/views/profile/ProfileEditorPanel.vue");
+  const src = read("src/features/profile/ProfileEditorPanel.vue");
   assert.match(src, /profile-editor keyboard-aware-surface/);
   assert.match(src, /padding-bottom: calc\(var\(--space-3\) \+ min\(var\(--keyboard-inset-bottom\), 240px\)\)/);
   assert.match(src, /scroll-margin-bottom: calc\(var\(--space-6\) \+ var\(--keyboard-inset-bottom\)\)/);

@@ -6,7 +6,7 @@ import {
   getReportReasonPlaceholder,
   getReportSubmissionMessage,
   shouldShowReportReasonField,
-} from "../../src/views/detail/reportFlow";
+} from "../../src/features/detail/reportFlow";
 
 function readRepoFile(relativePath: string) {
   return readFileSync(new URL(relativePath, import.meta.url), "utf8").replace(/\r\n/g, "\n");
@@ -54,8 +54,8 @@ describe("report flow helper", () => {
 });
 
 describe("report flow detail wiring", () => {
-  const panelSource = readRepoFile("../../src/views/detail/PostDetailPanel.vue");
-  const contentSource = readRepoFile("../../src/views/detail/PostDetailContent.vue");
+  const panelSource = readRepoFile("../../src/features/detail/PostDetailPanel.vue");
+  const contentSource = readRepoFile("../../src/features/detail/PostDetailContent.vue");
 
   it("keeps report helper logic in a dedicated detail helper module", () => {
     expect(panelSource).toContain("from \"./reportFlow\"");

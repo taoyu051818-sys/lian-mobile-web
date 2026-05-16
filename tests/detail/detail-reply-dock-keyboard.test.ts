@@ -6,7 +6,7 @@ function readRepoFile(relativePath: string) {
 }
 
 describe("PostReplyDock keyboard-inset wiring (#130)", () => {
-  const dockSource = readRepoFile("../../src/views/detail/PostReplyDock.vue");
+  const dockSource = readRepoFile("../../src/features/detail/PostReplyDock.vue");
 
   it("consumes --keyboard-inset-bottom in the bottom offset", () => {
     expect(dockSource).toContain("--keyboard-inset-bottom");
@@ -35,7 +35,7 @@ describe("PostReplyDock keyboard-inset wiring (#130)", () => {
 });
 
 describe("PostDetailPanel keyboard-inset activation (#130)", () => {
-  const panelSource = readRepoFile("../../src/views/detail/PostDetailPanel.vue");
+  const panelSource = readRepoFile("../../src/features/detail/PostDetailPanel.vue");
 
   it("imports useVisualViewport from the composables directory", () => {
     expect(panelSource).toContain("from \"../../composables/useVisualViewport\"");

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
-import { fetchMapV2Items } from "../api/map";
-import type { PageChromeSpec } from "../shell/page-model";
+import { fetchMapV2Items } from "../../api/map";
+import type { PageChromeSpec } from "../../shell/page-model";
 import {
   DEFAULT_USER_LABEL, ERROR_PUBLISH_IMAGE, ERROR_PUBLISH_LOCATION, ERROR_PUBLISH_GENERIC,
   PUBLISH_IDENTITY_META, PUBLISH_IDENTITY_UNCONFIRMED, PUBLISH_OPTIONAL,
@@ -10,8 +10,8 @@ import {
   PUBLISH_IMAGE_MAX, PUBLISH_IMAGE_UPLOADING, PUBLISH_IMAGE_READY, PUBLISH_IMAGE_COUNT_SUFFIX,
   PUBLISH_SUCCESS, PUBLISH_SUCCESS_BOUND, PUBLISH_SECTION_LABEL, PUBLISH_VIEW_POST,
   USER_AVATAR_FALLBACK, CHANNEL_RELOAD,
-} from "../config/brand";
-import { extractErrorMessage } from "../utils/extractErrorMessage";
+} from "../../config/brand";
+import { extractErrorMessage } from "../../utils/extractErrorMessage";
 import {
   buildPublishPayload,
   createMapV2LocationDraft,
@@ -21,19 +21,19 @@ import {
   publishPost,
   uploadPublishImage,
   validatePublishImageSelection,
-} from "../api/publish";
+} from "../../api/publish";
 import {
   validatePublishForm,
-} from "../domain/validation/forms";
-import { fetchAuthMe } from "../api/profile";
-import { GlassPanel, InlineError } from "../ui";
-import type { MapLocation } from "../types/map";
-import type { PlaceRef } from "../types/place";
-import type { PublishLocationDraft, PublishVisibility } from "../types/publish";
-import PublishActionBar from "./publish/PublishActionBar.vue";
-import PublishComposer from "./publish/PublishComposer.vue";
-import PublishLocationControls from "./publish/PublishLocationControls.vue";
-import PublishMetaControls from "./publish/PublishMetaControls.vue";
+} from "../../domain/validation/forms";
+import { fetchAuthMe } from "../../api/profile";
+import { GlassPanel, InlineError } from "../../ui";
+import type { MapLocation } from "../../types/map";
+import type { PlaceRef } from "../../types/place";
+import type { PublishLocationDraft, PublishVisibility } from "../../types/publish";
+import PublishActionBar from "./PublishActionBar.vue";
+import PublishComposer from "./PublishComposer.vue";
+import PublishLocationControls from "./PublishLocationControls.vue";
+import PublishMetaControls from "./PublishMetaControls.vue";
 
 const emit = defineEmits<{
   chrome: [spec: PageChromeSpec];

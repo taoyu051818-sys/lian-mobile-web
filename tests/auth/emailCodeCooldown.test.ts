@@ -4,7 +4,7 @@ import {
   AUTH_EMAIL_CODE_DEFAULT_COOLDOWN_SECONDS,
   formatEmailCodeHint,
   formatEmailCodeRateLimitMessage,
-} from "../../src/views/auth/useAuthForm";
+} from "../../src/features/auth/useAuthForm";
 
 function readRepoFile(relativePath: string) {
   return readFileSync(new URL(relativePath, import.meta.url), "utf8").replace(/\r\n/g, "\n");
@@ -28,7 +28,7 @@ describe("auth email-code cooldown copy", () => {
 });
 
 describe("AuthPanel cooldown wiring", () => {
-  const source = readRepoFile("../../src/views/auth/AuthPanel.vue");
+  const source = readRepoFile("../../src/features/auth/AuthPanel.vue");
 
   it("uses the cooldown-aware resend label", () => {
     expect(source).toContain("emailCodeButtonLabel");

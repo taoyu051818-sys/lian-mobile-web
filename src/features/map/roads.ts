@@ -23,7 +23,7 @@
  * field will then only ever be `"official"` or `"empty"`.
  */
 
-import type { MapLayerPoint, MapRoad, MapRoadNetworkPreview } from "../types/map";
+import type { MapLayerPoint, MapRoad, MapRoadNetworkPreview } from "../../types/map";
 
 const PREVIEW_PROJECTION_ORIGIN = { lat: 18.393453, lng: 110.015821 };
 const METERS_PER_DEGREE_LAT = 111320;

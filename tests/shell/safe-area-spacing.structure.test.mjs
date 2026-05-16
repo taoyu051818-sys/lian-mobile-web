@@ -84,17 +84,17 @@ test("primitives.css toast host offsets by safe-area-inset-top", () => {
 // --- Messages view: safe-area spacing ---
 
 test("MessagesView applies safe-area top padding for floating tabs", () => {
-  const src = read("src/views/MessagesView.vue");
+  const src = read("src/features/messages/MessagesView.vue");
   assert.match(src, /env\(safe-area-inset-top\)/);
 });
 
 test("MessagesView applies safe-area bottom padding", () => {
-  const src = read("src/views/MessagesView.vue");
+  const src = read("src/features/messages/MessagesView.vue");
   assert.match(src, /env\(safe-area-inset-bottom\)/);
 });
 
 test("MessagesView positions composer with floating-bar-bottom-offset (includes safe-area)", () => {
-  const src = read("src/views/MessagesView.vue");
+  const src = read("src/features/messages/MessagesView.vue");
   assert.match(src, /--floating-bar-bottom-offset/);
   assert.match(src, /--keyboard-inset-bottom/);
 });
@@ -102,13 +102,13 @@ test("MessagesView positions composer with floating-bar-bottom-offset (includes 
 // --- ChannelThread: clears fixed composer with safe-area-aware padding ---
 
 test("ChannelThread bottom padding accounts for safe-area-inset-bottom", () => {
-  const src = read("src/views/messages/ChannelThread.vue");
+  const src = read("src/features/messages/ChannelThread.vue");
   assert.match(src, /env\(safe-area-inset-bottom\)/);
 });
 
 // --- Map view: post detail safe-area clearance ---
 
 test("MapLeafletView post-detail panel uses safe-area-inset-bottom for clearance", () => {
-  const src = read("src/views/MapLeafletView.vue");
+  const src = read("src/features/map/MapLeafletView.vue");
   assert.match(src, /env\(safe-area-inset-bottom\)/);
 });

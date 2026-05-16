@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { GlassPanel, IdentityBadge, LianButton, TrustBadge, TypeChip } from "../ui";
+import { GlassPanel, IdentityBadge, LianButton, TrustBadge, TypeChip } from "../../ui";
 
 const lanes = [
   { key: "channel", label: "频道", description: "校园频道入口已由 Vue 承载，后续接入真实列表。", status: "Vue" },

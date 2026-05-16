@@ -1,8 +1,8 @@
 import { computed, ref } from "vue";
-import { fetchPostDetail } from "../api/posts";
-import type { FeedItemId } from "../types/feed";
-import type { PostDetail } from "../types/post";
-import { ERROR_LOAD_DETAIL } from "../config/brand";
+import { fetchPostDetail } from "../../api/posts";
+import type { FeedItemId } from "../../types/feed";
+import type { PostDetail } from "../../types/post";
+import { ERROR_LOAD_DETAIL } from "../../config/brand";
 
 export function usePostDetail() {
   const selectedPostId = ref<FeedItemId | null>(null);

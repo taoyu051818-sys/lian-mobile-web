@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { GlassPanel, IdentityBadge, LianButton, TagChip, TrustBadge } from "../ui";
+import { GlassPanel, IdentityBadge, LianButton, TagChip, TrustBadge } from "../../ui";
 
 interface ProfileMetric {
   label: string;

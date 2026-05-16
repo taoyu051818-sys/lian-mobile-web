@@ -9,8 +9,8 @@ const typesMessages = fs.readFileSync(path.join(repoRoot, "src/types/messages.ts
 const typesFeed = fs.readFileSync(path.join(repoRoot, "src/types/feed.ts"), "utf8");
 const typesProfile = fs.readFileSync(path.join(repoRoot, "src/types/profile.ts"), "utf8");
 const apiMessages = fs.readFileSync(path.join(repoRoot, "src/api/messages.ts"), "utf8");
-const viewSource = fs.readFileSync(path.join(repoRoot, "src/views/MessagesView.vue"), "utf8");
-const channelThreadSource = fs.readFileSync(path.join(repoRoot, "src/views/messages/ChannelThread.vue"), "utf8");
+const viewSource = fs.readFileSync(path.join(repoRoot, "src/features/messages/MessagesView.vue"), "utf8");
+const channelThreadSource = fs.readFileSync(path.join(repoRoot, "src/features/messages/ChannelThread.vue"), "utf8");
 
 // --- DisplayActor.id ---
 

@@ -5,7 +5,7 @@ import {
   toggleSelectedInterest,
   validateAuthForm,
   type AuthFormFields,
-} from "../../src/views/auth/useAuthForm";
+} from "../../src/features/auth/useAuthForm";
 
 function loginFields(overrides: Partial<AuthFormFields> = {}): AuthFormFields {
   return {

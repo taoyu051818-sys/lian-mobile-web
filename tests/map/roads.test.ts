@@ -6,7 +6,7 @@ import {
   previewPoint,
   resolveRoads,
   validateOfficialRoads,
-} from "../../src/map/roads.ts";
+} from "../../src/features/map/roads.ts";
 import type { MapRoad, MapRoadNetworkPreview } from "../../src/types/map.ts";
 
 // --- previewPoint ---

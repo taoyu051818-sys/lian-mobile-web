@@ -7,7 +7,7 @@ import { fileURLToPath } from "node:url";
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
 const feedTypeSource = fs.readFileSync(path.join(repoRoot, "src/types/feed.ts"), "utf8");
 const feedApiSource = fs.readFileSync(path.join(repoRoot, "src/api/feed.ts"), "utf8");
-const feedItemCardSource = fs.readFileSync(path.join(repoRoot, "src/views/feed/FeedItemCard.vue"), "utf8");
+const feedItemCardSource = fs.readFileSync(path.join(repoRoot, "src/features/feed/FeedItemCard.vue"), "utf8");
 
 test("Feed presentationIntent: types the normalized card template fields", () => {
   assert.match(feedTypeSource, /export type FeedPresentationIntent = "image" \| "text" \| "activity" \| "place" \| "merchant" \| "help";/);

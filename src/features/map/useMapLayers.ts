@@ -1,8 +1,8 @@
 import { type ComputedRef, type Ref, computed, watch } from "vue";
 import { MAP_CONTENT_FALLBACK } from "../../config/brand";
-import { resolveRoads } from "../../map/roads";
-import { renderRoads } from "../../map/useMapRoads";
-import { locationIcon, postIcon, assetIcon } from "../../map/mapIcons";
+import { resolveRoads } from "./roads";
+import { renderRoads } from "./useMapRoads";
+import { locationIcon, postIcon, assetIcon } from "./mapIcons";
 import {
   type LeafletLayerGroupLike,
   type LeafletMapLike,

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { GlassPanel, LianButton, LocationChip, TrustBadge, TypeChip } from "../ui";
+import { GlassPanel, LianButton, LocationChip, TrustBadge, TypeChip } from "../../ui";
 
 const places = [
   {

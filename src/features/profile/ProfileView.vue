@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from "vue";
-import { LianApiError } from "../api/http";
-import { activateProfileAlias, deactivateProfileAlias, fetchAuthMe, fetchProfileTab, logoutAuth } from "../api/profile";
+import { LianApiError } from "../../api/http";
+import { activateProfileAlias, deactivateProfileAlias, fetchAuthMe, fetchProfileTab, logoutAuth } from "../../api/profile";
 import {
   GUEST_DISPLAY_NAME, LOADING_PROFILE, LOADING_LIST, EMPTY_HISTORY, EMPTY_SAVED, EMPTY_LIKED,
   ERROR_LOAD_GENERIC, ERROR_LOGOUT, PROFILE_SECTION_LABEL, PROFILE_TAB_HISTORY, PROFILE_TAB_SAVED,
@@ -11,20 +11,20 @@ import {
   PROFILE_LOAD_ERROR_PREFIX, PROFILE_LIST_ERROR_PREFIX, PROFILE_RELOAD,
   POST_DETAIL_DIALOG_LABEL, USER_AVATAR_FALLBACK, CHANNEL_RELOAD,
   PROFILE_COLLAPSE_EDITOR, PROFILE_EDIT, PROFILE_LOGOUT,
-} from "../config/brand";
-import { extractErrorMessage } from "../utils/extractErrorMessage";
-import { usePostDetail } from "../composables/usePostDetail";
-import { getRecentReadHistoryIds } from "../platform/browser-storage";
-import { InlineError } from "../ui";
-import type { FeedItemId } from "../types/feed";
-import type { PageChromeSpec } from "../shell/page-model";
-import type { ProfileListItem, ProfileTabKey, ProfileUser } from "../types/profile";
-import AuthPanel from "./auth/AuthPanel.vue";
-import PostDetailPanel from "./detail/PostDetailPanel.vue";
-import ProfileEditorPanel from "./profile/ProfileEditorPanel.vue";
-import ProfileHeader from "./profile/ProfileHeader.vue";
-import ProfileTabs from "./profile/ProfileTabs.vue";
-import ProfileCollectionList from "./profile/ProfileCollectionList.vue";
+} from "../../config/brand";
+import { extractErrorMessage } from "../../utils/extractErrorMessage";
+import { usePostDetail } from "../detail/usePostDetail";
+import { getRecentReadHistoryIds } from "../../platform/browser-storage";
+import { InlineError } from "../../ui";
+import type { FeedItemId } from "../../types/feed";
+import type { PageChromeSpec } from "../../shell/page-model";
+import type { ProfileListItem, ProfileTabKey, ProfileUser } from "../../types/profile";
+import AuthPanel from "../auth/AuthPanel.vue";
+import PostDetailPanel from "../detail/PostDetailPanel.vue";
+import ProfileEditorPanel from "./ProfileEditorPanel.vue";
+import ProfileHeader from "./ProfileHeader.vue";
+import ProfileTabs from "./ProfileTabs.vue";
+import ProfileCollectionList from "./ProfileCollectionList.vue";
 
 const emit = defineEmits<{
   chrome: [spec: PageChromeSpec];

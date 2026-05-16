@@ -2,11 +2,11 @@ import { describe, expect, it } from "vitest";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { normalizeFeedItemId } from "../../src/views/feed/feedItemId";
+import { normalizeFeedItemId } from "../../src/features/feed/feedItemId";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
-const feedViewSource = fs.readFileSync(path.join(repoRoot, "src/views/FeedView.vue"), "utf8");
-const feedDetailSource = fs.readFileSync(path.join(repoRoot, "src/views/feed/useFeedDetail.ts"), "utf8");
+const feedViewSource = fs.readFileSync(path.join(repoRoot, "src/features/feed/FeedView.vue"), "utf8");
+const feedDetailSource = fs.readFileSync(path.join(repoRoot, "src/features/feed/useFeedDetail.ts"), "utf8");
 
 describe("Feed read-history string id normalization", () => {
   it("normalizes numeric and string ids through one shared helper", () => {
@@ -18,7 +18,7 @@ describe("Feed read-history string id normalization", () => {
   });
 
   it("reuses the helper in both Feed history and detail guard paths", () => {
-    expect(feedViewSource).toMatch(/import \{ normalizeFeedItemId \} from "\.\/feed\/feedItemId";/);
+    expect(feedViewSource).toMatch(/import \{ normalizeFeedItemId \} from "\.\/feedItemId";/);
     expect(feedViewSource).toMatch(/const normalizedId = normalizeFeedItemId\(id\);/);
     expect(feedViewSource).toMatch(/normalizeFeedItemId\(entry\.tid\) !== normalizedId/);
     expect(feedViewSource).not.toMatch(/Number\(entry\.tid\) !== Number\(id\)/);

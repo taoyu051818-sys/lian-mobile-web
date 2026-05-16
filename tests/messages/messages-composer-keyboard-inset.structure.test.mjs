@@ -10,8 +10,8 @@ function read(rel) {
   return fs.readFileSync(path.join(repoRoot, rel), "utf8");
 }
 
-const viewSource = read("src/views/MessagesView.vue");
-const threadSource = read("src/views/messages/ChannelThread.vue");
+const viewSource = read("src/features/messages/MessagesView.vue");
+const threadSource = read("src/features/messages/ChannelThread.vue");
 
 // --- MessagesView imports and activates useVisualViewport ---
 

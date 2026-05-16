@@ -1,15 +1,15 @@
 <script setup lang="ts">
 import { computed, onActivated, onMounted, watch } from "vue";
-import type { MapLocation, MapPost } from "../types/map";
-import type { PageChromeSpec } from "../shell/page-model";
-import MapCanvas from "./map/MapCanvas.vue";
-import MapPlaceSheet from "./map/MapPlaceSheet.vue";
-import MapStatus from "./map/MapStatus.vue";
-import PostDetailPanel from "./detail/PostDetailPanel.vue";
-import { useMapChrome } from "./map/useMapChrome";
-import { useMapDataCache } from "../composables/useMapDataCache";
-import { useMapSelection } from "./map/useMapSelection";
-import { MAP_ARIA_LABEL } from "../config/brand";
+import type { MapLocation, MapPost } from "../../types/map";
+import type { PageChromeSpec } from "../../shell/page-model";
+import MapCanvas from "./MapCanvas.vue";
+import MapPlaceSheet from "./MapPlaceSheet.vue";
+import MapStatus from "./MapStatus.vue";
+import PostDetailPanel from "../detail/PostDetailPanel.vue";
+import { useMapChrome } from "./useMapChrome";
+import { useMapDataCache } from "./useMapDataCache";
+import { useMapSelection } from "./useMapSelection";
+import { MAP_ARIA_LABEL } from "../../config/brand";
 
 defineOptions({ name: "MapLeafletView" });
 

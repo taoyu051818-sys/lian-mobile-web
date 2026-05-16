@@ -8,7 +8,7 @@ app.use(i18n);
 app.mount("#vue-root");
 
 function prefetchMapChunk() {
-  import("./views/MapLeafletView.vue").catch(() => {});
+  import("./features/map/MapLeafletView.vue").catch(() => {});
 }
 
 if (typeof requestIdleCallback === "function") {

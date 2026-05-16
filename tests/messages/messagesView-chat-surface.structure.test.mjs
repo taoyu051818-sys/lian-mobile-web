@@ -5,9 +5,9 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
-const viewSource = fs.readFileSync(path.join(repoRoot, "src/views/MessagesView.vue"), "utf8");
-const threadSource = fs.readFileSync(path.join(repoRoot, "src/views/messages/ChannelThread.vue"), "utf8");
-const composerSource = fs.readFileSync(path.join(repoRoot, "src/views/messages/ChannelComposer.vue"), "utf8");
+const viewSource = fs.readFileSync(path.join(repoRoot, "src/features/messages/MessagesView.vue"), "utf8");
+const threadSource = fs.readFileSync(path.join(repoRoot, "src/features/messages/ChannelThread.vue"), "utf8");
+const composerSource = fs.readFileSync(path.join(repoRoot, "src/features/messages/ChannelComposer.vue"), "utf8");
 
 test("MessagesView does not wrap content in GlassPanel", () => {
   assert.doesNotMatch(viewSource, /GlassPanel/);

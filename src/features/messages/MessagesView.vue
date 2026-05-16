@@ -1,24 +1,24 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
-import { fetchAuthMe } from "../api/profile";
-import { buildPendingChannelMessage, fetchChannelMessages, fetchNotifications, markChannelMessagesRead, mergeChannelMessagesChronologically, sendChannelMessage } from "../api/messages";
-import { usePostDetail } from "../composables/usePostDetail";
-import { useVisualViewport } from "../composables/useVisualViewport";
-import { actorAvatarText, actorDisplayName } from "../domain/actor";
-import type { FeedItemId } from "../types/feed";
-import type { ChannelMessage, ChannelMessageActor, MessageTabKey, NotificationItem } from "../types/messages";
-import type { ProfileUser } from "../types/profile";
-import type { PageChromeSpec } from "../shell/page-model";
-import PostDetailPanel from "./detail/PostDetailPanel.vue";
-import { ChannelComposer, ChannelThread, NotificationList } from "./messages";
+import { fetchAuthMe } from "../../api/profile";
+import { buildPendingChannelMessage, fetchChannelMessages, fetchNotifications, markChannelMessagesRead, mergeChannelMessagesChronologically, sendChannelMessage } from "../../api/messages";
+import { usePostDetail } from "../detail/usePostDetail";
+import { useVisualViewport } from "../../composables/useVisualViewport";
+import { actorAvatarText, actorDisplayName } from "../../domain/actor";
+import type { FeedItemId } from "../../types/feed";
+import type { ChannelMessage, ChannelMessageActor, MessageTabKey, NotificationItem } from "../../types/messages";
+import type { ProfileUser } from "../../types/profile";
+import type { PageChromeSpec } from "../../shell/page-model";
+import PostDetailPanel from "../detail/PostDetailPanel.vue";
+import { ChannelComposer, ChannelThread, NotificationList } from "./";
 import {
   CHANNEL_DEFAULT_TAG, DEFAULT_USER_LABEL, ERROR_LOAD_CHANNEL, ERROR_LOAD_NOTIFICATION,
   ERROR_SEND_MESSAGE, MESSAGE_EMPTY_CONTENT, MESSAGE_TAB_CHANNEL, MESSAGE_TAB_NOTIFICATION,
   MESSAGE_SECTION_LABEL, MESSAGE_TAB_LABEL, MESSAGE_IDENTITY_SIGNAL_PREFIX,
   MESSAGE_NO_IDENTITY_SIGNAL, POST_DETAIL_DIALOG_LABEL, USER_AVATAR_FALLBACK,
   NOTIFICATION_REPLY_LABEL, NOTIFICATION_ACTOR_LABEL,
-} from "../config/brand";
-import { extractErrorMessage } from "../utils/extractErrorMessage";
+} from "../../config/brand";
+import { extractErrorMessage } from "../../utils/extractErrorMessage";
 
 const emit = defineEmits<{
   chrome: [spec: PageChromeSpec];
