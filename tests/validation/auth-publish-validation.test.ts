@@ -100,7 +100,10 @@ describe("auth and publish validation helpers", () => {
     expect(toggleSelectedInterest(["music"], "music")).toEqual([]);
     expect(toggleSelectedInterest(["music"], "art")).toEqual(["music", "art"]);
 
-    const fullSelection = Array.from({ length: AUTH_MAX_INTEREST_SELECTIONS }, (_, index) => `tag-${index}`);
+    const fullSelection = Array.from(
+      { length: AUTH_MAX_INTEREST_SELECTIONS },
+      (_, index) => `tag-${index}`,
+    );
     expect(toggleSelectedInterest(fullSelection, "extra-tag")).toEqual(fullSelection);
   });
 
@@ -113,9 +116,7 @@ describe("auth and publish validation helpers", () => {
     ).toBe(`标题最多 ${PUBLISH_TITLE_MAX_LENGTH} 个字。`);
     expect(validatePublishForm(createPublishFields({ body: "   " }))).toBe("请填写正文。");
     expect(
-      validatePublishForm(
-        createPublishFields({ body: "文".repeat(PUBLISH_BODY_MAX_LENGTH + 1) }),
-      ),
+      validatePublishForm(createPublishFields({ body: "文".repeat(PUBLISH_BODY_MAX_LENGTH + 1) })),
     ).toBe(`正文最多 ${PUBLISH_BODY_MAX_LENGTH} 个字。`);
   });
 

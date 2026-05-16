@@ -10,7 +10,14 @@ defineEmits<{
 </script>
 
 <template>
-  <div v-if="src" class="post-detail-lightbox" role="dialog" aria-modal="true" aria-label="查看图片" @click="$emit('close')">
+  <div
+    v-if="src"
+    class="post-detail-lightbox"
+    role="dialog"
+    aria-modal="true"
+    aria-label="查看图片"
+    @click="$emit('close')"
+  >
     <img :src="src" :alt="alt" />
   </div>
 </template>

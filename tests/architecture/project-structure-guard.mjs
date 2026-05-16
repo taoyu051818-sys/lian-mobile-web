@@ -42,7 +42,11 @@ async function writeFile(filePath, content) {
 describe("architecture boundary guards", () => {
   it("passes on clean codebase", () => {
     const result = runGuard();
-    assert.equal(result.exitCode, 0, `guard should pass but exited ${result.exitCode}:\n${result.stdout}`);
+    assert.equal(
+      result.exitCode,
+      0,
+      `guard should pass but exited ${result.exitCode}:\n${result.stdout}`,
+    );
   });
 
   it("fails if src/views/ exists", async () => {
@@ -67,7 +71,10 @@ describe("architecture boundary guards", () => {
       );
       const result = runGuard();
       assert.equal(result.exitCode, 1, "guard should fail when ui imports features");
-      assert.ok(result.stdout.includes("ui → features"), "output should mention ui → features boundary");
+      assert.ok(
+        result.stdout.includes("ui → features"),
+        "output should mention ui → features boundary",
+      );
     } finally {
       await fs.unlink(violationFile).catch(() => {});
     }
@@ -88,7 +95,10 @@ describe("architecture boundary guards", () => {
   it("fails if src/domain/ imports api code", async () => {
     const violationFile = path.join(rootDir, "src", "domain", "_test_violation_api.ts");
     try {
-      await writeFile(violationFile, 'import { fetchFeed } from "../api/feed";\nexport const f = fetchFeed;\n');
+      await writeFile(
+        violationFile,
+        'import { fetchFeed } from "../api/feed";\nexport const f = fetchFeed;\n',
+      );
       const result = runGuard();
       assert.equal(result.exitCode, 1, "guard should fail when domain imports api");
       assert.ok(result.stdout.includes("domain purity"), "output should mention domain purity");
@@ -106,7 +116,10 @@ describe("architecture boundary guards", () => {
       );
       const result = runGuard();
       assert.equal(result.exitCode, 1, "guard should fail when platform imports features");
-      assert.ok(result.stdout.includes("platform boundary"), "output should mention platform boundary");
+      assert.ok(
+        result.stdout.includes("platform boundary"),
+        "output should mention platform boundary",
+      );
     } finally {
       await fs.unlink(violationFile).catch(() => {});
     }
@@ -120,8 +133,15 @@ describe("architecture boundary guards", () => {
         'import { MessagesView } from "../messages/MessagesView.vue";\nexport const v = MessagesView;\n',
       );
       const result = runGuard();
-      assert.equal(result.exitCode, 1, "guard should fail when feature imports private barrelled code");
-      assert.ok(result.stdout.includes("feature cross-import"), "output should mention feature cross-import");
+      assert.equal(
+        result.exitCode,
+        1,
+        "guard should fail when feature imports private barrelled code",
+      );
+      assert.ok(
+        result.stdout.includes("feature cross-import"),
+        "output should mention feature cross-import",
+      );
     } finally {
       await fs.unlink(violationFile).catch(() => {});
     }
@@ -135,7 +155,11 @@ describe("architecture boundary guards", () => {
         'import { MessagesTabs } from "../messages";\nexport const c = MessagesTabs;\n',
       );
       const result = runGuard();
-      assert.equal(result.exitCode, 0, `barrel import should pass but exited ${result.exitCode}:\n${result.stdout}`);
+      assert.equal(
+        result.exitCode,
+        0,
+        `barrel import should pass but exited ${result.exitCode}:\n${result.stdout}`,
+      );
     } finally {
       await fs.unlink(violationFile).catch(() => {});
     }

@@ -69,13 +69,17 @@ async function main() {
     }
 
     if (!matched) {
-      console.warn(`[WARNING] warn-public-asset-owners: "${label}" is not listed in public/assets/README.md`);
+      console.warn(
+        `[WARNING] warn-public-asset-owners: "${label}" is not listed in public/assets/README.md`,
+      );
       warningCount++;
     }
   }
 
   if (warningCount === 0) {
-    console.log("warn-public-asset-owners: All items in public/assets/ are accounted for in the README.");
+    console.log(
+      "warn-public-asset-owners: All items in public/assets/ are accounted for in the README.",
+    );
   } else {
     console.warn(`warn-public-asset-owners: ${warningCount} unlisted item(s) found.`);
   }
@@ -94,7 +98,8 @@ function simpleGlobMatch(pattern, filename) {
   const cleanName = filename.replace(/\/$/, "");
 
   // Convert glob pattern to regex: escape special chars, replace * with .*
-  const regexStr = "^" + cleanPattern.replace(/[.+^${}()|[\]\\]/g, "\\$&").replace(/\*/g, ".*") + "$";
+  const regexStr =
+    "^" + cleanPattern.replace(/[.+^${}()|[\]\\]/g, "\\$&").replace(/\*/g, ".*") + "$";
   const regex = new RegExp(regexStr, "i");
   return regex.test(cleanName);
 }

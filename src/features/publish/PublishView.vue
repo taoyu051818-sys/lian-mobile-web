@@ -60,7 +60,8 @@ onMounted(() => {
           class="publish-view__view-post"
           :href="postDetailUrl"
           data-testid="publish-view-post-link"
-        >{{ PUBLISH_VIEW_POST }}</a>
+          >{{ PUBLISH_VIEW_POST }}</a
+        >
       </div>
 
       <form class="publish-view__form keyboard-aware-surface" @submit.prevent="submitPublish">
@@ -163,7 +164,6 @@ onMounted(() => {
 .publish-view__card {
   gap: var(--space-5);
 }
-
 
 .publish-view__success-block {
   display: grid;

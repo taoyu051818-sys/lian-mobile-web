@@ -1,8 +1,5 @@
 import type { ComputedRef, Ref } from "vue";
-import type {
-  LeafletLayerGroupLike,
-  LeafletMapLike,
-} from "../../platform/leaflet";
+import type { LeafletLayerGroupLike, LeafletMapLike } from "../../platform/leaflet";
 import { getLeaflet, tryGetLeaflet } from "../../platform/leaflet";
 import type { MapRoad } from "../../types/map";
 
@@ -120,7 +117,9 @@ function escapeHtml(value = ""): string {
     .replace(/"/g, "&quot;");
 }
 
-function points(list: { lat?: number; lng?: number; x?: number; y?: number }[] = []): [number, number][] {
+function points(
+  list: { lat?: number; lng?: number; x?: number; y?: number }[] = [],
+): [number, number][] {
   return list
     .map((point): [number, number] => [Number(point.lat), Number(point.lng)])
     .filter(([lat, lng]) => Number.isFinite(lat) && Number.isFinite(lng));
@@ -142,7 +141,9 @@ export function roadZoomScale(zoom: number): number {
 }
 
 export function isPreviewRoad(road: MapRoad): boolean {
-  return String(road.source || "").includes("preview") || String(road.id || "").startsWith("preview:");
+  return (
+    String(road.source || "").includes("preview") || String(road.id || "").startsWith("preview:")
+  );
 }
 
 function renderDualLaneRoad(
@@ -164,48 +165,58 @@ function renderDualLaneRoad(
     interactive: false,
   };
 
-  getLeaflet().polyline(roadPoints, {
-    ...baseOptions,
-    color: style.shadow,
-    weight: weight + style.shadowExtra * scale,
-    opacity: Math.min(0.9, 0.78 * sourceOpacity),
-    className: `vue-map-road-shadow vue-map-road-shadow--${classSuffix}`,
-  }).addTo(layers.roadsCasing);
+  getLeaflet()
+    .polyline(roadPoints, {
+      ...baseOptions,
+      color: style.shadow,
+      weight: weight + style.shadowExtra * scale,
+      opacity: Math.min(0.9, 0.78 * sourceOpacity),
+      className: `vue-map-road-shadow vue-map-road-shadow--${classSuffix}`,
+    })
+    .addTo(layers.roadsCasing);
 
-  getLeaflet().polyline(roadPoints, {
-    ...baseOptions,
-    color: style.edge,
-    weight: weight + style.edgeExtra * scale,
-    opacity: Math.min(0.95, 0.86 * sourceOpacity),
-    className: `vue-map-road-edge vue-map-road-edge--${classSuffix}`,
-  }).addTo(layers.roadsCasing);
+  getLeaflet()
+    .polyline(roadPoints, {
+      ...baseOptions,
+      color: style.edge,
+      weight: weight + style.edgeExtra * scale,
+      opacity: Math.min(0.95, 0.86 * sourceOpacity),
+      className: `vue-map-road-edge vue-map-road-edge--${classSuffix}`,
+    })
+    .addTo(layers.roadsCasing);
 
-  getLeaflet().polyline(roadPoints, {
-    ...baseOptions,
-    color: style.asphalt,
-    weight,
-    opacity,
-    className: `vue-map-road-asphalt vue-map-road-asphalt--${classSuffix}`,
-  }).addTo(layers.roads);
+  getLeaflet()
+    .polyline(roadPoints, {
+      ...baseOptions,
+      color: style.asphalt,
+      weight,
+      opacity,
+      className: `vue-map-road-asphalt vue-map-road-asphalt--${classSuffix}`,
+    })
+    .addTo(layers.roads);
 
-  getLeaflet().polyline(roadPoints, {
-    ...baseOptions,
-    color: "rgba(255, 255, 255, 0.12)",
-    weight: Math.max(1.2, weight * 0.42),
-    opacity: 0.34 * sourceOpacity,
-    className: `vue-map-road-asphalt-highlight vue-map-road-asphalt-highlight--${classSuffix}`,
-  }).addTo(layers.roads);
+  getLeaflet()
+    .polyline(roadPoints, {
+      ...baseOptions,
+      color: "rgba(255, 255, 255, 0.12)",
+      weight: Math.max(1.2, weight * 0.42),
+      opacity: 0.34 * sourceOpacity,
+      className: `vue-map-road-asphalt-highlight vue-map-road-asphalt-highlight--${classSuffix}`,
+    })
+    .addTo(layers.roads);
 
   if (style.centerlineWeight > 0 && style.centerline !== "transparent") {
-    getLeaflet().polyline(roadPoints, {
-      ...baseOptions,
-      color: style.centerline,
-      weight: Math.max(1, style.centerlineWeight * scale * sourceWeight),
-      dashArray: style.centerlineDashArray,
-      opacity: style.centerlineOpacity * sourceOpacity,
-      lineCap: "butt",
-      className: `vue-map-road-centerline vue-map-road-centerline--${classSuffix}`,
-    }).addTo(layers.roads);
+    getLeaflet()
+      .polyline(roadPoints, {
+        ...baseOptions,
+        color: style.centerline,
+        weight: Math.max(1, style.centerlineWeight * scale * sourceWeight),
+        dashArray: style.centerlineDashArray,
+        opacity: style.centerlineOpacity * sourceOpacity,
+        lineCap: "butt",
+        className: `vue-map-road-centerline vue-map-road-centerline--${classSuffix}`,
+      })
+      .addTo(layers.roads);
   }
 }
 

@@ -2,13 +2,16 @@
 import { computed } from "vue";
 import { sanitizeHtml } from "../utils/html";
 
-const props = withDefaults(defineProps<{
-  html?: string;
-  as?: "div" | "span" | "p" | "section" | "article";
-}>(), {
-  html: "",
-  as: "div",
-});
+const props = withDefaults(
+  defineProps<{
+    html?: string;
+    as?: "div" | "span" | "p" | "section" | "article";
+  }>(),
+  {
+    html: "",
+    as: "div",
+  },
+);
 
 const sanitizedHtml = computed(() => sanitizeHtml(props.html));
 </script>

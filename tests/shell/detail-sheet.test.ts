@@ -95,7 +95,10 @@ describe("useDetailSheet", () => {
 
     for (const kind of kinds) {
       it(`supports "${kind}" kind`, () => {
-        const payloads: Record<DetailSheetKind, { postId?: string; placeId?: string; actorId?: string }> = {
+        const payloads: Record<
+          DetailSheetKind,
+          { postId?: string; placeId?: string; actorId?: string }
+        > = {
           post: { postId: "t" },
           place: { placeId: "p" },
           profile: { actorId: "a" },

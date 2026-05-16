@@ -103,10 +103,10 @@ Manual review:
 
 Head commit `3060b15` — all GitHub Actions green:
 
-| Workflow | Status |
-|---|---|
+| Workflow            | Status  |
+| ------------------- | ------- |
 | Frontend Validation | success |
-| Frontend Verify | success |
+| Frontend Verify     | success |
 | frontend auto build | success |
 
 ## Desktop acceptance evidence (≥960px)
@@ -142,6 +142,7 @@ Completing the bounded follow-up for PR #199 merge-readiness gap identified by A
 **CSS review result**: No defects found inside pilot scope. All base styles in `content-immersive-ui.css` apply at every width; the `@media (min-width: 960px)` block only adds the desktop left-rail layout override. Mobile inherits the full pilot treatment without gaps.
 
 **CSS property verification** (against `src/styles/content-immersive-ui.css`):
+
 - `.feed-item-card` — `contain: layout paint`; hover `transform: scale(var(--content-hover-scale))` (token resolves to 1.012); border transition to `var(--lian-line-strong)`; shadow transition to `var(--shadow-content-card-hover)`.
 - `.feed-item-card::before` — accent gradient line `linear-gradient(90deg, transparent, rgba(31, 167, 160, 0.28), transparent)` at 1px height; opacity 0→1 on hover/focus-visible.
 - `.feed-item-card__like` — hover/focus-visible `transform: translateY(-1px)`; opacity 0.82→1.
@@ -151,6 +152,7 @@ Completing the bounded follow-up for PR #199 merge-readiness gap identified by A
 - `@media (prefers-reduced-motion: reduce)` — all `transition` and `transform` properties disabled for tabs, bottom bar items, buttons, cards, card `::before`, card cover, and like button.
 
 **PR body updates**:
+
 - Enriched mobile acceptance evidence with CSS property-level specificity matching the desktop section.
 - Updated PR #199 Validation section to reflect current green workflow evidence on head `6808c4d`.
 - Issue linkage confirmed slice-accurate: PR body uses "Follow-up slice for #192", not `Closes #192`.

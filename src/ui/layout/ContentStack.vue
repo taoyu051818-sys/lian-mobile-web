@@ -1,13 +1,16 @@
 <script setup lang="ts">
-withDefaults(defineProps<{
-  as?: string;
-  gap?: "sm" | "md" | "lg";
-  align?: "start" | "center" | "end" | "stretch";
-}>(), {
-  as: "div",
-  gap: "md",
-  align: "stretch",
-});
+withDefaults(
+  defineProps<{
+    as?: string;
+    gap?: "sm" | "md" | "lg";
+    align?: "start" | "center" | "end" | "stretch";
+  }>(),
+  {
+    as: "div",
+    gap: "md",
+    align: "stretch",
+  },
+);
 </script>
 
 <template>

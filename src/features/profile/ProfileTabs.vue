@@ -50,7 +50,9 @@ const emit = defineEmits<{
   font-weight: 850;
   text-align: center;
   cursor: pointer;
-  transition: color var(--motion-fast) var(--motion-ease-standard), border-color var(--motion-fast) var(--motion-ease-standard);
+  transition:
+    color var(--motion-fast) var(--motion-ease-standard),
+    border-color var(--motion-fast) var(--motion-ease-standard);
 }
 
 .profile-tabs__tab.is-active {

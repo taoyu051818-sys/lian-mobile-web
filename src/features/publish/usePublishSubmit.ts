@@ -1,5 +1,10 @@
 import { computed, type Ref } from "vue";
-import { ERROR_PUBLISH_GENERIC, PUBLISH_LOCATION_UNBOUND, PUBLISH_SUCCESS, PUBLISH_SUCCESS_BOUND } from "../../config/brand";
+import {
+  ERROR_PUBLISH_GENERIC,
+  PUBLISH_LOCATION_UNBOUND,
+  PUBLISH_SUCCESS,
+  PUBLISH_SUCCESS_BOUND,
+} from "../../config/brand";
 import { extractErrorMessage } from "../../utils/extractErrorMessage";
 import { buildPublishPayload, publishPost } from "../../api/publish";
 import type { PublishLocationDraft, PublishVisibility } from "../../types/publish";
@@ -59,9 +64,10 @@ export function usePublishSubmit(options: {
       const response = await publishPost(payload);
       options.lastTid.value = response.tid || null;
       const boundPlaceName = placeNameFromResponse(response) || publishedLocationLabel;
-      options.successMessage.value = boundPlaceName && boundPlaceName !== PUBLISH_LOCATION_UNBOUND
-        ? PUBLISH_SUCCESS_BOUND.replace("{n}", boundPlaceName)
-        : PUBLISH_SUCCESS;
+      options.successMessage.value =
+        boundPlaceName && boundPlaceName !== PUBLISH_LOCATION_UNBOUND
+          ? PUBLISH_SUCCESS_BOUND.replace("{n}", boundPlaceName)
+          : PUBLISH_SUCCESS;
       options.resetForm();
     } catch (error) {
       options.errorMessage.value = extractErrorMessage(error, ERROR_PUBLISH_GENERIC);

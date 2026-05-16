@@ -16,6 +16,6 @@ export function useActiveView() {
     activeViewKey,
     activeView,
     views: appViews,
-    setActiveView
+    setActiveView,
   };
 }

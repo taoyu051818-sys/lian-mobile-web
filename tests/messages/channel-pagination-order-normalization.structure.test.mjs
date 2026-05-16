@@ -6,7 +6,10 @@ import { fileURLToPath } from "node:url";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
 const apiSource = fs.readFileSync(path.join(repoRoot, "src/api/messages.ts"), "utf8");
-const channelSource = fs.readFileSync(path.join(repoRoot, "src/features/messages/useChannelMessages.ts"), "utf8");
+const channelSource = fs.readFileSync(
+  path.join(repoRoot, "src/features/messages/useChannelMessages.ts"),
+  "utf8",
+);
 
 test("api/messages.ts exports pagination/order normalization helpers", () => {
   assert.match(apiSource, /export function mergeChannelMessagesChronologically/);
@@ -14,12 +17,18 @@ test("api/messages.ts exports pagination/order normalization helpers", () => {
 });
 
 test("normalizeChannelResponse uses ?? so nextOffset=0 is preserved", () => {
-  assert.match(apiSource, /nextOffset:\s*response\.nextOffset \?\? Math\.max\(0,\s*requestedOffset\)\s*\+\s*rawItems\.length/);
+  assert.match(
+    apiSource,
+    /nextOffset:\s*response\.nextOffset \?\? Math\.max\(0,\s*requestedOffset\)\s*\+\s*rawItems\.length/,
+  );
 });
 
 test("mergeChannelMessagesChronologically sorts by timestamp and deduplicates by id", () => {
   assert.match(apiSource, /new Map<string, ChannelMessage>/);
-  assert.match(apiSource, /Array\.from\(merged\.values\(\)\)\.sort\(compareChannelMessagesChronologically\)/);
+  assert.match(
+    apiSource,
+    /Array\.from\(merged\.values\(\)\)\.sort\(compareChannelMessagesChronologically\)/,
+  );
 });
 
 test("fetchChannelMessages normalizes the adapter response before returning it", () => {
@@ -40,7 +49,10 @@ test("useChannelMessages no longer computes nextOffset from response.items lengt
 });
 
 test("useChannelMessages merges paginated results through the shared chronological helper", () => {
-  assert.match(channelSource, /mergeChannelMessagesChronologically\(channelItems\.value,\s*nextItems\)/);
+  assert.match(
+    channelSource,
+    /mergeChannelMessagesChronologically\(channelItems\.value,\s*nextItems\)/,
+  );
 });
 
 test("pure JS: explicit nextOffset=0 is preserved", () => {
@@ -70,7 +82,9 @@ test("pure JS: paginated channel messages stay chronological after merge", () =>
   for (const item of existing) merged.set(String(item.id), item);
   for (const item of incoming) merged.set(String(item.id), item);
   const ids = Array.from(merged.values())
-    .sort((left, right) => (left.timestampISO < right.timestampISO ? -1 : left.timestampISO > right.timestampISO ? 1 : 0))
+    .sort((left, right) =>
+      left.timestampISO < right.timestampISO ? -1 : left.timestampISO > right.timestampISO ? 1 : 0,
+    )
     .map((item) => item.id);
   assert.deepEqual(ids, ["a", "b", "c"]);
 });

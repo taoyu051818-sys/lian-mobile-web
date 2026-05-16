@@ -129,7 +129,9 @@ describe("runtime config", () => {
 
   it("buildApiUrl passes through absolute and non-root-relative paths", () => {
     setWindow({ LIAN_API_BASE_URL: "https://api.example.com" });
-    expect(buildApiUrl("https://cdn.example.com/image.jpg")).toBe("https://cdn.example.com/image.jpg");
+    expect(buildApiUrl("https://cdn.example.com/image.jpg")).toBe(
+      "https://cdn.example.com/image.jpg",
+    );
     expect(buildApiUrl("api/me")).toBe("api/me");
     clearWindow();
   });

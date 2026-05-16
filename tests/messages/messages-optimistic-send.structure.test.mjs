@@ -44,7 +44,10 @@ test("buildPendingChannelMessage generates local-only id with pending- prefix", 
 // --- useChannelMessages optimistic send flow ---
 
 test("useChannelMessages imports buildPendingChannelMessage", () => {
-  assert.match(channelSource, /import \{[^}]*buildPendingChannelMessage[^}]*\} from "\.\.\/\.\.\/api\/messages"/);
+  assert.match(
+    channelSource,
+    /import \{[^}]*buildPendingChannelMessage[^}]*\} from "\.\.\/\.\.\/api\/messages"/,
+  );
 });
 
 test("useChannelMessages creates pending message before API call in sendMessage", () => {
@@ -229,7 +232,10 @@ test("near-bottom detection works at various scroll positions", () => {
   const farFromBottomPos = scrollHeight - innerHeight - 200;
 
   assert.ok(scrollHeight - nearBottomPos - innerHeight < threshold, "should be near bottom");
-  assert.ok(scrollHeight - farFromBottomPos - innerHeight >= threshold, "should not be near bottom");
+  assert.ok(
+    scrollHeight - farFromBottomPos - innerHeight >= threshold,
+    "should not be near bottom",
+  );
 });
 
 // --- Pure JS: optimistic message sorting ---
@@ -278,7 +284,10 @@ test("replacePendingWithLatest accepts retriesLeft parameter", () => {
 
 test("replacePendingWithLatest checks for confirmed message in fetch result", () => {
   assert.match(channelSource, /confirmedFound/);
-  assert.match(channelSource, /serverItem\.content\s*===\s*pendingContent\s*&&\s*serverItem\.isSelf/);
+  assert.match(
+    channelSource,
+    /serverItem\.content\s*===\s*pendingContent\s*&&\s*serverItem\.isSelf/,
+  );
 });
 
 test("replacePendingWithLatest retries when confirmed message not found and retries remain", () => {
@@ -299,7 +308,7 @@ test("replacePendingWithLatest resolves to sent when retries exhausted without f
 test("replacePendingWithLatest resolves to failed on fetch error", () => {
   const fnIdx = channelSource.indexOf("async function replacePendingWithLatest");
   assert.ok(fnIdx >= 0);
-  const catchIdx = channelSource.indexOf("resolvePendingState(pendingId, \"failed\")", fnIdx);
+  const catchIdx = channelSource.indexOf('resolvePendingState(pendingId, "failed")', fnIdx);
   assert.ok(catchIdx >= 0, "should resolve pending to failed in catch block");
 });
 
@@ -330,7 +339,10 @@ test("ChannelThread retry button meets mobile touch target minimum (44px)", () =
   const styles = btnMatch[1];
   const minHeightMatch = styles.match(/min-height:\s*(\d+)px/);
   assert.ok(minHeightMatch, "retry button should have min-height");
-  assert.ok(Number(minHeightMatch[1]) >= 44, `retry button min-height ${minHeightMatch[1]}px should be >= 44px for mobile touch target`);
+  assert.ok(
+    Number(minHeightMatch[1]) >= 44,
+    `retry button min-height ${minHeightMatch[1]}px should be >= 44px for mobile touch target`,
+  );
 });
 
 // --- Pure JS: window-miss resolution semantics ---
@@ -357,14 +369,16 @@ test("pending item resolves to sent when server-confirmed message absent from fe
     items[idx] = { ...items[idx], deliveryState: "sent" };
   }
 
-  assert.equal(items[1].deliveryState, "sent", "pending should resolve to sent, not stuck in sending");
+  assert.equal(
+    items[1].deliveryState,
+    "sent",
+    "pending should resolve to sent, not stuck in sending",
+  );
   assert.notEqual(items[1].deliveryState, "sending", "pending must not remain in sending state");
 });
 
 test("pending item resolves to failed when fetch throws", () => {
-  const items = [
-    { id: "pending-888", content: "test", isSelf: true, deliveryState: "sending" },
-  ];
+  const items = [{ id: "pending-888", content: "test", isSelf: true, deliveryState: "sending" }];
   const pendingId = "pending-888";
 
   const idx = items.findIndex((i) => i.id === pendingId);

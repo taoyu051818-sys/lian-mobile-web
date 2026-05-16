@@ -13,12 +13,12 @@ Vue/Vite is the active web frontend runtime.
 
 ## NPM scripts
 
-| Script | Purpose |
-| --- | --- |
-| `npm run dev` | Run the Vite development server for local active development |
-| `npm run preview` | Preview the built Vue app |
-| `npm run build` | Build the Vue app for production |
-| `npm run verify` | Run static checks, build, and smoke |
+| Script            | Purpose                                                      |
+| ----------------- | ------------------------------------------------------------ |
+| `npm run dev`     | Run the Vite development server for local active development |
+| `npm run preview` | Preview the built Vue app                                    |
+| `npm run build`   | Build the Vue app for production                             |
+| `npm run verify`  | Run static checks, build, and smoke                          |
 
 ## Production behavior
 

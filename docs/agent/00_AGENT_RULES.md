@@ -23,10 +23,10 @@ Read these files at the start of every task, in this order:
 
 This project uses a two-thread workflow by default:
 
-| Thread | Responsibility | Can implement? | Required output |
-|---|---|---:|---|
+| Thread              | Responsibility                                                                                 |                                           Can implement? | Required output                                                  |
+| ------------------- | ---------------------------------------------------------------------------------------------- | -------------------------------------------------------: | ---------------------------------------------------------------- |
 | Codex / code thread | Planning, task decomposition, architecture judgement, review, acceptance, documentation status | No, unless the user explicitly asks this thread to patch | Review findings, task docs, handoff updates, acceptance decision |
-| Claude Code thread | Bounded implementation against an approved task doc | Yes | Patch, verification output, handoff summary |
+| Claude Code thread  | Bounded implementation against an approved task doc                                            |                                                      Yes | Patch, verification output, handoff summary                      |
 
 Rules:
 
@@ -49,13 +49,13 @@ Rules:
 
 ## High-conflict frontend files
 
-| File / area | Level | Notes |
-|---|---|---|
-| `src/**` | soft-lock | Vue canary/runtime lane; check current PRs and task scope. |
-| `public/**` | soft-lock | Map assets and tools; check ownership and task scope. |
-| `public/tools/task-board.*` | soft-lock | Task-board UI; keep unauthenticated shell useful. |
-| `package.json` | hard-review | Defines current frontend commands; avoid script drift. |
-| `docs/agent/**` | documentation | Must follow current source-of-truth order. |
+| File / area                 | Level         | Notes                                                      |
+| --------------------------- | ------------- | ---------------------------------------------------------- |
+| `src/**`                    | soft-lock     | Vue canary/runtime lane; check current PRs and task scope. |
+| `public/**`                 | soft-lock     | Map assets and tools; check ownership and task scope.      |
+| `public/tools/task-board.*` | soft-lock     | Task-board UI; keep unauthenticated shell useful.          |
+| `package.json`              | hard-review   | Defines current frontend commands; avoid script drift.     |
+| `docs/agent/**`             | documentation | Must follow current source-of-truth order.                 |
 
 Backend-owned files such as `server.js`, `src/server/*`, runtime `data/*`, backend validation scripts, NodeBB integration, Redis storage, and backend route registry belong in `lian-platform-server`.
 
@@ -77,13 +77,13 @@ These areas need coordination:
 
 ## Small task vs large task
 
-| | Small task (typo, config, one-line fix) | Large task (new feature, multi-file, contract/runtime change) |
-|---|---|---|
-| Task doc | not required | required in `docs/agent/tasks/` or a dated task addendum |
-| Handoff | chat summary is enough | must write/update `docs/agent/handoffs/` |
-| Plan mode | not needed | required for 3+ files or touching runtime/API contracts |
-| Verification | changed-file check plus relevant package script | current `npm run verify` plus targeted smoke/manual checks |
-| Branch lifetime | hours | 1-3 days |
+|                 | Small task (typo, config, one-line fix)         | Large task (new feature, multi-file, contract/runtime change) |
+| --------------- | ----------------------------------------------- | ------------------------------------------------------------- |
+| Task doc        | not required                                    | required in `docs/agent/tasks/` or a dated task addendum      |
+| Handoff         | chat summary is enough                          | must write/update `docs/agent/handoffs/`                      |
+| Plan mode       | not needed                                      | required for 3+ files or touching runtime/API contracts       |
+| Verification    | changed-file check plus relevant package script | current `npm run verify` plus targeted smoke/manual checks    |
+| Branch lifetime | hours                                           | 1-3 days                                                      |
 
 ## Validation commands
 

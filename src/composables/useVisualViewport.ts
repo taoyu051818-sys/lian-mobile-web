@@ -25,15 +25,9 @@ export function useVisualViewport() {
   function updateInset() {
     cancelAnimationFrame(rafId);
     rafId = requestAnimationFrame(() => {
-      const inset = Math.max(
-        0,
-        window.innerHeight - vp.height - vp.offsetTop,
-      );
+      const inset = Math.max(0, window.innerHeight - vp.height - vp.offsetTop);
       keyboardInsetBottom.value = inset;
-      document.documentElement.style.setProperty(
-        "--keyboard-inset-bottom",
-        `${inset}px`,
-      );
+      document.documentElement.style.setProperty("--keyboard-inset-bottom", `${inset}px`);
     });
   }
 

@@ -1,6 +1,16 @@
 <script setup lang="ts">
 import { TagChip } from "../../ui";
-import { PUBLISH_TAG_SETTINGS, PUBLISH_TAG_LABEL, PUBLISH_TAG_HINT, PUBLISH_POST_TAG, PUBLISH_TAG_PLACEHOLDER, PUBLISH_TAG_PREVIEW, PUBLISH_IDENTITY_TAG, PUBLISH_NO_IDENTITY_TAG, PUBLISH_VISIBILITY } from "../../config/brand";
+import {
+  PUBLISH_TAG_SETTINGS,
+  PUBLISH_TAG_LABEL,
+  PUBLISH_TAG_HINT,
+  PUBLISH_POST_TAG,
+  PUBLISH_TAG_PLACEHOLDER,
+  PUBLISH_TAG_PREVIEW,
+  PUBLISH_IDENTITY_TAG,
+  PUBLISH_NO_IDENTITY_TAG,
+  PUBLISH_VISIBILITY,
+} from "../../config/brand";
 import type { PublishVisibility } from "../../types/publish";
 
 defineProps<{
@@ -35,16 +45,27 @@ const emit = defineEmits<{
 
     <label class="publish-meta__field publish-meta__field--compact">
       <span>{{ PUBLISH_POST_TAG }}</span>
-      <input :value="tagInput" maxlength="18" :placeholder="PUBLISH_TAG_PLACEHOLDER" @input="emit('update:tagInput', ($event.target as HTMLInputElement).value)" />
+      <input
+        :value="tagInput"
+        maxlength="18"
+        :placeholder="PUBLISH_TAG_PLACEHOLDER"
+        @input="emit('update:tagInput', ($event.target as HTMLInputElement).value)"
+      />
     </label>
 
     <div v-if="normalizedTag" class="publish-meta__tags" :aria-label="PUBLISH_TAG_PREVIEW">
       <TagChip :tag="normalizedTag" />
     </div>
 
-    <label v-if="identityTagOptions.length" class="publish-meta__field publish-meta__field--compact">
+    <label
+      v-if="identityTagOptions.length"
+      class="publish-meta__field publish-meta__field--compact"
+    >
       <span>{{ PUBLISH_IDENTITY_TAG }}</span>
-      <select :value="identityTag" @change="emit('update:identityTag', ($event.target as HTMLSelectElement).value)">
+      <select
+        :value="identityTag"
+        @change="emit('update:identityTag', ($event.target as HTMLSelectElement).value)"
+      >
         <option value="">{{ PUBLISH_NO_IDENTITY_TAG }}</option>
         <option v-for="tag in identityTagOptions" :key="tag" :value="tag">{{ tag }}</option>
       </select>

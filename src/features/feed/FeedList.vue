@@ -17,7 +17,9 @@ const emit = defineEmits<{
 function estimateCardWeight(item: FeedItem) {
   const coverWeight = item.cover ? 1.32 : 0.72;
   const titleWeight = Math.min(0.44, Math.max(0.18, item.title.length / 80));
-  const bodyWeight = item.bodyPreview ? Math.min(0.62, Math.max(0.22, item.bodyPreview.length / 120)) : 0;
+  const bodyWeight = item.bodyPreview
+    ? Math.min(0.62, Math.max(0.22, item.bodyPreview.length / 120))
+    : 0;
   const metaWeight = 0.34;
   return coverWeight + titleWeight + bodyWeight + metaWeight;
 }

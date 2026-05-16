@@ -52,7 +52,11 @@ defineEmits<{
     </div>
 
     <div v-else-if="status === 'unavailable'" class="auth-interest-picker__state">
-      <button type="button" class="auth-interest-picker__secondary-action" @click="$emit('refresh')">
+      <button
+        type="button"
+        class="auth-interest-picker__secondary-action"
+        @click="$emit('refresh')"
+      >
         {{ AUTH_INTEREST_RELOAD }}
       </button>
     </div>

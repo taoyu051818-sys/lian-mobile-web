@@ -27,17 +27,17 @@ This batch translates Pro review feedback into implementation lanes. The main de
 
 ## Work distribution
 
-| Lane | Thread | Task doc | Dependency | Notes |
-|---|---|---|---|---|
-| A | Backend safety | `docs/agent/tasks/metadata-write-safety.md` | none | First gate. Protects `post-metadata.json` writes. |
-| B | Route safety | `docs/agent/tasks/route-matcher-tests.md` | none | First gate. Freezes route behavior before more API work. |
-| C | Publish UX | `docs/agent/tasks/publish-v2-page.md` | A + B recommended | Verify/fix immediate Map v2 picker flow after image confirmation. |
-| D | Audience correctness | `docs/agent/tasks/audience-auth-hydration.md` | B recommended | Real auth users must work without stored `schoolId`. |
-| E | NodeBB contracts | `docs/agent/tasks/nodebb-contract-smoke-tests.md` | B recommended | Diagnostic-first. Do not change runtime behavior. |
-| F | Messages discussion | `docs/agent/tasks/nodebb-reply-notifications-messages.md` | D + E | NodeBB replies enter Messages as discussion notifications, not DM. |
-| G | Channel safety | `docs/agent/tasks/channel-messages-audience-filtering.md` | D | Prevent `/api/channel` from bypassing Audience. |
-| H | Map v2 picker safety | `docs/agent/tasks/map-v2-bounds-picker-validation.md` | B recommended | Product bounds and coordinate-bearing `locationDraft`. |
-| I | Map v2 editor continuation | `docs/agent/tasks/map-v2-admin-editor.md` | H recommended | Continue curves/assets/building hierarchy after picker contract stabilizes. |
+| Lane | Thread                     | Task doc                                                  | Dependency        | Notes                                                                       |
+| ---- | -------------------------- | --------------------------------------------------------- | ----------------- | --------------------------------------------------------------------------- |
+| A    | Backend safety             | `docs/agent/tasks/metadata-write-safety.md`               | none              | First gate. Protects `post-metadata.json` writes.                           |
+| B    | Route safety               | `docs/agent/tasks/route-matcher-tests.md`                 | none              | First gate. Freezes route behavior before more API work.                    |
+| C    | Publish UX                 | `docs/agent/tasks/publish-v2-page.md`                     | A + B recommended | Verify/fix immediate Map v2 picker flow after image confirmation.           |
+| D    | Audience correctness       | `docs/agent/tasks/audience-auth-hydration.md`             | B recommended     | Real auth users must work without stored `schoolId`.                        |
+| E    | NodeBB contracts           | `docs/agent/tasks/nodebb-contract-smoke-tests.md`         | B recommended     | Diagnostic-first. Do not change runtime behavior.                           |
+| F    | Messages discussion        | `docs/agent/tasks/nodebb-reply-notifications-messages.md` | D + E             | NodeBB replies enter Messages as discussion notifications, not DM.          |
+| G    | Channel safety             | `docs/agent/tasks/channel-messages-audience-filtering.md` | D                 | Prevent `/api/channel` from bypassing Audience.                             |
+| H    | Map v2 picker safety       | `docs/agent/tasks/map-v2-bounds-picker-validation.md`     | B recommended     | Product bounds and coordinate-bearing `locationDraft`.                      |
+| I    | Map v2 editor continuation | `docs/agent/tasks/map-v2-admin-editor.md`                 | H recommended     | Continue curves/assets/building hierarchy after picker contract stabilizes. |
 
 ## Decisions made
 

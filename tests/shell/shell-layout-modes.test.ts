@@ -1,5 +1,10 @@
 import { describe, it, expect } from "vitest";
-import { getShellLayoutMode, shellLayoutModes, type AppViewKey, type ShellLayoutMode } from "../../src/app/view-types";
+import {
+  getShellLayoutMode,
+  shellLayoutModes,
+  type AppViewKey,
+  type ShellLayoutMode,
+} from "../../src/app/view-types";
 
 const ALL_VIEWS: AppViewKey[] = ["feed", "map", "publish", "messages", "profile"];
 

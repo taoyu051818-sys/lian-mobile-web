@@ -79,7 +79,10 @@ describe("useShellChrome", () => {
     it("supports typed tabs spec", () => {
       const tabs: ChromeTabSpec = {
         kind: "tabs",
-        items: [{ id: "a", label: "A" }, { id: "b", label: "B" }],
+        items: [
+          { id: "a", label: "A" },
+          { id: "b", label: "B" },
+        ],
         activeKey: "a",
         ariaLabel: "分类",
       };
@@ -193,7 +196,11 @@ describe("shell chrome and active view state", () => {
     });
 
     chrome.applyRegions({
-      top: { buttons: [{ id: "detail-back", label: "返回" }], visible: true, slot: "detail-topbar" },
+      top: {
+        buttons: [{ id: "detail-back", label: "返回" }],
+        visible: true,
+        slot: "detail-topbar",
+      },
       bottom: { visible: false },
     });
 

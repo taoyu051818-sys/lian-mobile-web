@@ -1,11 +1,12 @@
 <script setup lang="ts">
+import { AUTH_USERNAME_MAX_LENGTH, AUTH_EMAIL_CODE_LENGTH } from "../../domain/validation/forms";
 import {
-  AUTH_USERNAME_MAX_LENGTH,
-  AUTH_EMAIL_CODE_LENGTH,
-} from "../../domain/validation/forms";
-import {
-  AUTH_NICKNAME, AUTH_NICKNAME_PLACEHOLDER, AUTH_NICKNAME_HINT,
-  AUTH_EMAIL_LABEL, AUTH_EMAIL_PLACEHOLDER, AUTH_EMAIL_HINT_FULL,
+  AUTH_NICKNAME,
+  AUTH_NICKNAME_PLACEHOLDER,
+  AUTH_NICKNAME_HINT,
+  AUTH_EMAIL_LABEL,
+  AUTH_EMAIL_PLACEHOLDER,
+  AUTH_EMAIL_HINT_FULL,
 } from "../../config/brand";
 import AuthEmailCodeField from "./AuthEmailCodeField.vue";
 import AuthInterestPicker from "./AuthInterestPicker.vue";
@@ -59,7 +60,9 @@ defineEmits<{
       enterkeyhint="next"
       required
       :aria-invalid="usernameHasError"
-      :aria-describedby="[usernameHintId, usernameHasError ? formErrorId : null].filter(Boolean).join(' ')"
+      :aria-describedby="
+        [usernameHintId, usernameHasError ? formErrorId : null].filter(Boolean).join(' ')
+      "
       :placeholder="AUTH_NICKNAME_PLACEHOLDER"
       @input="$emit('update:username', ($event.target as HTMLInputElement).value)"
     />
@@ -77,11 +80,15 @@ defineEmits<{
       enterkeyhint="next"
       inputmode="email"
       :aria-invalid="emailHasError"
-      :aria-describedby="[emailHintId, emailHasError ? formErrorId : null].filter(Boolean).join(' ')"
+      :aria-describedby="
+        [emailHintId, emailHasError ? formErrorId : null].filter(Boolean).join(' ')
+      "
       :placeholder="AUTH_EMAIL_PLACEHOLDER"
       @input="$emit('update:email', ($event.target as HTMLInputElement).value)"
     />
-    <small :id="emailHintId" class="auth-panel__hint">{{ AUTH_EMAIL_HINT_FULL.replace('{n}', String(AUTH_EMAIL_CODE_LENGTH)) }}</small>
+    <small :id="emailHintId" class="auth-panel__hint">{{
+      AUTH_EMAIL_HINT_FULL.replace("{n}", String(AUTH_EMAIL_CODE_LENGTH))
+    }}</small>
   </label>
   <AuthEmailCodeField
     :model-value="emailCode"

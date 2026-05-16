@@ -18,11 +18,7 @@ const emit = defineEmits<{
   <div class="feed-load-more">
     <template v-if="hasMore">
       <div class="feed-load-more__stack">
-        <LianButton
-          :loading="loadingMore"
-          variant="ghost"
-          @click="emit('loadMore')"
-        >
+        <LianButton :loading="loadingMore" variant="ghost" @click="emit('loadMore')">
           {{ FEED_LOAD_MORE }}
         </LianButton>
         <FeedAutoLoadSentinel

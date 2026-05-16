@@ -1,4 +1,9 @@
-import type { ChromeButtonSpec, ChromeFilterSpec, ChromeIdentitySpec, ChromeTabSpec } from "./shell-chrome-types";
+import type {
+  ChromeButtonSpec,
+  ChromeFilterSpec,
+  ChromeIdentitySpec,
+  ChromeTabSpec,
+} from "./shell-chrome-types";
 
 export interface PageChromeTopSpec {
   tabs?: ChromeTabSpec | null;

@@ -2,8 +2,10 @@ import { computed, ref, type Ref } from "vue";
 import { loginAuth, registerAuth } from "../../api/auth";
 import {
   ERROR_AUTH_GENERIC,
-  AUTH_LOGIN, AUTH_REGISTER_AND_LOGIN,
-  AUTH_LOGIN_PLACEHOLDER, AUTH_INTEREST_SKIP_HINT,
+  AUTH_LOGIN,
+  AUTH_REGISTER_AND_LOGIN,
+  AUTH_LOGIN_PLACEHOLDER,
+  AUTH_INTEREST_SKIP_HINT,
   AUTH_LOGGED_IN_REFRESH,
 } from "../../config/brand";
 import { extractErrorMessage } from "../../utils/extractErrorMessage";
@@ -35,11 +37,11 @@ export function useAuthSubmit(
   const errorMessage = ref("");
   const successMessage = ref("");
 
-  const primaryLabel = computed(() => (mode.value === "login" ? AUTH_LOGIN : AUTH_REGISTER_AND_LOGIN));
+  const primaryLabel = computed(() =>
+    mode.value === "login" ? AUTH_LOGIN : AUTH_REGISTER_AND_LOGIN,
+  );
   const note = computed(() =>
-    mode.value === "login"
-      ? AUTH_LOGIN_PLACEHOLDER
-      : AUTH_INTEREST_SKIP_HINT,
+    mode.value === "login" ? AUTH_LOGIN_PLACEHOLDER : AUTH_INTEREST_SKIP_HINT,
   );
   const passwordEnterKeyHint = computed(() => (mode.value === "login" ? "go" : "next"));
   const loginHasError = computed(
@@ -101,8 +103,7 @@ export function useAuthSubmit(
       successMessage.value = AUTH_LOGGED_IN_REFRESH;
       onAuthenticated(user);
     } catch (error) {
-      errorMessage.value =
-        extractErrorMessage(error, ERROR_AUTH_GENERIC);
+      errorMessage.value = extractErrorMessage(error, ERROR_AUTH_GENERIC);
     } finally {
       submitting.value = false;
     }

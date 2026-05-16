@@ -1,13 +1,15 @@
 <script setup lang="ts">
-import {
-  AUTH_PASSWORD_MIN_LENGTH,
-} from "../../domain/validation/forms";
+import { AUTH_PASSWORD_MIN_LENGTH } from "../../domain/validation/forms";
 import type { ProfileUser } from "../../types/profile";
 import { TypeChip } from "../../ui";
 import {
-  AUTH_PANEL_TITLE, AUTH_ACCOUNT_CHIP,
-  AUTH_PASSWORD_LABEL, AUTH_PASSWORD_PLACEHOLDER,
-  AUTH_PASSWORD_HINT, AUTH_INVITE_CODE, AUTH_INVITE_CODE_PLACEHOLDER,
+  AUTH_PANEL_TITLE,
+  AUTH_ACCOUNT_CHIP,
+  AUTH_PASSWORD_LABEL,
+  AUTH_PASSWORD_PLACEHOLDER,
+  AUTH_PASSWORD_HINT,
+  AUTH_INVITE_CODE,
+  AUTH_INVITE_CODE_PLACEHOLDER,
   AUTH_INVITE_CODE_HINT,
 } from "../../config/brand";
 import { useAuthForm } from "./useAuthForm";
@@ -134,10 +136,14 @@ const inviteCodeHintId = "auth-invite-code-hint";
           :autocomplete="mode === 'login' ? 'current-password' : 'new-password'"
           :enterkeyhint="passwordEnterKeyHint"
           :aria-invalid="passwordHasError"
-          :aria-describedby="[passwordHintId, passwordHasError ? formErrorId : null].filter(Boolean).join(' ')"
+          :aria-describedby="
+            [passwordHintId, passwordHasError ? formErrorId : null].filter(Boolean).join(' ')
+          "
           :placeholder="AUTH_PASSWORD_PLACEHOLDER.replace('{n}', String(AUTH_PASSWORD_MIN_LENGTH))"
         />
-        <small :id="passwordHintId" class="auth-panel__hint">{{ AUTH_PASSWORD_HINT.replace('{n}', String(AUTH_PASSWORD_MIN_LENGTH)) }}</small>
+        <small :id="passwordHintId" class="auth-panel__hint">{{
+          AUTH_PASSWORD_HINT.replace("{n}", String(AUTH_PASSWORD_MIN_LENGTH))
+        }}</small>
       </label>
 
       <label v-if="mode === 'register'">
@@ -150,7 +156,9 @@ const inviteCodeHintId = "auth-invite-code-hint";
           spellcheck="false"
           enterkeyhint="done"
           :aria-invalid="inviteCodeHasError"
-          :aria-describedby="[inviteCodeHintId, inviteCodeHasError ? formErrorId : null].filter(Boolean).join(' ')"
+          :aria-describedby="
+            [inviteCodeHintId, inviteCodeHasError ? formErrorId : null].filter(Boolean).join(' ')
+          "
           :placeholder="AUTH_INVITE_CODE_PLACEHOLDER"
         />
         <small :id="inviteCodeHintId" class="auth-panel__hint">{{ AUTH_INVITE_CODE_HINT }}</small>

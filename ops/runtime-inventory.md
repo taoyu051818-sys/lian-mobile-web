@@ -102,6 +102,7 @@ Prettier and ESLint are added as dev tooling (PR #545, 2026-05-16):
 - `npm run lint:fix` — auto-fix ESLint issues
 
 ESLint config (`eslint.config.js`) uses flat config with:
+
 - `@eslint/js` recommended rules
 - `typescript-eslint` recommended rules
 - `eslint-plugin-vue` flat/recommended rules

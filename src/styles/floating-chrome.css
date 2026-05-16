@@ -46,14 +46,22 @@
 }
 
 .post-detail-panel:not(.is-returning) .post-detail-panel__stage {
-  transform: translate3d(var(--detail-card-translate-x, 0px), var(--detail-card-translate-y, 0px), 0)
+  transform: translate3d(
+      var(--detail-card-translate-x, 0px),
+      var(--detail-card-translate-y, 0px),
+      0
+    )
     scale(calc(1 - (var(--detail-card-progress, 0) * var(--detail-drag-visible-scale-loss)))) !important;
   transition: none !important;
   will-change: transform, border-radius;
 }
 
 .post-detail-panel.is-returning .post-detail-panel__stage {
-  transform: translate3d(var(--detail-card-translate-x, 0px), var(--detail-card-translate-y, 0px), 0)
+  transform: translate3d(
+      var(--detail-card-translate-x, 0px),
+      var(--detail-card-translate-y, 0px),
+      0
+    )
     scale(var(--detail-card-scale, 1)) !important;
   transition:
     transform var(--motion-return) var(--motion-ease-standard),

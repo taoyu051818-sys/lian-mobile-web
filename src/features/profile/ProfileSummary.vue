@@ -13,13 +13,14 @@ const profile = {
   identity: "饭堂观察员",
   contribution: "地点沉淀者",
   status: "只读试点",
-  summary: "先把身份、贡献、标签和可信状态迁入 Vue；编辑资料、头像裁剪和发布历史仍留在 legacy 体验里验证。",
+  summary:
+    "先把身份、贡献、标签和可信状态迁入 Vue；编辑资料、头像裁剪和发布历史仍留在 legacy 体验里验证。",
   tags: ["饭堂", "校园生活", "地点观察"],
   metrics: [
     { label: "沉淀地点", value: "3", meta: "示例数据" },
     { label: "发布记录", value: "12", meta: "待接入真实接口" },
-    { label: "可信状态", value: "已展示", meta: "非生产事实" }
-  ] satisfies ProfileMetric[]
+    { label: "可信状态", value: "已展示", meta: "非生产事实" },
+  ] satisfies ProfileMetric[],
 };
 </script>
 

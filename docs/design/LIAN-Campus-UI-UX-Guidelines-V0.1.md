@@ -96,45 +96,45 @@ Suggested V0.1 tokens:
 
 ```css
 :root {
-  --lian-bg: #F7F4EC;
+  --lian-bg: #f7f4ec;
   --lian-card: rgba(255, 255, 255, 0.76);
 
-  --lian-primary: #1FA7A0;
-  --lian-primary-deep: #087B78;
-  --lian-primary-soft: #E4F7F5;
+  --lian-primary: #1fa7a0;
+  --lian-primary-deep: #087b78;
+  --lian-primary-soft: #e4f7f5;
 
-  --lian-coast-blue: #5BB8D6;
-  --lian-grass-green: #78B66B;
+  --lian-coast-blue: #5bb8d6;
+  --lian-grass-green: #78b66b;
 
-  --lian-ink: #1F2933;
-  --lian-muted: #6B7280;
-  --lian-faint: #9CA3AF;
+  --lian-ink: #1f2933;
+  --lian-muted: #6b7280;
+  --lian-faint: #9ca3af;
 
-  --lian-danger: #EF4444;
-  --lian-warning: #F59E0B;
-  --lian-success: #22C55E;
+  --lian-danger: #ef4444;
+  --lian-warning: #f59e0b;
+  --lian-success: #22c55e;
 }
 ```
 
 Color semantics must stay stable. A color cannot mean primary action, normal decoration, place, and AI at the same time.
 
-| Color role | Meaning | Strength |
-|---|---|---|
-| 蓝绿色主色 | Primary action, current selection, brand signal | Strong for action, restrained elsewhere |
-| 海岸蓝 | Place, map, spatial information | Light to medium |
-| 草地绿 | Success, confirmed, useful life information | Medium |
-| 黄色 / 橙色 | Pending, AI-organized, caution, trade risk | Medium to strong by risk |
-| 红色 | Delete, error, report, destructive risk | Strong |
-| 灰色 | Time, source, secondary information | Low |
+| Color role  | Meaning                                         | Strength                                |
+| ----------- | ----------------------------------------------- | --------------------------------------- |
+| 蓝绿色主色  | Primary action, current selection, brand signal | Strong for action, restrained elsewhere |
+| 海岸蓝      | Place, map, spatial information                 | Light to medium                         |
+| 草地绿      | Success, confirmed, useful life information     | Medium                                  |
+| 黄色 / 橙色 | Pending, AI-organized, caution, trade risk      | Medium to strong by risk                |
+| 红色        | Delete, error, report, destructive risk         | Strong                                  |
+| 灰色        | Time, source, secondary information             | Low                                     |
 
 Colors serve four semantic jobs:
 
-| Use | Meaning | Strength |
-|---|---|---|
-| 类型识别 | Experience, discussion, food, AI, official, trade | Weak |
-| 状态提示 | Confirmed, pending, expired, disputed | Medium |
-| 操作强调 | Publish, confirm, next, submit | Strong |
-| 风险警示 | Delete, report, trade risk, real-name reminder | Strong |
+| Use      | Meaning                                           | Strength |
+| -------- | ------------------------------------------------- | -------- |
+| 类型识别 | Experience, discussion, food, AI, official, trade | Weak     |
+| 状态提示 | Confirmed, pending, expired, disputed             | Medium   |
+| 操作强调 | Publish, confirm, next, submit                    | Strong   |
+| 风险警示 | Delete, report, trade risk, real-name reminder    | Strong   |
 
 The feed color rule:
 
@@ -148,15 +148,15 @@ Type tokens are for chips, icons, left hairlines, and small badges, not full-car
 
 ```css
 :root {
-  --type-experience: #78B66B;
-  --type-discussion: #5BB8D6;
-  --type-hot: #F59E0B;
-  --type-food: #1FA7A0;
-  --type-place: #2F80ED;
-  --type-ai: #8B7CF6;
-  --type-official: #087B78;
-  --type-trade: #F97316;
-  --type-contribution: #22C55E;
+  --type-experience: #78b66b;
+  --type-discussion: #5bb8d6;
+  --type-hot: #f59e0b;
+  --type-food: #1fa7a0;
+  --type-place: #2f80ed;
+  --type-ai: #8b7cf6;
+  --type-official: #087b78;
+  --type-trade: #f97316;
+  --type-contribution: #22c55e;
 
   --type-experience-soft: rgba(120, 182, 107, 0.14);
   --type-discussion-soft: rgba(91, 184, 214, 0.14);
@@ -174,24 +174,20 @@ Typography:
 
 ```css
 font-family:
-  -apple-system,
-  BlinkMacSystemFont,
-  "PingFang SC",
-  "Microsoft YaHei",
-  "Noto Sans CJK SC",
+  -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", "Noto Sans CJK SC",
   sans-serif;
 ```
 
 Type scale:
 
-| Use | Size |
-|---|---|
+| Use      | Size    |
+| -------- | ------- |
 | 页面标题 | 22-24px |
 | 模块标题 | 18-20px |
-| 卡片标题 | 16px |
-| 正文 | 14px |
-| 辅助信息 | 12px |
-| 标签 | 11-12px |
+| 卡片标题 | 16px    |
+| 正文     | 14px    |
+| 辅助信息 | 12px    |
+| 标签     | 11-12px |
 
 Typography rules:
 
@@ -244,13 +240,13 @@ Material is a depth tool, not a style protagonist. Glass should separate foregro
 
 Glass hierarchy:
 
-| Type | Use | Rule |
-|---|---|---|
-| `GlassBar` | Top bar, bottom navigation | Light blur, low shadow |
-| `GlassPanel` | Map detail, publish form, bottom sheet | Medium blur, medium shadow |
-| `GlassOrb` | Back, close, locate, floating publish actions | Circular, strongly recognizable |
-| `TonalPill` | Save draft, regenerate, filter | Soft color, low emphasis |
-| `FilledPill` | Publish, confirm, next, submit | Solid color, high emphasis |
+| Type         | Use                                           | Rule                            |
+| ------------ | --------------------------------------------- | ------------------------------- |
+| `GlassBar`   | Top bar, bottom navigation                    | Light blur, low shadow          |
+| `GlassPanel` | Map detail, publish form, bottom sheet        | Medium blur, medium shadow      |
+| `GlassOrb`   | Back, close, locate, floating publish actions | Circular, strongly recognizable |
+| `TonalPill`  | Save draft, regenerate, filter                | Soft color, low emphasis        |
+| `FilledPill` | Publish, confirm, next, submit                | Solid color, high emphasis      |
 
 Hard rules:
 
@@ -290,12 +286,12 @@ Cards are LIAN's core information container.
 
 V0.1 should start with four parent card families:
 
-| Parent card | Covers |
-|---|---|
-| `ContentCard` | Posts, experiences, discussions, notices |
-| `PlaceCard` | Places, buildings, dining halls, merchant aggregates |
-| `ActionCard` | Publish prompts, corrections, contributions, update records |
-| `SummaryCard` | AI summaries, system summaries, knowledge-base summaries |
+| Parent card   | Covers                                                      |
+| ------------- | ----------------------------------------------------------- |
+| `ContentCard` | Posts, experiences, discussions, notices                    |
+| `PlaceCard`   | Places, buildings, dining halls, merchant aggregates        |
+| `ActionCard`  | Publish prompts, corrections, contributions, update records |
+| `SummaryCard` | AI summaries, system summaries, knowledge-base summaries    |
 
 Specific cards such as `PostCard`, `HotCard`, `NoticeCard`, `MerchantCard`, and `AISummaryCard` should be variants of these parent cards instead of unrelated layouts.
 
@@ -311,13 +307,13 @@ Unified card structure:
 
 Field meaning:
 
-| Area | Content |
-|---|---|
-| 身份区 | Avatar, alias name, identity label, contribution label |
-| 内容区 | Title, summary, image, menu information, AI summary |
-| 上下文区 | Place, tag, time, source, category |
-| 互动区 | Comments, likes, saves, shares, corrections |
-| 沉淀区 | Linked place, entered knowledge base, referenced count |
+| Area     | Content                                                |
+| -------- | ------------------------------------------------------ |
+| 身份区   | Avatar, alias name, identity label, contribution label |
+| 内容区   | Title, summary, image, menu information, AI summary    |
+| 上下文区 | Place, tag, time, source, category                     |
+| 互动区   | Comments, likes, saves, shares, corrections            |
+| 沉淀区   | Linked place, entered knowledge base, referenced count |
 
 Information priority:
 
@@ -386,13 +382,13 @@ AI 卡片整张紫色
 
 Type-specific modules should carry the real difference:
 
-| Card type | Primary module |
-|---|---|
-| 校园经验 | Title, place, summary, saves, sedimentation |
-| 热门讨论 | Comment count, heat, latest reply, discussion state |
-| 饭堂商家 | Place, stall, price, open state, recommendation |
-| AI 摘要 | Source count, uncertainty, view sources |
-| 官方通知 | Official identity, publish time, importance, source link |
+| Card type   | Primary module                                           |
+| ----------- | -------------------------------------------------------- |
+| 校园经验    | Title, place, summary, saves, sedimentation              |
+| 热门讨论    | Comment count, heat, latest reply, discussion state      |
+| 饭堂商家    | Place, stall, price, open state, recommendation          |
+| AI 摘要     | Source count, uncertainty, view sources                  |
+| 官方通知    | Official identity, publish time, importance, source link |
 | 拼车 / 闲置 | Time/place, real-name state, risk prompt, contact action |
 
 Visible marker limits:
@@ -464,11 +460,11 @@ Tag rules:
 
 Tag types:
 
-| Type | Examples | Source |
-|---|---|---|
-| 内容标签 | `#避坑`, `#晚饭`, `#求助` | User input |
-| 地点标签 | `#三食堂`, `#宿舍区`, `#海边` | Generated by place binding |
-| 系统标签 | `#AI整理`, `#官方通知`, `#已验证` | System only |
+| Type     | Examples                          | Source                     |
+| -------- | --------------------------------- | -------------------------- |
+| 内容标签 | `#避坑`, `#晚饭`, `#求助`         | User input                 |
+| 地点标签 | `#三食堂`, `#宿舍区`, `#海边`     | Generated by place binding |
+| 系统标签 | `#AI整理`, `#官方通知`, `#已验证` | System only                |
 
 Users cannot freely create system trust tags such as `#官方通知`, `#已认证`, or `#AI整理`.
 
@@ -511,14 +507,14 @@ Initial feed channels:
 
 MVP distribution ratio can be manually configured:
 
-| Content type | Ratio |
-|---|---|
-| 热门讨论 | 30% |
-| 校园生活经验 | 25% |
-| 同学吐槽 / 实用反馈 | 20% |
-| 饭堂商家 | 15% |
-| AI 整理 | 5% |
-| 新内容探索 | 5% |
+| Content type        | Ratio |
+| ------------------- | ----- |
+| 热门讨论            | 30%   |
+| 校园生活经验        | 25%   |
+| 同学吐槽 / 实用反馈 | 20%   |
+| 饭堂商家            | 15%   |
+| AI 整理             | 5%    |
+| 新内容探索          | 5%    |
 
 Algorithm principle:
 
@@ -528,10 +524,10 @@ Algorithm principle:
 
 Use two metric groups:
 
-| Metric group | Examples |
-|---|---|
-| 分发指标 | 点击、停留、评论、点赞、收藏 |
-| 沉淀指标 | 地点绑定、搜索命中、被收藏、被 AI 引用、被地点页采用、纠错通过 |
+| Metric group | Examples                                                       |
+| ------------ | -------------------------------------------------------------- |
+| 分发指标     | 点击、停留、评论、点赞、收藏                                   |
+| 沉淀指标     | 地点绑定、搜索命中、被收藏、被 AI 引用、被地点页采用、纠错通过 |
 
 Map relationship:
 
@@ -627,13 +623,13 @@ Motion principles:
 
 Recommended duration:
 
-| Motion | Duration |
-|---|---|
-| 微反馈 | 100-180ms |
-| 卡片展开 | 180-240ms |
-| 页面转场 | 240-320ms |
-| 地图 Sheet | 250-350ms |
-| AI 生成 | Light loading only |
+| Motion     | Duration           |
+| ---------- | ------------------ |
+| 微反馈     | 100-180ms          |
+| 卡片展开   | 180-240ms          |
+| 页面转场   | 240-320ms          |
+| 地图 Sheet | 250-350ms          |
+| AI 生成    | Light loading only |
 
 Implementation rules:
 
@@ -660,16 +656,16 @@ Avoid:
 
 Interaction rules:
 
-| Target | Action |
-|---|---|
-| 卡片主体 | Enter detail |
-| 地点 chip | Enter place page |
-| 标签 chip | Enter tag/search result |
-| 身份 | Enter profile or identity explanation |
-| 图片 | Open lightbox |
-| 长按卡片 | More actions |
-| 首页下拉 | Refresh feed |
-| 地图 Sheet 上滑 | Expand place detail |
+| Target          | Action                                |
+| --------------- | ------------------------------------- |
+| 卡片主体        | Enter detail                          |
+| 地点 chip       | Enter place page                      |
+| 标签 chip       | Enter tag/search result               |
+| 身份            | Enter profile or identity explanation |
+| 图片            | Open lightbox                         |
+| 长按卡片        | More actions                          |
+| 首页下拉        | Refresh feed                          |
+| 地图 Sheet 上滑 | Expand place detail                   |
 
 Event priority inside cards:
 
@@ -681,10 +677,10 @@ This rule exists to prevent input fields or reply controls from accidentally tri
 
 State has two categories:
 
-| State category | Examples |
-|---|---|
-| 组件状态 | Default, pressed, selected, disabled, loading, success, failure |
-| 信息状态 | 已确认、待确认、有争议、已过期、AI 整理、官方信息 |
+| State category | Examples                                                        |
+| -------------- | --------------------------------------------------------------- |
+| 组件状态       | Default, pressed, selected, disabled, loading, success, failure |
+| 信息状态       | 已确认、待确认、有争议、已过期、AI 整理、官方信息               |
 
 Write actions must always produce feedback.
 

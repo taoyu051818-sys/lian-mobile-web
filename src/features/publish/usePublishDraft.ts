@@ -1,10 +1,18 @@
 import { computed, onBeforeUnmount, ref } from "vue";
 import type { PageChromeSpec } from "../../shell/page-model";
 import {
-  DEFAULT_USER_LABEL, ERROR_PUBLISH_IMAGE,
-  PUBLISH_IDENTITY_META, PUBLISH_IDENTITY_UNCONFIRMED,
-  PUBLISH_IMAGE_MAX, PUBLISH_IMAGE_UPLOADING, PUBLISH_IMAGE_READY, PUBLISH_IMAGE_COUNT_SUFFIX,
-  PUBLISH_VIS_PUBLIC, PUBLISH_VIS_CAMPUS, PUBLISH_VIS_SCHOOL, PUBLISH_VIS_PRIVATE,
+  DEFAULT_USER_LABEL,
+  ERROR_PUBLISH_IMAGE,
+  PUBLISH_IDENTITY_META,
+  PUBLISH_IDENTITY_UNCONFIRMED,
+  PUBLISH_IMAGE_MAX,
+  PUBLISH_IMAGE_UPLOADING,
+  PUBLISH_IMAGE_READY,
+  PUBLISH_IMAGE_COUNT_SUFFIX,
+  PUBLISH_VIS_PUBLIC,
+  PUBLISH_VIS_CAMPUS,
+  PUBLISH_VIS_SCHOOL,
+  PUBLISH_VIS_PRIVATE,
   USER_AVATAR_FALLBACK,
 } from "../../config/brand";
 import { extractErrorMessage } from "../../utils/extractErrorMessage";
@@ -53,14 +61,26 @@ export function usePublishDraft() {
     { value: "private", label: PUBLISH_VIS_PRIVATE },
   ];
 
-  const visibilityLabel = computed(() => visibilityOptions.find((item) => item.value === visibility.value)?.label || PUBLISH_VIS_PUBLIC);
+  const visibilityLabel = computed(
+    () =>
+      visibilityOptions.find((item) => item.value === visibility.value)?.label ||
+      PUBLISH_VIS_PUBLIC,
+  );
 
-  const canSubmit = computed(() => title.value.trim().length > 0 && body.value.trim().length > 0 && !uploading.value && !publishing.value);
+  const canSubmit = computed(
+    () =>
+      title.value.trim().length > 0 &&
+      body.value.trim().length > 0 &&
+      !uploading.value &&
+      !publishing.value,
+  );
   const titleCount = computed(() => title.value.length);
   const bodyCount = computed(() => body.value.length);
   const imageStatus = computed(() => {
-    if (!selectedFiles.value.length) return PUBLISH_IMAGE_MAX.replace("{n}", String(MAX_PUBLISH_IMAGE_COUNT));
-    if (uploading.value) return `${PUBLISH_IMAGE_UPLOADING} ${uploadedImageUrls.value.length}/${selectedFiles.value.length}`;
+    if (!selectedFiles.value.length)
+      return PUBLISH_IMAGE_MAX.replace("{n}", String(MAX_PUBLISH_IMAGE_COUNT));
+    if (uploading.value)
+      return `${PUBLISH_IMAGE_UPLOADING} ${uploadedImageUrls.value.length}/${selectedFiles.value.length}`;
     return `${PUBLISH_IMAGE_READY} ${uploadedImageUrls.value.length}/${selectedFiles.value.length} ${PUBLISH_IMAGE_COUNT_SUFFIX}`;
   });
 
@@ -81,7 +101,10 @@ export function usePublishDraft() {
 
   async function handleFiles(event: Event) {
     const input = event.target as HTMLInputElement;
-    const selection = validatePublishImageSelection(Array.from(input.files || []), selectedFiles.value.length);
+    const selection = validatePublishImageSelection(
+      Array.from(input.files || []),
+      selectedFiles.value.length,
+    );
     input.value = "";
 
     if (!selection.acceptedFiles.length) {
@@ -103,7 +126,11 @@ export function usePublishDraft() {
     if (uploading.value) return;
     uploading.value = true;
     try {
-      for (let index = uploadedImageUrls.value.length; index < selectedFiles.value.length; index += 1) {
+      for (
+        let index = uploadedImageUrls.value.length;
+        index < selectedFiles.value.length;
+        index += 1
+      ) {
         const url = await uploadPublishImage(selectedFiles.value[index]);
         uploadedImageUrls.value[index] = url;
       }
@@ -139,7 +166,9 @@ export function usePublishDraft() {
       aliasId.value = user?.activeAliasId || undefined;
       identityTagOptions.value = user?.identityTags || [];
       identityTag.value = "";
-      const activeAlias = aliasId.value ? user?.aliases?.find((alias) => alias.id === aliasId.value) : null;
+      const activeAlias = aliasId.value
+        ? user?.aliases?.find((alias) => alias.id === aliasId.value)
+        : null;
       identityMeta.value = activeAlias?.name || user?.institution || PUBLISH_IDENTITY_META;
     } catch {
       identityName.value = DEFAULT_USER_LABEL;
@@ -177,14 +206,42 @@ export function usePublishDraft() {
   });
 
   return {
-    title, body, tagInput, identityTag, identityTagOptions, placeName, visibility,
-    selectedFiles, localPreviewUrls, uploadedImageUrls,
-    aliasId, identityName, identityMeta,
-    uploading, publishing, errorMessage, successMessage, lastTid,
-    tagPanelOpen, visibilityPanelOpen,
-    normalizedTag, normalizedIdentityTag, avatarText,
-    canSubmit, titleCount, bodyCount, imageStatus, visibilityLabel, visibilityOptions, pageChrome,
-    handleFiles, removeImage, validate, loadIdentity, resetForm,
-    toggleTagPanel, toggleVisibilityPanel,
+    title,
+    body,
+    tagInput,
+    identityTag,
+    identityTagOptions,
+    placeName,
+    visibility,
+    selectedFiles,
+    localPreviewUrls,
+    uploadedImageUrls,
+    aliasId,
+    identityName,
+    identityMeta,
+    uploading,
+    publishing,
+    errorMessage,
+    successMessage,
+    lastTid,
+    tagPanelOpen,
+    visibilityPanelOpen,
+    normalizedTag,
+    normalizedIdentityTag,
+    avatarText,
+    canSubmit,
+    titleCount,
+    bodyCount,
+    imageStatus,
+    visibilityLabel,
+    visibilityOptions,
+    pageChrome,
+    handleFiles,
+    removeImage,
+    validate,
+    loadIdentity,
+    resetForm,
+    toggleTagPanel,
+    toggleVisibilityPanel,
   };
 }

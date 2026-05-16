@@ -25,9 +25,10 @@ function normalizeReadHistoryEntry(value: unknown): ReadHistoryEntry | null {
   const tid = Number((value as { tid?: unknown }).tid);
   if (!Number.isFinite(tid)) return null;
 
-  const lastViewedAt = typeof (value as { lastViewedAt?: unknown }).lastViewedAt === "string"
-    ? (value as { lastViewedAt: string }).lastViewedAt
-    : undefined;
+  const lastViewedAt =
+    typeof (value as { lastViewedAt?: unknown }).lastViewedAt === "string"
+      ? (value as { lastViewedAt: string }).lastViewedAt
+      : undefined;
 
   return lastViewedAt ? { tid, lastViewedAt } : { tid };
 }

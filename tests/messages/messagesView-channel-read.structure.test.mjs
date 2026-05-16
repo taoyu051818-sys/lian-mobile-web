@@ -5,7 +5,10 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
-const channelSource = fs.readFileSync(path.join(repoRoot, "src/features/messages/useChannelMessages.ts"), "utf8");
+const channelSource = fs.readFileSync(
+  path.join(repoRoot, "src/features/messages/useChannelMessages.ts"),
+  "utf8",
+);
 const apiSource = fs.readFileSync(path.join(repoRoot, "src/api/messages.ts"), "utf8");
 const typesSource = fs.readFileSync(path.join(repoRoot, "src/types/messages.ts"), "utf8");
 
@@ -15,7 +18,10 @@ test("useChannelMessages uses ?? for nextOffset fallback so 0 is preserved", () 
 });
 
 test("useChannelMessages imports markChannelMessagesRead from the API module", () => {
-  assert.match(channelSource, /import \{[^}]*markChannelMessagesRead[^}]*\} from "\.\.\/\.\.\/api\/messages"/);
+  assert.match(
+    channelSource,
+    /import \{[^}]*markChannelMessagesRead[^}]*\} from "\.\.\/\.\.\/api\/messages"/,
+  );
 });
 
 test("useChannelMessages fires markChannelMessagesRead after a reset channel load", () => {

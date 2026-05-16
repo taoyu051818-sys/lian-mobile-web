@@ -33,10 +33,6 @@ const icon = computed(() => {
     :aria-hidden="title ? undefined : 'true'"
   >
     <title v-if="title">{{ title }}</title>
-    <path
-      v-for="(d, i) in icon.paths"
-      :key="i"
-      :d="d"
-    />
+    <path v-for="(d, i) in icon.paths" :key="i" :d="d" />
   </svg>
 </template>

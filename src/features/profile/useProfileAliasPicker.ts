@@ -1,9 +1,13 @@
 import { computed, ref, type Ref } from "vue";
 import { activateProfileAlias, deactivateProfileAlias } from "../../api/profile";
 import {
-  PROFILE_ALIAS_TYPE, PROFILE_ALIAS_SIGNAL,
-  PROFILE_ALIAS_PERSONA, PROFILE_ALIAS_DESCRIPTION, PROFILE_REAL_IDENTITY_HINT,
-  PROFILE_ALIAS_DEFAULT_HINT, PROFILE_ALIAS_MORE_HINT,
+  PROFILE_ALIAS_TYPE,
+  PROFILE_ALIAS_SIGNAL,
+  PROFILE_ALIAS_PERSONA,
+  PROFILE_ALIAS_DESCRIPTION,
+  PROFILE_REAL_IDENTITY_HINT,
+  PROFILE_ALIAS_DEFAULT_HINT,
+  PROFILE_ALIAS_MORE_HINT,
 } from "../../config/brand";
 import type { ProfileUser } from "../../types/profile";
 
@@ -34,12 +38,16 @@ export function useProfileAliasPicker(options: {
 
   const activeAliasHint = computed(() => {
     if (!activeAlias.value) return PROFILE_REAL_IDENTITY_HINT;
-    return activeAliasSummary.value.length
-      ? PROFILE_ALIAS_DEFAULT_HINT
-      : PROFILE_ALIAS_MORE_HINT;
+    return activeAliasSummary.value.length ? PROFILE_ALIAS_DEFAULT_HINT : PROFILE_ALIAS_MORE_HINT;
   });
 
-  const identityMeta = computed(() => activeAlias.value?.name || user.value?.identityTags?.[0] || user.value?.institution || PROFILE_REAL_IDENTITY_HINT);
+  const identityMeta = computed(
+    () =>
+      activeAlias.value?.name ||
+      user.value?.identityTags?.[0] ||
+      user.value?.institution ||
+      PROFILE_REAL_IDENTITY_HINT,
+  );
 
   const userTags = computed(() => {
     const tags = user.value?.tags || user.value?.identityTags || [];

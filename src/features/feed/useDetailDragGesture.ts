@@ -7,7 +7,11 @@ const DETAIL_DRAG_EDGE_GUARD = 28;
 function isInteractiveTarget(target: EventTarget | null) {
   if (!(target instanceof HTMLElement)) return false;
   if (target.closest(".post-detail-panel__gallery, .post-detail-panel__gallery-item")) return false;
-  return Boolean(target.closest(".post-detail-panel__topbar, .post-detail-panel__dock, .post-detail-panel__report, .post-detail-panel__lightbox, a, button, input, textarea, select, [role='button']"));
+  return Boolean(
+    target.closest(
+      ".post-detail-panel__topbar, .post-detail-panel__dock, .post-detail-panel__report, .post-detail-panel__lightbox, a, button, input, textarea, select, [role='button']",
+    ),
+  );
 }
 
 export function useDetailDragGesture(deps: {
@@ -38,7 +42,13 @@ export function useDetailDragGesture(deps: {
   }
 
   function onDetailPointerDown(event: PointerEvent) {
-    if (!deps.detailOpen.value || deps.detailLoading.value || deps.detailReturning.value || isInteractiveTarget(event.target)) return;
+    if (
+      !deps.detailOpen.value ||
+      deps.detailLoading.value ||
+      deps.detailReturning.value ||
+      isInteractiveTarget(event.target)
+    )
+      return;
     if (event.pointerType === "mouse" && event.button !== 0) return;
     deps.updateViewport();
     if (!isInsideDetailDragBand(event.clientX)) return;

@@ -7,8 +7,10 @@ import type { PageChromeSpec } from "../../shell/page-model";
 import PostDetailPanel from "../detail/PostDetailPanel.vue";
 import { ChannelComposer, ChannelThread, NotificationList } from "./";
 import {
-  MESSAGE_TAB_CHANNEL, MESSAGE_TAB_NOTIFICATION,
-  MESSAGE_SECTION_LABEL, MESSAGE_TAB_LABEL,
+  MESSAGE_TAB_CHANNEL,
+  MESSAGE_TAB_NOTIFICATION,
+  MESSAGE_SECTION_LABEL,
+  MESSAGE_TAB_LABEL,
   POST_DETAIL_DIALOG_LABEL,
 } from "../../config/brand";
 import { useChannelMessages } from "./useChannelMessages";
@@ -21,21 +23,44 @@ const emit = defineEmits<{
 
 const activeTab = ref<MessageTabKey>("channel");
 
-const { channelItems, channelLoading, channelError, channelHasMore, loadChannel, sendMessage, retryMessage: channelRetryMessage } = useChannelMessages();
-const { notificationItems, notificationLoading, notificationError, loadNotifications } = useNotifications();
 const {
-  composerContent, composerIdentityTag, currentUser, identityTags,
-  sending, sendError,
-  composerActorName, composerAvatarText, composerSignalMeta,
-  loadCurrentUser, submitMessage, retryMessage,
+  channelItems,
+  channelLoading,
+  channelError,
+  channelHasMore,
+  loadChannel,
+  sendMessage,
+  retryMessage: channelRetryMessage,
+} = useChannelMessages();
+const { notificationItems, notificationLoading, notificationError, loadNotifications } =
+  useNotifications();
+const {
+  composerContent,
+  composerIdentityTag,
+  currentUser,
+  identityTags,
+  sending,
+  sendError,
+  composerActorName,
+  composerAvatarText,
+  composerSignalMeta,
+  loadCurrentUser,
+  submitMessage,
+  retryMessage,
 } = useMessageComposer({
   onSend: sendMessage,
   onRetry: channelRetryMessage,
 });
 
 const {
-  selectedPostId, selectedPost, detailLoading, detailError, detailOpen,
-  openDetail: openNotification, closeDetail, retryDetail,
+  selectedPostId,
+  selectedPost,
+  detailLoading,
+  detailError,
+  detailOpen,
+  openDetail: openNotification,
+  closeDetail,
+  retryDetail,
 } = usePostDetail();
 
 useVisualViewport();
@@ -53,11 +78,15 @@ const pageChrome = computed<PageChromeSpec>(() => ({
       activeKey: activeTab.value,
       ariaLabel: MESSAGE_TAB_LABEL,
     },
-    identity: currentUser.value ? {
-      avatarText: composerAvatarText.value,
-      name: composerActorName.value,
-    } : null,
-    onTabSelect: (tabId: string) => { void switchTab(tabId as MessageTabKey); },
+    identity: currentUser.value
+      ? {
+          avatarText: composerAvatarText.value,
+          name: composerActorName.value,
+        }
+      : null,
+    onTabSelect: (tabId: string) => {
+      void switchTab(tabId as MessageTabKey);
+    },
   },
   bottom: {
     visible: activeTab.value === "channel",
@@ -120,7 +149,13 @@ onMounted(async () => {
       @submit="submitMessage"
     />
 
-    <div v-if="detailOpen" class="messages-view__detail-overlay" role="dialog" aria-modal="true" :aria-label="POST_DETAIL_DIALOG_LABEL">
+    <div
+      v-if="detailOpen"
+      class="messages-view__detail-overlay"
+      role="dialog"
+      aria-modal="true"
+      :aria-label="POST_DETAIL_DIALOG_LABEL"
+    >
       <PostDetailPanel
         :post="selectedPost"
         :loading="detailLoading"
@@ -144,7 +179,10 @@ onMounted(async () => {
   position: fixed;
   right: max(var(--floating-bar-side-inset), env(safe-area-inset-right));
   left: max(var(--floating-bar-side-inset), env(safe-area-inset-left));
-  bottom: calc(var(--floating-bar-bottom-offset) + var(--floating-bar-height) + var(--space-2) + var(--keyboard-inset-bottom, 0px));
+  bottom: calc(
+    var(--floating-bar-bottom-offset) + var(--floating-bar-height) + var(--space-2) +
+      var(--keyboard-inset-bottom, 0px)
+  );
   z-index: var(--floating-bar-z, 70);
   width: min(calc(100vw - var(--space-6)), var(--floating-bar-max-width));
   margin: 0 auto;

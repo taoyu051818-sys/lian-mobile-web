@@ -6,27 +6,42 @@ import type { PlaceSheet } from "../../types/place";
 import type { PostDetail } from "../../types/post";
 import { formatTimestampLabel } from "../../utils/time";
 
-export function usePostDetailPresentation(post: ComputedRef<PostDetail | null>, placeSheet: ComputedRef<PlaceSheet | null>) {
+export function usePostDetailPresentation(
+  post: ComputedRef<PostDetail | null>,
+  placeSheet: ComputedRef<PlaceSheet | null>,
+) {
   const postId = computed(() => post.value?.tid ?? null);
   const title = computed(() => post.value?.title || "");
   const authorLabel = computed(() => actorDisplayName(post.value?.actor));
   const authorAvatarUrl = computed(() => actorAvatarUrl(post.value?.actor));
   const authorInitial = computed(() => actorAvatarText(post.value?.actor, authorLabel.value));
-  const hasAuthorIdentity = computed(() => Boolean(authorLabel.value || authorAvatarUrl.value || authorInitial.value));
+  const hasAuthorIdentity = computed(() =>
+    Boolean(authorLabel.value || authorAvatarUrl.value || authorInitial.value),
+  );
   const structuredPlace = computed(() => post.value?.place || null);
   const placeLabel = computed(() => structuredPlace.value?.name || post.value?.locationArea || "");
   const primaryTag = computed(() => normalizePostTag(post.value?.primaryTag || ""));
   const rawBodyHtml = computed(() => post.value?.contentHtml || "");
   const bodyHtml = computed(() => stripDecorativeContentFromHtml(sanitizeHtml(rawBodyHtml.value)));
   const replies = computed(() => post.value?.replies || []);
-  const images = computed(() => uniqueGalleryImages([post.value?.cover || "", ...(post.value?.imageUrls || [])]).slice(0, 8));
+  const images = computed(() =>
+    uniqueGalleryImages([post.value?.cover || "", ...(post.value?.imageUrls || [])]).slice(0, 8),
+  );
   const fullResolutionImages = computed(() => images.value.map(toFullResolutionImageUrl));
-  const timeLabel = computed(() => formatTimestampLabel(post.value?.timestampISO, post.value?.timeLabel || ""));
-  const placeStatusText = computed(() => placeStatusLabel(placeSheet.value?.status || structuredPlace.value?.status));
+  const timeLabel = computed(() =>
+    formatTimestampLabel(post.value?.timestampISO, post.value?.timeLabel || ""),
+  );
+  const placeStatusText = computed(() =>
+    placeStatusLabel(placeSheet.value?.status || structuredPlace.value?.status),
+  );
 
-  watch(fullResolutionImages, (urls) => {
-    preloadImages(urls);
-  }, { immediate: true });
+  watch(
+    fullResolutionImages,
+    (urls) => {
+      preloadImages(urls);
+    },
+    { immediate: true },
+  );
 
   return {
     postId,
@@ -48,7 +63,9 @@ export function usePostDetailPresentation(post: ComputedRef<PostDetail | null>, 
 }
 
 function normalizePostTag(value: string) {
-  const text = String(value || "").trim().replace(/^#+/, "");
+  const text = String(value || "")
+    .trim()
+    .replace(/^#+/, "");
   return text ? `#${text}` : "";
 }
 
@@ -56,7 +73,10 @@ function galleryImageKey(value: string) {
   const raw = String(value || "").trim();
   if (!raw) return "";
   try {
-    const url = new URL(raw, typeof window !== "undefined" ? window.location.origin : "https://lian.invalid");
+    const url = new URL(
+      raw,
+      typeof window !== "undefined" ? window.location.origin : "https://lian.invalid",
+    );
     const pathname = url.pathname.replace(/^\/+/, "");
     const uploadIndex = pathname.indexOf("/upload/");
     if (uploadIndex >= 0) {
@@ -90,7 +110,10 @@ function toFullResolutionImageUrl(value: string) {
   const raw = String(value || "").trim();
   if (!raw) return "";
   try {
-    const url = new URL(raw, typeof window !== "undefined" ? window.location.origin : "https://lian.invalid");
+    const url = new URL(
+      raw,
+      typeof window !== "undefined" ? window.location.origin : "https://lian.invalid",
+    );
     if (!url.hostname.includes("cloudinary.com") || !url.pathname.includes("/upload/")) return raw;
     url.pathname = url.pathname.replace(/\/upload\/[^/]+\//, "/upload/f_auto,q_auto/");
     return url.toString();
@@ -116,4 +139,3 @@ function stripDecorativeContentFromHtml(value: string) {
     .replace(/<p[^>]*>\s*#+[^<]+\s*<\/p>/gi, "")
     .trim();
 }
-

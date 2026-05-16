@@ -1,12 +1,15 @@
 <script setup lang="ts">
-withDefaults(defineProps<{
-  avatarText?: string;
-  label: string;
-  meta?: string;
-}>(), {
-  avatarText: "同",
-  meta: ""
-});
+withDefaults(
+  defineProps<{
+    avatarText?: string;
+    label: string;
+    meta?: string;
+  }>(),
+  {
+    avatarText: "同",
+    meta: "",
+  },
+);
 </script>
 
 <template>

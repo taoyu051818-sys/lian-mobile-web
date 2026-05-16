@@ -33,7 +33,8 @@ export const AUTH_LOGIN_PLACEHOLDER = "使用邮箱或昵称登录。";
 export const AUTH_INTEREST_SKIP_HINT = "兴趣会帮助初始化首页推荐，可先跳过，之后再调整推荐偏好。";
 export const AUTH_INTEREST_LOADING = "正在加载首页推荐偏好选项。";
 export const AUTH_INTEREST_EMPTY = "当前没有可选兴趣，也可以先完成注册，之后再调整首页推荐偏好。";
-export const AUTH_INTEREST_ERROR = "兴趣选项暂时加载失败，也可以先完成注册，之后再调整首页推荐偏好。";
+export const AUTH_INTEREST_ERROR =
+  "兴趣选项暂时加载失败，也可以先完成注册，之后再调整首页推荐偏好。";
 export const AUTH_INTEREST_PICK_HINT = "选择至少 1 个兴趣，用于初始化首页推荐；之后仍可以再调整。";
 export const AUTH_INTEREST_SKIP_DEFAULT = "兴趣会帮助初始化首页推荐，可先跳过，之后再调整。";
 export const AUTH_LOGGED_IN_REFRESH = "已登录，正在刷新个人资料。";
@@ -52,4 +53,5 @@ export const AUTH_CODE_RATE_LIMIT = "发送太频繁，请在 {n} 秒后再试�
 export const AUTH_CODE_RATE_LIMIT_DEFAULT = "发送太频繁，请稍后再试。页面会先按 {n} 秒冷却处理。";
 export const AUTH_CODE_SENT_INST = "验证码已发送，识别为 {n}。";
 export const AUTH_CODE_RATE_LIMIT_RESEND = "当前发送过于频繁，请在 {n} 秒后重新获取验证码。";
-export const AUTH_CODE_RATE_LIMIT_FALLBACK = "如果服务端没有返回具体等待时间，页面会先按 {n} 秒冷却处理。";
+export const AUTH_CODE_RATE_LIMIT_FALLBACK =
+  "如果服务端没有返回具体等待时间，页面会先按 {n} 秒冷却处理。";

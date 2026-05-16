@@ -57,7 +57,9 @@ export function locationIcon(location: MapLocation): LeafletDivIconLike {
 }
 
 export function postIcon(post: MapPost): LeafletDivIconLike {
-  const image = post.imageUrl ? `<img src="${escapeHtml(post.imageUrl)}" alt="">` : `<strong>${MAP_POST_AVATAR_FALLBACK}</strong>`;
+  const image = post.imageUrl
+    ? `<img src="${escapeHtml(post.imageUrl)}" alt="">`
+    : `<strong>${MAP_POST_AVATAR_FALLBACK}</strong>`;
   return htmlIcon(
     "vue-map-marker vue-map-marker--post",
     `<span class="vue-map-post-card">${image}<span>${escapeHtml(post.title || post.locationArea || MAP_CONTENT_FALLBACK)}</span></span>`,
@@ -67,8 +69,12 @@ export function postIcon(post: MapPost): LeafletDivIconLike {
 }
 
 export function assetIcon(asset: MapAsset): LeafletDivIconLike {
-  const size: [number, number] = Array.isArray(asset.size) ? [Number(asset.size[0] ?? 64), Number(asset.size[1] ?? 64)] : [64, 64];
-  const anchor: [number, number] = Array.isArray(asset.anchor) ? [Number(asset.anchor[0] ?? size[0] / 2), Number(asset.anchor[1] ?? size[1])] : [size[0] / 2, size[1]];
+  const size: [number, number] = Array.isArray(asset.size)
+    ? [Number(asset.size[0] ?? 64), Number(asset.size[1] ?? 64)]
+    : [64, 64];
+  const anchor: [number, number] = Array.isArray(asset.anchor)
+    ? [Number(asset.anchor[0] ?? size[0] / 2), Number(asset.anchor[1] ?? size[1])]
+    : [size[0] / 2, size[1]];
   const opacity = Math.max(0, Math.min(1, Number(asset.opacity ?? 1)));
   const rotation = Number(asset.rotation || 0);
   return htmlIcon(

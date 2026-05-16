@@ -14,7 +14,7 @@ const TEXT_EXTENSIONS = new Set([
   ".mjs",
   ".txt",
   ".yml",
-  ".yaml"
+  ".yaml",
 ]);
 const IGNORE_DIRS = new Set([
   ".git",
@@ -24,7 +24,7 @@ const IGNORE_DIRS = new Set([
   ".cache",
   "dist",
   "build",
-  "coverage"
+  "coverage",
 ]);
 
 // ── Latin-1 / Windows-1252 mojibake detection ──
@@ -39,10 +39,12 @@ const mojibakeTokens = [
   0x00e5,
   [0x00e4, 0x00b8],
   0x00e6,
-  0x00e7
-].map((item) => Array.isArray(item)
-  ? item.map((code) => String.fromCharCode(code)).join("")
-  : String.fromCharCode(item));
+  0x00e7,
+].map((item) =>
+  Array.isArray(item)
+    ? item.map((code) => String.fromCharCode(code)).join("")
+    : String.fromCharCode(item),
+);
 
 // ── GBK-as-UTF-8 mojibake detection ──
 // When UTF-8 Chinese text is mistakenly decoded as GBK/GB2312, the resulting
@@ -69,7 +71,7 @@ const MOJIBAKE_RARE_CJK =
   "鍚" + // 鍚
   "鏁" + // 鏁
   "鏂" + // 鏂
-  "閰";  // 閰
+  "閰"; // 閰
 const gbkMojibakePattern = new RegExp(`[${MOJIBAKE_RARE_CJK}]{2,}`);
 
 // Well-known GBK mojibake trigrams produced by the most common Chinese words.
@@ -98,11 +100,17 @@ const KNOWN_MOJIBAKE_TRIGRAMS = [
 const PATTERNS = [
   { name: "unicode replacement character", regex: new RegExp(String.fromCharCode(0xfffd)) },
   { name: "common mojibake lead bytes", regex: new RegExp(`(?:${mojibakeTokens.join("|")})`) },
-  { name: "legacy GBK/GB2312/GB18030 charset", regex: /charset\s*=\s*["']?(?:gbk|gb2312|gb18030)/i },
+  {
+    name: "legacy GBK/GB2312/GB18030 charset",
+    regex: /charset\s*=\s*["']?(?:gbk|gb2312|gb18030)/i,
+  },
   { name: "legacy non-UTF-8 decoder", regex: new RegExp(textDecoderPattern, "i") },
   { name: "binary string conversion", regex: /\.toString\(\s*["']binary["']\s*\)/i },
   { name: "GBK-as-UTF-8 mojibake (rare CJK sequence)", regex: gbkMojibakePattern },
-  { name: "known GBK mojibake trigram", regex: new RegExp(`(?:${KNOWN_MOJIBAKE_TRIGRAMS.map(escapeRegExp).join("|")})`) },
+  {
+    name: "known GBK mojibake trigram",
+    regex: new RegExp(`(?:${KNOWN_MOJIBAKE_TRIGRAMS.map(escapeRegExp).join("|")})`),
+  },
 ];
 
 // ── helpers ──
@@ -152,7 +160,9 @@ if (process.argv.includes("--test")) {
       passed++;
     } else {
       failed++;
-      console.error(`FAIL: ${name} — expected ${shouldMatch ? "match" : "no match"}, got ${matched ? `match (${matchedPattern})` : "no match"}`);
+      console.error(
+        `FAIL: ${name} — expected ${shouldMatch ? "match" : "no match"}, got ${matched ? `match (${matchedPattern})` : "no match"}`,
+      );
     }
   }
 
@@ -225,7 +235,7 @@ for (const file of files) {
       file: relative,
       line: lineNumberAt(text, match.index),
       pattern: pattern.name,
-      sample: match[0]
+      sample: match[0],
     });
   }
 }
