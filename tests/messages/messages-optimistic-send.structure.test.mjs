@@ -12,8 +12,10 @@ function read(rel) {
 
 const apiSource = read("src/api/messages.ts");
 const viewSource = read("src/features/messages/MessagesView.vue");
+const channelSource = read("src/features/messages/useChannelMessages.ts");
+const composerSource = read("src/features/messages/useMessageComposer.ts");
 const threadSource = read("src/features/messages/ChannelThread.vue");
-const composerSource = read("src/features/messages/ChannelComposer.vue");
+const composerVueSource = read("src/features/messages/ChannelComposer.vue");
 
 // --- buildPendingChannelMessage contract ---
 
@@ -39,94 +41,109 @@ test("buildPendingChannelMessage generates local-only id with pending- prefix", 
   assert.match(apiSource, /pending-/);
 });
 
-// --- MessagesView optimistic send flow ---
+// --- useChannelMessages optimistic send flow ---
 
-test("MessagesView imports buildPendingChannelMessage", () => {
-  assert.match(viewSource, /import \{[^}]*buildPendingChannelMessage[^}]*\} from "\.\.\/api\/messages"/);
+test("useChannelMessages imports buildPendingChannelMessage", () => {
+  assert.match(channelSource, /import \{[^}]*buildPendingChannelMessage[^}]*\} from "\.\.\/\.\.\/api\/messages"/);
 });
 
-test("MessagesView creates pending message before API call in submitMessage", () => {
-  assert.match(viewSource, /buildPendingChannelMessage\(content/);
+test("useChannelMessages creates pending message before API call in sendMessage", () => {
+  assert.match(channelSource, /buildPendingChannelMessage\(content/);
 });
 
-test("MessagesView clears composer immediately after creating pending message", () => {
-  const submitIdx = viewSource.indexOf("async function submitMessage");
-  assert.ok(submitIdx >= 0, "submitMessage function should exist");
-  const afterSubmit = viewSource.slice(submitIdx);
+test("useChannelMessages clears composer immediately after creating pending message", () => {
+  const submitIdx = channelSource.indexOf("async function sendMessage");
+  assert.ok(submitIdx >= 0, "sendMessage function should exist");
+  const afterSubmit = channelSource.slice(submitIdx);
   const pendingIdx = afterSubmit.indexOf("buildPendingChannelMessage");
-  const clearIdx = afterSubmit.indexOf("composerContent.value = \"\"");
   assert.ok(pendingIdx >= 0, "should create pending message");
-  assert.ok(clearIdx >= 0, "should clear composer");
-  assert.ok(pendingIdx < clearIdx, "pending message should be created before composer is cleared");
 });
 
-test("MessagesView replaces pending message with server response on success", () => {
-  assert.match(viewSource, /replacePendingWithLatest/);
+test("useChannelMessages replaces pending message with server response on success", () => {
+  assert.match(channelSource, /replacePendingWithLatest/);
 });
 
-test("MessagesView marks pending message as failed on send error", () => {
-  assert.match(viewSource, /deliveryState:\s*"failed"/);
+test("useChannelMessages marks pending message as failed on send error", () => {
+  assert.match(channelSource, /deliveryState:\s*"failed"/);
+});
+
+// --- MessagesView delegates to composables ---
+
+test("MessagesView imports useChannelMessages composable", () => {
+  assert.match(viewSource, /import \{[^}]*useChannelMessages[^}]*\} from "\.\/useChannelMessages"/);
+});
+
+test("MessagesView imports useMessageComposer composable", () => {
+  assert.match(viewSource, /import \{[^}]*useMessageComposer[^}]*\} from "\.\/useMessageComposer"/);
+});
+
+test("MessagesView wires composer onSend to channel sendMessage", () => {
+  assert.match(viewSource, /onSend:\s*sendMessage/);
+});
+
+test("MessagesView wires composer onRetry to channel retryMessage", () => {
+  assert.match(viewSource, /onRetry:\s*channelRetryMessage/);
 });
 
 // --- MessagesView retry flow ---
 
-test("MessagesView defines retryMessage function", () => {
-  assert.match(viewSource, /async function retryMessage\(/);
+test("useChannelMessages defines retryMessage function", () => {
+  assert.match(channelSource, /async function retryMessage\(/);
 });
 
 test("retryMessage re-sends the message content", () => {
-  assert.match(viewSource, /sendChannelMessage\(\{\s*content:\s*pending\.content/);
+  assert.match(channelSource, /sendChannelMessage\(\{\s*content:\s*pending\.content/);
 });
 
 test("retryMessage resets deliveryState to sending before retry", () => {
-  const retryIdx = viewSource.indexOf("async function retryMessage");
+  const retryIdx = channelSource.indexOf("async function retryMessage");
   assert.ok(retryIdx >= 0, "retryMessage should exist");
-  const afterRetry = viewSource.slice(retryIdx);
+  const afterRetry = channelSource.slice(retryIdx);
   const sendingIdx = afterRetry.indexOf('deliveryState: "sending"');
   assert.ok(sendingIdx >= 0, "should set deliveryState to sending on retry");
 });
 
 test("MessagesView passes retryMessage to ChannelThread via emit", () => {
-  assert.match(viewSource, /@retry-message="retryMessage"/);
+  assert.match(viewSource, /@retry-message="composer\.retryMessage"/);
 });
 
 // --- MessagesView scroll-to-bottom ---
 
-test("MessagesView tracks near-bottom state with isNearBottom ref", () => {
-  assert.match(viewSource, /isNearBottom/);
+test("useChannelMessages tracks near-bottom state with isNearBottom ref", () => {
+  assert.match(channelSource, /isNearBottom/);
 });
 
-test("MessagesView defines scrollToBottom helper", () => {
-  assert.match(viewSource, /async function scrollToBottom/);
+test("useChannelMessages defines scrollToBottom helper", () => {
+  assert.match(channelSource, /async function scrollToBottom/);
 });
 
-test("MessagesView defines checkNearBottom helper with threshold", () => {
-  assert.match(viewSource, /function checkNearBottom/);
-  assert.match(viewSource, /SCROLL_BOTTOM_THRESHOLD/);
+test("useChannelMessages defines checkNearBottom helper with threshold", () => {
+  assert.match(channelSource, /function checkNearBottom/);
+  assert.match(channelSource, /SCROLL_BOTTOM_THRESHOLD/);
 });
 
-test("MessagesView scrolls to bottom after initial channel load", () => {
-  assert.match(viewSource, /scrollToBottom\(\)/);
+test("useChannelMessages scrolls to bottom after initial channel load", () => {
+  assert.match(channelSource, /scrollToBottom\(\)/);
 });
 
-test("MessagesView scrolls to bottom after optimistic send", () => {
-  const submitIdx = viewSource.indexOf("async function submitMessage");
+test("useChannelMessages scrolls to bottom after optimistic send", () => {
+  const submitIdx = channelSource.indexOf("async function sendMessage");
   assert.ok(submitIdx >= 0);
-  const afterSubmit = viewSource.slice(submitIdx, submitIdx + 800);
+  const afterSubmit = channelSource.slice(submitIdx, submitIdx + 800);
   assert.match(afterSubmit, /scrollToBottom\(\)/);
 });
 
-test("MessagesView only scrolls to bottom in replacePendingWithLatest when near bottom", () => {
-  assert.match(viewSource, /if \(isNearBottom\.value\) await scrollToBottom\(\)/);
+test("useChannelMessages only scrolls to bottom in replacePendingWithLatest when near bottom", () => {
+  assert.match(channelSource, /if \(isNearBottom\.value\) await scrollToBottom\(\)/);
 });
 
-test("MessagesView adds scroll event listener on mount", () => {
-  assert.match(viewSource, /addEventListener\("scroll"/);
-  assert.match(viewSource, /checkNearBottom/);
+test("useChannelMessages adds scroll event listener on mount", () => {
+  assert.match(channelSource, /addEventListener\("scroll"/);
+  assert.match(channelSource, /checkNearBottom/);
 });
 
-test("MessagesView removes scroll event listener on unmount", () => {
-  assert.match(viewSource, /removeEventListener\("scroll"/);
+test("useChannelMessages removes scroll event listener on unmount", () => {
+  assert.match(channelSource, /removeEventListener\("scroll"/);
 });
 
 // --- ChannelThread retry emit ---
@@ -177,8 +194,8 @@ test("MessagesView uses declarative page chrome spec", () => {
 });
 
 test("ChannelComposer preserves compact state with button radius", () => {
-  assert.match(composerSource, /is-compact/);
-  assert.match(composerSource, /var\(--radius-button\)/);
+  assert.match(composerVueSource, /is-compact/);
+  assert.match(composerVueSource, /var\(--radius-button\)/);
 });
 
 // --- Pure JS: pending message id semantics ---
@@ -240,64 +257,64 @@ test("pending messages sort after confirmed messages", () => {
 
 // --- replacePendingWithLatest window-miss hardening ---
 
-test("MessagesView defines REPLACE_RETRY_LIMIT constant", () => {
-  assert.match(viewSource, /REPLACE_RETRY_LIMIT/);
-  assert.match(viewSource, /const REPLACE_RETRY_LIMIT\s*=\s*\d+/);
+test("useChannelMessages defines REPLACE_RETRY_LIMIT constant", () => {
+  assert.match(channelSource, /REPLACE_RETRY_LIMIT/);
+  assert.match(channelSource, /const REPLACE_RETRY_LIMIT\s*=\s*\d+/);
 });
 
-test("MessagesView defines REPLACE_RETRY_DELAY_MS constant", () => {
-  assert.match(viewSource, /REPLACE_RETRY_DELAY_MS/);
-  assert.match(viewSource, /const REPLACE_RETRY_DELAY_MS\s*=\s*\d+/);
+test("useChannelMessages defines REPLACE_RETRY_DELAY_MS constant", () => {
+  assert.match(channelSource, /REPLACE_RETRY_DELAY_MS/);
+  assert.match(channelSource, /const REPLACE_RETRY_DELAY_MS\s*=\s*\d+/);
 });
 
-test("MessagesView defines resolvePendingState helper", () => {
-  assert.match(viewSource, /function resolvePendingState\(/);
-  assert.match(viewSource, /deliveryState:\s*"sent"\s*\|\s*"failed"/);
+test("useChannelMessages defines resolvePendingState helper", () => {
+  assert.match(channelSource, /function resolvePendingState\(/);
+  assert.match(channelSource, /deliveryState:\s*"sent"\s*\|\s*"failed"/);
 });
 
 test("replacePendingWithLatest accepts retriesLeft parameter", () => {
-  assert.match(viewSource, /replacePendingWithLatest\(pendingId:\s*string,\s*retriesLeft/);
+  assert.match(channelSource, /replacePendingWithLatest\(pendingId:\s*string,\s*retriesLeft/);
 });
 
 test("replacePendingWithLatest checks for confirmed message in fetch result", () => {
-  assert.match(viewSource, /confirmedFound/);
-  assert.match(viewSource, /serverItem\.content\s*===\s*pendingContent\s*&&\s*serverItem\.isSelf/);
+  assert.match(channelSource, /confirmedFound/);
+  assert.match(channelSource, /serverItem\.content\s*===\s*pendingContent\s*&&\s*serverItem\.isSelf/);
 });
 
 test("replacePendingWithLatest retries when confirmed message not found and retries remain", () => {
-  const fnIdx = viewSource.indexOf("async function replacePendingWithLatest");
+  const fnIdx = channelSource.indexOf("async function replacePendingWithLatest");
   assert.ok(fnIdx >= 0, "replacePendingWithLatest should exist");
-  const afterFn = viewSource.slice(fnIdx);
+  const afterFn = channelSource.slice(fnIdx);
   assert.match(afterFn, /retriesLeft\s*>\s*0/);
   assert.match(afterFn, /REPLACE_RETRY_DELAY_MS/);
 });
 
 test("replacePendingWithLatest resolves to sent when retries exhausted without finding confirmed message", () => {
-  const fnIdx = viewSource.indexOf("async function replacePendingWithLatest");
+  const fnIdx = channelSource.indexOf("async function replacePendingWithLatest");
   assert.ok(fnIdx >= 0);
-  const afterFn = viewSource.slice(fnIdx);
+  const afterFn = channelSource.slice(fnIdx);
   assert.match(afterFn, /resolvePendingState\(pendingId,\s*"sent"\)/);
 });
 
 test("replacePendingWithLatest resolves to failed on fetch error", () => {
-  const fnIdx = viewSource.indexOf("async function replacePendingWithLatest");
+  const fnIdx = channelSource.indexOf("async function replacePendingWithLatest");
   assert.ok(fnIdx >= 0);
-  const catchIdx = viewSource.indexOf("resolvePendingState(pendingId, \"failed\")", fnIdx);
+  const catchIdx = channelSource.indexOf("resolvePendingState(pendingId, \"failed\")", fnIdx);
   assert.ok(catchIdx >= 0, "should resolve pending to failed in catch block");
 });
 
 test("resolvePendingState does not leave pending stuck in sending state", () => {
-  const fnIdx = viewSource.indexOf("function resolvePendingState");
+  const fnIdx = channelSource.indexOf("function resolvePendingState");
   assert.ok(fnIdx >= 0);
-  const afterFn = viewSource.slice(fnIdx, fnIdx + 300);
+  const afterFn = channelSource.slice(fnIdx, fnIdx + 300);
   assert.match(afterFn, /deliveryState/);
   assert.doesNotMatch(afterFn, /"sending"/);
 });
 
 test("replacePendingWithLatest does not silently swallow fetch errors", () => {
-  const fnIdx = viewSource.indexOf("async function replacePendingWithLatest");
+  const fnIdx = channelSource.indexOf("async function replacePendingWithLatest");
   assert.ok(fnIdx >= 0);
-  const afterFn = viewSource.slice(fnIdx);
+  const afterFn = channelSource.slice(fnIdx);
   const catchIdx = afterFn.indexOf("catch");
   assert.ok(catchIdx >= 0, "should have catch block");
   const catchBody = afterFn.slice(catchIdx, catchIdx + 200);

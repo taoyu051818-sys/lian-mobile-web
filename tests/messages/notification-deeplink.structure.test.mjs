@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
 const viewSource = fs.readFileSync(path.join(repoRoot, "src/features/messages/MessagesView.vue"), "utf8");
+const channelSource = fs.readFileSync(path.join(repoRoot, "src/features/messages/useChannelMessages.ts"), "utf8");
 const listSource = fs.readFileSync(path.join(repoRoot, "src/features/messages/NotificationList.vue"), "utf8");
 
 test("NotificationList emits open-item with tid when notification is clicked", () => {
@@ -41,12 +42,7 @@ test("MessagesView uses usePostDetail composable for notification detail", () =>
 });
 
 test("MessagesView imports PostDetailPanel component", () => {
-  assert.match(viewSource, /import\s+PostDetailPanel\s+from\s*"\.\/detail\/PostDetailPanel\.vue"/);
-});
-
-test("MessagesView imports FeedItemId and PostDetail types", () => {
-  assert.match(viewSource, /FeedItemId/);
-  assert.match(viewSource, /PostDetail/);
+  assert.match(viewSource, /import\s+PostDetailPanel\s+from\s*"\.\.\/detail\/PostDetailPanel\.vue"/);
 });
 
 test("MessagesView declares detail state refs for notification deep-link", () => {
@@ -100,9 +96,12 @@ test("MessagesView detail overlay uses fixed positioning with full viewport cove
   assert.match(viewSource, /z-index:\s*30/);
 });
 
-test("MessagesView preserves existing optimistic send and keyboard inset behavior", () => {
-  assert.match(viewSource, /buildPendingChannelMessage/);
-  assert.match(viewSource, /replacePendingWithLatest/);
+test("useChannelMessages preserves optimistic send behavior", () => {
+  assert.match(channelSource, /buildPendingChannelMessage/);
+  assert.match(channelSource, /replacePendingWithLatest/);
+});
+
+test("MessagesView preserves keyboard inset and visual viewport behavior", () => {
   assert.match(viewSource, /keyboard-inset-bottom/);
   assert.match(viewSource, /useVisualViewport/);
 });

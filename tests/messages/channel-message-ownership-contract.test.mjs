@@ -9,7 +9,7 @@ const typesMessages = fs.readFileSync(path.join(repoRoot, "src/types/messages.ts
 const typesFeed = fs.readFileSync(path.join(repoRoot, "src/types/feed.ts"), "utf8");
 const typesProfile = fs.readFileSync(path.join(repoRoot, "src/types/profile.ts"), "utf8");
 const apiMessages = fs.readFileSync(path.join(repoRoot, "src/api/messages.ts"), "utf8");
-const viewSource = fs.readFileSync(path.join(repoRoot, "src/features/messages/MessagesView.vue"), "utf8");
+const channelSource = fs.readFileSync(path.join(repoRoot, "src/features/messages/useChannelMessages.ts"), "utf8");
 const channelThreadSource = fs.readFileSync(path.join(repoRoot, "src/features/messages/ChannelThread.vue"), "utf8");
 
 // --- DisplayActor.id ---
@@ -86,10 +86,10 @@ test("fetchChannelMessages normalizes items before returning", () => {
   assert.match(apiMessages, /response\.items\?\.map\(normalizeChannelMessage\)/);
 });
 
-// --- MessagesView ownership usage ---
+// --- useChannelMessages ownership usage ---
 
-test("MessagesView imports ChannelMessageActor", () => {
-  assert.match(viewSource, /import type \{[^}]*ChannelMessageActor[^}]*\} from "\.\.\/types\/messages"/);
+test("useChannelMessages imports ChannelMessage types", () => {
+  assert.match(channelSource, /import type \{[^}]*ChannelMessage[^}]*\} from "\.\.\/\.\.\/types\/messages"/);
 });
 
 test("ChannelThread uses isSelf for message CSS class", () => {
@@ -101,9 +101,9 @@ test("ChannelThread shows delivery state for self messages", () => {
   assert.match(channelThreadSource, /item\.isSelf && item\.deliveryState === 'failed'/);
 });
 
-test("MessagesView messageActor returns ChannelMessageActor with fallback id", () => {
-  assert.match(viewSource, /function messageActor\(item: ChannelMessage\): ChannelMessageActor/);
-  assert.match(viewSource, /return item\.actor \|\| \{ id: "" \}/);
+test("ChannelThread messageActor returns ChannelMessageActor with fallback id", () => {
+  assert.match(channelThreadSource, /function messageActor\(item: ChannelMessage\): ChannelMessageActor/);
+  assert.match(channelThreadSource, /return item\.actor \|\| \{ id: "" \}/);
 });
 
 // --- Pure JS: actor id authority semantics ---

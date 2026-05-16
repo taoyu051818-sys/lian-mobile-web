@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
 const apiSource = fs.readFileSync(path.join(repoRoot, "src/api/messages.ts"), "utf8");
-const viewSource = fs.readFileSync(path.join(repoRoot, "src/features/messages/MessagesView.vue"), "utf8");
+const channelSource = fs.readFileSync(path.join(repoRoot, "src/features/messages/useChannelMessages.ts"), "utf8");
 
 test("api/messages.ts exports pagination/order normalization helpers", () => {
   assert.match(apiSource, /export function mergeChannelMessagesChronologically/);
@@ -14,7 +14,7 @@ test("api/messages.ts exports pagination/order normalization helpers", () => {
 });
 
 test("normalizeChannelResponse uses ?? so nextOffset=0 is preserved", () => {
-  assert.match(apiSource, /nextOffset:\s*response\.nextOffset \?\? Math\.max\(0, requestedOffset\) \+ rawItems\.length/);
+  assert.match(apiSource, /nextOffset:\s*response\.nextOffset \?\? Math\.max\(0,\s*requestedOffset\)\s*\+\s*rawItems\.length/);
 });
 
 test("mergeChannelMessagesChronologically sorts by timestamp and deduplicates by id", () => {
@@ -23,24 +23,24 @@ test("mergeChannelMessagesChronologically sorts by timestamp and deduplicates by
 });
 
 test("fetchChannelMessages normalizes the adapter response before returning it", () => {
-  assert.match(apiSource, /return normalizeChannelResponse\(response, requestedOffset\)/);
+  assert.match(apiSource, /return normalizeChannelResponse\(response,\s*requestedOffset\)/);
 });
 
-test("MessagesView imports mergeChannelMessagesChronologically from the API module", () => {
-  assert.match(viewSource, /mergeChannelMessagesChronologically/);
+test("useChannelMessages imports mergeChannelMessagesChronologically from the API module", () => {
+  assert.match(channelSource, /mergeChannelMessagesChronologically/);
 });
 
-test("MessagesView no longer reverses response items in the view layer", () => {
-  assert.doesNotMatch(viewSource, /slice\(\)\.reverse\(\)/);
+test("useChannelMessages no longer reverses response items in the view layer", () => {
+  assert.doesNotMatch(channelSource, /slice\(\)\.reverse\(\)/);
 });
 
-test("MessagesView no longer computes nextOffset from response.items length", () => {
-  assert.doesNotMatch(viewSource, /response\.items\?\.length/);
-  assert.doesNotMatch(viewSource, /channelOffset\.value \+ /);
+test("useChannelMessages no longer computes nextOffset from response.items length", () => {
+  assert.doesNotMatch(channelSource, /response\.items\?\.length/);
+  assert.doesNotMatch(channelSource, /channelOffset\.value \+ /);
 });
 
-test("MessagesView merges paginated results through the shared chronological helper", () => {
-  assert.match(viewSource, /mergeChannelMessagesChronologically\(channelItems\.value, nextItems\)/);
+test("useChannelMessages merges paginated results through the shared chronological helper", () => {
+  assert.match(channelSource, /mergeChannelMessagesChronologically\(channelItems\.value,\s*nextItems\)/);
 });
 
 test("pure JS: explicit nextOffset=0 is preserved", () => {
