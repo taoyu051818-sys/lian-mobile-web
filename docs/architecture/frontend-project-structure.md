@@ -14,7 +14,7 @@ which runs:
 node scripts/validate-project-structure.js
 ```
 
-When this document drifts from the repository, trust the scripts and the current runtime files first, then refresh the document as a concise architecture guide.
+When this document drifts from the repository, trust the scripts and the current runtime files first, then refresh the document as a concise architecture guide. Current code and structure guard scripts (`scripts/validate-project-structure.js`, `scripts/guard-runtime-inventory.js`) are authoritative when older docs or issues disagree.
 
 ## Current folder structure
 
@@ -59,15 +59,21 @@ src/
 |-- App.vue
 |-- app/
 |-- api/
+|-- composables/
+|-- config/
+|-- domain/
+|-- features/
+|-- locales/
 |-- platform/
 |-- shell/
 |-- styles/
+|-- types/
 |-- ui/
-|-- views/
+|-- utils/
 `-- vite-env.d.ts
 ```
 
-The important shift from older docs is that the app now has an explicit `src/shell/` layer. The current shell/content split is documented in more detail in `docs/frontend/shell-content-architecture.md`; this file stays at the project-structure level.
+The important shift from older docs is that the app now has an explicit `src/shell/` layer and feature pages live under `src/features/` rather than the historical `src/views/` directory. The current shell/content split is documented in more detail in `docs/frontend/shell-content-architecture.md`; this file stays at the project-structure level.
 
 ## Top-level component ownership
 
@@ -152,21 +158,35 @@ src/shell/index.ts
 
 Rule of thumb: shell owns persistent app chrome, framing, and shared overlay infrastructure; pages own feature content and page-local interaction behavior.
 
-### `src/views/`
+### `src/features/`
 
-Page-level feature surfaces.
+Feature-owned page surfaces and page-local state. Each feature directory contains the view component, related composables, and presentation helpers for that page.
 
-Current mapped view components:
+Current feature directories:
 
 ```text
-feed     -> src/views/FeedView.vue
-map      -> src/views/MapLeafletView.vue
-publish  -> src/views/PublishView.vue
-messages -> src/views/MessagesView.vue
-profile  -> src/views/ProfileView.vue
+src/features/feed/       FeedView.vue, FeedList.vue, FeedItemCard.vue, ...
+src/features/map/        MapLeafletView.vue, MapCanvas.vue, useMapSelection.ts, ...
+src/features/publish/    PublishView.vue, PublishComposer.vue, PublishActionBar.vue, ...
+src/features/messages/   MessagesView.vue, ChannelComposer.vue, ChannelThread.vue, ...
+src/features/profile/    ProfileView.vue, ProfileHeader.vue, ProfileSummary.vue, ...
+src/features/detail/     PostDetailContent.vue, PostDetailPanel.vue, ...
+src/features/auth/       AuthPanel.vue, useAuthForm.ts
 ```
 
 These views own feature workflows such as feed interactions, map selection, publish form behavior, messages layout/composer behavior, and profile content. They can describe shell intent through typed shell state, but they do not own the shell DOM structure itself.
+
+`AppViewHost.vue` maps the five primary view keys to their feature-owned components:
+
+```text
+feed     -> src/features/feed/FeedView.vue
+map      -> src/features/map/MapLeafletView.vue       (async)
+publish  -> src/features/publish/PublishView.vue       (async)
+messages -> src/features/messages/MessagesView.vue     (async)
+profile  -> src/features/profile/ProfileView.vue       (async)
+```
+
+`feed` is eagerly loaded; the other four are loaded asynchronously via `defineAsyncComponent`. `MapLeafletView` is kept alive across navigation via `<KeepAlive include="MapLeafletView">`.
 
 ### `src/ui/`
 
@@ -218,11 +238,11 @@ The app now exposes five primary shell-mounted views:
 
 | Key | Label | Layout mode | Current surface |
 | --- | --- | --- | --- |
-| `feed` | `首页` | `content` | `src/views/FeedView.vue` |
-| `map` | `探索` | `full-bleed` | `src/views/MapLeafletView.vue` |
-| `publish` | `发布` | `content` | `src/views/PublishView.vue` |
-| `messages` | `消息` | `composer-safe` | `src/views/MessagesView.vue` |
-| `profile` | `我的` | `content` | `src/views/ProfileView.vue` |
+| `feed` | `首页` | `content` | `src/features/feed/FeedView.vue` |
+| `map` | `探索` | `full-bleed` | `src/features/map/MapLeafletView.vue` |
+| `publish` | `发布` | `content` | `src/features/publish/PublishView.vue` |
+| `messages` | `消息` | `composer-safe` | `src/features/messages/MessagesView.vue` |
+| `profile` | `我的` | `content` | `src/features/profile/ProfileView.vue` |
 
 The map row is the most important stale-doc correction in this lane: current runtime truth is centered on `MapLeafletView.vue` inside shell-owned framing, not an older `MapView.vue`-based structure description.
 
@@ -230,11 +250,14 @@ The map row is the most important stale-doc correction in this lane: current run
 
 Treat these as historical references only:
 
+- `src/views/` as the current runtime page directory — pages now live under `src/features/<feature>/`
 - `TopBar` / `AppViewHost` / `BottomTabBar` as the current shell ownership model
 - `MapView.vue` as the current explore-view owner
 - `public/tools/task-board.*` as the live development dashboard or control plane
 
 Older issues and docs may still mention those names because they reflect migration-era structure. When they conflict with current `main`, prefer the current shell docs and runtime files.
+
+The `src/views/` directory was removed during the feature-domain reorganization tracked by #487. References to `src/views/` in older docs or issues are historical only.
 
 ## Validation commands
 

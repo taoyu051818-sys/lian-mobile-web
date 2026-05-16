@@ -174,6 +174,7 @@ These patterns can still appear in older issues, PR descriptions, or earlier doc
 
 | Historical pattern | Why it is stale now | Current truth |
 |---|---|---|
+| `src/views/` as the runtime page directory | Removed during #487 feature-domain reorganization | Pages live under `src/features/<feature>/` |
 | Feed top tabs rendered through Teleport into shell DOM | Replaced by shell-owned typed tab rendering in #343 | `ShellChrome` owns the top-tab DOM; pages provide intent only |
 | `usePublishChromeActions` routing publish buttons through shell bottom chrome | Removed in #353 | Publish actions are page-owned inside `PublishView`; shell keeps bottom nav |
 | Motion/chrome docs treating `#278` and `#281` as still-open foundation work | Superseded by #342 | Chrome lifecycle and phase truth are implemented |
@@ -217,17 +218,27 @@ src/
   ui/
     layout/
       PageSurface.vue            ← generic page-surface wrapper
-  views/
-    FeedView.vue                 ← feed content + feed-owned behavior, shell tab intent
-    MapLeafletView.vue           ← map content + map-owned behavior
-    PublishView.vue              ← publish content + local publish actions
-    MessagesView.vue             ← messages content + page-local composer/bubble behavior
-    ProfileView.vue              ← profile content
+  app/
+    AppViewHost.vue              ← active page switcher (maps view keys to feature components)
+  features/
+    feed/
+      FeedView.vue               ← feed content + feed-owned behavior, shell tab intent
     map/
+      MapLeafletView.vue         ← map content + map-owned behavior
       useMapSelection.ts         ← map-local selection/detail orchestration
+    publish/
+      PublishView.vue            ← publish content + local publish actions
+    messages/
+      MessagesView.vue           ← messages content + page-local composer/bubble behavior
+    profile/
+      ProfileView.vue            ← profile content
+    detail/
+      PostDetailContent.vue      ← post detail content
+    auth/
+      AuthPanel.vue              ← auth panel
 ```
 
-The main thing to notice here is that the shell folder contains shell infrastructure, while page folders continue to own feature workflows.
+The main thing to notice here is that the shell folder contains shell infrastructure, while feature folders under `src/features/` continue to own feature workflows. The historical `src/views/` directory was removed during the #487 feature-domain reorganization.
 
 ## 12. Apple Music Comparison
 
@@ -255,7 +266,8 @@ In practical terms, that means:
 
 - do not reintroduce Teleport-based top-tab ownership because an older issue mentions it;
 - do not reintroduce shell-owned publish actions because an earlier migration step temporarily did that;
-- do not describe chrome lifecycle as missing if your source predates #342.
+- do not describe chrome lifecycle as missing if your source predates #342;
+- do not describe `src/views/` as the current page directory — pages now live under `src/features/` (#487).
 
 ## 14. Summary
 
