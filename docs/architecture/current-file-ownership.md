@@ -123,7 +123,13 @@ High-level rules:
 | File | Owns |
 | --- | --- |
 | `PostDetailPanel.vue` | Detail panel container, composable wiring, template composition. |
-| `PostDetailContent.vue` | Detail body presentation: author, content, place, metadata and sanitized HTML. |
+| `PostDetailContent.vue` | Detail body composition shell — wires sub-components, forwards props/emits. |
+| `PostDetailGallery.vue` | Image gallery presentation and pointer events. |
+| `PostDetailMainBody.vue` | Title + SafeHtml body presentation. |
+| `PostDetailInfoStrip.vue` | Tag, time, place button, report toggle strip. |
+| `PostPlaceSheetBlock.vue` | Expanded place sheet with meta/stats/recent posts. |
+| `PostReportBlock.vue` | Report form + follow-up hide prompt. |
+| `PostActionFeedback.vue` | Action error/success display. |
 | `PostDetailTopbar.vue` | Detail topbar presentation and top actions. |
 | `PostReplies.vue` | Reply list presentation. |
 | `PostReplyDock.vue` | Reply composer dock. |
@@ -322,14 +328,15 @@ High-level rules:
 
 ## Cleanup Hotspots
 
-Current largest remaining source files (post-refactor wave #516):
+Current largest remaining source files (post-refactor wave #539):
 
-1. `src/features/detail/PostDetailContent.vue` — detail body presentation, candidate for presentational block split.
+1. `src/features/detail/PostDetailPanel.vue` — detail panel container.
 2. `src/features/feed/FeedItemCard.vue` — feed card presentation.
 
-Completed refactorings (waves #513–#533):
+Completed refactorings (waves #513–#539):
 - `ProfileEditorPanel.vue` — split into avatar/alias/invite sub-components and composables.
 - `PostDetailPanel.vue` — split into reactions/place/report/reply/share/gallery composables.
+- `PostDetailContent.vue` — split into 6 presentational sub-components (gallery/main-body/info-strip/place-sheet/report/feedback).
 - `AuthPanel.vue` — split into 6 template block components and 3 composables.
 - `useAuthForm.ts` — split into useEmailCodeCooldown, useAuthInterests, useAuthSubmit.
 - `ProfileView.vue` — split into session/tabs/chrome/alias composables.
