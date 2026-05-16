@@ -12,7 +12,7 @@ import type { ShellRegionKey, ChromeButtonSpec } from "./shell-chrome-types";
 
 const props = withDefaults(
   defineProps<{
-    region: ShellRegionKey;
+    region?: ShellRegionKey;
   }>(),
   {
     region: "top",

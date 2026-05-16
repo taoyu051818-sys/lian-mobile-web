@@ -108,10 +108,12 @@ export function validateOfficialRoads(
   if (!roads || roads.length === 0) {
     if (preview?.roads?.length) {
       if (!loggedPreviewFallback) {
+        // eslint-disable-next-line no-console -- operational telemetry, logged once per session
         console.info("[map-roads] Official road data is empty; using preview road fallback.");
         loggedPreviewFallback = true;
       }
     } else if (!loggedEmptyRoads) {
+      // eslint-disable-next-line no-console -- operational telemetry, logged once per session
       console.warn("[map-roads] Official and preview road data are empty.");
       loggedEmptyRoads = true;
     }

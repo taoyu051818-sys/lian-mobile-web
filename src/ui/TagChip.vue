@@ -1,7 +1,7 @@
 <script setup lang="ts">
 const props = withDefaults(
   defineProps<{
-    tag: string;
+    tag?: string;
   }>(),
   {
     tag: "",

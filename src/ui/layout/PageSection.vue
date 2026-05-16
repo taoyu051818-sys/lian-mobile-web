@@ -7,6 +7,8 @@ withDefaults(
   }>(),
   {
     as: "section",
+    title: undefined,
+    description: undefined,
   },
 );
 </script>

@@ -17,7 +17,9 @@ const emit = defineEmits<{
   liked: [liked: boolean, count: number];
 }>();
 
+// eslint-disable-next-line vue/no-dupe-keys -- intentional optimistic update: props synced to local refs
 const liked = ref(false);
+// eslint-disable-next-line vue/no-dupe-keys -- intentional optimistic update: props synced to local refs
 const likeCount = ref(0);
 const likeBusy = ref(false);
 
