@@ -31,7 +31,13 @@ function handleGenerate() {
       <span>{{ canCreateInvite ? "可生成" : "暂无权限" }}</span>
     </div>
     <div class="profile-editor__invite-row">
-      <LianButton type="button" variant="ghost" :disabled="!canCreateInvite" :loading="busy" @click="handleGenerate">
+      <LianButton
+        type="button"
+        variant="ghost"
+        :disabled="!canCreateInvite"
+        :loading="busy"
+        @click="handleGenerate"
+      >
         生成邀请码
       </LianButton>
       <code v-if="inviteCode">{{ inviteCode }}</code>

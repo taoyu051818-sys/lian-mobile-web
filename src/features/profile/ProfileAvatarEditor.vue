@@ -15,11 +15,23 @@ const emit = defineEmits<{
 }>();
 
 const {
-  file, previewUrl, scale, offsetX, offsetY, busy, previewRef,
-  previewStyle, handleInput,
-  handlePointerDown, handlePointerMove, handlePointerUp,
-  handleTouchMove, handleTouchEnd,
-  createCroppedBlob, revokePreview, cancel,
+  file,
+  previewUrl,
+  scale,
+  offsetX,
+  offsetY,
+  busy,
+  previewRef,
+  previewStyle,
+  handleInput,
+  handlePointerDown,
+  handlePointerMove,
+  handlePointerUp,
+  handleTouchMove,
+  handleTouchEnd,
+  createCroppedBlob,
+  revokePreview,
+  cancel,
 } = useAvatarCropper();
 
 async function saveAvatar() {
@@ -49,7 +61,11 @@ async function saveAvatar() {
       <span>拖拽调整位置，捏合或滑块缩放</span>
     </div>
     <div class="profile-editor__avatar-row">
-      <IdentityBadge :avatar-text="props.avatarText" :label="props.displayName" :meta="props.activeAliasName" />
+      <IdentityBadge
+        :avatar-text="props.avatarText"
+        :label="props.displayName"
+        :meta="props.activeAliasName"
+      />
       <div
         v-if="previewUrl"
         ref="previewRef"
@@ -74,7 +90,9 @@ async function saveAvatar() {
     </label>
     <div v-if="previewUrl" class="profile-editor__actions">
       <LianButton type="button" variant="ghost" :disabled="busy" @click="cancel">取消</LianButton>
-      <LianButton type="button" variant="tonal" :loading="busy" @click="saveAvatar">保存头像</LianButton>
+      <LianButton type="button" variant="tonal" :loading="busy" @click="saveAvatar"
+        >保存头像</LianButton
+      >
     </div>
   </section>
 </template>

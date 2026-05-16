@@ -19,8 +19,8 @@ describe("useReducedMotion shared module (#254)", () => {
   });
 
   it("listens for runtime preference changes via the change event", () => {
-    expect(source).toContain("addEventListener(\"change\"");
-    expect(source).toContain("removeEventListener(\"change\"");
+    expect(source).toContain('addEventListener("change"');
+    expect(source).toContain('removeEventListener("change"');
   });
 
   it("cleans up the change listener on unmount", () => {

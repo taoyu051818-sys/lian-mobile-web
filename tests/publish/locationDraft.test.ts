@@ -234,12 +234,7 @@ describe("buildPublishPayload", () => {
 
   it("includes 'map' in distribution when locationArea is present", () => {
     const payload = buildPublishPayload({ ...baseInput, placeName: "操场" });
-    expect(payload.metadata.distribution).toEqual([
-      "home",
-      "map",
-      "search",
-      "detail",
-    ]);
+    expect(payload.metadata.distribution).toEqual(["home", "map", "search", "detail"]);
   });
 
   it("normalizes tag and identityTag", () => {

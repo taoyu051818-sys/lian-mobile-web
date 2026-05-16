@@ -25,11 +25,11 @@ The deployable artifact is the output of `npm run build` (the Vite `dist/` direc
 
 **What gets archived:**
 
-| Content | Source | Notes |
-|---|---|---|
-| Vite hashed JS/CSS/assets | `dist/` | Content-addressed filenames |
-| Manifest and icons | `public/manifest.webmanifest`, `public/icons/*` | When PWA installability is enabled |
-| Standalone tool assets | `public/tools/*` and referenced same-origin static files | Internal tools shipped alongside the repo when needed |
+| Content                   | Source                                                   | Notes                                                 |
+| ------------------------- | -------------------------------------------------------- | ----------------------------------------------------- |
+| Vite hashed JS/CSS/assets | `dist/`                                                  | Content-addressed filenames                           |
+| Manifest and icons        | `public/manifest.webmanifest`, `public/icons/*`          | When PWA installability is enabled                    |
+| Standalone tool assets    | `public/tools/*` and referenced same-origin static files | Internal tools shipped alongside the repo when needed |
 
 **CI artifact boundary** (`.github/workflows/frontend.yml`):
 
@@ -77,13 +77,13 @@ Current repo truth and deployment truth are slightly different here:
 
 **Current variables:**
 
-| Variable | Source | Default |
-|---|---|---|
-| `LIAN_API_BASE_URL` | Deploy-time runtime injection (if used) | `""` (same-origin) |
-| `LIAN_IMAGE_PROXY_BASE_URL` | Deploy-time runtime injection (if used) | `window.location.origin` |
-| `LIAN_PUBLIC_PROTO` | Deploy-time runtime injection / env | `""` (auto-detect) |
-| `releaseId` | Release manifest injection | none |
-| `enablePwa` | Runtime feature flag | disabled until the PWA path is intentionally enabled |
+| Variable                    | Source                                  | Default                                              |
+| --------------------------- | --------------------------------------- | ---------------------------------------------------- |
+| `LIAN_API_BASE_URL`         | Deploy-time runtime injection (if used) | `""` (same-origin)                                   |
+| `LIAN_IMAGE_PROXY_BASE_URL` | Deploy-time runtime injection (if used) | `window.location.origin`                             |
+| `LIAN_PUBLIC_PROTO`         | Deploy-time runtime injection / env     | `""` (auto-detect)                                   |
+| `releaseId`                 | Release manifest injection              | none                                                 |
+| `enablePwa`                 | Runtime feature flag                    | disabled until the PWA path is intentionally enabled |
 
 **Production contract:**
 
@@ -107,15 +107,15 @@ Production must differentiate resource types for caching.
 
 **Production cache header contract:**
 
-| Resource type | `cache-control` | Rationale |
-|---|---|---|
-| `index.html` | `no-cache` (or `max-age=0, must-revalidate`) | Always revalidate; HTML is the entry point |
-| Vite hashed JS/CSS (`/assets/*.js`, `/assets/*.css`) | `max-age=31536000, immutable` | Content hash in filename; safe to cache forever |
-| `manifest.webmanifest` | `max-age=3600` | Short cache; PWA metadata may change |
-| Icons / images | `max-age=86400` | Daily revalidation acceptable |
-| Service Worker (`sw.js`) | `no-cache` | Must always check for updates |
-| Standalone internal tool HTML / JS / CSS | `no-cache` or short TTL | These pages are not content-hashed and should pick up fixes quickly |
-| API responses | `no-store` | Never cache user-specific data |
+| Resource type                                        | `cache-control`                              | Rationale                                                           |
+| ---------------------------------------------------- | -------------------------------------------- | ------------------------------------------------------------------- |
+| `index.html`                                         | `no-cache` (or `max-age=0, must-revalidate`) | Always revalidate; HTML is the entry point                          |
+| Vite hashed JS/CSS (`/assets/*.js`, `/assets/*.css`) | `max-age=31536000, immutable`                | Content hash in filename; safe to cache forever                     |
+| `manifest.webmanifest`                               | `max-age=3600`                               | Short cache; PWA metadata may change                                |
+| Icons / images                                       | `max-age=86400`                              | Daily revalidation acceptable                                       |
+| Service Worker (`sw.js`)                             | `no-cache`                                   | Must always check for updates                                       |
+| Standalone internal tool HTML / JS / CSS             | `no-cache` or short TTL                      | These pages are not content-hashed and should pick up fixes quickly |
+| API responses                                        | `no-store`                                   | Never cache user-specific data                                      |
 
 **Enforcement:**
 
@@ -130,12 +130,12 @@ The active Vue shell no longer loads Leaflet from `unpkg` in root `index.html`. 
 
 **Current external dependencies:**
 
-| Resource | URL | SRI state | Notes |
-|---|---|---|---|
-| Standalone tool Leaflet CSS | `https://unpkg.com/leaflet@1.9.4/dist/leaflet.css` | Missing on current `main` | Loaded by `public/tools/map-v2-editor.html`, `public/tools/map-georef.html`, and `public/tools/map-coastline-align.html` |
-| Standalone tool Leaflet JS | `https://unpkg.com/leaflet@1.9.4/dist/leaflet.js` | Missing on current `main` | Loaded by the same tool pages |
-| Gaode tiles | `https://webrd0{s}.is.autonavi.com/...` | N/A | Third-party map tile provider used by the Vue map surface and the tool surfaces |
-| Vue-shell Leaflet runtime | bundled via npm/Vite | Not applicable as external SRI | Imported through `src/platform/leaflet.ts` |
+| Resource                    | URL                                                | SRI state                      | Notes                                                                                                                    |
+| --------------------------- | -------------------------------------------------- | ------------------------------ | ------------------------------------------------------------------------------------------------------------------------ |
+| Standalone tool Leaflet CSS | `https://unpkg.com/leaflet@1.9.4/dist/leaflet.css` | Missing on current `main`      | Loaded by `public/tools/map-v2-editor.html`, `public/tools/map-georef.html`, and `public/tools/map-coastline-align.html` |
+| Standalone tool Leaflet JS  | `https://unpkg.com/leaflet@1.9.4/dist/leaflet.js`  | Missing on current `main`      | Loaded by the same tool pages                                                                                            |
+| Gaode tiles                 | `https://webrd0{s}.is.autonavi.com/...`            | N/A                            | Third-party map tile provider used by the Vue map surface and the tool surfaces                                          |
+| Vue-shell Leaflet runtime   | bundled via npm/Vite                               | Not applicable as external SRI | Imported through `src/platform/leaflet.ts`                                                                               |
 
 **Risks:**
 
@@ -165,8 +165,8 @@ The active Vue shell no longer loads Leaflet from `unpkg` in root `index.html`. 
 
 Vue/Vite is the sole active web runtime on `main`.
 
-| Runtime | Entry | Port | Failure behavior |
-|---|---|---|---|
+| Runtime  | Entry             | Port           | Failure behavior              |
+| -------- | ----------------- | -------------- | ----------------------------- |
 | Vue/Vite | `npm run preview` | 4173 (default) | Process exits with error code |
 
 **Health checks:**
@@ -183,16 +183,16 @@ Run these checks immediately after deploying to each environment.
 
 **Smoke checklist:**
 
-| Check | Target | Expected |
-|---|---|---|
-| `GET /` | Vue/Vite | 200 |
-| `GET /api/feed` | Vue/Vite | JSON response (skip if backend unavailable) |
-| `GET /api/map/v2/items` | Vue/Vite | JSON response (skip if backend unavailable) |
-| `cache-control` on `GET /` | Production | `no-cache` or `max-age=0, must-revalidate` |
-| `cache-control` on hashed asset | Production | `max-age=31536000, immutable` |
-| Release ID | Production | Matches expected git SHA from the release manifest |
-| Tool-side Leaflet CDN | Production | Only required if the standalone internal tools are in deployment scope |
-| Gaode tiles | Production | Reachable where map functionality is expected |
+| Check                           | Target     | Expected                                                               |
+| ------------------------------- | ---------- | ---------------------------------------------------------------------- |
+| `GET /`                         | Vue/Vite   | 200                                                                    |
+| `GET /api/feed`                 | Vue/Vite   | JSON response (skip if backend unavailable)                            |
+| `GET /api/map/v2/items`         | Vue/Vite   | JSON response (skip if backend unavailable)                            |
+| `cache-control` on `GET /`      | Production | `no-cache` or `max-age=0, must-revalidate`                             |
+| `cache-control` on hashed asset | Production | `max-age=31536000, immutable`                                          |
+| Release ID                      | Production | Matches expected git SHA from the release manifest                     |
+| Tool-side Leaflet CDN           | Production | Only required if the standalone internal tools are in deployment scope |
+| Gaode tiles                     | Production | Reachable where map functionality is expected                          |
 
 **Decision criteria:**
 

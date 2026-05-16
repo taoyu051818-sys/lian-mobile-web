@@ -5,9 +5,18 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
-const viewSource = fs.readFileSync(path.join(repoRoot, "src/features/messages/MessagesView.vue"), "utf8");
-const channelSource = fs.readFileSync(path.join(repoRoot, "src/features/messages/useChannelMessages.ts"), "utf8");
-const listSource = fs.readFileSync(path.join(repoRoot, "src/features/messages/NotificationList.vue"), "utf8");
+const viewSource = fs.readFileSync(
+  path.join(repoRoot, "src/features/messages/MessagesView.vue"),
+  "utf8",
+);
+const channelSource = fs.readFileSync(
+  path.join(repoRoot, "src/features/messages/useChannelMessages.ts"),
+  "utf8",
+);
+const listSource = fs.readFileSync(
+  path.join(repoRoot, "src/features/messages/NotificationList.vue"),
+  "utf8",
+);
 
 test("NotificationList emits open-item with tid when notification is clicked", () => {
   assert.match(listSource, /"open-item":\s*\[tid:\s*number\]/);
@@ -42,7 +51,10 @@ test("MessagesView uses usePostDetail composable for notification detail", () =>
 });
 
 test("MessagesView imports PostDetailPanel component", () => {
-  assert.match(viewSource, /import\s+PostDetailPanel\s+from\s*"\.\.\/detail\/PostDetailPanel\.vue"/);
+  assert.match(
+    viewSource,
+    /import\s+PostDetailPanel\s+from\s*"\.\.\/detail\/PostDetailPanel\.vue"/,
+  );
 });
 
 test("MessagesView declares detail state refs for notification deep-link", () => {

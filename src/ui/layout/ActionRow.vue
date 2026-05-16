@@ -1,13 +1,16 @@
 <script setup lang="ts">
-withDefaults(defineProps<{
-  as?: string;
-  justify?: "start" | "center" | "end" | "between" | "around";
-  wrap?: boolean;
-}>(), {
-  as: "div",
-  justify: "end",
-  wrap: false,
-});
+withDefaults(
+  defineProps<{
+    as?: string;
+    justify?: "start" | "center" | "end" | "between" | "around";
+    wrap?: boolean;
+  }>(),
+  {
+    as: "div",
+    justify: "end",
+    wrap: false,
+  },
+);
 </script>
 
 <template>

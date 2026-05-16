@@ -59,7 +59,11 @@ test("floating-chrome.css defines data-floating-state selectors for all lifecycl
   // Outside reduced-motion block, check the main selectors exist
   const beforeRm = css.slice(0, css.indexOf("@media (prefers-reduced-motion: reduce)"));
   for (const state of ["visible", "exiting", "hidden", "entering", "progress"]) {
-    assert.match(beforeRm, new RegExp(`data-floating-state="${state}"`), `missing [data-floating-state="${state}"] selector`);
+    assert.match(
+      beforeRm,
+      new RegExp(`data-floating-state="${state}"`),
+      `missing [data-floating-state="${state}"] selector`,
+    );
   }
 });
 
@@ -89,18 +93,27 @@ test("entering state disables pointer events", () => {
 
 test("top chrome variants use --floating-chrome-top-exit-y for directional exit", () => {
   const css = readCss();
-  assert.match(css, /\.lian-floating-chrome--top[\s\S]*?--chrome-exit-y:\s*var\(--floating-chrome-top-exit-y\)/);
+  assert.match(
+    css,
+    /\.lian-floating-chrome--top[\s\S]*?--chrome-exit-y:\s*var\(--floating-chrome-top-exit-y\)/,
+  );
 });
 
 test("bottom chrome variants use --floating-chrome-bottom-exit-y for directional exit", () => {
   const css = readCss();
-  assert.match(css, /\.lian-floating-chrome--bottom[\s\S]*?--chrome-exit-y:\s*var\(--floating-chrome-bottom-exit-y\)/);
+  assert.match(
+    css,
+    /\.lian-floating-chrome--bottom[\s\S]*?--chrome-exit-y:\s*var\(--floating-chrome-bottom-exit-y\)/,
+  );
 });
 
 test("hidden/exiting states use --chrome-exit-y for directional translate", () => {
   const css = readCss();
   const beforeRm = css.slice(0, css.indexOf("@media (prefers-reduced-motion: reduce)"));
-  assert.match(beforeRm, /\[data-floating-state="hidden"\][\s\S]*?translate3d\(0,\s*var\(--chrome-exit-y/);
+  assert.match(
+    beforeRm,
+    /\[data-floating-state="hidden"\][\s\S]*?translate3d\(0,\s*var\(--chrome-exit-y/,
+  );
 });
 
 test("visible/entering states use translate3d(0, 0, 0) with no directional offset", () => {

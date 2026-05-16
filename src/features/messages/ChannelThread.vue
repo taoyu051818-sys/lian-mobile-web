@@ -3,7 +3,21 @@ import { InlineError, LianButton } from "../../ui";
 import { actorAvatarText, actorDisplayName } from "../../domain/actor";
 import type { ChannelMessage, ChannelMessageActor } from "../../types/messages";
 import { formatRelativeTime } from "../../utils/time";
-import { CHANNEL_DEFAULT_TAG, DEFAULT_USER_LABEL, MESSAGE_EMPTY_CONTENT, LOADING_CHANNEL, EMPTY_CHANNEL, CHANNEL_RELOAD, CHANNEL_LOAD_MORE, CHANNEL_SENDING, CHANNEL_SEND_FAILED, CHANNEL_RETRY, CHANNEL_READ_COUNT, CHANNEL_THREAD_LABEL, FEED_TIME_JUST_NOW } from "../../config/brand";
+import {
+  CHANNEL_DEFAULT_TAG,
+  DEFAULT_USER_LABEL,
+  MESSAGE_EMPTY_CONTENT,
+  LOADING_CHANNEL,
+  EMPTY_CHANNEL,
+  CHANNEL_RELOAD,
+  CHANNEL_LOAD_MORE,
+  CHANNEL_SENDING,
+  CHANNEL_SEND_FAILED,
+  CHANNEL_RETRY,
+  CHANNEL_READ_COUNT,
+  CHANNEL_THREAD_LABEL,
+  FEED_TIME_JUST_NOW,
+} from "../../config/brand";
 
 const props = defineProps<{
   items: ChannelMessage[];
@@ -56,14 +70,28 @@ function messageMeta(item: ChannelMessage) {
     </InlineError>
 
     <div class="messages-view__load-more">
-      <LianButton v-if="hasMore" variant="ghost" :loading="loading" @click="emit('loadMore')">{{ CHANNEL_LOAD_MORE }}</LianButton>
+      <LianButton v-if="hasMore" variant="ghost" :loading="loading" @click="emit('loadMore')">{{
+        CHANNEL_LOAD_MORE
+      }}</LianButton>
     </div>
 
-    <div v-if="loading && !items.length" class="messages-view__state" role="status">{{ LOADING_CHANNEL }}</div>
+    <div v-if="loading && !items.length" class="messages-view__state" role="status">
+      {{ LOADING_CHANNEL }}
+    </div>
     <div v-else-if="!items.length" class="messages-view__state">{{ EMPTY_CHANNEL }}</div>
     <div v-else class="messages-view__list" aria-live="polite">
-      <article v-for="item in items" :key="String(item.id)" class="messages-view__message" :class="{ 'is-self': item.isSelf, 'is-pending': String(item.id).startsWith('pending-') }">
-        <span v-if="!item.isSelf" class="messages-view__message-avatar identity-badge__avatar" aria-hidden="true">{{ messageAvatarText(item) }}</span>
+      <article
+        v-for="item in items"
+        :key="String(item.id)"
+        class="messages-view__message"
+        :class="{ 'is-self': item.isSelf, 'is-pending': String(item.id).startsWith('pending-') }"
+      >
+        <span
+          v-if="!item.isSelf"
+          class="messages-view__message-avatar identity-badge__avatar"
+          aria-hidden="true"
+          >{{ messageAvatarText(item) }}</span
+        >
         <div class="messages-view__message-body">
           <span v-if="!item.isSelf" class="messages-view__message-author identity-badge__text">
             <strong>{{ messageAuthor(item) }}</strong>
@@ -72,11 +100,21 @@ function messageMeta(item: ChannelMessage) {
           <div class="messages-view__bubble">
             <p>{{ messageText(item) }}</p>
             <footer>
-              <span>{{ formatRelativeTime(item.timestampISO || item.time) || FEED_TIME_JUST_NOW }}</span>
-              <span v-if="item.isSelf && item.deliveryState === 'sending'">{{ CHANNEL_SENDING }}</span>
+              <span>{{
+                formatRelativeTime(item.timestampISO || item.time) || FEED_TIME_JUST_NOW
+              }}</span>
+              <span v-if="item.isSelf && item.deliveryState === 'sending'">{{
+                CHANNEL_SENDING
+              }}</span>
               <span v-else-if="item.isSelf && item.deliveryState === 'failed'">
                 {{ CHANNEL_SEND_FAILED }}
-                <button type="button" class="messages-view__retry-btn" @click="emit('retryMessage', String(item.id))">{{ CHANNEL_RETRY }}</button>
+                <button
+                  type="button"
+                  class="messages-view__retry-btn"
+                  @click="emit('retryMessage', String(item.id))"
+                >
+                  {{ CHANNEL_RETRY }}
+                </button>
               </span>
               <span v-else-if="item.readCount">{{ item.readCount }} {{ CHANNEL_READ_COUNT }}</span>
             </footer>

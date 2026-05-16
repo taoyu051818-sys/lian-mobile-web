@@ -1,17 +1,20 @@
 <script setup lang="ts">
-const props = withDefaults(defineProps<{
-  variant?: "primary" | "tonal" | "ghost" | "danger";
-  size?: "sm" | "md" | "lg";
-  disabled?: boolean;
-  loading?: boolean;
-  type?: "button" | "submit" | "reset";
-}>(), {
-  variant: "tonal",
-  size: "md",
-  disabled: false,
-  loading: false,
-  type: "button"
-});
+const props = withDefaults(
+  defineProps<{
+    variant?: "primary" | "tonal" | "ghost" | "danger";
+    size?: "sm" | "md" | "lg";
+    disabled?: boolean;
+    loading?: boolean;
+    type?: "button" | "submit" | "reset";
+  }>(),
+  {
+    variant: "tonal",
+    size: "md",
+    disabled: false,
+    loading: false,
+    type: "button",
+  },
+);
 
 const emit = defineEmits<{
   click: [event: Event];

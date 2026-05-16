@@ -25,7 +25,8 @@ export const PROFILE_ALIAS_PERSONA = "人格";
 export const PROFILE_ALIAS_DESCRIPTION = "说明";
 export const PROFILE_REAL_IDENTITY_HINT = "当前使用真实身份。";
 export const PROFILE_ALIAS_DEFAULT_HINT = "这个马甲会作为你在 LIAN 中出现的默认身份。";
-export const PROFILE_ALIAS_MORE_HINT = "这个马甲会作为你在 LIAN 中出现的默认身份，更多身份说明会在后续补齐。";
+export const PROFILE_ALIAS_MORE_HINT =
+  "这个马甲会作为你在 LIAN 中出现的默认身份，更多身份说明会在后续补齐。";
 export const PROFILE_EMPTY_CONTENT = "暂无内容";
 export const PROFILE_LOAD_ERROR_PREFIX = "个人资料";
 export const PROFILE_LIST_ERROR_PREFIX = "列表";

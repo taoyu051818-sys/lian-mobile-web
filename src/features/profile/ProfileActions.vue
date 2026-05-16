@@ -17,7 +17,11 @@ const emit = defineEmits<{
       {{ editorOpen ? PROFILE_COLLAPSE_EDITOR : PROFILE_EDIT }}
     </button>
     <span class="profile-actions__divider" aria-hidden="true">·</span>
-    <button type="button" class="profile-actions__btn profile-actions__btn--muted" @click="emit('logout')">
+    <button
+      type="button"
+      class="profile-actions__btn profile-actions__btn--muted"
+      @click="emit('logout')"
+    >
       {{ PROFILE_LOGOUT }}
     </button>
   </div>

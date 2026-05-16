@@ -27,7 +27,8 @@ import type { MapLayerPoint, MapRoad, MapRoadNetworkPreview } from "../../types/
 
 const PREVIEW_PROJECTION_ORIGIN = { lat: 18.393453, lng: 110.015821 };
 const METERS_PER_DEGREE_LAT = 111320;
-const METERS_PER_DEGREE_LNG = METERS_PER_DEGREE_LAT * Math.cos(PREVIEW_PROJECTION_ORIGIN.lat * Math.PI / 180);
+const METERS_PER_DEGREE_LNG =
+  METERS_PER_DEGREE_LAT * Math.cos((PREVIEW_PROJECTION_ORIGIN.lat * Math.PI) / 180);
 
 export interface RoadResolution {
   roads: MapRoad[];
@@ -42,7 +43,7 @@ export function previewPoint(
   transform?: MapRoadNetworkPreview["transform"],
 ): MapLayerPoint {
   const scale = Number(transform?.scale || 1);
-  const rotation = Number(transform?.rotation || 0) * Math.PI / 180;
+  const rotation = (Number(transform?.rotation || 0) * Math.PI) / 180;
   const translateX = Number(transform?.translateX || 0);
   const translateY = Number(transform?.translateY || 0);
   const lat = Number(point[0]);
@@ -67,25 +68,29 @@ export function previewPoint(
  * - `source` is set to the preview's `source` field (defaulting to `"road_network_preview"`).
  * - `interactive` is `false` (preview roads are display-only, not clickable).
  */
-export function convertPreviewToRoads(preview: MapRoadNetworkPreview | null | undefined): MapRoad[] {
+export function convertPreviewToRoads(
+  preview: MapRoadNetworkPreview | null | undefined,
+): MapRoad[] {
   if (!preview?.roads?.length) return [];
   return preview.roads
-    .map((road): MapRoad => ({
-      id: `preview-road-${road.road_id}`,
-      name: `Preview road ${road.road_id}`,
-      type: road.road_type === "walking" ? "pedestrian_path" : "main_road",
-      points: road.points
-        .map((p) => previewPoint(p, preview.transform))
-        .filter((p) => Number.isFinite(p.lat) && Number.isFinite(p.lng)),
-      style: {
-        color: road.road_type === "walking" ? "#b8a99a" : "#8f98a3",
-        weight: Math.max(2, Math.min(6, Number(road.width_m || 3.2))),
-        dashArray: road.road_type === "walking" ? "5 5" : "",
-      },
-      interactive: false,
-      status: "active",
-      source: preview.source || "road_network_preview",
-    }))
+    .map(
+      (road): MapRoad => ({
+        id: `preview-road-${road.road_id}`,
+        name: `Preview road ${road.road_id}`,
+        type: road.road_type === "walking" ? "pedestrian_path" : "main_road",
+        points: road.points
+          .map((p) => previewPoint(p, preview.transform))
+          .filter((p) => Number.isFinite(p.lat) && Number.isFinite(p.lng)),
+        style: {
+          color: road.road_type === "walking" ? "#b8a99a" : "#8f98a3",
+          weight: Math.max(2, Math.min(6, Number(road.width_m || 3.2))),
+          dashArray: road.road_type === "walking" ? "5 5" : "",
+        },
+        interactive: false,
+        status: "active",
+        source: preview.source || "road_network_preview",
+      }),
+    )
     .filter((road) => road.points.length >= 2);
 }
 
@@ -96,7 +101,10 @@ export function convertPreviewToRoads(preview: MapRoadNetworkPreview | null | un
  * empty. The info-level "using preview road fallback" log is the primary
  * telemetry signal for the exit criteria described in the module header.
  */
-export function validateOfficialRoads(roads: MapRoad[] | null | undefined, preview?: MapRoadNetworkPreview | null): boolean {
+export function validateOfficialRoads(
+  roads: MapRoad[] | null | undefined,
+  preview?: MapRoadNetworkPreview | null,
+): boolean {
   if (!roads || roads.length === 0) {
     if (preview?.roads?.length) {
       if (!loggedPreviewFallback) {

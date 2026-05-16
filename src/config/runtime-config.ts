@@ -97,9 +97,7 @@ export function parseEnvUrl(
 function validateAbsoluteOrEmpty(value: string, label: string, dev: boolean): string {
   if (!value) return value;
   if (!isAbsoluteUrl(value)) {
-    throw new Error(
-      `[runtime-config] ${label} is not an absolute URL: ${JSON.stringify(value)}`,
-    );
+    throw new Error(`[runtime-config] ${label} is not an absolute URL: ${JSON.stringify(value)}`);
   }
   if (!dev && isLocalhostOrigin(value)) {
     throw new Error(
@@ -122,11 +120,11 @@ function validateAbsoluteRequired(value: string, label: string, dev: boolean): s
 export function getRuntimeConfig(): RuntimeConfig {
   const dev = isDevContext();
   return {
-    apiBaseUrl: validateAbsoluteOrEmpty(
-      readRaw("LIAN_API_BASE_URL"), "LIAN_API_BASE_URL", dev,
-    ),
+    apiBaseUrl: validateAbsoluteOrEmpty(readRaw("LIAN_API_BASE_URL"), "LIAN_API_BASE_URL", dev),
     imageProxyBaseUrl: validateAbsoluteRequired(
-      readRaw("LIAN_IMAGE_PROXY_BASE_URL"), "LIAN_IMAGE_PROXY_BASE_URL", dev,
+      readRaw("LIAN_IMAGE_PROXY_BASE_URL"),
+      "LIAN_IMAGE_PROXY_BASE_URL",
+      dev,
     ),
   };
 }
@@ -144,5 +142,9 @@ export function buildApiUrl(path: string): string {
 
 /** Convenience accessor – prefer getRuntimeConfig() when both values are needed. */
 export function getImageProxyBase(): string {
-  return validateAbsoluteRequired(readRaw("LIAN_IMAGE_PROXY_BASE_URL"), "LIAN_IMAGE_PROXY_BASE_URL", isDevContext());
+  return validateAbsoluteRequired(
+    readRaw("LIAN_IMAGE_PROXY_BASE_URL"),
+    "LIAN_IMAGE_PROXY_BASE_URL",
+    isDevContext(),
+  );
 }

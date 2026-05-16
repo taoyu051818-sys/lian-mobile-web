@@ -74,7 +74,10 @@ test("ContentStack applies gap and align modifier classes", () => {
 test("ActionRow exposes as, justify, and wrap props", () => {
   const src = readSource("ActionRow.vue");
   assert.match(src, /as\?\s*:\s*string/);
-  assert.match(src, /justify\?\s*:\s*"start"\s*\|\s*"center"\s*\|\s*"end"\s*\|\s*"between"\s*\|\s*"around"/);
+  assert.match(
+    src,
+    /justify\?\s*:\s*"start"\s*\|\s*"center"\s*\|\s*"end"\s*\|\s*"between"\s*\|\s*"around"/,
+  );
   assert.match(src, /wrap\?\s*:\s*boolean/);
 });
 

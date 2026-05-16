@@ -13,13 +13,7 @@ import { fileURLToPath } from "node:url";
 const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const docsDir = path.join(rootDir, "docs");
 
-const STALE_KEYWORDS = [
-  "superseded",
-  "historical",
-  "frozen",
-  "not yet implemented",
-  "draft",
-];
+const STALE_KEYWORDS = ["superseded", "historical", "frozen", "not yet implemented", "draft"];
 
 async function walkMdFiles(dir) {
   const results = [];
@@ -63,7 +57,9 @@ async function main() {
 
     for (const keyword of STALE_KEYWORDS) {
       if (contentLower.includes(keyword)) {
-        console.warn(`[WARNING] warn-stale-doc-keywords: "${relPath}" contains stale keyword: "${keyword}"`);
+        console.warn(
+          `[WARNING] warn-stale-doc-keywords: "${relPath}" contains stale keyword: "${keyword}"`,
+        );
         warningCount++;
       }
     }

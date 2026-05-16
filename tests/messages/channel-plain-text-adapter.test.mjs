@@ -7,7 +7,10 @@ import { fileURLToPath } from "node:url";
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
 const apiSource = fs.readFileSync(path.join(repoRoot, "src/api/messages.ts"), "utf8");
 const typesSource = fs.readFileSync(path.join(repoRoot, "src/types/messages.ts"), "utf8");
-const channelSource = fs.readFileSync(path.join(repoRoot, "src/features/messages/useChannelMessages.ts"), "utf8");
+const channelSource = fs.readFileSync(
+  path.join(repoRoot, "src/features/messages/useChannelMessages.ts"),
+  "utf8",
+);
 
 test("types/messages.ts defines ChannelMessage plainText", () => {
   assert.match(typesSource, /plainText\?: string/);
@@ -29,7 +32,14 @@ test("useChannelMessages reads helper-produced plainText before falling back to 
 });
 
 test("channel plain-text helper keeps text and strips tags conservatively", () => {
-  const extractChannelMessagePlainText = (html = "") => html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
-  assert.equal(extractChannelMessagePlainText("<p>Hello <strong>campus</strong></p>"), "Hello campus");
+  const extractChannelMessagePlainText = (html = "") =>
+    html
+      .replace(/<[^>]+>/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+  assert.equal(
+    extractChannelMessagePlainText("<p>Hello <strong>campus</strong></p>"),
+    "Hello campus",
+  );
   assert.equal(extractChannelMessagePlainText(""), "");
 });

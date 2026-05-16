@@ -22,7 +22,6 @@ export function withApiBase(path: string) {
   return path.startsWith("/") ? `${getApiBase()}${path}` : path;
 }
 
-
 function normalizeJsonOptions(options: RequestInit = {}) {
   if (!options.body) return options;
   const headers = new Headers(options.headers || {});
@@ -69,7 +68,12 @@ function extractApiError(data: unknown, status: number) {
   return { message: `请求失败（状态码 ${status}）`, code };
 }
 
-function buildApiError(data: unknown, status: number, fallbackMessage = "", retryAfterSeconds: number | null = null) {
+function buildApiError(
+  data: unknown,
+  status: number,
+  fallbackMessage = "",
+  retryAfterSeconds: number | null = null,
+) {
   const error = extractApiError(data, status);
   if (fallbackMessage && error.message === `请求失败（状态码 ${status}）`) {
     return new LianApiError(fallbackMessage, status, error.code, retryAfterSeconds);
@@ -78,7 +82,7 @@ function buildApiError(data: unknown, status: number, fallbackMessage = "", retr
 }
 
 async function readJsonResponse<T>(response: Response): Promise<T> {
-  return response.json().catch(() => ({} as T));
+  return response.json().catch(() => ({}) as T);
 }
 
 async function apiRequest<T>(
@@ -96,7 +100,12 @@ async function apiRequest<T>(
   });
   const data = await readJsonResponse<T>(response);
   if (!response.ok) {
-    throw buildApiError(data, response.status, fallbackMessage, parseRetryAfterSeconds(response.headers.get("retry-after")));
+    throw buildApiError(
+      data,
+      response.status,
+      fallbackMessage,
+      parseRetryAfterSeconds(response.headers.get("retry-after")),
+    );
   }
   return data;
 }

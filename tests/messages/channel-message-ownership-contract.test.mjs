@@ -9,8 +9,14 @@ const typesMessages = fs.readFileSync(path.join(repoRoot, "src/types/messages.ts
 const typesFeed = fs.readFileSync(path.join(repoRoot, "src/types/feed.ts"), "utf8");
 const typesProfile = fs.readFileSync(path.join(repoRoot, "src/types/profile.ts"), "utf8");
 const apiMessages = fs.readFileSync(path.join(repoRoot, "src/api/messages.ts"), "utf8");
-const channelSource = fs.readFileSync(path.join(repoRoot, "src/features/messages/useChannelMessages.ts"), "utf8");
-const channelThreadSource = fs.readFileSync(path.join(repoRoot, "src/features/messages/ChannelThread.vue"), "utf8");
+const channelSource = fs.readFileSync(
+  path.join(repoRoot, "src/features/messages/useChannelMessages.ts"),
+  "utf8",
+);
+const channelThreadSource = fs.readFileSync(
+  path.join(repoRoot, "src/features/messages/ChannelThread.vue"),
+  "utf8",
+);
 
 // --- DisplayActor.id ---
 
@@ -79,7 +85,10 @@ test("normalizeChannelMessage defaults deliveryState to sent", () => {
 });
 
 test("normalizeChannelMessage computes isSelf only when actor id is authoritative", () => {
-  assert.match(apiMessages, /raw\.isSelf \?\? \(actor\?\.authoritative \? actor\.id === clientId : false\)/);
+  assert.match(
+    apiMessages,
+    /raw\.isSelf \?\? \(actor\?\.authoritative \? actor\.id === clientId : false\)/,
+  );
 });
 
 test("fetchChannelMessages normalizes items before returning", () => {
@@ -89,7 +98,10 @@ test("fetchChannelMessages normalizes items before returning", () => {
 // --- useChannelMessages ownership usage ---
 
 test("useChannelMessages imports ChannelMessage types", () => {
-  assert.match(channelSource, /import type \{[^}]*ChannelMessage[^}]*\} from "\.\.\/\.\.\/types\/messages"/);
+  assert.match(
+    channelSource,
+    /import type \{[^}]*ChannelMessage[^}]*\} from "\.\.\/\.\.\/types\/messages"/,
+  );
 });
 
 test("ChannelThread uses isSelf for message CSS class", () => {
@@ -102,7 +114,10 @@ test("ChannelThread shows delivery state for self messages", () => {
 });
 
 test("ChannelThread messageActor returns ChannelMessageActor with fallback id", () => {
-  assert.match(channelThreadSource, /function messageActor\(item: ChannelMessage\): ChannelMessageActor/);
+  assert.match(
+    channelThreadSource,
+    /function messageActor\(item: ChannelMessage\): ChannelMessageActor/,
+  );
   assert.match(channelThreadSource, /return item\.actor \|\| \{ id: "" \}/);
 });
 

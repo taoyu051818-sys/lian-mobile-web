@@ -1,12 +1,15 @@
 <script setup lang="ts">
-withDefaults(defineProps<{
-  title: string;
-  titleId?: string;
-  subtitle?: string;
-}>(), {
-  titleId: undefined,
-  subtitle: ""
-});
+withDefaults(
+  defineProps<{
+    title: string;
+    titleId?: string;
+    subtitle?: string;
+  }>(),
+  {
+    titleId: undefined,
+    subtitle: "",
+  },
+);
 </script>
 
 <template>

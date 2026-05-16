@@ -20,10 +20,13 @@ describe("publish image upload validation", () => {
   });
 
   it("rejects non-image files and oversized uploads with a user-facing message", () => {
-    const result = validatePublishImageSelection([
-      createMockFile("text/plain", 128),
-      createMockFile("image/jpeg", MAX_PUBLISH_IMAGE_BYTES + 1),
-    ], 0);
+    const result = validatePublishImageSelection(
+      [
+        createMockFile("text/plain", 128),
+        createMockFile("image/jpeg", MAX_PUBLISH_IMAGE_BYTES + 1),
+      ],
+      0,
+    );
 
     expect(result.acceptedFiles).toHaveLength(0);
     expect(result.message).toContain("非图片文件");
@@ -31,10 +34,10 @@ describe("publish image upload validation", () => {
   });
 
   it("keeps the publish image count within the current limit", () => {
-    const result = validatePublishImageSelection([
-      createMockFile("image/webp", 1024),
-      createMockFile("image/webp", 1024),
-    ], MAX_PUBLISH_IMAGE_COUNT - 1);
+    const result = validatePublishImageSelection(
+      [createMockFile("image/webp", 1024), createMockFile("image/webp", 1024)],
+      MAX_PUBLISH_IMAGE_COUNT - 1,
+    );
 
     expect(result.acceptedFiles).toHaveLength(1);
     expect(result.message).toContain(`最多只能上传 ${MAX_PUBLISH_IMAGE_COUNT} 张图片`);
@@ -42,7 +45,9 @@ describe("publish image upload validation", () => {
 
   it("uses the same single-file guard for direct upload calls", () => {
     expect(validatePublishImageFile(createMockFile("image/gif", MAX_PUBLISH_IMAGE_BYTES))).toBe("");
-    expect(validatePublishImageFile(createMockFile("application/pdf", 256))).toBe("请上传图片文件。");
+    expect(validatePublishImageFile(createMockFile("application/pdf", 256))).toBe(
+      "请上传图片文件。",
+    );
   });
 
   it("ships publish image help copy that explains the validation scope", () => {

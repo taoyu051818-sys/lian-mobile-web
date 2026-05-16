@@ -1,6 +1,16 @@
 <script setup lang="ts">
 import { InlineError, TrustBadge } from "../../ui";
-import { LOADING_NOTIFICATION, EMPTY_NOTIFICATION, NOTIFICATION_SECTION_LABEL, CHANNEL_RELOAD, NOTIFICATION_READ, NOTIFICATION_UNREAD, NOTIFICATION_DEFAULT_TITLE, NOTIFICATION_REPLY_LABEL, NOTIFICATION_ACTOR_LABEL } from "../../config/brand";
+import {
+  LOADING_NOTIFICATION,
+  EMPTY_NOTIFICATION,
+  NOTIFICATION_SECTION_LABEL,
+  CHANNEL_RELOAD,
+  NOTIFICATION_READ,
+  NOTIFICATION_UNREAD,
+  NOTIFICATION_DEFAULT_TITLE,
+  NOTIFICATION_REPLY_LABEL,
+  NOTIFICATION_ACTOR_LABEL,
+} from "../../config/brand";
 import { actorDisplayName } from "../../domain/actor";
 import type { NotificationItem } from "../../types/messages";
 import { formatRelativeTime } from "../../utils/time";
@@ -21,7 +31,10 @@ function isReplyNotification(item: NotificationItem) {
 }
 
 function notificationActor(item: NotificationItem) {
-  return actorDisplayName(item.actor, isReplyNotification(item) ? NOTIFICATION_REPLY_LABEL : NOTIFICATION_ACTOR_LABEL);
+  return actorDisplayName(
+    item.actor,
+    isReplyNotification(item) ? NOTIFICATION_REPLY_LABEL : NOTIFICATION_ACTOR_LABEL,
+  );
 }
 
 function openNotification(item: NotificationItem) {
@@ -37,7 +50,9 @@ function openNotification(item: NotificationItem) {
       <button type="button" @click="emit('retry')">{{ CHANNEL_RELOAD }}</button>
     </InlineError>
 
-    <div v-if="loading && !items.length" class="messages-view__state" role="status">{{ LOADING_NOTIFICATION }}</div>
+    <div v-if="loading && !items.length" class="messages-view__state" role="status">
+      {{ LOADING_NOTIFICATION }}
+    </div>
     <div v-else-if="!items.length" class="messages-view__state">{{ EMPTY_NOTIFICATION }}</div>
     <div v-else class="messages-view__list" aria-live="polite">
       <article
@@ -52,7 +67,9 @@ function openNotification(item: NotificationItem) {
       >
         <header>
           <strong>{{ notificationActor(item) }}</strong>
-          <TrustBadge :tone="item.read ? 'confirmed' : 'pending'">{{ item.read ? NOTIFICATION_READ : NOTIFICATION_UNREAD }}</TrustBadge>
+          <TrustBadge :tone="item.read ? 'confirmed' : 'pending'">{{
+            item.read ? NOTIFICATION_READ : NOTIFICATION_UNREAD
+          }}</TrustBadge>
         </header>
         <h3>{{ item.title || NOTIFICATION_DEFAULT_TITLE }}</h3>
         <p v-if="item.excerpt && item.excerpt !== item.title">{{ item.excerpt }}</p>

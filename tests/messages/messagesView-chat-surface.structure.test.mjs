@@ -5,9 +5,18 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
-const viewSource = fs.readFileSync(path.join(repoRoot, "src/features/messages/MessagesView.vue"), "utf8");
-const threadSource = fs.readFileSync(path.join(repoRoot, "src/features/messages/ChannelThread.vue"), "utf8");
-const composerSource = fs.readFileSync(path.join(repoRoot, "src/features/messages/ChannelComposer.vue"), "utf8");
+const viewSource = fs.readFileSync(
+  path.join(repoRoot, "src/features/messages/MessagesView.vue"),
+  "utf8",
+);
+const threadSource = fs.readFileSync(
+  path.join(repoRoot, "src/features/messages/ChannelThread.vue"),
+  "utf8",
+);
+const composerSource = fs.readFileSync(
+  path.join(repoRoot, "src/features/messages/ChannelComposer.vue"),
+  "utf8",
+);
 
 test("MessagesView does not wrap content in GlassPanel", () => {
   assert.doesNotMatch(viewSource, /GlassPanel/);
@@ -29,7 +38,10 @@ test("ChannelThread load-older button sits above the message list", () => {
   const listIdx = threadSource.indexOf("messages-view__list");
   assert.ok(loadMoreIdx >= 0, "load-more element should exist");
   assert.ok(listIdx >= 0, "list element should exist");
-  assert.ok(loadMoreIdx < listIdx, "load-more should appear before the message list in the template");
+  assert.ok(
+    loadMoreIdx < listIdx,
+    "load-more should appear before the message list in the template",
+  );
 });
 
 test("ChannelThread preserves sender identity layout from #376: avatar left of bubble, author above bubble", () => {

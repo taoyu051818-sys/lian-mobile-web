@@ -53,13 +53,14 @@ describe("apiUpload", () => {
     const form = new FormData();
     form.append("image", makeFile("demo.png"));
 
-    await expect(apiUpload("/api/upload/image?purpose=publish-v2", form, "fallback")).rejects
-      .toMatchObject({
-        code: "",
-        message: "后端拒绝了上传",
-        name: "LianApiError",
-        status: 400,
-      });
+    await expect(
+      apiUpload("/api/upload/image?purpose=publish-v2", form, "fallback"),
+    ).rejects.toMatchObject({
+      code: "",
+      message: "后端拒绝了上传",
+      name: "LianApiError",
+      status: 400,
+    });
   });
 
   it("uses the provided fallback message when the server response is not parseable", async () => {
@@ -71,12 +72,13 @@ describe("apiUpload", () => {
     const form = new FormData();
     form.append("image", makeFile("demo.png"));
 
-    await expect(apiUpload("/api/upload/image?purpose=avatar", form, "头像上传失败")).rejects
-      .toMatchObject({
-        message: "头像上传失败",
-        name: "LianApiError",
-        status: 502,
-      });
+    await expect(
+      apiUpload("/api/upload/image?purpose=avatar", form, "头像上传失败"),
+    ).rejects.toMatchObject({
+      message: "头像上传失败",
+      name: "LianApiError",
+      status: 502,
+    });
   });
 });
 

@@ -45,12 +45,17 @@ test("convertPreviewToRoads converts walking roads to pedestrian_path", () => {
   const preview: MapRoadNetworkPreview = {
     source: "test_source",
     transform: { translateX: 0, translateY: 0, scale: 1, rotation: 0 },
-    roads: [{
-      road_id: 1,
-      road_type: "walking",
-      width_m: 2.5,
-      points: [[18.393453, 110.015821], [18.394, 110.016]],
-    }],
+    roads: [
+      {
+        road_id: 1,
+        road_type: "walking",
+        width_m: 2.5,
+        points: [
+          [18.393453, 110.015821],
+          [18.394, 110.016],
+        ],
+      },
+    ],
   };
   const roads = convertPreviewToRoads(preview);
   assert.equal(roads.length, 1);
@@ -63,12 +68,17 @@ test("convertPreviewToRoads converts walking roads to pedestrian_path", () => {
 test("convertPreviewToRoads converts non-walking roads to main_road", () => {
   const preview: MapRoadNetworkPreview = {
     source: "test",
-    roads: [{
-      road_id: 42,
-      road_type: "driving",
-      width_m: 5,
-      points: [[18.393453, 110.015821], [18.394, 110.016]],
-    }],
+    roads: [
+      {
+        road_id: 42,
+        road_type: "driving",
+        width_m: 5,
+        points: [
+          [18.393453, 110.015821],
+          [18.394, 110.016],
+        ],
+      },
+    ],
   };
   const roads = convertPreviewToRoads(preview);
   assert.equal(roads.length, 1);
@@ -80,7 +90,13 @@ test("convertPreviewToRoads filters out roads with fewer than 2 valid points", (
     source: "test",
     roads: [
       { road_id: 1, points: [[18.393453, 110.015821]] },
-      { road_id: 2, points: [[18.393453, 110.015821], [18.394, 110.016]] },
+      {
+        road_id: 2,
+        points: [
+          [18.393453, 110.015821],
+          [18.394, 110.016],
+        ],
+      },
     ],
   };
   const roads = convertPreviewToRoads(preview);
@@ -101,7 +117,21 @@ test("validateOfficialRoads returns false and logs info when preview fallback ex
   console.info = (...args: unknown[]) => {
     if (String(args[0]).includes("using preview road fallback")) informed = true;
   };
-  assert.equal(validateOfficialRoads([], { source: "test", roads: [{ road_id: 1, points: [[1, 1], [2, 2]] }] }), false);
+  assert.equal(
+    validateOfficialRoads([], {
+      source: "test",
+      roads: [
+        {
+          road_id: 1,
+          points: [
+            [1, 1],
+            [2, 2],
+          ],
+        },
+      ],
+    }),
+    false,
+  );
   assert.equal(informed, true, "should log preview fallback info");
   console.info = origInfo;
 });
@@ -121,7 +151,18 @@ test("validateOfficialRoads returns false and warns when all road sources are em
 
 test("resolveRoads prefers official roads when available", () => {
   const official: MapRoad[] = [{ id: "official-1", points: [{ lat: 1, lng: 1 }] }];
-  const preview: MapRoadNetworkPreview = { source: "p", roads: [{ road_id: 99, points: [[1, 1], [2, 2]] }] };
+  const preview: MapRoadNetworkPreview = {
+    source: "p",
+    roads: [
+      {
+        road_id: 99,
+        points: [
+          [1, 1],
+          [2, 2],
+        ],
+      },
+    ],
+  };
   const result = resolveRoads(official, preview);
   assert.equal(result.source, "official");
   assert.equal(result.roads.length, 1);
@@ -131,7 +172,16 @@ test("resolveRoads prefers official roads when available", () => {
 test("resolveRoads falls back to preview when official roads are empty", () => {
   const preview: MapRoadNetworkPreview = {
     source: "road_network_preview",
-    roads: [{ road_id: 10, road_type: "walking", points: [[18.393453, 110.015821], [18.394, 110.016]] }],
+    roads: [
+      {
+        road_id: 10,
+        road_type: "walking",
+        points: [
+          [18.393453, 110.015821],
+          [18.394, 110.016],
+        ],
+      },
+    ],
   };
   const result = resolveRoads([], preview);
   assert.equal(result.source, "preview");
@@ -151,7 +201,16 @@ test("resolveRoads returns empty source when both official and preview are empty
 test("resolveRoads falls back to preview when official roads are null", () => {
   const preview: MapRoadNetworkPreview = {
     source: "test",
-    roads: [{ road_id: 5, road_type: "driving", points: [[18.393453, 110.015821], [18.394, 110.016]] }],
+    roads: [
+      {
+        road_id: 5,
+        road_type: "driving",
+        points: [
+          [18.393453, 110.015821],
+          [18.394, 110.016],
+        ],
+      },
+    ],
   };
   const result = resolveRoads(null, preview);
   assert.equal(result.source, "preview");
@@ -172,7 +231,16 @@ test("resolveRoads returns empty when official is null and no preview roads exis
 test("preview fallback roads carry preview-road- id prefix", () => {
   const preview: MapRoadNetworkPreview = {
     source: "road_network_preview",
-    roads: [{ road_id: 7, road_type: "driving", points: [[18.393453, 110.015821], [18.394, 110.016]] }],
+    roads: [
+      {
+        road_id: 7,
+        road_type: "driving",
+        points: [
+          [18.393453, 110.015821],
+          [18.394, 110.016],
+        ],
+      },
+    ],
   };
   const result = resolveRoads([], preview);
   assert.equal(result.source, "preview");
@@ -182,7 +250,16 @@ test("preview fallback roads carry preview-road- id prefix", () => {
 test("preview fallback roads have interactive=false", () => {
   const preview: MapRoadNetworkPreview = {
     source: "test",
-    roads: [{ road_id: 1, road_type: "walking", points: [[18.393453, 110.015821], [18.394, 110.016]] }],
+    roads: [
+      {
+        road_id: 1,
+        road_type: "walking",
+        points: [
+          [18.393453, 110.015821],
+          [18.394, 110.016],
+        ],
+      },
+    ],
   };
   const result = resolveRoads([], preview);
   assert.equal(result.roads[0].interactive, false);
@@ -191,7 +268,16 @@ test("preview fallback roads have interactive=false", () => {
 test("preview fallback roads carry preview source string", () => {
   const preview: MapRoadNetworkPreview = {
     source: "custom_preview_source",
-    roads: [{ road_id: 3, road_type: "driving", points: [[18.393453, 110.015821], [18.394, 110.016]] }],
+    roads: [
+      {
+        road_id: 3,
+        road_type: "driving",
+        points: [
+          [18.393453, 110.015821],
+          [18.394, 110.016],
+        ],
+      },
+    ],
   };
   const roads = convertPreviewToRoads(preview);
   assert.equal(roads[0].source, "custom_preview_source");
@@ -199,7 +285,15 @@ test("preview fallback roads carry preview source string", () => {
 
 test("preview roads default source to road_network_preview when source is missing", () => {
   const preview: MapRoadNetworkPreview = {
-    roads: [{ road_id: 2, points: [[18.393453, 110.015821], [18.394, 110.016]] }],
+    roads: [
+      {
+        road_id: 2,
+        points: [
+          [18.393453, 110.015821],
+          [18.394, 110.016],
+        ],
+      },
+    ],
   };
   const roads = convertPreviewToRoads(preview);
   assert.equal(roads[0].source, "road_network_preview");
@@ -222,7 +316,18 @@ test("validateOfficialRoads does not re-log preview fallback after first call", 
   console.info = (...args: unknown[]) => {
     if (String(args[0]).includes("using preview road fallback")) logged = true;
   };
-  const preview: MapRoadNetworkPreview = { source: "t", roads: [{ road_id: 1, points: [[1, 1], [2, 2]] }] };
+  const preview: MapRoadNetworkPreview = {
+    source: "t",
+    roads: [
+      {
+        road_id: 1,
+        points: [
+          [1, 1],
+          [2, 2],
+        ],
+      },
+    ],
+  };
   validateOfficialRoads([], preview);
   assert.equal(logged, false, "module-level guard should suppress repeat logging");
   console.info = origInfo;

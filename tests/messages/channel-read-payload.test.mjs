@@ -7,7 +7,10 @@ import { fileURLToPath } from "node:url";
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
 const apiSource = fs.readFileSync(path.join(repoRoot, "src/api/messages.ts"), "utf8");
 const typesSource = fs.readFileSync(path.join(repoRoot, "src/types/messages.ts"), "utf8");
-const viewSource = fs.readFileSync(path.join(repoRoot, "src/features/messages/MessagesView.vue"), "utf8");
+const viewSource = fs.readFileSync(
+  path.join(repoRoot, "src/features/messages/MessagesView.vue"),
+  "utf8",
+);
 
 // --- ChannelReadPayload type ---
 
@@ -20,7 +23,10 @@ test("types/messages.ts defines ChannelReadPayload with messageIds and readerId"
 // --- buildChannelReadPayload ---
 
 test("api/messages.ts exports buildChannelReadPayload", () => {
-  assert.match(apiSource, /export function buildChannelReadPayload\(messageIds: Array<string \| number>\)/);
+  assert.match(
+    apiSource,
+    /export function buildChannelReadPayload\(messageIds: Array<string \| number>\)/,
+  );
 });
 
 test("buildChannelReadPayload returns { messageIds, readerId } shape", () => {
@@ -30,7 +36,10 @@ test("buildChannelReadPayload returns { messageIds, readerId } shape", () => {
 // --- markChannelMessagesRead ---
 
 test("api/messages.ts exports markChannelMessagesRead", () => {
-  assert.match(apiSource, /export async function markChannelMessagesRead\(messageIds: Array<string \| number>\)/);
+  assert.match(
+    apiSource,
+    /export async function markChannelMessagesRead\(messageIds: Array<string \| number>\)/,
+  );
 });
 
 test("markChannelMessagesRead short-circuits on empty messageIds", () => {
@@ -53,7 +62,10 @@ test("MessagesView uses ?? for nextOffset fallback so 0 is preserved", () => {
 
 test("MessagesView imports markChannelMessagesRead", () => {
   assert.match(viewSource, /markChannelMessagesRead/);
-  assert.match(viewSource, /import \{[^}]*markChannelMessagesRead[^}]*\} from "\.\.\/api\/messages"/);
+  assert.match(
+    viewSource,
+    /import \{[^}]*markChannelMessagesRead[^}]*\} from "\.\.\/api\/messages"/,
+  );
 });
 
 test("MessagesView calls markChannelMessagesRead only on reset loads", () => {
@@ -73,8 +85,8 @@ test("nullish coalescing preserves 0 where || would not", () => {
 
 test("nullish coalescing falls back for undefined and null", () => {
   const fallback = 42;
-  assert.equal((undefined ?? fallback), 42);
-  assert.equal((null ?? fallback), 42);
-  assert.equal((0 ?? fallback), 0);
-  assert.equal((false ?? fallback), false);
+  assert.equal(undefined ?? fallback, 42);
+  assert.equal(null ?? fallback, 42);
+  assert.equal(0 ?? fallback, 0);
+  assert.equal(false ?? fallback, false);
 });

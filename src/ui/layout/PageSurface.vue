@@ -1,13 +1,16 @@
 <script setup lang="ts">
-withDefaults(defineProps<{
-  as?: string;
-  bleed?: boolean;
-  padded?: boolean;
-}>(), {
-  as: "main",
-  bleed: false,
-  padded: true,
-});
+withDefaults(
+  defineProps<{
+    as?: string;
+    bleed?: boolean;
+    padded?: boolean;
+  }>(),
+  {
+    as: "main",
+    bleed: false,
+    padded: true,
+  },
+);
 </script>
 
 <template>

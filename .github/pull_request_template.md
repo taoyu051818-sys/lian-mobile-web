@@ -25,14 +25,14 @@ If any item is checked, describe rollback path and confirm the runtime inventory
 
 For frontend migration work, mark each product area as `Vue`, `Legacy fallback`, `Explicitly disabled`, or `Not touched`.
 
-| Area | Status | Notes |
-| --- | --- | --- |
-| Feed |  |  |
-| Detail |  |  |
-| Map |  |  |
-| Publish |  |  |
-| Messages |  |  |
-| Profile |  |  |
+| Area     | Status | Notes |
+| -------- | ------ | ----- |
+| Feed     |        |       |
+| Detail   |        |       |
+| Map      |        |       |
+| Publish  |        |       |
+| Messages |        |       |
+| Profile  |        |       |
 
 ## Verification
 

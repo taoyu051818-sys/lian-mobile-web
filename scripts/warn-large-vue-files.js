@@ -54,7 +54,9 @@ async function main() {
 
     if (lineCount > LINE_THRESHOLD) {
       const relPath = path.relative(rootDir, filePath).replace(/\\/g, "/");
-      console.warn(`[WARNING] warn-large-vue-files: "${relPath}" has ${lineCount} lines (threshold: ${LINE_THRESHOLD})`);
+      console.warn(
+        `[WARNING] warn-large-vue-files: "${relPath}" has ${lineCount} lines (threshold: ${LINE_THRESHOLD})`,
+      );
       warningCount++;
     }
   }

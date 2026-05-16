@@ -19,7 +19,7 @@ const DEFAULT_DURATION = 3600;
 let nextToastId = 1;
 
 const toastState = reactive<{ items: ToastMessage[] }>({
-  items: []
+  items: [],
 });
 
 function removeToast(id: number) {
@@ -37,7 +37,7 @@ function pushToast(message: string, options: ToastOptions = {}) {
     message: text,
     tone: options.tone || "info",
     duration: Number.isFinite(options.duration) ? Number(options.duration) : DEFAULT_DURATION,
-    createdAt: Date.now()
+    createdAt: Date.now(),
   };
   toastState.items.push(toast);
   if (toast.duration > 0) {

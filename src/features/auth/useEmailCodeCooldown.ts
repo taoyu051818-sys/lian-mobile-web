@@ -2,10 +2,18 @@ import { computed, onBeforeUnmount, ref, type Ref } from "vue";
 import { sendEmailCode } from "../../api/auth";
 import {
   ERROR_SEND_CODE,
-  AUTH_SENDING, AUTH_RESEND, AUTH_SEND,
-  AUTH_EMAIL_HINT, AUTH_EMAIL_REQUIRED, AUTH_CODE_SENT,
-  AUTH_CODE_RESEND_HINT, AUTH_CODE_COOLDOWN_HINT, AUTH_CODE_RATE_LIMIT,
-  AUTH_CODE_RATE_LIMIT_DEFAULT, AUTH_CODE_SENT_INST, AUTH_CODE_RATE_LIMIT_RESEND,
+  AUTH_SENDING,
+  AUTH_RESEND,
+  AUTH_SEND,
+  AUTH_EMAIL_HINT,
+  AUTH_EMAIL_REQUIRED,
+  AUTH_CODE_SENT,
+  AUTH_CODE_RESEND_HINT,
+  AUTH_CODE_COOLDOWN_HINT,
+  AUTH_CODE_RATE_LIMIT,
+  AUTH_CODE_RATE_LIMIT_DEFAULT,
+  AUTH_CODE_SENT_INST,
+  AUTH_CODE_RATE_LIMIT_RESEND,
   AUTH_CODE_RATE_LIMIT_FALLBACK,
 } from "../../config/brand";
 import { extractErrorMessage } from "../../utils/extractErrorMessage";
@@ -26,7 +34,10 @@ export function formatEmailCodeRateLimitMessage(retryAfterSeconds: number | null
   if (retryAfterSeconds && retryAfterSeconds > 0) {
     return AUTH_CODE_RATE_LIMIT.replace("{n}", String(retryAfterSeconds));
   }
-  return AUTH_CODE_RATE_LIMIT_DEFAULT.replace("{n}", String(AUTH_EMAIL_CODE_DEFAULT_COOLDOWN_SECONDS));
+  return AUTH_CODE_RATE_LIMIT_DEFAULT.replace(
+    "{n}",
+    String(AUTH_EMAIL_CODE_DEFAULT_COOLDOWN_SECONDS),
+  );
 }
 
 export function normalizeCooldownSeconds(value: number | null | undefined) {
@@ -34,22 +45,20 @@ export function normalizeCooldownSeconds(value: number | null | undefined) {
   return Math.ceil(value);
 }
 
-export function useEmailCodeCooldown(
-  email: Ref<string>,
-  errorMessage: Ref<string>,
-) {
+export function useEmailCodeCooldown(email: Ref<string>, errorMessage: Ref<string>) {
   const sendingCode = ref(false);
   const codeMessage = ref("");
   const emailCodeCooldownUntil = ref(0);
   const emailCodeCooldownRemaining = ref(0);
   let emailCodeCooldownTimer: ReturnType<typeof globalThis.setInterval> | null = null;
 
-  const emailCodeHint = computed(
-    () => formatEmailCodeHint(codeMessage.value, emailCodeCooldownRemaining.value),
+  const emailCodeHint = computed(() =>
+    formatEmailCodeHint(codeMessage.value, emailCodeCooldownRemaining.value),
   );
   const emailCodeButtonLabel = computed(() => {
     if (sendingCode.value) return AUTH_SENDING;
-    if (emailCodeCooldownRemaining.value > 0) return `${AUTH_RESEND} ${emailCodeCooldownRemaining.value}s`;
+    if (emailCodeCooldownRemaining.value > 0)
+      return `${AUTH_RESEND} ${emailCodeCooldownRemaining.value}s`;
     return AUTH_SEND;
   });
   const canRequestEmailCode = computed(
@@ -104,13 +113,17 @@ export function useEmailCodeCooldown(
         : AUTH_CODE_SENT;
     } catch (error) {
       if (error instanceof LianApiError && error.status === 429) {
-        const retryAfterSeconds = normalizeCooldownSeconds(error.retryAfterSeconds)
-          || AUTH_EMAIL_CODE_DEFAULT_COOLDOWN_SECONDS;
+        const retryAfterSeconds =
+          normalizeCooldownSeconds(error.retryAfterSeconds) ||
+          AUTH_EMAIL_CODE_DEFAULT_COOLDOWN_SECONDS;
         startEmailCodeCooldown(retryAfterSeconds);
         errorMessage.value = formatEmailCodeRateLimitMessage(error.retryAfterSeconds);
         codeMessage.value = error.retryAfterSeconds
           ? AUTH_CODE_RATE_LIMIT_RESEND.replace("{n}", String(retryAfterSeconds))
-          : AUTH_CODE_RATE_LIMIT_FALLBACK.replace("{n}", String(AUTH_EMAIL_CODE_DEFAULT_COOLDOWN_SECONDS));
+          : AUTH_CODE_RATE_LIMIT_FALLBACK.replace(
+              "{n}",
+              String(AUTH_EMAIL_CODE_DEFAULT_COOLDOWN_SECONDS),
+            );
       } else {
         errorMessage.value = extractErrorMessage(error, ERROR_SEND_CODE);
       }

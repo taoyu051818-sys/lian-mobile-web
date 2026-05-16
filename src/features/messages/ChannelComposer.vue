@@ -1,7 +1,13 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
 import { IdentityBadge, InlineError, LianButton } from "../../ui";
-import { CHANNEL_DEFAULT_TAG, COMPOSER_IDENTITY_SIGNAL, COMPOSER_NO_IDENTITY_SIGNAL, COMPOSER_SAY_SOMETHING, COMPOSER_SEND } from "../../config/brand";
+import {
+  CHANNEL_DEFAULT_TAG,
+  COMPOSER_IDENTITY_SIGNAL,
+  COMPOSER_NO_IDENTITY_SIGNAL,
+  COMPOSER_SAY_SOMETHING,
+  COMPOSER_SEND,
+} from "../../config/brand";
 
 const props = defineProps<{
   avatarText: string;
@@ -32,11 +38,26 @@ function handleFocusOut(event: FocusEvent) {
 </script>
 
 <template>
-  <form ref="composerRef" class="messages-view__composer" :class="{ 'is-compact': isCompact }" @submit.prevent="emit('submit')" @focusin="focused = true" @focusout="handleFocusOut">
-    <IdentityBadge v-if="!isCompact" :avatar-text="avatarText" :label="actorName" :meta="signalMeta" />
+  <form
+    ref="composerRef"
+    class="messages-view__composer"
+    :class="{ 'is-compact': isCompact }"
+    @submit.prevent="emit('submit')"
+    @focusin="focused = true"
+    @focusout="handleFocusOut"
+  >
+    <IdentityBadge
+      v-if="!isCompact"
+      :avatar-text="avatarText"
+      :label="actorName"
+      :meta="signalMeta"
+    />
     <label v-if="!isCompact && identityTags.length" class="messages-view__field">
       <span>{{ COMPOSER_IDENTITY_SIGNAL }}</span>
-      <select :value="identityTag" @input="emit('update:identityTag', ($event.target as HTMLSelectElement).value)">
+      <select
+        :value="identityTag"
+        @input="emit('update:identityTag', ($event.target as HTMLSelectElement).value)"
+      >
         <option value="">{{ COMPOSER_NO_IDENTITY_SIGNAL }}</option>
         <option v-for="tag in identityTags" :key="tag" :value="tag">{{ tag }}</option>
       </select>

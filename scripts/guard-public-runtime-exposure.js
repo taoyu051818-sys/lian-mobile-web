@@ -6,39 +6,24 @@ import { fileURLToPath } from "node:url";
 
 const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 
-const textExtensions = new Set([
-  ".html",
-  ".js",
-  ".css",
-  ".ts",
-  ".vue",
-  ".json"
-]);
+const textExtensions = new Set([".html", ".js", ".css", ".ts", ".vue", ".json"]);
 
-const productionEntryFiles = [
-  "index.html",
-  "src/main.ts",
-  "src/App.vue",
-  "vite.config.ts"
-];
+const productionEntryFiles = ["index.html", "src/main.ts", "src/App.vue", "vite.config.ts"];
 
-const productionEntryDirectories = [
-  "public"
-];
+const productionEntryDirectories = ["public"];
 
-const ignoredPrefixes = [
-  "public/tools/"
-];
+const ignoredPrefixes = ["public/tools/"];
 
 const forbiddenChecks = [
   {
     name: "rehearsal marker",
-    pattern: /\bLIAN_STATIC_REHEARSAL\b/g
+    pattern: /\bLIAN_STATIC_REHEARSAL\b/g,
   },
   {
     name: "internal/debug path",
-    pattern: /["'`](?:\/(?:debug|internal|admin)(?:\/|["'`?#])|\/tools\/(?:debug|internal|admin|ops|qa|dev)(?:[/.][^"'`?#]*)?["'`?#])/g
-  }
+    pattern:
+      /["'`](?:\/(?:debug|internal|admin)(?:\/|["'`?#])|\/tools\/(?:debug|internal|admin|ops|qa|dev)(?:[/.][^"'`?#]*)?["'`?#])/g,
+  },
 ];
 
 let passed = 0;

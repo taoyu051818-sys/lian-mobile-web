@@ -1,5 +1,13 @@
 <script setup lang="ts">
-import { GlassPanel, IdentityBadge, LianButton, LocationChip, TagChip, TrustBadge, TypeChip } from "../../ui";
+import {
+  GlassPanel,
+  IdentityBadge,
+  LianButton,
+  LocationChip,
+  TagChip,
+  TrustBadge,
+  TypeChip,
+} from "../../ui";
 
 const cards = [
   {
@@ -10,7 +18,7 @@ const cards = [
     summary: "18:30 后二楼窗口更空，适合下课晚到的同学。",
     location: "三食堂",
     trust: "已确认",
-    tags: ["饭堂", "晚餐"]
+    tags: ["饭堂", "晚餐"],
   },
   {
     id: "library",
@@ -20,8 +28,8 @@ const cards = [
     summary: "靠窗位置下午满员较快，建议先看三楼中区。",
     location: "图书馆",
     trust: "待补充",
-    tags: ["自习", "设施"]
-  }
+    tags: ["自习", "设施"],
+  },
 ] as const;
 </script>
 
@@ -43,9 +51,13 @@ const cards = [
     <div class="feed-view__list" aria-label="信息流示例">
       <GlassPanel v-for="card in cards" :key="card.id" class="feed-view__card">
         <div class="vue-shell__row">
-          <TypeChip :type="card.type" :icon="card.icon">{{ card.type === "experience" ? "经验" : "讨论" }}</TypeChip>
+          <TypeChip :type="card.type" :icon="card.icon">{{
+            card.type === "experience" ? "经验" : "讨论"
+          }}</TypeChip>
           <LocationChip>{{ card.location }}</LocationChip>
-          <TrustBadge :tone="card.trust === '已确认' ? 'confirmed' : 'pending'">{{ card.trust }}</TrustBadge>
+          <TrustBadge :tone="card.trust === '已确认' ? 'confirmed' : 'pending'">{{
+            card.trust
+          }}</TrustBadge>
         </div>
         <h3>{{ card.title }}</h3>
         <p>{{ card.summary }}</p>

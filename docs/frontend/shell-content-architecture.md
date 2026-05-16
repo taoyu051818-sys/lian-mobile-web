@@ -73,42 +73,42 @@ DetailSheet.vue                      ← shell-level overlay infrastructure
 
 The original foundation and page chrome migration work is merged:
 
-| Area | PR / issue lane | Status |
-|---|---|---|
-| ShellChrome foundation | #292 / #275 | merged |
-| BottomTabBar through shell bottom region | #326 / #276 | merged |
-| Feed top tabs into shell top region | #335 / #277 | merged |
-| ContentFrame | #330 / #307 | merged |
-| DetailSheet foundation | #334 / #308 | merged |
-| AppShell extraction | #332 / #309 | merged |
-| Profile shell chrome integration | #333 / #321 | merged |
-| Publish shell chrome migration (historical step) | #336 / #318 | merged historically, later corrected by #353 |
-| Map shell chrome integration | #337 / #320 | merged |
-| Messages shell chrome integration | #338 / #319 | merged |
+| Area                                             | PR / issue lane | Status                                       |
+| ------------------------------------------------ | --------------- | -------------------------------------------- |
+| ShellChrome foundation                           | #292 / #275     | merged                                       |
+| BottomTabBar through shell bottom region         | #326 / #276     | merged                                       |
+| Feed top tabs into shell top region              | #335 / #277     | merged                                       |
+| ContentFrame                                     | #330 / #307     | merged                                       |
+| DetailSheet foundation                           | #334 / #308     | merged                                       |
+| AppShell extraction                              | #332 / #309     | merged                                       |
+| Profile shell chrome integration                 | #333 / #321     | merged                                       |
+| Publish shell chrome migration (historical step) | #336 / #318     | merged historically, later corrected by #353 |
+| Map shell chrome integration                     | #337 / #320     | merged                                       |
+| Messages shell chrome integration                | #338 / #319     | merged                                       |
 
 ### Post-#338 corrections that matter for current truth
 
-| PR | Current truth it established |
-|---|---|
-| #342 | Shell chrome transition lifecycle is implemented; reduced-motion keeps the state sequence while skipping motion-heavy effects. |
-| #343 | Feed top tabs are rendered by `ShellChrome` from typed tab specs; Teleport-based feed tab DOM is no longer the active pattern. |
-| #352 | Map selection/detail orchestration moved into a map-local composable, confirming that selection state remains page-owned logic rather than shell infrastructure. |
+| PR   | Current truth it established                                                                                                                                                                   |
+| ---- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| #342 | Shell chrome transition lifecycle is implemented; reduced-motion keeps the state sequence while skipping motion-heavy effects.                                                                 |
+| #343 | Feed top tabs are rendered by `ShellChrome` from typed tab specs; Teleport-based feed tab DOM is no longer the active pattern.                                                                 |
+| #352 | Map selection/detail orchestration moved into a map-local composable, confirming that selection state remains page-owned logic rather than shell infrastructure.                               |
 | #353 | Publish actions moved back into `PublishView`; `usePublishChromeActions` is gone, and the shell keeps owning global bottom navigation instead of swapping it out for publish-specific actions. |
-| #361 | Messages continued page-level UI refinement; sender identity placement above non-self bubbles is page content truth, not shell chrome truth. |
+| #361 | Messages continued page-level UI refinement; sender identity placement above non-self bubbles is page content truth, not shell chrome truth.                                                   |
 
 ## 5. Ownership Model
 
-| Concern | Owner | Notes |
-|---|---|---|
-| App shell composition | `AppShell.vue` | Owns shell structure and region composition. |
-| Persistent top and bottom chrome | `ShellChrome.vue` | Owns shell chrome DOM and rendering behavior. |
-| Global bottom navigation | shell | `BottomTabBar` remains shell-owned global navigation. |
-| Layout mode and content frame | `ContentFrame.vue` | Owns safe-area/layout framing for page surfaces. |
-| Page business logic and page content | page components | Data loading, feature workflows, and view-specific content remain page-owned. |
-| Page-local action UI | page components | Example: publish clear/submit actions now live inside `PublishView` again. |
-| Shared overlay infrastructure | `DetailSheet.vue` | Shell owns the overlay container contract. |
-| Detail content | page/detail components | Pages still own the actual feature-specific detail bodies. |
-| Toast/feedback host | shell/app layer | Shared app feedback infrastructure. |
+| Concern                                    | Owner                            | Notes                                                                                                     |
+| ------------------------------------------ | -------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| App shell composition                      | `AppShell.vue`                   | Owns shell structure and region composition.                                                              |
+| Persistent top and bottom chrome           | `ShellChrome.vue`                | Owns shell chrome DOM and rendering behavior.                                                             |
+| Global bottom navigation                   | shell                            | `BottomTabBar` remains shell-owned global navigation.                                                     |
+| Layout mode and content frame              | `ContentFrame.vue`               | Owns safe-area/layout framing for page surfaces.                                                          |
+| Page business logic and page content       | page components                  | Data loading, feature workflows, and view-specific content remain page-owned.                             |
+| Page-local action UI                       | page components                  | Example: publish clear/submit actions now live inside `PublishView` again.                                |
+| Shared overlay infrastructure              | `DetailSheet.vue`                | Shell owns the overlay container contract.                                                                |
+| Detail content                             | page/detail components           | Pages still own the actual feature-specific detail bodies.                                                |
+| Toast/feedback host                        | shell/app layer                  | Shared app feedback infrastructure.                                                                       |
 | View-local selection/composer/detail state | page-local composables and views | Example: map selection remains in map-local code; messaging bubble layout remains in messages-local code. |
 
 ### Rules of thumb
@@ -120,13 +120,13 @@ The original foundation and page chrome migration work is merged:
 
 ## 6. Per-View Ownership Summary
 
-| View | Current shell-chrome relationship | Page-owned content relationship | Notes |
-|---|---|---|---|
-| FeedView | Declares top chrome intent through typed shell state; shell renders the tabs | Feed content, feed detail flow, and feed-local interaction state remain page-owned | The old Teleport-based feed top-tab pattern is historical only. |
-| MapLeafletView | Uses shell chrome where appropriate for shared chrome presentation | Map canvas, selection state, and detail orchestration remain map-owned | `useMapSelection` reinforces page ownership of selection/detail logic. |
-| PublishView | No longer routes publish actions through shell chrome | Publish form, clear action, and submit action are page-owned | Bottom nav stays visible; `usePublishChromeActions` is removed. |
-| MessagesView | Uses shell chrome for page-level chrome surfaces where needed | Message list rendering, bubble layout, sender identity placement, and composer behavior remain page-owned | Message-author-above-bubble is UI/content truth, not shell truth. |
-| ProfileView | Uses shell chrome for profile-level shell actions | Profile content remains page-owned | No special stale doc correction needed in this slice. |
+| View           | Current shell-chrome relationship                                            | Page-owned content relationship                                                                           | Notes                                                                  |
+| -------------- | ---------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| FeedView       | Declares top chrome intent through typed shell state; shell renders the tabs | Feed content, feed detail flow, and feed-local interaction state remain page-owned                        | The old Teleport-based feed top-tab pattern is historical only.        |
+| MapLeafletView | Uses shell chrome where appropriate for shared chrome presentation           | Map canvas, selection state, and detail orchestration remain map-owned                                    | `useMapSelection` reinforces page ownership of selection/detail logic. |
+| PublishView    | No longer routes publish actions through shell chrome                        | Publish form, clear action, and submit action are page-owned                                              | Bottom nav stays visible; `usePublishChromeActions` is removed.        |
+| MessagesView   | Uses shell chrome for page-level chrome surfaces where needed                | Message list rendering, bubble layout, sender identity placement, and composer behavior remain page-owned | Message-author-above-bubble is UI/content truth, not shell truth.      |
+| ProfileView    | Uses shell chrome for profile-level shell actions                            | Profile content remains page-owned                                                                        | No special stale doc correction needed in this slice.                  |
 
 ## 7. Current ShellChrome Contract
 
@@ -172,13 +172,13 @@ A newcomer should read the current shell contract as **typed intent flowing into
 
 These patterns can still appear in older issues, PR descriptions, or earlier docs, but they should be treated as historical context rather than current architecture truth:
 
-| Historical pattern | Why it is stale now | Current truth |
-|---|---|---|
-| `src/views/` as the runtime page directory | Removed during #487 feature-domain reorganization | Pages live under `src/features/<feature>/` |
-| Feed top tabs rendered through Teleport into shell DOM | Replaced by shell-owned typed tab rendering in #343 | `ShellChrome` owns the top-tab DOM; pages provide intent only |
-| `usePublishChromeActions` routing publish buttons through shell bottom chrome | Removed in #353 | Publish actions are page-owned inside `PublishView`; shell keeps bottom nav |
-| Motion/chrome docs treating `#278` and `#281` as still-open foundation work | Superseded by #342 | Chrome lifecycle and phase truth are implemented |
-| Treating every bottom-of-screen control as shell chrome | Too broad and blurs ownership boundaries | Some bottom-edge controls are global shell chrome; others are page-local feature UI |
+| Historical pattern                                                            | Why it is stale now                                 | Current truth                                                                       |
+| ----------------------------------------------------------------------------- | --------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| `src/views/` as the runtime page directory                                    | Removed during #487 feature-domain reorganization   | Pages live under `src/features/<feature>/`                                          |
+| Feed top tabs rendered through Teleport into shell DOM                        | Replaced by shell-owned typed tab rendering in #343 | `ShellChrome` owns the top-tab DOM; pages provide intent only                       |
+| `usePublishChromeActions` routing publish buttons through shell bottom chrome | Removed in #353                                     | Publish actions are page-owned inside `PublishView`; shell keeps bottom nav         |
+| Motion/chrome docs treating `#278` and `#281` as still-open foundation work   | Superseded by #342                                  | Chrome lifecycle and phase truth are implemented                                    |
+| Treating every bottom-of-screen control as shell chrome                       | Too broad and blurs ownership boundaries            | Some bottom-edge controls are global shell chrome; others are page-local feature UI |
 
 ## 10. Remaining Follow-Up Work
 
@@ -186,19 +186,19 @@ This refresh should not imply that every shell-adjacent migration is finished. T
 
 ### Still follow-up work
 
-| Area | Why it is still follow-up |
-|---|---|
-| DetailSheet adoption by all views | The shell-level overlay infrastructure exists, but not every detail flow is using it yet. |
+| Area                                              | Why it is still follow-up                                                                                                                      |
+| ------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| DetailSheet adoption by all views                 | The shell-level overlay infrastructure exists, but not every detail flow is using it yet.                                                      |
 | Some page-local cleanup after the shell migration | Views still have local interaction/state cleanup work that should stay in page-owned lanes rather than being misdescribed as shell completion. |
-| Broader docs freshness outside this file | Other docs may still describe older migration-era states or outdated follow-up lists. |
+| Broader docs freshness outside this file          | Other docs may still describe older migration-era states or outdated follow-up lists.                                                          |
 
 ### Not follow-up anymore
 
-| Area | Why |
-|---|---|
-| Teleport-based feed top tab rendering as the active model | Replaced by #343 |
-| `usePublishChromeActions` as the current publish ownership model | Removed by #353 |
-| Chrome transition lifecycle as an unimplemented future shell foundation | Landed in #342 |
+| Area                                                                    | Why              |
+| ----------------------------------------------------------------------- | ---------------- |
+| Teleport-based feed top tab rendering as the active model               | Replaced by #343 |
+| `usePublishChromeActions` as the current publish ownership model        | Removed by #353  |
+| Chrome transition lifecycle as an unimplemented future shell foundation | Landed in #342   |
 
 ## 11. Folder Map (Current Reading)
 
@@ -244,13 +244,13 @@ The main thing to notice here is that the shell folder contains shell infrastruc
 
 The Apple Music comparison is still useful, but only at the structural level.
 
-| Concept | Apple Music-style analogy | LIAN equivalent |
-|---|---|---|
-| Stable app shell | tab/navigation controller layer | `AppShell` |
-| Persistent global chrome | app-owned nav/tab chrome | `ShellChrome` + `BottomTabBar` |
-| Content frame | app-owned content area | `ContentFrame` |
-| Feature surface | individual view controller content | page components |
-| Shared overlay infrastructure | app-owned modal/sheet infrastructure | `DetailSheet` |
+| Concept                       | Apple Music-style analogy            | LIAN equivalent                |
+| ----------------------------- | ------------------------------------ | ------------------------------ |
+| Stable app shell              | tab/navigation controller layer      | `AppShell`                     |
+| Persistent global chrome      | app-owned nav/tab chrome             | `ShellChrome` + `BottomTabBar` |
+| Content frame                 | app-owned content area               | `ContentFrame`                 |
+| Feature surface               | individual view controller content   | page components                |
+| Shared overlay infrastructure | app-owned modal/sheet infrastructure | `DetailSheet`                  |
 
 What LIAN does **not** copy is the literal Apple Music UI. The borrowed idea is the separation between app-owned infrastructure and view-owned content.
 

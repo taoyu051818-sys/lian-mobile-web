@@ -135,7 +135,11 @@ export interface LeafletLike {
   polygon(latlngs: LeafletLatLngTuple[], options?: LeafletPolygonOptions): LeafletLayerLike;
   polyline(latlngs: LeafletLatLngTuple[], options?: LeafletPolylineOptions): LeafletLayerLike;
   tileLayer(urlTemplate: string, options?: LeafletTileLayerOptions): LeafletTileLayerLike;
-  imageOverlay(imageUrl: string, bounds: LeafletLatLngTuple[], options?: LeafletImageOverlayOptions): LeafletImageOverlayLike;
+  imageOverlay(
+    imageUrl: string,
+    bounds: LeafletLatLngTuple[],
+    options?: LeafletImageOverlayOptions,
+  ): LeafletImageOverlayLike;
   divIcon(options?: LeafletDivIconOptions): LeafletDivIconLike;
   control: {
     zoom(options?: LeafletZoomControlOptions): LeafletZoomControlLike;

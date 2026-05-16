@@ -7,10 +7,7 @@ import {
   sendChannelMessage,
 } from "../../api/messages";
 import { extractErrorMessage } from "../../utils/extractErrorMessage";
-import {
-  ERROR_LOAD_CHANNEL,
-  MESSAGE_EMPTY_CONTENT,
-} from "../../config/brand";
+import { ERROR_LOAD_CHANNEL, MESSAGE_EMPTY_CONTENT } from "../../config/brand";
 import type { ChannelMessage } from "../../types/messages";
 import type { ProfileUser } from "../../types/profile";
 
@@ -32,7 +29,8 @@ export function useChannelMessages() {
 
   function checkNearBottom() {
     const doc = document.documentElement;
-    isNearBottom.value = doc.scrollHeight - window.scrollY - window.innerHeight < SCROLL_BOTTOM_THRESHOLD;
+    isNearBottom.value =
+      doc.scrollHeight - window.scrollY - window.innerHeight < SCROLL_BOTTOM_THRESHOLD;
   }
 
   async function scrollToBottom() {
@@ -103,18 +101,23 @@ export function useChannelMessages() {
       const pendingContent = pendingItem?.content || "";
 
       const confirmedFound = latestItems.some(
-        (serverItem) => serverItem.content === pendingContent && serverItem.isSelf && !String(serverItem.id).startsWith("pending-"),
+        (serverItem) =>
+          serverItem.content === pendingContent &&
+          serverItem.isSelf &&
+          !String(serverItem.id).startsWith("pending-"),
       );
 
       if (confirmedFound) {
         channelItems.value = channelItems.value
           .filter((item) => String(item.id) !== pendingId)
-          .concat(latestItems.filter((serverItem) => {
-            const existingIds = new Set(channelItems.value.map((i) => String(i.id)));
-            if (existingIds.has(String(serverItem.id))) return false;
-            if (serverItem.content === pendingContent && !serverItem.isSelf) return false;
-            return true;
-          }));
+          .concat(
+            latestItems.filter((serverItem) => {
+              const existingIds = new Set(channelItems.value.map((i) => String(i.id)));
+              if (existingIds.has(String(serverItem.id))) return false;
+              if (serverItem.content === pendingContent && !serverItem.isSelf) return false;
+              return true;
+            }),
+          );
 
         channelItems.value = channelItems.value.slice().sort((a, b) => {
           const aPending = String(a.id).startsWith("pending-");
@@ -138,7 +141,11 @@ export function useChannelMessages() {
     }
   }
 
-  async function sendMessage(content: string, identityTag: string, currentUser: ProfileUser | null) {
+  async function sendMessage(
+    content: string,
+    identityTag: string,
+    currentUser: ProfileUser | null,
+  ) {
     const pending = buildPendingChannelMessage(content, identityTag || undefined, currentUser);
     channelItems.value = [...channelItems.value, pending];
     await scrollToBottom();

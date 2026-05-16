@@ -2,9 +2,24 @@
 import { GlassPanel, IdentityBadge, LianButton, TrustBadge, TypeChip } from "../../ui";
 
 const lanes = [
-  { key: "channel", label: "频道", description: "校园频道入口已由 Vue 承载，后续接入真实列表。", status: "Vue" },
-  { key: "notice", label: "通知", description: "回复、收藏和系统提醒会在这里聚合。", status: "Next" },
-  { key: "archive", label: "归档", description: "保留历史信息入口，方便后续做搜索和沉淀。", status: "Ready" }
+  {
+    key: "channel",
+    label: "频道",
+    description: "校园频道入口已由 Vue 承载，后续接入真实列表。",
+    status: "Vue",
+  },
+  {
+    key: "notice",
+    label: "通知",
+    description: "回复、收藏和系统提醒会在这里聚合。",
+    status: "Next",
+  },
+  {
+    key: "archive",
+    label: "归档",
+    description: "保留历史信息入口，方便后续做搜索和沉淀。",
+    status: "Ready",
+  },
 ] as const;
 </script>
 

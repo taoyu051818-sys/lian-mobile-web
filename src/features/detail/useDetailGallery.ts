@@ -28,7 +28,8 @@ export function useDetailGallery(options: {
       galleryPointerMoved.value = false;
       return;
     }
-    fullscreenImage.value = options.fullResolutionImages.value[index] || options.images.value[index] || "";
+    fullscreenImage.value =
+      options.fullResolutionImages.value[index] || options.images.value[index] || "";
   }
 
   function resetGallery() {

@@ -17,7 +17,11 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <section v-if="localPreviewUrls.length" class="publish-image-preview" :aria-label="PUBLISH_IMAGE_PREVIEW_LABEL">
+  <section
+    v-if="localPreviewUrls.length"
+    class="publish-image-preview"
+    :aria-label="PUBLISH_IMAGE_PREVIEW_LABEL"
+  >
     <div class="publish-image-preview__header">
       <strong>{{ PUBLISH_IMAGE_TOOLBAR }}</strong>
       <span>{{ imageStatus }}</span>
@@ -25,7 +29,13 @@ const emit = defineEmits<{
     <div class="publish-image-preview__grid">
       <div v-for="(url, index) in localPreviewUrls" :key="url" class="publish-image-preview__item">
         <img :src="url" :alt="PUBLISH_IMAGE_PREVIEW_ALT" />
-        <button type="button" :aria-label="PUBLISH_IMAGE_REMOVE_LABEL" @click="emit('removeImage', index)">&times;</button>
+        <button
+          type="button"
+          :aria-label="PUBLISH_IMAGE_REMOVE_LABEL"
+          @click="emit('removeImage', index)"
+        >
+          &times;
+        </button>
       </div>
     </div>
   </section>

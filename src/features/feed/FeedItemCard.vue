@@ -1,6 +1,13 @@
 <script setup lang="ts">
 import { computed, nextTick, ref, watch } from "vue";
-import { DEFAULT_USER_LABEL, UNTITLED_CONTENT, FEED_PLACE_CAMPUS, FEED_TIME_JUST_NOW, FEED_COLLAPSE, FEED_EXPAND } from "../../config/brand";
+import {
+  DEFAULT_USER_LABEL,
+  UNTITLED_CONTENT,
+  FEED_PLACE_CAMPUS,
+  FEED_TIME_JUST_NOW,
+  FEED_COLLAPSE,
+  FEED_EXPAND,
+} from "../../config/brand";
 import { actorAvatarText, actorAvatarUrl, actorDisplayName } from "../../domain/actor";
 import type { FeedItem, FeedItemId, FeedPresentationIntent } from "../../types/feed";
 import FeedItemCardFooter from "./FeedItemCardFooter.vue";
@@ -14,16 +21,30 @@ const MAX_VISIBLE_AUTHOR_CHARS = 10;
 
 const props = defineProps<{ item: FeedItem }>();
 const emit = defineEmits<{
-  open: [id: FeedItemId, payload?: {
-    item: FeedItem;
-    rect: { top: number; left: number; width: number; height: number };
-  }];
+  open: [
+    id: FeedItemId,
+    payload?: {
+      item: FeedItem;
+      rect: { top: number; left: number; width: number; height: number };
+    },
+  ];
 }>();
 
-const CARD_TEMPLATES: ReadonlySet<CardTemplate> = new Set(["image", "text", "activity", "place", "merchant", "help"]);
+const CARD_TEMPLATES: ReadonlySet<CardTemplate> = new Set([
+  "image",
+  "text",
+  "activity",
+  "place",
+  "merchant",
+  "help",
+]);
 
-function normalizePresentationIntent(value: FeedItem["cardTemplate"] | FeedItem["presentationIntent"]): CardTemplate | null {
-  return typeof value === "string" && CARD_TEMPLATES.has(value as CardTemplate) ? value as CardTemplate : null;
+function normalizePresentationIntent(
+  value: FeedItem["cardTemplate"] | FeedItem["presentationIntent"],
+): CardTemplate | null {
+  return typeof value === "string" && CARD_TEMPLATES.has(value as CardTemplate)
+    ? (value as CardTemplate)
+    : null;
 }
 
 const title = computed(() => props.item.title || UNTITLED_CONTENT);
@@ -36,11 +57,18 @@ const authorName = computed(() => actorDisplayName(actor.value, DEFAULT_USER_LAB
 const authorAvatarUrl = computed(() => actorAvatarUrl(actor.value));
 const authorInitial = computed(() => actorAvatarText(actor.value, authorName.value));
 const normalizedCardTemplate = computed(() => normalizePresentationIntent(props.item.cardTemplate));
-const serverPresentationIntent = computed(() => normalizePresentationIntent(props.item.presentationIntent));
-const cardWarning = computed(() => [
-  title.value.length > MAX_VISIBLE_TITLE_CHARS ? "title-clamped" : "",
-  authorName.value.length > MAX_VISIBLE_AUTHOR_CHARS ? "author-ellipsized" : "",
-].filter(Boolean).join(" ") || undefined);
+const serverPresentationIntent = computed(() =>
+  normalizePresentationIntent(props.item.presentationIntent),
+);
+const cardWarning = computed(
+  () =>
+    [
+      title.value.length > MAX_VISIBLE_TITLE_CHARS ? "title-clamped" : "",
+      authorName.value.length > MAX_VISIBLE_AUTHOR_CHARS ? "author-ellipsized" : "",
+    ]
+      .filter(Boolean)
+      .join(" ") || undefined,
+);
 
 const cardTemplate = computed<CardTemplate>(() => {
   if (normalizedCardTemplate.value) return normalizedCardTemplate.value;
@@ -48,14 +76,17 @@ const cardTemplate = computed<CardTemplate>(() => {
   return coverUrl.value ? "image" : "text";
 });
 
-const templateMark = computed(() => ({
-  image: "◐",
-  text: "✎",
-  activity: "◦",
-  place: "⌖",
-  merchant: "食",
-  help: "＋",
-})[cardTemplate.value]);
+const templateMark = computed(
+  () =>
+    ({
+      image: "◐",
+      text: "✎",
+      activity: "◦",
+      place: "⌖",
+      merchant: "食",
+      help: "＋",
+    })[cardTemplate.value],
+);
 
 const bodyPreview = computed(() => props.item.bodyPreview || "");
 const bodyExpanded = ref(false);
@@ -64,7 +95,10 @@ const bodyPreviewEl = ref<HTMLParagraphElement | null>(null);
 
 function checkBodyClamp() {
   const el = bodyPreviewEl.value;
-  if (!el) { needsBodyClamp.value = false; return; }
+  if (!el) {
+    needsBodyClamp.value = false;
+    return;
+  }
   needsBodyClamp.value = el.scrollHeight > el.clientHeight + 2;
 }
 
@@ -73,22 +107,31 @@ function toggleBody() {
   if (!bodyExpanded.value) nextTick(checkBodyClamp);
 }
 
-watch(() => props.item.tid, () => {
-  bodyExpanded.value = false;
-  nextTick(checkBodyClamp);
-});
+watch(
+  () => props.item.tid,
+  () => {
+    bodyExpanded.value = false;
+    nextTick(checkBodyClamp);
+  },
+);
 
 function emitOpen(target: HTMLElement | null) {
   const bounds = target?.getBoundingClientRect();
-  emit("open", props.item.tid, bounds ? {
-    item: props.item,
-    rect: {
-      top: bounds.top,
-      left: bounds.left,
-      width: bounds.width,
-      height: bounds.height,
-    },
-  } : undefined);
+  emit(
+    "open",
+    props.item.tid,
+    bounds
+      ? {
+          item: props.item,
+          rect: {
+            top: bounds.top,
+            left: bounds.left,
+            width: bounds.width,
+            height: bounds.height,
+          },
+        }
+      : undefined,
+  );
 }
 
 const {
@@ -133,7 +176,12 @@ const {
     />
 
     <div class="feed-item-card__body" data-motion-role="body">
-      <span v-if="cardTemplate === 'text' && primaryTag" class="feed-item-card__inline-tag" data-motion-role="tag">{{ primaryTag }}</span>
+      <span
+        v-if="cardTemplate === 'text' && primaryTag"
+        class="feed-item-card__inline-tag"
+        data-motion-role="tag"
+        >{{ primaryTag }}</span
+      >
 
       <h3 :title="title" data-motion-role="title">{{ title }}</h3>
 
@@ -142,13 +190,17 @@ const {
           ref="bodyPreviewEl"
           class="feed-item-card__body-preview"
           :class="{ 'is-expanded': bodyExpanded }"
-        >{{ bodyPreview }}</p>
+        >
+          {{ bodyPreview }}
+        </p>
         <button
           v-if="needsBodyClamp || bodyExpanded"
           class="feed-item-card__body-toggle"
           type="button"
           @click.stop="toggleBody"
-        >{{ bodyExpanded ? FEED_COLLAPSE : FEED_EXPAND }}</button>
+        >
+          {{ bodyExpanded ? FEED_COLLAPSE : FEED_EXPAND }}
+        </button>
       </template>
 
       <FeedItemCardFooter
@@ -175,7 +227,9 @@ const {
   cursor: pointer;
   touch-action: manipulation;
   user-select: none;
-  transition: transform 160ms ease, box-shadow 160ms ease;
+  transition:
+    transform 160ms ease,
+    box-shadow 160ms ease;
 }
 
 .feed-item-card:focus-visible {
@@ -189,23 +243,33 @@ const {
 }
 
 .feed-item-card--text {
-  background: radial-gradient(circle at top left, rgba(31, 167, 160, 0.12), transparent 42%), var(--lian-card-strong);
+  background:
+    radial-gradient(circle at top left, rgba(31, 167, 160, 0.12), transparent 42%),
+    var(--lian-card-strong);
 }
 
 .feed-item-card--activity {
-  background: linear-gradient(145deg, rgba(255, 255, 255, 0.92), rgba(255, 247, 237, 0.82)), var(--lian-card-strong);
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.92), rgba(255, 247, 237, 0.82)),
+    var(--lian-card-strong);
 }
 
 .feed-item-card--place {
-  background: linear-gradient(145deg, rgba(255, 255, 255, 0.92), rgba(236, 253, 245, 0.82)), var(--lian-card-strong);
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.92), rgba(236, 253, 245, 0.82)),
+    var(--lian-card-strong);
 }
 
 .feed-item-card--merchant {
-  background: linear-gradient(145deg, rgba(255, 255, 255, 0.94), rgba(255, 251, 235, 0.86)), var(--lian-card-strong);
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.94), rgba(255, 251, 235, 0.86)),
+    var(--lian-card-strong);
 }
 
 .feed-item-card--help {
-  background: linear-gradient(145deg, rgba(255, 255, 255, 0.92), rgba(245, 243, 255, 0.82)), var(--lian-card-strong);
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.92), rgba(245, 243, 255, 0.82)),
+    var(--lian-card-strong);
 }
 
 .feed-item-card__body {

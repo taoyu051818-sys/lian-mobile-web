@@ -6,10 +6,10 @@ The frontend verification gate must catch regressions in static structure, build
 
 The project splits verification into two layers:
 
-| Layer | Script | What it checks |
-| --- | --- | --- |
-| Static guards + build | `npm run verify:static` | Repo structure, encoding, ops guard, Vite build |
-| Smoke | `npm run verify:smoke` | Vite preview server reachability, HTML contract, JS syntax, API probe |
+| Layer                 | Script                  | What it checks                                                        |
+| --------------------- | ----------------------- | --------------------------------------------------------------------- |
+| Static guards + build | `npm run verify:static` | Repo structure, encoding, ops guard, Vite build                       |
+| Smoke                 | `npm run verify:smoke`  | Vite preview server reachability, HTML contract, JS syntax, API probe |
 
 `npm run verify` runs both layers sequentially.
 

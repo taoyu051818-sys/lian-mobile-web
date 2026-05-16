@@ -38,7 +38,7 @@ describe("PostDetailPanel keyboard-inset activation (#130)", () => {
   const panelSource = readRepoFile("../../src/features/detail/PostDetailPanel.vue");
 
   it("imports useVisualViewport from the composables directory", () => {
-    expect(panelSource).toContain("from \"../../composables/useVisualViewport\"");
+    expect(panelSource).toContain('from "../../composables/useVisualViewport"');
   });
 
   it("calls useVisualViewport() to activate keyboard tracking", () => {

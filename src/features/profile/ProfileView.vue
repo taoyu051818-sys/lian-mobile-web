@@ -2,8 +2,12 @@
 import { onMounted, ref } from "vue";
 import { fetchAuthMe, logoutAuth } from "../../api/profile";
 import {
-  LOADING_PROFILE, ERROR_LOAD_GENERIC, ERROR_LOGOUT, PROFILE_SECTION_LABEL,
-  PROFILE_LOAD_ERROR_PREFIX, PROFILE_RELOAD,
+  LOADING_PROFILE,
+  ERROR_LOAD_GENERIC,
+  ERROR_LOGOUT,
+  PROFILE_SECTION_LABEL,
+  PROFILE_LOAD_ERROR_PREFIX,
+  PROFILE_RELOAD,
 } from "../../config/brand";
 import { extractErrorMessage } from "../../utils/extractErrorMessage";
 import { usePostDetail } from "../detail/usePostDetail";
@@ -25,12 +29,20 @@ const emit = defineEmits<{
   chrome: [spec: PageChromeSpec];
 }>();
 
-const { user, loading, errorMessage, isMissingSessionError, refreshCurrentSession } = useProfileSession();
+const { user, loading, errorMessage, isMissingSessionError, refreshCurrentSession } =
+  useProfileSession();
 
 const editorOpen = ref(false);
 
 const {
-  listLoading, listError, activeTab, profileItems, tabs, listEmptyText, loadProfileList, resetList,
+  listLoading,
+  listError,
+  activeTab,
+  profileItems,
+  tabs,
+  listEmptyText,
+  loadProfileList,
+  resetList,
 } = useProfileTabs({
   user,
   enterGuestState: () => enterGuestState(),
@@ -39,13 +51,26 @@ const {
 });
 
 const {
-  selectedPostId, selectedPost, detailLoading, detailError, detailOpen,
-  openDetail: openItem, closeDetail, retryDetail,
+  selectedPostId,
+  selectedPost,
+  detailLoading,
+  detailError,
+  detailOpen,
+  openDetail: openItem,
+  closeDetail,
+  retryDetail,
 } = usePostDetail();
 
 const {
-  aliasPickerOpen, activeAlias, activeAliasSummary, activeAliasHint,
-  identityMeta, userTags, aliases, handleProfileUpdated, switchAlias,
+  aliasPickerOpen,
+  activeAlias,
+  activeAliasSummary,
+  activeAliasHint,
+  identityMeta,
+  userTags,
+  aliases,
+  handleProfileUpdated,
+  switchAlias,
 } = useProfileAliasPicker({
   user,
   loadProfile: () => loadProfile(),
@@ -77,7 +102,10 @@ async function loadProfile() {
     if (isMissingSessionError(error)) {
       enterGuestState();
     } else {
-      errorMessage.value = extractErrorMessage(error, PROFILE_LOAD_ERROR_PREFIX + ERROR_LOAD_GENERIC);
+      errorMessage.value = extractErrorMessage(
+        error,
+        PROFILE_LOAD_ERROR_PREFIX + ERROR_LOAD_GENERIC,
+      );
     }
   } finally {
     loading.value = false;

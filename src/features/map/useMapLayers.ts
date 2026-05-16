@@ -19,7 +19,14 @@ import type {
   MapRoute,
 } from "../../types/map";
 
-export type LayerKey = "areas" | "roadsCasing" | "roads" | "routes" | "assets" | "locations" | "posts";
+export type LayerKey =
+  | "areas"
+  | "roadsCasing"
+  | "roads"
+  | "routes"
+  | "assets"
+  | "locations"
+  | "posts";
 
 const MAX_RENDERED_LOCATIONS = 120;
 const MAX_RENDERED_POSTS = 60;
@@ -72,13 +79,15 @@ export function useMapLayers(
     areas.value.forEach((area) => {
       const areaPoints = points(area.points);
       if (areaPoints.length < 3) return;
-      getLeaflet().polygon(areaPoints, {
-        color: area.style?.strokeColor || area.style?.color || "#1fa7a0",
-        weight: 2,
-        fillColor: area.style?.fillColor || area.style?.color || "#1fa7a0",
-        fillOpacity: Number(area.style?.fillOpacity ?? 0.1),
-        className: "vue-map-area",
-      }).addTo(layers!.areas);
+      getLeaflet()
+        .polygon(areaPoints, {
+          color: area.style?.strokeColor || area.style?.color || "#1fa7a0",
+          weight: 2,
+          fillColor: area.style?.fillColor || area.style?.color || "#1fa7a0",
+          fillOpacity: Number(area.style?.fillOpacity ?? 0.1),
+          className: "vue-map-area",
+        })
+        .addTo(layers!.areas);
     });
   }
 
@@ -87,16 +96,18 @@ export function useMapLayers(
     (routes.value as MapRoute[]).forEach((route) => {
       const routePoints = points(route.points);
       if (routePoints.length < 2) return;
-      getLeaflet().polyline(routePoints, {
-        color: route.style?.color || "#2563eb",
-        weight: Number(route.style?.weight || 4),
-        dashArray: route.style?.dashArray || "",
-        opacity: 0.92,
-        lineCap: "round",
-        lineJoin: "round",
-        interactive: false,
-        className: "vue-map-route",
-      }).addTo(layers!.routes);
+      getLeaflet()
+        .polyline(routePoints, {
+          color: route.style?.color || "#2563eb",
+          weight: Number(route.style?.weight || 4),
+          dashArray: route.style?.dashArray || "",
+          opacity: 0.92,
+          lineCap: "round",
+          lineJoin: "round",
+          interactive: false,
+          className: "vue-map-route",
+        })
+        .addTo(layers!.routes);
     });
   }
 
@@ -106,12 +117,14 @@ export function useMapLayers(
       if (!asset.url || !asset.position) return;
       const position = latLng(asset.position);
       if (!position) return;
-      getLeaflet().marker(position, {
-        icon: assetIcon(asset),
-        interactive: false,
-        keyboard: false,
-        zIndexOffset: Number(asset.zIndex || 20),
-      }).addTo(layers!.assets);
+      getLeaflet()
+        .marker(position, {
+          icon: assetIcon(asset),
+          interactive: false,
+          keyboard: false,
+          zIndexOffset: Number(asset.zIndex || 20),
+        })
+        .addTo(layers!.assets);
     });
   }
 
@@ -120,16 +133,30 @@ export function useMapLayers(
     renderedLocations.value.forEach((location) => {
       const position = latLng(location);
       if (!position) return;
-      const m = getLeaflet().marker(position, { icon: locationIcon(location), title: location.name, zIndexOffset: 80, interactive: true, keyboard: true });
+      const m = getLeaflet().marker(position, {
+        icon: locationIcon(location),
+        title: location.name,
+        zIndexOffset: 80,
+        interactive: true,
+        keyboard: true,
+      });
       m.on("click", () => onPlaceSelect(location));
       m.bindTooltip(location.name, { sticky: true }).addTo(layers!.locations);
     });
     renderedPosts.value.forEach((post) => {
       const position = latLng(post);
       if (!position) return;
-      const m = getLeaflet().marker(position, { icon: postIcon(post), title: post.title || post.locationArea || "", zIndexOffset: 120, interactive: true, keyboard: true });
+      const m = getLeaflet().marker(position, {
+        icon: postIcon(post),
+        title: post.title || post.locationArea || "",
+        zIndexOffset: 120,
+        interactive: true,
+        keyboard: true,
+      });
       m.on("click", () => onPlaceSelect(post));
-      m.bindTooltip(post.title || post.locationArea || MAP_CONTENT_FALLBACK, { sticky: true }).addTo(layers!.posts);
+      m.bindTooltip(post.title || post.locationArea || MAP_CONTENT_FALLBACK, {
+        sticky: true,
+      }).addTo(layers!.posts);
     });
   }
 
@@ -145,19 +172,28 @@ export function useMapLayers(
   }
 
   // Layer visibility toggling
-  watch(visibleLayers, (vis) => {
-    if (!layers) return;
-    const mapEl = map.value as (LeafletMapLike & { hasLayer(l: unknown): boolean; removeLayer(l: unknown): LeafletMapLike }) | null;
-    if (!mapEl) return;
-    const toggle = (layer: LeafletLayerGroupLike, key: string) => {
-      const visible = vis[key] !== false;
-      const has = mapEl.hasLayer(layer);
-      if (visible && !has) layer.addTo(mapEl);
-      else if (!visible && has) mapEl.removeLayer(layer);
-    };
-    toggle(layers.locations, "locations");
-    toggle(layers.posts, "posts");
-  }, { deep: true });
+  watch(
+    visibleLayers,
+    (vis) => {
+      if (!layers) return;
+      const mapEl = map.value as
+        | (LeafletMapLike & {
+            hasLayer(l: unknown): boolean;
+            removeLayer(l: unknown): LeafletMapLike;
+          })
+        | null;
+      if (!mapEl) return;
+      const toggle = (layer: LeafletLayerGroupLike, key: string) => {
+        const visible = vis[key] !== false;
+        const has = mapEl.hasLayer(layer);
+        if (visible && !has) layer.addTo(mapEl);
+        else if (!visible && has) mapEl.removeLayer(layer);
+      };
+      toggle(layers.locations, "locations");
+      toggle(layers.posts, "posts");
+    },
+    { deep: true },
+  );
 
   return {
     layers,

@@ -298,9 +298,7 @@ describe("brand constants", () => {
   }
 
   it("exports expected number of string constants", () => {
-    const exportedStrings = Object.entries(brand).filter(
-      ([, value]) => typeof value === "string",
-    );
+    const exportedStrings = Object.entries(brand).filter(([, value]) => typeof value === "string");
     expect(exportedStrings.length).toBe(STRING_CONSTANTS.length);
   });
 });

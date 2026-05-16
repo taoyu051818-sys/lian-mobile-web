@@ -3,9 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 
 const rootDir = path.resolve(process.cwd(), "src");
-const allowedFiles = new Set([
-  path.normalize("src/ui/SafeHtml.vue"),
-]);
+const allowedFiles = new Set([path.normalize("src/ui/SafeHtml.vue")]);
 
 function walk(dir) {
   const entries = fs.readdirSync(dir, { withFileTypes: true });
@@ -52,5 +50,5 @@ console.error("Raw v-html usage found outside SafeHtml.vue:");
 for (const finding of findings) {
   console.error(`- ${finding.file}:${finding.line}`);
 }
-console.error("\nUse <SafeHtml :html=\"...\" /> or sanitizeHtml() before rendering trusted HTML.");
+console.error('\nUse <SafeHtml :html="..." /> or sanitizeHtml() before rendering trusted HTML.');
 process.exit(1);

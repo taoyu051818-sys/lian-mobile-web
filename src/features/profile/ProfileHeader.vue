@@ -2,9 +2,14 @@
 import { computed } from "vue";
 import { TagChip } from "../../ui";
 import {
-  PROFILE_CAMPUS_USER, PROFILE_INVITE_USER, PROFILE_IDENTITY_TAGS,
-  PROFILE_ALIAS_DESC, PROFILE_REAL_IDENTITY, PROFILE_ALIAS_COUNT_SUFFIX,
-  PROFILE_SELECT_IDENTITY, PROFILE_OFFICIAL_ALIAS,
+  PROFILE_CAMPUS_USER,
+  PROFILE_INVITE_USER,
+  PROFILE_IDENTITY_TAGS,
+  PROFILE_ALIAS_DESC,
+  PROFILE_REAL_IDENTITY,
+  PROFILE_ALIAS_COUNT_SUFFIX,
+  PROFILE_SELECT_IDENTITY,
+  PROFILE_OFFICIAL_ALIAS,
 } from "../../config/brand";
 import type { ProfileAlias, ProfileUser } from "../../types/profile";
 
@@ -35,19 +40,41 @@ const hasMultipleAliases = computed(() => props.aliases.length > 0);
       <div class="profile-header__avatar" aria-hidden="true">{{ avatarText }}</div>
       <h1 class="profile-header__name">{{ displayName }}</h1>
       <p class="profile-header__meta">{{ identityMeta }}</p>
-      <p class="profile-header__sub">{{ user.institution || PROFILE_CAMPUS_USER }} · {{ user.email || PROFILE_INVITE_USER }}</p>
+      <p class="profile-header__sub">
+        {{ user.institution || PROFILE_CAMPUS_USER }} · {{ user.email || PROFILE_INVITE_USER }}
+      </p>
     </div>
 
     <div v-if="userTags.length" class="profile-header__chips" :aria-label="PROFILE_IDENTITY_TAGS">
       <TagChip v-for="tag in userTags" :key="tag" :tag="tag" />
     </div>
 
-    <section v-if="activeAlias || activeAliasSummary.length" class="profile-header__alias-card" :class="{ 'profile-header__alias-card--clickable': hasMultipleAliases }" :aria-label="PROFILE_ALIAS_DESC" v-bind="hasMultipleAliases ? { role: 'button', tabindex: 0, 'aria-expanded': aliasPickerOpen, 'aria-haspopup': 'listbox' } : {}" @click="hasMultipleAliases ? emit('toggle-alias-picker') : undefined" @keydown.enter="hasMultipleAliases ? emit('toggle-alias-picker') : undefined" @keydown.space.prevent="hasMultipleAliases ? emit('toggle-alias-picker') : undefined">
+    <section
+      v-if="activeAlias || activeAliasSummary.length"
+      class="profile-header__alias-card"
+      :class="{ 'profile-header__alias-card--clickable': hasMultipleAliases }"
+      :aria-label="PROFILE_ALIAS_DESC"
+      v-bind="
+        hasMultipleAliases
+          ? {
+              role: 'button',
+              tabindex: 0,
+              'aria-expanded': aliasPickerOpen,
+              'aria-haspopup': 'listbox',
+            }
+          : {}
+      "
+      @click="hasMultipleAliases ? emit('toggle-alias-picker') : undefined"
+      @keydown.enter="hasMultipleAliases ? emit('toggle-alias-picker') : undefined"
+      @keydown.space.prevent="hasMultipleAliases ? emit('toggle-alias-picker') : undefined"
+    >
       <div class="profile-header__alias-head">
         <strong>{{ activeAlias ? activeAlias.name : PROFILE_REAL_IDENTITY }}</strong>
         <span class="profile-header__alias-head-row">
           <span>{{ activeAliasHint }}</span>
-          <span v-if="hasMultipleAliases" class="profile-header__alias-count">{{ aliases.length }}{{ PROFILE_ALIAS_COUNT_SUFFIX }}</span>
+          <span v-if="hasMultipleAliases" class="profile-header__alias-count"
+            >{{ aliases.length }}{{ PROFILE_ALIAS_COUNT_SUFFIX }}</span
+          >
         </span>
       </div>
       <dl v-if="activeAliasSummary.length" class="profile-header__alias-grid">
@@ -58,7 +85,12 @@ const hasMultipleAliases = computed(() => props.aliases.length > 0);
       </dl>
     </section>
 
-    <div v-if="aliasPickerOpen && aliases.length" class="profile-header__alias-picker" role="listbox" :aria-label="PROFILE_SELECT_IDENTITY">
+    <div
+      v-if="aliasPickerOpen && aliases.length"
+      class="profile-header__alias-picker"
+      role="listbox"
+      :aria-label="PROFILE_SELECT_IDENTITY"
+    >
       <button
         type="button"
         class="profile-header__alias-option"
@@ -155,7 +187,9 @@ const hasMultipleAliases = computed(() => props.aliases.length > 0);
 
 .profile-header__alias-card--clickable {
   cursor: pointer;
-  transition: border-color var(--motion-fast) var(--motion-ease-standard), background var(--motion-fast) var(--motion-ease-standard);
+  transition:
+    border-color var(--motion-fast) var(--motion-ease-standard),
+    background var(--motion-fast) var(--motion-ease-standard);
 }
 
 .profile-header__alias-card--clickable:hover {
@@ -249,7 +283,9 @@ const hasMultipleAliases = computed(() => props.aliases.length > 0);
   font: inherit;
   cursor: pointer;
   text-align: left;
-  transition: border-color var(--motion-fast) var(--motion-ease-standard), background var(--motion-fast) var(--motion-ease-standard);
+  transition:
+    border-color var(--motion-fast) var(--motion-ease-standard),
+    background var(--motion-fast) var(--motion-ease-standard);
 }
 
 .profile-header__alias-option:hover {

@@ -9,7 +9,10 @@ export function useProfileSession() {
   const errorMessage = ref("");
 
   function isMissingSessionError(error: unknown) {
-    return error instanceof LianApiError && (error.code === "not-authorised" || error.status === 401 || error.status === 403);
+    return (
+      error instanceof LianApiError &&
+      (error.code === "not-authorised" || error.status === 401 || error.status === 403)
+    );
   }
 
   async function refreshCurrentSession() {

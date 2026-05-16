@@ -21,7 +21,11 @@ describe("profile chrome spec", () => {
       visible: true,
       slot: "tabs",
       buttons: [
-        { id: "profile:toggle-editor", label: editorOpen ? "收起编辑" : "编辑资料", variant: "tonal" },
+        {
+          id: "profile:toggle-editor",
+          label: editorOpen ? "收起编辑" : "编辑资料",
+          variant: "tonal",
+        },
         { id: "profile:logout", label: "退出登录", variant: "ghost" },
       ],
     });

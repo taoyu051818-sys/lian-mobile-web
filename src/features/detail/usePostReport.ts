@@ -47,7 +47,10 @@ export function usePostReport(options: {
     reportBusy.value = true;
     options.clearMessages();
     try {
-      await reportPost(options.postId.value, buildReportPayload(reportCategory.value, reportReason.value));
+      await reportPost(
+        options.postId.value,
+        buildReportPayload(reportCategory.value, reportReason.value),
+      );
       reportOpen.value = false;
       reportReason.value = "";
       reportFollowUpVisible.value = true;

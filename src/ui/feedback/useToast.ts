@@ -13,7 +13,7 @@ function useToast() {
     success: (message: string, duration?: number) => show(message, "success", duration),
     warning: (message: string, duration?: number) => show(message, "warning", duration),
     error: (message: string, duration?: number) => show(message, "error", duration),
-    remove: removeToast
+    remove: removeToast,
   };
 }
 

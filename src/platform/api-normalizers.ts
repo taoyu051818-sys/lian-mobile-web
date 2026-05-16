@@ -13,9 +13,7 @@ const PLACE_STATUSES = new Set<PlaceStatus>([
 ]);
 
 export function asRecord(value: unknown): JsonRecord {
-  return value && typeof value === "object" && !Array.isArray(value)
-    ? (value as JsonRecord)
-    : {};
+  return value && typeof value === "object" && !Array.isArray(value) ? (value as JsonRecord) : {};
 }
 
 export function asString(value: unknown, fallback = ""): string {
@@ -46,9 +44,7 @@ export function asBoolean(value: unknown, fallback = false): boolean {
 
 export function asStringArray(value: unknown): string[] {
   if (!Array.isArray(value)) return [];
-  return value
-    .map((entry) => asString(entry))
-    .filter((entry) => entry.length > 0);
+  return value.map((entry) => asString(entry)).filter((entry) => entry.length > 0);
 }
 
 export function normalizeFeedItemId(value: unknown, fallback = 0): number {
@@ -107,9 +103,10 @@ export function normalizePlaceRef(value: unknown): PlaceRef | undefined {
 
   const type = optionalString(record.type);
   const rawStatus = optionalString(record.status);
-  const status = rawStatus && PLACE_STATUSES.has(rawStatus as PlaceStatus)
-    ? (rawStatus as PlaceStatus)
-    : undefined;
+  const status =
+    rawStatus && PLACE_STATUSES.has(rawStatus as PlaceStatus)
+      ? (rawStatus as PlaceStatus)
+      : undefined;
 
   return {
     id,

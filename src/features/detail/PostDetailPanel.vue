@@ -19,14 +19,17 @@ import { usePostReplyComposer } from "./usePostReplyComposer";
 import { usePostShare } from "./usePostShare";
 import { useDetailGallery } from "./useDetailGallery";
 
-const props = withDefaults(defineProps<{
-  post: PostDetail | null;
-  loading?: boolean;
-  error?: string;
-}>(), {
-  loading: false,
-  error: "",
-});
+const props = withDefaults(
+  defineProps<{
+    post: PostDetail | null;
+    loading?: boolean;
+    error?: string;
+  }>(),
+  {
+    loading: false,
+    error: "",
+  },
+);
 
 const emit = defineEmits<{
   close: [];
@@ -60,14 +63,21 @@ function setActionError(message: string) {
 }
 
 const {
-  liked, saved, likeCount, likeBusy, saveBusy,
+  liked,
+  saved,
+  likeCount,
+  likeBusy,
+  saveBusy,
   handleLike: rawHandleLike,
   handleSave: rawHandleSave,
   resetReactions,
 } = usePostReactions({ clearMessages, showError: showActionError });
 
 const {
-  placeSheet, placeSheetOpen, placeSheetLoading, placeSheetError,
+  placeSheet,
+  placeSheetOpen,
+  placeSheetLoading,
+  placeSheetError,
   placeSheetState,
   openPlaceSheet,
   resetPlaceSheet,
@@ -113,21 +123,15 @@ const {
   setActionError,
 });
 
-const {
-  replyBusy,
-  replyExpanded,
-  replyContent,
-  collapseReplyIfOpen,
-  submitReply,
-  resetReply,
-} = usePostReplyComposer({
-  postId,
-  clearMessages,
-  showError: showActionError,
-  showActionMessage,
-  setActionError,
-  onReplySuccess: () => emit("retry"),
-});
+const { replyBusy, replyExpanded, replyContent, collapseReplyIfOpen, submitReply, resetReply } =
+  usePostReplyComposer({
+    postId,
+    clearMessages,
+    showError: showActionError,
+    showActionMessage,
+    setActionError,
+    onReplySuccess: () => emit("retry"),
+  });
 
 const { handleShare } = usePostShare({
   postId,
@@ -149,16 +153,24 @@ const {
 });
 const replyIdentityLabel = "以当前身份回复";
 
-function handleLike() { return rawHandleLike(postId.value); }
-function handleSave() { return rawHandleSave(postId.value); }
-watch(post, (nextPost) => {
-  resetReactions(nextPost);
-  resetPlaceSheet();
-  resetReport();
-  resetReply();
-  resetGallery();
-  clearMessages();
-}, { immediate: true });
+function handleLike() {
+  return rawHandleLike(postId.value);
+}
+function handleSave() {
+  return rawHandleSave(postId.value);
+}
+watch(
+  post,
+  (nextPost) => {
+    resetReactions(nextPost);
+    resetPlaceSheet();
+    resetReport();
+    resetReply();
+    resetGallery();
+    clearMessages();
+  },
+  { immediate: true },
+);
 </script>
 
 <template>
@@ -181,10 +193,7 @@ watch(post, (nextPost) => {
       </InlineError>
 
       <template v-else-if="post">
-        <PostDetailHiddenState
-          v-if="locallyHidden"
-          @undo-hide="undoHideReportedPost"
-        />
+        <PostDetailHiddenState v-if="locallyHidden" @undo-hide="undoHideReportedPost" />
 
         <template v-else>
           <PostDetailContent
@@ -245,11 +254,7 @@ watch(post, (nextPost) => {
       @update:reply-content="replyContent = $event"
     />
 
-    <PostDetailLightbox
-      :src="fullscreenImage"
-      :alt="title"
-      @close="fullscreenImage = ''"
-    />
+    <PostDetailLightbox :src="fullscreenImage" :alt="title" @close="fullscreenImage = ''" />
   </aside>
 </template>
 
@@ -259,7 +264,8 @@ watch(post, (nextPost) => {
   display: grid;
   gap: var(--space-4);
   min-height: 100%;
-  padding: calc(var(--floating-bar-height) + var(--space-3)) var(--space-3) calc(var(--floating-bar-height) + var(--space-8));
+  padding: calc(var(--floating-bar-height) + var(--space-3)) var(--space-3)
+    calc(var(--floating-bar-height) + var(--space-8));
 }
 
 .post-detail-panel__stage {
@@ -267,14 +273,21 @@ watch(post, (nextPost) => {
   gap: var(--space-4);
   overflow: hidden;
   border-radius: var(--detail-card-radius, 0px);
-  transform: translate3d(var(--detail-card-translate-x, 0px), var(--detail-card-translate-y, 0px), 0) scale(var(--detail-card-scale, 1));
+  transform: translate3d(
+      var(--detail-card-translate-x, 0px),
+      var(--detail-card-translate-y, 0px),
+      0
+    )
+    scale(var(--detail-card-scale, 1));
   transform-origin: center center;
   will-change: transform, border-radius;
   transition: none;
 }
 
 .post-detail-panel.is-returning .post-detail-panel__stage {
-  transition: transform var(--motion-return) var(--motion-ease-standard), border-radius var(--motion-return) var(--motion-ease-standard);
+  transition:
+    transform var(--motion-return) var(--motion-ease-standard),
+    border-radius var(--motion-return) var(--motion-ease-standard);
 }
 
 .post-detail-panel__state {
@@ -293,6 +306,8 @@ watch(post, (nextPost) => {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .post-detail-panel__stage { transition: none; }
+  .post-detail-panel__stage {
+    transition: none;
+  }
 }
 </style>

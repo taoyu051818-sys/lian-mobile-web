@@ -103,9 +103,7 @@ describe("validateAuthForm", () => {
 
     it("returns empty string for valid register with inviteCode", () => {
       expect(
-        validateAuthForm(
-          registerFields({ email: "", emailCode: "", inviteCode: "INV" }),
-        ),
+        validateAuthForm(registerFields({ email: "", emailCode: "", inviteCode: "INV" })),
       ).toBe("");
     });
   });
@@ -151,7 +149,9 @@ describe("loadAuthInterestSettings", () => {
   });
 
   it("returns unavailable state when auth rules fail", async () => {
-    const fetchRules = vi.fn<() => Promise<AuthRulesResponse>>().mockRejectedValue(new Error("boom"));
+    const fetchRules = vi
+      .fn<() => Promise<AuthRulesResponse>>()
+      .mockRejectedValue(new Error("boom"));
 
     await expect(loadAuthInterestSettings(fetchRules)).resolves.toEqual({
       options: [],
@@ -171,8 +171,12 @@ describe("toggleSelectedInterest", () => {
   });
 
   it("does not add a sixth interest", () => {
-    expect(
-      toggleSelectedInterest(["a", "b", "c", "d", "e"], "f"),
-    ).toEqual(["a", "b", "c", "d", "e"]);
+    expect(toggleSelectedInterest(["a", "b", "c", "d", "e"], "f")).toEqual([
+      "a",
+      "b",
+      "c",
+      "d",
+      "e",
+    ]);
   });
 });

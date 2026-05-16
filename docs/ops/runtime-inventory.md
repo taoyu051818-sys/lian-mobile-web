@@ -6,8 +6,8 @@ For the operator-facing split between install, build, deploy-prepare, and startu
 
 ## Current frontend runtime
 
-| Runtime | Purpose | Default port | Entry command |
-| --- | --- | ---: | --- |
+| Runtime          | Purpose                                                |                Default port | Entry command     |
+| ---------------- | ------------------------------------------------------ | --------------------------: | ----------------- |
 | Vue/Vite preview | Vue/Vite frontend shell, including Map/Explore surface | 4173 (vite preview default) | `npm run preview` |
 
 The legacy static runtime was removed in PR #282 and migrated to https://github.com/taoyu051818-sys/-lian-mobile-web-legacy. Vue/Vite is now the sole active web runtime.

@@ -10,7 +10,7 @@ interface UseAutoLoadSentinelOptions {
 export function useAutoLoadSentinel(
   targetRef: Ref<HTMLElement | null>,
   onIntersect: () => void,
-  options: UseAutoLoadSentinelOptions = {}
+  options: UseAutoLoadSentinelOptions = {},
 ) {
   let observer: IntersectionObserver | null = null;
   let stopWatchingTarget: (() => void) | null = null;
@@ -38,22 +38,29 @@ export function useAutoLoadSentinel(
     disconnect();
     if (!target || typeof IntersectionObserver === "undefined") return;
 
-    observer = new IntersectionObserver((entries) => {
-      if (!entries.some((entry) => entry.isIntersecting)) return;
-      trigger();
-    }, {
-      root: null,
-      rootMargin: options.rootMargin ?? "720px 0px 720px 0px",
-      threshold: options.threshold ?? 0.01,
-    });
+    observer = new IntersectionObserver(
+      (entries) => {
+        if (!entries.some((entry) => entry.isIntersecting)) return;
+        trigger();
+      },
+      {
+        root: null,
+        rootMargin: options.rootMargin ?? "720px 0px 720px 0px",
+        threshold: options.threshold ?? 0.01,
+      },
+    );
 
     observer.observe(target);
   }
 
   onMounted(() => {
-    stopWatchingTarget = watch(targetRef, (target) => {
-      observeTarget(target);
-    }, { immediate: true });
+    stopWatchingTarget = watch(
+      targetRef,
+      (target) => {
+        observeTarget(target);
+      },
+      { immediate: true },
+    );
   });
 
   onBeforeUnmount(() => {

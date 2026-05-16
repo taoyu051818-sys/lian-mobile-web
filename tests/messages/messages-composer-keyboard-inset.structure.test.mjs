@@ -16,7 +16,10 @@ const threadSource = read("src/features/messages/ChannelThread.vue");
 // --- MessagesView imports and activates useVisualViewport ---
 
 test("MessagesView imports useVisualViewport composable", () => {
-  assert.match(viewSource, /import\s*\{[^}]*useVisualViewport[^}]*\}\s*from\s*"[\./]*composables\/useVisualViewport"/);
+  assert.match(
+    viewSource,
+    /import\s*\{[^}]*useVisualViewport[^}]*\}\s*from\s*"[\./]*composables\/useVisualViewport"/,
+  );
 });
 
 test("MessagesView calls useVisualViewport to activate keyboard-inset CSS token", () => {
@@ -30,7 +33,9 @@ test("MessagesView composer bottom includes keyboard-inset-bottom token", () => 
 });
 
 test("MessagesView composer bottom calc includes keyboard inset", () => {
-  const composerMatch = viewSource.match(/\.messages-view__chrome-composer\s*\{[^}]*bottom:\s*([^;]+)/);
+  const composerMatch = viewSource.match(
+    /\.messages-view__chrome-composer\s*\{[^}]*bottom:\s*([^;]+)/,
+  );
   assert.ok(composerMatch, "composer should have bottom property");
   const bottom = composerMatch[1];
   assert.match(bottom, /--keyboard-inset-bottom/);

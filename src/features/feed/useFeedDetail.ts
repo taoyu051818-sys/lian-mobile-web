@@ -54,7 +54,9 @@ export function useFeedDetail(deps: FeedDetailDeps) {
   }
 
   const detailOpen = computed(() => selectedPostId.value !== null);
-  const detailCardifyProgress = computed(() => Math.min(1, Math.max(0, Math.abs(detailDragX.value) / deps.cardifyDistance)));
+  const detailCardifyProgress = computed(() =>
+    Math.min(1, Math.max(0, Math.abs(detailDragX.value) / deps.cardifyDistance)),
+  );
   const detailTargetScale = computed(() => {
     const snapshot = lastOpenSnapshot.value;
     if (!snapshot) return 0.5;
@@ -101,7 +103,11 @@ export function useFeedDetail(deps: FeedDetailDeps) {
   function pushDetailHistory(id: FeedItemId) {
     if (typeof window === "undefined" || detailHistoryActive.value) return;
     try {
-      window.history.pushState({ ...currentHistoryState(), lianDetail: true, tid: String(id) }, "", window.location.href);
+      window.history.pushState(
+        { ...currentHistoryState(), lianDetail: true, tid: String(id) },
+        "",
+        window.location.href,
+      );
       detailHistoryActive.value = true;
     } catch {
       detailHistoryActive.value = false;
@@ -190,9 +196,7 @@ export function useFeedDetail(deps: FeedDetailDeps) {
         selectedPost.value = detail;
       }
     } catch (error) {
-      detailError.value = error instanceof Error
-        ? error.message
-        : ERROR_LOAD_DETAIL;
+      detailError.value = error instanceof Error ? error.message : ERROR_LOAD_DETAIL;
     } finally {
       if (normalizeFeedItemId(selectedPostId.value) === normalizedId) {
         detailLoading.value = false;

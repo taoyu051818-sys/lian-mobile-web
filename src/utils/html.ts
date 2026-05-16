@@ -36,10 +36,14 @@ const TAG_ALLOWED_ATTRIBUTES: Record<string, Set<string>> = {
 function isSafeUrl(value: string) {
   const trimmed = value.trim().replace(/&amp;/g, "&");
   if (!trimmed) return false;
-  if (trimmed.startsWith("#") || (trimmed.startsWith("/") && !trimmed.startsWith("//"))) return true;
+  if (trimmed.startsWith("#") || (trimmed.startsWith("/") && !trimmed.startsWith("//")))
+    return true;
 
   try {
-    const url = new URL(trimmed, typeof window !== "undefined" ? window.location.origin : "https://lian.invalid");
+    const url = new URL(
+      trimmed,
+      typeof window !== "undefined" ? window.location.origin : "https://lian.invalid",
+    );
     return ["http:", "https:", "mailto:"].includes(url.protocol);
   } catch {
     return false;
@@ -95,12 +99,17 @@ export function sanitizeHtml(value: string) {
       .replace(/<iframe\b[^>]*>[\s\S]*?<\/iframe>/gi, "")
       .replace(/\son[a-z]+\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, "")
       .replace(/\sstyle\s*=\s*("[^"]*"|'[^']*'|[^\s>]+)/gi, "")
-      .replace(/\s(?:href|src)\s*=\s*("javascript:[^"]*"|'javascript:[^']*'|javascript:[^\s>]+)/gi, "");
+      .replace(
+        /\s(?:href|src)\s*=\s*("javascript:[^"]*"|'javascript:[^']*'|javascript:[^\s>]+)/gi,
+        "",
+      );
   }
 
   const parser = new DOMParser();
   const document = parser.parseFromString(raw, "text/html");
-  document.querySelectorAll("script, style, iframe, object, embed, link, meta").forEach((node) => node.remove());
+  document
+    .querySelectorAll("script, style, iframe, object, embed, link, meta")
+    .forEach((node) => node.remove());
 
   for (const element of Array.from(document.body.querySelectorAll("*"))) {
     sanitizeElement(element);
@@ -114,7 +123,10 @@ export function stripHtml(value: string) {
   if (!raw) return "";
 
   if (typeof window === "undefined" || typeof DOMParser === "undefined") {
-    return raw.replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
+    return raw
+      .replace(/<[^>]+>/g, "")
+      .replace(/\s+/g, " ")
+      .trim();
   }
 
   const parser = new DOMParser();

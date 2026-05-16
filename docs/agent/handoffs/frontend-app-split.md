@@ -68,4 +68,3 @@ Manual HTTP checks:
 ## Next suggested task
 
 - `frontend-stability-smoke`
-

@@ -4,7 +4,10 @@ const CARD_CLICK_MAX_DURATION_MS = 360;
 const CARD_CLICK_MOVE_TOLERANCE_PX = 8;
 
 function isControlTarget(target: EventTarget | null) {
-  return target instanceof HTMLElement && Boolean(target.closest("button, a, input, textarea, select, [data-card-control]"));
+  return (
+    target instanceof HTMLElement &&
+    Boolean(target.closest("button, a, input, textarea, select, [data-card-control]"))
+  );
 }
 
 export function useCardPointerInteraction(emitOpen: (target: HTMLElement | null) => void) {
@@ -68,7 +71,8 @@ export function useCardPointerInteraction(emitOpen: (target: HTMLElement | null)
   function handlePointerUp(event: PointerEvent) {
     if (pointerCandidateId.value !== event.pointerId) return;
     clearLongPressTimer();
-    pointerWasLongPress.value = performance.now() - pointerDownAt.value > CARD_CLICK_MAX_DURATION_MS;
+    pointerWasLongPress.value =
+      performance.now() - pointerDownAt.value > CARD_CLICK_MAX_DURATION_MS;
   }
 
   function handlePointerCancel(event: PointerEvent) {

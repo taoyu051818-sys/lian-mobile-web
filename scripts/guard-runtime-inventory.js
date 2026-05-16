@@ -12,34 +12,30 @@ const isCi = process.env.CI === "true" || process.env.GITHUB_ACTIONS === "true";
 const requiredFiles = [
   ".github/pull_request_template.md",
   "ops/runtime-inventory.schema.json",
-  "index.html"
+  "index.html",
 ];
 
 const opsInventoryFiles = [
   "ops/runtime-inventory.schema.json",
   "ops/runtime-inventory.example.json",
   "ops/runtime-inventory.md",
-  "docs/ops/runtime-inventory.md"
+  "docs/ops/runtime-inventory.md",
 ];
 
 const runtimeSensitiveFiles = [
   "package.json",
   "index.html",
   "vite.config.ts",
-  "scripts/validate-project-structure.js"
+  "scripts/validate-project-structure.js",
 ];
 
-const runtimeSensitivePrefixes = [
-  ".github/workflows/",
-  "ops/",
-  "docs/ops/"
-];
+const runtimeSensitivePrefixes = [".github/workflows/", "ops/", "docs/ops/"];
 
 const forbiddenSnippets = [
   ["pm2 restart", "lian-mobile-web"].join(" "),
   ["systemctl restart", "lian-mobile-web"].join(" "),
   ["lian-mobile-web", ".service"].join(""),
-  ["/path/to", "lian-platform-server"].join("/")
+  ["/path/to", "lian-platform-server"].join("/"),
 ];
 
 const canonicalContractForbiddenSnippets = [
@@ -57,9 +53,15 @@ const canonicalContractForbiddenSnippets = [
   ["authorIdentityTag?:", "Post DTO types must not reintroduce legacy authorIdentityTag"],
   ["FeedAuthor", "Feed DTO types must not reintroduce legacy FeedAuthor"],
   ["ChannelMessageAuthor", "Messages DTO types must not reintroduce legacy ChannelMessageAuthor"],
-  ["location.place?.id || location.placeId || location.id", "Map/Publish must not treat marker location.id as stable PlaceRef"],
-  ["location.placeId || location.id", "Map/Publish must not treat marker location.id as stable PlaceRef"],
-  ["fetchPlaceSheet(location.id", "PlaceSheet must be opened from place.id/placeId only"]
+  [
+    "location.place?.id || location.placeId || location.id",
+    "Map/Publish must not treat marker location.id as stable PlaceRef",
+  ],
+  [
+    "location.placeId || location.id",
+    "Map/Publish must not treat marker location.id as stable PlaceRef",
+  ],
+  ["fetchPlaceSheet(location.id", "PlaceSheet must be opened from place.id/placeId only"],
 ];
 
 const textExtensions = new Set([
@@ -72,7 +74,7 @@ const textExtensions = new Set([
   ".yaml",
   ".html",
   ".css",
-  ".txt"
+  ".txt",
 ]);
 
 let passed = 0;
@@ -110,7 +112,7 @@ function git(args) {
   return execFileSync("git", args, {
     cwd: rootDir,
     encoding: "utf8",
-    stdio: ["ignore", "pipe", "ignore"]
+    stdio: ["ignore", "pipe", "ignore"],
   }).trim();
 }
 
@@ -129,7 +131,9 @@ function changedFiles() {
   }
 
   if (!isCi) {
-    note("no base ref outside CI; skipping runtime inventory diff guard for deployed main checkout");
+    note(
+      "no base ref outside CI; skipping runtime inventory diff guard for deployed main checkout",
+    );
     return [];
   }
 
@@ -141,7 +145,10 @@ function changedFiles() {
 }
 
 function isRuntimeSensitive(file) {
-  return runtimeSensitiveFiles.includes(file) || runtimeSensitivePrefixes.some((prefix) => file.startsWith(prefix));
+  return (
+    runtimeSensitiveFiles.includes(file) ||
+    runtimeSensitivePrefixes.some((prefix) => file.startsWith(prefix))
+  );
 }
 
 function isOpsInventory(file) {
@@ -229,7 +236,7 @@ function checkDiffGuard() {
   }
   fail(
     "runtime inventory diff guard",
-    `runtime-sensitive files changed without ops inventory update: ${sensitive.join(", ")}`
+    `runtime-sensitive files changed without ops inventory update: ${sensitive.join(", ")}`,
   );
 }
 
@@ -240,5 +247,7 @@ checkForbiddenSnippets();
 checkCanonicalContractFallbacks();
 checkDiffGuard();
 
-console.log(`\n═══ Result: ${passed} passed, ${failed} failed${noted ? `, ${noted} noted` : ""} ═══\n`);
+console.log(
+  `\n═══ Result: ${passed} passed, ${failed} failed${noted ? `, ${noted} noted` : ""} ═══\n`,
+);
 if (failed > 0) process.exit(1);

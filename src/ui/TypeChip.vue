@@ -1,13 +1,26 @@
 <script setup lang="ts">
-type ContentType = "experience" | "discussion" | "hot" | "food" | "place" | "ai" | "official" | "trade" | "contribution" | "default";
+type ContentType =
+  | "experience"
+  | "discussion"
+  | "hot"
+  | "food"
+  | "place"
+  | "ai"
+  | "official"
+  | "trade"
+  | "contribution"
+  | "default";
 
-withDefaults(defineProps<{
-  type?: ContentType;
-  icon?: string;
-}>(), {
-  type: "default",
-  icon: ""
-});
+withDefaults(
+  defineProps<{
+    type?: ContentType;
+    icon?: string;
+  }>(),
+  {
+    type: "default",
+    icon: "",
+  },
+);
 </script>
 
 <template>

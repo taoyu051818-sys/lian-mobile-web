@@ -1,10 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import {
-  placeIdForLocation,
-  hasStablePlaceRef,
-} from "../../src/features/map/useMapSelection.ts";
+import { placeIdForLocation, hasStablePlaceRef } from "../../src/features/map/useMapSelection.ts";
 import type { MapLocation } from "../../src/types/map.ts";
 
 function makeLocation(overrides: Partial<MapLocation> = {}): MapLocation {

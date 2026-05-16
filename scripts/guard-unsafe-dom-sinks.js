@@ -13,11 +13,11 @@ const IGNORE_DIRS = new Set([
   "docs",
   "node_modules",
   "runtime-inventory",
-  "tests"
+  "tests",
 ]);
 const IGNORE_FILES = new Set([
   "scripts/guard-unsafe-dom-sinks.js",
-  "scripts/test-html-sanitizer.js"
+  "scripts/test-html-sanitizer.js",
 ]);
 
 const RULES = [
@@ -25,23 +25,26 @@ const RULES = [
     description: "raw v-html usage",
     regex: /\bv-html\s*=/g,
     allow(relativePath) {
-      return relativePath === "src/ui/SafeHtml.vue" || relativePath === "src/views/detail/PostDetailPanel.vue";
-    }
+      return (
+        relativePath === "src/ui/SafeHtml.vue" ||
+        relativePath === "src/views/detail/PostDetailPanel.vue"
+      );
+    },
   },
   {
     description: "raw innerHTML usage",
     regex: /\binnerHTML\b/g,
     allow(relativePath) {
       return relativePath === "src/utils/html.ts" || relativePath.startsWith("public/");
-    }
+    },
   },
   {
     description: "direct alert/prompt/confirm usage",
     regex: /\b(?:alert|prompt|confirm)\s*\(/g,
     allow(relativePath) {
       return relativePath.startsWith("public/");
-    }
-  }
+    },
+  },
 ];
 
 function isCodeFile(filePath) {
@@ -85,7 +88,7 @@ for (const file of walk(ROOT)) {
         file: relativePath,
         line,
         description: rule.description,
-        sample: lineTextAt(text, line).trim()
+        sample: lineTextAt(text, line).trim(),
       });
     }
   }

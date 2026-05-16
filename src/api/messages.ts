@@ -1,7 +1,13 @@
 import { apiGet, apiSend } from "./http";
 import { DEFAULT_USER_LABEL } from "../config/brand";
 import { ensureClientId } from "../platform/clientIdentity";
-import type { ChannelMessage, ChannelReadPayload, ChannelResponse, NotificationResponse, SendChannelMessagePayload } from "../types/messages";
+import type {
+  ChannelMessage,
+  ChannelReadPayload,
+  ChannelResponse,
+  NotificationResponse,
+  SendChannelMessagePayload,
+} from "../types/messages";
 
 export function extractChannelMessagePlainText(html?: string): string {
   if (!html) return "";
@@ -11,8 +17,14 @@ export function extractChannelMessagePlainText(html?: string): string {
     .trim();
 }
 
-export function resolveChannelMessagePlainText(message: Pick<ChannelMessage, "content" | "contentHtml" | "plainText">): string {
-  return message.plainText?.trim() || message.content?.trim() || extractChannelMessagePlainText(message.contentHtml);
+export function resolveChannelMessagePlainText(
+  message: Pick<ChannelMessage, "content" | "contentHtml" | "plainText">,
+): string {
+  return (
+    message.plainText?.trim() ||
+    message.content?.trim() ||
+    extractChannelMessagePlainText(message.contentHtml)
+  );
 }
 
 export function normalizeChannelMessage(raw: ChannelMessage): ChannelMessage {
@@ -48,16 +60,25 @@ function compareChannelMessagesChronologically(a: ChannelMessage, b: ChannelMess
   return String(a.id).localeCompare(String(b.id));
 }
 
-export function mergeChannelMessagesChronologically(existing: ChannelMessage[], incoming: ChannelMessage[]): ChannelMessage[] {
+export function mergeChannelMessagesChronologically(
+  existing: ChannelMessage[],
+  incoming: ChannelMessage[],
+): ChannelMessage[] {
   const merged = new Map<string, ChannelMessage>();
   for (const item of existing) merged.set(String(item.id), item);
   for (const item of incoming) merged.set(String(item.id), item);
   return Array.from(merged.values()).sort(compareChannelMessagesChronologically);
 }
 
-export function normalizeChannelResponse(response: ChannelResponse, requestedOffset = 0): ChannelResponse {
+export function normalizeChannelResponse(
+  response: ChannelResponse,
+  requestedOffset = 0,
+): ChannelResponse {
   const rawItems = response.items || [];
-  const normalizedItems = mergeChannelMessagesChronologically([], rawItems.map(normalizeChannelMessage));
+  const normalizedItems = mergeChannelMessagesChronologically(
+    [],
+    rawItems.map(normalizeChannelMessage),
+  );
   return {
     ...response,
     items: normalizedItems,
