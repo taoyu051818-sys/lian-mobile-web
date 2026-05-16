@@ -7,7 +7,7 @@ import { InlineError } from "../../ui";
 import PostDetailPanel from "../detail/PostDetailPanel.vue";
 import FeedList from "./FeedList.vue";
 import FeedLoadMore from "./FeedLoadMore.vue";
-import { useFeedDetail, type CardOpenPayload, type CardTransitionSnapshot } from "./useFeedDetail";
+import { useFeedDetail, type CardTransitionSnapshot } from "./useFeedDetail";
 import { useFeedData } from "./useFeedData";
 import { useDetailDragGesture } from "./useDetailDragGesture";
 import { CHANNEL_RELOAD, FEED_FILTER_LABEL, FEED_VIEW_TITLE } from "../../config/brand";
@@ -48,7 +48,7 @@ function cancelCardTransitionTimers() {
 
 // Detail lifecycle composable
 const {
-  selectedPostId,
+  selectedPostId: _selectedPostId,
   selectedPost,
   detailLoading,
   detailError,
@@ -60,7 +60,7 @@ const {
   detailGestureLocked,
   dragStartX,
   dragStartY,
-  detailCardifyProgress,
+  detailCardifyProgress: _detailCardifyProgress,
   detailDragStyle,
   openItem,
   retryDetail,

@@ -79,4 +79,12 @@ export default [
       "vue/multi-word-component-names": "off",
     },
   },
+
+  // Test and script files: allow console (used for test output and CLI reporting)
+  {
+    files: ["tests/**/*.{ts,mjs,js}", "scripts/**/*.js"],
+    rules: {
+      "no-console": "off",
+    },
+  },
 ];

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { defineAsyncComponent, KeepAlive, type Component, type PropType } from "vue";
+import { defineAsyncComponent, type Component, type PropType } from "vue";
 import type { AppViewKey } from "./view-types";
 import type { PageChromeSpec } from "../shell/page-model";
 import FeedView from "../features/feed/FeedView.vue";
