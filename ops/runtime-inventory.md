@@ -82,6 +82,16 @@ The guards run as part of `npm run check` and are verified by `tests/architectur
 
 Stale `docs/ops/` files removed in PR #535 (2026-05-16): `2026-05-05-bad-smell-cleanup-summary.md`, `motion-integration-lane.md`. These were historical-only docs with no runtime behavior impact.
 
+## Warning guard scripts
+
+Three warning-only guard scripts are wired into `npm run check` (PR #538, 2026-05-16):
+
+- `check:asset-owners` — `scripts/warn-public-asset-owners.js` — flags unlisted public assets
+- `check:stale-docs` — `scripts/warn-stale-doc-keywords.js` — flags stale keywords in docs
+- `check:large-vue` — `scripts/warn-large-vue-files.js` — flags `.vue` files over 300 lines
+
+All three always exit 0 (warning only, never fail build). Changes to these scripts or their wiring in `package.json` must update this inventory.
+
 ## Operational rule
 
 Any PR that changes dependency preflight behavior, the runtime config accessor/env-validation contract, unsafe DOM sink guard coverage, public runtime exposure checks, frontend project-structure validation, frontend verify/test wiring, or UGC HTML sanitizer verification must update this document or another runtime inventory artifact in the same PR.
