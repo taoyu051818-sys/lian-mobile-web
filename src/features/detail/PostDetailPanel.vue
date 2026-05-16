@@ -1,28 +1,21 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
 import { useVisualViewport } from "../../composables/useVisualViewport";
-import { reportPost, sendPostReply } from "../../api/posts";
 import { InlineError, LianButton } from "../../ui";
-import { ERROR_SEND_REPLY, LOADING_DETAIL } from "../../config/brand";
+import { LOADING_DETAIL } from "../../config/brand";
 import { extractErrorMessage } from "../../utils/extractErrorMessage";
 import type { PostDetail } from "../../types/post";
-import { sharePost } from "../../platform/share";
-import { configureWeChatShare } from "../../platform/wechatShare";
-import { buildCanonicalPostUrl } from "../../platform/share";
 import PostDetailTopbar from "./PostDetailTopbar.vue";
 import PostDetailContent from "./PostDetailContent.vue";
 import PostReplies from "./PostReplies.vue";
 import PostReplyDock from "./PostReplyDock.vue";
-import {
-  buildReportPayload,
-  getReportReasonPlaceholder,
-  getReportSubmissionMessage,
-  REPORT_CATEGORIES,
-  shouldShowReportReasonField,
-} from "./reportFlow";
 import { usePostDetailPresentation } from "./usePostDetailPresentation";
 import { usePostReactions } from "./usePostReactions";
 import { usePlaceSheetLoader } from "./usePlaceSheetLoader";
+import { usePostReport } from "./usePostReport";
+import { usePostReplyComposer } from "./usePostReplyComposer";
+import { usePostShare } from "./usePostShare";
+import { useDetailGallery } from "./useDetailGallery";
 
 const props = withDefaults(defineProps<{
   post: PostDetail | null;
@@ -40,21 +33,8 @@ const emit = defineEmits<{
 
 useVisualViewport();
 
-const reportBusy = ref(false);
-const reportOpen = ref(false);
-const reportReason = ref("");
-const reportFollowUpVisible = ref(false);
-const locallyHidden = ref(false);
-const replyBusy = ref(false);
-const replyExpanded = ref(false);
-const fullscreenImage = ref("");
 const actionError = ref("");
 const actionMessage = ref("");
-const reportCategory = ref(REPORT_CATEGORIES[REPORT_CATEGORIES.length - 1].value);
-const replyContent = ref("");
-const galleryPointerDownX = ref(0);
-const galleryPointerDownY = ref(0);
-const galleryPointerMoved = ref(false);
 
 const post = computed(() => props.post);
 
@@ -66,6 +46,16 @@ function clearMessages() {
 function showActionError(error: unknown, fallback: string) {
   actionMessage.value = "";
   actionError.value = extractErrorMessage(error, fallback);
+}
+
+function showActionMessage(message: string) {
+  actionError.value = "";
+  actionMessage.value = message;
+}
+
+function setActionError(message: string) {
+  actionMessage.value = "";
+  actionError.value = message;
 }
 
 const {
@@ -82,8 +72,6 @@ const {
   resetPlaceSheet,
 } = usePlaceSheetLoader(post);
 
-const reportReasonVisible = computed(() => shouldShowReportReasonField(reportCategory.value));
-const reportReasonPlaceholder = computed(() => getReportReasonPlaceholder(reportCategory.value));
 const {
   postId,
   title,
@@ -101,6 +89,64 @@ const {
   timeLabel,
   placeStatusText,
 } = usePostDetailPresentation(post, placeSheetState);
+
+const {
+  reportBusy,
+  reportOpen,
+  reportReason,
+  reportFollowUpVisible,
+  locallyHidden,
+  reportCategory,
+  REPORT_CATEGORIES,
+  reportReasonVisible,
+  reportReasonPlaceholder,
+  toggleReport,
+  handleHideReportedPost,
+  undoHideReportedPost,
+  handleReport,
+  resetReport,
+} = usePostReport({
+  postId,
+  clearMessages,
+  showActionMessage,
+  setActionError,
+});
+
+const {
+  replyBusy,
+  replyExpanded,
+  replyContent,
+  collapseReplyIfOpen,
+  submitReply,
+  resetReply,
+} = usePostReplyComposer({
+  postId,
+  clearMessages,
+  showError: showActionError,
+  showActionMessage,
+  setActionError,
+  onReplySuccess: () => emit("retry"),
+});
+
+const { handleShare } = usePostShare({
+  postId,
+  title,
+  post,
+  showActionMessage,
+  showError: showActionError,
+});
+
+const {
+  fullscreenImage,
+  handleGalleryPointerDown,
+  handleGalleryPointerMove,
+  openGalleryImage,
+  resetGallery,
+} = useDetailGallery({
+  images,
+  fullResolutionImages,
+});
+
 const replyIdentityLabel = "以当前身份回复";
 
 function handleLike() { return rawHandleLike(postId.value); }
@@ -109,139 +155,11 @@ function handleSave() { return rawHandleSave(postId.value); }
 watch(post, (nextPost) => {
   resetReactions(nextPost);
   resetPlaceSheet();
-  actionError.value = "";
-  actionMessage.value = "";
-  reportOpen.value = false;
-  reportReason.value = "";
-  reportFollowUpVisible.value = false;
-  locallyHidden.value = false;
-  replyExpanded.value = false;
-  replyContent.value = "";
-  fullscreenImage.value = "";
-  galleryPointerMoved.value = false;
+  resetReport();
+  resetReply();
+  resetGallery();
+  clearMessages();
 }, { immediate: true });
-
-// Configure WeChat share card when post data loads
-watch(post, (nextPost) => {
-  if (!nextPost?.tid) return;
-  const plainBody = (nextPost.contentHtml || "").replace(/<[^>]+>/g, "").trim();
-  configureWeChatShare({
-    title: nextPost.title || "黎安屿你",
-    desc: plainBody.slice(0, 100) || undefined,
-    link: buildCanonicalPostUrl(nextPost.tid),
-    imgUrl: nextPost.cover || nextPost.imageUrls?.[0] || undefined,
-  });
-});
-
-function showActionMessage(message: string) {
-  actionError.value = "";
-  actionMessage.value = message;
-}
-
-function setActionError(message: string) {
-  actionMessage.value = "";
-  actionError.value = message;
-}
-
-function collapseReplyIfOpen() {
-  if (!replyExpanded.value) return;
-  replyExpanded.value = false;
-}
-
-function handleGalleryPointerDown(event: PointerEvent) {
-  galleryPointerDownX.value = event.clientX;
-  galleryPointerDownY.value = event.clientY;
-  galleryPointerMoved.value = false;
-}
-
-function handleGalleryPointerMove(event: PointerEvent) {
-  const deltaX = Math.abs(event.clientX - galleryPointerDownX.value);
-  const deltaY = Math.abs(event.clientY - galleryPointerDownY.value);
-  if (deltaX > 8 || deltaY > 8) {
-    galleryPointerMoved.value = true;
-  }
-}
-
-function openGalleryImage(index: number) {
-  if (galleryPointerMoved.value) {
-    galleryPointerMoved.value = false;
-    return;
-  }
-  fullscreenImage.value = fullResolutionImages.value[index] || images.value[index] || "";
-}
-
-async function handleShare() {
-  if (postId.value == null) return;
-  const result = await sharePost({ tid: postId.value, title: title.value });
-  if (result.outcome === "shared" || result.outcome === "cancelled") return;
-  if (result.outcome === "copied") {
-    showActionMessage("链接已复制");
-    return;
-  }
-  showActionError(null, result.message);
-}
-
-function toggleReport() {
-  actionError.value = "";
-  actionMessage.value = "";
-  reportFollowUpVisible.value = false;
-  reportOpen.value = !reportOpen.value;
-}
-
-function handleHideReportedPost() {
-  locallyHidden.value = true;
-  reportFollowUpVisible.value = false;
-  actionError.value = "";
-  actionMessage.value = "";
-}
-
-function undoHideReportedPost() {
-  locallyHidden.value = false;
-  reportFollowUpVisible.value = false;
-  showActionMessage("这条内容已经恢复显示。");
-}
-
-async function handleReport() {
-  if (postId.value == null || reportBusy.value) return;
-  reportBusy.value = true;
-  actionError.value = "";
-  actionMessage.value = "";
-  try {
-    await reportPost(postId.value, buildReportPayload(reportCategory.value, reportReason.value));
-    reportOpen.value = false;
-    reportReason.value = "";
-    reportFollowUpVisible.value = true;
-    showActionMessage("举报已提交。你也可以先暂时隐藏这条内容。");
-  } catch (error) {
-    setActionError(getReportSubmissionMessage(error));
-  } finally {
-    reportBusy.value = false;
-  }
-}
-
-async function submitReply() {
-  if (postId.value == null || replyBusy.value) return;
-  const content = replyContent.value.trim();
-  if (!content) {
-    actionError.value = "请先填写回复内容。";
-    replyExpanded.value = true;
-    return;
-  }
-  replyBusy.value = true;
-  actionError.value = "";
-  actionMessage.value = "";
-  try {
-    await sendPostReply(postId.value, content);
-    replyContent.value = "";
-    replyExpanded.value = false;
-    showActionMessage("回复已发送，正在刷新详情。");
-    emit("retry");
-  } catch (error) {
-    showActionError(error, ERROR_SEND_REPLY);
-  } finally {
-    replyBusy.value = false;
-  }
-}
 </script>
 
 <template>
