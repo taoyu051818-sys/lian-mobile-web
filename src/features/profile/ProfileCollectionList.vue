@@ -1,15 +1,19 @@
 <script setup lang="ts">
 import { InlineError } from "../../ui";
 import {
-  UNTITLED_CONTENT,
   CHANNEL_RELOAD,
-  LOADING_LIST,
-  CONTENT_COVER_ALT,
   CONTENT_AVATAR_FALLBACK,
+  CONTENT_COVER_ALT,
+  LOADING_LIST,
+  PROFILE_ACTIVITY_STATUS_DRAFT,
+  PROFILE_ACTIVITY_STATUS_HIDDEN,
+  PROFILE_ACTIVITY_STATUS_PENDING,
+  PROFILE_ACTIVITY_STATUS_PUBLISHED,
   TIME_UNKNOWN,
+  UNTITLED_CONTENT,
 } from "../../config/brand";
 import type { FeedItemId } from "../../types/feed";
-import type { ProfileListItem } from "../../types/profile";
+import type { ProfileActivityStatus, ProfileListItem } from "../../types/profile";
 import { formatRelativeTime } from "../../utils/time";
 
 defineProps<{
@@ -23,6 +27,39 @@ const emit = defineEmits<{
   retry: [];
   "open-item": [tid: FeedItemId];
 }>();
+
+function canOpenItem(item: ProfileListItem) {
+  return typeof item.tid === "number" && item.tid > 0;
+}
+
+function itemKey(item: ProfileListItem, index: number) {
+  if (item.id !== undefined && item.id !== "") return `profile-item:${String(item.id)}`;
+  if (item.tid) return `profile-item:${String(item.tid)}`;
+  return `profile-item:${index}`;
+}
+
+function itemTime(item: ProfileListItem) {
+  return formatRelativeTime(item.lastViewedAt || item.timestampISO) || item.timeLabel || TIME_UNKNOWN;
+}
+
+function statusLabel(status?: ProfileActivityStatus) {
+  switch (status) {
+    case "draft":
+      return PROFILE_ACTIVITY_STATUS_DRAFT;
+    case "pending":
+      return PROFILE_ACTIVITY_STATUS_PENDING;
+    case "hidden":
+      return PROFILE_ACTIVITY_STATUS_HIDDEN;
+    case "published":
+    default:
+      return PROFILE_ACTIVITY_STATUS_PUBLISHED;
+  }
+}
+
+function openItem(item: ProfileListItem) {
+  if (!canOpenItem(item) || item.tid === undefined) return;
+  emit("open-item", item.tid);
+}
 </script>
 
 <template>
@@ -36,14 +73,16 @@ const emit = defineEmits<{
     <div v-else-if="!items.length" class="profile-collection__state">{{ emptyText }}</div>
     <div v-else class="profile-collection__list" aria-live="polite">
       <article
-        v-for="item in items"
-        :key="String(item.tid)"
+        v-for="(item, index) in items"
+        :key="itemKey(item, index)"
         class="profile-collection__item"
-        role="button"
-        tabindex="0"
-        @click="emit('open-item', item.tid)"
-        @keydown.enter="emit('open-item', item.tid)"
-        @keydown.space.prevent="emit('open-item', item.tid)"
+        :class="{ 'is-openable': canOpenItem(item) }"
+        :role="canOpenItem(item) ? 'button' : undefined"
+        :tabindex="canOpenItem(item) ? 0 : undefined"
+        :aria-disabled="canOpenItem(item) ? undefined : true"
+        @click="openItem(item)"
+        @keydown.enter="openItem(item)"
+        @keydown.space.prevent="openItem(item)"
       >
         <img
           v-if="item.cover"
@@ -54,9 +93,13 @@ const emit = defineEmits<{
         <div v-else class="profile-collection__thumb" aria-hidden="true">
           {{ (item.title || CONTENT_AVATAR_FALLBACK).slice(0, 1) }}
         </div>
-        <div>
+        <div class="profile-collection__content">
           <h3>{{ item.title || UNTITLED_CONTENT }}</h3>
-          <p>{{ formatRelativeTime(item.lastViewedAt || item.timestampISO) || TIME_UNKNOWN }}</p>
+          <div class="profile-collection__meta">
+            <span>{{ itemTime(item) }}</span>
+            <span v-if="item.status">{{ statusLabel(item.status) }}</span>
+            <span v-if="item.locationArea">{{ item.locationArea }}</span>
+          </div>
         </div>
       </article>
     </div>
@@ -97,31 +140,49 @@ const emit = defineEmits<{
   border-radius: var(--radius-card);
   background: rgba(255, 255, 255, 0.6);
   box-shadow: var(--shadow-card);
+}
+
+.profile-collection__item.is-openable {
   cursor: pointer;
   transition:
     box-shadow var(--motion-fast) var(--motion-ease-standard),
     transform var(--motion-fast) var(--motion-ease-standard);
 }
 
-.profile-collection__item:hover {
+.profile-collection__item.is-openable:hover {
   box-shadow:
     var(--shadow-card),
     0 2px 8px rgba(31, 167, 160, 0.12);
 }
 
-.profile-collection__item:focus-visible {
+.profile-collection__item.is-openable:focus-visible {
   outline: 2px solid var(--lian-primary);
   outline-offset: 2px;
 }
 
-.profile-collection__item:active {
+.profile-collection__item.is-openable:active {
   transform: scale(0.99);
 }
 
-.profile-collection__item p {
+.profile-collection__content {
+  display: grid;
+  gap: 6px;
+}
+
+.profile-collection__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: center;
   color: var(--lian-muted);
   font-size: 12px;
   line-height: 1.5;
+}
+
+.profile-collection__meta span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .profile-collection__item img,
@@ -142,7 +203,6 @@ const emit = defineEmits<{
 }
 
 .profile-collection__item h3 {
-  margin-bottom: 2px;
   color: var(--lian-ink);
   font-size: 14px;
   font-weight: 850;
