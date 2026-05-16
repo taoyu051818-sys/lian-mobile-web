@@ -19,6 +19,10 @@
     "check:asset-owners": "node scripts/warn-public-asset-owners.js",
     "check:stale-docs": "node scripts/warn-stale-doc-keywords.js",
     "check:large-vue": "node scripts/warn-large-vue-files.js",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
     "audit:v-html": "node scripts/audit-v-html-usage.js",
     "test:html-sanitizer": "node scripts/test-html-sanitizer.js",
     "ops:guard": "node scripts/guard-runtime-inventory.js",
@@ -36,11 +40,19 @@
     "vue-i18n": "^10.0.8"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@types/leaflet": "^1.9.20",
     "@vitejs/plugin-vue": "^5.2.1",
+    "eslint": "^10.4.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-vue": "^10.9.1",
+    "globals": "^17.6.0",
+    "prettier": "^3.8.3",
     "typescript": "^5.7.2",
+    "typescript-eslint": "^8.59.3",
     "vite": "^6.0.5",
     "vitest": "^4.1.5",
+    "vue-eslint-parser": "^10.4.0",
     "vue-tsc": "^2.2.0"
   }
 }
