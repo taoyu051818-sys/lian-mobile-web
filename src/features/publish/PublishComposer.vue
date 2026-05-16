@@ -6,9 +6,9 @@ import {
   PUBLISH_BODY_LABEL, PUBLISH_BODY_PLACEHOLDER, PUBLISH_SUMMARY_LABEL,
   PUBLISH_IMAGE_PILL_SUFFIX, PUBLISH_IDENTITY_PILL_PREFIX, PUBLISH_SETTINGS_LABEL,
   PUBLISH_IMAGE_TOOLBAR, PUBLISH_LOCATION_TOOLBAR, PUBLISH_TAG_TOOLBAR,
-  PUBLISH_VISIBILITY, PUBLISH_OPTIONAL, PUBLISH_IMAGE_PREVIEW_LABEL,
-  PUBLISH_IMAGE_PREVIEW_ALT, PUBLISH_IMAGE_REMOVE_LABEL,
+  PUBLISH_VISIBILITY, PUBLISH_OPTIONAL,
 } from "../../config/brand";
+import PublishImagePreview from "./PublishImagePreview.vue";
 import type { MapLocation } from "../../types/map";
 
 const MAX_TITLE_LENGTH = 40;
@@ -114,18 +114,11 @@ function openFilePicker() {
     </div>
   </section>
 
-  <section v-if="localPreviewUrls.length" class="publish-composer__image-panel" :aria-label="PUBLISH_IMAGE_PREVIEW_LABEL">
-    <div class="publish-composer__panel-header">
-      <strong>{{ PUBLISH_IMAGE_TOOLBAR }}</strong>
-      <span>{{ imageStatus }}</span>
-    </div>
-    <div class="publish-composer__image-grid">
-      <div v-for="(url, index) in localPreviewUrls" :key="url" class="publish-composer__image">
-        <img :src="url" :alt="PUBLISH_IMAGE_PREVIEW_ALT" />
-        <button type="button" :aria-label="PUBLISH_IMAGE_REMOVE_LABEL" @click="emit('removeImage', index)">&times;</button>
-      </div>
-    </div>
-  </section>
+  <PublishImagePreview
+    :local-preview-urls="localPreviewUrls"
+    :image-status="imageStatus"
+    @remove-image="emit('removeImage', $event)"
+  />
 </template>
 
 <style scoped>
@@ -258,63 +251,4 @@ function openFilePicker() {
   pointer-events: none;
 }
 
-.publish-composer__image-panel {
-  display: grid;
-  gap: var(--space-3);
-  padding: var(--space-4);
-  border: 1px solid rgba(31, 41, 51, 0.08);
-  border-radius: calc(var(--radius-card) + 2px);
-  background: rgba(255, 255, 255, 0.56);
-}
-
-.publish-composer__panel-header {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
-  align-items: center;
-  justify-content: space-between;
-}
-
-.publish-composer__panel-header span {
-  color: var(--lian-muted);
-  font-size: 12px;
-  font-weight: 800;
-}
-
-.publish-composer__image-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
-  gap: var(--space-2);
-}
-
-.publish-composer__image {
-  position: relative;
-  overflow: hidden;
-  border-radius: var(--radius-3);
-  background: rgba(31, 41, 51, 0.06);
-}
-
-.publish-composer__image img {
-  display: block;
-  width: 100%;
-  aspect-ratio: 1;
-  object-fit: cover;
-}
-
-.publish-composer__image button {
-  position: absolute;
-  top: 6px;
-  right: 6px;
-  display: grid;
-  width: 32px;
-  height: 32px;
-  min-width: 32px;
-  place-items: center;
-  border: 1px solid var(--glass-border);
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.86);
-  color: var(--lian-ink);
-  font-size: 18px;
-  font-weight: 900;
-}
 </style>
