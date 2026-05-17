@@ -24,6 +24,4 @@ export interface PageChromeBottomSpec {
 export interface PageChromeSpec {
   top?: PageChromeTopSpec;
   bottom?: PageChromeBottomSpec;
-  /** When true, shell hides chrome while a detail overlay is open. */
-  autoHideOnDetail?: boolean;
 }

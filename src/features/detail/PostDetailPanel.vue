@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
 import { useVisualViewport } from "../../composables/useVisualViewport";
+import { useFloatingChromeState } from "../../shell/floatingChromeState";
 import { InlineError } from "../../ui";
 import { LOADING_DETAIL, DETAIL_RELOAD, REPLY_IDENTITY_LABEL } from "../../config/brand";
 import { extractErrorMessage } from "../../utils/extractErrorMessage";
@@ -37,6 +38,17 @@ const emit = defineEmits<{
 }>();
 
 useVisualViewport();
+
+const { detailTopChromeOpacity, detailBottomChromeOpacity, detailPointerEvents } =
+  useFloatingChromeState();
+
+const detailChromeStyle = computed(
+  (): Record<string, string> => ({
+    "--detail-top-chrome-opacity": String(detailTopChromeOpacity.value),
+    "--detail-bottom-chrome-opacity": String(detailBottomChromeOpacity.value),
+    "pointer-events": detailPointerEvents.value,
+  }),
+);
 
 const actionError = ref("");
 const actionMessage = ref("");
@@ -176,7 +188,7 @@ watch(
 </script>
 
 <template>
-  <aside class="post-detail-panel" aria-labelledby="post-detail-title">
+  <aside class="post-detail-panel" :style="detailChromeStyle" aria-labelledby="post-detail-title">
     <PostDetailTopbar
       :author-label="authorLabel"
       :avatar-url="authorAvatarUrl"
@@ -295,12 +307,6 @@ watch(
 .post-detail-panel__state {
   color: var(--lian-muted);
   text-align: center;
-}
-
-.post-detail-panel.is-returning {
-  --detail-top-chrome-opacity: 0;
-  --detail-bottom-chrome-opacity: 0;
-  pointer-events: none;
 }
 
 .inline-error button {
