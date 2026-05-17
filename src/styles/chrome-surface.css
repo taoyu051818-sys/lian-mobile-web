@@ -1,0 +1,35 @@
+/*
+ * Chrome surface — shared visual base for floating chrome elements.
+ *
+ * Provides glass background, border, shadow, backdrop-filter, and
+ * fixed positioning.  Concrete layout (shell tabs, detail topbar,
+ * bottom tabbar) adds its own classes on top.
+ */
+
+.chrome-surface,
+.lian-floating-chrome {
+  position: fixed;
+  right: max(var(--floating-bar-side-inset), env(safe-area-inset-right));
+  left: max(var(--floating-bar-side-inset), env(safe-area-inset-left));
+  z-index: var(--floating-bar-z);
+  width: min(calc(100vw - var(--space-6)), var(--floating-bar-max-width));
+  min-height: var(--floating-bar-height);
+  margin: 0 auto;
+  border: 1px solid var(--glass-border);
+  border-radius: var(--floating-bar-radius);
+  background: var(--glass-bg-strong);
+  box-shadow: var(--shadow-floating);
+  opacity: 1;
+  pointer-events: auto;
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+}
+
+.chrome-surface--top,
+.lian-floating-chrome--top {
+  top: var(--floating-bar-top-offset);
+}
+
+.chrome-surface--bottom,
+.lian-floating-chrome--bottom {
+  bottom: var(--floating-bar-bottom-offset);
+}

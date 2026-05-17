@@ -3,6 +3,7 @@
 @import "../shell/shell-chrome.css";
 @import "../shell/content-frame.css";
 @import "../shell/detail-sheet.css";
+@import "./chrome-surface.css";
 @import "./floating-chrome.css";
 @import "./content-immersive-ui.css";
 
