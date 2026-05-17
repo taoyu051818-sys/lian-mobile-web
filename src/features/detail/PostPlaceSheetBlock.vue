@@ -5,6 +5,12 @@ import {
   PLACE_SHEET_COLLAPSE,
   PLACE_SHEET_RETRY,
   PLACE_SHEET_SETTLING,
+  DETAIL_PLACE_SHEET_LABEL,
+  PLACE_SHEET_STATS_LABEL,
+  PLACE_SHEET_UPDATED_PREFIX,
+  PLACE_SHEET_POST_COUNT_SUFFIX,
+  PLACE_SHEET_CORRECTION_SUFFIX,
+  PLACE_SHEET_SAVED_SUFFIX,
 } from "../../config/brand";
 import { actorDisplayName } from "../../domain/actor";
 import type { PlaceRef, PlaceSheet } from "../../types/place";
@@ -27,7 +33,12 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <section v-if="placeSheetOpen" class="post-place-sheet" aria-label="地点信息" @click.stop>
+  <section
+    v-if="placeSheetOpen"
+    class="post-place-sheet"
+    :aria-label="DETAIL_PLACE_SHEET_LABEL"
+    @click.stop
+  >
     <div class="post-place-sheet__title">
       <h3>{{ placeSheet?.name || structuredPlace?.name || placeLabel }}</h3>
       <button type="button" @click="emit('update:placeSheetOpen', false)">
@@ -46,22 +57,27 @@ const emit = defineEmits<{
           placeSheet?.type || structuredPlace?.type
         }}</span>
         <span v-if="placeSheet?.updatedAt"
-          >更新于 {{ formatRelativeTime(placeSheet.updatedAt) || placeSheet.updatedAt }}</span
+          >{{ PLACE_SHEET_UPDATED_PREFIX }}
+          {{ formatRelativeTime(placeSheet.updatedAt) || placeSheet.updatedAt }}</span
         >
       </div>
       <p v-if="placeSheet?.summary?.text" class="post-place-sheet__summary">
         {{ placeSheet.summary.text }}
       </p>
       <p v-else class="post-place-sheet__empty">{{ PLACE_SHEET_SETTLING }}</p>
-      <div v-if="placeSheet?.stats" class="post-place-sheet__stats" aria-label="地点统计">
+      <div
+        v-if="placeSheet?.stats"
+        class="post-place-sheet__stats"
+        :aria-label="PLACE_SHEET_STATS_LABEL"
+      >
         <span v-if="placeSheet.stats.postCount != null"
-          >{{ placeSheet.stats.postCount }} 条内容</span
+          >{{ placeSheet.stats.postCount }} {{ PLACE_SHEET_POST_COUNT_SUFFIX }}</span
         >
         <span v-if="placeSheet.stats.correctionCount != null"
-          >{{ placeSheet.stats.correctionCount }} 条修正</span
+          >{{ placeSheet.stats.correctionCount }} {{ PLACE_SHEET_CORRECTION_SUFFIX }}</span
         >
         <span v-if="placeSheet.stats.savedCount != null"
-          >{{ placeSheet.stats.savedCount }} 次收藏</span
+          >{{ placeSheet.stats.savedCount }} {{ PLACE_SHEET_SAVED_SUFFIX }}</span
         >
       </div>
       <div v-if="placeSheet?.recentPosts?.length" class="post-place-sheet__posts">

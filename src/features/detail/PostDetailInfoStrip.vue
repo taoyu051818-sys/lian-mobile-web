@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { PlaceRef } from "../../types/place";
+import { INFO_STRIP_LABEL, REPORT_TOGGLE_OPEN, REPORT_TOGGLE_CLOSE } from "../../config/brand";
 
 defineProps<{
   primaryTag?: string;
@@ -19,7 +20,7 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <section class="post-detail-info-strip" aria-label="帖子属性">
+  <section class="post-detail-info-strip" :aria-label="INFO_STRIP_LABEL">
     <div class="post-detail-info-strip__left">
       <span
         v-if="primaryTag"
@@ -44,7 +45,7 @@ const emit = defineEmits<{
       :disabled="reportBusy"
       @click.stop="emit('toggleReport')"
     >
-      {{ reportOpen ? "收起" : "举报" }}
+      {{ reportOpen ? REPORT_TOGGLE_CLOSE : REPORT_TOGGLE_OPEN }}
     </button>
   </section>
 </template>
