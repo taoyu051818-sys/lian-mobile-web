@@ -72,8 +72,11 @@ const settingsRows = computed(() => [
   },
 ]);
 
-const forumLinkText = computed(() =>
-  props.hasForumLink ? PROFILE_FORUM_LINK_READY : PROFILE_FORUM_LINK_MISSING,
+const forumLinkText = computed(
+  () =>
+    props.hasForumLink
+      ? PROFILE_FORUM_LINK_READY
+      : PROFILE_FORUM_LINK_MISSING,
 );
 </script>
 
@@ -102,7 +105,11 @@ const forumLinkText = computed(() =>
 
     <template v-else>
       <dl class="profile-summary__metrics" :aria-label="PROFILE_STATS_TITLE">
-        <div v-for="card in statsCards" :key="card.label" class="profile-summary__metric">
+        <div
+          v-for="card in statsCards"
+          :key="card.label"
+          class="profile-summary__metric"
+        >
           <dt>{{ card.label }}</dt>
           <dd>{{ card.value }}</dd>
         </div>
