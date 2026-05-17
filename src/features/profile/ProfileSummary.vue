@@ -1,10 +1,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import { PROFILE_RELOAD } from "../../config/brand";
-import type {
-  ProfileSettings,
-  ProfileStats,
-} from "../../types/profile";
+import type { ProfileSettings, ProfileStats } from "../../types/profile";
 import { InlineError } from "../../ui";
 
 const PROFILE_SUMMARY_TITLE = "个人概览";
@@ -54,9 +51,7 @@ const statsCards = computed(() => [
 const settingsRows = computed(() => [
   {
     label: PROFILE_SETTING_NOTIFICATIONS,
-    value: props.settings.notificationEnabled
-      ? PROFILE_SETTING_ENABLED
-      : PROFILE_SETTING_DISABLED,
+    value: props.settings.notificationEnabled ? PROFILE_SETTING_ENABLED : PROFILE_SETTING_DISABLED,
   },
   {
     label: PROFILE_SETTING_VISIBILITY,
@@ -69,9 +64,7 @@ const settingsRows = computed(() => [
   },
   {
     label: PROFILE_SETTING_MENTIONS,
-    value: props.settings.allowMessageMentions
-      ? PROFILE_SETTING_ENABLED
-      : PROFILE_SETTING_DISABLED,
+    value: props.settings.allowMessageMentions ? PROFILE_SETTING_ENABLED : PROFILE_SETTING_DISABLED,
   },
 ]);
 
@@ -87,12 +80,7 @@ const forumLinkText = computed(() =>
         <p class="profile-summary__eyebrow">{{ PROFILE_SUMMARY_TITLE }}</p>
         <h2 id="profile-summary-title">{{ PROFILE_STATS_TITLE }}</h2>
       </div>
-      <button
-        v-if="error"
-        type="button"
-        class="profile-summary__retry"
-        @click="emit('retry')"
-      >
+      <button v-if="error" type="button" class="profile-summary__retry" @click="emit('retry')">
         {{ PROFILE_RELOAD }}
       </button>
     </header>
@@ -105,37 +93,23 @@ const forumLinkText = computed(() =>
 
     <template v-else>
       <dl class="profile-summary__metrics" :aria-label="PROFILE_STATS_TITLE">
-        <div
-          v-for="card in statsCards"
-          :key="card.label"
-          class="profile-summary__metric"
-        >
+        <div v-for="card in statsCards" :key="card.label" class="profile-summary__metric">
           <dt>{{ card.label }}</dt>
           <dd>{{ card.value }}</dd>
         </div>
       </dl>
 
-      <section
-        class="profile-summary__settings"
-        aria-labelledby="profile-settings-title"
-      >
+      <section class="profile-summary__settings" aria-labelledby="profile-settings-title">
         <h3 id="profile-settings-title">{{ PROFILE_SETTINGS_TITLE }}</h3>
         <dl class="profile-summary__settings-grid">
-          <div
-            v-for="row in settingsRows"
-            :key="row.label"
-            class="profile-summary__setting-row"
-          >
+          <div v-for="row in settingsRows" :key="row.label" class="profile-summary__setting-row">
             <dt>{{ row.label }}</dt>
             <dd>{{ row.value }}</dd>
           </div>
         </dl>
       </section>
 
-      <section
-        class="profile-summary__forum-note"
-        aria-labelledby="profile-forum-title"
-      >
+      <section class="profile-summary__forum-note" aria-labelledby="profile-forum-title">
         <h3 id="profile-forum-title">{{ PROFILE_FORUM_LINK_NOTICE }}</h3>
         <p>{{ forumLinkText }}</p>
       </section>
