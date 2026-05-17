@@ -17,7 +17,11 @@ import {
   PROFILE_SECTION_LABEL,
 } from "../../config/brand";
 import type { PageChromeSpec } from "../../shell/page-model";
-import type { ProfileSettings, ProfileStats, ProfileUser } from "../../types/profile";
+import type {
+  ProfileSettings,
+  ProfileStats,
+  ProfileUser,
+} from "../../types/profile";
 import { InlineError } from "../../ui";
 import { extractErrorMessage } from "../../utils/extractErrorMessage";
 import { usePostDetail } from "../detail/usePostDetail";
@@ -177,7 +181,10 @@ async function loadProfile() {
   try {
     user.value = await fetchAuthMe();
     if (user.value) {
-      await Promise.all([loadProfileOverview(), loadProfileList(activeTab.value)]);
+      await Promise.all([
+        loadProfileOverview(),
+        loadProfileList(activeTab.value),
+      ]);
     } else {
       resetProfileOverview();
       resetList();
@@ -264,11 +271,7 @@ onMounted(() => {
         @retry="loadProfileOverview"
       />
 
-      <ProfileEditorPanel
-        v-if="editorOpen"
-        :user="user"
-        @updated="handleProfileUpdated"
-      />
+      <ProfileEditorPanel v-if="editorOpen" :user="user" @updated="handleProfileUpdated" />
 
       <ProfileTabs :tabs="tabs" :active-tab="activeTab" @select="loadProfileList" />
 
