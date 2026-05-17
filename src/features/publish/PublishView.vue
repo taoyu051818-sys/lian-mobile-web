@@ -1,16 +1,7 @@
 <script setup lang="ts">
-import {
-  computed,
-  onBeforeUnmount,
-  onMounted,
-  ref,
-  watch,
-} from "vue";
+import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import type { PageChromeSpec } from "../../shell/page-model";
-import {
-  PUBLISH_SECTION_LABEL,
-  PUBLISH_VIEW_POST,
-} from "../../config/brand";
+import { PUBLISH_SECTION_LABEL, PUBLISH_VIEW_POST } from "../../config/brand";
 import { GlassPanel, InlineError, LianButton } from "../../ui";
 import PublishActionBar from "./PublishActionBar.vue";
 import PublishComposer from "./PublishComposer.vue";
@@ -103,10 +94,10 @@ function restoreDraftFromSession() {
   draft.tagInput.value = snapshot.tagInput;
   draft.placeName.value = snapshot.placeName;
   draft.visibility.value = snapshot.visibility;
-  locationOptions.selectedMapLocation.value =
-    restorePublishDraftLocation(snapshot.selectedMapLocation);
-  locationOptions.locationSearch.value =
-    snapshot.selectedMapLocation?.name || snapshot.placeName;
+  locationOptions.selectedMapLocation.value = restorePublishDraftLocation(
+    snapshot.selectedMapLocation,
+  );
+  locationOptions.locationSearch.value = snapshot.selectedMapLocation?.name || snapshot.placeName;
   locationOptions.locationPanelOpen.value = Boolean(
     snapshot.selectedMapLocation || snapshot.placeName.trim(),
   );
@@ -180,25 +171,15 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-  <section
-    class="publish-view keyboard-aware-surface"
-    :aria-label="PUBLISH_SECTION_LABEL"
-  >
+  <section class="publish-view keyboard-aware-surface" :aria-label="PUBLISH_SECTION_LABEL">
     <GlassPanel class="publish-view__card">
       <InlineError v-if="draft.errorMessage.value">
         {{ draft.errorMessage.value }}
       </InlineError>
-      <p
-        v-if="draftNotice"
-        class="publish-view__draft-notice"
-        data-testid="publish-draft-notice"
-      >
+      <p v-if="draftNotice" class="publish-view__draft-notice" data-testid="publish-draft-notice">
         {{ draftNotice }}
       </p>
-      <div
-        v-if="draft.successMessage.value"
-        class="publish-view__success-block"
-      >
+      <div v-if="draft.successMessage.value" class="publish-view__success-block">
         <p class="publish-view__success">{{ draft.successMessage.value }}</p>
         <a
           v-if="postDetailUrl"
@@ -210,10 +191,7 @@ onBeforeUnmount(() => {
         </a>
       </div>
 
-      <form
-        class="publish-view__form keyboard-aware-surface"
-        @submit.prevent="submitPublish"
-      >
+      <form class="publish-view__form keyboard-aware-surface" @submit.prevent="submitPublish">
         <PublishComposer
           :local-preview-urls="draft.localPreviewUrls.value"
           :image-status="draft.imageStatus.value"
