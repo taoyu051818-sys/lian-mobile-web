@@ -17,11 +17,7 @@ import {
   PROFILE_SECTION_LABEL,
 } from "../../config/brand";
 import type { PageChromeSpec } from "../../shell/page-model";
-import type {
-  ProfileSettings,
-  ProfileStats,
-  ProfileUser,
-} from "../../types/profile";
+import type { ProfileSettings, ProfileStats, ProfileUser } from "../../types/profile";
 import { InlineError } from "../../ui";
 import { extractErrorMessage } from "../../utils/extractErrorMessage";
 import { usePostDetail } from "../detail/usePostDetail";
@@ -43,13 +39,8 @@ const emit = defineEmits<{
 
 const PROFILE_SUMMARY_ERROR_PREFIX = "概览";
 
-const {
-  user,
-  loading,
-  errorMessage,
-  isMissingSessionError,
-  refreshCurrentSession,
-} = useProfileSession();
+const { user, loading, errorMessage, isMissingSessionError, refreshCurrentSession } =
+  useProfileSession();
 
 const editorOpen = ref(false);
 const summaryLoading = ref(false);
@@ -181,10 +172,7 @@ async function loadProfile() {
   try {
     user.value = await fetchAuthMe();
     if (user.value) {
-      await Promise.all([
-        loadProfileOverview(),
-        loadProfileList(activeTab.value),
-      ]);
+      await Promise.all([loadProfileOverview(), loadProfileList(activeTab.value)]);
     } else {
       resetProfileOverview();
       resetList();
@@ -271,17 +259,9 @@ onMounted(() => {
         @retry="loadProfileOverview"
       />
 
-      <ProfileEditorPanel
-        v-if="editorOpen"
-        :user="user"
-        @updated="handleProfileUpdated"
-      />
+      <ProfileEditorPanel v-if="editorOpen" :user="user" @updated="handleProfileUpdated" />
 
-      <ProfileTabs
-        :tabs="tabs"
-        :active-tab="activeTab"
-        @select="loadProfileList"
-      />
+      <ProfileTabs :tabs="tabs" :active-tab="activeTab" @select="loadProfileList" />
 
       <ProfileCollectionList
         :items="profileItems"
@@ -323,11 +303,7 @@ onMounted(() => {
   left: calc(-1 * var(--space-4));
   right: calc(-1 * var(--space-4));
   height: 200px;
-  background: linear-gradient(
-    180deg,
-    var(--lian-primary-soft) 0%,
-    transparent 100%
-  );
+  background: linear-gradient(180deg, var(--lian-primary-soft) 0%, transparent 100%);
   pointer-events: none;
 }
 
