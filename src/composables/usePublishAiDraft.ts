@@ -43,9 +43,7 @@ export interface UsePublishAiDraftResult {
  *   - Decisions about *which* fields to fill live in
  *     `domain/publishAiPolicy.planAiSuggestionPatch` — see `onSuggestion`.
  */
-export function usePublishAiDraft(
-  options: UsePublishAiDraftOptions,
-): UsePublishAiDraftResult {
+export function usePublishAiDraft(options: UsePublishAiDraftOptions): UsePublishAiDraftResult {
   const loading = ref(false);
   const error = ref("");
   const suggestions = ref<AiPreviewSuggestions | null>(null);
@@ -75,8 +73,7 @@ export function usePublishAiDraft(
       // Soft-fail responses already became EMPTY_SUGGESTIONS in the client;
       // anything reaching here is an actual auth/network problem. Surface it
       // briefly but don't throw — publish must still work without AI.
-      error.value =
-        err instanceof LianApiError ? err.message : PUBLISH_AI_UNAVAILABLE;
+      error.value = err instanceof LianApiError ? err.message : PUBLISH_AI_UNAVAILABLE;
     } finally {
       if (ticket === inflight) loading.value = false;
     }

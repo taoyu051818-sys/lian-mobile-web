@@ -102,14 +102,20 @@ function selectVisibility(value: PublishVisibility) {
         :key="option.value"
         type="button"
         class="publish-meta__visibility"
-        :class="{ 'is-active': visibility === option.value, 'is-disabled': !isAllowed(option.value) }"
+        :class="{
+          'is-active': visibility === option.value,
+          'is-disabled': !isAllowed(option.value),
+        }"
         :disabled="!isAllowed(option.value)"
         :title="disabledReasonFor(option.value) || undefined"
         :aria-disabled="!isAllowed(option.value)"
         @click="selectVisibility(option.value)"
       >
         <strong>{{ option.label }}</strong>
-        <span v-if="!isAllowed(option.value) && disabledReasonFor(option.value)" class="publish-meta__visibility-reason">
+        <span
+          v-if="!isAllowed(option.value) && disabledReasonFor(option.value)"
+          class="publish-meta__visibility-reason"
+        >
           {{ disabledReasonFor(option.value) }}
         </span>
       </button>

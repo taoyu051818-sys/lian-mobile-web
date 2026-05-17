@@ -35,7 +35,9 @@ describe("Phase 0/1: PublishMetaControls honors audience gating", () => {
 
   it("accepts isVisibilityAllowed and visibilityDisabledReason as props", () => {
     expect(meta).toMatch(/isVisibilityAllowed\?:\s*\(value:\s*PublishVisibility\)\s*=>\s*boolean/);
-    expect(meta).toMatch(/visibilityDisabledReason\?:\s*\(value:\s*PublishVisibility\)\s*=>\s*string/);
+    expect(meta).toMatch(
+      /visibilityDisabledReason\?:\s*\(value:\s*PublishVisibility\)\s*=>\s*string/,
+    );
   });
 
   it("disables the option button and short-circuits emit when not allowed", () => {

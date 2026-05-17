@@ -2,16 +2,8 @@ import { describe, it, expect } from "vitest";
 import { readFileSync, existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
-import {
-  POST_TYPES,
-  isKnownPostType,
-  normalizePostType,
-} from "../../src/types/post";
-import {
-  DEFAULT_AUDIENCE,
-  isDefaultAudience,
-  normalizeAudience,
-} from "../../src/types/audience";
+import { POST_TYPES, isKnownPostType, normalizePostType } from "../../src/types/post";
+import { DEFAULT_AUDIENCE, isDefaultAudience, normalizeAudience } from "../../src/types/audience";
 import {
   DEFAULT_MAP_VIEWPORT_POLICY,
   clampZoom,
@@ -162,9 +154,7 @@ describe("Phase 0/1 sanity: helpers behave", () => {
         navigatorLanguage: "en-US",
       }),
     ).toBe("zh-CN");
-    expect(
-      resolveAppLocale({ navigatorLanguages: ["fr-FR", "en-US"] }),
-    ).toBe("en");
+    expect(resolveAppLocale({ navigatorLanguages: ["fr-FR", "en-US"] })).toBe("en");
     expect(resolveAppLocale({ navigatorLanguages: ["zh-Hans-CN"] })).toBe("zh-CN");
     expect(resolveAppLocale({})).toBe("en");
   });

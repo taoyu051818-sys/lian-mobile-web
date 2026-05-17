@@ -16,10 +16,7 @@ import type {
   MapV2ItemsResponse,
   MapRoadNetworkPreview,
 } from "../../types/map";
-import {
-  DEFAULT_MAP_VIEWPORT_POLICY,
-  type MapViewportPolicy,
-} from "../../types/map-policy";
+import { DEFAULT_MAP_VIEWPORT_POLICY, type MapViewportPolicy } from "../../types/map-policy";
 import { useMapLayers } from "./useMapLayers";
 import { createMapIconScale } from "./useMapIconScale";
 

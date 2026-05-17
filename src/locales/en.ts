@@ -80,7 +80,8 @@ export default {
     send: "Send",
     login: "Sign in",
     registerAndLogin: "Sign up & sign in",
-    emailHint: "We'll send the code to your campus email. You can leave this blank when signing up with an invite code.",
+    emailHint:
+      "We'll send the code to your campus email. You can leave this blank when signing up with an invite code.",
     loginPlaceholder: "Sign in with email or nickname.",
     interestSkipHint: "Interests seed your feed. You can skip and adjust later.",
     interestLoading: "Loading interest options…",
@@ -168,7 +169,8 @@ export default {
     nicknameHint: "Used as your initial public identity.",
     emailLabel: "Campus email",
     emailPlaceholder: "Optional when using an invite code",
-    emailHintFull: "Email signup needs a {n}-digit verification code; invite-code signup can leave this blank.",
+    emailHintFull:
+      "Email signup needs a {n}-digit verification code; invite-code signup can leave this blank.",
     emailCodeLabel: "Email verification code",
     interestSection: "Interest preferences",
     interestReload: "Reload interest options",
@@ -286,7 +288,8 @@ export default {
     success: "Published — it should show up on Home shortly.",
     successBound: "Published — linked to “{n}”.",
     viewPost: "View post",
-    aiPending: "AI is reading the image. The draft will fill itself in shortly — you can pick a location in the meantime.",
+    aiPending:
+      "AI is reading the image. The draft will fill itself in shortly — you can pick a location in the meantime.",
     aiRiskFlagsLabel: "AI risk warnings",
     aiUnavailable: "AI drafting is unavailable right now. You can still publish manually.",
   },
@@ -379,6 +382,7 @@ export default {
     rateLimitDefault: "Too many sends — please try again later. The page will cool down for {n}s.",
     sentInst: "Code sent — recognized as {n}.",
     rateLimitResend: "Sending too frequently — please retry in {n}s.",
-    rateLimitFallback: "If the server doesn't return a wait time, the page will cool down for {n}s.",
+    rateLimitFallback:
+      "If the server doesn't return a wait time, the page will cool down for {n}s.",
   },
 } as const;

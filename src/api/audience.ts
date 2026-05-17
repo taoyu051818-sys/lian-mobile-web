@@ -34,7 +34,8 @@ function normalizeOption(value: unknown): AudienceOption | null {
   if (typeof visibility !== "string" || !KNOWN_VISIBILITIES.has(visibility as AudienceVisibility)) {
     return null;
   }
-  const label = typeof record.label === "string" && record.label.trim() ? record.label.trim() : visibility;
+  const label =
+    typeof record.label === "string" && record.label.trim() ? record.label.trim() : visibility;
   const description = typeof record.description === "string" ? record.description : undefined;
   const disabled = Boolean(record.disabled);
   const disabledReason =

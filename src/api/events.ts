@@ -64,10 +64,9 @@ export async function joinEvent(eventId: string): Promise<EventPostExtension> {
 }
 
 export async function cancelJoinEvent(eventId: string): Promise<EventPostExtension> {
-  return apiSend<EventPostExtension>(
-    `/api/events/${encodeURIComponent(eventId)}/cancel-join`,
-    { method: "POST" },
-  );
+  return apiSend<EventPostExtension>(`/api/events/${encodeURIComponent(eventId)}/cancel-join`, {
+    method: "POST",
+  });
 }
 
 export async function completeEvent(eventId: string): Promise<EventPostExtension> {
@@ -84,13 +83,10 @@ export async function linkHelpToEvent(
   helpId: string,
   eventTid: number,
 ): Promise<HelpPostExtension> {
-  return apiSend<HelpPostExtension>(
-    `/api/help/${encodeURIComponent(helpId)}/link-event`,
-    {
-      method: "POST",
-      body: JSON.stringify({ eventTid }),
-    },
-  );
+  return apiSend<HelpPostExtension>(`/api/help/${encodeURIComponent(helpId)}/link-event`, {
+    method: "POST",
+    body: JSON.stringify({ eventTid }),
+  });
 }
 
 export async function resolveHelp(helpId: string, status: HelpStatus): Promise<HelpPostExtension> {
@@ -123,9 +119,7 @@ export async function fetchErrandOrder(orderId: string): Promise<ErrandOrder> {
   return apiGet<ErrandOrder>(`/api/errands/orders/${encodeURIComponent(orderId)}`);
 }
 
-export async function reportRunnerLocation(
-  location: ErrandRunnerLocation,
-): Promise<{ ok: true }> {
+export async function reportRunnerLocation(location: ErrandRunnerLocation): Promise<{ ok: true }> {
   return apiSend<{ ok: true }>("/api/errands/runner/location", {
     method: "POST",
     body: JSON.stringify(location),

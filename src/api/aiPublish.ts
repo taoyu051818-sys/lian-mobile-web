@@ -86,7 +86,8 @@ function asConfidence(value: unknown): number {
  * missing, malformed, or renamed by the backend mid-flight.
  */
 export function parseAiPreviewSuggestions(value: unknown): AiPreviewSuggestions {
-  const record = (value && typeof value === "object" ? (value as Record<string, unknown>) : {}) || {};
+  const record =
+    (value && typeof value === "object" ? (value as Record<string, unknown>) : {}) || {};
   // Backend may use either `audience` or `suggestedAudience`.
   const rawAudience = record.audience ?? record.suggestedAudience;
   return {
@@ -119,9 +120,7 @@ const EMPTY_SUGGESTIONS: AiPreviewSuggestions = Object.freeze({
  * suggestion bundle — the UI shows the user's manual input unchanged.
  * Network errors propagate so the caller can show a retry chip if needed.
  */
-export async function fetchAiPostPreview(
-  request: AiPreviewRequest,
-): Promise<AiPreviewSuggestions> {
+export async function fetchAiPostPreview(request: AiPreviewRequest): Promise<AiPreviewSuggestions> {
   try {
     const data = await apiSend<unknown>("/api/ai/post-preview", {
       method: "POST",

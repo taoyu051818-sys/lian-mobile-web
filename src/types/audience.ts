@@ -11,12 +11,7 @@
  * they can grow independently without coupling all three.
  */
 
-export type AudienceVisibility =
-  | "public"
-  | "campus"
-  | "school"
-  | "private"
-  | "linkOnly";
+export type AudienceVisibility = "public" | "campus" | "school" | "private" | "linkOnly";
 
 export interface Audience {
   visibility: AudienceVisibility;

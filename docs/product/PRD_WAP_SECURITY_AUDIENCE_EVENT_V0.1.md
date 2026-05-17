@@ -108,11 +108,11 @@ LIAN 是一个面向高校/园区/组织场景的 WAP 网页应用。核心不�
 
 不要只写"可见范围"。需要拆成三类：
 
-| 权限类型              | 含义                         | 示例                                   |
-| --------------------- | ---------------------------- | -------------------------------------- |
-| `viewPermission`      | 谁能看到帖子                 | 公开、登录用户、某高校、某组织、指定用户 |
-| `actionPermission`    | 谁能点赞、vote、评论、报名、交易 | 未注册不能 like/vote；非组织用户不能报名活动 |
-| `publishPermission`   | 谁能发布某类帖子             | merchant 需要实名认证；二手交易至少高校认证 |
+| 权限类型            | 含义                             | 示例                                         |
+| ------------------- | -------------------------------- | -------------------------------------------- |
+| `viewPermission`    | 谁能看到帖子                     | 公开、登录用户、某高校、某组织、指定用户     |
+| `actionPermission`  | 谁能点赞、vote、评论、报名、交易 | 未注册不能 like/vote；非组织用户不能报名活动 |
+| `publishPermission` | 谁能发布某类帖子                 | merchant 需要实名认证；二手交易至少高校认证  |
 
 这三类不能混在一个字段里。
 
@@ -178,35 +178,35 @@ CSP 适合作为浏览器端纵深防御，尤其用于限制 inline script、�
 
 ### 5.1 用户状态
 
-| 状态                 | 说明                            |
-| -------------------- | ------------------------------- |
-| `anonymous`          | 未注册用户                      |
-| `new_cookie_user`    | cookie 显示新用户，但未注册     |
-| `registered`         | 已注册用户                      |
-| `invited_user`       | 通过邀请码注册                  |
-| `campus_verified`    | 高校邮箱/高校身份认证           |
-| `realname_verified`  | 实名认证                        |
-| `org_member`         | 某组织成员                      |
-| `merchant_verified`  | 商家/餐饮/交易发布权限          |
-| `runner_verified`    | 跑腿骑手权限                    |
-| `admin`              | 管理员                          |
-| `moderator`          | 内容/社区管理员                 |
+| 状态                | 说明                        |
+| ------------------- | --------------------------- |
+| `anonymous`         | 未注册用户                  |
+| `new_cookie_user`   | cookie 显示新用户，但未注册 |
+| `registered`        | 已注册用户                  |
+| `invited_user`      | 通过邀请码注册              |
+| `campus_verified`   | 高校邮箱/高校身份认证       |
+| `realname_verified` | 实名认证                    |
+| `org_member`        | 某组织成员                  |
+| `merchant_verified` | 商家/餐饮/交易发布权限      |
+| `runner_verified`   | 跑腿骑手权限                |
+| `admin`             | 管理员                      |
+| `moderator`         | 内容/社区管理员             |
 
 ### 5.2 权限矩阵
 
-| 功能                | anonymous | registered | campus_verified | realname_verified | admin |
-| ------------------- | :-------: | :--------: | :-------------: | :---------------: | :---: |
-| 查看公开首页        |    ✅    |    ✅     |       ✅        |        ✅         |  ✅   |
-| 查看地图公开内容    |    ✅    |    ✅     |       ✅        |        ✅         |  ✅   |
-| 查看校园内容        |    ❌    |    ✅     |       ✅        |        ✅         |  ✅   |
-| like/vote           |    ❌    |    ✅     |       ✅        |        ✅         |  ✅   |
-| comment/reply       |    ❌    |    ✅     |       ✅        |        ✅         |  ✅   |
-| 举报                |    ❌    |    ✅     |       ✅        |        ✅         |  ✅   |
-| 发布普通图文        |    ❌    |    ✅     |       ✅        |        ✅         |  ✅   |
-| 发布二手交易        |    ❌    |    ❌     |       ✅        |        ✅         |  ✅   |
-| 发布 merchant       |    ❌    |    ❌     |       ❌        | ✅/merchant_verified | ✅ |
-| 创建 event/activity |    ❌    | 条件开放  |       ✅        |        ✅         |  ✅   |
-| 管理举报            |    ❌    |    ❌     |       ❌        |        ❌         |  ✅   |
+| 功能                | anonymous | registered | campus_verified |  realname_verified   | admin |
+| ------------------- | :-------: | :--------: | :-------------: | :------------------: | :---: |
+| 查看公开首页        |    ✅     |     ✅     |       ✅        |          ✅          |  ✅   |
+| 查看地图公开内容    |    ✅     |     ✅     |       ✅        |          ✅          |  ✅   |
+| 查看校园内容        |    ❌     |     ✅     |       ✅        |          ✅          |  ✅   |
+| like/vote           |    ❌     |     ✅     |       ✅        |          ✅          |  ✅   |
+| comment/reply       |    ❌     |     ✅     |       ✅        |          ✅          |  ✅   |
+| 举报                |    ❌     |     ✅     |       ✅        |          ✅          |  ✅   |
+| 发布普通图文        |    ❌     |     ✅     |       ✅        |          ✅          |  ✅   |
+| 发布二手交易        |    ❌     |     ❌     |       ✅        |          ✅          |  ✅   |
+| 发布 merchant       |    ❌     |     ❌     |       ❌        | ✅/merchant_verified |  ✅   |
+| 创建 event/activity |    ❌     |  条件开放  |       ✅        |          ✅          |  ✅   |
+| 管理举报            |    ❌     |     ❌     |       ❌        |          ❌          |  ✅   |
 
 ---
 
@@ -215,14 +215,7 @@ CSP 适合作为浏览器端纵深防御，尤其用于限制 inline script、�
 ### 6.1 Post
 
 ```ts
-type PostType =
-  | "image"
-  | "text"
-  | "event"
-  | "merchant"
-  | "trade"
-  | "help"
-  | "place";
+type PostType = "image" | "text" | "event" | "merchant" | "trade" | "help" | "place";
 
 interface Post {
   tid: number;
@@ -506,14 +499,14 @@ GET /api/audience/options
 
 #### 7.6.2 游戏化引导
 
-| 阶段             | 开放能力                       |
-| ---------------- | ------------------------------ |
-| 未注册           | 首页查看、地图查看             |
-| 注册后           | like/vote/comment/report       |
-| 完成兴趣选择     | 标签推荐、精选推荐             |
-| 高校认证后       | 二手交易、校园范围内容         |
-| 实名/商家认证后  | merchant 发布、跑腿相关能力    |
-| 完成 event 后    | 贡献值、荣誉、更多活动创建权限 |
+| 阶段            | 开放能力                       |
+| --------------- | ------------------------------ |
+| 未注册          | 首页查看、地图查看             |
+| 注册后          | like/vote/comment/report       |
+| 完成兴趣选择    | 标签推荐、精选推荐             |
+| 高校认证后      | 二手交易、校园范围内容         |
+| 实名/商家认证后 | merchant 发布、跑腿相关能力    |
+| 完成 event 后   | 贡献值、荣誉、更多活动创建权限 |
 
 ---
 
@@ -570,11 +563,8 @@ V0.1 风控要求：设备/浏览器 client id、登录态 session、IP + 用户
 ### 9.2 语言优先级
 
 ```ts
-language = userSetting
-  ?? localStorage.language
-  ?? navigator.languages
-  ?? navigator.language
-  ?? "en";
+language =
+  userSetting ?? localStorage.language ?? navigator.languages ?? navigator.language ?? "en";
 ```
 
 规则：

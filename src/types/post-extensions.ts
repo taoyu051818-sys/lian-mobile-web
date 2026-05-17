@@ -15,11 +15,7 @@ import type { PostLocation } from "./post";
 
 export type EventStatus = "open" | "full" | "closed" | "completed" | "cancelled";
 
-export type EventJoinPolicy =
-  | "open"
-  | "approval_required"
-  | "org_only"
-  | "school_only";
+export type EventJoinPolicy = "open" | "approval_required" | "org_only" | "school_only";
 
 export interface EventReward {
   /** Symbolic reward identifier — backend authoritative; UI shows label only. */

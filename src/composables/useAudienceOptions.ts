@@ -11,9 +11,7 @@ interface UseAudienceOptionsResult {
   disabledReason: (visibility: AudienceVisibility) => string;
 }
 
-const FALLBACK: AudienceOption[] = [
-  { visibility: "public", label: "公开", disabled: false },
-];
+const FALLBACK: AudienceOption[] = [{ visibility: "public", label: "公开", disabled: false }];
 
 /**
  * Loads the user-allowed audience choices from the backend on mount.
