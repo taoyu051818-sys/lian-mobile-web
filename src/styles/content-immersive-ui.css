@@ -69,32 +69,16 @@
 
 @media (min-width: 960px) {
   .vue-shell {
-    padding-right: max(var(--space-6), 112px);
-    padding-left: max(var(--space-6), 112px);
+    padding-right: var(--space-6);
+    padding-left: var(--space-6);
   }
 
   .vue-shell__grid {
     width: min(100%, 920px);
   }
 
-  .bottom-tab-bar {
-    top: calc(var(--space-6) + env(safe-area-inset-top));
-    right: auto;
-    bottom: auto;
-    left: var(--space-6);
-    grid-template-columns: 1fr;
-    width: 72px;
-    padding: var(--space-2);
-    border-radius: var(--radius-sheet);
-  }
-
-  .bottom-tab-bar__item {
-    min-height: 58px;
-    font-size: 11px;
-  }
-
   .shell-chrome__tabs {
-    width: min(calc(100vw - 224px), 920px);
+    width: min(calc(100vw - var(--space-6) * 2), 920px);
   }
 }
 
