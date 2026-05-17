@@ -16,6 +16,7 @@ import type {
   MapV2ItemsResponse,
   MapRoadNetworkPreview,
 } from "../../types/map";
+import { DEFAULT_MAP_VIEWPORT_POLICY, type MapViewportPolicy } from "../../types/map-policy";
 import { useMapLayers } from "./useMapLayers";
 import { createMapIconScale } from "./useMapIconScale";
 
@@ -33,6 +34,12 @@ const props = defineProps<{
   roadPreview: MapRoadNetworkPreview | null;
   loading: boolean;
   visibleLayers?: Record<string, boolean>;
+  /**
+   * Optional viewport policy (PRD V0.1 §7.2.3). When omitted, falls back to
+   * the legacy minZoom=15/maxZoom=17 hardcoded values plus mapData.bounds.
+   * Backend can override this via `/api/map/policy` once it ships.
+   */
+  viewportPolicy?: MapViewportPolicy;
 }>();
 
 const emit = defineEmits<{
@@ -94,12 +101,21 @@ function initMap() {
     return;
   }
   const center = props.mapData?.center || { lat: 18.3935, lng: 110.0159 };
+  // Prefer the dataset bounds for the image overlay, but let an explicit
+  // viewport policy (admin-tunable) widen/narrow the user-navigable area.
+  const policy = props.viewportPolicy ?? DEFAULT_MAP_VIEWPORT_POLICY;
+  const policyBounds: [number, number][] = [
+    [policy.campusBounds.south, policy.campusBounds.west],
+    [policy.campusBounds.north, policy.campusBounds.east],
+  ];
   const newMap = L.map(stageEl.value, {
     center: [center.lat, center.lng],
     zoom: props.mapData?.zoom || 16,
-    minZoom: 15,
-    maxZoom: 17,
-    maxBounds: nextBounds,
+    minZoom: policy.minZoom,
+    maxZoom: policy.maxZoom,
+    // Prefer the dataset bounds when present (campus-tight); otherwise fall
+    // back to the policy bounds.
+    maxBounds: props.mapData?.bounds ? nextBounds : policyBounds,
     maxBoundsViscosity: 1,
     zoomControl: false,
     attributionControl: false,

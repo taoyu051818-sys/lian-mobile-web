@@ -38,6 +38,28 @@ export default defineConfig({
   },
   build: {
     outDir: "dist",
-    emptyOutDir: true
-  }
+    emptyOutDir: true,
+    // Source protection baseline (PRD V0.1 §8.1):
+    // - sourcemap disabled in production so original TypeScript/Vue source is
+    //   not shipped alongside the bundle
+    // - esbuild minify strips identifier names where safe; legal comments
+    //   removed so internal license/headers do not leak
+    sourcemap: false,
+    minify: "esbuild",
+    cssMinify: true,
+    target: "es2020",
+    rollupOptions: {
+      output: {
+        // Stable, content-hashed names; no path metadata in chunk names
+        chunkFileNames: "assets/[hash].js",
+        entryFileNames: "assets/[hash].js",
+        assetFileNames: "assets/[hash][extname]",
+      },
+    },
+  },
+  esbuild: {
+    legalComments: "none",
+    // drop console/debugger only in production builds; dev keeps them
+    drop: process.env.NODE_ENV === "production" ? ["debugger"] : [],
+  },
 });

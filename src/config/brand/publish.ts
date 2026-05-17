@@ -66,3 +66,8 @@ export const PUBLISH_IMAGE_RESELECT = "已选择的图片需要重新添加。";
 export const PUBLISH_DRAFT_RECOVERED = "已恢复同一会话中的未发布内容。";
 export const PUBLISH_RESET_CONTINUE = "继续编辑";
 export const PUBLISH_RESET_CONFIRM_ACTION = "确认清空";
+
+/** 发布 AI 草稿 */
+export const PUBLISH_AI_PENDING = "AI 正在分析图片，稍后会自动填入草稿，先选择地点也可以…";
+export const PUBLISH_AI_RISK_LABEL = "AI 风险提示";
+export const PUBLISH_AI_UNAVAILABLE = "AI 草稿暂时不可用，可以手动填写后直接发布。";

@@ -7,6 +7,12 @@ import type {
   PublishVisibility,
   UploadImageResponse,
 } from "../types/publish";
+import {
+  type Audience,
+  DEFAULT_AUDIENCE,
+  isDefaultAudience,
+  normalizeAudience,
+} from "../types/audience";
 export const MAX_PUBLISH_IMAGE_COUNT = 9;
 export const MAX_PUBLISH_IMAGE_BYTES = 10 * 1024 * 1024;
 export const PUBLISH_IMAGE_HELP_TEXT = `支持常见图片格式，单张不超过 ${formatPublishImageSize(MAX_PUBLISH_IMAGE_BYTES)}，最多 ${MAX_PUBLISH_IMAGE_COUNT} 张。`;
@@ -147,6 +153,10 @@ export function createMapV2LocationDraft(input: {
  * Assembles the full publish payload. Falls back to a manual location
  * draft when no `locationDraft` is provided, using `placeName` as
  * the display-only fallback text.
+ *
+ * `audience` (PRD V0.1 §6.2) is optional. When omitted or equal to the
+ * default public audience, the payload skips the field on the wire so
+ * older backends keep authorizing on `metadata.visibility` alone.
  */
 export function buildPublishPayload(input: {
   imageUrls: string[];
@@ -158,18 +168,23 @@ export function buildPublishPayload(input: {
   visibility: PublishVisibility;
   aliasId?: string;
   locationDraft?: PublishLocationDraft | null;
+  audience?: Audience;
 }): PublishPayload {
   const locationDraft = input.locationDraft || createManualLocationDraft(input.placeName);
   const locationArea = locationDraft.skipped ? "" : locationDraft.locationArea;
   const tag = normalizePublishTag(input.tag);
   const identityTag = normalizeIdentityTag(input.identityTag || "");
-  const metadata = {
+  const audience = input.audience ? normalizeAudience(input.audience) : DEFAULT_AUDIENCE;
+  const metadata: PublishPayload["metadata"] = {
     locationArea,
     visibility: input.visibility,
     distribution: locationArea ? ["home", "map", "search", "detail"] : ["home", "search", "detail"],
     primaryTag: tag,
     identityTag,
   };
+  if (!isDefaultAudience(audience)) {
+    metadata.audience = audience;
+  }
 
   return {
     imageUrl: input.imageUrls[0] || "",

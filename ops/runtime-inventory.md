@@ -114,6 +114,19 @@ Node.js globals are provided for `scripts/**/*.js` and `tests/**/*.mjs` files.
 
 Phase 1 baseline: format:check and lint are now wired into `npm run check` (PR #548, 2026-05-16). ESLint runs with 0 errors; remaining warnings are `no-console` and `no-unused-vars`.
 
+## Source protection baseline (PRD V0.1 §8.1)
+
+`vite.config.ts` configures the production build to keep frontend source from leaking through the deployed bundle:
+
+- `build.sourcemap` is `false` so the original TypeScript/Vue source is not shipped alongside the bundle.
+- `build.minify: "esbuild"` and `build.cssMinify: true` strip identifier names and CSS whitespace where safe.
+- `build.target: "es2020"` keeps the output uniform across browsers we support.
+- `rollupOptions.output` uses content-hashed `assets/[hash].*` filenames (entry, chunk, asset) so original module paths do not appear in the build manifest.
+- `esbuild.legalComments: "none"` removes legal/license comment passthrough so internal headers do not leak.
+- `esbuild.drop` removes `debugger` statements in production builds; `console.*` is intentionally kept so production telemetry remains observable.
+
+Any PR that changes the production minify strategy, sourcemap setting, output filename pattern, legal-comments policy, or build-time `drop` list must update this section so reviewers can see why the source-protection surface changed.
+
 ## Operational rule
 
-Any PR that changes dependency preflight behavior, the runtime config accessor/env-validation contract, unsafe DOM sink guard coverage, public runtime exposure checks, frontend project-structure validation, frontend verify/test wiring, or UGC HTML sanitizer verification must update this document or another runtime inventory artifact in the same PR.
+Any PR that changes dependency preflight behavior, the runtime config accessor/env-validation contract, unsafe DOM sink guard coverage, public runtime exposure checks, frontend project-structure validation, frontend verify/test wiring, UGC HTML sanitizer verification, or the source-protection build configuration must update this document or another runtime inventory artifact in the same PR.

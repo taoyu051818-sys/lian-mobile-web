@@ -10,6 +10,7 @@ import { useMapChrome } from "./useMapChrome";
 import { useMapDataCache } from "./useMapDataCache";
 import { useMapSelection } from "./useMapSelection";
 import { MAP_ARIA_LABEL } from "../../config/brand";
+import { DEFAULT_MAP_VIEWPORT_POLICY } from "../../types/map-policy";
 
 defineOptions({ name: "MapLeafletView" });
 
@@ -91,6 +92,7 @@ onActivated(() => {
         :road-preview="roadPreview"
         :loading="loading"
         :visible-layers="visibleLayers"
+        :viewport-policy="DEFAULT_MAP_VIEWPORT_POLICY"
         @load-error="onCanvasError"
         @place-select="handlePlaceSelect"
       />
