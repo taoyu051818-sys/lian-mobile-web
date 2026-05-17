@@ -41,3 +41,16 @@ export const PLACE_SHEET_COLLAPSE = "收起";
 export const PLACE_SHEET_RETRY = "重试";
 export const PLACE_SHEET_SETTLING = "这个地点还在沉淀信息。";
 export const DETAIL_RELOAD = "重新加载";
+
+/** 信息条 UI */
+export const INFO_STRIP_LABEL = "帖子属性";
+export const REPORT_TOGGLE_OPEN = "举报";
+export const REPORT_TOGGLE_CLOSE = "收起";
+
+/** 地点弹层统计 */
+export const DETAIL_PLACE_SHEET_LABEL = "地点信息";
+export const PLACE_SHEET_STATS_LABEL = "地点统计";
+export const PLACE_SHEET_UPDATED_PREFIX = "更新于";
+export const PLACE_SHEET_POST_COUNT_SUFFIX = "条内容";
+export const PLACE_SHEET_CORRECTION_SUFFIX = "条修正";
+export const PLACE_SHEET_SAVED_SUFFIX = "次收藏";
