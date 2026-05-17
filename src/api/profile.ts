@@ -1,5 +1,11 @@
 import { apiGet, apiSend, apiUpload } from "./http";
-import { asBoolean, asNumber, asRecord, asString, normalizeFeedItemId } from "../platform/api-normalizers";
+import {
+  asBoolean,
+  asNumber,
+  asRecord,
+  asString,
+  normalizeFeedItemId,
+} from "../platform/api-normalizers";
 import type { FeedItemId } from "../types/feed";
 import type {
   ProfileActivityStatus,
@@ -7,10 +13,10 @@ import type {
   ProfileListPagination,
   ProfileListResponse,
   ProfileSettings,
+  ProfileStats,
   ProfileTabKey,
   ProfileUser,
   ProfileVisibility,
-  ProfileStats,
 } from "../types/profile";
 
 export const DEFAULT_PROFILE_STATS: ProfileStats = {
