@@ -48,11 +48,7 @@ const PROFILE_ACTIVITY_STATUSES = new Set<ProfileActivityStatus>([
   "hidden",
 ]);
 
-const PROFILE_VISIBILITIES = new Set<ProfileVisibility>([
-  "public",
-  "campus",
-  "private",
-]);
+const PROFILE_VISIBILITIES = new Set<ProfileVisibility>(["public", "campus", "private"]);
 
 const PROFILE_TAB_PATHS: Record<Exclude<ProfileTabKey, "history">, string> = {
   saved: "/api/me/saved",
@@ -64,19 +60,14 @@ const PROFILE_TAB_PATHS: Record<Exclude<ProfileTabKey, "history">, string> = {
 };
 
 function normalizeProfileVisibility(value: unknown): ProfileVisibility {
-  const visibility = asString(
-    value,
-    DEFAULT_PROFILE_SETTINGS.profileVisibility,
-  ).toLowerCase();
+  const visibility = asString(value, DEFAULT_PROFILE_SETTINGS.profileVisibility).toLowerCase();
 
   return PROFILE_VISIBILITIES.has(visibility as ProfileVisibility)
     ? (visibility as ProfileVisibility)
     : DEFAULT_PROFILE_SETTINGS.profileVisibility;
 }
 
-function normalizeProfileActivityStatus(
-  value: unknown,
-): ProfileActivityStatus | undefined {
+function normalizeProfileActivityStatus(value: unknown): ProfileActivityStatus | undefined {
   const status = asString(value).toLowerCase();
   return PROFILE_ACTIVITY_STATUSES.has(status as ProfileActivityStatus)
     ? (status as ProfileActivityStatus)
@@ -178,11 +169,7 @@ export function normalizeProfileListResponse(
 
   return {
     items,
-    pagination: normalizeProfileListPagination(
-      record.pagination,
-      items.length,
-      fallbackLimit,
-    ),
+    pagination: normalizeProfileListPagination(record.pagination, items.length, fallbackLimit),
   };
 }
 
@@ -257,13 +244,10 @@ export async function updateProfileAvatar(avatarUrl: string): Promise<void> {
 export async function activateProfileAlias(
   aliasId: string,
 ): Promise<{ activeAliasId?: string | null }> {
-  return apiSend<{ activeAliasId?: string | null }>(
-    "/api/auth/aliases/activate",
-    {
-      method: "POST",
-      body: JSON.stringify({ aliasId }),
-    },
-  );
+  return apiSend<{ activeAliasId?: string | null }>("/api/auth/aliases/activate", {
+    method: "POST",
+    body: JSON.stringify({ aliasId }),
+  });
 }
 
 export async function deactivateProfileAlias(): Promise<void> {
