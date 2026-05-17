@@ -6,11 +6,13 @@ For the operator-facing split between install, build, deploy-prepare, and startu
 
 ## Current frontend runtime
 
-| Runtime          | Purpose                                                |                Default port | Entry command     |
-| ---------------- | ------------------------------------------------------ | --------------------------: | ----------------- |
-| Vue/Vite preview | Vue/Vite frontend shell, including Map/Explore surface | 4173 (vite preview default) | `npm run preview` |
+| Runtime          | Purpose                                                | Default port      | Entry command |
+| ---------------- | ------------------------------------------------------ | ----------------: | ------------- |
+| Vue/Vite preview | Vue/Vite frontend shell, including Map/Explore surface | 4301 (`npm start`) | `npm start` |
 
 The legacy static runtime was removed in PR #282 and migrated to https://github.com/taoyu051818-sys/-lian-mobile-web-legacy. Vue/Vite is now the sole active web runtime.
+
+`npm run preview` remains the raw Vite preview entrypoint, but the operator-facing start contract is `npm start` so the runtime binds to port 4301 with `--strictPort`.
 
 The production process manager name and deploy path are intentionally not hardcoded here. They are environment-specific and should be checked on the target host before any restart, reload, or rollback operation.
 
@@ -19,10 +21,10 @@ The production process manager name and deploy path are intentionally not hardco
 The following file groups must update this inventory or explicitly document why the runtime contract is unchanged:
 
 - `.github/workflows/*`
-- `package.json`
+- `package.json` — owns Node/npm policy plus the operator and CI entrypoints (`npm start`, `npm run check`, `npm run ops:guard`, `npm run verify`, `npm run ownership-doc`, `npm run check:ownership-doc`, `npm run check:dead-code`)
 - `index.html`
-- `vite.config.ts`
-- `scripts/validate-project-structure.js`
+- `vite.config.ts` — owns the `~` alias, env URL validation, dev proxy contract, and production build settings
+- `scripts/validate-project-structure.js` — executable repo-shape and boundary guard behind `npm run check`; it verifies required frontend files, backend-only exclusions, and layer/barrel rules
 - `ops/*` and `docs/ops/*`
 
 ## CI and smoke ownership
@@ -39,6 +41,16 @@ The frontend quality gate is split into two visible layers:
 Frontend CI and reproducible local setup use Node 22 with npm 10 or newer. The repository declares this through `.nvmrc` and `package.json` engines.
 
 CI workflows must install from the lockfile with `npm ci`; `npm install` is reserved for local dependency updates that intentionally change `package-lock.json`. This keeps validation aligned with the committed dependency graph and avoids workflow drift between the frontend validation lanes.
+
+## Architecture cleanup follow-up (issue #578 / merged PR #577)
+
+Merged PR `#577` changed `package.json`, `scripts/validate-project-structure.js`, and `vite.config.ts` together. Those files now form one coordinated runtime/governance surface:
+
+- `package.json` wires the verification flow, ownership-doc regeneration/check mode, dead-code scan, stale-code tracking, and runtime inventory guard.
+- `scripts/validate-project-structure.js` is not just a folder-layout check. It validates required files, JSON config shape, frontend guard script syntax, backend-only exclusions, the `src/views/` ban, UI/domain/platform boundaries, and feature-barrel imports.
+- `vite.config.ts` owns the `~` path alias in addition to backend/image-proxy env validation, dev proxy targets, and source-protection build settings.
+
+If any of those files change, update this inventory and the paired architecture ownership docs in the same branch.
 
 ## Workflow baseline note (PR #266)
 
