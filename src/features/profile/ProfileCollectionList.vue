@@ -9,10 +9,7 @@ import {
   UNTITLED_CONTENT,
 } from "../../config/brand";
 import type { FeedItemId } from "../../types/feed";
-import type {
-  ProfileActivityStatus,
-  ProfileListItem,
-} from "../../types/profile";
+import type { ProfileActivityStatus, ProfileListItem } from "../../types/profile";
 import { formatRelativeTime } from "../../utils/time";
 
 defineProps<{
@@ -48,9 +45,7 @@ function itemKey(item: ProfileListItem, index: number) {
 
 function itemTime(item: ProfileListItem) {
   return (
-    formatRelativeTime(item.lastViewedAt || item.timestampISO) ||
-    item.timeLabel ||
-    TIME_UNKNOWN
+    formatRelativeTime(item.lastViewedAt || item.timestampISO) || item.timeLabel || TIME_UNKNOWN
   );
 }
 
