@@ -286,6 +286,9 @@ export default {
     success: "Published — it should show up on Home shortly.",
     successBound: "Published — linked to “{n}”.",
     viewPost: "View post",
+    aiPending: "AI is reading the image. The draft will fill itself in shortly — you can pick a location in the meantime.",
+    aiRiskFlagsLabel: "AI risk warnings",
+    aiUnavailable: "AI drafting is unavailable right now. You can still publish manually.",
   },
   publishComposer: {
     label: "Publish content",

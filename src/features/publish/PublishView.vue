@@ -6,6 +6,8 @@ import {
   PUBLISH_VIEW_POST,
   PUBLISH_CLEAR_CONFIRM,
   PUBLISH_IMAGE_RESELECT,
+  PUBLISH_AI_PENDING,
+  PUBLISH_AI_RISK_LABEL,
 } from "../../config/brand";
 import { GlassPanel, InlineError } from "../../ui";
 import PublishActionBar from "./PublishActionBar.vue";
@@ -93,6 +95,20 @@ function confirmResetForm() {
   draft.successMessage.value = "";
 }
 
+async function handleFiles(event: Event) {
+  await draft.handleFiles(event);
+  // PRD §7.4.2 step 4: after the first successful upload, surface the
+  // location step so the user picks a place (or skips) before AI returns.
+  draft.notifyFirstUploadComplete(() => {
+    if (!locationOptions.locationPanelOpen.value) {
+      locationOptions.toggleLocationPanel();
+    }
+    if (!locationOptions.mapLocations.value.length) {
+      void locationOptions.loadMapLocations();
+    }
+  });
+}
+
 watch(draft.pageChrome, (spec) => emit("chrome", spec), {
   deep: true,
 });
@@ -127,6 +143,26 @@ onMounted(() => {
         </a>
       </div>
 
+      <p
+        v-if="draft.aiLoading.value"
+        class="publish-view__ai-pending"
+        data-testid="publish-ai-pending"
+        role="status"
+        aria-live="polite"
+      >
+        {{ PUBLISH_AI_PENDING }}
+      </p>
+      <ul
+        v-if="draft.aiRiskFlags.value.length"
+        class="publish-view__risk-list"
+        data-testid="publish-ai-risk-flags"
+        :aria-label="PUBLISH_AI_RISK_LABEL"
+      >
+        <li v-for="(flag, idx) in draft.aiRiskFlags.value" :key="idx">
+          {{ flag }}
+        </li>
+      </ul>
+
       <form class="publish-view__form keyboard-aware-surface" @submit.prevent="submitPublish">
         <PublishComposer
           :local-preview-urls="draft.localPreviewUrls.value"
@@ -150,7 +186,7 @@ onMounted(() => {
           :visibility-label="draft.visibilityLabel.value"
           @update:title="draft.title.value = $event"
           @update:body="draft.body.value = $event"
-          @handle-files="draft.handleFiles"
+          @handle-files="handleFiles"
           @remove-image="draft.removeImage"
           @toggle-location-panel="locationOptions.toggleLocationPanel"
           @toggle-tag-panel="draft.toggleTagPanel"
@@ -267,5 +303,33 @@ onMounted(() => {
   font-weight: 700;
   text-decoration: underline;
   text-underline-offset: 3px;
+}
+
+.publish-view__ai-pending {
+  padding: var(--space-3) var(--space-4);
+  border: 1px dashed rgba(31, 167, 160, 0.3);
+  border-radius: var(--radius-card);
+  background: rgba(31, 167, 160, 0.06);
+  color: var(--lian-muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.publish-view__risk-list {
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid rgba(255, 159, 67, 0.28);
+  border-radius: var(--radius-card);
+  background: rgba(255, 159, 67, 0.08);
+  color: var(--lian-ink);
+  font-size: 13px;
+  font-weight: 700;
+  list-style: none;
+  display: grid;
+  gap: 4px;
+}
+
+.publish-view__risk-list li::before {
+  content: "⚠ ";
 }
 </style>

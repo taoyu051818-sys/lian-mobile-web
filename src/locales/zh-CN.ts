@@ -278,6 +278,9 @@ export default {
     success: "发布成功，稍后可以在首页看到。",
     successBound: "发布成功，已绑定到「{n}」。",
     viewPost: "查看帖子",
+    aiPending: "AI 正在分析图片，稍后会自动填入草稿，先选择地点也可以…",
+    aiRiskFlagsLabel: "AI 风险提示",
+    aiUnavailable: "AI 草稿暂时不可用，可以手动填写后直接发布。",
   },
   publishComposer: {
     label: "发布内容",

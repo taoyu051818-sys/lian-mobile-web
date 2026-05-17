@@ -27,6 +27,8 @@ import { validatePublishForm } from "../../domain/validation/forms";
 import { fetchAuthMe } from "../../api/profile";
 import type { PublishVisibility } from "../../types/publish";
 import { useAudienceOptions } from "../../composables/useAudienceOptions";
+import { usePublishAiDraft } from "../../composables/usePublishAiDraft";
+import { planAiSuggestionPatch } from "../../domain/publishAiPolicy";
 import type { AudienceVisibility } from "../../types/audience";
 
 export function usePublishDraft() {
@@ -72,6 +74,39 @@ export function usePublishDraft() {
   function visibilityDisabledReason(value: PublishVisibility): string {
     return audience.disabledReason(value as AudienceVisibility);
   }
+
+  // AI draft (PRD V0.1 Phase 3 / §7.4.2). Suggestions only fill empty fields,
+  // and AI failures are silent — manual entry always works. The decision of
+  // *what* to apply lives in domain/publishAiPolicy so it can be unit-tested
+  // without Vue refs; this composable just wires the policy to live state.
+  const aiInternal = usePublishAiDraft({
+    uploadedImageUrls,
+    title,
+    body,
+    locationLabel: placeName,
+    onSuggestion: (suggestion) => {
+      const patch = planAiSuggestionPatch(
+        {
+          title: title.value,
+          body: body.value,
+          tag: tagInput.value,
+          visibility: visibility.value,
+        },
+        suggestion,
+        (value) => audience.isAllowed(value as AudienceVisibility),
+      );
+      if (patch.title !== undefined) title.value = patch.title;
+      if (patch.body !== undefined) body.value = patch.body;
+      if (patch.tag !== undefined) tagInput.value = patch.tag;
+      if (patch.visibility !== undefined) visibility.value = patch.visibility;
+    },
+  });
+
+  // Flat re-exports so the view never reaches into nested `ai.*.value`.
+  const aiLoading = aiInternal.loading;
+  const aiError = aiInternal.error;
+  const aiRiskFlags = aiInternal.riskFlags;
+  const aiRefresh = aiInternal.refresh;
 
   const visibilityLabel = computed(
     () =>
@@ -151,6 +186,17 @@ export function usePublishDraft() {
       errorMessage.value = extractErrorMessage(error, ERROR_PUBLISH_IMAGE);
     } finally {
       uploading.value = false;
+    }
+  }
+
+  /**
+   * After the first successful upload, surface the location step (PRD §7.4.2).
+   * The caller passes a callback rather than coupling this composable to the
+   * location-options composable, so this stays publishable in isolation.
+   */
+  function notifyFirstUploadComplete(openLocation: () => void) {
+    if (uploadedImageUrls.value.length === 1 && !uploading.value) {
+      openLocation();
     }
   }
 
@@ -258,5 +304,10 @@ export function usePublishDraft() {
     audience,
     isVisibilityAllowed,
     visibilityDisabledReason,
+    aiLoading,
+    aiError,
+    aiRiskFlags,
+    aiRefresh,
+    notifyFirstUploadComplete,
   };
 }
