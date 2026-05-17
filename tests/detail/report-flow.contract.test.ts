@@ -79,10 +79,10 @@ describe("report flow detail wiring", () => {
   });
 
   it("adds optional free-text context and a reversible local hide path", () => {
-    expect(reportBlockSource).toContain("补充说明（可选）");
+    expect(reportBlockSource).toContain("REPORT_REASON_NOTE");
     expect(reportBlockSource).toContain("<textarea");
-    expect(reportBlockSource).toContain("暂时隐藏");
-    expect(hiddenStateSource).toContain("这条内容已在当前会话中隐藏");
-    expect(hiddenStateSource).toContain("撤销隐藏");
+    expect(reportBlockSource).toContain("REPORT_HIDE_LABEL");
+    expect(hiddenStateSource).toContain("HIDDEN_STATE_TITLE");
+    expect(hiddenStateSource).toContain("HIDDEN_STATE_UNDO");
   });
 });
