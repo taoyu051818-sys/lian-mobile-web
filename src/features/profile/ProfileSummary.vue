@@ -1,93 +1,220 @@
 <script setup lang="ts">
-import { GlassPanel, IdentityBadge, LianButton, TagChip, TrustBadge } from "../../ui";
+import { computed } from "vue";
+import { InlineError } from "../../ui";
 import {
+  PROFILE_FORUM_LINK_MISSING,
+  PROFILE_FORUM_LINK_NOTICE,
+  PROFILE_FORUM_LINK_READY,
+  PROFILE_RELOAD,
+  PROFILE_SETTING_DISABLED,
+  PROFILE_SETTING_ENABLED,
+  PROFILE_SETTING_MENTIONS,
+  PROFILE_SETTING_NOTIFICATIONS,
+  PROFILE_SETTING_VISIBILITY,
+  PROFILE_SETTING_VISIBILITY_CAMPUS,
+  PROFILE_SETTING_VISIBILITY_PRIVATE,
+  PROFILE_SETTING_VISIBILITY_PUBLIC,
+  PROFILE_SETTINGS_TITLE,
+  PROFILE_STATS_DRAFTS,
+  PROFILE_STATS_LIKED,
+  PROFILE_STATS_MAP,
+  PROFILE_STATS_POSTS,
+  PROFILE_STATS_REPLIES,
+  PROFILE_STATS_SAVED,
+  PROFILE_STATS_TITLE,
+  PROFILE_SUMMARY_LOADING,
   PROFILE_SUMMARY_TITLE,
-  PROFILE_MIGRATION_TITLE,
-  PROFILE_MIGRATION_DESCRIPTION,
-  PROFILE_PUBLISH_DISABLED,
-  PROFILE_EDIT_DISABLED,
 } from "../../config/brand";
+import type { ProfileSettings, ProfileStats } from "../../types/profile";
 
-interface ProfileMetric {
-  label: string;
-  value: string;
-  meta: string;
-}
+const props = defineProps<{
+  stats: ProfileStats;
+  settings: ProfileSettings;
+  loading: boolean;
+  error: string;
+  hasForumLink: boolean;
+}>();
 
-const profile = {
-  avatarText: "蓝",
-  displayName: "小蓝鲸",
-  identity: "饭堂观察员",
-  contribution: "地点沉淀者",
-  status: "只读试点",
-  summary:
-    "先把身份、贡献、标签和可信状态迁入 Vue；编辑资料、头像裁剪和发布历史仍留在 legacy 体验里验证。",
-  tags: ["饭堂", "校园生活", "地点观察"],
-  metrics: [
-    { label: "沉淀地点", value: "3", meta: "示例数据" },
-    { label: "发布记录", value: "12", meta: "待接入真实接口" },
-    { label: "可信状态", value: "已展示", meta: "非生产事实" },
-  ] satisfies ProfileMetric[],
-};
+const emit = defineEmits<{
+  retry: [];
+}>();
+
+const statsCards = computed(() => [
+  { label: PROFILE_STATS_POSTS, value: props.stats.posts },
+  { label: PROFILE_STATS_REPLIES, value: props.stats.replies },
+  { label: PROFILE_STATS_SAVED, value: props.stats.saved },
+  { label: PROFILE_STATS_LIKED, value: props.stats.liked },
+  { label: PROFILE_STATS_DRAFTS, value: props.stats.drafts },
+  { label: PROFILE_STATS_MAP, value: props.stats.mapContributions },
+]);
+
+const settingsRows = computed(() => [
+  {
+    label: PROFILE_SETTING_NOTIFICATIONS,
+    value: props.settings.notificationEnabled ? PROFILE_SETTING_ENABLED : PROFILE_SETTING_DISABLED,
+  },
+  {
+    label: PROFILE_SETTING_VISIBILITY,
+    value:
+      props.settings.profileVisibility === "public"
+        ? PROFILE_SETTING_VISIBILITY_PUBLIC
+        : props.settings.profileVisibility === "private"
+          ? PROFILE_SETTING_VISIBILITY_PRIVATE
+          : PROFILE_SETTING_VISIBILITY_CAMPUS,
+  },
+  {
+    label: PROFILE_SETTING_MENTIONS,
+    value: props.settings.allowMessageMentions ? PROFILE_SETTING_ENABLED : PROFILE_SETTING_DISABLED,
+  },
+]);
+
+const forumLinkText = computed(() =>
+  props.hasForumLink ? PROFILE_FORUM_LINK_READY : PROFILE_FORUM_LINK_MISSING,
+);
 </script>
 
 <template>
   <section class="profile-summary" aria-labelledby="profile-summary-title">
-    <GlassPanel class="profile-summary__card">
-      <header class="profile-summary__header">
-        <IdentityBadge
-          :avatar-text="profile.avatarText"
-          :label="profile.displayName"
-          :meta="profile.identity"
-        />
-        <TrustBadge tone="pending">{{ profile.status }}</TrustBadge>
-      </header>
-
-      <div class="profile-summary__copy">
-        <p class="profile-summary__eyebrow">Profile Migration Pilot</p>
-        <h2 id="profile-summary-title">{{ PROFILE_SUMMARY_TITLE }}</h2>
-        <p>{{ profile.summary }}</p>
+    <header class="profile-summary__header">
+      <div>
+        <p class="profile-summary__eyebrow">{{ PROFILE_SUMMARY_TITLE }}</p>
+        <h2 id="profile-summary-title">{{ PROFILE_STATS_TITLE }}</h2>
       </div>
+      <button v-if="error" type="button" class="profile-summary__retry" @click="emit('retry')">
+        {{ PROFILE_RELOAD }}
+      </button>
+    </header>
 
-      <div class="profile-summary__chips" aria-label="个人资料标签">
-        <TagChip v-for="tag in profile.tags" :key="tag" :tag="tag" />
-      </div>
+    <InlineError v-if="error">{{ error }}</InlineError>
 
-      <dl class="profile-summary__metrics" aria-label="个人资料概览">
-        <div v-for="metric in profile.metrics" :key="metric.label" class="profile-summary__metric">
-          <dt>{{ metric.label }}</dt>
-          <dd>{{ metric.value }}</dd>
-          <span>{{ metric.meta }}</span>
+    <div v-if="loading" class="profile-summary__state" role="status">
+      {{ PROFILE_SUMMARY_LOADING }}
+    </div>
+
+    <template v-else>
+      <dl class="profile-summary__metrics" :aria-label="PROFILE_STATS_TITLE">
+        <div v-for="card in statsCards" :key="card.label" class="profile-summary__metric">
+          <dt>{{ card.label }}</dt>
+          <dd>{{ card.value }}</dd>
         </div>
       </dl>
 
-      <section class="profile-summary__notice" aria-labelledby="profile-summary-notice-title">
-        <h3 id="profile-summary-notice-title">{{ PROFILE_MIGRATION_TITLE }}</h3>
-        <p>
-          {{ PROFILE_MIGRATION_DESCRIPTION }}
-        </p>
+      <section class="profile-summary__settings" aria-labelledby="profile-settings-title">
+        <h3 id="profile-settings-title">{{ PROFILE_SETTINGS_TITLE }}</h3>
+        <dl class="profile-summary__settings-grid">
+          <div v-for="row in settingsRows" :key="row.label" class="profile-summary__setting-row">
+            <dt>{{ row.label }}</dt>
+            <dd>{{ row.value }}</dd>
+          </div>
+        </dl>
       </section>
 
-      <div class="vue-shell__row">
-        <LianButton variant="tonal" disabled>{{ PROFILE_PUBLISH_DISABLED }}</LianButton>
-        <LianButton variant="ghost" disabled>{{ PROFILE_EDIT_DISABLED }}</LianButton>
-      </div>
-    </GlassPanel>
+      <section class="profile-summary__forum-note" aria-labelledby="profile-forum-title">
+        <h3 id="profile-forum-title">{{ PROFILE_FORUM_LINK_NOTICE }}</h3>
+        <p>{{ forumLinkText }}</p>
+      </section>
+    </template>
   </section>
 </template>
 
 <style scoped>
 .profile-summary {
   display: grid;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border: 1px solid rgba(31, 41, 51, 0.08);
+  border-radius: var(--radius-card);
+  background: rgba(255, 255, 255, 0.48);
 }
 
-.profile-summary__card {
+.profile-summary__header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.profile-summary__header h2,
+.profile-summary__settings h3,
+.profile-summary__forum-note h3,
+.profile-summary__metrics dt,
+.profile-summary__settings-grid dt,
+.profile-summary__settings-grid dd,
+.profile-summary__metrics dd,
+.profile-summary__forum-note p {
+  margin: 0;
+}
+
+.profile-summary__eyebrow {
+  margin: 0 0 4px;
+  color: var(--lian-primary);
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.profile-summary__retry {
+  min-height: 32px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: var(--radius-chip);
+  background: rgba(31, 167, 160, 0.12);
+  color: var(--lian-primary-deep);
+  font: inherit;
+  font-weight: 850;
+}
+
+.profile-summary__state {
   display: grid;
-  gap: var(--space-4);
+  min-height: 96px;
+  place-items: center;
+  color: var(--lian-muted);
+  text-align: center;
 }
 
-.profile-summary__header,
-.profile-summary__chips {
+.profile-summary__metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-2);
+}
+
+.profile-summary__metric,
+.profile-summary__setting-row,
+.profile-summary__forum-note {
+  padding: var(--space-3);
+  border: 1px solid rgba(31, 41, 51, 0.08);
+  border-radius: var(--radius-card);
+  background: rgba(255, 255, 255, 0.58);
+}
+
+.profile-summary__metric {
+  display: grid;
+  gap: 4px;
+}
+
+.profile-summary__metric dt,
+.profile-summary__setting-row dt {
+  color: var(--lian-muted);
+  font-size: 12px;
+}
+
+.profile-summary__metric dd {
+  color: var(--lian-ink);
+  font-size: 22px;
+  font-weight: 900;
+}
+
+.profile-summary__settings {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.profile-summary__settings-grid {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.profile-summary__setting-row {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-2);
@@ -95,79 +222,25 @@ const profile = {
   justify-content: space-between;
 }
 
-.profile-summary__copy {
+.profile-summary__setting-row dd {
+  color: var(--lian-ink);
+  font-size: 13px;
+  font-weight: 850;
+}
+
+.profile-summary__forum-note {
   display: grid;
-  gap: var(--space-2);
+  gap: 6px;
 }
 
-.profile-summary__copy h2,
-.profile-summary__notice h3 {
-  margin: 0;
-}
-
-.profile-summary__copy p,
-.profile-summary__notice p {
-  margin: 0;
+.profile-summary__forum-note p {
   color: var(--lian-muted);
-  line-height: 1.6;
-}
-
-.profile-summary__eyebrow {
-  color: var(--lian-primary-deep) !important;
-  font-size: 12px;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.profile-summary__chips {
-  justify-content: flex-start;
-}
-
-.profile-summary__metrics {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: var(--space-2);
-  margin: 0;
-}
-
-.profile-summary__metric {
-  display: grid;
-  gap: 2px;
-  padding: var(--space-3);
-  border: 1px solid var(--lian-border);
-  border-radius: var(--radius-3);
-  background: rgba(255, 255, 255, 0.52);
-}
-
-.profile-summary__metric dt {
-  color: var(--lian-muted);
-  font-size: 12px;
-}
-
-.profile-summary__metric dd {
-  margin: 0;
-  font-size: 22px;
-  font-weight: 800;
-}
-
-.profile-summary__metric span {
-  color: var(--lian-muted);
-  font-size: 11px;
-}
-
-.profile-summary__notice {
-  display: grid;
-  gap: var(--space-2);
-  padding: var(--space-3);
-  border: 1px dashed var(--lian-border-strong);
-  border-radius: var(--radius-3);
-  background: rgba(255, 255, 255, 0.34);
+  line-height: 1.5;
 }
 
 @media (max-width: 640px) {
   .profile-summary__metrics {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 </style>
