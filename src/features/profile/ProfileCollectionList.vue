@@ -9,10 +9,7 @@ import {
   UNTITLED_CONTENT,
 } from "../../config/brand";
 import type { FeedItemId } from "../../types/feed";
-import type {
-  ProfileActivityStatus,
-  ProfileListItem,
-} from "../../types/profile";
+import type { ProfileActivityStatus, ProfileListItem } from "../../types/profile";
 import { formatRelativeTime } from "../../utils/time";
 
 defineProps<{
@@ -74,9 +71,7 @@ function openItem(item: ProfileListItem) {
     <div v-if="loading" class="profile-collection__state" role="status">
       {{ LOADING_LIST }}
     </div>
-    <div v-else-if="!items.length" class="profile-collection__state">
-      {{ emptyText }}
-    </div>
+    <div v-else-if="!items.length" class="profile-collection__state">{{ emptyText }}</div>
     <div v-else class="profile-collection__list" aria-live="polite">
       <article
         v-for="(item, index) in items"
