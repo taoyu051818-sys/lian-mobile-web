@@ -13,7 +13,7 @@ export function usePostReactions(options: {
   const likeBusy = ref(false);
   const saveBusy = ref(false);
 
-  async function handleLike(postId: number | null) {
+  async function handleLike(postId: number | null, isStillCurrent?: () => boolean) {
     if (postId == null || likeBusy.value) return;
     const previousLiked = liked.value;
     const previousCount = likeCount.value;
@@ -24,18 +24,20 @@ export function usePostReactions(options: {
     options.clearMessages();
     try {
       const response = await togglePostLike(postId, nextLiked);
+      if (isStillCurrent && !isStillCurrent()) return;
       liked.value = Boolean(response.liked);
       likeCount.value = Math.max(0, Number(response.likeCount || 0));
     } catch (error) {
+      if (isStillCurrent && !isStillCurrent()) return;
       liked.value = previousLiked;
       likeCount.value = previousCount;
       options.showError(error, ERROR_LIKE_ACTION);
     } finally {
-      likeBusy.value = false;
+      if (!isStillCurrent || isStillCurrent()) likeBusy.value = false;
     }
   }
 
-  async function handleSave(postId: number | null) {
+  async function handleSave(postId: number | null, isStillCurrent?: () => boolean) {
     if (postId == null || saveBusy.value) return;
     const previousSaved = saved.value;
     const nextSaved = !previousSaved;
@@ -44,12 +46,14 @@ export function usePostReactions(options: {
     options.clearMessages();
     try {
       const response = await togglePostSave(postId, nextSaved);
+      if (isStillCurrent && !isStillCurrent()) return;
       saved.value = Boolean(response.saved);
     } catch (error) {
+      if (isStillCurrent && !isStillCurrent()) return;
       saved.value = previousSaved;
       options.showError(error, ERROR_SAVE_ACTION);
     } finally {
-      saveBusy.value = false;
+      if (!isStillCurrent || isStillCurrent()) saveBusy.value = false;
     }
   }
 
