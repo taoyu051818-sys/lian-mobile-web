@@ -15,7 +15,6 @@ import {
   PROFILE_SECTION_LABEL,
   PROFILE_LOAD_ERROR_PREFIX,
   PROFILE_RELOAD,
-  PROFILE_SUMMARY_ERROR_PREFIX,
 } from "../../config/brand";
 import { extractErrorMessage } from "../../utils/extractErrorMessage";
 import { usePostDetail } from "../detail/usePostDetail";
@@ -37,6 +36,8 @@ import { useProfileAliasPicker } from "./useProfileAliasPicker";
 const emit = defineEmits<{
   chrome: [spec: PageChromeSpec];
 }>();
+
+const PROFILE_SUMMARY_ERROR_PREFIX = "概览";
 
 const { user, loading, errorMessage, isMissingSessionError, refreshCurrentSession } =
   useProfileSession();
