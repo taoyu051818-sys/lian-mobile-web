@@ -18,6 +18,7 @@ export default defineConfig({
       "tests/profile/**/*.test.ts",
       "src/utils/__tests__/**/*.test.ts",
       "tests/motion/**/*.test.ts",
+      "tests/phase0/**/*.test.ts",
     ],
   },
 });

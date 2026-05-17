@@ -1,4 +1,5 @@
 import type { PlaceRef } from "./place";
+import type { Audience } from "./audience";
 
 export type PublishVisibility = "public" | "campus" | "school" | "private";
 export type PublishLocationSource = "manual" | "skipped" | "map_v2";
@@ -35,6 +36,12 @@ export interface PublishPayload {
     distribution: string[];
     primaryTag?: string;
     identityTag?: string;
+    /**
+     * Optional full Audience descriptor (PRD V0.1 §6.2). Older backends ignore
+     * this field and rely on `visibility` alone; newer backends use it to
+     * authorize and persist scoped audience data.
+     */
+    audience?: Audience;
   };
   locationDraft: PublishLocationDraft;
   riskFlags: Array<{ message?: string }>;

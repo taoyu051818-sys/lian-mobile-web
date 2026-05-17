@@ -21,6 +21,11 @@ export interface SourceSignal {
   visible?: boolean;
 }
 
+/**
+ * Card-template vocabulary the Feed UI knows how to render. `activity` is the
+ * presentation label for `event` PostType (PRD V0.1 §3.2). `trade` reuses the
+ * `merchant` template at the UI level until it gets its own visual variant.
+ */
 export type FeedPresentationIntent = "image" | "text" | "activity" | "place" | "merchant" | "help";
 export type FeedItemCardTemplateSource = "server" | "content-type" | "cover-fallback";
 

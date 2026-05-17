@@ -26,6 +26,8 @@ import {
 import { validatePublishForm } from "../../domain/validation/forms";
 import { fetchAuthMe } from "../../api/profile";
 import type { PublishVisibility } from "../../types/publish";
+import { useAudienceOptions } from "../../composables/useAudienceOptions";
+import type { AudienceVisibility } from "../../types/audience";
 
 export function usePublishDraft() {
   const title = ref("");
@@ -60,6 +62,16 @@ export function usePublishDraft() {
     { value: "school", label: PUBLISH_VIS_SCHOOL },
     { value: "private", label: PUBLISH_VIS_PRIVATE },
   ];
+
+  // Backend-driven audience options (PRD V0.1 §7.4.3). Falls back to public-only
+  // when the backend route is missing, so the publish UI degrades gracefully.
+  const audience = useAudienceOptions();
+  function isVisibilityAllowed(value: PublishVisibility): boolean {
+    return audience.isAllowed(value as AudienceVisibility);
+  }
+  function visibilityDisabledReason(value: PublishVisibility): string {
+    return audience.disabledReason(value as AudienceVisibility);
+  }
 
   const visibilityLabel = computed(
     () =>
@@ -243,5 +255,8 @@ export function usePublishDraft() {
     resetForm,
     toggleTagPanel,
     toggleVisibilityPanel,
+    audience,
+    isVisibilityAllowed,
+    visibilityDisabledReason,
   };
 }

@@ -13,7 +13,7 @@ import {
 } from "../../config/brand";
 import type { PublishVisibility } from "../../types/publish";
 
-defineProps<{
+const props = defineProps<{
   tagPanelOpen: boolean;
   visibilityPanelOpen: boolean;
   tagInput: string;
@@ -23,6 +23,10 @@ defineProps<{
   visibility: PublishVisibility;
   visibilityOptions: Array<{ value: PublishVisibility; label: string }>;
   visibilityLabel: string;
+  // PRD V0.1 §3.1 — backend-driven gating. Optional: when omitted (older
+  // wiring), every option behaves as enabled.
+  isVisibilityAllowed?: (value: PublishVisibility) => boolean;
+  visibilityDisabledReason?: (value: PublishVisibility) => string;
 }>();
 
 const emit = defineEmits<{
@@ -30,6 +34,17 @@ const emit = defineEmits<{
   "update:identityTag": [value: string];
   "update:visibility": [value: PublishVisibility];
 }>();
+
+function isAllowed(value: PublishVisibility): boolean {
+  return props.isVisibilityAllowed ? props.isVisibilityAllowed(value) : true;
+}
+function disabledReasonFor(value: PublishVisibility): string {
+  return props.visibilityDisabledReason ? props.visibilityDisabledReason(value) : "";
+}
+function selectVisibility(value: PublishVisibility) {
+  if (!isAllowed(value)) return;
+  emit("update:visibility", value);
+}
 </script>
 
 <template>
@@ -87,10 +102,16 @@ const emit = defineEmits<{
         :key="option.value"
         type="button"
         class="publish-meta__visibility"
-        :class="{ 'is-active': visibility === option.value }"
-        @click="emit('update:visibility', option.value)"
+        :class="{ 'is-active': visibility === option.value, 'is-disabled': !isAllowed(option.value) }"
+        :disabled="!isAllowed(option.value)"
+        :title="disabledReasonFor(option.value) || undefined"
+        :aria-disabled="!isAllowed(option.value)"
+        @click="selectVisibility(option.value)"
       >
         <strong>{{ option.label }}</strong>
+        <span v-if="!isAllowed(option.value) && disabledReasonFor(option.value)" class="publish-meta__visibility-reason">
+          {{ disabledReasonFor(option.value) }}
+        </span>
       </button>
     </div>
   </section>
@@ -192,6 +213,21 @@ const emit = defineEmits<{
 .publish-meta__visibility.is-active {
   border-color: rgba(31, 167, 160, 0.3);
   background: rgba(31, 167, 160, 0.14);
+}
+
+.publish-meta__visibility.is-disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.publish-meta__visibility-reason {
+  display: block;
+  margin-top: 4px;
+  color: var(--lian-muted);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: normal;
+  text-transform: none;
 }
 
 @media (max-width: 640px) {

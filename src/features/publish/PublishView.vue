@@ -185,6 +185,8 @@ onMounted(() => {
           :visibility="draft.visibility.value"
           :visibility-options="draft.visibilityOptions"
           :visibility-label="draft.visibilityLabel.value"
+          :is-visibility-allowed="draft.isVisibilityAllowed"
+          :visibility-disabled-reason="draft.visibilityDisabledReason"
           @update:tag-input="draft.tagInput.value = $event"
           @update:identity-tag="draft.identityTag.value = $event"
           @update:visibility="draft.visibility.value = $event"
