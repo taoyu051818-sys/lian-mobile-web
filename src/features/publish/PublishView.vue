@@ -1,27 +1,22 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
+import { onMounted, ref, watch } from "vue";
 import type { PageChromeSpec } from "../../shell/page-model";
 import {
   PUBLISH_SECTION_LABEL,
   PUBLISH_VIEW_POST,
   PUBLISH_CLEAR_CONFIRM,
   PUBLISH_IMAGE_RESELECT,
-  PUBLISH_DRAFT_RECOVERED,
 } from "../../config/brand";
-import { GlassPanel, InlineError, LianButton } from "../../ui";
+import { GlassPanel, InlineError } from "../../ui";
 import PublishActionBar from "./PublishActionBar.vue";
 import PublishComposer from "./PublishComposer.vue";
 import PublishLocationControls from "./PublishLocationControls.vue";
 import PublishMetaControls from "./PublishMetaControls.vue";
 import { usePublishDraft } from "./usePublishDraft";
 import { usePublishLocationOptions } from "./usePublishLocationOptions";
-import {
-  clearPublishDraft,
-  hasMeaningfulPublishDraft,
-  readPublishDraft,
-  restorePublishDraftLocation,
-  savePublishDraft,
-} from "./publishDraftSession";
+import { clearPublishDraft } from "./publishDraftSession";
+import { usePublishDraftSession } from "./usePublishDraftSession";
+import PublishResetConfirm from "./PublishResetConfirm.vue";
 import { usePublishSubmit } from "./usePublishSubmit";
 
 const emit = defineEmits<{
@@ -32,8 +27,22 @@ const RESET_CONFIRM_MESSAGE = [PUBLISH_CLEAR_CONFIRM, PUBLISH_IMAGE_RESELECT].jo
 
 const draft = usePublishDraft();
 const locationOptions = usePublishLocationOptions(draft.placeName);
-const draftNotice = ref("");
 const resetConfirmationVisible = ref(false);
+
+const { draftNotice, hasUnsavedDraft } = usePublishDraftSession({
+  title: draft.title,
+  body: draft.body,
+  tagInput: draft.tagInput,
+  placeName: draft.placeName,
+  visibility: draft.visibility,
+  selectedFiles: draft.selectedFiles,
+  selectedMapLocation: locationOptions.selectedMapLocation,
+  locationSearch: locationOptions.locationSearch,
+  locationPanelOpen: locationOptions.locationPanelOpen,
+  publishing: draft.publishing,
+  loadIdentity: draft.loadIdentity,
+  loadMapLocations: locationOptions.loadMapLocations,
+});
 
 function clearPublishState() {
   draft.resetForm(locationOptions.clearLocationState);
@@ -64,51 +73,6 @@ const { postDetailUrl, submitPublish } = usePublishSubmit({
   resetForm: clearPublishState,
 });
 
-const hasUnsavedDraft = computed(() =>
-  hasMeaningfulPublishDraft({
-    title: draft.title.value,
-    body: draft.body.value,
-    tagInput: draft.tagInput.value,
-    placeName: draft.placeName.value,
-    visibility: draft.visibility.value,
-    selectedMapLocation: locationOptions.selectedMapLocation.value,
-    selectedFileCount: draft.selectedFiles.value.length,
-  }),
-);
-
-function persistPublishDraft() {
-  savePublishDraft({
-    title: draft.title.value,
-    body: draft.body.value,
-    tagInput: draft.tagInput.value,
-    placeName: draft.placeName.value,
-    visibility: draft.visibility.value,
-    selectedMapLocation: locationOptions.selectedMapLocation.value,
-    selectedFileCount: draft.selectedFiles.value.length,
-  });
-}
-
-function restoreDraftFromSession() {
-  const snapshot = readPublishDraft();
-  if (!snapshot) return;
-
-  draft.title.value = snapshot.title;
-  draft.body.value = snapshot.body;
-  draft.tagInput.value = snapshot.tagInput;
-  draft.placeName.value = snapshot.placeName;
-  draft.visibility.value = snapshot.visibility;
-  locationOptions.selectedMapLocation.value = restorePublishDraftLocation(
-    snapshot.selectedMapLocation,
-  );
-  locationOptions.locationSearch.value = snapshot.selectedMapLocation?.name || snapshot.placeName;
-  locationOptions.locationPanelOpen.value = Boolean(
-    snapshot.selectedMapLocation || snapshot.placeName.trim(),
-  );
-  draftNotice.value = snapshot.pendingImageCount
-    ? `${PUBLISH_DRAFT_RECOVERED}，${snapshot.pendingImageCount} 张图片需要重新选择。`
-    : PUBLISH_DRAFT_RECOVERED;
-}
-
 function requestResetForm() {
   if (!hasUnsavedDraft.value) {
     clearPublishState();
@@ -129,28 +93,9 @@ function confirmResetForm() {
   draft.successMessage.value = "";
 }
 
-function handleBeforeUnload(event: BeforeUnloadEvent) {
-  if (!hasUnsavedDraft.value || draft.publishing.value) return;
-  event.preventDefault();
-  event.returnValue = "";
-}
-
 watch(draft.pageChrome, (spec) => emit("chrome", spec), {
   deep: true,
 });
-
-watch(
-  [
-    draft.title,
-    draft.body,
-    draft.tagInput,
-    draft.placeName,
-    draft.visibility,
-    locationOptions.selectedMapLocation,
-    () => draft.selectedFiles.value.length,
-  ],
-  persistPublishDraft,
-);
 
 watch(hasUnsavedDraft, (value) => {
   if (!value) resetConfirmationVisible.value = false;
@@ -158,18 +103,6 @@ watch(hasUnsavedDraft, (value) => {
 
 onMounted(() => {
   emit("chrome", draft.pageChrome.value);
-  restoreDraftFromSession();
-  if (typeof window !== "undefined") {
-    window.addEventListener("beforeunload", handleBeforeUnload);
-  }
-  void draft.loadIdentity();
-  void locationOptions.loadMapLocations();
-});
-
-onBeforeUnmount(() => {
-  if (typeof window !== "undefined") {
-    window.removeEventListener("beforeunload", handleBeforeUnload);
-  }
 });
 </script>
 
@@ -257,22 +190,12 @@ onBeforeUnmount(() => {
           @update:visibility="draft.visibility.value = $event"
         />
 
-        <div
-          v-if="resetConfirmationVisible"
-          class="publish-view__reset-confirm"
-          aria-live="polite"
-          data-testid="publish-reset-confirm"
-        >
-          <p>{{ RESET_CONFIRM_MESSAGE }}</p>
-          <div class="publish-view__reset-confirm-actions">
-            <LianButton type="button" variant="ghost" @click="cancelResetForm">
-              继续编辑
-            </LianButton>
-            <LianButton type="button" variant="danger" @click="confirmResetForm">
-              确认清空
-            </LianButton>
-          </div>
-        </div>
+        <PublishResetConfirm
+          :visible="resetConfirmationVisible"
+          :message="RESET_CONFIRM_MESSAGE"
+          @cancel="cancelResetForm"
+          @confirm="confirmResetForm"
+        />
 
         <PublishActionBar
           :publishing="draft.publishing.value"
@@ -342,27 +265,5 @@ onBeforeUnmount(() => {
   font-weight: 700;
   text-decoration: underline;
   text-underline-offset: 3px;
-}
-
-.publish-view__reset-confirm {
-  display: grid;
-  gap: var(--space-3);
-  padding: var(--space-3) var(--space-4);
-  border: 1px solid rgba(214, 78, 58, 0.18);
-  border-radius: var(--radius-card);
-  background: rgba(214, 78, 58, 0.08);
-  color: var(--lian-ink);
-}
-
-.publish-view__reset-confirm p {
-  font-size: 14px;
-  font-weight: 700;
-}
-
-.publish-view__reset-confirm-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
-  justify-content: flex-end;
 }
 </style>
