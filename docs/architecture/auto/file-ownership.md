@@ -32,7 +32,7 @@ Total files: 231
 
 | File                          | Summary                                                                           | Lines |
 | ----------------------------- | --------------------------------------------------------------------------------- | ----: |
-| `app/AppViewHost.vue`         | Vue SFC                                                                           |    42 |
+| `app/AppViewHost.vue`         | Vue SFC                                                                           |    44 |
 | `app/ViewAsyncError.vue`      | Vue SFC                                                                           |    50 |
 | `app/ViewLoadingFallback.vue` | Vue SFC                                                                           |    39 |
 | `app/useActiveView.ts`        | export function useActiveView()                                                   |    22 |
