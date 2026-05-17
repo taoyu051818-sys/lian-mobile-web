@@ -18,6 +18,10 @@ export const PROFILE_SECTION_LABEL = "我的";
 export const PROFILE_TAB_HISTORY = "浏览";
 export const PROFILE_TAB_SAVED = "收藏";
 export const PROFILE_TAB_LIKED = "赞过";
+export const PROFILE_TAB_POSTS = "发布";
+export const PROFILE_TAB_REPLIES = "回复";
+export const PROFILE_TAB_DRAFTS = "草稿";
+export const PROFILE_TAB_MAP = "地图";
 export const PROFILE_IDENTITY_FALLBACK = "校园身份";
 export const PROFILE_ALIAS_TYPE = "类型";
 export const PROFILE_ALIAS_SIGNAL = "信号";
@@ -28,10 +32,20 @@ export const PROFILE_ALIAS_DEFAULT_HINT = "这个马甲会作为你在 LIAN 中�
 export const PROFILE_ALIAS_MORE_HINT =
   "这个马甲会作为你在 LIAN 中出现的默认身份，更多身份说明会在后续补齐。";
 export const PROFILE_EMPTY_CONTENT = "暂无内容";
+export const EMPTY_HISTORY = "还没有浏览记录";
+export const EMPTY_SAVED = "还没有收藏内容";
+export const EMPTY_LIKED = "还没有点赞记录";
+export const EMPTY_POSTS = "还没有公开发布内容";
+export const EMPTY_REPLIES = "还没有回复记录";
+export const EMPTY_DRAFTS = "还没有保存草稿";
+export const EMPTY_MAP_CONTRIBUTIONS = "还没有地图贡献";
 export const PROFILE_LOAD_ERROR_PREFIX = "个人资料";
 export const PROFILE_LIST_ERROR_PREFIX = "列表";
+export const PROFILE_SUMMARY_ERROR_PREFIX = "概览";
 export const PROFILE_TABS_LABEL = "个人内容分类";
 export const PROFILE_RELOAD = "重新加载";
+export const PROFILE_FORUM_LINK_MISSING =
+  "当前账号还没有绑定论坛身份，发布、回复和地图贡献会暂时显示为空。";
 
 /** 马甲选择器 */
 export const PROFILE_ALIAS_TITLE = "发布身份";
@@ -59,20 +73,28 @@ export const PROFILE_INVITE_UNAVAILABLE = "暂无权限";
 export const PROFILE_EDITOR_TITLE = "编辑资料";
 export const PROFILE_EDITOR_CHIP = "资料管理";
 
-/** 概览页 */
-export const PROFILE_SUMMARY_TITLE = "我的校园身份";
-export const PROFILE_MIGRATION_TITLE = "迁移边界";
-export const PROFILE_MIGRATION_DESCRIPTION =
-  "当前只迁移低风险展示层。资料编辑、头像上传裁剪、历史发布列表和账号状态仍不在这个试点里接管。";
-export const PROFILE_PUBLISH_DISABLED = "查看我的发布稍后接入";
-export const PROFILE_EDIT_DISABLED = "编辑资料仍走 legacy";
-
-/** 个人资料操作反馈 */
-export const PROFILE_AVATAR_UPDATED = "头像已更新。";
-export const PROFILE_IDENTITY_SWITCHED = "发布身份已切换。";
-export const PROFILE_INVITE_GENERATED = "邀请码已生成。";
-export const PROFILE_INVITE_SUBMITTED = "邀请码请求已提交。";
-export const PROFILE_INVITE_ERROR = "邀请码没有生成成功，可以稍后再试。";
-export const PROFILE_IDENTITY_SWITCH_ERROR = "发布身份没有切换成功，可以稍后再试。";
-export const PROFILE_AVATAR_CROP_UNSUPPORTED = "浏览器暂时不能裁剪头像，请换一个浏览器再试。";
-export const PROFILE_AVATAR_CROP_ERROR = "头像裁剪失败，请换一张图片再试。";
+/** 个人概览 */
+export const PROFILE_SUMMARY_TITLE = "个人概览";
+export const PROFILE_SUMMARY_LOADING = "正在同步个人概览…";
+export const PROFILE_STATS_TITLE = "活动统计";
+export const PROFILE_SETTINGS_TITLE = "当前设置";
+export const PROFILE_FORUM_LINK_NOTICE = "论坛同步";
+export const PROFILE_FORUM_LINK_READY = "论坛活动已接入当前账号。";
+export const PROFILE_STATS_POSTS = "发布";
+export const PROFILE_STATS_REPLIES = "回复";
+export const PROFILE_STATS_SAVED = "收藏";
+export const PROFILE_STATS_LIKED = "赞过";
+export const PROFILE_STATS_DRAFTS = "草稿";
+export const PROFILE_STATS_MAP = "地图贡献";
+export const PROFILE_SETTING_NOTIFICATIONS = "消息提醒";
+export const PROFILE_SETTING_VISIBILITY = "资料可见范围";
+export const PROFILE_SETTING_MENTIONS = "允许提及";
+export const PROFILE_SETTING_ENABLED = "已开启";
+export const PROFILE_SETTING_DISABLED = "已关闭";
+export const PROFILE_SETTING_VISIBILITY_PUBLIC = "公开";
+export const PROFILE_SETTING_VISIBILITY_CAMPUS = "校内";
+export const PROFILE_SETTING_VISIBILITY_PRIVATE = "仅自己";
+export const PROFILE_ACTIVITY_STATUS_PUBLISHED = "已发布";
+export const PROFILE_ACTIVITY_STATUS_DRAFT = "草稿";
+export const PROFILE_ACTIVITY_STATUS_PENDING = "待处理";
+export const PROFILE_ACTIVITY_STATUS_HIDDEN = "隐藏";
