@@ -48,12 +48,13 @@ const PROFILE_ACTIVITY_STATUSES = new Set<ProfileActivityStatus>([
   "hidden",
 ]);
 
-const PROFILE_VISIBILITIES = new Set<ProfileVisibility>(["public", "campus", "private"]);
+const PROFILE_VISIBILITIES = new Set<ProfileVisibility>([
+  "public",
+  "campus",
+  "private",
+]);
 
-const PROFILE_TAB_PATHS: Record<
-  Exclude<ProfileTabKey, "history">,
-  string
-> = {
+const PROFILE_TAB_PATHS: Record<Exclude<ProfileTabKey, "history">, string> = {
   saved: "/api/me/saved",
   liked: "/api/me/liked",
   posts: "/api/me/posts",
@@ -103,26 +104,11 @@ function normalizeProfileListPagination(
 export function normalizeProfileStats(value: unknown): ProfileStats {
   const record = asRecord(value);
   return {
-    posts: Math.max(
-      asNumber(record.posts, DEFAULT_PROFILE_STATS.posts),
-      0,
-    ),
-    replies: Math.max(
-      asNumber(record.replies, DEFAULT_PROFILE_STATS.replies),
-      0,
-    ),
-    saved: Math.max(
-      asNumber(record.saved, DEFAULT_PROFILE_STATS.saved),
-      0,
-    ),
-    liked: Math.max(
-      asNumber(record.liked, DEFAULT_PROFILE_STATS.liked),
-      0,
-    ),
-    drafts: Math.max(
-      asNumber(record.drafts, DEFAULT_PROFILE_STATS.drafts),
-      0,
-    ),
+    posts: Math.max(asNumber(record.posts, DEFAULT_PROFILE_STATS.posts), 0),
+    replies: Math.max(asNumber(record.replies, DEFAULT_PROFILE_STATS.replies), 0),
+    saved: Math.max(asNumber(record.saved, DEFAULT_PROFILE_STATS.saved), 0),
+    liked: Math.max(asNumber(record.liked, DEFAULT_PROFILE_STATS.liked), 0),
+    drafts: Math.max(asNumber(record.drafts, DEFAULT_PROFILE_STATS.drafts), 0),
     mapContributions: Math.max(
       asNumber(record.mapContributions, DEFAULT_PROFILE_STATS.mapContributions),
       0,
@@ -201,22 +187,16 @@ export function normalizeProfileListResponse(
 }
 
 export async function fetchAuthMe(): Promise<ProfileUser | null> {
-  const data = await apiGet<{ user?: ProfileUser | null }>(
-    "/api/auth/me",
-  );
+  const data = await apiGet<{ user?: ProfileUser | null }>("/api/auth/me");
   return data.user || null;
 }
 
 export async function fetchProfileStats(): Promise<ProfileStats> {
-  return normalizeProfileStats(
-    await apiGet<unknown>("/api/me/stats"),
-  );
+  return normalizeProfileStats(await apiGet<unknown>("/api/me/stats"));
 }
 
 export async function fetchProfileSettings(): Promise<ProfileSettings> {
-  return normalizeProfileSettings(
-    await apiGet<unknown>("/api/me/settings"),
-  );
+  return normalizeProfileSettings(await apiGet<unknown>("/api/me/settings"));
 }
 
 export async function updateProfileSettings(
@@ -251,9 +231,7 @@ export async function fetchProfileTab(
     );
   }
 
-  return normalizeProfileListResponse(
-    await apiGet<unknown>(PROFILE_TAB_PATHS[tab]),
-  );
+  return normalizeProfileListResponse(await apiGet<unknown>(PROFILE_TAB_PATHS[tab]));
 }
 
 export async function uploadProfileAvatar(file: File): Promise<string> {
@@ -293,10 +271,7 @@ export async function deactivateProfileAlias(): Promise<void> {
 }
 
 export async function createInviteCode(): Promise<{ code?: string }> {
-  return apiSend<{ code?: string }>(
-    "/api/auth/invites",
-    { method: "POST" },
-  );
+  return apiSend<{ code?: string }>("/api/auth/invites", { method: "POST" });
 }
 
 export async function logoutAuth(): Promise<void> {
