@@ -76,16 +76,7 @@ const emit = defineEmits<{
 
 <style scoped>
 .post-reply-dock {
-  position: fixed;
-  right: max(var(--floating-bar-side-inset), env(safe-area-inset-right));
-  left: max(var(--floating-bar-side-inset), env(safe-area-inset-left));
-  z-index: var(--floating-bar-z);
-  width: min(calc(100vw - var(--space-6)), var(--floating-bar-max-width));
-  margin: 0 auto;
-  border: 1px solid var(--glass-border);
-  border-radius: var(--floating-bar-radius);
-  background: var(--glass-bg-strong);
-  box-shadow: var(--shadow-floating);
+  /* Visual base (position, glass, shadow) comes from lian-floating-chrome in chrome-surface.css */
   transition:
     transform var(--floating-chrome-motion-duration, 260ms) var(--motion-ease-standard),
     opacity var(--floating-chrome-motion-duration, 260ms) var(--motion-ease-standard),
@@ -93,8 +84,7 @@ const emit = defineEmits<{
     bottom 200ms ease,
     min-height 180ms ease,
     align-items 180ms ease;
-  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
-  bottom: calc(var(--floating-bar-bottom-offset) + var(--keyboard-inset-bottom, 0px));
+  bottom: calc(var(--detail-reply-dock-bottom-offset) + var(--keyboard-inset-bottom, 0px));
   display: flex;
   gap: var(--space-2);
   align-items: center;
