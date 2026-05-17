@@ -1,6 +1,11 @@
 import { ref } from "vue";
 import { createInviteCode } from "../../api/profile";
 import { extractErrorMessage } from "../../utils/extractErrorMessage";
+import {
+  PROFILE_INVITE_GENERATED,
+  PROFILE_INVITE_SUBMITTED,
+  PROFILE_INVITE_ERROR,
+} from "../../config/brand";
 
 export function useInviteCode() {
   const busy = ref(false);
@@ -15,9 +20,9 @@ export function useInviteCode() {
     try {
       const response = await createInviteCode();
       inviteCode.value = response.code || "";
-      onSuccess(inviteCode.value ? "邀请码已生成。" : "邀请码请求已提交。");
+      onSuccess(inviteCode.value ? PROFILE_INVITE_GENERATED : PROFILE_INVITE_SUBMITTED);
     } catch (error) {
-      onError(extractErrorMessage(error, "邀请码没有生成成功，可以稍后再试。"));
+      onError(extractErrorMessage(error, PROFILE_INVITE_ERROR));
     } finally {
       busy.value = false;
     }

@@ -66,3 +66,13 @@ export const PROFILE_MIGRATION_DESCRIPTION =
   "当前只迁移低风险展示层。资料编辑、头像上传裁剪、历史发布列表和账号状态仍不在这个试点里接管。";
 export const PROFILE_PUBLISH_DISABLED = "查看我的发布稍后接入";
 export const PROFILE_EDIT_DISABLED = "编辑资料仍走 legacy";
+
+/** 个人资料操作反馈 */
+export const PROFILE_AVATAR_UPDATED = "头像已更新。";
+export const PROFILE_IDENTITY_SWITCHED = "发布身份已切换。";
+export const PROFILE_INVITE_GENERATED = "邀请码已生成。";
+export const PROFILE_INVITE_SUBMITTED = "邀请码请求已提交。";
+export const PROFILE_INVITE_ERROR = "邀请码没有生成成功，可以稍后再试。";
+export const PROFILE_IDENTITY_SWITCH_ERROR = "发布身份没有切换成功，可以稍后再试。";
+export const PROFILE_AVATAR_CROP_UNSUPPORTED = "浏览器暂时不能裁剪头像，请换一个浏览器再试。";
+export const PROFILE_AVATAR_CROP_ERROR = "头像裁剪失败，请换一张图片再试。";

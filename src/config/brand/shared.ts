@@ -21,3 +21,6 @@ export const CONTENT_FRAME_LABEL = "页面内容";
 export const CONTENT_COVER_ALT = "内容封面";
 export const CONTENT_AVATAR_FALLBACK = "内";
 export const TIME_UNKNOWN = "时间未知";
+
+/** 分享 */
+export const SHARE_LINK_COPIED = "链接已复制";

@@ -7,6 +7,7 @@ import {
   REPORT_CATEGORIES,
   shouldShowReportReasonField,
 } from "./reportFlow";
+import { REPORT_UNHIDDEN_MESSAGE, REPORT_SUBMITTED_MESSAGE } from "../../config/brand";
 
 export function usePostReport(options: {
   postId: ComputedRef<number | null>;
@@ -39,7 +40,7 @@ export function usePostReport(options: {
   function undoHideReportedPost() {
     locallyHidden.value = false;
     reportFollowUpVisible.value = false;
-    options.showActionMessage("这条内容已经恢复显示。");
+    options.showActionMessage(REPORT_UNHIDDEN_MESSAGE);
   }
 
   async function handleReport() {
@@ -54,7 +55,7 @@ export function usePostReport(options: {
       reportOpen.value = false;
       reportReason.value = "";
       reportFollowUpVisible.value = true;
-      options.showActionMessage("举报已提交。你也可以先暂时隐藏这条内容。");
+      options.showActionMessage(REPORT_SUBMITTED_MESSAGE);
     } catch (error) {
       options.setActionError(getReportSubmissionMessage(error));
     } finally {

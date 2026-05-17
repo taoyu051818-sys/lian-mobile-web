@@ -1,6 +1,7 @@
 import { ref } from "vue";
 import { activateProfileAlias, deactivateProfileAlias } from "../../api/profile";
 import { extractErrorMessage } from "../../utils/extractErrorMessage";
+import { PROFILE_IDENTITY_SWITCH_ERROR } from "../../config/brand";
 
 export function useProfileAliasSwitch() {
   const busy = ref(false);
@@ -17,7 +18,7 @@ export function useProfileAliasSwitch() {
       else await deactivateProfileAlias();
       onSuccess();
     } catch (error) {
-      onError(extractErrorMessage(error, "发布身份没有切换成功，可以稍后再试。"));
+      onError(extractErrorMessage(error, PROFILE_IDENTITY_SWITCH_ERROR));
     } finally {
       busy.value = false;
     }

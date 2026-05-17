@@ -7,6 +7,8 @@ import {
   PROFILE_REAL_IDENTITY,
   PROFILE_EDITOR_CHIP,
   PROFILE_EDIT,
+  PROFILE_AVATAR_UPDATED,
+  PROFILE_IDENTITY_SWITCHED,
 } from "../../config/brand";
 import type { ProfileUser } from "../../types/profile";
 import ProfileAliasSelector from "./ProfileAliasSelector.vue";
@@ -42,7 +44,7 @@ function showError(message: string) {
 }
 
 function handleAvatarUpdated() {
-  showSuccess("头像已更新。");
+  showSuccess(PROFILE_AVATAR_UPDATED);
   emit("updated");
 }
 
@@ -51,7 +53,7 @@ function handleAvatarError(message: string) {
 }
 
 function handleAliasSwitched() {
-  showSuccess("发布身份已切换。");
+  showSuccess(PROFILE_IDENTITY_SWITCHED);
   emit("updated");
 }
 

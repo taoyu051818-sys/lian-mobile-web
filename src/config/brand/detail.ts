@@ -54,3 +54,7 @@ export const PLACE_SHEET_UPDATED_PREFIX = "更新于";
 export const PLACE_SHEET_POST_COUNT_SUFFIX = "条内容";
 export const PLACE_SHEET_CORRECTION_SUFFIX = "条修正";
 export const PLACE_SHEET_SAVED_SUFFIX = "次收藏";
+
+/** 举报/隐藏反馈 */
+export const REPORT_UNHIDDEN_MESSAGE = "这条内容已经恢复显示。";
+export const REPORT_SUBMITTED_MESSAGE = "举报已提交。你也可以先暂时隐藏这条内容。";
