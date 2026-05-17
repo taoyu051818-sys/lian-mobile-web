@@ -5,10 +5,6 @@ import {
   CONTENT_AVATAR_FALLBACK,
   CONTENT_COVER_ALT,
   LOADING_LIST,
-  PROFILE_ACTIVITY_STATUS_DRAFT,
-  PROFILE_ACTIVITY_STATUS_HIDDEN,
-  PROFILE_ACTIVITY_STATUS_PENDING,
-  PROFILE_ACTIVITY_STATUS_PUBLISHED,
   TIME_UNKNOWN,
   UNTITLED_CONTENT,
 } from "../../config/brand";
@@ -28,6 +24,13 @@ const emit = defineEmits<{
   "open-item": [tid: FeedItemId];
 }>();
 
+const PROFILE_ACTIVITY_LABELS: Record<ProfileActivityStatus, string> = {
+  published: "已发布",
+  draft: "草稿",
+  pending: "待处理",
+  hidden: "隐藏",
+};
+
 function canOpenItem(item: ProfileListItem) {
   return typeof item.tid === "number" && item.tid > 0;
 }
@@ -43,17 +46,7 @@ function itemTime(item: ProfileListItem) {
 }
 
 function statusLabel(status?: ProfileActivityStatus) {
-  switch (status) {
-    case "draft":
-      return PROFILE_ACTIVITY_STATUS_DRAFT;
-    case "pending":
-      return PROFILE_ACTIVITY_STATUS_PENDING;
-    case "hidden":
-      return PROFILE_ACTIVITY_STATUS_HIDDEN;
-    case "published":
-    default:
-      return PROFILE_ACTIVITY_STATUS_PUBLISHED;
-  }
+  return status ? PROFILE_ACTIVITY_LABELS[status] : undefined;
 }
 
 function openItem(item: ProfileListItem) {
