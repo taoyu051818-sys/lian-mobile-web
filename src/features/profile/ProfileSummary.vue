@@ -72,11 +72,8 @@ const settingsRows = computed(() => [
   },
 ]);
 
-const forumLinkText = computed(
-  () =>
-    props.hasForumLink
-      ? PROFILE_FORUM_LINK_READY
-      : PROFILE_FORUM_LINK_MISSING,
+const forumLinkText = computed(() =>
+  props.hasForumLink ? PROFILE_FORUM_LINK_READY : PROFILE_FORUM_LINK_MISSING,
 );
 </script>
 
@@ -115,7 +112,10 @@ const forumLinkText = computed(
         </div>
       </dl>
 
-      <section class="profile-summary__settings" aria-labelledby="profile-settings-title">
+      <section
+        class="profile-summary__settings"
+        aria-labelledby="profile-settings-title"
+      >
         <h3 id="profile-settings-title">{{ PROFILE_SETTINGS_TITLE }}</h3>
         <dl class="profile-summary__settings-grid">
           <div
@@ -129,7 +129,10 @@ const forumLinkText = computed(
         </dl>
       </section>
 
-      <section class="profile-summary__forum-note" aria-labelledby="profile-forum-title">
+      <section
+        class="profile-summary__forum-note"
+        aria-labelledby="profile-forum-title"
+      >
         <h3 id="profile-forum-title">{{ PROFILE_FORUM_LINK_NOTICE }}</h3>
         <p>{{ forumLinkText }}</p>
       </section>
