@@ -9,29 +9,33 @@ import {
   logoutAuth,
 } from "../../api/profile";
 import {
-  LOADING_PROFILE,
   ERROR_LOAD_GENERIC,
   ERROR_LOGOUT,
-  PROFILE_SECTION_LABEL,
+  LOADING_PROFILE,
   PROFILE_LOAD_ERROR_PREFIX,
   PROFILE_RELOAD,
+  PROFILE_SECTION_LABEL,
 } from "../../config/brand";
+import type { PageChromeSpec } from "../../shell/page-model";
+import type {
+  ProfileSettings,
+  ProfileStats,
+  ProfileUser,
+} from "../../types/profile";
+import { InlineError } from "../../ui";
 import { extractErrorMessage } from "../../utils/extractErrorMessage";
 import { usePostDetail } from "../detail/usePostDetail";
-import type { PageChromeSpec } from "../../shell/page-model";
-import type { ProfileSettings, ProfileStats, ProfileUser } from "../../types/profile";
-import { InlineError } from "../../ui";
 import AuthPanel from "../auth/AuthPanel.vue";
+import ProfileCollectionList from "./ProfileCollectionList.vue";
+import ProfileDetailOverlay from "./ProfileDetailOverlay.vue";
 import ProfileEditorPanel from "./ProfileEditorPanel.vue";
 import ProfileHeader from "./ProfileHeader.vue";
 import ProfileSummary from "./ProfileSummary.vue";
 import ProfileTabs from "./ProfileTabs.vue";
-import ProfileCollectionList from "./ProfileCollectionList.vue";
-import ProfileDetailOverlay from "./ProfileDetailOverlay.vue";
+import { useProfileAliasPicker } from "./useProfileAliasPicker";
+import { useProfileChrome } from "./useProfileChrome";
 import { useProfileSession } from "./useProfileSession";
 import { useProfileTabs } from "./useProfileTabs";
-import { useProfileChrome } from "./useProfileChrome";
-import { useProfileAliasPicker } from "./useProfileAliasPicker";
 
 const emit = defineEmits<{
   chrome: [spec: PageChromeSpec];
@@ -198,8 +202,11 @@ async function logout() {
     await logoutAuth();
     enterGuestState();
   } catch (error) {
-    if (isMissingSessionError(error)) enterGuestState();
-    else errorMessage.value = extractErrorMessage(error, ERROR_LOGOUT);
+    if (isMissingSessionError(error)) {
+      enterGuestState();
+    } else {
+      errorMessage.value = extractErrorMessage(error, ERROR_LOGOUT);
+    }
   } finally {
     loading.value = false;
   }
@@ -225,7 +232,9 @@ onMounted(() => {
       <button type="button" @click="loadProfile">{{ PROFILE_RELOAD }}</button>
     </InlineError>
 
-    <div v-if="loading" class="profile-view__state" role="status">{{ LOADING_PROFILE }}</div>
+    <div v-if="loading" class="profile-view__state" role="status">
+      {{ LOADING_PROFILE }}
+    </div>
 
     <template v-else-if="user">
       <div class="profile-view__hero-bg" aria-hidden="true"></div>
