@@ -14,10 +14,10 @@ Total files: 222
 
 | File                 | Summary                                                                                                                  | Lines |
 | -------------------- | ------------------------------------------------------------------------------------------------------------------------ | ----: |
-| `api/aiPublish.ts`   | AI publish API client (PRD V0.1 §3 / §7.4 / Phase 3). Three endpoints, all already in the backend live surface: PO...    |   166 |
-| `api/audience.ts`    | Audience options API client. Backend route (PRD V0.1 §11.1): GET /api/audience/options The route may be missing in o...  |    80 |
+| `api/aiPublish.ts`   | AI publish API client (PRD V0.1 §3 / §7.4 / Phase 3). Three endpoints, all already in the backend live surface: PO...    |   165 |
+| `api/audience.ts`    | Audience options API client. Backend route (PRD V0.1 §11.1): GET /api/audience/options The route may be missing in o...  |    81 |
 | `api/auth.ts`        | export type AuthMode = "login" \| "register";                                                                            |    66 |
-| `api/events.ts`      | Event / Help / Errand API client stubs (PRD V0.1 §11.2, §11.3, §11.4). Every function below is intentionally thin — ...  |   134 |
+| `api/events.ts`      | Event / Help / Errand API client stubs (PRD V0.1 §11.2, §11.3, §11.4). Every function below is intentionally thin — ...  |   128 |
 | `api/feed.ts`        | export const DEFAULT_TABS: FeedTab[] = [                                                                                 |   192 |
 | `api/http.ts`        | export class LianApiError extends Error                                                                                  |   132 |
 | `api/interaction.ts` | Like/vote unified interaction API (PRD V0.1 §7.1.2, §11.3). Backend already exposes `/api/posts/:tid/like` for likes...  |    65 |
@@ -42,12 +42,12 @@ Total files: 222
 
 | File                                 | Summary                                                                                                                  | Lines |
 | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------ | ----: |
-| `composables/useAudienceOptions.ts`  | Loads the user-allowed audience choices from the backend on mount. Why a composable: publish, event creation, and ad...  |    63 |
+| `composables/useAudienceOptions.ts`  | Loads the user-allowed audience choices from the backend on mount. Why a composable: publish, event creation, and ad...  |    61 |
 | `composables/useAutoLoadSentinel.ts` | export function useAutoLoadSentinel(                                                                                     |    76 |
 | `composables/useBodyScrollLock.ts`   | export function useBodyScrollLock(active: Ref<boolean>)                                                                  |    30 |
 | `composables/useEscapeListener.ts`   | export function useEscapeListener(active: Ref<boolean>, onEscape: () => void)                                            |    18 |
 | `composables/useFocusRestore.ts`     | export function useFocusRestore()                                                                                        |    15 |
-| `composables/usePublishAiDraft.ts`   | uploadedImageUrls: Ref<string[]>; title: Ref<string>; body: Ref<string>; locationLabel: Ref<string>; Called once per ... |   104 |
+| `composables/usePublishAiDraft.ts`   | uploadedImageUrls: Ref<string[]>; title: Ref<string>; body: Ref<string>; locationLabel: Ref<string>; Called once per ... |   101 |
 | `composables/useReducedMotion.ts`    | Reactive reduced-motion preference composable. SSR-safe: returns `false` when `window` / `matchMedia` are unavailabl...  |    40 |
 | `composables/useVisualViewport.ts`   | Reactive visual-viewport keyboard-inset composable. Tracks `window.visualViewport` resize/scroll events and exposes ...  |    51 |
 
@@ -137,7 +137,7 @@ Total files: 222
 | `features/feed/useFeedDetail.ts`                | export interface CardOpenPayload                                                                                         |   117 |
 | `features/feed/useFeedDetailHistory.ts`         | export interface UseFeedDetailHistoryOptions                                                                             |    80 |
 | `features/feed/usePostDetailLoader.ts`          | export function usePostDetailLoader()                                                                                    |    59 |
-| `features/map/MapCanvas.vue`                    | Prefer the dataset bounds for the image overlay, but let an explicit                                                     |   209 |
+| `features/map/MapCanvas.vue`                    | Prefer the dataset bounds for the image overlay, but let an explicit                                                     |   206 |
 | `features/map/MapLeafletView.vue`               | Vue SFC                                                                                                                  |   140 |
 | `features/map/MapPlaceSheet.vue`                | Vue SFC                                                                                                                  |    70 |
 | `features/map/MapStatus.vue`                    | Vue SFC                                                                                                                  |    34 |
@@ -181,7 +181,7 @@ Total files: 222
 | `features/publish/PublishComposer.vue`          | Vue SFC                                                                                                                  |   293 |
 | `features/publish/PublishImagePreview.vue`      | Vue SFC                                                                                                                  |   105 |
 | `features/publish/PublishLocationControls.vue`  | Vue SFC                                                                                                                  |   268 |
-| `features/publish/PublishMetaControls.vue`      | PRD V0.1 §3.1 — backend-driven gating. Optional: when omitted (older                                                     |   239 |
+| `features/publish/PublishMetaControls.vue`      | PRD V0.1 §3.1 — backend-driven gating. Optional: when omitted (older                                                     |   245 |
 | `features/publish/PublishResetConfirm.vue`      | Vue SFC                                                                                                                  |    59 |
 | `features/publish/PublishView.vue`              | PRD §7.4.2 step 4: after the first successful upload, surface the                                                        |   336 |
 | `features/publish/index.ts`                     | TypeScript module                                                                                                        |     2 |
@@ -195,7 +195,7 @@ Total files: 222
 
 | File                       | Summary                                                                                                                  | Lines |
 | -------------------------- | ------------------------------------------------------------------------------------------------------------------------ | ----: |
-| `locales/en.ts`            | English locale (PRD V0.1 §9). Mirrors zh-CN keys 1:1 — every flatten key in src/locales/zh-CN.ts must exist here too,... |   385 |
+| `locales/en.ts`            | English locale (PRD V0.1 §9). Mirrors zh-CN keys 1:1 — every flatten key in src/locales/zh-CN.ts must exist here too,... |   389 |
 | `locales/index.ts`         | Switch the active locale at runtime and persist the choice. Use this from a settings UI; navigator-driven detection r... |    33 |
 | `locales/resolveLocale.ts` | Resolve the active UI language from a navigator-like input. Priority (PRD V0.1 §9.2): 1. explicit user setting (lo...    |    90 |
 | `locales/zh-CN.ts`         | TypeScript module                                                                                                        |   377 |
@@ -250,14 +250,14 @@ Total files: 222
 
 | File                       | Summary                                                                                                                   | Lines |
 | -------------------------- | ------------------------------------------------------------------------------------------------------------------------- | ----: |
-| `types/audience.ts`        | Audience model — frontend mirror of the backend AUDIENCE_SYSTEM contract. Three permission axes are kept separate (P...   |   112 |
+| `types/audience.ts`        | Audience model — frontend mirror of the backend AUDIENCE_SYSTEM contract. Three permission axes are kept separate (P...   |   107 |
 | `types/feed.ts`            | Card-template vocabulary the Feed UI knows how to render. `activity` is the presentation label for `event` PostType (...  |    64 |
 | `types/map-policy.ts`      | Map viewport policy (PRD V0.1 §7.2.3). Bounds are deliberately permissive for V0.1 (large enough to cover any reason...   |    82 |
 | `types/map.ts`             | export interface MapBounds                                                                                                |   141 |
 | `types/messages.ts`        | export type MessageTabKey = "channel" \| "notifications";                                                                 |    59 |
 | `types/place.ts`           | export type PlaceStatus =                                                                                                 |    54 |
-| `types/post-extensions.ts` | Event / Help / Merchant / Trade / Errand domain types (PRD V0.1 §6). V0.1 ships shapes only — no UI yet. The point i...   |   124 |
-| `types/post.ts`            | Unified PostType vocabulary (PRD V0.1 §6.1). - data model (server) → `PostType` (here) - feed/card prese...               |   115 |
+| `types/post-extensions.ts` | Event / Help / Merchant / Trade / Errand domain types (PRD V0.1 §6). V0.1 ships shapes only — no UI yet. The point i...   |   120 |
+| `types/post.ts`            | Unified PostType vocabulary (PRD V0.1 §6.1). - data model (server) → `PostType` (here) - feed/card prese...               |   108 |
 | `types/profile.ts`         | export type ProfileTabKey = "history" \| "saved" \| "liked";                                                              |    42 |
 | `types/publish.ts`         | export type PublishMapVersion = "legacy" \| "manual" \| "gaode_v2"; export interface PublishLocationDraft { source: Pu... |    62 |
 
