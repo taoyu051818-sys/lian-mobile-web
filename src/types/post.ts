@@ -1,6 +1,7 @@
 import type { DisplayActor, FeedItemId, SourceSignal } from "./feed";
 import type { PlaceRef } from "./place";
 import type { Audience } from "./audience";
+import type { EventPostExtension } from "./post-extensions";
 
 export interface PostReply {
   id: FeedItemId;
@@ -28,6 +29,10 @@ export interface PostDetail {
   sourceUrl: string;
   replies: PostReply[];
   bookmarked: boolean;
+  /** PRD V0.1 §6.3 — present iff postType === "event". */
+  event?: EventPostExtension;
+  /** Whether the current viewer has already joined this event. */
+  eventJoined?: boolean;
 }
 
 /**

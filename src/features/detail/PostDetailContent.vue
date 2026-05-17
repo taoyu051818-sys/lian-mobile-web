@@ -1,8 +1,11 @@
 <script setup lang="ts">
 import type { PlaceRef, PlaceSheet } from "../../types/place";
+import type { EventActionPlan } from "../../domain/eventActionPolicy";
+import type { EventPostExtension } from "../../types/post-extensions";
 import PostDetailGallery from "./PostDetailGallery.vue";
 import PostDetailMainBody from "./PostDetailMainBody.vue";
 import PostDetailInfoStrip from "./PostDetailInfoStrip.vue";
+import PostDetailEventBlock from "./PostDetailEventBlock.vue";
 import PostPlaceSheetBlock from "./PostPlaceSheetBlock.vue";
 import PostReportBlock from "./PostReportBlock.vue";
 import PostActionFeedback from "./PostActionFeedback.vue";
@@ -30,6 +33,10 @@ defineProps<{
   reportFollowUpVisible?: boolean;
   actionError?: string;
   actionMessage?: string;
+  event?: EventPostExtension;
+  eventPlan?: EventActionPlan;
+  eventBusy?: boolean;
+  eventActionError?: string;
 }>();
 
 const emit = defineEmits<{
@@ -40,6 +47,7 @@ const emit = defineEmits<{
   toggleReport: [];
   submitReport: [];
   hideReportedPost: [];
+  eventAct: [];
   "update:reportCategory": [value: string];
   "update:reportReason": [value: string];
   "update:placeSheetOpen": [value: boolean];
@@ -57,6 +65,15 @@ const emit = defineEmits<{
     />
 
     <PostDetailMainBody :title="title" :body-html="bodyHtml" />
+
+    <PostDetailEventBlock
+      v-if="event && eventPlan"
+      :event="event"
+      :plan="eventPlan"
+      :busy="!!eventBusy"
+      :action-error="eventActionError"
+      @act="emit('eventAct')"
+    />
 
     <PostDetailInfoStrip
       :primary-tag="primaryTag"
