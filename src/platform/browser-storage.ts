@@ -69,7 +69,7 @@ export function rememberReadItem(id: FeedItemId, storage: Storage = localStorage
     const normalizedId = id == null ? "" : String(id);
     const history = readHistoryEntries(storage);
     const nextHistory = history.filter((entry) => String(entry.tid) !== normalizedId);
-    nextHistory.push({ tid: normalizedId, lastViewedAt: new Date().toISOString() });
+    nextHistory.push({ tid: Number(normalizedId), lastViewedAt: new Date().toISOString() });
     storage.setItem(READ_HISTORY_KEY, JSON.stringify(nextHistory.slice(-500)));
   } catch {
     // Reading history should never block opening a card.
