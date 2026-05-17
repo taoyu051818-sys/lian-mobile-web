@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import { PROFILE_RELOAD } from "../../config/brand";
-import type { ProfileSettings, ProfileStats } from "../../types/profile";
+import type {
+  ProfileSettings,
+  ProfileStats,
+} from "../../types/profile";
 import { InlineError } from "../../ui";
 
 const PROFILE_SUMMARY_TITLE = "个人概览";
