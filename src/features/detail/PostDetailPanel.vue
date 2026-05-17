@@ -297,6 +297,12 @@ watch(
   text-align: center;
 }
 
+.post-detail-panel.is-returning {
+  --detail-top-chrome-opacity: 0;
+  --detail-bottom-chrome-opacity: 0;
+  pointer-events: none;
+}
+
 .inline-error button {
   min-height: 32px;
   margin-left: var(--space-2);

@@ -53,6 +53,7 @@ const {
   detailLoading,
   detailError,
   detailOpen,
+  detailPhase,
   detailDragging,
   detailReturning,
   detailDragX,
@@ -143,7 +144,7 @@ const pageChrome = computed<PageChromeSpec>(() => ({
     },
     onTabSelect: feedData.switchTab,
   },
-  autoHideOnDetail: detailOpen.value,
+  autoHideOnDetail: detailPhase.value !== "idle",
 }));
 
 watch(pageChrome, (spec) => emit("chrome", spec), { deep: true });

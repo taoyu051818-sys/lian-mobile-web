@@ -54,6 +54,12 @@ export function useFeedDetail(deps: FeedDetailDeps) {
   }
 
   const detailOpen = computed(() => selectedPostId.value !== null);
+  const detailPhase = computed(() => {
+    if (detailReturning.value) return "returning";
+    if (detailDragging.value) return "dragging";
+    if (detailOpen.value) return detailLoading.value ? "opening" : "open";
+    return "idle";
+  });
   const detailCardifyProgress = computed(() =>
     Math.min(1, Math.max(0, Math.abs(detailDragX.value) / deps.cardifyDistance)),
   );
@@ -230,6 +236,7 @@ export function useFeedDetail(deps: FeedDetailDeps) {
     detailError,
     lastOpenSnapshot,
     detailOpen,
+    detailPhase,
     detailDragging,
     detailReturning,
     detailDragX,
