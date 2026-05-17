@@ -97,12 +97,13 @@ describe("card camera timer hygiene (#254)", () => {
 
 describe("detail return timer hygiene (#254)", () => {
   const detailSource = readRepoFile("../../src/features/feed/useFeedDetail.ts");
+  const motionSource = readRepoFile("../../src/features/feed/useDetailCardifyMotion.ts");
 
-  it("useFeedDetail saves and cancels return animation timeout handle", () => {
-    expect(detailSource).toContain("let pendingReturnTimer: ReturnType<typeof setTimeout>");
-    expect(detailSource).toContain("clearTimeout(pendingReturnTimer)");
-    expect(detailSource).toContain("pendingReturnTimer = window.setTimeout(");
-    expect(detailSource).toContain("cancelPendingReturnTimer()");
+  it("useDetailCardifyMotion saves and cancels return animation timeout handle", () => {
+    expect(motionSource).toContain("let pendingReturnTimer: ReturnType<typeof setTimeout>");
+    expect(motionSource).toContain("clearTimeout(pendingReturnTimer)");
+    expect(motionSource).toContain("pendingReturnTimer = window.setTimeout(");
+    expect(motionSource).toContain("cancelPendingReturnTimer()");
   });
 
   it("useFeedDetail cancels return timer on unmount", () => {
@@ -112,10 +113,9 @@ describe("detail return timer hygiene (#254)", () => {
     expect(unmountMatch).toBeTruthy();
   });
 
-  it("useFeedDetail cancels existing return timer when a new close supersedes", () => {
-    // closeDetailWithCardify should call cancelPendingReturnTimer before creating new timer
+  it("useFeedDetail delegates to motion.cancelPendingReturnTimer in closeDetailWithCardify", () => {
     const closeMatch = detailSource.match(
-      /function closeDetailWithCardify[\s\S]*?cancelPendingReturnTimer\(\)[\s\S]*?pendingReturnTimer = window\.setTimeout/,
+      /function closeDetailWithCardify[\s\S]*?motion\.cancelPendingReturnTimer\(\)/,
     );
     expect(closeMatch).toBeTruthy();
   });
