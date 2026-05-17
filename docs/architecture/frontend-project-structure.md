@@ -1,4 +1,4 @@
-﻿# Frontend Project Structure
+# Frontend Project Structure
 
 This document explains the current frontend folder structure, ownership boundaries, and page map on `main`.
 
@@ -44,6 +44,14 @@ The root contains the Vue/Vite app entry plus project configuration:
 The active frontend runtime is Vue 3 + Vite.
 
 The old static runtime was removed in PR `#282` and migrated to `taoyu051818-sys/-lian-mobile-web-legacy`. `public/assets/` now mainly holds static assets used by the Vue runtime, while `public/tools/` holds standalone internal tools.
+
+`package.json`, `vite.config.ts`, and `scripts/validate-project-structure.js` now act as one coordinated root contract surface:
+
+- `package.json` owns the operator and CI entrypoints for `npm start`, `npm run check`, `npm run ops:guard`, `npm run build`, `npm run verify`, `npm run ownership-doc`, `npm run check:ownership-doc`, and `npm run check:dead-code`.
+- `vite.config.ts` owns the `~` alias to `src/`, backend/image-proxy env validation, dev-server proxy behavior, and the production source-protection build settings.
+- `scripts/validate-project-structure.js` is the executable repo-shape guard behind `npm run check`; it validates required frontend files, backend-only exclusions, and the layer/barrel rules described below.
+
+When one of those files changes, update this guide and the runtime inventory if the developer-facing or deploy-facing contract changed.
 
 `public/tools/task-board.html`, `public/tools/task-board.js`, and `public/tools/task-board.css` are a legacy/internal historical viewer. They are not the live LIAN coordination surface. For current coordination truth, use:
 

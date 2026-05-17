@@ -78,6 +78,16 @@ Any PR that changes the Leaflet dependency version, adds or removes Leaflet plug
 
 The guards run as part of `npm run check` and are verified by `tests/architecture/project-structure-guard.mjs`. Any PR that modifies `scripts/validate-project-structure.js` or the architecture guard tests must keep this inventory updated.
 
+## Architecture cleanup follow-up (issue #578 / merged PR #577)
+
+Merged PR `#577` changed `package.json`, `scripts/validate-project-structure.js`, and `vite.config.ts` together. Those files now form one coordinated runtime-sensitive surface:
+
+- `package.json` owns the operator and CI entrypoints for `npm start`, `npm run check`, `npm run ops:guard`, `npm run verify`, `npm run ownership-doc`, `npm run check:ownership-doc`, `npm run check:dead-code`, and `npm run check:stale-code`.
+- `scripts/validate-project-structure.js` is not just a folder-layout check. It validates required frontend files, JSON config shape, frontend guard script syntax, backend-only exclusions, the `src/views/` ban, UI/domain/platform boundaries, and feature-barrel imports.
+- `vite.config.ts` owns the `~` path alias in addition to backend/image-proxy env validation, dev proxy targets, and source-protection build settings.
+
+Because `npm run check` and `npm run ops:guard` treat those files as one contract surface, any PR that changes one of them must update this inventory and the paired architecture ownership docs in the same branch.
+
 ## Ops doc cleanup
 
 Stale `docs/ops/` files removed in PR #535 (2026-05-16): `2026-05-05-bad-smell-cleanup-summary.md`, `motion-integration-lane.md`. These were historical-only docs with no runtime behavior impact.
