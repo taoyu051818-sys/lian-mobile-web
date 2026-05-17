@@ -71,20 +71,16 @@ Returning from detail reverses the same camera path:
 4. Detail surface shrinks toward the original card rect.
 5. Home chrome returns from the bottom/top according to fixed chrome rules.
 
-## Current implementation stage
+## Implementation status
 
-The first implementation stage uses a transition overlay (quarantined v1 scaffolding, issue #274):
+The product motion described above is implemented by `useDetailCardifyMotion.ts` (return-side cardify scale + translate animation back to the original card rect) plus `FeedItemCard.vue` exposing `data-motion-role` anchors that future stages can use for forward-side morph.
 
-- `FeedItemCard.vue` exposes motion anchors through `data-motion-role` attributes.
-- `card-camera-transition.css` controls the overlay moving from card rect to center.
-- `content-immersive-ui.css` layers visual skin (border, bg, shadow) on the overlay.
-- Tag, time, and reply are currently represented by overlay styling and pseudo-elements to validate timing and direction.
-
-### Ownership after #347
+### Ownership
 
 - `useFeedDetail.ts` owns detail data lifecycle, history/popstate, close orchestration (`closeDetailWithCardify`), and chrome handoff.
-- `FeedView.vue` still owns the v1 card overlay DOM, the `startCardTransition` injection (rAF + setTimeout scaffolding), and scoped card-transition CSS.
-- Chrome visibility is declarative: `FeedView` emits `PageChromeSpec` with `autoHideOnDetail`, and the shell's `applyPageChrome` handles hiding/showing chrome.
-- The old floating chrome phase controller (`useFloatingChromeController`) has been retired. Chrome visibility is now driven by the shell's `applyPageChrome` and `ShellChrome`'s `data-visible` attribute.
+- `useDetailCardifyMotion.ts` owns the return-side animation: scale, translate, and radius interpolation back to `lastOpenSnapshot.rect`.
+- Chrome visibility is declarative: feature views emit `PageChromeSpec` with `autoHideOnDetail`, and the shell's `applyPageChrome` handles hiding/showing chrome through `ShellChrome`'s `data-visible` attribute.
 
-Future stages should replace pseudo-elements with real DOM morph targets and connect values from the selected feed item rather than static placeholder text.
+### Future stages
+
+Future stages should add a forward-side morph that uses the existing `data-motion-role` anchors as real DOM targets, replacing the current "details just appear" open transition. The return-side animation in `useDetailCardifyMotion.ts` is the reference implementation for what the forward side should look like in reverse.

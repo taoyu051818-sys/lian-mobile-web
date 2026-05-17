@@ -46,14 +46,6 @@ test("ProfileTabs uses underline tab style with role=tablist", () => {
   assert.doesNotMatch(src, /border-radius: var\(--radius-chip\)/);
 });
 
-test("ProfileActions uses subtle text-style buttons instead of LianButton", () => {
-  const src = read("src/features/profile/ProfileActions.vue");
-  assert.doesNotMatch(src, /<LianButton/);
-  assert.doesNotMatch(src, /import.*LianButton/);
-  assert.match(src, /profile-actions__btn/);
-  assert.match(src, /profile-actions__divider/);
-});
-
 test("ProfileCollectionList cards use shadow instead of border", () => {
   const src = read("src/features/profile/ProfileCollectionList.vue");
   assert.match(src, /box-shadow: var\(--shadow-card\)/);

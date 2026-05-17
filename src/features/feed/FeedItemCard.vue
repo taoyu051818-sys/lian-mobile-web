@@ -3,7 +3,6 @@ import { computed, nextTick, ref, watch } from "vue";
 import {
   DEFAULT_USER_LABEL,
   UNTITLED_CONTENT,
-  FEED_PLACE_CAMPUS,
   FEED_TIME_JUST_NOW,
   FEED_COLLAPSE,
   FEED_EXPAND,
@@ -50,7 +49,6 @@ function normalizePresentationIntent(
 const title = computed(() => props.item.title || UNTITLED_CONTENT);
 const coverUrl = computed(() => props.item.cover || "");
 const primaryTag = computed(() => props.item.primaryTag || "");
-const placeLabel = computed(() => props.item.locationArea || FEED_PLACE_CAMPUS);
 const timeLabel = computed(() => props.item.timeLabel || FEED_TIME_JUST_NOW);
 const actor = computed(() => props.item.actor || {});
 const authorName = computed(() => actorDisplayName(actor.value, DEFAULT_USER_LABEL));
@@ -150,11 +148,6 @@ const {
     class="feed-item-card"
     :class="[`feed-item-card--${cardTemplate}`, { 'feed-item-card--with-cover': coverUrl }]"
     :data-card-warning="cardWarning"
-    :data-motion-title="title"
-    :data-motion-tag="primaryTag"
-    :data-motion-time="timeLabel"
-    :data-motion-author="authorName"
-    :data-motion-place="placeLabel"
     role="button"
     tabindex="0"
     :aria-label="`${title}，${authorName}`"
@@ -175,15 +168,12 @@ const {
       :template-mark="templateMark"
     />
 
-    <div class="feed-item-card__body" data-motion-role="body">
-      <span
-        v-if="cardTemplate === 'text' && primaryTag"
-        class="feed-item-card__inline-tag"
-        data-motion-role="tag"
-        >{{ primaryTag }}</span
-      >
+    <div class="feed-item-card__body">
+      <span v-if="cardTemplate === 'text' && primaryTag" class="feed-item-card__inline-tag">{{
+        primaryTag
+      }}</span>
 
-      <h3 :title="title" data-motion-role="title">{{ title }}</h3>
+      <h3 :title="title">{{ title }}</h3>
 
       <template v-if="cardTemplate === 'text' && bodyPreview">
         <p

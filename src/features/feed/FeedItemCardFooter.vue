@@ -59,29 +59,20 @@ async function handleLike() {
 </script>
 
 <template>
-  <footer class="feed-item-card__footer" data-motion-role="meta-row">
-    <div class="feed-item-card__author" data-motion-role="author">
+  <footer class="feed-item-card__footer">
+    <div class="feed-item-card__author">
       <img
         v-if="authorAvatarUrl"
         :src="authorAvatarUrl"
         :alt="authorName"
         loading="lazy"
-        data-motion-role="avatar"
         draggable="false"
       />
-      <span
-        v-else
-        class="feed-item-card__avatar-text"
-        aria-hidden="true"
-        data-motion-role="avatar"
-        >{{ authorInitial }}</span
-      >
+      <span v-else class="feed-item-card__avatar-text" aria-hidden="true">{{ authorInitial }}</span>
       <span class="feed-item-card__author-name" :title="authorName">{{ authorName }}</span>
     </div>
 
-    <span class="feed-item-card__motion-time" data-motion-role="time" aria-hidden="true">{{
-      timeLabel
-    }}</span>
+    <span class="feed-item-card__motion-time" aria-hidden="true">{{ timeLabel }}</span>
 
     <button
       class="feed-item-card__like"
@@ -91,7 +82,6 @@ async function handleLike() {
       :aria-pressed="liked"
       :disabled="likeBusy"
       data-card-control="like"
-      data-motion-role="like"
       @click.stop="handleLike"
       @pointerdown.stop
       @pointerup.stop

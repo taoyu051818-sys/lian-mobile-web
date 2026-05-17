@@ -1,4 +1,4 @@
-import { buildApiUrl, getApiBase } from "../config/runtime-config";
+import { buildApiUrl } from "../config/runtime-config";
 import { ERROR_RATE_LIMIT } from "../config/brand";
 import { ensureClientId } from "../platform/clientIdentity";
 import { asRecord } from "../platform/api-normalizers";
@@ -15,11 +15,6 @@ export class LianApiError extends Error {
     this.code = code;
     this.retryAfterSeconds = retryAfterSeconds;
   }
-}
-
-export function withApiBase(path: string) {
-  if (/^https?:\/\//i.test(path)) return path;
-  return path.startsWith("/") ? `${getApiBase()}${path}` : path;
 }
 
 function normalizeJsonOptions(options: RequestInit = {}) {

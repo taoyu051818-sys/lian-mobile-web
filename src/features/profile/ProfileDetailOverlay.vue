@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { POST_DETAIL_DIALOG_LABEL } from "../../config/brand";
 import type { PostDetail } from "../../types/post";
-import PostDetailPanel from "../detail/PostDetailPanel.vue";
+import { PostDetailPanel } from "../detail";
 
 defineProps<{
   post: PostDetail | null;

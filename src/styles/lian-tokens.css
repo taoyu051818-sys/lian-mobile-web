@@ -88,8 +88,6 @@
   --motion-fast: 160ms;
   --motion-micro: 120ms;
   --motion-standard: 220ms;
-  --motion-panel: 280ms;
-  --motion-page: 320ms;
   --motion-return: 380ms;
   --motion-ease-standard: cubic-bezier(0.22, 0.61, 0.36, 1);
   --bg: var(--lian-bg);

@@ -1,10 +1,9 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from "vue";
-import { usePostDetail } from "../detail/usePostDetail";
+import { PostDetailPanel, usePostDetail } from "../detail";
 import { useVisualViewport } from "../../composables/useVisualViewport";
 import type { MessageTabKey } from "../../types/messages";
 import type { PageChromeSpec } from "../../shell/page-model";
-import PostDetailPanel from "../detail/PostDetailPanel.vue";
 import { ChannelComposer, ChannelThread, NotificationList } from "./";
 import {
   MESSAGE_TAB_CHANNEL,

@@ -2,7 +2,7 @@
 import { defineAsyncComponent, type Component, type PropType } from "vue";
 import type { AppViewKey } from "./view-types";
 import type { PageChromeSpec } from "../shell/page-model";
-import FeedView from "../features/feed/FeedView.vue";
+import { FeedView } from "../features/feed";
 import ViewAsyncError from "./ViewAsyncError.vue";
 import ViewLoadingFallback from "./ViewLoadingFallback.vue";
 
@@ -17,10 +17,12 @@ function asyncView(loader: () => Promise<{ default: Component }>) {
 
 const viewComponents: Record<AppViewKey, Component> = {
   feed: FeedView,
-  map: asyncView(() => import("../features/map/MapLeafletView.vue")),
-  publish: asyncView(() => import("../features/publish/PublishView.vue")),
-  messages: asyncView(() => import("../features/messages/MessagesView.vue")),
-  profile: asyncView(() => import("../features/profile/ProfileView.vue")),
+  map: asyncView(() => import("../features/map").then((m) => ({ default: m.MapLeafletView }))),
+  publish: asyncView(() => import("../features/publish").then((m) => ({ default: m.PublishView }))),
+  messages: asyncView(() =>
+    import("../features/messages").then((m) => ({ default: m.MessagesView })),
+  ),
+  profile: asyncView(() => import("../features/profile").then((m) => ({ default: m.ProfileView }))),
 };
 
 const props = defineProps({
