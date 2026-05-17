@@ -56,3 +56,22 @@ export function getRecentReadHistoryIds(storage: Storage = localStorage, limit =
     .map((entry) => entry.tid)
     .slice(0, limit);
 }
+
+export function readHistoryQuery(storage: Storage = localStorage): string {
+  return readHistoryEntries(storage)
+    .map((entry) => String(entry.tid))
+    .filter(Boolean)
+    .join(",");
+}
+
+export function rememberReadItem(id: FeedItemId, storage: Storage = localStorage): void {
+  try {
+    const normalizedId = id == null ? "" : String(id);
+    const history = readHistoryEntries(storage);
+    const nextHistory = history.filter((entry) => String(entry.tid) !== normalizedId);
+    nextHistory.push({ tid: Number(normalizedId), lastViewedAt: new Date().toISOString() });
+    storage.setItem(READ_HISTORY_KEY, JSON.stringify(nextHistory.slice(-500)));
+  } catch {
+    // Reading history should never block opening a card.
+  }
+}
