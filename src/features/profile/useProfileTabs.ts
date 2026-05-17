@@ -3,27 +3,29 @@ import { fetchProfileTab } from "../../api/profile";
 import { getRecentReadHistoryIds } from "../../platform/browser-storage";
 import { extractErrorMessage } from "../../utils/extractErrorMessage";
 import {
-  EMPTY_DRAFTS,
   EMPTY_HISTORY,
   EMPTY_LIKED,
-  EMPTY_MAP_CONTRIBUTIONS,
-  EMPTY_POSTS,
-  EMPTY_REPLIES,
   EMPTY_SAVED,
   ERROR_LOAD_GENERIC,
   PROFILE_EMPTY_CONTENT,
-  PROFILE_FORUM_LINK_MISSING,
   PROFILE_LIST_ERROR_PREFIX,
-  PROFILE_TAB_DRAFTS,
   PROFILE_TAB_HISTORY,
   PROFILE_TAB_LIKED,
-  PROFILE_TAB_MAP,
-  PROFILE_TAB_POSTS,
-  PROFILE_TAB_REPLIES,
   PROFILE_TAB_SAVED,
 } from "../../config/brand";
 import type { FeedItemId } from "../../types/feed";
 import type { ProfileListItem, ProfileTabKey, ProfileUser } from "../../types/profile";
+
+const PROFILE_TAB_POSTS = "发布";
+const PROFILE_TAB_REPLIES = "回复";
+const PROFILE_TAB_DRAFTS = "草稿";
+const PROFILE_TAB_MAP = "地图";
+const EMPTY_POSTS = "还没有公开发布内容";
+const EMPTY_REPLIES = "还没有回复记录";
+const EMPTY_DRAFTS = "还没有保存草稿";
+const EMPTY_MAP_CONTRIBUTIONS = "还没有地图贡献";
+const PROFILE_FORUM_LINK_MISSING =
+  "当前账号还没有绑定论坛身份，发布、回复和地图贡献会暂时显示为空。";
 
 const FORUM_LINKED_TABS = new Set<ProfileTabKey>(["posts", "replies", "map-contributions"]);
 
