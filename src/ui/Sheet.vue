@@ -1,5 +1,8 @@
 <script setup lang="ts">
-import { watch, onBeforeUnmount, useTemplateRef, nextTick } from "vue";
+import { computed, watch, useTemplateRef, nextTick } from "vue";
+import { useBodyScrollLock } from "../composables/useBodyScrollLock";
+import { useEscapeListener } from "../composables/useEscapeListener";
+import { useFocusRestore } from "../composables/useFocusRestore";
 
 const props = withDefaults(
   defineProps<{
@@ -16,23 +19,12 @@ const emit = defineEmits<{
   close: [];
 }>();
 
+const isOpen = computed(() => props.open);
 const overlayRef = useTemplateRef<HTMLElement>("overlay");
-let triggerEl: HTMLElement | null = null;
+const focusRestore = useFocusRestore();
 
-function handleKeydown(event: KeyboardEvent) {
-  if (event.key === "Escape") {
-    event.stopPropagation();
-    emit("close");
-  }
-}
-
-function lockScroll() {
-  document.body.style.setProperty("overflow", "hidden");
-}
-
-function unlockScroll() {
-  document.body.style.removeProperty("overflow");
-}
+useBodyScrollLock(isOpen);
+useEscapeListener(isOpen, () => emit("close"));
 
 function keepFocusVisible(target: EventTarget | null) {
   if (!(target instanceof HTMLElement)) return;
@@ -57,25 +49,13 @@ function handleFocusIn(event: FocusEvent) {
   keepFocusVisible(event.target);
 }
 
-watch(
-  () => props.open,
-  (isOpen) => {
-    if (isOpen) {
-      triggerEl = document.activeElement as HTMLElement;
-      lockScroll();
-      document.addEventListener("keydown", handleKeydown);
-      focusFirst();
-    } else {
-      unlockScroll();
-      document.removeEventListener("keydown", handleKeydown);
-      triggerEl?.focus();
-    }
-  },
-);
-
-onBeforeUnmount(() => {
-  unlockScroll();
-  document.removeEventListener("keydown", handleKeydown);
+watch(isOpen, (open) => {
+  if (open) {
+    focusRestore.save();
+    focusFirst();
+  } else {
+    focusRestore.restore();
+  }
 });
 </script>
 
