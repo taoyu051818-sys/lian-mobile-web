@@ -4,10 +4,21 @@ import {
   PUBLISH_LOCATION_UNBOUND,
   PUBLISH_SUCCESS,
   PUBLISH_SUCCESS_BOUND,
+  PUBLISH_EVENT_SUCCESS,
+  PUBLISH_EVENT_UNAVAILABLE,
+  PUBLISH_EVENT_INVALID_TIME,
+  PUBLISH_EVENT_CAPACITY_NOT_INT,
+  PUBLISH_EVENT_CAPACITY_NEGATIVE,
+  PUBLISH_EVENT_JOIN_POLICY_UNKNOWN,
 } from "../../config/brand";
 import { extractErrorMessage } from "../../utils/extractErrorMessage";
 import { buildPublishPayload, publishPost } from "../../api/publish";
+import { createEvent } from "../../api/events";
+import { parseCapacityInput, validateEventPublishForm } from "../../domain/eventPublishPolicy";
+import { normalizeAudience } from "../../types/audience";
+import type { EventJoinPolicy } from "../../types/post-extensions";
 import type { PublishLocationDraft, PublishVisibility } from "../../types/publish";
+import type { PublishPostType } from "../../composables/useEventPublishDraft";
 
 export function usePublishSubmit(options: {
   title: Ref<string>;
@@ -29,6 +40,14 @@ export function usePublishSubmit(options: {
   locationPreviewLabel: Ref<string>;
   validate: () => string;
   resetForm: () => void;
+  // Event-publish extras (PRD V0.1 §6.3 / §11.2). Optional so callers that
+  // never publish events stay backwards-compatible.
+  postType?: Ref<PublishPostType>;
+  eventStartAt?: Ref<string>;
+  eventEndAt?: Ref<string>;
+  eventCapacity?: Ref<string>;
+  eventJoinPolicy?: Ref<EventJoinPolicy>;
+  audienceVisibility?: Ref<PublishVisibility>;
 }) {
   const postDetailUrl = computed(() => {
     const tid = options.lastTid.value;
@@ -40,8 +59,52 @@ export function usePublishSubmit(options: {
     return response.place?.name || "";
   }
 
+  function validateEventFields(): string {
+    if (!options.postType || options.postType.value !== "event") return "";
+    return validateEventPublishForm(
+      {
+        startAt: options.eventStartAt?.value || "",
+        endAt: options.eventEndAt?.value || "",
+        capacity: options.eventCapacity?.value || "",
+        joinPolicy: options.eventJoinPolicy?.value || "open",
+      },
+      {
+        startAfterEnd: PUBLISH_EVENT_INVALID_TIME,
+        capacityNotInt: PUBLISH_EVENT_CAPACITY_NOT_INT,
+        capacityNegative: PUBLISH_EVENT_CAPACITY_NEGATIVE,
+        joinPolicyUnknown: PUBLISH_EVENT_JOIN_POLICY_UNKNOWN,
+      },
+    );
+  }
+
+  async function submitEvent() {
+    const cap = parseCapacityInput(options.eventCapacity?.value || "");
+    const capacity = cap.ok ? cap.capacity : undefined;
+    const startAt = (options.eventStartAt?.value || "").trim();
+    const endAt = (options.eventEndAt?.value || "").trim();
+    const audience = normalizeAudience({
+      visibility: options.audienceVisibility?.value || options.visibility.value,
+    });
+    try {
+      const response = await createEvent({
+        title: options.title.value,
+        body: options.body.value,
+        participantScope: audience,
+        joinPolicy: options.eventJoinPolicy?.value || "open",
+        ...(startAt ? { startAt } : {}),
+        ...(endAt ? { endAt } : {}),
+        ...(capacity !== undefined ? { capacity } : {}),
+      });
+      options.lastTid.value = response.tid || null;
+      options.successMessage.value = PUBLISH_EVENT_SUCCESS;
+      options.resetForm();
+    } catch (error) {
+      options.errorMessage.value = extractErrorMessage(error, PUBLISH_EVENT_UNAVAILABLE);
+    }
+  }
+
   async function submitPublish() {
-    const validation = options.validate();
+    const validation = options.validate() || validateEventFields();
     options.errorMessage.value = validation;
     options.successMessage.value = "";
     options.lastTid.value = null;
@@ -49,6 +112,10 @@ export function usePublishSubmit(options: {
 
     options.publishing.value = true;
     try {
+      if (options.postType?.value === "event") {
+        await submitEvent();
+        return;
+      }
       const publishedLocationLabel = options.locationPreviewLabel.value;
       const payload = buildPublishPayload({
         imageUrls: options.uploadedImageUrls.value,
