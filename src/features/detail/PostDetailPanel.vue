@@ -154,10 +154,12 @@ const {
 const replyIdentityLabel = "以当前身份回复";
 
 function handleLike() {
-  return rawHandleLike(postId.value);
+  const currentId = postId.value;
+  return rawHandleLike(currentId, () => postId.value === currentId);
 }
 function handleSave() {
-  return rawHandleSave(postId.value);
+  const currentId = postId.value;
+  return rawHandleSave(currentId, () => postId.value === currentId);
 }
 watch(
   post,

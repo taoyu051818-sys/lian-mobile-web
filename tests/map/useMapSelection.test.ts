@@ -1,5 +1,4 @@
-import test from "node:test";
-import assert from "node:assert/strict";
+import { describe, expect, it } from "vitest";
 
 import { placeIdForLocation, hasStablePlaceRef } from "../../src/features/map/useMapSelection.ts";
 import type { MapLocation } from "../../src/types/map.ts";
@@ -14,49 +13,51 @@ function makeLocation(overrides: Partial<MapLocation> = {}): MapLocation {
   };
 }
 
-// --- placeIdForLocation ---
+describe("useMapSelection helpers", () => {
+  // --- placeIdForLocation ---
 
-test("placeIdForLocation returns place.id when present", () => {
-  const location = makeLocation({ place: { id: "p-1", name: "图书馆" } });
-  assert.equal(placeIdForLocation(location), "p-1");
-});
-
-test("placeIdForLocation returns placeId when place.id is absent", () => {
-  const location = makeLocation({ placeId: "pid-2" });
-  assert.equal(placeIdForLocation(location), "pid-2");
-});
-
-test("placeIdForLocation prefers place.id over placeId", () => {
-  const location = makeLocation({
-    placeId: "pid-2",
-    place: { id: "p-1", name: "图书馆" },
+  it("placeIdForLocation returns place.id when present", () => {
+    const location = makeLocation({ place: { id: "p-1", name: "图书馆" } });
+    expect(placeIdForLocation(location)).toBe("p-1");
   });
-  assert.equal(placeIdForLocation(location), "p-1");
-});
 
-test("placeIdForLocation returns empty string when neither exists", () => {
-  const location = makeLocation();
-  assert.equal(placeIdForLocation(location), "");
-});
+  it("placeIdForLocation returns placeId when place.id is absent", () => {
+    const location = makeLocation({ placeId: "pid-2" });
+    expect(placeIdForLocation(location)).toBe("pid-2");
+  });
 
-// --- hasStablePlaceRef ---
+  it("placeIdForLocation prefers place.id over placeId", () => {
+    const location = makeLocation({
+      placeId: "pid-2",
+      place: { id: "p-1", name: "图书馆" },
+    });
+    expect(placeIdForLocation(location)).toBe("p-1");
+  });
 
-test("hasStablePlaceRef returns true when place.id exists", () => {
-  const location = makeLocation({ place: { id: "p-1", name: "图书馆" } });
-  assert.equal(hasStablePlaceRef(location), true);
-});
+  it("placeIdForLocation returns empty string when neither exists", () => {
+    const location = makeLocation();
+    expect(placeIdForLocation(location)).toBe("");
+  });
 
-test("hasStablePlaceRef returns true when placeId exists", () => {
-  const location = makeLocation({ placeId: "pid-2" });
-  assert.equal(hasStablePlaceRef(location), true);
-});
+  // --- hasStablePlaceRef ---
 
-test("hasStablePlaceRef returns false when neither exists", () => {
-  const location = makeLocation();
-  assert.equal(hasStablePlaceRef(location), false);
-});
+  it("hasStablePlaceRef returns true when place.id exists", () => {
+    const location = makeLocation({ place: { id: "p-1", name: "图书馆" } });
+    expect(hasStablePlaceRef(location)).toBe(true);
+  });
 
-test("hasStablePlaceRef returns false for empty string placeId", () => {
-  const location = makeLocation({ placeId: "" });
-  assert.equal(hasStablePlaceRef(location), false);
+  it("hasStablePlaceRef returns true when placeId exists", () => {
+    const location = makeLocation({ placeId: "pid-2" });
+    expect(hasStablePlaceRef(location)).toBe(true);
+  });
+
+  it("hasStablePlaceRef returns false when neither exists", () => {
+    const location = makeLocation();
+    expect(hasStablePlaceRef(location)).toBe(false);
+  });
+
+  it("hasStablePlaceRef returns false for empty string placeId", () => {
+    const location = makeLocation({ placeId: "" });
+    expect(hasStablePlaceRef(location)).toBe(false);
+  });
 });
