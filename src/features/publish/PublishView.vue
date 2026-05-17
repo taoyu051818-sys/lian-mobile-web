@@ -14,12 +14,14 @@ import PublishActionBar from "./PublishActionBar.vue";
 import PublishComposer from "./PublishComposer.vue";
 import PublishLocationControls from "./PublishLocationControls.vue";
 import PublishMetaControls from "./PublishMetaControls.vue";
+import PublishEventControls from "./PublishEventControls.vue";
 import { usePublishDraft } from "./usePublishDraft";
 import { usePublishLocationOptions } from "./usePublishLocationOptions";
 import { clearPublishDraft } from "./publishDraftSession";
 import { usePublishDraftSession } from "./usePublishDraftSession";
 import PublishResetConfirm from "./PublishResetConfirm.vue";
 import { usePublishSubmit } from "./usePublishSubmit";
+import { useEventPublishDraft } from "../../composables/useEventPublishDraft";
 
 const emit = defineEmits<{
   chrome: [spec: PageChromeSpec];
@@ -28,6 +30,7 @@ const emit = defineEmits<{
 const RESET_CONFIRM_MESSAGE = [PUBLISH_CLEAR_CONFIRM, PUBLISH_IMAGE_RESELECT].join("");
 
 const draft = usePublishDraft();
+const eventDraft = useEventPublishDraft();
 const locationOptions = usePublishLocationOptions(draft.placeName);
 const resetConfirmationVisible = ref(false);
 
@@ -48,6 +51,7 @@ const { draftNotice, hasUnsavedDraft } = usePublishDraftSession({
 
 function clearPublishState() {
   draft.resetForm(locationOptions.clearLocationState);
+  eventDraft.reset();
   clearPublishDraft();
   draftNotice.value = "";
   resetConfirmationVisible.value = false;
@@ -73,6 +77,12 @@ const { postDetailUrl, submitPublish } = usePublishSubmit({
   locationPreviewLabel: locationOptions.locationPreviewLabel,
   validate: draft.validate,
   resetForm: clearPublishState,
+  postType: eventDraft.postType,
+  eventStartAt: eventDraft.startAt,
+  eventEndAt: eventDraft.endAt,
+  eventCapacity: eventDraft.capacity,
+  eventJoinPolicy: eventDraft.joinPolicy,
+  audienceVisibility: draft.visibility,
 });
 
 function requestResetForm() {
@@ -226,6 +236,19 @@ onMounted(() => {
           @update:tag-input="draft.tagInput.value = $event"
           @update:identity-tag="draft.identityTag.value = $event"
           @update:visibility="draft.visibility.value = $event"
+        />
+
+        <PublishEventControls
+          :post-type="eventDraft.postType.value"
+          :start-at="eventDraft.startAt.value"
+          :end-at="eventDraft.endAt.value"
+          :capacity="eventDraft.capacity.value"
+          :join-policy="eventDraft.joinPolicy.value"
+          @update:post-type="eventDraft.postType.value = $event"
+          @update:start-at="eventDraft.startAt.value = $event"
+          @update:end-at="eventDraft.endAt.value = $event"
+          @update:capacity="eventDraft.capacity.value = $event"
+          @update:join-policy="eventDraft.joinPolicy.value = $event"
         />
 
         <PublishResetConfirm

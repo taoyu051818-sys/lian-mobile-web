@@ -71,3 +71,25 @@ export const PUBLISH_RESET_CONFIRM_ACTION = "确认清空";
 export const PUBLISH_AI_PENDING = "AI 正在分析图片，稍后会自动填入草稿，先选择地点也可以…";
 export const PUBLISH_AI_RISK_LABEL = "AI 风险提示";
 export const PUBLISH_AI_UNAVAILABLE = "AI 草稿暂时不可用，可以手动填写后直接发布。";
+
+/** 发布事件 (PRD V0.1 §6.3 / §11.2) */
+export const PUBLISH_POST_TYPE_LABEL = "内容类型";
+export const PUBLISH_POST_TYPE_POST = "普通帖子";
+export const PUBLISH_POST_TYPE_EVENT = "活动 / 事件";
+export const PUBLISH_EVENT_PANEL_LABEL = "活动设置";
+export const PUBLISH_EVENT_START_AT = "开始时间";
+export const PUBLISH_EVENT_END_AT = "结束时间";
+export const PUBLISH_EVENT_TIME_HINT = "建议设置具体时间，便于他人安排参与";
+export const PUBLISH_EVENT_CAPACITY = "人数上限";
+export const PUBLISH_EVENT_CAPACITY_PLACEHOLDER = "留空表示不限";
+export const PUBLISH_EVENT_JOIN_POLICY = "报名方式";
+export const PUBLISH_EVENT_JOIN_OPEN = "自由报名";
+export const PUBLISH_EVENT_JOIN_APPROVAL = "需要审核";
+export const PUBLISH_EVENT_JOIN_ORG = "限本社团";
+export const PUBLISH_EVENT_JOIN_SCHOOL = "限本校";
+export const PUBLISH_EVENT_INVALID_TIME = "结束时间需要在开始时间之后。";
+export const PUBLISH_EVENT_CAPACITY_NOT_INT = "人数上限需要填整数。";
+export const PUBLISH_EVENT_CAPACITY_NEGATIVE = "人数上限不能小于 0。";
+export const PUBLISH_EVENT_JOIN_POLICY_UNKNOWN = "请选择一种报名方式。";
+export const PUBLISH_EVENT_SUCCESS = "活动已发布，参与者可以在活动详情页报名。";
+export const PUBLISH_EVENT_UNAVAILABLE = "活动发布暂时不可用，可以稍后再试或先发普通帖子。";
