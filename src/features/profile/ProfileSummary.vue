@@ -51,7 +51,9 @@ const statsCards = computed(() => [
 const settingsRows = computed(() => [
   {
     label: PROFILE_SETTING_NOTIFICATIONS,
-    value: props.settings.notificationEnabled ? PROFILE_SETTING_ENABLED : PROFILE_SETTING_DISABLED,
+    value: props.settings.notificationEnabled
+      ? PROFILE_SETTING_ENABLED
+      : PROFILE_SETTING_DISABLED,
   },
   {
     label: PROFILE_SETTING_VISIBILITY,
@@ -64,7 +66,9 @@ const settingsRows = computed(() => [
   },
   {
     label: PROFILE_SETTING_MENTIONS,
-    value: props.settings.allowMessageMentions ? PROFILE_SETTING_ENABLED : PROFILE_SETTING_DISABLED,
+    value: props.settings.allowMessageMentions
+      ? PROFILE_SETTING_ENABLED
+      : PROFILE_SETTING_DISABLED,
   },
 ]);
 
@@ -80,7 +84,12 @@ const forumLinkText = computed(() =>
         <p class="profile-summary__eyebrow">{{ PROFILE_SUMMARY_TITLE }}</p>
         <h2 id="profile-summary-title">{{ PROFILE_STATS_TITLE }}</h2>
       </div>
-      <button v-if="error" type="button" class="profile-summary__retry" @click="emit('retry')">
+      <button
+        v-if="error"
+        type="button"
+        class="profile-summary__retry"
+        @click="emit('retry')"
+      >
         {{ PROFILE_RELOAD }}
       </button>
     </header>
@@ -102,7 +111,11 @@ const forumLinkText = computed(() =>
       <section class="profile-summary__settings" aria-labelledby="profile-settings-title">
         <h3 id="profile-settings-title">{{ PROFILE_SETTINGS_TITLE }}</h3>
         <dl class="profile-summary__settings-grid">
-          <div v-for="row in settingsRows" :key="row.label" class="profile-summary__setting-row">
+          <div
+            v-for="row in settingsRows"
+            :key="row.label"
+            class="profile-summary__setting-row"
+          >
             <dt>{{ row.label }}</dt>
             <dd>{{ row.value }}</dd>
           </div>
