@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 import { useShellChrome } from "./useShellChrome";
+import { useFloatingChromeState } from "./floatingChromeState";
 import {
   SHELL_TOP_REGION,
   SHELL_BOTTOM_REGION,
@@ -25,9 +26,10 @@ const emit = defineEmits<{
 }>();
 
 const { state } = useShellChrome();
+const { shellVisible } = useFloatingChromeState();
 
 const regionSpec = computed(() => state[props.region]);
-const isVisible = computed(() => regionSpec.value.visible !== false);
+const isVisible = computed(() => regionSpec.value.visible !== false && shellVisible.value);
 const buttons = computed(() => regionSpec.value.buttons ?? []);
 const filters = computed(() => regionSpec.value.filters ?? []);
 const identity = computed(() => regionSpec.value.identity ?? null);
@@ -63,6 +65,7 @@ function handleFilterToggle(filterId: string) {
     role="complementary"
     :aria-label="region === 'top' ? SHELL_TOP_REGION : SHELL_BOTTOM_REGION"
     :data-visible="isVisible"
+    :style="{ pointerEvents: isVisible ? 'auto' : 'none' }"
   >
     <template v-if="hasTabs">
       <nav

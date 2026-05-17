@@ -2,6 +2,7 @@
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { prefersReducedMotion } from "../../composables/useReducedMotion";
 import type { PageChromeSpec } from "../../shell/page-model";
+import { useFloatingChromeState } from "../../shell/floatingChromeState";
 import type { FeedItemId } from "../../types/feed";
 import { InlineError } from "../../ui";
 import PostDetailPanel from "../detail/PostDetailPanel.vue";
@@ -123,6 +124,10 @@ const { onDetailPointerDown, onDetailPointerMove, onDetailPointerUp, onDetailPoi
     cardifyDistance: CARDIFY_DISTANCE,
   });
 
+// Unified chrome state — write detailPhase so shell can derive visibility
+const { setDetailPhase } = useFloatingChromeState();
+watch(detailPhase, (p) => setDetailPhase(p), { immediate: true });
+
 const cardTransitionStyle = computed(() => {
   const snapshot = cardTransition.value;
   if (!snapshot) return undefined;
@@ -144,7 +149,6 @@ const pageChrome = computed<PageChromeSpec>(() => ({
     },
     onTabSelect: feedData.switchTab,
   },
-  autoHideOnDetail: detailPhase.value !== "idle",
 }));
 
 watch(pageChrome, (spec) => emit("chrome", spec), { deep: true });
@@ -213,7 +217,7 @@ onBeforeUnmount(() => {
       v-if="detailOpen"
       key="feed-detail"
       class="feed-view__detail"
-      :class="{ 'is-dragging': detailDragging, 'is-returning': detailReturning }"
+      :class="{ 'is-dragging': detailDragging }"
       :style="detailDragStyle"
       :post="selectedPost"
       :loading="detailLoading"
