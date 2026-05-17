@@ -1,31 +1,31 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import { InlineError } from "../../ui";
-import {
-  PROFILE_FORUM_LINK_MISSING,
-  PROFILE_FORUM_LINK_NOTICE,
-  PROFILE_FORUM_LINK_READY,
-  PROFILE_RELOAD,
-  PROFILE_SETTING_DISABLED,
-  PROFILE_SETTING_ENABLED,
-  PROFILE_SETTING_MENTIONS,
-  PROFILE_SETTING_NOTIFICATIONS,
-  PROFILE_SETTING_VISIBILITY,
-  PROFILE_SETTING_VISIBILITY_CAMPUS,
-  PROFILE_SETTING_VISIBILITY_PRIVATE,
-  PROFILE_SETTING_VISIBILITY_PUBLIC,
-  PROFILE_SETTINGS_TITLE,
-  PROFILE_STATS_DRAFTS,
-  PROFILE_STATS_LIKED,
-  PROFILE_STATS_MAP,
-  PROFILE_STATS_POSTS,
-  PROFILE_STATS_REPLIES,
-  PROFILE_STATS_SAVED,
-  PROFILE_STATS_TITLE,
-  PROFILE_SUMMARY_LOADING,
-  PROFILE_SUMMARY_TITLE,
-} from "../../config/brand";
+import { PROFILE_RELOAD } from "../../config/brand";
 import type { ProfileSettings, ProfileStats } from "../../types/profile";
+import { InlineError } from "../../ui";
+
+const PROFILE_SUMMARY_TITLE = "个人概览";
+const PROFILE_STATS_TITLE = "活动统计";
+const PROFILE_SETTINGS_TITLE = "当前设置";
+const PROFILE_SUMMARY_LOADING = "正在同步个人概览…";
+const PROFILE_FORUM_LINK_NOTICE = "论坛同步";
+const PROFILE_FORUM_LINK_READY = "论坛活动已接入当前账号。";
+const PROFILE_FORUM_LINK_MISSING =
+  "当前账号还没有绑定论坛身份，发布、回复和地图贡献会暂时显示为空。";
+const PROFILE_SETTING_ENABLED = "已开启";
+const PROFILE_SETTING_DISABLED = "已关闭";
+const PROFILE_SETTING_NOTIFICATIONS = "消息提醒";
+const PROFILE_SETTING_VISIBILITY = "资料可见范围";
+const PROFILE_SETTING_MENTIONS = "允许提及";
+const PROFILE_SETTING_VISIBILITY_PUBLIC = "公开";
+const PROFILE_SETTING_VISIBILITY_PRIVATE = "仅自己";
+const PROFILE_SETTING_VISIBILITY_CAMPUS = "校内";
+const PROFILE_STATS_POSTS = "发布";
+const PROFILE_STATS_REPLIES = "回复";
+const PROFILE_STATS_SAVED = "收藏";
+const PROFILE_STATS_LIKED = "赞过";
+const PROFILE_STATS_DRAFTS = "草稿";
+const PROFILE_STATS_MAP = "地图贡献";
 
 const props = defineProps<{
   stats: ProfileStats;
