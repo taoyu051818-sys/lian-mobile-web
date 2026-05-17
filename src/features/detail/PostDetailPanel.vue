@@ -3,9 +3,16 @@ import { computed, ref, watch } from "vue";
 import { useVisualViewport } from "../../composables/useVisualViewport";
 import { useFloatingChromeState } from "../../shell/floatingChromeState";
 import { InlineError } from "../../ui";
-import { LOADING_DETAIL, DETAIL_RELOAD, REPLY_IDENTITY_LABEL } from "../../config/brand";
+import {
+  LOADING_DETAIL,
+  DETAIL_RELOAD,
+  REPLY_IDENTITY_LABEL,
+  EVENT_JOIN_SUCCESS,
+  EVENT_CANCEL_SUCCESS,
+} from "../../config/brand";
 import { extractErrorMessage } from "../../utils/extractErrorMessage";
 import type { PostDetail } from "../../types/post";
+import type { EventPostExtension } from "../../types/post-extensions";
 import PostDetailTopbar from "./PostDetailTopbar.vue";
 import PostDetailContent from "./PostDetailContent.vue";
 import PostDetailHiddenState from "./PostDetailHiddenState.vue";
@@ -19,6 +26,8 @@ import { usePostReport } from "./usePostReport";
 import { usePostReplyComposer } from "./usePostReplyComposer";
 import { usePostShare } from "./usePostShare";
 import { useDetailGallery } from "./useDetailGallery";
+import { useEventActions } from "../../composables/useEventActions";
+import { useAudienceOptions } from "../../composables/useAudienceOptions";
 
 const props = withDefaults(
   defineProps<{
@@ -165,6 +174,45 @@ const {
 });
 const replyIdentityLabel = REPLY_IDENTITY_LABEL;
 
+const audience = useAudienceOptions();
+const eventExtension = computed<EventPostExtension | undefined>(() => post.value?.event);
+const eventJoined = ref(false);
+const eventLocalEvent = ref<EventPostExtension | undefined>(undefined);
+const isAuthenticated = computed(() => Boolean(post.value));
+const liveEvent = computed<EventPostExtension | undefined>(
+  () => eventLocalEvent.value || eventExtension.value,
+);
+
+function isEligibleForScope() {
+  // V0.1 surface — backend authoritative for action permission. The publish
+  // composable already gates create-event by audience.isAllowed; on the read
+  // side we trust the eligibility the backend implies by returning the post
+  // and let the join endpoint return a typed error if the viewer is
+  // ineligible. Keeping this true means UI does not double-gate.
+  return true;
+}
+
+const eventActions = useEventActions({
+  event: liveEvent,
+  hasJoined: eventJoined,
+  isAuthenticated,
+  isEligibleForScope,
+  onChange: ({ event, joined }) => {
+    eventLocalEvent.value = event;
+    eventJoined.value = joined;
+  },
+  onMessage: showActionMessage,
+});
+
+function handleEventAct() {
+  const mode = eventActions.plan.value.mode;
+  if (mode === "join") {
+    void eventActions.act(EVENT_JOIN_SUCCESS);
+  } else if (mode === "cancel") {
+    void eventActions.act(EVENT_CANCEL_SUCCESS);
+  }
+}
+
 function handleLike() {
   const currentId = postId.value;
   return rawHandleLike(currentId, () => postId.value === currentId);
@@ -182,9 +230,13 @@ watch(
     resetReply();
     resetGallery();
     clearMessages();
+    eventLocalEvent.value = undefined;
+    eventJoined.value = Boolean(nextPost?.eventJoined);
   },
   { immediate: true },
 );
+// Touch `audience` so the load fires; gating uses it indirectly via composables.
+void audience;
 </script>
 
 <template>
@@ -233,6 +285,10 @@ watch(
             :report-follow-up-visible="reportFollowUpVisible"
             :action-error="actionError"
             :action-message="actionMessage"
+            :event="liveEvent"
+            :event-plan="eventActions.plan.value"
+            :event-busy="eventActions.busy.value"
+            :event-action-error="eventActions.actionError.value"
             @gallery-pointer-down="handleGalleryPointerDown"
             @gallery-pointer-move="handleGalleryPointerMove"
             @open-gallery-image="openGalleryImage"
@@ -240,6 +296,7 @@ watch(
             @toggle-report="toggleReport"
             @submit-report="handleReport"
             @hide-reported-post="handleHideReportedPost"
+            @event-act="handleEventAct"
             @update:report-category="reportCategory = $event"
             @update:report-reason="reportReason = $event"
             @update:place-sheet-open="placeSheetOpen = $event"

@@ -61,3 +61,24 @@ export const REPORT_SUBMITTED_MESSAGE = "举报已提交。你也可以先暂时
 
 /** 回复 */
 export const REPLY_IDENTITY_LABEL = "以当前身份回复";
+
+/** 事件详情 (PRD V0.1 §6.3) */
+export const EVENT_BLOCK_LABEL = "活动信息";
+export const EVENT_STATUS_OPEN = "报名中";
+export const EVENT_STATUS_FULL = "已满员";
+export const EVENT_STATUS_CLOSED = "已关闭";
+export const EVENT_STATUS_COMPLETED = "已结束";
+export const EVENT_STATUS_CANCELLED = "已取消";
+export const EVENT_TIME_RANGE_SEPARATOR = "至";
+export const EVENT_PARTICIPANT_PREFIX = "已报名";
+export const EVENT_PARTICIPANT_OF = "/";
+export const EVENT_CAPACITY_UNLIMITED = "不限";
+export const EVENT_JOIN = "报名";
+export const EVENT_CANCEL_JOIN = "取消报名";
+export const EVENT_JOIN_PENDING = "处理中…";
+export const EVENT_DISABLED_NOT_OPEN = "当前不在报名期";
+export const EVENT_DISABLED_FULL = "名额已满";
+export const EVENT_DISABLED_OUT_OF_SCOPE = "不在参与范围内";
+export const EVENT_ACTION_UNAVAILABLE = "活动操作暂时不可用，可以稍后再试。";
+export const EVENT_JOIN_SUCCESS = "已报名，期待你来。";
+export const EVENT_CANCEL_SUCCESS = "已取消报名。";

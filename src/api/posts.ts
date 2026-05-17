@@ -6,6 +6,7 @@ import {
   asString,
   asStringArray,
   normalizeDisplayActor,
+  normalizeEventExtension,
   normalizeFeedItemId,
   normalizePlaceRef,
   normalizeSourceSignal,
@@ -46,6 +47,8 @@ export function normalizePostDetail(value: unknown, fallbackId: FeedItemId): Pos
     ? record.replies.filter((reply) => reply && typeof reply === "object")
     : [];
   const bookmarkedValue = "bookmarked" in record ? record.bookmarked : record.saved;
+  const event = normalizeEventExtension(record.event);
+  const eventJoined = "eventJoined" in record ? asBoolean(record.eventJoined) : undefined;
 
   return {
     tid,
@@ -65,6 +68,8 @@ export function normalizePostDetail(value: unknown, fallbackId: FeedItemId): Pos
     sourceUrl: asString(record.sourceUrl ?? record.url),
     replies: rawReplies.map((reply, index) => normalizePostReply(reply, tid * 1000 + index + 1)),
     bookmarked: asBoolean(bookmarkedValue),
+    ...(event ? { event } : {}),
+    ...(eventJoined !== undefined ? { eventJoined } : {}),
   };
 }
 

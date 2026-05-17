@@ -1,5 +1,14 @@
 import type { DisplayActor, SourceSignal } from "../types/feed";
 import type { PlaceRef, PlaceStatus } from "../types/place";
+import type { Audience } from "../types/audience";
+import { normalizeAudience } from "../types/audience";
+import type {
+  EventJoinPolicy,
+  EventPostExtension,
+  EventReward,
+  EventStatus,
+} from "../types/post-extensions";
+import type { PostLocation } from "../types/post";
 
 type JsonRecord = Record<string, unknown>;
 
@@ -113,5 +122,108 @@ export function normalizePlaceRef(value: unknown): PlaceRef | undefined {
     name,
     ...(type ? { type } : {}),
     ...(status ? { status } : {}),
+  };
+}
+
+const EVENT_STATUSES: ReadonlySet<EventStatus> = new Set([
+  "open",
+  "full",
+  "closed",
+  "completed",
+  "cancelled",
+]);
+
+const EVENT_JOIN_POLICIES: ReadonlySet<EventJoinPolicy> = new Set([
+  "open",
+  "approval_required",
+  "org_only",
+  "school_only",
+]);
+
+const EVENT_REWARD_TYPES: ReadonlySet<EventReward["type"]> = new Set([
+  "contribution",
+  "honor",
+  "coupon",
+  "credit",
+  "custom",
+]);
+
+function normalizeEventReward(value: unknown): EventReward | undefined {
+  const record = asRecord(value);
+  const rawType = optionalString(record.type);
+  if (!rawType || !EVENT_REWARD_TYPES.has(rawType as EventReward["type"])) return undefined;
+  const reward: EventReward = { type: rawType as EventReward["type"] };
+  if (typeof record.amount === "number" && Number.isFinite(record.amount)) {
+    reward.amount = record.amount;
+  } else if (typeof record.amount === "string" && record.amount.trim()) {
+    const parsed = Number(record.amount);
+    if (Number.isFinite(parsed)) reward.amount = parsed;
+  }
+  const label = optionalString(record.label);
+  if (label) reward.label = label;
+  return reward;
+}
+
+function normalizePostLocation(value: unknown): PostLocation | undefined {
+  if (!value || typeof value !== "object") return undefined;
+  const record = value as Record<string, unknown>;
+  const placeId = asString(record.placeId);
+  const label = asString(record.label);
+  if (!placeId && !label) return undefined;
+  const lat = typeof record.lat === "number" && Number.isFinite(record.lat) ? record.lat : null;
+  const lng = typeof record.lng === "number" && Number.isFinite(record.lng) ? record.lng : null;
+  return {
+    placeId,
+    label,
+    lat,
+    lng,
+    place: normalizePlaceRef(record.place),
+  };
+}
+
+/**
+ * Coerce a raw payload into an EventPostExtension. Returns undefined when the
+ * payload does not look like an event (no eventId or unknown status). Never
+ * throws — callers can render the post even when the event extension is
+ * missing or malformed.
+ */
+export function normalizeEventExtension(value: unknown): EventPostExtension | undefined {
+  const record = asRecord(value);
+  const eventId = optionalString(record.eventId);
+  if (!eventId) return undefined;
+  const rawStatus = optionalString(record.eventStatus);
+  if (!rawStatus || !EVENT_STATUSES.has(rawStatus as EventStatus)) return undefined;
+  const rawJoin = optionalString(record.joinPolicy);
+  const joinPolicy: EventJoinPolicy = EVENT_JOIN_POLICIES.has(rawJoin as EventJoinPolicy)
+    ? (rawJoin as EventJoinPolicy)
+    : "open";
+  const participantScope: Audience = normalizeAudience(record.participantScope);
+  const allowedOrganizations = asStringArray(record.allowedOrganizations);
+  const reward = normalizeEventReward(record.reward);
+  const startAt = optionalString(record.startAt);
+  const endAt = optionalString(record.endAt);
+  const location = normalizePostLocation(record.location);
+  const capacityRaw = record.capacity;
+  let capacity: number | undefined;
+  if (typeof capacityRaw === "number" && Number.isFinite(capacityRaw) && capacityRaw >= 0) {
+    capacity = Math.trunc(capacityRaw);
+  } else if (typeof capacityRaw === "string" && capacityRaw.trim()) {
+    const parsed = Number(capacityRaw);
+    if (Number.isFinite(parsed) && parsed >= 0) capacity = Math.trunc(parsed);
+  }
+  const participantCount = Math.max(0, Math.trunc(asNumber(record.participantCount, 0)));
+
+  return {
+    eventId,
+    participantScope,
+    allowedOrganizations,
+    ...(reward ? { reward } : {}),
+    eventStatus: rawStatus as EventStatus,
+    ...(startAt ? { startAt } : {}),
+    ...(endAt ? { endAt } : {}),
+    ...(location ? { location } : {}),
+    ...(capacity !== undefined ? { capacity } : {}),
+    participantCount,
+    joinPolicy,
   };
 }
