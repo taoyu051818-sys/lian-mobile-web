@@ -190,6 +190,29 @@
   outline-offset: 2px;
 }
 
+/* Shell chrome visibility */
+.shell-chrome[data-visible="false"] {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.shell-chrome[data-visible="false"] .lian-floating-chrome {
+  pointer-events: none;
+}
+
+/* Bottom tab bar layout inside floating chrome */
+.bottom-tab-bar.lian-floating-chrome {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: var(--space-1);
+  padding: var(--floating-bar-padding);
+}
+
+/* Shell tabs container inside floating chrome */
+.shell-chrome__tabs.lian-floating-chrome {
+  /* layout and scrollbar hiding inherited from .lian-floating-chrome base and .shell-chrome__tabs */
+}
+
 @media (prefers-reduced-motion: reduce) {
   .shell-chrome__tab {
     transition: none;

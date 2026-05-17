@@ -1,55 +1,18 @@
-.lian-floating-chrome {
-  position: fixed;
-  right: max(var(--floating-bar-side-inset), env(safe-area-inset-right));
-  left: max(var(--floating-bar-side-inset), env(safe-area-inset-left));
-  z-index: var(--floating-bar-z);
-  width: min(calc(100vw - var(--space-6)), var(--floating-bar-max-width));
-  min-height: var(--floating-bar-height);
-  margin: 0 auto;
-  border: 1px solid var(--glass-border);
-  border-radius: var(--floating-bar-radius);
-  background: var(--glass-bg-strong);
-  box-shadow: var(--shadow-floating);
-  opacity: 1;
-  pointer-events: auto;
-  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
-}
+/*
+ * Floating chrome — component-specific positioning.
+ *
+ * Visual base (glass bg, border, shadow, backdrop-filter) lives in
+ * chrome-surface.css.  Shell visibility and layout rules live in
+ * shell-chrome.css.
+ */
 
-.lian-floating-chrome--top {
-  top: var(--floating-bar-top-offset);
-}
-
-.lian-floating-chrome--bottom {
-  bottom: var(--floating-bar-bottom-offset);
-}
-
-.bottom-tab-bar.lian-floating-chrome {
-  display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: var(--space-1);
-  padding: var(--floating-bar-padding);
-}
-
-.shell-chrome__tabs.lian-floating-chrome {
-  /* layout and scrollbar hiding inherited from .lian-floating-chrome base and .shell-chrome__tabs */
-}
-
+/* Detail topbar and dock — reapply inset/width for specificity override */
 .post-detail-panel__topbar.lian-floating-chrome,
 .post-detail-panel__dock.lian-floating-chrome {
   right: max(var(--floating-bar-side-inset), env(safe-area-inset-right));
   left: max(var(--floating-bar-side-inset), env(safe-area-inset-left));
   width: min(calc(100vw - var(--space-6)), var(--floating-bar-max-width));
   margin: 0 auto;
-}
-
-/* Shell chrome visibility */
-.shell-chrome[data-visible="false"] {
-  opacity: 0;
-  pointer-events: none;
-}
-
-.shell-chrome[data-visible="false"] .lian-floating-chrome {
-  pointer-events: none;
 }
 
 /* Reduced-motion: no transitions */
