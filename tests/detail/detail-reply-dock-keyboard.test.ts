@@ -25,8 +25,13 @@ describe("PostReplyDock keyboard-inset wiring (#130)", () => {
     expect(dockSource).toMatch(/prefers-reduced-motion:[\s\S]*transition:\s*none/);
   });
 
-  it("retains the floating-bar-bottom-offset base offset", () => {
-    expect(dockSource).toContain("--floating-bar-bottom-offset");
+  it("uses the detail-reply-dock-bottom-offset token for independent positioning", () => {
+    expect(dockSource).toContain("--detail-reply-dock-bottom-offset");
+  });
+
+  it("detail-reply-dock-bottom-offset is defined in lian-tokens", () => {
+    const tokensSource = readRepoFile("../../src/styles/lian-tokens.css");
+    expect(tokensSource).toContain("--detail-reply-dock-bottom-offset");
   });
 
   it("does not import useVisualViewport (consumed by parent panel)", () => {

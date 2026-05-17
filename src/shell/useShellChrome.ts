@@ -59,13 +59,17 @@ function resetRegions() {
 
 function applyPageChrome(spec: PageChromeSpec) {
   const defaults = createDefaultChromeState();
+
+  // Always restore both regions to defaults first, so a previous
+  // autoHideOnDetail=true doesn't leave bottom stuck at visible=false.
+  mergeRegion(state.top, defaults.top);
+  mergeRegion(state.bottom, defaults.bottom);
+  state.bottom.slot = "tabs";
+
   if (spec.top) {
-    mergeRegion(state.top, defaults.top);
     setRegion("top", spec.top);
   }
   if (spec.bottom) {
-    mergeRegion(state.bottom, defaults.bottom);
-    state.bottom.slot = "tabs";
     setRegion("bottom", spec.bottom);
   }
 
