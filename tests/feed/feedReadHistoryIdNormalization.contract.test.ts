@@ -10,7 +10,7 @@ const feedDataSource = fs.readFileSync(
   "utf8",
 );
 const feedDetailSource = fs.readFileSync(
-  path.join(repoRoot, "src/features/feed/useFeedDetail.ts"),
+  path.join(repoRoot, "src/features/feed/usePostDetailLoader.ts"),
   "utf8",
 );
 

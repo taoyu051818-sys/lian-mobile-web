@@ -1,9 +1,8 @@
-import { computed, onBeforeUnmount, onMounted, ref, type Ref } from "vue";
-import { fetchPostDetail } from "../../api/posts";
+import { onBeforeUnmount, type Ref } from "vue";
 import type { FeedItem, FeedItemId } from "../../types/feed";
-import type { PostDetail } from "../../types/post";
-import { ERROR_LOAD_DETAIL } from "../../config/brand";
-import { normalizeFeedItemId } from "./feedItemId";
+import { usePostDetailLoader } from "./usePostDetailLoader";
+import { useFeedDetailHistory } from "./useFeedDetailHistory";
+import { useDetailCardifyMotion } from "./useDetailCardifyMotion";
 
 export interface CardOpenPayload {
   item: FeedItem;
@@ -11,11 +10,6 @@ export interface CardOpenPayload {
 }
 
 export type CardTransitionSnapshot = CardOpenPayload;
-
-interface DetailHistoryState {
-  lianDetail?: boolean;
-  tid?: string;
-}
 
 export interface FeedDetailDeps {
   startCardTransition: (payload?: CardOpenPayload) => void;
@@ -30,231 +24,97 @@ export interface FeedDetailDeps {
 }
 
 export function useFeedDetail(deps: FeedDetailDeps) {
-  const selectedPostId = ref<FeedItemId | null>(null);
-  const selectedPost = ref<PostDetail | null>(null);
-  const detailLoading = ref(false);
-  const detailError = ref("");
-  const lastOpenSnapshot = ref<CardTransitionSnapshot | null>(null);
-  const dragStartX = ref(0);
-  const dragStartY = ref(0);
-  const detailDragX = ref(0);
-  const detailDragging = ref(false);
-  const detailReturning = ref(false);
-  const detailPointerId = ref<number | null>(null);
-  const detailGestureLocked = ref<"horizontal" | "vertical" | null>(null);
-  const detailHistoryActive = ref(false);
-  const ignoreNextPopState = ref(false);
-  let pendingReturnTimer: ReturnType<typeof setTimeout> | undefined;
+  const loader = usePostDetailLoader();
 
-  function cancelPendingReturnTimer() {
-    if (pendingReturnTimer !== undefined) {
-      clearTimeout(pendingReturnTimer);
-      pendingReturnTimer = undefined;
-    }
-  }
-
-  const detailOpen = computed(() => selectedPostId.value !== null);
-  const detailPhase = computed(() => {
-    if (detailReturning.value) return "returning";
-    if (detailDragging.value) return "dragging";
-    if (detailOpen.value) return detailLoading.value ? "opening" : "open";
-    return "idle";
-  });
-  const detailCardifyProgress = computed(() =>
-    Math.min(1, Math.max(0, Math.abs(detailDragX.value) / deps.cardifyDistance)),
-  );
-  const detailTargetScale = computed(() => {
-    const snapshot = lastOpenSnapshot.value;
-    if (!snapshot) return 0.5;
-    const scaleByWidth = snapshot.rect.width / Math.max(1, deps.viewportWidth.value);
-    const scaleByHeight = snapshot.rect.height / Math.max(1, deps.viewportHeight.value);
-    return Math.max(0.34, Math.min(0.72, Math.max(scaleByWidth, scaleByHeight)));
-  });
-  const detailTargetX = computed(() => {
-    const snapshot = lastOpenSnapshot.value;
-    if (!snapshot) return 0;
-    return snapshot.rect.left + snapshot.rect.width / 2 - deps.viewportWidth.value / 2;
-  });
-  const detailTargetY = computed(() => {
-    const snapshot = lastOpenSnapshot.value;
-    if (!snapshot) return 0;
-    return snapshot.rect.top + snapshot.rect.height / 2 - deps.viewportHeight.value / 2;
-  });
-  const detailDragStyle = computed(() => {
-    const progress = detailCardifyProgress.value;
-    const returning = detailReturning.value;
-    const scale = returning
-      ? 1 - (1 - detailTargetScale.value) * progress
-      : 1 - (1 - deps.dragStageMinScale) * progress;
-    const translateX = returning ? detailTargetX.value * progress : detailDragX.value;
-    const translateY = returning ? detailTargetY.value * progress : 0;
-    const feedOpacity = detailOpen.value ? Math.max(0.1, progress * 0.9) : 1;
-    const feedScale = detailOpen.value ? 0.985 + progress * 0.015 : 1;
-    return {
-      "--detail-card-progress": String(progress),
-      "--detail-card-scale": String(scale),
-      "--detail-card-translate-x": `${translateX}px`,
-      "--detail-card-translate-y": `${translateY}px`,
-      "--detail-card-radius": `${Math.round(progress * 18)}px`,
-      "--feed-under-detail-opacity": String(feedOpacity),
-      "--feed-under-detail-scale": String(feedScale),
-    };
+  const motion = useDetailCardifyMotion({
+    detailOpen: loader.detailOpen,
+    detailLoading: loader.detailLoading,
+    viewportWidth: deps.viewportWidth,
+    viewportHeight: deps.viewportHeight,
+    updateViewport: deps.updateViewport,
+    prefersReducedMotion: deps.prefersReducedMotion,
+    cardifyDistance: deps.cardifyDistance,
+    dragStageMinScale: deps.dragStageMinScale,
+    returnAnimationMs: deps.returnAnimationMs,
   });
 
-  function currentHistoryState(): DetailHistoryState {
-    if (typeof window === "undefined") return {} as DetailHistoryState;
-    return (window.history.state || {}) as DetailHistoryState;
-  }
-
-  function pushDetailHistory(id: FeedItemId) {
-    if (typeof window === "undefined" || detailHistoryActive.value) return;
-    try {
-      window.history.pushState(
-        { ...currentHistoryState(), lianDetail: true, tid: String(id) },
-        "",
-        window.location.href,
-      );
-      detailHistoryActive.value = true;
-    } catch {
-      detailHistoryActive.value = false;
-    }
-  }
-
-  function clearDetailHistory() {
-    if (typeof window === "undefined" || !detailHistoryActive.value) return;
-    detailHistoryActive.value = false;
-    try {
-      if (currentHistoryState().lianDetail) {
-        ignoreNextPopState.value = true;
-        window.history.back();
-      }
-    } catch {
-      ignoreNextPopState.value = false;
-    }
-  }
+  const history = useFeedDetailHistory({
+    detailOpen: loader.detailOpen,
+    onPopState: () =>
+      closeDetailWithCardify({
+        syncHistory: false,
+        direction: motion.detailDragX.value || -1,
+      }),
+  });
 
   function resetDetailState() {
-    selectedPostId.value = null;
-    selectedPost.value = null;
-    detailLoading.value = false;
-    detailError.value = "";
-    detailDragX.value = 0;
-    detailDragging.value = false;
-    detailReturning.value = false;
-    detailPointerId.value = null;
-    detailGestureLocked.value = null;
-    detailHistoryActive.value = false;
+    loader.resetLoaderState();
+    motion.resetMotionState();
+    history.resetHistoryState();
   }
 
   function closeDetailWithCardify(options: { syncHistory?: boolean; direction?: number } = {}) {
     const syncHistory = options.syncHistory !== false;
-    const direction = options.direction ?? (detailDragX.value < 0 ? -1 : 1);
-    if (syncHistory) clearDetailHistory();
+    const direction = options.direction ?? (motion.detailDragX.value < 0 ? -1 : 1);
+    if (syncHistory) history.clearDetailHistory();
     if (deps.prefersReducedMotion()) {
       resetDetailState();
       return;
     }
-    cancelPendingReturnTimer();
-    deps.updateViewport();
-    detailDragging.value = false;
-    detailReturning.value = true;
-    detailPointerId.value = null;
-    detailGestureLocked.value = null;
-
-    detailDragX.value = Math.sign(direction || 1) * deps.cardifyDistance;
-    pendingReturnTimer = window.setTimeout(() => {
-      pendingReturnTimer = undefined;
+    motion.cancelPendingReturnTimer();
+    void motion.startReturn(direction).then(() => {
       resetDetailState();
-    }, deps.returnAnimationMs);
-  }
-
-  function onWindowPopState() {
-    if (ignoreNextPopState.value) {
-      ignoreNextPopState.value = false;
-      return;
-    }
-    if (!detailOpen.value && !detailHistoryActive.value) return;
-    detailHistoryActive.value = false;
-    closeDetailWithCardify({ syncHistory: false, direction: detailDragX.value || -1 });
+    });
   }
 
   async function openItem(id: FeedItemId, payload?: CardOpenPayload) {
     deps.updateViewport();
-    const normalizedId = normalizeFeedItemId(id);
-
     if (payload && !deps.prefersReducedMotion()) {
-      lastOpenSnapshot.value = payload;
+      motion.lastOpenSnapshot.value = payload;
     }
     deps.startCardTransition(payload);
     deps.rememberReadItem(id);
-    selectedPostId.value = id;
-    selectedPost.value = null;
-    detailError.value = "";
-    detailLoading.value = true;
-    detailDragX.value = 0;
-    detailDragging.value = false;
-    detailReturning.value = false;
-    pushDetailHistory(id);
-
-    try {
-      const detail = await fetchPostDetail(id);
-      if (normalizeFeedItemId(selectedPostId.value) === normalizedId) {
-        selectedPost.value = detail;
-      }
-    } catch (error) {
-      detailError.value = error instanceof Error ? error.message : ERROR_LOAD_DETAIL;
-    } finally {
-      if (normalizeFeedItemId(selectedPostId.value) === normalizedId) {
-        detailLoading.value = false;
-      }
-    }
-  }
-
-  function retryDetail() {
-    if (selectedPostId.value == null) return;
-    void openItem(selectedPostId.value);
+    loader.selectedPostId.value = id;
+    loader.selectedPost.value = null;
+    motion.resetDragState();
+    history.pushDetailHistory(id);
+    await loader.loadDetail(id);
   }
 
   function closeDetail() {
     closeDetailWithCardify();
   }
 
-  onMounted(() => {
-    window.addEventListener("popstate", onWindowPopState);
-  });
-
   onBeforeUnmount(() => {
-    cancelPendingReturnTimer();
-    clearDetailHistory();
-    window.removeEventListener("popstate", onWindowPopState);
+    motion.cancelPendingReturnTimer();
   });
 
   return {
-    selectedPostId,
-    selectedPost,
-    detailLoading,
-    detailError,
-    lastOpenSnapshot,
-    detailOpen,
-    detailPhase,
-    detailDragging,
-    detailReturning,
-    detailDragX,
-    detailPointerId,
-    detailGestureLocked,
-    dragStartX,
-    dragStartY,
-    detailHistoryActive,
-    detailCardifyProgress,
-    detailTargetScale,
-    detailTargetX,
-    detailTargetY,
-    detailDragStyle,
+    selectedPostId: loader.selectedPostId,
+    selectedPost: loader.selectedPost,
+    detailLoading: loader.detailLoading,
+    detailError: loader.detailError,
+    lastOpenSnapshot: motion.lastOpenSnapshot,
+    detailOpen: loader.detailOpen,
+    detailPhase: motion.detailPhase,
+    detailDragging: motion.detailDragging,
+    detailReturning: motion.detailReturning,
+    detailDragX: motion.detailDragX,
+    detailPointerId: motion.detailPointerId,
+    detailGestureLocked: motion.detailGestureLocked,
+    dragStartX: motion.dragStartX,
+    dragStartY: motion.dragStartY,
+    detailHistoryActive: history.detailHistoryActive,
+    detailCardifyProgress: motion.detailCardifyProgress,
+    detailTargetScale: motion.detailTargetScale,
+    detailTargetX: motion.detailTargetX,
+    detailTargetY: motion.detailTargetY,
+    detailDragStyle: motion.detailDragStyle,
     openItem,
-    retryDetail,
+    retryDetail: loader.retryDetail,
     closeDetail,
     closeDetailWithCardify,
     resetDetailState,
-    pushDetailHistory,
+    pushDetailHistory: history.pushDetailHistory,
   };
 }
