@@ -1,5 +1,5 @@
 import { computed, ref, type Ref } from "vue";
-import type { CardTransitionSnapshot } from "./useFeedDetail";
+import type { CardOpenPayload } from "./useFeedDetail";
 
 export interface UseDetailCardifyMotionOptions {
   detailOpen: Ref<boolean>;
@@ -14,7 +14,7 @@ export interface UseDetailCardifyMotionOptions {
 }
 
 export function useDetailCardifyMotion(options: UseDetailCardifyMotionOptions) {
-  const lastOpenSnapshot = ref<CardTransitionSnapshot | null>(null);
+  const lastOpenSnapshot = ref<CardOpenPayload | null>(null);
   const dragStartX = ref(0);
   const dragStartY = ref(0);
   const detailDragX = ref(0);

@@ -403,6 +403,7 @@ async function checkFeatureCrossImports() {
   }
 
   let violations = 0;
+  const featuresMissingBarrel = new Set();
   for (const file of files) {
     const sourceFeature = getFeatureName(file);
     if (!sourceFeature) continue;
@@ -427,7 +428,13 @@ async function checkFeatureCrossImports() {
       const isReExported = reExports.has(resolvedNorm);
 
       if (!hasBarrel) {
-        // Feature without barrel is implicitly open — no violation.
+        featuresMissingBarrel.add(targetFeature);
+        const relFile = normalizePath(path.relative(rootDir, file));
+        fail(
+          "feature cross-import",
+          `${relFile} imports ${targetFeature} but ${targetFeature}/index.ts is missing — every feature must declare a public surface`,
+        );
+        violations++;
       } else if (!isBarrelImport && !isReExported) {
         const relFile = normalizePath(path.relative(rootDir, file));
         fail(

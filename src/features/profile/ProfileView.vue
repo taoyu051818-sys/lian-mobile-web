@@ -10,11 +10,11 @@ import {
   PROFILE_RELOAD,
 } from "../../config/brand";
 import { extractErrorMessage } from "../../utils/extractErrorMessage";
-import { usePostDetail } from "../detail/usePostDetail";
+import { usePostDetail } from "../detail";
 import type { PageChromeSpec } from "../../shell/page-model";
 import type { ProfileUser } from "../../types/profile";
 import { InlineError } from "../../ui";
-import AuthPanel from "../auth/AuthPanel.vue";
+import { AuthPanel } from "../auth";
 import ProfileEditorPanel from "./ProfileEditorPanel.vue";
 import ProfileHeader from "./ProfileHeader.vue";
 import ProfileTabs from "./ProfileTabs.vue";

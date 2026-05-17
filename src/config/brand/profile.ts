@@ -59,14 +59,6 @@ export const PROFILE_INVITE_UNAVAILABLE = "暂无权限";
 export const PROFILE_EDITOR_TITLE = "编辑资料";
 export const PROFILE_EDITOR_CHIP = "资料管理";
 
-/** 概览页 */
-export const PROFILE_SUMMARY_TITLE = "我的校园身份";
-export const PROFILE_MIGRATION_TITLE = "迁移边界";
-export const PROFILE_MIGRATION_DESCRIPTION =
-  "当前只迁移低风险展示层。资料编辑、头像上传裁剪、历史发布列表和账号状态仍不在这个试点里接管。";
-export const PROFILE_PUBLISH_DISABLED = "查看我的发布稍后接入";
-export const PROFILE_EDIT_DISABLED = "编辑资料仍走 legacy";
-
 /** 个人资料操作反馈 */
 export const PROFILE_AVATAR_UPDATED = "头像已更新。";
 export const PROFILE_IDENTITY_SWITCHED = "发布身份已切换。";

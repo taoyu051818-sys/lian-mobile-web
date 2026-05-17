@@ -9,10 +9,7 @@ export interface CardOpenPayload {
   rect: { top: number; left: number; width: number; height: number };
 }
 
-export type CardTransitionSnapshot = CardOpenPayload;
-
 export interface FeedDetailDeps {
-  startCardTransition: (payload?: CardOpenPayload) => void;
   rememberReadItem: (id: FeedItemId) => void;
   updateViewport: () => void;
   prefersReducedMotion: () => boolean;
@@ -72,7 +69,6 @@ export function useFeedDetail(deps: FeedDetailDeps) {
     if (payload && !deps.prefersReducedMotion()) {
       motion.lastOpenSnapshot.value = payload;
     }
-    deps.startCardTransition(payload);
     deps.rememberReadItem(id);
     loader.selectedPostId.value = id;
     loader.selectedPost.value = null;

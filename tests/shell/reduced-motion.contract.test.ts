@@ -43,10 +43,7 @@ describe("Feed detail reduced-motion guards", () => {
     expect(sharedSource).toContain("prefers-reduced-motion: reduce");
   });
 
-  it("short-circuits detail open and close motion when reduced motion is enabled", () => {
-    expect(viewSource).toContain(
-      'if (!payload || typeof window === "undefined" || prefersReducedMotion()) return;',
-    );
+  it("short-circuits detail close motion when reduced motion is enabled", () => {
     expect(detailSource).toContain(
       "if (deps.prefersReducedMotion()) {\n      resetDetailState();\n      return;\n    }",
     );
@@ -67,31 +64,6 @@ describe("shell chrome tabs reduced-motion stylesheet", () => {
     expect(reducedMotionBlock).toContain(".shell-chrome__tab");
     expect(reducedMotionBlock).not.toContain(".feed-view__tab");
     expect(reducedMotionBlock).toContain("transition: none");
-  });
-});
-
-describe("card camera timer hygiene (#254)", () => {
-  const viewSource = readRepoFile("../../src/features/feed/FeedView.vue");
-
-  it("FeedView saves and cancels card transition rAF handle", () => {
-    expect(viewSource).toContain("let pendingCardRaf = 0");
-    expect(viewSource).toContain("cancelAnimationFrame(pendingCardRaf)");
-    expect(viewSource).toContain("pendingCardRaf = requestAnimationFrame(");
-    expect(viewSource).toContain("cancelCardTransitionTimers()");
-  });
-
-  it("FeedView saves and cancels card transition timeout handle", () => {
-    expect(viewSource).toContain("let pendingCardTimer: ReturnType<typeof setTimeout>");
-    expect(viewSource).toContain("clearTimeout(pendingCardTimer)");
-    expect(viewSource).toContain("pendingCardTimer = window.setTimeout(");
-  });
-
-  it("FeedView cancels card transition timers on unmount", () => {
-    // The onBeforeUnmount hook should call cancelCardTransitionTimers
-    const unmountMatch = viewSource.match(
-      /onBeforeUnmount\(\(\) => \{[\s\S]*?cancelCardTransitionTimers\(\)/,
-    );
-    expect(unmountMatch).toBeTruthy();
   });
 });
 

@@ -1,14 +1,14 @@
 <script setup lang="ts">
-import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { prefersReducedMotion } from "../../composables/useReducedMotion";
 import type { PageChromeSpec } from "../../shell/page-model";
 import { useFloatingChromeState } from "../../shell/floatingChromeState";
 import type { FeedItemId } from "../../types/feed";
 import { InlineError } from "../../ui";
-import PostDetailPanel from "../detail/PostDetailPanel.vue";
+import { PostDetailPanel } from "../detail";
 import FeedList from "./FeedList.vue";
 import FeedLoadMore from "./FeedLoadMore.vue";
-import { useFeedDetail, type CardTransitionSnapshot } from "./useFeedDetail";
+import { useFeedDetail } from "./useFeedDetail";
 import { useFeedData } from "./useFeedData";
 import { useDetailDragGesture } from "./useDetailDragGesture";
 import { CHANNEL_RELOAD, FEED_FILTER_LABEL, FEED_VIEW_TITLE } from "../../config/brand";
@@ -28,23 +28,6 @@ function updateViewport() {
   if (typeof window === "undefined") return;
   viewportWidth.value = window.innerWidth || 390;
   viewportHeight.value = window.innerHeight || 844;
-}
-
-// QUARANTINE: v1 card-camera overlay timer handles (issue #85 / #274).
-const cardTransition = ref<CardTransitionSnapshot | null>(null);
-const cardTransitionActive = ref(false);
-let pendingCardRaf = 0;
-let pendingCardTimer: ReturnType<typeof setTimeout> | undefined;
-
-function cancelCardTransitionTimers() {
-  if (pendingCardRaf) {
-    cancelAnimationFrame(pendingCardRaf);
-    pendingCardRaf = 0;
-  }
-  if (pendingCardTimer !== undefined) {
-    clearTimeout(pendingCardTimer);
-    pendingCardTimer = undefined;
-  }
 }
 
 // Detail lifecycle composable
@@ -70,23 +53,6 @@ const {
   closeDetailWithCardify,
   resetDetailState,
 } = useFeedDetail({
-  startCardTransition(payload) {
-    if (!payload || typeof window === "undefined" || prefersReducedMotion()) return;
-    cancelCardTransitionTimers();
-    cardTransition.value = payload;
-    cardTransitionActive.value = false;
-    void nextTick(() => {
-      pendingCardRaf = requestAnimationFrame(() => {
-        pendingCardRaf = 0;
-        cardTransitionActive.value = true;
-        pendingCardTimer = window.setTimeout(() => {
-          pendingCardTimer = undefined;
-          cardTransition.value = null;
-          cardTransitionActive.value = false;
-        }, 320);
-      });
-    });
-  },
   rememberReadItem(id: FeedItemId) {
     feedData.rememberReadItem(id);
   },
@@ -128,17 +94,6 @@ const { onDetailPointerDown, onDetailPointerMove, onDetailPointerUp, onDetailPoi
 const { setDetailPhase } = useFloatingChromeState();
 watch(detailPhase, (p) => setDetailPhase(p), { immediate: true });
 
-const cardTransitionStyle = computed(() => {
-  const snapshot = cardTransition.value;
-  if (!snapshot) return undefined;
-  return {
-    "--card-top": `${snapshot.rect.top}px`,
-    "--card-left": `${snapshot.rect.left}px`,
-    "--card-width": `${snapshot.rect.width}px`,
-    "--card-height": `${snapshot.rect.height}px`,
-  };
-});
-
 const pageChrome = computed<PageChromeSpec>(() => ({
   top: {
     tabs: {
@@ -161,7 +116,6 @@ onMounted(() => {
 });
 
 onBeforeUnmount(() => {
-  cancelCardTransitionTimers();
   window.removeEventListener("resize", updateViewport);
 });
 </script>
@@ -229,25 +183,6 @@ onBeforeUnmount(() => {
       @pointerup="onDetailPointerUp"
       @pointercancel="onDetailPointerCancel"
     />
-
-    <!-- QUARANTINE: v1 card-camera overlay (issue #85 / #274). Temporary scaffolding; do not extend. -->
-    <div
-      v-if="cardTransition"
-      class="feed-view__card-transition"
-      :class="{ 'is-active': cardTransitionActive }"
-      :style="cardTransitionStyle"
-      aria-hidden="true"
-    >
-      <img
-        v-if="cardTransition.item.cover"
-        :src="cardTransition.item.cover"
-        :alt="cardTransition.item.title"
-      />
-      <span v-if="cardTransition.item.primaryTag" class="feed-view__card-transition-tag">{{
-        cardTransition.item.primaryTag
-      }}</span>
-      <strong>{{ cardTransition.item.title }}</strong>
-    </div>
   </section>
 </template>
 

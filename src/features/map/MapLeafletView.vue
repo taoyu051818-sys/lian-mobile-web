@@ -5,7 +5,7 @@ import type { PageChromeSpec } from "../../shell/page-model";
 import MapCanvas from "./MapCanvas.vue";
 import MapPlaceSheet from "./MapPlaceSheet.vue";
 import MapStatus from "./MapStatus.vue";
-import PostDetailPanel from "../detail/PostDetailPanel.vue";
+import { PostDetailPanel } from "../detail";
 import { useMapChrome } from "./useMapChrome";
 import { useMapDataCache } from "./useMapDataCache";
 import { useMapSelection } from "./useMapSelection";

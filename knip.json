@@ -1,0 +1,26 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "entry": [
+    "src/main.ts",
+    "src/app/AppViewHost.vue",
+    "vite.config.ts",
+    "vitest.config.ts",
+    "eslint.config.js",
+    "scripts/*.js"
+  ],
+  "project": ["src/**/*.{ts,vue,css}", "scripts/**/*.js", "tests/**/*.{ts,mjs,js}"],
+  "ignore": ["dist/**", "node_modules/**", "public/**"],
+  "exclude": ["exports", "types"],
+  "ignoreDependencies": [],
+  "vue": true,
+  "vite": {
+    "config": ["vite.config.ts"]
+  },
+  "vitest": {
+    "config": ["vitest.config.ts"],
+    "entry": ["tests/**/*.test.{ts,mjs}", "tests/**/*.test.js"]
+  },
+  "eslint": {
+    "config": ["eslint.config.js"]
+  }
+}

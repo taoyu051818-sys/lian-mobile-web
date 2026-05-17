@@ -109,19 +109,6 @@ test("ProfileTabs uses underline border style not chip radius", () => {
   assert.doesNotMatch(src, /border-radius: var\(--radius-chip\)/);
 });
 
-// --- ProfileActions ---
-
-test("ProfileActions uses text-style buttons, not LianButton", () => {
-  const src = read("src/features/profile/ProfileActions.vue");
-  assert.doesNotMatch(src, /<LianButton/);
-  assert.match(src, /profile-actions__btn/);
-});
-
-test("ProfileActions has divider between buttons", () => {
-  const src = read("src/features/profile/ProfileActions.vue");
-  assert.match(src, /profile-actions__divider/);
-});
-
 // --- ProfileCollectionList ---
 
 test("ProfileCollectionList cards use shadow not border", () => {
