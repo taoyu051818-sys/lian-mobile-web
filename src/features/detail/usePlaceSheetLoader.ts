@@ -13,23 +13,30 @@ export function usePlaceSheetLoader(post: ComputedRef<PostDetail | null>) {
 
   const placeSheetState = computed(() => placeSheet.value);
 
+  let requestSeq = 0;
+
   async function openPlaceSheet() {
     const placeId = post.value?.place?.id;
     if (!placeId) return;
+    const seq = ++requestSeq;
     placeSheetOpen.value = true;
     placeSheetError.value = "";
     if (placeSheet.value?.id === placeId) return;
     placeSheetLoading.value = true;
     try {
-      placeSheet.value = await fetchPlaceSheet(placeId);
+      const nextSheet = await fetchPlaceSheet(placeId);
+      if (seq !== requestSeq || post.value?.place?.id !== placeId) return;
+      placeSheet.value = nextSheet;
     } catch (error) {
+      if (seq !== requestSeq || post.value?.place?.id !== placeId) return;
       placeSheetError.value = extractErrorMessage(error, ERROR_LOAD_PLACE);
     } finally {
-      placeSheetLoading.value = false;
+      if (seq === requestSeq) placeSheetLoading.value = false;
     }
   }
 
   function resetPlaceSheet() {
+    requestSeq++;
     placeSheet.value = null;
     placeSheetOpen.value = false;
     placeSheetLoading.value = false;

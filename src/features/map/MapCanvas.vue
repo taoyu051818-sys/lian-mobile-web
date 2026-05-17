@@ -152,6 +152,13 @@ watch(
   },
 );
 
+watch(
+  () => props.roadPreview,
+  () => {
+    if (map.value) renderMap();
+  },
+);
+
 onBeforeUnmount(() => {
   detachZoomControl();
   map.value?.remove();

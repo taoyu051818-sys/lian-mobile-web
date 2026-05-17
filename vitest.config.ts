@@ -11,6 +11,7 @@ export default defineConfig({
       "tests/feed/feedReadHistoryIdNormalization.contract.test.ts",
       "tests/html/**/*.test.ts",
       "tests/locales/**/*.test.ts",
+      "tests/map/**/*.test.ts",
       "tests/time/**/*.test.ts",
       "tests/shell/**/*.test.ts",
       "tests/publish/**/*.test.ts",
