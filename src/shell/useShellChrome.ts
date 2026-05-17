@@ -9,9 +9,6 @@ import {
 import type { PageChromeSpec } from "./page-model";
 
 const state: ShellChromeState = reactive(createDefaultChromeState());
-let autoHideActive = false;
-let savedTopVisible: boolean | undefined;
-let savedBottomVisible: boolean | undefined;
 
 function mergeRegion(target: ShellChromeRegionSpec, patch: ShellChromeRegionSpec) {
   if (patch.buttons !== undefined) {
@@ -58,19 +55,9 @@ function resetRegions() {
   mergeRegion(state.bottom, defaults.bottom);
   // Preserve the shell-owned tab slot set once by AppShell.
   state.bottom.slot = "tabs";
-  autoHideActive = false;
-  savedTopVisible = undefined;
-  savedBottomVisible = undefined;
 }
 
 function applyPageChrome(spec: PageChromeSpec) {
-  // Reset both regions before applying new spec so stale fields from previous
-  // view (tabs, buttons, identity, filters, visible) don't persist.
-  // Also clear any stale autoHide state from a previous view.
-  autoHideActive = false;
-  savedTopVisible = undefined;
-  savedBottomVisible = undefined;
-
   const defaults = createDefaultChromeState();
   if (spec.top) {
     mergeRegion(state.top, defaults.top);
@@ -78,25 +65,13 @@ function applyPageChrome(spec: PageChromeSpec) {
   }
   if (spec.bottom) {
     mergeRegion(state.bottom, defaults.bottom);
-    // Preserve the shell-owned tab slot set once by AppShell.
     state.bottom.slot = "tabs";
     setRegion("bottom", spec.bottom);
   }
 
-  if (spec.autoHideOnDetail !== undefined) {
-    if (spec.autoHideOnDetail && !autoHideActive) {
-      savedTopVisible = state.top.visible;
-      savedBottomVisible = state.bottom.visible;
-      state.top.visible = false;
-      state.bottom.visible = false;
-      autoHideActive = true;
-    } else if (!spec.autoHideOnDetail && autoHideActive) {
-      state.top.visible = savedTopVisible ?? true;
-      state.bottom.visible = savedBottomVisible ?? true;
-      autoHideActive = false;
-      savedTopVisible = undefined;
-      savedBottomVisible = undefined;
-    }
+  if (spec.autoHideOnDetail) {
+    state.top.visible = false;
+    state.bottom.visible = false;
   }
 }
 

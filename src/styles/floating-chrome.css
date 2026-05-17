@@ -1,8 +1,3 @@
-:root {
-  --bottom-chrome-visibility-progress: 1;
-  --detail-drag-visible-scale-loss: 0;
-}
-
 .lian-floating-chrome {
   position: fixed;
   right: max(var(--floating-bar-side-inset), env(safe-area-inset-right));
@@ -37,35 +32,6 @@
 
 .shell-chrome__tabs.lian-floating-chrome {
   /* layout and scrollbar hiding inherited from .lian-floating-chrome base and .shell-chrome__tabs */
-}
-
-/* Detail drag cardify transitions */
-.feed-view__content.is-under-detail {
-  opacity: var(--feed-under-detail-opacity, 0.08) !important;
-  transform: scale(var(--feed-under-detail-scale, 0.985)) !important;
-}
-
-.post-detail-panel:not(.is-returning) .post-detail-panel__stage {
-  transform: translate3d(
-      var(--detail-card-translate-x, 0px),
-      var(--detail-card-translate-y, 0px),
-      0
-    )
-    scale(calc(1 - (var(--detail-card-progress, 0) * var(--detail-drag-visible-scale-loss)))) !important;
-  transition: none !important;
-  will-change: transform, border-radius;
-}
-
-.post-detail-panel.is-returning .post-detail-panel__stage {
-  transform: translate3d(
-      var(--detail-card-translate-x, 0px),
-      var(--detail-card-translate-y, 0px),
-      0
-    )
-    scale(var(--detail-card-scale, 1)) !important;
-  transition:
-    transform var(--motion-return) var(--motion-ease-standard),
-    border-radius var(--motion-return) var(--motion-ease-standard) !important;
 }
 
 .post-detail-panel__topbar.lian-floating-chrome,
