@@ -1,6 +1,9 @@
 <script setup lang="ts">
-import { watch, onBeforeUnmount } from "vue";
+import { computed, watch } from "vue";
 import { useDetailSheet } from "./useDetailSheet";
+import { useBodyScrollLock } from "../composables/useBodyScrollLock";
+import { useEscapeListener } from "../composables/useEscapeListener";
+import { useFocusRestore } from "../composables/useFocusRestore";
 import { DETAIL_SHEET_LABEL, DETAIL_SHEET_TITLE, CLOSE_BUTTON_LABEL } from "../config/brand";
 
 const emit = defineEmits<{
@@ -8,46 +11,23 @@ const emit = defineEmits<{
 }>();
 
 const { state, close } = useDetailSheet();
-let triggerEl: HTMLElement | null = null;
+const isOpen = computed(() => state.open);
+const focusRestore = useFocusRestore();
+
+useBodyScrollLock(isOpen);
+useEscapeListener(isOpen, handleClose);
 
 function handleClose() {
   close();
   emit("close");
 }
 
-function handleKeydown(event: KeyboardEvent) {
-  if (event.key === "Escape" && state.open) {
-    event.stopPropagation();
-    handleClose();
+watch(isOpen, (open) => {
+  if (open) {
+    focusRestore.save();
+  } else {
+    focusRestore.restore();
   }
-}
-
-function lockScroll() {
-  document.body.style.setProperty("overflow", "hidden");
-}
-
-function unlockScroll() {
-  document.body.style.removeProperty("overflow");
-}
-
-watch(
-  () => state.open,
-  (isOpen) => {
-    if (isOpen) {
-      triggerEl = document.activeElement as HTMLElement;
-      lockScroll();
-      document.addEventListener("keydown", handleKeydown);
-    } else {
-      unlockScroll();
-      document.removeEventListener("keydown", handleKeydown);
-      triggerEl?.focus();
-    }
-  },
-);
-
-onBeforeUnmount(() => {
-  unlockScroll();
-  document.removeEventListener("keydown", handleKeydown);
 });
 </script>
 
