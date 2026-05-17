@@ -1,6 +1,7 @@
 import { watch, type ComputedRef, type Ref } from "vue";
 import { sharePost, buildCanonicalPostUrl } from "../../platform/share";
 import { configureWeChatShare } from "../../platform/wechatShare";
+import { APP_NAME, SHARE_LINK_COPIED } from "../../config/brand";
 import type { PostDetail } from "../../types/post";
 
 export function usePostShare(options: {
@@ -17,7 +18,7 @@ export function usePostShare(options: {
       if (!nextPost?.tid) return;
       const plainBody = (nextPost.contentHtml || "").replace(/<[^>]+>/g, "").trim();
       configureWeChatShare({
-        title: nextPost.title || "黎安屿你",
+        title: nextPost.title || APP_NAME,
         desc: plainBody.slice(0, 100) || undefined,
         link: buildCanonicalPostUrl(nextPost.tid),
         imgUrl: nextPost.cover || nextPost.imageUrls?.[0] || undefined,
@@ -31,7 +32,7 @@ export function usePostShare(options: {
     const result = await sharePost({ tid: options.postId.value, title: options.title.value });
     if (result.outcome === "shared" || result.outcome === "cancelled") return;
     if (result.outcome === "copied") {
-      options.showActionMessage("链接已复制");
+      options.showActionMessage(SHARE_LINK_COPIED);
       return;
     }
     // WeChat: show hint to use the right-menu share

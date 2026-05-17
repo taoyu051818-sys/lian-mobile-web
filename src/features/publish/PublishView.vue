@@ -1,7 +1,13 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import type { PageChromeSpec } from "../../shell/page-model";
-import { PUBLISH_SECTION_LABEL, PUBLISH_VIEW_POST } from "../../config/brand";
+import {
+  PUBLISH_SECTION_LABEL,
+  PUBLISH_VIEW_POST,
+  PUBLISH_CLEAR_CONFIRM,
+  PUBLISH_IMAGE_RESELECT,
+  PUBLISH_DRAFT_RECOVERED,
+} from "../../config/brand";
 import { GlassPanel, InlineError, LianButton } from "../../ui";
 import PublishActionBar from "./PublishActionBar.vue";
 import PublishComposer from "./PublishComposer.vue";
@@ -22,10 +28,7 @@ const emit = defineEmits<{
   chrome: [spec: PageChromeSpec];
 }>();
 
-const RESET_CONFIRM_MESSAGE = [
-  "当前发布内容还没有提交，确认清空吗？",
-  "已选择的图片需要重新添加。",
-].join("");
+const RESET_CONFIRM_MESSAGE = [PUBLISH_CLEAR_CONFIRM, PUBLISH_IMAGE_RESELECT].join("");
 
 const draft = usePublishDraft();
 const locationOptions = usePublishLocationOptions(draft.placeName);
@@ -102,8 +105,8 @@ function restoreDraftFromSession() {
     snapshot.selectedMapLocation || snapshot.placeName.trim(),
   );
   draftNotice.value = snapshot.pendingImageCount
-    ? `已恢复同一会话中的未发布内容，${snapshot.pendingImageCount} 张图片需要重新选择。`
-    : "已恢复同一会话中的未发布内容。";
+    ? `${PUBLISH_DRAFT_RECOVERED}，${snapshot.pendingImageCount} 张图片需要重新选择。`
+    : PUBLISH_DRAFT_RECOVERED;
 }
 
 function requestResetForm() {

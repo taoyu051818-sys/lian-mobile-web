@@ -1,4 +1,5 @@
 import { computed, onBeforeUnmount, ref, type StyleValue } from "vue";
+import { PROFILE_AVATAR_CROP_UNSUPPORTED, PROFILE_AVATAR_CROP_ERROR } from "../../config/brand";
 
 export interface UseAvatarCropperOptions {
   previewSize?: number;
@@ -123,7 +124,7 @@ export function useAvatarCropper(options: UseAvatarCropperOptions = {}) {
     canvas.width = size;
     canvas.height = size;
     const ctx = canvas.getContext("2d");
-    if (!ctx) throw new Error("浏览器暂时不能裁剪头像，请换一个浏览器再试。");
+    if (!ctx) throw new Error(PROFILE_AVATAR_CROP_UNSUPPORTED);
 
     const pScale = previewSize / Math.min(bitmap.width, bitmap.height);
     const bitmapOx = ox / pScale;
@@ -139,7 +140,7 @@ export function useAvatarCropper(options: UseAvatarCropperOptions = {}) {
       canvas.toBlob(
         (blob) => {
           if (blob) resolve(blob);
-          else reject(new Error("头像裁剪失败，请换一张图片再试。"));
+          else reject(new Error(PROFILE_AVATAR_CROP_ERROR));
         },
         "image/jpeg",
         0.9,
