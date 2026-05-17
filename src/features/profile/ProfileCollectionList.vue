@@ -36,13 +36,19 @@ function canOpenItem(item: ProfileListItem) {
 }
 
 function itemKey(item: ProfileListItem, index: number) {
-  if (item.id !== undefined && item.id !== "") return `profile-item:${String(item.id)}`;
+  if (item.id !== undefined && item.id !== "") {
+    return `profile-item:${String(item.id)}`;
+  }
   if (item.tid) return `profile-item:${String(item.tid)}`;
   return `profile-item:${index}`;
 }
 
 function itemTime(item: ProfileListItem) {
-  return formatRelativeTime(item.lastViewedAt || item.timestampISO) || item.timeLabel || TIME_UNKNOWN;
+  return (
+    formatRelativeTime(item.lastViewedAt || item.timestampISO) ||
+    item.timeLabel ||
+    TIME_UNKNOWN
+  );
 }
 
 function statusLabel(status?: ProfileActivityStatus) {
