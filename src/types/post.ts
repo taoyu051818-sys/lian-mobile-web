@@ -1,7 +1,7 @@
 import type { DisplayActor, FeedItemId, SourceSignal } from "./feed";
 import type { PlaceRef } from "./place";
 import type { Audience } from "./audience";
-import type { EventPostExtension } from "./post-extensions";
+import type { EventPostExtension, HelpPostExtension } from "./post-extensions";
 
 export interface PostReply {
   id: FeedItemId;
@@ -33,6 +33,10 @@ export interface PostDetail {
   event?: EventPostExtension;
   /** Whether the current viewer has already joined this event. */
   eventJoined?: boolean;
+  /** PRD V0.1 §6.5 — present iff postType === "help". */
+  help?: HelpPostExtension;
+  /** Whether the current viewer has already voted on this help post. */
+  helpVoted?: boolean;
 }
 
 /**

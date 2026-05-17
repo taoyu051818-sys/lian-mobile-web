@@ -1,11 +1,13 @@
 <script setup lang="ts">
 import type { PlaceRef, PlaceSheet } from "../../types/place";
 import type { EventActionPlan } from "../../domain/eventActionPolicy";
-import type { EventPostExtension } from "../../types/post-extensions";
+import type { HelpVotePlan } from "../../domain/helpVotePolicy";
+import type { EventPostExtension, HelpPostExtension } from "../../types/post-extensions";
 import PostDetailGallery from "./PostDetailGallery.vue";
 import PostDetailMainBody from "./PostDetailMainBody.vue";
 import PostDetailInfoStrip from "./PostDetailInfoStrip.vue";
 import PostDetailEventBlock from "./PostDetailEventBlock.vue";
+import PostDetailHelpBlock from "./PostDetailHelpBlock.vue";
 import PostPlaceSheetBlock from "./PostPlaceSheetBlock.vue";
 import PostReportBlock from "./PostReportBlock.vue";
 import PostActionFeedback from "./PostActionFeedback.vue";
@@ -37,6 +39,10 @@ defineProps<{
   eventPlan?: EventActionPlan;
   eventBusy?: boolean;
   eventActionError?: string;
+  help?: HelpPostExtension;
+  helpPlan?: HelpVotePlan;
+  helpBusy?: boolean;
+  helpActionError?: string;
 }>();
 
 const emit = defineEmits<{
@@ -48,6 +54,8 @@ const emit = defineEmits<{
   submitReport: [];
   hideReportedPost: [];
   eventAct: [];
+  helpAct: [];
+  helpOpenLinkedEvent: [tid: number];
   "update:reportCategory": [value: string];
   "update:reportReason": [value: string];
   "update:placeSheetOpen": [value: boolean];
@@ -73,6 +81,16 @@ const emit = defineEmits<{
       :busy="!!eventBusy"
       :action-error="eventActionError"
       @act="emit('eventAct')"
+    />
+
+    <PostDetailHelpBlock
+      v-if="help && helpPlan"
+      :help="help"
+      :plan="helpPlan"
+      :busy="!!helpBusy"
+      :action-error="helpActionError"
+      @act="emit('helpAct')"
+      @open-linked-event="emit('helpOpenLinkedEvent', $event)"
     />
 
     <PostDetailInfoStrip

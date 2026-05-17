@@ -9,10 +9,12 @@ import {
   REPLY_IDENTITY_LABEL,
   EVENT_JOIN_SUCCESS,
   EVENT_CANCEL_SUCCESS,
+  HELP_VOTE_SUCCESS,
+  HELP_UNVOTE_SUCCESS,
 } from "../../config/brand";
 import { extractErrorMessage } from "../../utils/extractErrorMessage";
 import type { PostDetail } from "../../types/post";
-import type { EventPostExtension } from "../../types/post-extensions";
+import type { EventPostExtension, HelpPostExtension } from "../../types/post-extensions";
 import PostDetailTopbar from "./PostDetailTopbar.vue";
 import PostDetailContent from "./PostDetailContent.vue";
 import PostDetailHiddenState from "./PostDetailHiddenState.vue";
@@ -27,6 +29,7 @@ import { usePostReplyComposer } from "./usePostReplyComposer";
 import { usePostShare } from "./usePostShare";
 import { useDetailGallery } from "./useDetailGallery";
 import { useEventActions } from "../../composables/useEventActions";
+import { useHelpVote } from "../../composables/useHelpVote";
 import { useAudienceOptions } from "../../composables/useAudienceOptions";
 
 const props = withDefaults(
@@ -213,6 +216,42 @@ function handleEventAct() {
   }
 }
 
+const helpExtension = computed<HelpPostExtension | undefined>(() => post.value?.help);
+const helpLocal = ref<HelpPostExtension | undefined>(undefined);
+const helpVoted = ref(false);
+const liveHelp = computed<HelpPostExtension | undefined>(
+  () => helpLocal.value || helpExtension.value,
+);
+
+const helpVote = useHelpVote({
+  tid: postId,
+  help: liveHelp,
+  hasVoted: helpVoted,
+  isAuthenticated,
+  onChange: ({ help, voted }) => {
+    helpLocal.value = help;
+    helpVoted.value = voted;
+  },
+  onMessage: showActionMessage,
+});
+
+function handleHelpAct() {
+  const mode = helpVote.plan.value.mode;
+  if (mode === "vote") {
+    void helpVote.act(HELP_VOTE_SUCCESS);
+  } else if (mode === "unvote") {
+    void helpVote.act(HELP_UNVOTE_SUCCESS);
+  }
+}
+
+function handleHelpOpenLinkedEvent(tid: number) {
+  // V0.1 surface — emit retry so the panel reloads to the linked-event tid
+  // by way of the parent. Until the parent owns navigation, nothing else to
+  // wire. Touch the param so TS does not complain.
+  void tid;
+  emit("retry");
+}
+
 function handleLike() {
   const currentId = postId.value;
   return rawHandleLike(currentId, () => postId.value === currentId);
@@ -232,6 +271,8 @@ watch(
     clearMessages();
     eventLocalEvent.value = undefined;
     eventJoined.value = Boolean(nextPost?.eventJoined);
+    helpLocal.value = undefined;
+    helpVoted.value = Boolean(nextPost?.helpVoted);
   },
   { immediate: true },
 );
@@ -289,6 +330,10 @@ void audience;
             :event-plan="eventActions.plan.value"
             :event-busy="eventActions.busy.value"
             :event-action-error="eventActions.actionError.value"
+            :help="liveHelp"
+            :help-plan="helpVote.plan.value"
+            :help-busy="helpVote.busy.value"
+            :help-action-error="helpVote.actionError.value"
             @gallery-pointer-down="handleGalleryPointerDown"
             @gallery-pointer-move="handleGalleryPointerMove"
             @open-gallery-image="openGalleryImage"
@@ -297,6 +342,8 @@ void audience;
             @submit-report="handleReport"
             @hide-reported-post="handleHideReportedPost"
             @event-act="handleEventAct"
+            @help-act="handleHelpAct"
+            @help-open-linked-event="handleHelpOpenLinkedEvent"
             @update:report-category="reportCategory = $event"
             @update:report-reason="reportReason = $event"
             @update:place-sheet-open="placeSheetOpen = $event"
