@@ -8,6 +8,7 @@ import {
   normalizeDisplayActor,
   normalizeEventExtension,
   normalizeFeedItemId,
+  normalizeHelpExtension,
   normalizePlaceRef,
   normalizeSourceSignal,
 } from "../platform/api-normalizers";
@@ -49,6 +50,8 @@ export function normalizePostDetail(value: unknown, fallbackId: FeedItemId): Pos
   const bookmarkedValue = "bookmarked" in record ? record.bookmarked : record.saved;
   const event = normalizeEventExtension(record.event);
   const eventJoined = "eventJoined" in record ? asBoolean(record.eventJoined) : undefined;
+  const help = normalizeHelpExtension(record.help);
+  const helpVoted = "helpVoted" in record ? asBoolean(record.helpVoted) : undefined;
 
   return {
     tid,
@@ -70,6 +73,8 @@ export function normalizePostDetail(value: unknown, fallbackId: FeedItemId): Pos
     bookmarked: asBoolean(bookmarkedValue),
     ...(event ? { event } : {}),
     ...(eventJoined !== undefined ? { eventJoined } : {}),
+    ...(help ? { help } : {}),
+    ...(helpVoted !== undefined ? { helpVoted } : {}),
   };
 }
 

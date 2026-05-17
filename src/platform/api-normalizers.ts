@@ -7,6 +7,8 @@ import type {
   EventPostExtension,
   EventReward,
   EventStatus,
+  HelpPostExtension,
+  HelpStatus,
 } from "../types/post-extensions";
 import type { PostLocation } from "../types/post";
 
@@ -225,5 +227,43 @@ export function normalizeEventExtension(value: unknown): EventPostExtension | un
     ...(capacity !== undefined ? { capacity } : {}),
     participantCount,
     joinPolicy,
+  };
+}
+
+const HELP_STATUSES: ReadonlySet<HelpStatus> = new Set([
+  "open",
+  "linked_event",
+  "resolved",
+  "closed",
+]);
+
+/**
+ * Coerce a raw payload into a HelpPostExtension. Returns undefined when the
+ * payload does not look like a help (no helpId or unknown status). Never
+ * throws — callers can render the post even when the help extension is
+ * missing or malformed.
+ */
+export function normalizeHelpExtension(value: unknown): HelpPostExtension | undefined {
+  const record = asRecord(value);
+  const helpId = optionalString(record.helpId);
+  if (!helpId) return undefined;
+  const rawStatus = optionalString(record.status);
+  if (!rawStatus || !HELP_STATUSES.has(rawStatus as HelpStatus)) return undefined;
+  const voteCount = Math.max(0, Math.trunc(asNumber(record.voteCount, 0)));
+  const commentCount = Math.max(0, Math.trunc(asNumber(record.commentCount, 0)));
+  const linkedRaw = record.linkedEventTid;
+  let linkedEventTid: number | undefined;
+  if (typeof linkedRaw === "number" && Number.isFinite(linkedRaw) && linkedRaw > 0) {
+    linkedEventTid = Math.trunc(linkedRaw);
+  } else if (typeof linkedRaw === "string" && linkedRaw.trim()) {
+    const parsed = Number(linkedRaw);
+    if (Number.isFinite(parsed) && parsed > 0) linkedEventTid = Math.trunc(parsed);
+  }
+  return {
+    helpId,
+    voteCount,
+    commentCount,
+    status: rawStatus as HelpStatus,
+    ...(linkedEventTid !== undefined ? { linkedEventTid } : {}),
   };
 }

@@ -82,3 +82,21 @@ export const EVENT_DISABLED_OUT_OF_SCOPE = "不在参与范围内";
 export const EVENT_ACTION_UNAVAILABLE = "活动操作暂时不可用，可以稍后再试。";
 export const EVENT_JOIN_SUCCESS = "已报名，期待你来。";
 export const EVENT_CANCEL_SUCCESS = "已取消报名。";
+
+/** 求助详情 (PRD V0.1 §6.5 / §11.3) */
+export const HELP_BLOCK_LABEL = "求助信息";
+export const HELP_STATUS_OPEN = "求助中";
+export const HELP_STATUS_LINKED_EVENT = "已关联活动";
+export const HELP_STATUS_RESOLVED = "已解决";
+export const HELP_STATUS_CLOSED = "已关闭";
+export const HELP_VOTE_COUNT_PREFIX = "投票数";
+export const HELP_VOTE = "我也需要";
+export const HELP_UNVOTE = "取消支持";
+export const HELP_VOTE_PENDING = "处理中…";
+export const HELP_DISABLED_RESOLVED = "求助已解决";
+export const HELP_DISABLED_CLOSED = "求助已关闭";
+export const HELP_DISABLED_NOT_SIGNED_IN = "登录后可以投票支持";
+export const HELP_LINKED_EVENT_LABEL = "查看关联活动";
+export const HELP_ACTION_UNAVAILABLE = "求助操作暂时不可用，可以稍后再试。";
+export const HELP_VOTE_SUCCESS = "已支持，谢谢。";
+export const HELP_UNVOTE_SUCCESS = "已取消支持。";
