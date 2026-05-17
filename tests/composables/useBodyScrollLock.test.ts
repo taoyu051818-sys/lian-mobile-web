@@ -4,10 +4,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
-const source = readFileSync(
-  path.join(repoRoot, "src/composables/useBodyScrollLock.ts"),
-  "utf8",
-);
+const source = readFileSync(path.join(repoRoot, "src/composables/useBodyScrollLock.ts"), "utf8");
 
 describe("useBodyScrollLock stacked-modal contract", () => {
   it("uses a module-level lock count for ref-counting", () => {
