@@ -36,8 +36,6 @@ const emit = defineEmits<{
 
 <template>
   <div class="app-view-host">
-    <KeepAlive include="MapLeafletView">
-      <component :is="viewComponents[props.activeViewKey]" @chrome="emit('chrome', $event)" />
-    </KeepAlive>
+    <component :is="viewComponents[props.activeViewKey]" @chrome="emit('chrome', $event)" />
   </div>
 </template>
