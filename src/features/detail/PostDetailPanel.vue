@@ -42,11 +42,13 @@ useVisualViewport();
 const { detailTopChromeOpacity, detailBottomChromeOpacity, detailPointerEvents } =
   useFloatingChromeState();
 
-const detailChromeStyle = computed(() => ({
-  "--detail-top-chrome-opacity": detailTopChromeOpacity.value,
-  "--detail-bottom-chrome-opacity": detailBottomChromeOpacity.value,
-  "pointer-events": detailPointerEvents.value,
-}));
+const detailChromeStyle = computed(
+  (): Record<string, string> => ({
+    "--detail-top-chrome-opacity": String(detailTopChromeOpacity.value),
+    "--detail-bottom-chrome-opacity": String(detailBottomChromeOpacity.value),
+    "pointer-events": detailPointerEvents.value,
+  }),
+);
 
 const actionError = ref("");
 const actionMessage = ref("");
