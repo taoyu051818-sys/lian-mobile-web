@@ -13,6 +13,10 @@ const feedDetailSource = fs.readFileSync(
   path.join(repoRoot, "src/features/feed/useFeedDetail.ts"),
   "utf8",
 );
+const browserStorageSource = fs.readFileSync(
+  path.join(repoRoot, "src/platform/browser-storage.ts"),
+  "utf8",
+);
 
 describe("Feed read-history string id normalization", () => {
   it("normalizes numeric and string ids through one shared helper", () => {
@@ -23,12 +27,20 @@ describe("Feed read-history string id normalization", () => {
     expect(normalizeFeedItemId(undefined)).toBe("");
   });
 
-  it("reuses the helper in both Feed history and detail guard paths", () => {
-    expect(feedDataSource).toMatch(/import \{ normalizeFeedItemId \} from "\.\/feedItemId";/);
-    expect(feedDataSource).toMatch(/const normalizedId = normalizeFeedItemId\(id\);/);
-    expect(feedDataSource).toMatch(/normalizeFeedItemId\(entry\.tid\) !== normalizedId/);
-    expect(feedDataSource).not.toMatch(/Number\(entry\.tid\) !== Number\(id\)/);
+  it("useFeedData delegates read history to platform/browser-storage", () => {
+    expect(feedDataSource).toMatch(
+      /import \{.*readHistoryQuery.*rememberReadItem.*\} from "\.\.\/\.\.\/platform\/browser-storage"/,
+    );
+    expect(feedDataSource).not.toMatch(/localStorage\.getItem/);
+  });
 
+  it("browser-storage normalizes TIDs in readHistoryQuery and rememberReadItem", () => {
+    expect(browserStorageSource).toMatch(/String\(entry\.tid\)/);
+    expect(browserStorageSource).toMatch(/const normalizedId = id == null \? "" : String\(id\)/);
+    expect(browserStorageSource).toMatch(/String\(entry\.tid\) !== normalizedId/);
+  });
+
+  it("reuses the helper in detail guard paths", () => {
     expect(feedDetailSource).toMatch(/import \{ normalizeFeedItemId \} from "\.\/feedItemId";/);
     expect(feedDetailSource).toMatch(/const normalizedId = normalizeFeedItemId\(id\);/);
     expect(feedDetailSource).toMatch(
