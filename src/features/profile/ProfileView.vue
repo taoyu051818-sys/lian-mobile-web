@@ -271,9 +271,17 @@ onMounted(() => {
         @retry="loadProfileOverview"
       />
 
-      <ProfileEditorPanel v-if="editorOpen" :user="user" @updated="handleProfileUpdated" />
+      <ProfileEditorPanel
+        v-if="editorOpen"
+        :user="user"
+        @updated="handleProfileUpdated"
+      />
 
-      <ProfileTabs :tabs="tabs" :active-tab="activeTab" @select="loadProfileList" />
+      <ProfileTabs
+        :tabs="tabs"
+        :active-tab="activeTab"
+        @select="loadProfileList"
+      />
 
       <ProfileCollectionList
         :items="profileItems"
@@ -315,7 +323,11 @@ onMounted(() => {
   left: calc(-1 * var(--space-4));
   right: calc(-1 * var(--space-4));
   height: 200px;
-  background: linear-gradient(180deg, var(--lian-primary-soft) 0%, transparent 100%);
+  background: linear-gradient(
+    180deg,
+    var(--lian-primary-soft) 0%,
+    transparent 100%
+  );
   pointer-events: none;
 }
 
