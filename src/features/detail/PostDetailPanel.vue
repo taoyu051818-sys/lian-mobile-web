@@ -2,7 +2,7 @@
 import { computed, ref, watch } from "vue";
 import { useVisualViewport } from "../../composables/useVisualViewport";
 import { InlineError } from "../../ui";
-import { LOADING_DETAIL, DETAIL_RELOAD } from "../../config/brand";
+import { LOADING_DETAIL, DETAIL_RELOAD, REPLY_IDENTITY_LABEL } from "../../config/brand";
 import { extractErrorMessage } from "../../utils/extractErrorMessage";
 import type { PostDetail } from "../../types/post";
 import PostDetailTopbar from "./PostDetailTopbar.vue";
@@ -151,7 +151,7 @@ const {
   images,
   fullResolutionImages,
 });
-const replyIdentityLabel = "以当前身份回复";
+const replyIdentityLabel = REPLY_IDENTITY_LABEL;
 
 function handleLike() {
   const currentId = postId.value;

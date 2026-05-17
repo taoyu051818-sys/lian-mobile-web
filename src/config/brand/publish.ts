@@ -64,3 +64,5 @@ export const PUBLISH_IMAGE_REMOVE_LABEL = "移除图片";
 export const PUBLISH_CLEAR_CONFIRM = "当前发布内容还没有提交，确认清空吗？";
 export const PUBLISH_IMAGE_RESELECT = "已选择的图片需要重新添加。";
 export const PUBLISH_DRAFT_RECOVERED = "已恢复同一会话中的未发布内容。";
+export const PUBLISH_RESET_CONTINUE = "继续编辑";
+export const PUBLISH_RESET_CONFIRM_ACTION = "确认清空";
