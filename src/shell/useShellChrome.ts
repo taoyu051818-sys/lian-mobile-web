@@ -62,6 +62,9 @@ function applyPageChrome(spec: PageChromeSpec) {
 
   mergeRegion(state.top, defaults.top);
   mergeRegion(state.bottom, defaults.bottom);
+  // Clear any slot left over from a previous view (e.g. detail-topbar from a
+  // detail panel that closed without completing its unmount cleanup).
+  state.top.slot = null;
   state.bottom.slot = "tabs";
 
   if (spec.top) {

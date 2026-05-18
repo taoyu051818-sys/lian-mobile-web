@@ -19,10 +19,7 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <header
-    class="post-detail-topbar lian-floating-chrome lian-floating-chrome--top"
-    data-floating-chrome="top"
-  >
+  <header class="post-detail-topbar">
     <button
       class="post-detail-topbar__close"
       type="button"
@@ -61,28 +58,11 @@ const emit = defineEmits<{
 
 <style scoped>
 .post-detail-topbar {
-  position: fixed;
-  right: max(var(--floating-bar-side-inset), env(safe-area-inset-right));
-  left: max(var(--floating-bar-side-inset), env(safe-area-inset-left));
-  z-index: var(--floating-bar-z);
-  width: min(calc(100vw - var(--space-6)), var(--floating-bar-max-width));
-  margin: 0 auto;
-  border: 1px solid var(--glass-border);
-  border-radius: var(--floating-bar-radius);
-  background: var(--glass-bg-strong);
-  box-shadow: var(--shadow-floating);
-  transition:
-    transform var(--floating-chrome-motion-duration, 260ms) var(--motion-ease-standard),
-    opacity var(--floating-chrome-motion-duration, 260ms) var(--motion-ease-standard),
-    filter var(--floating-chrome-motion-duration, 260ms) var(--motion-ease-standard),
-    min-height 180ms ease,
-    align-items 180ms ease;
-  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
-  top: var(--floating-bar-top-offset);
   display: grid;
   grid-template-columns: 44px minmax(0, 1fr) 64px;
   gap: var(--space-1);
   align-items: center;
+  width: 100%;
   min-height: var(--floating-bar-height);
   padding: var(--floating-bar-padding);
 }

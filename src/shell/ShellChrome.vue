@@ -29,21 +29,23 @@ const { state } = useShellChrome();
 const { shellVisible } = useFloatingChromeState();
 
 const regionSpec = computed(() => state[props.region]);
-// Bottom region stays mounted across detail open/close because it now hosts
-// the reply-dock teleport target. Top region keeps the original visibility
-// gating for chrome that should disappear behind detail.
+// Both regions stay mounted across detail open/close when they host a slot
+// (reply-dock on bottom, detail-topbar on top), so the teleport targets are
+// available the moment a detail panel mounts. Top without a slot still gates
+// on shellVisible to preserve legacy hide-on-detail behavior for plain chrome.
 const isBottom = computed(() => props.region === "bottom");
-const isVisible = computed(() =>
-  isBottom.value
-    ? regionSpec.value.visible !== false
-    : regionSpec.value.visible !== false && shellVisible.value,
-);
+const hasSlot = computed(() => regionSpec.value.slot != null);
+const isVisible = computed(() => {
+  if (isBottom.value || hasSlot.value) return regionSpec.value.visible !== false;
+  return regionSpec.value.visible !== false && shellVisible.value;
+});
 const buttons = computed(() => regionSpec.value.buttons ?? []);
 const filters = computed(() => regionSpec.value.filters ?? []);
 const identity = computed(() => regionSpec.value.identity ?? null);
 const hasTabs = computed(() => regionSpec.value.tabs != null);
 const isSlottedTabs = computed(() => !hasTabs.value && regionSpec.value.slot === "tabs");
 const isReplyDockSlot = computed(() => regionSpec.value.slot === "reply-dock");
+const isDetailTopbarSlot = computed(() => regionSpec.value.slot === "detail-topbar");
 
 function handleButtonClick(button: ChromeButtonSpec) {
   if (!button.disabled && isVisible.value) {
@@ -74,85 +76,107 @@ function handleFilterToggle(filterId: string) {
       {
         'shell-chrome--tabs': hasTabs || isSlottedTabs,
         'shell-chrome--reply-dock': isReplyDockSlot,
+        'shell-chrome--detail-topbar': isDetailTopbarSlot,
       },
     ]"
-    :aria-hidden="hasTabs || isSlottedTabs || isReplyDockSlot ? undefined : !isVisible"
+    :aria-hidden="
+      hasTabs || isSlottedTabs || isReplyDockSlot || isDetailTopbarSlot ? undefined : !isVisible
+    "
     role="complementary"
     :aria-label="region === 'top' ? SHELL_TOP_REGION : SHELL_BOTTOM_REGION"
     :data-visible="isVisible"
     :style="{ pointerEvents: isVisible ? 'auto' : 'none' }"
   >
-    <template v-if="hasTabs">
-      <nav
-        class="shell-chrome__tabs lian-floating-chrome"
-        :class="[`lian-floating-chrome--${region}`]"
-        :aria-label="regionSpec.tabs?.ariaLabel ?? SHELL_TAB_SWITCH"
-        :aria-hidden="!isVisible"
-        data-floating-chrome="top"
-      >
-        <button
-          v-for="tab in regionSpec.tabs?.items ?? []"
-          :key="tab.id"
-          type="button"
-          class="shell-chrome__tab"
-          :class="{ 'is-active': tab.id === regionSpec.tabs?.activeKey }"
-          :aria-pressed="tab.id === regionSpec.tabs?.activeKey"
-          @click="handleTabSelect(tab.id)"
+    <Transition :name="`shell-slot-${region}`" mode="out-in">
+      <template v-if="hasTabs">
+        <nav
+          key="tabs-typed"
+          class="shell-chrome__tabs lian-floating-chrome"
+          :class="[`lian-floating-chrome--${region}`]"
+          :aria-label="regionSpec.tabs?.ariaLabel ?? SHELL_TAB_SWITCH"
+          :aria-hidden="!isVisible"
+          data-floating-chrome="top"
         >
-          {{ tab.label }}
-        </button>
-      </nav>
-    </template>
-    <template v-else-if="isSlottedTabs">
-      <slot />
-    </template>
-    <template v-else-if="isReplyDockSlot">
-      <div
-        id="lian-shell-bottom-slot"
-        class="shell-chrome__bottom-slot lian-floating-chrome lian-floating-chrome--bottom"
-        data-floating-chrome="bottom"
-      />
-    </template>
-    <template v-else>
-      <div class="shell-chrome__inner lian-floating-chrome lian-floating-chrome--top">
-        <div v-if="identity" class="shell-chrome__identity" :aria-label="SHELL_CURRENT_IDENTITY">
-          <span class="shell-chrome__identity-avatar" aria-hidden="true">{{
-            identity.avatarText
-          }}</span>
-          <span class="shell-chrome__identity-name">{{ identity.name }}</span>
-          <span v-if="identity.meta" class="shell-chrome__identity-meta">{{ identity.meta }}</span>
-        </div>
-        <div class="shell-chrome__slot">
-          <slot />
-        </div>
-        <nav v-if="filters.length" class="shell-chrome__filters" :aria-label="SHELL_FILTER">
           <button
-            v-for="f in filters"
-            :key="f.id"
+            v-for="tab in regionSpec.tabs?.items ?? []"
+            :key="tab.id"
             type="button"
-            class="shell-chrome__filter"
-            :class="{ 'is-active': f.active }"
-            :aria-pressed="f.active"
-            @click="handleFilterToggle(f.id)"
+            class="shell-chrome__tab"
+            :class="{ 'is-active': tab.id === regionSpec.tabs?.activeKey }"
+            :aria-pressed="tab.id === regionSpec.tabs?.activeKey"
+            @click="handleTabSelect(tab.id)"
           >
-            {{ f.active ? `✓ ${f.label}` : f.label }}
+            {{ tab.label }}
           </button>
         </nav>
-        <div v-if="buttons.length" class="shell-chrome__buttons">
-          <button
-            v-for="btn in buttons"
-            :key="btn.id"
-            class="lian-button"
-            :class="[`lian-button--${btn.variant ?? 'ghost'}`]"
-            :disabled="btn.disabled || !isVisible"
-            type="button"
-            :aria-label="btn.label"
-            @click="handleButtonClick(btn)"
-          >
-            {{ btn.label }}
-          </button>
+      </template>
+      <template v-else-if="isSlottedTabs">
+        <div key="tabs-slot" class="shell-chrome__slot-host">
+          <slot />
         </div>
-      </div>
-    </template>
+      </template>
+      <template v-else-if="isReplyDockSlot">
+        <div
+          key="reply-dock"
+          id="lian-shell-bottom-slot"
+          class="shell-chrome__bottom-slot lian-floating-chrome lian-floating-chrome--bottom"
+          data-floating-chrome="bottom"
+        />
+      </template>
+      <template v-else-if="isDetailTopbarSlot">
+        <div
+          key="detail-topbar"
+          id="lian-shell-top-slot"
+          class="shell-chrome__top-slot lian-floating-chrome lian-floating-chrome--top"
+          data-floating-chrome="top"
+        />
+      </template>
+      <template v-else>
+        <div
+          key="default"
+          class="shell-chrome__inner lian-floating-chrome lian-floating-chrome--top"
+        >
+          <div v-if="identity" class="shell-chrome__identity" :aria-label="SHELL_CURRENT_IDENTITY">
+            <span class="shell-chrome__identity-avatar" aria-hidden="true">{{
+              identity.avatarText
+            }}</span>
+            <span class="shell-chrome__identity-name">{{ identity.name }}</span>
+            <span v-if="identity.meta" class="shell-chrome__identity-meta">{{
+              identity.meta
+            }}</span>
+          </div>
+          <div class="shell-chrome__slot">
+            <slot />
+          </div>
+          <nav v-if="filters.length" class="shell-chrome__filters" :aria-label="SHELL_FILTER">
+            <button
+              v-for="f in filters"
+              :key="f.id"
+              type="button"
+              class="shell-chrome__filter"
+              :class="{ 'is-active': f.active }"
+              :aria-pressed="f.active"
+              @click="handleFilterToggle(f.id)"
+            >
+              {{ f.active ? `✓ ${f.label}` : f.label }}
+            </button>
+          </nav>
+          <div v-if="buttons.length" class="shell-chrome__buttons">
+            <button
+              v-for="btn in buttons"
+              :key="btn.id"
+              class="lian-button"
+              :class="[`lian-button--${btn.variant ?? 'ghost'}`]"
+              :disabled="btn.disabled || !isVisible"
+              type="button"
+              :aria-label="btn.label"
+              @click="handleButtonClick(btn)"
+            >
+              {{ btn.label }}
+            </button>
+          </div>
+        </div>
+      </template>
+    </Transition>
   </aside>
 </template>

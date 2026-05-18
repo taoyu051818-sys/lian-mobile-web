@@ -6,21 +6,10 @@
  * shell-chrome.css.
  */
 
-/* Detail topbar and dock — reapply inset/width for specificity override */
-.post-detail-panel__topbar.lian-floating-chrome,
-.post-detail-panel__dock.lian-floating-chrome {
-  right: max(var(--floating-bar-side-inset), env(safe-area-inset-right));
-  left: max(var(--floating-bar-side-inset), env(safe-area-inset-left));
-  width: min(calc(100vw - var(--space-6)), var(--floating-bar-max-width));
-  margin: 0 auto;
-}
-
 /* Reduced-motion: no transitions */
 @media (prefers-reduced-motion: reduce) {
   .lian-floating-chrome,
   .shell-chrome__tabs.lian-floating-chrome,
-  .post-detail-panel__topbar.lian-floating-chrome,
-  .post-detail-panel__dock.lian-floating-chrome,
   .bottom-tab-bar.lian-floating-chrome,
   .vue-shell__bottom-tab.lian-floating-chrome {
     transition: none !important;

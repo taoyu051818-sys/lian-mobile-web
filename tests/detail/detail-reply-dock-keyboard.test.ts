@@ -64,9 +64,30 @@ describe("PostDetailPanel keyboard-inset activation (#130)", () => {
 describe("floating-chrome bottom baseline (#130)", () => {
   const chromeSource = readRepoFile("../../src/styles/floating-chrome.css");
 
-  it("reduced-motion override disables transitions on bottom floating chrome", () => {
+  it("reduced-motion override disables transitions on the shell-owned floating chrome surface", () => {
     expect(chromeSource).toMatch(
-      /prefers-reduced-motion[\s\S]*post-detail-panel__dock[\s\S]*transition:\s*none/,
+      /prefers-reduced-motion[\s\S]*\.lian-floating-chrome[\s\S]*transition:\s*none/,
+    );
+  });
+
+  it("does not retroactively position the detail dock or topbar (slot containers do)", () => {
+    expect(chromeSource).not.toContain("post-detail-panel__dock");
+    expect(chromeSource).not.toContain("post-detail-panel__topbar");
+  });
+});
+
+describe("PostDetailTopbar layout under chrome slot protocol (top slot)", () => {
+  const topbarSource = readRepoFile("../../src/features/detail/PostDetailTopbar.vue");
+
+  it("does not self-position via lian-floating-chrome (shell top slot owns position)", () => {
+    expect(topbarSource).not.toContain("lian-floating-chrome");
+    expect(topbarSource).not.toMatch(/position:\s*fixed/);
+  });
+
+  it("lian-floating-chrome--top consumes --floating-bar-top-offset", () => {
+    const chromeSurface = readRepoFile("../../src/styles/chrome-surface.css");
+    expect(chromeSurface).toMatch(
+      /lian-floating-chrome--top\s*\{[\s\S]*var\(--floating-bar-top-offset/,
     );
   });
 });

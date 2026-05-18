@@ -146,6 +146,10 @@
   display: contents;
 }
 
+.shell-chrome--detail-topbar {
+  display: contents;
+}
+
 /* Shell-owned tab nav container */
 .shell-chrome__tabs {
   display: flex;
@@ -220,5 +224,49 @@
 @media (prefers-reduced-motion: reduce) {
   .shell-chrome__tab {
     transition: none;
+  }
+}
+
+/* Dynamic-island slot transitions: any slot kind change in either region
+   shares a single enter/leave curve so feed→detail (top topbar reveals,
+   bottom dock slides in) reads as one coordinated motion. */
+.shell-slot-top-enter-active,
+.shell-slot-top-leave-active,
+.shell-slot-bottom-enter-active,
+.shell-slot-bottom-leave-active {
+  transition:
+    transform var(--motion-standard) var(--motion-ease-standard),
+    opacity var(--motion-standard) var(--motion-ease-standard),
+    filter var(--motion-standard) var(--motion-ease-standard);
+}
+
+.shell-slot-top-enter-from,
+.shell-slot-top-leave-to {
+  transform: translateY(-12px) scale(0.94);
+  opacity: 0;
+  filter: blur(4px);
+}
+
+.shell-slot-bottom-enter-from,
+.shell-slot-bottom-leave-to {
+  transform: translateY(12px) scale(0.94);
+  opacity: 0;
+  filter: blur(4px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shell-slot-top-enter-active,
+  .shell-slot-top-leave-active,
+  .shell-slot-bottom-enter-active,
+  .shell-slot-bottom-leave-active {
+    transition: none;
+  }
+  .shell-slot-top-enter-from,
+  .shell-slot-top-leave-to,
+  .shell-slot-bottom-enter-from,
+  .shell-slot-bottom-leave-to {
+    transform: none;
+    opacity: 1;
+    filter: none;
   }
 }

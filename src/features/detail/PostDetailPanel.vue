@@ -42,8 +42,12 @@ const emit = defineEmits<{
 useVisualViewport();
 
 const { setRegion } = useShellChrome();
+setRegion("top", { slot: "detail-topbar", visible: true });
 setRegion("bottom", { slot: "reply-dock", visible: true });
-onBeforeUnmount(() => setRegion("bottom", { slot: "tabs", visible: true }));
+onBeforeUnmount(() => {
+  setRegion("top", { slot: null, visible: true });
+  setRegion("bottom", { slot: "tabs", visible: true });
+});
 
 const actionError = ref("");
 const actionMessage = ref("");
@@ -222,15 +226,16 @@ void audience;
 
 <template>
   <aside class="post-detail-panel" aria-labelledby="post-detail-title">
-    <PostDetailTopbar
-      :author-label="authorLabel"
-      :avatar-url="authorAvatarUrl"
-      :author-initial="authorInitial"
-      :has-author-identity="hasAuthorIdentity"
-      @close="emit('close')"
-      @share="handleShare"
-    />
-
+    <Teleport defer to="#lian-shell-top-slot">
+      <PostDetailTopbar
+        :author-label="authorLabel"
+        :avatar-url="authorAvatarUrl"
+        :author-initial="authorInitial"
+        :has-author-identity="hasAuthorIdentity"
+        @close="emit('close')"
+        @share="handleShare"
+      />
+    </Teleport>
     <div class="post-detail-panel__stage" @click="collapseReplyIfOpen">
       <div v-if="loading" class="post-detail-panel__state" role="status">{{ LOADING_DETAIL }}</div>
 
