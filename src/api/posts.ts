@@ -12,6 +12,7 @@ import {
   normalizeMerchantExtension,
   normalizePlaceRef,
   normalizeSourceSignal,
+  normalizeTradeExtension,
 } from "../platform/api-normalizers";
 import type { FeedItemId } from "../types/feed";
 import type { PostDetail, PostReply } from "../types/post";
@@ -63,6 +64,7 @@ export function normalizePostDetail(value: unknown, fallbackId: FeedItemId): Pos
       ? asBoolean(record.errandEntryAvailable)
       : merchant.errandSupported
     : undefined;
+  const trade = normalizeTradeExtension(record.trade);
 
   return {
     tid,
@@ -89,6 +91,7 @@ export function normalizePostDetail(value: unknown, fallbackId: FeedItemId): Pos
     ...(helpManageable !== undefined ? { helpManageable } : {}),
     ...(merchant ? { merchant } : {}),
     ...(errandEntryAvailable !== undefined ? { errandEntryAvailable } : {}),
+    ...(trade ? { trade } : {}),
   };
 }
 

@@ -113,6 +113,34 @@ export interface MerchantPostExtension {
 }
 
 // ---------------------------------------------------------------------------
+// Trade (PRD V0.1 §6.4 / §11)
+// ---------------------------------------------------------------------------
+
+/**
+ * Lifecycle of a second-hand listing. PRD §J4. `available` → `reserved` →
+ * `sold` is the happy path; `cancelled` is the terminal exit. The transitions
+ * themselves are not in scope for #608 — backend ships create-only first; the
+ * detail page just renders the badge.
+ */
+export type TradeState = "available" | "reserved" | "sold" | "cancelled";
+
+/**
+ * Read-side trade block surfaced by `GET /api/posts/:tid` after backend #387.
+ * Mirrors `metadata.trade` exactly. `category` is free-text (textbooks /
+ * electronics / daily / 搬寝出物 …) — it's merchandising, not a routing axis,
+ * so we keep it as a string and let frontend chips curate without forcing a
+ * server-side enum migration.
+ */
+export interface TradePostExtension {
+  /** Display string. Backend never parses currency — it's whatever the seller typed. */
+  price: string;
+  state: TradeState;
+  category: string;
+  /** ISO timestamp of the active `campus_verified` grant at publish time. */
+  verifiedAt: string;
+}
+
+// ---------------------------------------------------------------------------
 // Errand (PRD V0.1 §6.4)
 // ---------------------------------------------------------------------------
 

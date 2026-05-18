@@ -280,6 +280,7 @@ watch(
             :help-manage-action-error="helpManageActionError"
             :merchant="post?.merchant"
             :errand-entry-available="post?.errandEntryAvailable"
+            :trade="post?.trade"
             @gallery-pointer-down="handleGalleryPointerDown"
             @gallery-pointer-move="handleGalleryPointerMove"
             @open-gallery-image="openGalleryImage"

@@ -7,6 +7,7 @@ import type {
   EventPostExtension,
   HelpPostExtension,
   MerchantPostExtension,
+  TradePostExtension,
 } from "../../types/post-extensions";
 import PostDetailGallery from "./PostDetailGallery.vue";
 import PostDetailMainBody from "./PostDetailMainBody.vue";
@@ -15,6 +16,7 @@ import PostDetailEventBlock from "./PostDetailEventBlock.vue";
 import PostDetailHelpBlock from "./PostDetailHelpBlock.vue";
 import PostDetailHelpManageBlock from "./PostDetailHelpManageBlock.vue";
 import PostDetailMerchantBlock from "./PostDetailMerchantBlock.vue";
+import PostDetailTradeBlock from "./PostDetailTradeBlock.vue";
 import PostPlaceSheetBlock from "./PostPlaceSheetBlock.vue";
 import PostReportBlock from "./PostReportBlock.vue";
 import PostActionFeedback from "./PostActionFeedback.vue";
@@ -55,6 +57,7 @@ defineProps<{
   helpManageActionError?: string;
   merchant?: MerchantPostExtension;
   errandEntryAvailable?: boolean;
+  trade?: TradePostExtension;
 }>();
 
 const emit = defineEmits<{
@@ -125,6 +128,8 @@ const emit = defineEmits<{
       :merchant="merchant"
       :errand-entry-available="errandEntryAvailable"
     />
+
+    <PostDetailTradeBlock v-if="trade" :trade="trade" />
 
     <PostDetailInfoStrip
       :primary-tag="primaryTag"
