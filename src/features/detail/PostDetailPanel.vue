@@ -3,21 +3,9 @@ import { computed, ref, watch } from "vue";
 import { useVisualViewport } from "../../composables/useVisualViewport";
 import { useFloatingChromeState } from "../../shell/floatingChromeState";
 import { InlineError } from "../../ui";
-import {
-  LOADING_DETAIL,
-  DETAIL_RELOAD,
-  REPLY_IDENTITY_LABEL,
-  EVENT_JOIN_SUCCESS,
-  EVENT_CANCEL_SUCCESS,
-  HELP_VOTE_SUCCESS,
-  HELP_UNVOTE_SUCCESS,
-  HELP_MANAGE_LINK_SUCCESS,
-  HELP_MANAGE_RESOLVE_SUCCESS,
-  HELP_MANAGE_CLOSE_SUCCESS,
-} from "../../config/brand";
+import { LOADING_DETAIL, DETAIL_RELOAD, REPLY_IDENTITY_LABEL } from "../../config/brand";
 import { extractErrorMessage } from "../../utils/extractErrorMessage";
 import type { PostDetail } from "../../types/post";
-import type { EventPostExtension, HelpPostExtension } from "../../types/post-extensions";
 import PostDetailTopbar from "./PostDetailTopbar.vue";
 import PostDetailContent from "./PostDetailContent.vue";
 import PostDetailHiddenState from "./PostDetailHiddenState.vue";
@@ -31,9 +19,7 @@ import { usePostReport } from "./usePostReport";
 import { usePostReplyComposer } from "./usePostReplyComposer";
 import { usePostShare } from "./usePostShare";
 import { useDetailGallery } from "./useDetailGallery";
-import { useEventActions } from "../../composables/useEventActions";
-import { useHelpVote } from "../../composables/useHelpVote";
-import { useHelpManage } from "../../composables/useHelpManage";
+import { usePostDetailExtensions } from "../../composables/usePostDetailExtensions";
 import { useAudienceOptions } from "../../composables/useAudienceOptions";
 
 const props = withDefaults(
@@ -182,71 +168,32 @@ const {
 const replyIdentityLabel = REPLY_IDENTITY_LABEL;
 
 const audience = useAudienceOptions();
-const eventExtension = computed<EventPostExtension | undefined>(() => post.value?.event);
-const eventJoined = ref(false);
-const eventLocalEvent = ref<EventPostExtension | undefined>(undefined);
 const isAuthenticated = computed(() => Boolean(post.value));
-const liveEvent = computed<EventPostExtension | undefined>(
-  () => eventLocalEvent.value || eventExtension.value,
-);
 
-function isEligibleForScope() {
-  // V0.1 surface — backend authoritative for action permission. The publish
-  // composable already gates create-event by audience.isAllowed; on the read
-  // side we trust the eligibility the backend implies by returning the post
-  // and let the join endpoint return a typed error if the viewer is
-  // ineligible. Keeping this true means UI does not double-gate.
-  return true;
-}
-
-const eventActions = useEventActions({
-  event: liveEvent,
-  hasJoined: eventJoined,
+const {
+  liveEvent,
+  eventPlan,
+  eventBusy,
+  eventActionError,
+  handleEventAct,
+  liveHelp,
+  helpPlan,
+  helpBusy,
+  helpActionError,
+  handleHelpAct,
+  helpManagePlan,
+  helpManageBusy,
+  helpManageActionError,
+  handleHelpManageLinkEvent,
+  handleHelpManageUnlinkEvent,
+  handleHelpManageResolve,
+  handleHelpManageClose,
+} = usePostDetailExtensions({
+  post,
+  postId,
   isAuthenticated,
-  isEligibleForScope,
-  onChange: ({ event, joined }) => {
-    eventLocalEvent.value = event;
-    eventJoined.value = joined;
-  },
   onMessage: showActionMessage,
 });
-
-function handleEventAct() {
-  const mode = eventActions.plan.value.mode;
-  if (mode === "join") {
-    void eventActions.act(EVENT_JOIN_SUCCESS);
-  } else if (mode === "cancel") {
-    void eventActions.act(EVENT_CANCEL_SUCCESS);
-  }
-}
-
-const helpExtension = computed<HelpPostExtension | undefined>(() => post.value?.help);
-const helpLocal = ref<HelpPostExtension | undefined>(undefined);
-const helpVoted = ref(false);
-const liveHelp = computed<HelpPostExtension | undefined>(
-  () => helpLocal.value || helpExtension.value,
-);
-
-const helpVote = useHelpVote({
-  tid: postId,
-  help: liveHelp,
-  hasVoted: helpVoted,
-  isAuthenticated,
-  onChange: ({ help, voted }) => {
-    helpLocal.value = help;
-    helpVoted.value = voted;
-  },
-  onMessage: showActionMessage,
-});
-
-function handleHelpAct() {
-  const mode = helpVote.plan.value.mode;
-  if (mode === "vote") {
-    void helpVote.act(HELP_VOTE_SUCCESS);
-  } else if (mode === "unvote") {
-    void helpVote.act(HELP_UNVOTE_SUCCESS);
-  }
-}
 
 function handleHelpOpenLinkedEvent(tid: number) {
   // V0.1 surface — emit retry so the panel reloads to the linked-event tid
@@ -254,29 +201,6 @@ function handleHelpOpenLinkedEvent(tid: number) {
   // wire. Touch the param so TS does not complain.
   void tid;
   emit("retry");
-}
-
-const helpManageable = computed(() => Boolean(post.value?.helpManageable));
-const helpManage = useHelpManage({
-  help: liveHelp,
-  isManageable: helpManageable,
-  onChange: (next) => {
-    helpLocal.value = next;
-  },
-  onMessage: showActionMessage,
-});
-
-function handleHelpManageLinkEvent(eventTid: number) {
-  void helpManage.linkEvent(eventTid, HELP_MANAGE_LINK_SUCCESS);
-}
-function handleHelpManageUnlinkEvent() {
-  void helpManage.unlinkEvent(HELP_MANAGE_LINK_SUCCESS);
-}
-function handleHelpManageResolve() {
-  void helpManage.markResolved(HELP_MANAGE_RESOLVE_SUCCESS);
-}
-function handleHelpManageClose() {
-  void helpManage.markClosed(HELP_MANAGE_CLOSE_SUCCESS);
 }
 
 function handleLike() {
@@ -296,10 +220,6 @@ watch(
     resetReply();
     resetGallery();
     clearMessages();
-    eventLocalEvent.value = undefined;
-    eventJoined.value = Boolean(nextPost?.eventJoined);
-    helpLocal.value = undefined;
-    helpVoted.value = Boolean(nextPost?.helpVoted);
   },
   { immediate: true },
 );
@@ -354,16 +274,16 @@ void audience;
             :action-error="actionError"
             :action-message="actionMessage"
             :event="liveEvent"
-            :event-plan="eventActions.plan.value"
-            :event-busy="eventActions.busy.value"
-            :event-action-error="eventActions.actionError.value"
+            :event-plan="eventPlan"
+            :event-busy="eventBusy"
+            :event-action-error="eventActionError"
             :help="liveHelp"
-            :help-plan="helpVote.plan.value"
-            :help-busy="helpVote.busy.value"
-            :help-action-error="helpVote.actionError.value"
-            :help-manage-plan="helpManage.plan.value"
-            :help-manage-busy="helpManage.busy.value"
-            :help-manage-action-error="helpManage.actionError.value"
+            :help-plan="helpPlan"
+            :help-busy="helpBusy"
+            :help-action-error="helpActionError"
+            :help-manage-plan="helpManagePlan"
+            :help-manage-busy="helpManageBusy"
+            :help-manage-action-error="helpManageActionError"
             @gallery-pointer-down="handleGalleryPointerDown"
             @gallery-pointer-move="handleGalleryPointerMove"
             @open-gallery-image="openGalleryImage"

@@ -192,11 +192,13 @@ describe("Phase 4 (help): composable + view wiring", () => {
     expect(view).not.toMatch(/'我也需要'/);
   });
 
-  it("PostDetailPanel wires useHelpVote through to the content slot", () => {
-    expect(panel).toMatch(/useHelpVote/);
-    expect(panel).toMatch(/HELP_VOTE_SUCCESS/);
-    expect(panel).toMatch(/HELP_UNVOTE_SUCCESS/);
+  it("PostDetailPanel wires useHelpVote through usePostDetailExtensions", () => {
+    const extensions = readRepoFile("../../src/composables/usePostDetailExtensions.ts");
+    expect(panel).toMatch(/usePostDetailExtensions/);
     expect(panel).toMatch(/handleHelpAct/);
     expect(panel).toMatch(/handleHelpOpenLinkedEvent/);
+    expect(extensions).toMatch(/useHelpVote/);
+    expect(extensions).toMatch(/HELP_VOTE_SUCCESS/);
+    expect(extensions).toMatch(/HELP_UNVOTE_SUCCESS/);
   });
 });

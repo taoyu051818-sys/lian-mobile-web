@@ -147,14 +147,16 @@ describe("Phase 4 (help-manage): composable + view wiring", () => {
     expect(view).not.toMatch(/'标记为已解决'/);
   });
 
-  it("PostDetailPanel wires useHelpManage with helpManageable from PostDetail", () => {
-    expect(panel).toMatch(/useHelpManage/);
-    expect(panel).toMatch(/helpManageable/);
-    expect(panel).toMatch(/HELP_MANAGE_LINK_SUCCESS/);
-    expect(panel).toMatch(/HELP_MANAGE_RESOLVE_SUCCESS/);
-    expect(panel).toMatch(/HELP_MANAGE_CLOSE_SUCCESS/);
+  it("PostDetailPanel wires useHelpManage through usePostDetailExtensions with helpManageable from PostDetail", () => {
+    const extensions = readRepoFile("../../src/composables/usePostDetailExtensions.ts");
+    expect(panel).toMatch(/usePostDetailExtensions/);
     expect(panel).toMatch(/handleHelpManageLinkEvent/);
     expect(panel).toMatch(/handleHelpManageResolve/);
     expect(panel).toMatch(/handleHelpManageClose/);
+    expect(extensions).toMatch(/useHelpManage/);
+    expect(extensions).toMatch(/helpManageable/);
+    expect(extensions).toMatch(/HELP_MANAGE_LINK_SUCCESS/);
+    expect(extensions).toMatch(/HELP_MANAGE_RESOLVE_SUCCESS/);
+    expect(extensions).toMatch(/HELP_MANAGE_CLOSE_SUCCESS/);
   });
 });
