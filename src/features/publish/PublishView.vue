@@ -8,6 +8,9 @@ import {
   PUBLISH_IMAGE_RESELECT,
   PUBLISH_AI_PENDING,
   PUBLISH_AI_RISK_LABEL,
+  PUBLISH_TYPE_LABEL,
+  PUBLISH_TYPE_REGULAR,
+  PUBLISH_TYPE_MERCHANT,
 } from "../../config/brand";
 import { GlassPanel, InlineError } from "../../ui";
 import PublishActionBar from "./PublishActionBar.vue";
@@ -15,6 +18,7 @@ import PublishComposer from "./PublishComposer.vue";
 import PublishLocationControls from "./PublishLocationControls.vue";
 import PublishMetaControls from "./PublishMetaControls.vue";
 import PublishEventControls from "./PublishEventControls.vue";
+import PublishMerchantControls from "./PublishMerchantControls.vue";
 import { usePublishDraft } from "./usePublishDraft";
 import { usePublishLocationOptions } from "./usePublishLocationOptions";
 import { clearPublishDraft } from "./publishDraftSession";
@@ -22,6 +26,7 @@ import { usePublishDraftSession } from "./usePublishDraftSession";
 import PublishResetConfirm from "./PublishResetConfirm.vue";
 import { usePublishSubmit } from "./usePublishSubmit";
 import { useEventPublishDraft } from "../../composables/useEventPublishDraft";
+import { useActiveView } from "../../app/useActiveView";
 
 const emit = defineEmits<{
   chrome: [spec: PageChromeSpec];
@@ -33,6 +38,21 @@ const draft = usePublishDraft();
 const eventDraft = useEventPublishDraft();
 const locationOptions = usePublishLocationOptions(draft.placeName);
 const resetConfirmationVisible = ref(false);
+const { setActiveView } = useActiveView();
+
+function goToVerification() {
+  setActiveView("verification");
+}
+
+watch(
+  draft.publishKind,
+  (kind) => {
+    if (kind === "merchant" && !draft.merchant.verificationLoaded.value) {
+      void draft.merchant.refreshVerification();
+    }
+  },
+  { immediate: false },
+);
 
 const { draftNotice, hasUnsavedDraft } = usePublishDraftSession({
   title: draft.title,
@@ -83,6 +103,9 @@ const { postDetailUrl, submitPublish } = usePublishSubmit({
   eventCapacity: eventDraft.capacity,
   eventJoinPolicy: eventDraft.joinPolicy,
   audienceVisibility: draft.visibility,
+  publishKind: draft.publishKind,
+  merchantPayload: () => draft.merchant.payload(),
+  merchantVerified: draft.merchant.merchantVerified,
 });
 
 function requestResetForm() {
@@ -174,6 +197,57 @@ onMounted(() => {
       </ul>
 
       <form class="publish-view__form keyboard-aware-surface" @submit.prevent="submitPublish">
+        <fieldset
+          class="publish-view__type-switch"
+          :aria-label="PUBLISH_TYPE_LABEL"
+          data-testid="publish-type-switch"
+        >
+          <legend>{{ PUBLISH_TYPE_LABEL }}</legend>
+          <label
+            class="publish-view__type-option"
+            :class="{ 'is-active': draft.publishKind.value === 'regular' }"
+          >
+            <input
+              type="radio"
+              name="publish-kind"
+              value="regular"
+              :checked="draft.publishKind.value === 'regular'"
+              @change="draft.publishKind.value = 'regular'"
+            />
+            <span>{{ PUBLISH_TYPE_REGULAR }}</span>
+          </label>
+          <label
+            class="publish-view__type-option"
+            :class="{ 'is-active': draft.publishKind.value === 'merchant' }"
+          >
+            <input
+              type="radio"
+              name="publish-kind"
+              value="merchant"
+              data-testid="publish-type-merchant"
+              :checked="draft.publishKind.value === 'merchant'"
+              @change="draft.publishKind.value = 'merchant'"
+            />
+            <span>{{ PUBLISH_TYPE_MERCHANT }}</span>
+          </label>
+        </fieldset>
+
+        <PublishMerchantControls
+          v-if="draft.publishKind.value === 'merchant'"
+          :merchant-verified="draft.merchant.merchantVerified.value"
+          :verification-loaded="draft.merchant.verificationLoaded.value"
+          :name="draft.merchant.name.value"
+          :category="draft.merchant.category.value"
+          :hours="draft.merchant.hours.value"
+          :contact="draft.merchant.contact.value"
+          :errand-supported="draft.merchant.errandSupported.value"
+          @update:name="draft.merchant.name.value = $event"
+          @update:category="draft.merchant.category.value = $event"
+          @update:hours="draft.merchant.hours.value = $event"
+          @update:contact="draft.merchant.contact.value = $event"
+          @update:errand-supported="draft.merchant.errandSupported.value = $event"
+          @go-verify="goToVerification"
+        />
         <PublishComposer
           :local-preview-urls="draft.localPreviewUrls.value"
           :image-status="draft.imageStatus.value"
@@ -354,5 +428,48 @@ onMounted(() => {
 
 .publish-view__risk-list li::before {
   content: "⚠ ";
+}
+
+.publish-view__type-switch {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  margin: 0;
+  border: 1px solid rgba(31, 41, 51, 0.08);
+  border-radius: calc(var(--radius-card) + 2px);
+  background: rgba(255, 255, 255, 0.56);
+}
+
+.publish-view__type-switch legend {
+  width: 100%;
+  margin-bottom: 4px;
+  color: var(--lian-muted);
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.publish-view__type-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px var(--space-3);
+  border: 1px solid rgba(31, 41, 51, 0.12);
+  border-radius: var(--radius-chip, 999px);
+  background: rgba(255, 255, 255, 0.74);
+  color: var(--lian-ink);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.publish-view__type-option input {
+  accent-color: var(--lian-primary, #1fa7a0);
+}
+
+.publish-view__type-option.is-active {
+  border-color: rgba(31, 167, 160, 0.35);
+  background: rgba(31, 167, 160, 0.14);
 }
 </style>
