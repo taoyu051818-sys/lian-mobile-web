@@ -245,7 +245,7 @@ export function normalizeMerchantExtension(value: unknown): MerchantPostExtensio
   const record = asRecord(value);
   const name = optionalString(record.name);
   if (!name) return undefined;
-  const rawCategory = optionalString(record.category).toLowerCase();
+  const rawCategory = (optionalString(record.category) || "").toLowerCase();
   const category = MERCHANT_CATEGORIES.has(rawCategory as MerchantCategory)
     ? (rawCategory as MerchantCategory)
     : "service";
