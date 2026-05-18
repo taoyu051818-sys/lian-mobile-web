@@ -234,10 +234,12 @@ describe("Phase 4: composable + view wiring", () => {
     expect(view).not.toMatch(/'报名'/);
   });
 
-  it("PostDetailPanel wires useEventActions through to the content slot", () => {
-    expect(panel).toMatch(/useEventActions/);
-    expect(panel).toMatch(/EVENT_JOIN_SUCCESS/);
-    expect(panel).toMatch(/EVENT_CANCEL_SUCCESS/);
+  it("PostDetailPanel wires useEventActions through usePostDetailExtensions", () => {
+    const extensions = readRepoFile("../../src/composables/usePostDetailExtensions.ts");
+    expect(panel).toMatch(/usePostDetailExtensions/);
     expect(panel).toMatch(/handleEventAct/);
+    expect(extensions).toMatch(/useEventActions/);
+    expect(extensions).toMatch(/EVENT_JOIN_SUCCESS/);
+    expect(extensions).toMatch(/EVENT_CANCEL_SUCCESS/);
   });
 });
