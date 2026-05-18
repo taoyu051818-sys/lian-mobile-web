@@ -3,13 +3,18 @@ import type { PlaceRef, PlaceSheet } from "../../types/place";
 import type { EventActionPlan } from "../../domain/eventActionPolicy";
 import type { HelpVotePlan } from "../../domain/helpVotePolicy";
 import type { HelpManagePlan } from "../../domain/helpManagePolicy";
-import type { EventPostExtension, HelpPostExtension } from "../../types/post-extensions";
+import type {
+  EventPostExtension,
+  HelpPostExtension,
+  MerchantPostExtension,
+} from "../../types/post-extensions";
 import PostDetailGallery from "./PostDetailGallery.vue";
 import PostDetailMainBody from "./PostDetailMainBody.vue";
 import PostDetailInfoStrip from "./PostDetailInfoStrip.vue";
 import PostDetailEventBlock from "./PostDetailEventBlock.vue";
 import PostDetailHelpBlock from "./PostDetailHelpBlock.vue";
 import PostDetailHelpManageBlock from "./PostDetailHelpManageBlock.vue";
+import PostDetailMerchantBlock from "./PostDetailMerchantBlock.vue";
 import PostPlaceSheetBlock from "./PostPlaceSheetBlock.vue";
 import PostReportBlock from "./PostReportBlock.vue";
 import PostActionFeedback from "./PostActionFeedback.vue";
@@ -48,6 +53,8 @@ defineProps<{
   helpManagePlan?: HelpManagePlan;
   helpManageBusy?: boolean;
   helpManageActionError?: string;
+  merchant?: MerchantPostExtension;
+  errandEntryAvailable?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -111,6 +118,12 @@ const emit = defineEmits<{
       @unlink-event="emit('helpManageUnlinkEvent')"
       @resolve="emit('helpManageResolve')"
       @close="emit('helpManageClose')"
+    />
+
+    <PostDetailMerchantBlock
+      v-if="merchant"
+      :merchant="merchant"
+      :errand-entry-available="errandEntryAvailable"
     />
 
     <PostDetailInfoStrip

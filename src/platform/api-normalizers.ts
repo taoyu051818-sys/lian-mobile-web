@@ -1,6 +1,12 @@
 import type { DisplayActor, SourceSignal } from "../types/feed";
 import type { PlaceRef, PlaceStatus } from "../types/place";
-import type { EventPostExtension, HelpPostExtension, HelpStatus } from "../types/post-extensions";
+import type {
+  EventPostExtension,
+  HelpPostExtension,
+  HelpStatus,
+  MerchantCategory,
+  MerchantPostExtension,
+} from "../types/post-extensions";
 
 type JsonRecord = Record<string, unknown>;
 
@@ -223,5 +229,32 @@ export function normalizeHelpExtension(value: unknown): HelpPostExtension | unde
     commentCount,
     status,
     ...(linkedEventTid !== undefined ? { linkedEventTid } : {}),
+  };
+}
+
+const MERCHANT_CATEGORIES: ReadonlySet<MerchantCategory> = new Set(["food", "service", "retail"]);
+
+/**
+ * Coerce a raw payload into a MerchantPostExtension. Returns undefined when
+ * `name` is missing — backend `normalizeMerchantMetadata` already rejects
+ * nameless input, so a missing name on the wire means the publisher never
+ * intended a merchant block. Unknown categories fall back to "service" to
+ * mirror the backend default.
+ */
+export function normalizeMerchantExtension(value: unknown): MerchantPostExtension | undefined {
+  const record = asRecord(value);
+  const name = optionalString(record.name);
+  if (!name) return undefined;
+  const rawCategory = (optionalString(record.category) || "").toLowerCase();
+  const category = MERCHANT_CATEGORIES.has(rawCategory as MerchantCategory)
+    ? (rawCategory as MerchantCategory)
+    : "service";
+  return {
+    name,
+    category,
+    hours: asString(record.hours),
+    contact: asString(record.contact),
+    errandSupported: asBoolean(record.errandSupported),
+    verifiedAt: asString(record.verifiedAt),
   };
 }

@@ -85,17 +85,31 @@ export interface HelpPostExtension {
 }
 
 // ---------------------------------------------------------------------------
-// Merchant (PRD V0.1 §6.4)
+// Merchant (PRD V0.1 §6.4 / §10)
 // ---------------------------------------------------------------------------
 
-export type MerchantType = "food" | "shop" | "service" | "trade";
+/**
+ * Backend taxonomy: post contentType is one of `merchant_food` /
+ * `merchant_service` / `merchant_retail`; the inner `metadata.merchant.category`
+ * mirrors the trailing slug. We keep this tight to the wire so the frontend
+ * does not need to translate.
+ */
+export type MerchantCategory = "food" | "service" | "retail";
 
+/**
+ * Read-side merchant block surfaced by `GET /api/posts/:tid` after PR-V607a
+ * (backend #383). Wire shape mirrors `metadata.merchant` exactly. Optional
+ * fields (`hours`, `contact`) are empty strings rather than missing keys when
+ * the publisher left them blank.
+ */
 export interface MerchantPostExtension {
-  merchantId?: string;
-  merchantType: MerchantType;
-  /** Identity tags the user must hold to publish in this merchant category. */
-  publishRequiredTags: string[];
-  supportsErrand: boolean;
+  name: string;
+  category: MerchantCategory;
+  hours: string;
+  contact: string;
+  errandSupported: boolean;
+  /** ISO timestamp of the active `merchant_verified` grant at publish time. */
+  verifiedAt: string;
 }
 
 // ---------------------------------------------------------------------------

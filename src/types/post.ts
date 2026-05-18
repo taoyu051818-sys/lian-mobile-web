@@ -1,7 +1,11 @@
 import type { DisplayActor, FeedItemId, SourceSignal } from "./feed";
 import type { PlaceRef } from "./place";
 import type { Audience } from "./audience";
-import type { EventPostExtension, HelpPostExtension } from "./post-extensions";
+import type {
+  EventPostExtension,
+  HelpPostExtension,
+  MerchantPostExtension,
+} from "./post-extensions";
 
 export interface PostReply {
   id: FeedItemId;
@@ -39,6 +43,14 @@ export interface PostDetail {
   helpVoted?: boolean;
   /** PRD V0.1 §6.5 / §11.3 — backend-driven flag for help management surface. */
   helpManageable?: boolean;
+  /** PRD V0.1 §6.4 / §10 — present iff metadata.merchant exists. */
+  merchant?: MerchantPostExtension;
+  /**
+   * PRD V0.1 §10 — true iff `merchant.errandSupported`. Hoisted to the top
+   * level by the backend DTO so the errand entry can render without
+   * destructuring the merchant block.
+   */
+  errandEntryAvailable?: boolean;
 }
 
 /**
