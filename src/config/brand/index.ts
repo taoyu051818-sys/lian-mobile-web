@@ -13,3 +13,4 @@ export * from "./shell";
 export * from "./report";
 export * from "./notification";
 export * from "./share";
+export * from "./admin";
