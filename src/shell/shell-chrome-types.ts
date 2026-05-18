@@ -1,5 +1,13 @@
 export type ShellRegionKey = "top" | "bottom";
 
+/**
+ * Named slot kinds rendered inside a shell region. The slot value drives
+ * which sub-component (tabs / detail topbar / reply dock / ...) the shell
+ * renders at the corresponding edge. Adding a new kind requires updating
+ * ShellChrome's render branches and the docs in floating-chrome.css.
+ */
+export type ChromeSlotKind = "tabs" | "detail-topbar" | "reply-dock";
+
 export interface ChromeButtonSpec {
   id: string;
   label: string;
@@ -36,8 +44,8 @@ export interface ChromeIdentitySpec {
 export interface ShellChromeRegionSpec {
   buttons?: ChromeButtonSpec[];
   visible?: boolean;
-  /** Opaque slot hint for future slot-based rendering. */
-  slot?: string;
+  /** Named slot rendered by ShellChrome. See ChromeSlotKind for valid values. */
+  slot?: ChromeSlotKind;
   /** Typed tab spec. When set, ShellChrome renders the tab nav directly. */
   tabs?: ChromeTabSpec | null;
   /** Filter toggle buttons (e.g. map layers). */

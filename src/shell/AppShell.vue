@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { computed } from "vue";
 import { BottomTabBar, PageSurface } from "../ui";
 import type { LianIconName } from "../ui/icons/paths";
 import ShellChrome from "./ShellChrome.vue";
@@ -24,9 +25,11 @@ const emit = defineEmits<{
   "view-change": [key: string];
 }>();
 
-const { applyPageChrome, setRegion } = useShellChrome();
+const { applyPageChrome, setRegion, state } = useShellChrome();
 
 setRegion("bottom", { slot: "tabs" });
+
+const bottomSlotKind = computed(() => state.bottom.slot);
 
 function handleChrome(spec: PageChromeSpec) {
   applyPageChrome(spec);
@@ -47,6 +50,7 @@ function handleViewChange(key: string) {
     </ContentFrame>
     <ShellChrome region="bottom">
       <BottomTabBar
+        v-if="bottomSlotKind === 'tabs'"
         class="vue-shell__bottom-tab lian-floating-chrome lian-floating-chrome--bottom"
         data-floating-chrome="bottom"
         :items="tabs"

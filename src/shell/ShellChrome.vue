@@ -29,12 +29,21 @@ const { state } = useShellChrome();
 const { shellVisible } = useFloatingChromeState();
 
 const regionSpec = computed(() => state[props.region]);
-const isVisible = computed(() => regionSpec.value.visible !== false && shellVisible.value);
+// Bottom region stays mounted across detail open/close because it now hosts
+// the reply-dock teleport target. Top region keeps the original visibility
+// gating for chrome that should disappear behind detail.
+const isBottom = computed(() => props.region === "bottom");
+const isVisible = computed(() =>
+  isBottom.value
+    ? regionSpec.value.visible !== false
+    : regionSpec.value.visible !== false && shellVisible.value,
+);
 const buttons = computed(() => regionSpec.value.buttons ?? []);
 const filters = computed(() => regionSpec.value.filters ?? []);
 const identity = computed(() => regionSpec.value.identity ?? null);
 const hasTabs = computed(() => regionSpec.value.tabs != null);
 const isSlottedTabs = computed(() => !hasTabs.value && regionSpec.value.slot === "tabs");
+const isReplyDockSlot = computed(() => regionSpec.value.slot === "reply-dock");
 
 function handleButtonClick(button: ChromeButtonSpec) {
   if (!button.disabled && isVisible.value) {
@@ -60,8 +69,14 @@ function handleFilterToggle(filterId: string) {
 <template>
   <aside
     class="shell-chrome"
-    :class="[`shell-chrome--${region}`, { 'shell-chrome--tabs': hasTabs || isSlottedTabs }]"
-    :aria-hidden="hasTabs || isSlottedTabs ? undefined : !isVisible"
+    :class="[
+      `shell-chrome--${region}`,
+      {
+        'shell-chrome--tabs': hasTabs || isSlottedTabs,
+        'shell-chrome--reply-dock': isReplyDockSlot,
+      },
+    ]"
+    :aria-hidden="hasTabs || isSlottedTabs || isReplyDockSlot ? undefined : !isVisible"
     role="complementary"
     :aria-label="region === 'top' ? SHELL_TOP_REGION : SHELL_BOTTOM_REGION"
     :data-visible="isVisible"
@@ -90,6 +105,13 @@ function handleFilterToggle(filterId: string) {
     </template>
     <template v-else-if="isSlottedTabs">
       <slot />
+    </template>
+    <template v-else-if="isReplyDockSlot">
+      <div
+        id="lian-shell-bottom-slot"
+        class="shell-chrome__bottom-slot lian-floating-chrome lian-floating-chrome--bottom"
+        data-floating-chrome="bottom"
+      />
     </template>
     <template v-else>
       <div class="shell-chrome__inner lian-floating-chrome lian-floating-chrome--top">

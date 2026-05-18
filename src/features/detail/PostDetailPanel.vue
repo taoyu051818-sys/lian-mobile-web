@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { computed, ref, watch } from "vue";
+import { computed, onBeforeUnmount, ref, watch } from "vue";
 import { useVisualViewport } from "../../composables/useVisualViewport";
-import { useFloatingChromeState } from "../../shell/floatingChromeState";
+import { useShellChrome } from "../../shell/useShellChrome";
 import { InlineError } from "../../ui";
 import { LOADING_DETAIL, DETAIL_RELOAD, REPLY_IDENTITY_LABEL } from "../../config/brand";
 import { extractErrorMessage } from "../../utils/extractErrorMessage";
@@ -41,16 +41,9 @@ const emit = defineEmits<{
 
 useVisualViewport();
 
-const { detailTopChromeOpacity, detailBottomChromeOpacity, detailPointerEvents } =
-  useFloatingChromeState();
-
-const detailChromeStyle = computed(
-  (): Record<string, string> => ({
-    "--detail-top-chrome-opacity": String(detailTopChromeOpacity.value),
-    "--detail-bottom-chrome-opacity": String(detailBottomChromeOpacity.value),
-    "pointer-events": detailPointerEvents.value,
-  }),
-);
+const { setRegion } = useShellChrome();
+setRegion("bottom", { slot: "reply-dock", visible: true });
+onBeforeUnmount(() => setRegion("bottom", { slot: "tabs", visible: true }));
 
 const actionError = ref("");
 const actionMessage = ref("");
@@ -228,7 +221,7 @@ void audience;
 </script>
 
 <template>
-  <aside class="post-detail-panel" :style="detailChromeStyle" aria-labelledby="post-detail-title">
+  <aside class="post-detail-panel" aria-labelledby="post-detail-title">
     <PostDetailTopbar
       :author-label="authorLabel"
       :avatar-url="authorAvatarUrl"
@@ -308,23 +301,25 @@ void audience;
       </template>
     </div>
 
-    <PostReplyDock
-      v-if="post && !loading && !error && !locallyHidden"
-      :liked="liked"
-      :saved="saved"
-      :like-count="likeCount"
-      :like-busy="likeBusy"
-      :save-busy="saveBusy"
-      :reply-busy="replyBusy"
-      :reply-expanded="replyExpanded"
-      :reply-content="replyContent"
-      :reply-identity-label="replyIdentityLabel"
-      @like="handleLike"
-      @save="handleSave"
-      @submit-reply="submitReply"
-      @update:reply-expanded="replyExpanded = $event"
-      @update:reply-content="replyContent = $event"
-    />
+    <Teleport defer to="#lian-shell-bottom-slot">
+      <PostReplyDock
+        v-if="post && !loading && !error && !locallyHidden"
+        :liked="liked"
+        :saved="saved"
+        :like-count="likeCount"
+        :like-busy="likeBusy"
+        :save-busy="saveBusy"
+        :reply-busy="replyBusy"
+        :reply-expanded="replyExpanded"
+        :reply-content="replyContent"
+        :reply-identity-label="replyIdentityLabel"
+        @like="handleLike"
+        @save="handleSave"
+        @submit-reply="submitReply"
+        @update:reply-expanded="replyExpanded = $event"
+        @update:reply-content="replyContent = $event"
+      />
+    </Teleport>
 
     <PostDetailLightbox :src="fullscreenImage" :alt="title" @close="fullscreenImage = ''" />
   </aside>

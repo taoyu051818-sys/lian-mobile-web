@@ -5,37 +5,39 @@ function readRepoFile(relativePath: string) {
   return readFileSync(new URL(relativePath, import.meta.url), "utf8").replace(/\r\n/g, "\n");
 }
 
-describe("PostReplyDock keyboard-inset wiring (#130)", () => {
+describe("PostReplyDock layout under chrome slot protocol (#130 / dock-in-shell)", () => {
   const dockSource = readRepoFile("../../src/features/detail/PostReplyDock.vue");
 
-  it("consumes --keyboard-inset-bottom in the bottom offset", () => {
-    expect(dockSource).toContain("--keyboard-inset-bottom");
+  it("does not self-position via lian-floating-chrome (shell bottom slot owns position)", () => {
+    expect(dockSource).not.toContain("lian-floating-chrome");
+    expect(dockSource).not.toMatch(/\bbottom:\s*calc\(/);
   });
 
-  it("falls back to 0px when the keyboard token is absent", () => {
-    expect(dockSource).toContain("var(--keyboard-inset-bottom, 0px)");
+  it("does not consume --keyboard-inset-bottom directly (shell container does)", () => {
+    expect(dockSource).not.toContain("--keyboard-inset-bottom");
   });
 
-  it("includes bottom in the transition list for smooth keyboard animation", () => {
-    expect(dockSource).toMatch(/transition:[\s\S]*bottom\s+\d+ms/);
-  });
-
-  it("preserves reduced-motion by disabling all transitions", () => {
+  it("preserves reduced-motion by disabling internal transitions", () => {
     expect(dockSource).toContain("prefers-reduced-motion: reduce");
     expect(dockSource).toMatch(/prefers-reduced-motion:[\s\S]*transition:\s*none/);
   });
 
-  it("uses the detail-reply-dock-bottom-offset token for independent positioning", () => {
-    expect(dockSource).toContain("--detail-reply-dock-bottom-offset");
-  });
-
-  it("detail-reply-dock-bottom-offset is defined in lian-tokens", () => {
-    const tokensSource = readRepoFile("../../src/styles/lian-tokens.css");
-    expect(tokensSource).toContain("--detail-reply-dock-bottom-offset");
-  });
-
   it("does not import useVisualViewport (consumed by parent panel)", () => {
     expect(dockSource).not.toContain("useVisualViewport");
+  });
+});
+
+describe("Shell bottom slot owns keyboard inset (#130 / dock-in-shell)", () => {
+  it("--keyboard-inset-bottom is defined in lian-tokens", () => {
+    const tokensSource = readRepoFile("../../src/styles/lian-tokens.css");
+    expect(tokensSource).toContain("--keyboard-inset-bottom");
+  });
+
+  it("lian-floating-chrome--bottom consumes --keyboard-inset-bottom", () => {
+    const chromeSource = readRepoFile("../../src/styles/chrome-surface.css");
+    expect(chromeSource).toMatch(
+      /lian-floating-chrome--bottom\s*\{[\s\S]*var\(--keyboard-inset-bottom/,
+    );
   });
 });
 
@@ -61,11 +63,6 @@ describe("PostDetailPanel keyboard-inset activation (#130)", () => {
 
 describe("floating-chrome bottom baseline (#130)", () => {
   const chromeSource = readRepoFile("../../src/styles/floating-chrome.css");
-
-  it("defines --keyboard-inset-bottom as a default token in lian-tokens", () => {
-    const tokensSource = readRepoFile("../../src/styles/lian-tokens.css");
-    expect(tokensSource).toContain("--keyboard-inset-bottom");
-  });
 
   it("reduced-motion override disables transitions on bottom floating chrome", () => {
     expect(chromeSource).toMatch(

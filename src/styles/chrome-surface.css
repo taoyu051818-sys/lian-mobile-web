@@ -31,5 +31,5 @@
 
 .chrome-surface--bottom,
 .lian-floating-chrome--bottom {
-  bottom: var(--floating-bar-bottom-offset);
+  bottom: calc(var(--floating-bar-bottom-offset) + var(--keyboard-inset-bottom, 0px));
 }
