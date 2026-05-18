@@ -80,6 +80,10 @@ onMounted(() => {
 });
 
 onActivated(() => {
+  // KeepAlive caches this view, so onMounted only fires the first time.
+  // Re-emit chrome on every reactivation so the shell state matches the
+  // map view instead of whichever view we just left.
+  emit("chrome", pageChrome.value);
   if (!mapData.value) void loadMap();
 });
 </script>

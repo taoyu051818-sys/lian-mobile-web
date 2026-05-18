@@ -148,7 +148,7 @@ Total files: 233
 | `features/feed/useFeedDetailHistory.ts`         | export interface UseFeedDetailHistoryOptions                                                                             |    80 |
 | `features/feed/usePostDetailLoader.ts`          | export function usePostDetailLoader()                                                                                    |    59 |
 | `features/map/MapCanvas.vue`                    | Prefer the dataset bounds for the image overlay, but let an explicit                                                     |   206 |
-| `features/map/MapLeafletView.vue`               | Vue SFC                                                                                                                  |   140 |
+| `features/map/MapLeafletView.vue`               | KeepAlive caches this view, so onMounted only fires the first time.                                                      |   144 |
 | `features/map/MapPlaceSheet.vue`                | Vue SFC                                                                                                                  |    70 |
 | `features/map/MapStatus.vue`                    | Vue SFC                                                                                                                  |    34 |
 | `features/map/index.ts`                         | TypeScript module                                                                                                        |     2 |
