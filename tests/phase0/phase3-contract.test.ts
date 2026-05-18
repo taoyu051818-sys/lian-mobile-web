@@ -176,13 +176,19 @@ describe("Phase 3: usePublishAiDraft composable", () => {
 
 describe("Phase 3: publish flow wires AI policy + post-upload location panel", () => {
   const draft = readRepoFile("../../src/features/publish/usePublishDraft.ts");
+  const ai = readRepoFile("../../src/features/publish/usePublishAi.ts");
   const view = readRepoFile("../../src/features/publish/PublishView.vue");
 
-  it("usePublishDraft delegates suggestion application to planAiSuggestionPatch", () => {
-    expect(draft).toMatch(/planAiSuggestionPatch/);
-    expect(draft).toMatch(/onSuggestion/);
-    // The view must not hand-roll the empty-field check anymore.
+  it("publish flow delegates suggestion application to planAiSuggestionPatch", () => {
+    // The policy lives in usePublishAi.ts (extracted out of usePublishDraft to
+    // keep that file focused on form/upload state). usePublishDraft must still
+    // wire it up via the AI sub-composable, and neither file may hand-roll the
+    // empty-field check that planAiSuggestionPatch owns.
+    expect(ai).toMatch(/planAiSuggestionPatch/);
+    expect(ai).toMatch(/onSuggestion/);
+    expect(draft).toMatch(/usePublishAi/);
     expect(draft).not.toMatch(/!title\.value\.trim\(\)/);
+    expect(ai).not.toMatch(/!title\.value\.trim\(\)/);
   });
 
   it("usePublishDraft re-exports AI state as flat fields (no nested ai object)", () => {

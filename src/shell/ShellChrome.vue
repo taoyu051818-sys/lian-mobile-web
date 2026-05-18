@@ -88,7 +88,28 @@ function handleFilterToggle(filterId: string) {
     :style="{ pointerEvents: isVisible ? 'auto' : 'none' }"
   >
     <Transition :name="`shell-slot-${region}`" mode="out-in">
-      <template v-if="hasTabs">
+      <template v-if="isSlottedTabs">
+        <div key="tabs-slot" class="shell-chrome__slot-host">
+          <slot />
+        </div>
+      </template>
+      <template v-else-if="isReplyDockSlot">
+        <div
+          key="reply-dock"
+          id="lian-shell-bottom-slot"
+          class="shell-chrome__bottom-slot lian-floating-chrome lian-floating-chrome--bottom"
+          data-floating-chrome="bottom"
+        />
+      </template>
+      <template v-else-if="isDetailTopbarSlot">
+        <div
+          key="detail-topbar"
+          id="lian-shell-top-slot"
+          class="shell-chrome__top-slot lian-floating-chrome lian-floating-chrome--top"
+          data-floating-chrome="top"
+        />
+      </template>
+      <template v-else-if="hasTabs">
         <nav
           key="tabs-typed"
           class="shell-chrome__tabs lian-floating-chrome"
@@ -109,27 +130,6 @@ function handleFilterToggle(filterId: string) {
             {{ tab.label }}
           </button>
         </nav>
-      </template>
-      <template v-else-if="isSlottedTabs">
-        <div key="tabs-slot" class="shell-chrome__slot-host">
-          <slot />
-        </div>
-      </template>
-      <template v-else-if="isReplyDockSlot">
-        <div
-          key="reply-dock"
-          id="lian-shell-bottom-slot"
-          class="shell-chrome__bottom-slot lian-floating-chrome lian-floating-chrome--bottom"
-          data-floating-chrome="bottom"
-        />
-      </template>
-      <template v-else-if="isDetailTopbarSlot">
-        <div
-          key="detail-topbar"
-          id="lian-shell-top-slot"
-          class="shell-chrome__top-slot lian-floating-chrome lian-floating-chrome--top"
-          data-floating-chrome="top"
-        />
       </template>
       <template v-else>
         <div

@@ -104,11 +104,14 @@ export function buildPendingChannelMessage(
   identityTag: string | undefined,
   currentUser: { username?: string; displayName?: string; avatarText?: string; id?: string } | null,
 ): ChannelMessage {
-  const id = `pending-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  void identityTag;
+  const nonce = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+  const id = `pending-${nonce}`;
   const now = new Date().toISOString();
   const name = currentUser?.displayName || currentUser?.username || DEFAULT_USER_LABEL;
   return {
     id,
+    clientNonce: nonce,
     content,
     plainText: content,
     actor: {
@@ -133,6 +136,10 @@ export async function sendChannelMessage(payload: SendChannelMessagePayload): Pr
       readerId,
       content: payload.content,
       identityTag: payload.identityTag || "",
+      // Backends that don't recognize this field will ignore it. Once the
+      // server echoes it back on the corresponding ChannelMessage, the optimistic
+      // pending item is replaced by exact nonce match instead of content equality.
+      clientNonce: payload.clientNonce || "",
     }),
   });
 }

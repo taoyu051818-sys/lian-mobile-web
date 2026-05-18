@@ -178,7 +178,7 @@ describe("useShellChrome", () => {
     });
   });
 
-  describe("detail chrome lock", () => {
+  describe("slot stack", () => {
     it("keeps teleport slot targets available when page chrome re-emits tabs", () => {
       chrome.applyPageChrome({
         top: {
@@ -190,11 +190,13 @@ describe("useShellChrome", () => {
         },
         bottom: { visible: true },
       });
+      chrome.setRegion("bottom", { slot: "tabs" });
 
-      chrome.beginDetailChrome();
+      const releaseTop = chrome.pushSlot("top", "detail-topbar");
+      const releaseBottom = chrome.pushSlot("bottom", "reply-dock");
 
       expect(chrome.state.top.slot).toBe("detail-topbar");
-      expect(chrome.state.top.tabs).toBeNull();
+      expect(chrome.state.top.tabs).toBeDefined();
       expect(chrome.state.bottom.slot).toBe("reply-dock");
 
       chrome.applyPageChrome({
@@ -209,10 +211,11 @@ describe("useShellChrome", () => {
       });
 
       expect(chrome.state.top.slot).toBe("detail-topbar");
-      expect(chrome.state.top.tabs).toBeNull();
+      expect(chrome.state.top.tabs).toBeDefined();
       expect(chrome.state.bottom.slot).toBe("reply-dock");
 
-      chrome.endDetailChrome();
+      releaseTop();
+      releaseBottom();
 
       expect(chrome.state.top.slot).toBeNull();
       expect(chrome.state.bottom.slot).toBe("tabs");

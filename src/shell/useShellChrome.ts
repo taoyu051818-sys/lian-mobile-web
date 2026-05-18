@@ -1,6 +1,7 @@
 import { reactive, readonly } from "vue";
 import {
   createDefaultChromeState,
+  type ChromeSlotKind,
   type ShellChromeRegionMap,
   type ShellChromeRegionSpec,
   type ShellChromeState,
@@ -9,65 +10,51 @@ import {
 import type { PageChromeSpec } from "./page-model";
 
 const state: ShellChromeState = reactive(createDefaultChromeState());
-let detailChromeLockCount = 0;
+
+interface SlotEntry {
+  token: symbol;
+  slot: ChromeSlotKind | null;
+}
+
+/**
+ * Per-region slot stack. The base entry is owned by AppShell/page chrome;
+ * pushed entries are owned by mounted children such as PostDetailPanel.
+ */
+const slotStacks: Record<ShellRegionKey, SlotEntry[]> = {
+  top: [],
+  bottom: [],
+};
+
+function syncSlot(key: ShellRegionKey) {
+  const stack = slotStacks[key];
+  state[key].slot = stack.length ? stack[stack.length - 1].slot : null;
+}
 
 function mergeRegion(target: ShellChromeRegionSpec, patch: ShellChromeRegionSpec) {
-  if (patch.buttons !== undefined) {
-    target.buttons = patch.buttons;
+  if (patch.buttons !== undefined) target.buttons = patch.buttons;
+  if (patch.visible !== undefined) target.visible = patch.visible;
+  if (patch.tabs !== undefined) target.tabs = patch.tabs;
+  if (patch.filters !== undefined) target.filters = patch.filters;
+  if (patch.identity !== undefined) target.identity = patch.identity;
+  if (patch.onTabSelect !== undefined) target.onTabSelect = patch.onTabSelect;
+  if (patch.onButtonClick !== undefined) target.onButtonClick = patch.onButtonClick;
+  if (patch.onFilterToggle !== undefined) target.onFilterToggle = patch.onFilterToggle;
+}
+
+function writeSlotBase(key: ShellRegionKey, slot: ChromeSlotKind | null) {
+  if (slotStacks[key].length === 0) {
+    slotStacks[key].push({ token: Symbol(`${key}:base`), slot });
+  } else {
+    slotStacks[key][0].slot = slot;
   }
-  if (patch.visible !== undefined) {
-    target.visible = patch.visible;
-  }
-  if (patch.slot !== undefined) {
-    target.slot = patch.slot;
-  }
-  if (patch.tabs !== undefined) {
-    target.tabs = patch.tabs;
-  }
-  if (patch.filters !== undefined) {
-    target.filters = patch.filters;
-  }
-  if (patch.identity !== undefined) {
-    target.identity = patch.identity;
-  }
-  if (patch.onTabSelect !== undefined) {
-    target.onTabSelect = patch.onTabSelect;
-  }
-  if (patch.onButtonClick !== undefined) {
-    target.onButtonClick = patch.onButtonClick;
-  }
-  if (patch.onFilterToggle !== undefined) {
-    target.onFilterToggle = patch.onFilterToggle;
-  }
+  syncSlot(key);
 }
 
 function setRegion(key: ShellRegionKey, spec: ShellChromeRegionSpec) {
   mergeRegion(state[key], spec);
-}
-
-function forceDetailChromeSlots() {
-  state.top.slot = "detail-topbar";
-  state.top.visible = true;
-  state.top.tabs = null;
-  state.bottom.slot = "reply-dock";
-  state.bottom.visible = true;
-}
-
-function beginDetailChrome() {
-  detailChromeLockCount += 1;
-  forceDetailChromeSlots();
-}
-
-function endDetailChrome() {
-  detailChromeLockCount = Math.max(0, detailChromeLockCount - 1);
-  if (detailChromeLockCount > 0) {
-    forceDetailChromeSlots();
-    return;
+  if (spec.slot !== undefined) {
+    writeSlotBase(key, spec.slot);
   }
-  state.top.slot = null;
-  state.bottom.slot = "tabs";
-  state.top.visible = true;
-  state.bottom.visible = true;
 }
 
 function applyRegions(map: ShellChromeRegionMap) {
@@ -76,33 +63,42 @@ function applyRegions(map: ShellChromeRegionMap) {
 }
 
 function resetRegions() {
-  detailChromeLockCount = 0;
   const defaults = createDefaultChromeState();
   mergeRegion(state.top, defaults.top);
   mergeRegion(state.bottom, defaults.bottom);
-  // Preserve the shell-owned tab slot set once by AppShell.
-  state.bottom.slot = "tabs";
+
+  // Top chrome is always page-owned, so reset clears any leftover base/detail
+  // slot. Bottom preserves AppShell's tabs base while dropping child-owned
+  // entries so a missed unmount cleanup cannot leak into the next view/test.
+  slotStacks.top.splice(0);
+  slotStacks.bottom.splice(1);
+  syncSlot("top");
+  syncSlot("bottom");
 }
 
 function applyPageChrome(spec: PageChromeSpec) {
   const defaults = createDefaultChromeState();
-
   mergeRegion(state.top, defaults.top);
   mergeRegion(state.bottom, defaults.bottom);
-  // Clear any slot left over from a previous view (e.g. detail-topbar from a
-  // detail panel that closed without completing its unmount cleanup).
-  state.top.slot = null;
-  state.bottom.slot = "tabs";
+  if (spec.top) setRegion("top", spec.top);
+  if (spec.bottom) setRegion("bottom", spec.bottom);
+  // Slots are owned by setRegion({ slot }) or pushSlot(); page chrome updates
+  // must not remove active child-owned Teleport targets.
+  syncSlot("top");
+  syncSlot("bottom");
+}
 
-  if (spec.top) {
-    setRegion("top", spec.top);
-  }
-  if (spec.bottom) {
-    setRegion("bottom", spec.bottom);
-  }
-  if (detailChromeLockCount > 0) {
-    forceDetailChromeSlots();
-  }
+function pushSlot(key: ShellRegionKey, slot: ChromeSlotKind): () => void {
+  const token = Symbol(`${key}:${slot}`);
+  slotStacks[key].push({ token, slot });
+  syncSlot(key);
+
+  return () => {
+    const stack = slotStacks[key];
+    const index = stack.findIndex((entry) => entry.token === token);
+    if (index >= 0) stack.splice(index, 1);
+    syncSlot(key);
+  };
 }
 
 export function useShellChrome(): {
@@ -111,8 +107,7 @@ export function useShellChrome(): {
   applyRegions: (map: ShellChromeRegionMap) => void;
   resetRegions: () => void;
   applyPageChrome: (spec: PageChromeSpec) => void;
-  beginDetailChrome: () => void;
-  endDetailChrome: () => void;
+  pushSlot: (key: ShellRegionKey, slot: ChromeSlotKind) => () => void;
 } {
   return {
     state: readonly(state) as Readonly<ShellChromeState>,
@@ -120,7 +115,6 @@ export function useShellChrome(): {
     applyRegions,
     resetRegions,
     applyPageChrome,
-    beginDetailChrome,
-    endDetailChrome,
+    pushSlot,
   };
 }
