@@ -20,7 +20,6 @@ import { usePostReplyComposer } from "./usePostReplyComposer";
 import { usePostShare } from "./usePostShare";
 import { useDetailGallery } from "./useDetailGallery";
 import { usePostDetailExtensions } from "../../composables/usePostDetailExtensions";
-import { useAudienceOptions } from "../../composables/useAudienceOptions";
 
 const props = withDefaults(
   defineProps<{
@@ -41,12 +40,12 @@ const emit = defineEmits<{
 
 useVisualViewport();
 
-const { setRegion } = useShellChrome();
-setRegion("top", { slot: "detail-topbar", visible: true });
-setRegion("bottom", { slot: "reply-dock", visible: true });
+const { pushSlot } = useShellChrome();
+const releaseTopSlot = pushSlot("top", "detail-topbar");
+const releaseBottomSlot = pushSlot("bottom", "reply-dock");
 onBeforeUnmount(() => {
-  setRegion("top", { slot: null, visible: true });
-  setRegion("bottom", { slot: "tabs", visible: true });
+  releaseTopSlot();
+  releaseBottomSlot();
 });
 
 const actionError = ref("");
@@ -164,7 +163,6 @@ const {
 });
 const replyIdentityLabel = REPLY_IDENTITY_LABEL;
 
-const audience = useAudienceOptions();
 const isAuthenticated = computed(() => Boolean(post.value));
 
 const {
@@ -220,8 +218,6 @@ watch(
   },
   { immediate: true },
 );
-// Touch `audience` so the load fires; gating uses it indirectly via composables.
-void audience;
 </script>
 
 <template>

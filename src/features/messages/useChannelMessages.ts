@@ -99,13 +99,17 @@ export function useChannelMessages() {
       const latestItems = response.items || [];
       const pendingItem = channelItems.value.find((item) => String(item.id) === pendingId);
       const pendingContent = pendingItem?.content || "";
+      const pendingNonce = pendingItem?.clientNonce || "";
 
-      const confirmedFound = latestItems.some(
-        (serverItem) =>
-          serverItem.content === pendingContent &&
-          serverItem.isSelf &&
-          !String(serverItem.id).startsWith("pending-"),
-      );
+      // Prefer nonce match — backends that echo `clientNonce` give us an exact
+      // 1:1 binding so two rapid messages with identical content don't get
+      // crossed over. Falls back to content + isSelf, which keeps working
+      // against backends that haven't shipped the nonce echo yet.
+      const confirmedFound = latestItems.some((serverItem) => {
+        if (String(serverItem.id).startsWith("pending-")) return false;
+        if (pendingNonce && serverItem.clientNonce === pendingNonce) return true;
+        return serverItem.content === pendingContent && serverItem.isSelf;
+      });
 
       if (confirmedFound) {
         channelItems.value = channelItems.value
@@ -114,6 +118,7 @@ export function useChannelMessages() {
             latestItems.filter((serverItem) => {
               const existingIds = new Set(channelItems.value.map((i) => String(i.id)));
               if (existingIds.has(String(serverItem.id))) return false;
+              if (pendingNonce && serverItem.clientNonce === pendingNonce) return true;
               if (serverItem.content === pendingContent && !serverItem.isSelf) return false;
               return true;
             }),
@@ -151,7 +156,11 @@ export function useChannelMessages() {
     await scrollToBottom();
 
     try {
-      await sendChannelMessage({ content, identityTag });
+      await sendChannelMessage({
+        content,
+        identityTag,
+        clientNonce: pending.clientNonce,
+      });
       await replacePendingWithLatest(String(pending.id));
     } catch {
       const idx = channelItems.value.findIndex((item) => String(item.id) === String(pending.id));
@@ -175,7 +184,11 @@ export function useChannelMessages() {
     }
 
     try {
-      await sendChannelMessage({ content: pending.content || "", identityTag: identityTag || "" });
+      await sendChannelMessage({
+        content: pending.content || "",
+        identityTag: identityTag || "",
+        clientNonce: pending.clientNonce,
+      });
       await replacePendingWithLatest(pendingId);
     } catch {
       const failIdx = channelItems.value.findIndex((item) => String(item.id) === pendingId);
