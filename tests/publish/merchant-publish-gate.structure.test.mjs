@@ -18,10 +18,7 @@ test("PublishPayload carries optional contentType + merchant block", () => {
   assert.match(src, /MerchantPublishInput/);
   assert.match(src, /contentType\?:\s*MerchantContentType/);
   assert.match(src, /merchant\?:\s*MerchantPublishInput/);
-  assert.match(
-    src,
-    /"merchant_food"\s*\|\s*"merchant_service"\s*\|\s*"merchant_retail"/,
-  );
+  assert.match(src, /"merchant_food"\s*\|\s*"merchant_service"\s*\|\s*"merchant_retail"/);
 });
 
 test("ProfileUser surfaces verificationState + verificationTags", () => {
