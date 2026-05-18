@@ -32,7 +32,11 @@ function handleViewChange(key: string) {
     @view-change="handleViewChange"
   >
     <template #default="{ onChrome }">
-      <AppViewHost :active-view-key="activeViewKey" @chrome="onChrome" />
+      <AppViewHost
+        :active-view-key="activeViewKey"
+        @chrome="onChrome"
+        @close="setActiveView('profile')"
+      />
     </template>
   </AppShell>
   <ToastHost />

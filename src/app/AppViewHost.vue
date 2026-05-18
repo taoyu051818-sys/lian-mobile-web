@@ -30,13 +30,18 @@ const props = defineProps({
 
 const emit = defineEmits<{
   chrome: [payload: PageChromeSpec];
+  close: [];
 }>();
 </script>
 
 <template>
   <div class="app-view-host">
     <KeepAlive include="MapLeafletView">
-      <component :is="viewComponents[props.activeViewKey]" @chrome="emit('chrome', $event)" />
+      <component
+        :is="viewComponents[props.activeViewKey]"
+        @chrome="emit('chrome', $event)"
+        @close="emit('close')"
+      />
     </KeepAlive>
   </div>
 </template>
