@@ -38,6 +38,16 @@ export function useFeedDetail(deps: FeedDetailDeps) {
     await loader.loadDetail(id);
   }
 
+  // Open from a `#/post/{tid}` deep link — the URL is already correct, so we
+  // skip history.pushDetailHistory and the read-history mark (the user has
+  // not actively browsed to the card yet, only landed on the URL).
+  async function openFromDeepLink(id: FeedItemId) {
+    if (loader.selectedPostId.value === id) return;
+    loader.selectedPostId.value = id;
+    loader.selectedPost.value = null;
+    await loader.loadDetail(id);
+  }
+
   return {
     selectedPostId: loader.selectedPostId,
     selectedPost: loader.selectedPost,
@@ -46,6 +56,7 @@ export function useFeedDetail(deps: FeedDetailDeps) {
     detailOpen: loader.detailOpen,
     detailHistoryActive: history.detailHistoryActive,
     openItem,
+    openFromDeepLink,
     retryDetail: loader.retryDetail,
     closeDetail,
     resetDetailState,

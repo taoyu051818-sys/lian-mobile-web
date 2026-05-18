@@ -1,59 +1,42 @@
 import { onBeforeUnmount, onMounted, ref, type Ref } from "vue";
 import type { FeedItemId } from "../../types/feed";
-
-interface DetailHistoryState {
-  lianDetail?: boolean;
-  tid?: string;
-}
+import { clearPostDetailHash, pushPostDetailHash, getDetailTidRef } from "../../app/useDeepLink";
 
 export interface UseFeedDetailHistoryOptions {
   detailOpen: Ref<boolean>;
   onPopState: () => void;
 }
 
+/**
+ * Mirrors detail-panel open state into `window.location.hash` (`#/post/{tid}`)
+ * and listens to popstate so the back button closes the detail. The deep-link
+ * singleton in `app/useDeepLink` is the source of truth for the parsed tid;
+ * this composable only translates Feed-level open/close events to that
+ * singleton's push/clear helpers.
+ */
 export function useFeedDetailHistory(options: UseFeedDetailHistoryOptions) {
   const detailHistoryActive = ref(false);
-  const ignoreNextPopState = ref(false);
-
-  function currentHistoryState(): DetailHistoryState {
-    if (typeof window === "undefined") return {} as DetailHistoryState;
-    return (window.history.state || {}) as DetailHistoryState;
-  }
+  const detailTid = getDetailTidRef();
 
   function pushDetailHistory(id: FeedItemId) {
-    if (typeof window === "undefined" || detailHistoryActive.value) return;
-    try {
-      window.history.pushState(
-        { ...currentHistoryState(), lianDetail: true, tid: String(id) },
-        "",
-        window.location.href,
-      );
-      detailHistoryActive.value = true;
-    } catch {
-      detailHistoryActive.value = false;
-    }
+    if (typeof window === "undefined") return;
+    pushPostDetailHash(Number(id));
+    detailHistoryActive.value = true;
   }
 
   function clearDetailHistory() {
-    if (typeof window === "undefined" || !detailHistoryActive.value) return;
+    if (typeof window === "undefined") return;
+    clearPostDetailHash();
     detailHistoryActive.value = false;
-    try {
-      if (currentHistoryState().lianDetail) {
-        ignoreNextPopState.value = true;
-        window.history.back();
-      }
-    } catch {
-      ignoreNextPopState.value = false;
-    }
   }
 
   function onWindowPopState() {
-    if (ignoreNextPopState.value) {
-      ignoreNextPopState.value = false;
-      return;
-    }
-    if (!options.detailOpen.value && !detailHistoryActive.value) return;
-    detailHistoryActive.value = false;
+    // After popstate fires, the deep-link singleton has already re-synced
+    // from window.location.hash. If the hash no longer matches a post detail
+    // (back-out), close the panel; if it now matches a *different* post,
+    // re-resolve through onPopState so the loader can pick up the new tid.
+    if (!options.detailOpen.value && detailTid.value === null) return;
+    detailHistoryActive.value = detailTid.value !== null;
     options.onPopState();
   }
 

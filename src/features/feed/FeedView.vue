@@ -9,6 +9,7 @@ import FeedList from "./FeedList.vue";
 import FeedLoadMore from "./FeedLoadMore.vue";
 import { useFeedDetail } from "./useFeedDetail";
 import { useFeedData } from "./useFeedData";
+import { useDeepLink } from "../../app/useDeepLink";
 import { CHANNEL_RELOAD, FEED_FILTER_LABEL, FEED_VIEW_TITLE } from "../../config/brand";
 
 const emit = defineEmits<{
@@ -16,12 +17,13 @@ const emit = defineEmits<{
 }>();
 
 const {
-  selectedPostId: _selectedPostId,
+  selectedPostId,
   selectedPost,
   detailLoading,
   detailError,
   detailOpen,
   openItem,
+  openFromDeepLink,
   retryDetail,
   closeDetail,
   resetDetailState,
@@ -31,6 +33,8 @@ const {
   },
 });
 
+const { detailTid } = useDeepLink();
+
 const feedData = useFeedData({
   detailOpen: () => detailOpen.value,
   closeDetail: () => closeDetail(),
@@ -39,6 +43,26 @@ const feedData = useFeedData({
 
 const { setDetailPhase } = useFloatingChromeState();
 watch(detailOpen, (open) => setDetailPhase(open ? "open" : "idle"), { immediate: true });
+
+// Reconcile the panel against `#/post/{tid}`. Triggers on:
+//  - cold-load with a deep-link URL (immediate: true)
+//  - back/forward navigation between detail URLs
+//  - back-out from a detail URL to a non-detail URL
+// Does NOT re-trigger when the user just opened a card (openItem already
+// pushed the same tid, so detailTid === selectedPostId here — no-op).
+watch(
+  detailTid,
+  (next) => {
+    if (next === null) {
+      if (detailOpen.value) closeDetail({ syncHistory: false });
+      return;
+    }
+    if (selectedPostId.value !== next) {
+      void openFromDeepLink(next);
+    }
+  },
+  { immediate: true },
+);
 
 const pageChrome = computed<PageChromeSpec>(() => ({
   top: {
