@@ -141,7 +141,7 @@ Total files: 249
 | `features/detail/reportFlow.ts`                 | export interface ReportCategoryOption                                                                                    |    98 |
 | `features/detail/useDetailGallery.ts`           | export function useDetailGallery(options:                                                                                |    48 |
 | `features/detail/usePlaceSheetLoader.ts`        | export function usePlaceSheetLoader(post: ComputedRef<PostDetail \| null>)                                               |    56 |
-| `features/detail/usePostDetail.ts`              | export function usePostDetail()                                                                                          |    56 |
+| `features/detail/usePostDetail.ts`              | export function usePostDetail()                                                                                          |    64 |
 | `features/detail/usePostDetailPresentation.ts`  | export function usePostDetailPresentation(                                                                               |   142 |
 | `features/detail/usePostReactions.ts`           | export function usePostReactions(options:                                                                                |    79 |
 | `features/detail/usePostReplyComposer.ts`       | export function usePostReplyComposer(options:                                                                            |    59 |

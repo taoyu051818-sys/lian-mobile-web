@@ -12,23 +12,31 @@ export function usePostDetail() {
   const savedScrollY = ref(0);
 
   const detailOpen = computed(() => selectedPostId.value !== null);
+  let pendingToken = 0;
 
   async function openDetail(tid: FeedItemId) {
+    const token = ++pendingToken;
     savedScrollY.value = typeof window !== "undefined" ? window.scrollY : 0;
     selectedPostId.value = tid;
     selectedPost.value = null;
     detailError.value = "";
     detailLoading.value = true;
     try {
-      selectedPost.value = await fetchPostDetail(tid);
+      const detail = await fetchPostDetail(tid);
+      if (token !== pendingToken) return;
+      selectedPost.value = detail;
     } catch (error) {
+      if (token !== pendingToken) return;
       detailError.value = error instanceof Error ? error.message : ERROR_LOAD_DETAIL;
     } finally {
-      detailLoading.value = false;
+      if (token === pendingToken) {
+        detailLoading.value = false;
+      }
     }
   }
 
   function closeDetail() {
+    pendingToken += 1;
     selectedPostId.value = null;
     selectedPost.value = null;
     detailLoading.value = false;

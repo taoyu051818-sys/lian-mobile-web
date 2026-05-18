@@ -9,6 +9,16 @@ import { fetchPostDetail } from "../../src/api/posts";
 
 const mockFetchPostDetail = vi.mocked(fetchPostDetail);
 
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  let reject!: (reason: unknown) => void;
+  const promise = new Promise<T>((res, rej) => {
+    resolve = res;
+    reject = rej;
+  });
+  return { promise, resolve, reject };
+}
+
 describe("usePostDetail state machine", () => {
   beforeEach(() => {
     mockFetchPostDetail.mockReset();
@@ -95,5 +105,49 @@ describe("usePostDetail state machine", () => {
     const d = usePostDetail();
     d.retryDetail();
     expect(mockFetchPostDetail).not.toHaveBeenCalled();
+  });
+
+  it("closeDetail invalidates an in-flight fetch so it cannot write back", async () => {
+    const pending = deferred<{ tid: number; title: string }>();
+    mockFetchPostDetail.mockReturnValueOnce(pending.promise as never);
+
+    const d = usePostDetail();
+    const task = d.openDetail(12);
+
+    expect(d.detailLoading.value).toBe(true);
+
+    d.closeDetail();
+    pending.resolve({ tid: 12, title: "stale detail" });
+    await task;
+
+    expect(d.selectedPostId.value).toBeNull();
+    expect(d.selectedPost.value).toBeNull();
+    expect(d.detailLoading.value).toBe(false);
+    expect(d.detailError.value).toBe("");
+  });
+
+  it("keeps the latest openDetail request authoritative", async () => {
+    const first = deferred<{ tid: number; title: string }>();
+    const second = deferred<{ tid: number; title: string }>();
+    mockFetchPostDetail
+      .mockReturnValueOnce(first.promise as never)
+      .mockReturnValueOnce(second.promise as never);
+
+    const d = usePostDetail();
+    const firstTask = d.openDetail(1);
+    const secondTask = d.openDetail(2);
+
+    first.resolve({ tid: 1, title: "old detail" });
+    await firstTask;
+
+    expect(d.selectedPost.value).toBeNull();
+    expect(d.detailLoading.value).toBe(true);
+
+    second.resolve({ tid: 2, title: "new detail" });
+    await secondTask;
+
+    expect(d.selectedPostId.value).toBe(2);
+    expect(d.selectedPost.value).toEqual({ tid: 2, title: "new detail" });
+    expect(d.detailLoading.value).toBe(false);
   });
 });
