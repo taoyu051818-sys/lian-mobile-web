@@ -24,9 +24,8 @@ const emit = defineEmits<{
 
 <template>
   <form
-    class="post-reply-dock lian-floating-chrome lian-floating-chrome--bottom"
+    class="post-reply-dock"
     :class="{ 'is-expanded': replyExpanded }"
-    data-floating-chrome="bottom"
     @submit.prevent="emit('submitReply')"
     @click.stop
   >
@@ -76,22 +75,18 @@ const emit = defineEmits<{
 
 <style scoped>
 .post-reply-dock {
-  /* Visual base (position, glass, shadow) comes from lian-floating-chrome in chrome-surface.css */
-  transition:
-    transform var(--floating-chrome-motion-duration, 260ms) var(--motion-ease-standard),
-    opacity var(--floating-chrome-motion-duration, 260ms) var(--motion-ease-standard),
-    filter var(--floating-chrome-motion-duration, 260ms) var(--motion-ease-standard),
-    bottom 200ms ease,
-    min-height 180ms ease,
-    align-items 180ms ease;
-  bottom: calc(var(--detail-reply-dock-bottom-offset) + var(--keyboard-inset-bottom, 0px));
+  /* Visual base (glass, shadow, fixed inset, width) is provided by the
+     parent shell-chrome bottom region (see ShellChrome.vue). The dock
+     itself only owns its internal layout. */
   display: flex;
   gap: var(--space-2);
   align-items: center;
+  width: 100%;
   min-height: var(--floating-bar-height);
   padding: var(--floating-bar-padding);
-  opacity: var(--detail-bottom-chrome-opacity, 1);
-  transform: translateY(var(--detail-bottom-chrome-translate-y, 0px));
+  transition:
+    min-height 180ms ease,
+    align-items 180ms ease;
 }
 
 .post-reply-dock.is-expanded {

@@ -85,8 +85,6 @@ const emit = defineEmits<{
   align-items: center;
   min-height: var(--floating-bar-height);
   padding: var(--floating-bar-padding);
-  opacity: var(--detail-top-chrome-opacity, 1);
-  transform: translateY(var(--detail-top-chrome-translate-y, 0px));
 }
 
 .post-detail-topbar__close,

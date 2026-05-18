@@ -142,6 +142,10 @@
   display: contents;
 }
 
+.shell-chrome--reply-dock {
+  display: contents;
+}
+
 /* Shell-owned tab nav container */
 .shell-chrome__tabs {
   display: flex;
