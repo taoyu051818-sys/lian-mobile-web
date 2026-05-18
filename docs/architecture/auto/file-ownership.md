@@ -147,8 +147,8 @@ Total files: 236
 | `features/feed/useCardPointerInteraction.ts`    | export function useCardPointerInteraction(emitOpen: (target: HTMLElement \| null) => void)                               |   119 |
 | `features/feed/useFeedData.ts`                  | export function useFeedData(options:                                                                                     |   101 |
 | `features/feed/useFeedDetail.ts`                | export interface CardOpenPayload                                                                                         |    66 |
-| `features/feed/useFeedDetailHistory.ts`         | Mirrors detail-panel open state into `window.location.hash` (`#/post/{tid}`) and listens to popstate so the back butt... |    63 |
-| `features/feed/usePostDetailLoader.ts`          | export function usePostDetailLoader()                                                                                    |    59 |
+| `features/feed/useFeedDetailHistory.ts`         | Mirrors detail-panel open state into `window.location.hash` (`#/post/{tid}`) and listens to popstate so the back butt... |    71 |
+| `features/feed/usePostDetailLoader.ts`          | export function usePostDetailLoader()                                                                                    |    66 |
 | `features/map/MapCanvas.vue`                    | Prefer the dataset bounds for the image overlay, but let an explicit                                                     |   206 |
 | `features/map/MapLeafletView.vue`               | KeepAlive caches this view, so onMounted only fires the first time.                                                      |   144 |
 | `features/map/MapPlaceSheet.vue`                | Vue SFC                                                                                                                  |    70 |
