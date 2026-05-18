@@ -1,6 +1,13 @@
 import type { LianIconName } from "../ui/icons/paths";
 
-export type AppViewKey = "feed" | "map" | "publish" | "messages" | "profile" | "admin";
+export type AppViewKey =
+  | "feed"
+  | "map"
+  | "publish"
+  | "messages"
+  | "profile"
+  | "admin"
+  | "verification";
 
 export type ShellLayoutMode = "content" | "full-bleed" | "composer-safe";
 
@@ -17,6 +24,7 @@ export const shellLayoutModes: Record<AppViewKey, ShellLayoutMode> = {
   messages: "composer-safe",
   profile: "content",
   admin: "content",
+  verification: "content",
 };
 
 export function getShellLayoutMode(key: AppViewKey): ShellLayoutMode {

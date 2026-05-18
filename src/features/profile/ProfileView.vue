@@ -9,6 +9,7 @@ import {
   PROFILE_SECTION_LABEL,
   PROFILE_LOAD_ERROR_PREFIX,
   PROFILE_RELOAD,
+  VERIFICATION_ENTER_LABEL,
 } from "../../config/brand";
 import { extractErrorMessage } from "../../utils/extractErrorMessage";
 import { usePostDetail } from "../detail";
@@ -192,6 +193,16 @@ onMounted(() => {
         @close="closeDetail"
         @retry="retryDetail"
       />
+
+      <footer class="profile-view__verification-entry">
+        <button
+          type="button"
+          class="profile-view__verification-link"
+          @click="setActiveView('verification')"
+        >
+          {{ VERIFICATION_ENTER_LABEL }}
+        </button>
+      </footer>
 
       <footer v-if="adminEntryVisible" class="profile-view__admin-entry">
         <button type="button" class="profile-view__admin-link" @click="setActiveView('admin')">

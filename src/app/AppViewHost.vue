@@ -25,6 +25,7 @@ const viewComponents: Record<AppViewKey, Component> = {
   messages: asyncView(() => import("../features/messages").then((m) => m.MessagesView)),
   profile: asyncView(() => import("../features/profile").then((m) => m.ProfileView)),
   admin: asyncView(() => import("../features/admin").then((m) => m.AdminView)),
+  verification: asyncView(() => import("../features/verification").then((m) => m.VerificationView)),
 };
 
 const props = defineProps({
