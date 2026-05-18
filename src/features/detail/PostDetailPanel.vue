@@ -278,6 +278,8 @@ watch(
             :help-manage-plan="helpManagePlan"
             :help-manage-busy="helpManageBusy"
             :help-manage-action-error="helpManageActionError"
+            :merchant="post?.merchant"
+            :errand-entry-available="post?.errandEntryAvailable"
             @gallery-pointer-down="handleGalleryPointerDown"
             @gallery-pointer-move="handleGalleryPointerMove"
             @open-gallery-image="openGalleryImage"

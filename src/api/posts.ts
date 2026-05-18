@@ -9,6 +9,7 @@ import {
   normalizeEventExtension,
   normalizeFeedItemId,
   normalizeHelpExtension,
+  normalizeMerchantExtension,
   normalizePlaceRef,
   normalizeSourceSignal,
 } from "../platform/api-normalizers";
@@ -53,6 +54,15 @@ export function normalizePostDetail(value: unknown, fallbackId: FeedItemId): Pos
   const help = normalizeHelpExtension(record.help);
   const helpVoted = "helpVoted" in record ? asBoolean(record.helpVoted) : undefined;
   const helpManageable = "helpManageable" in record ? asBoolean(record.helpManageable) : undefined;
+  const merchant = normalizeMerchantExtension(record.merchant);
+  // `errandEntryAvailable` is hoisted to the top level by the backend DTO. We
+  // only surface it when the merchant block is present so callers can rely on
+  // `(post.merchant && post.errandEntryAvailable)` without a null check.
+  const errandEntryAvailable = merchant
+    ? "errandEntryAvailable" in record
+      ? asBoolean(record.errandEntryAvailable)
+      : merchant.errandSupported
+    : undefined;
 
   return {
     tid,
@@ -77,6 +87,8 @@ export function normalizePostDetail(value: unknown, fallbackId: FeedItemId): Pos
     ...(help ? { help } : {}),
     ...(helpVoted !== undefined ? { helpVoted } : {}),
     ...(helpManageable !== undefined ? { helpManageable } : {}),
+    ...(merchant ? { merchant } : {}),
+    ...(errandEntryAvailable !== undefined ? { errandEntryAvailable } : {}),
   };
 }
 
