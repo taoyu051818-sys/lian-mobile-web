@@ -100,3 +100,17 @@ export const HELP_LINKED_EVENT_LABEL = "查看关联活动";
 export const HELP_ACTION_UNAVAILABLE = "求助操作暂时不可用，可以稍后再试。";
 export const HELP_VOTE_SUCCESS = "已支持，谢谢。";
 export const HELP_UNVOTE_SUCCESS = "已取消支持。";
+
+/** 求助管理写侧 (PRD V0.1 §6.5 / §11.3) */
+export const HELP_MANAGE_BLOCK_LABEL = "求助管理";
+export const HELP_MANAGE_LINK_EVENT = "关联到活动";
+export const HELP_MANAGE_LINK_EVENT_PLACEHOLDER = "输入活动帖 ID";
+export const HELP_MANAGE_LINK_EVENT_HINT = "把这条求助关联到一个已发布的活动帖。";
+export const HELP_MANAGE_LINK_EVENT_INVALID = "活动帖 ID 需要是正整数。";
+export const HELP_MANAGE_RESOLVE = "标记为已解决";
+export const HELP_MANAGE_CLOSE = "关闭求助";
+export const HELP_MANAGE_PENDING = "处理中…";
+export const HELP_MANAGE_LINK_SUCCESS = "已关联活动。";
+export const HELP_MANAGE_RESOLVE_SUCCESS = "已标记为已解决。";
+export const HELP_MANAGE_CLOSE_SUCCESS = "求助已关闭。";
+export const HELP_MANAGE_UNAVAILABLE = "管理操作暂时不可用，可以稍后再试。";

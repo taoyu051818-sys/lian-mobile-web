@@ -37,6 +37,8 @@ export interface PostDetail {
   help?: HelpPostExtension;
   /** Whether the current viewer has already voted on this help post. */
   helpVoted?: boolean;
+  /** PRD V0.1 §6.5 / §11.3 — backend-driven flag for help management surface. */
+  helpManageable?: boolean;
 }
 
 /**

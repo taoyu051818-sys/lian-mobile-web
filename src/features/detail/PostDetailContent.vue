@@ -2,12 +2,14 @@
 import type { PlaceRef, PlaceSheet } from "../../types/place";
 import type { EventActionPlan } from "../../domain/eventActionPolicy";
 import type { HelpVotePlan } from "../../domain/helpVotePolicy";
+import type { HelpManagePlan } from "../../domain/helpManagePolicy";
 import type { EventPostExtension, HelpPostExtension } from "../../types/post-extensions";
 import PostDetailGallery from "./PostDetailGallery.vue";
 import PostDetailMainBody from "./PostDetailMainBody.vue";
 import PostDetailInfoStrip from "./PostDetailInfoStrip.vue";
 import PostDetailEventBlock from "./PostDetailEventBlock.vue";
 import PostDetailHelpBlock from "./PostDetailHelpBlock.vue";
+import PostDetailHelpManageBlock from "./PostDetailHelpManageBlock.vue";
 import PostPlaceSheetBlock from "./PostPlaceSheetBlock.vue";
 import PostReportBlock from "./PostReportBlock.vue";
 import PostActionFeedback from "./PostActionFeedback.vue";
@@ -43,6 +45,9 @@ defineProps<{
   helpPlan?: HelpVotePlan;
   helpBusy?: boolean;
   helpActionError?: string;
+  helpManagePlan?: HelpManagePlan;
+  helpManageBusy?: boolean;
+  helpManageActionError?: string;
 }>();
 
 const emit = defineEmits<{
@@ -56,6 +61,10 @@ const emit = defineEmits<{
   eventAct: [];
   helpAct: [];
   helpOpenLinkedEvent: [tid: number];
+  helpManageLinkEvent: [eventTid: number];
+  helpManageUnlinkEvent: [];
+  helpManageResolve: [];
+  helpManageClose: [];
   "update:reportCategory": [value: string];
   "update:reportReason": [value: string];
   "update:placeSheetOpen": [value: boolean];
@@ -91,6 +100,17 @@ const emit = defineEmits<{
       :action-error="helpActionError"
       @act="emit('helpAct')"
       @open-linked-event="emit('helpOpenLinkedEvent', $event)"
+    />
+
+    <PostDetailHelpManageBlock
+      v-if="help && helpManagePlan"
+      :plan="helpManagePlan"
+      :busy="!!helpManageBusy"
+      :action-error="helpManageActionError"
+      @link-event="emit('helpManageLinkEvent', $event)"
+      @unlink-event="emit('helpManageUnlinkEvent')"
+      @resolve="emit('helpManageResolve')"
+      @close="emit('helpManageClose')"
     />
 
     <PostDetailInfoStrip

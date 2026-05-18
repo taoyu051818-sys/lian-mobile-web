@@ -11,6 +11,9 @@ import {
   EVENT_CANCEL_SUCCESS,
   HELP_VOTE_SUCCESS,
   HELP_UNVOTE_SUCCESS,
+  HELP_MANAGE_LINK_SUCCESS,
+  HELP_MANAGE_RESOLVE_SUCCESS,
+  HELP_MANAGE_CLOSE_SUCCESS,
 } from "../../config/brand";
 import { extractErrorMessage } from "../../utils/extractErrorMessage";
 import type { PostDetail } from "../../types/post";
@@ -30,6 +33,7 @@ import { usePostShare } from "./usePostShare";
 import { useDetailGallery } from "./useDetailGallery";
 import { useEventActions } from "../../composables/useEventActions";
 import { useHelpVote } from "../../composables/useHelpVote";
+import { useHelpManage } from "../../composables/useHelpManage";
 import { useAudienceOptions } from "../../composables/useAudienceOptions";
 
 const props = withDefaults(
@@ -252,6 +256,29 @@ function handleHelpOpenLinkedEvent(tid: number) {
   emit("retry");
 }
 
+const helpManageable = computed(() => Boolean(post.value?.helpManageable));
+const helpManage = useHelpManage({
+  help: liveHelp,
+  isManageable: helpManageable,
+  onChange: (next) => {
+    helpLocal.value = next;
+  },
+  onMessage: showActionMessage,
+});
+
+function handleHelpManageLinkEvent(eventTid: number) {
+  void helpManage.linkEvent(eventTid, HELP_MANAGE_LINK_SUCCESS);
+}
+function handleHelpManageUnlinkEvent() {
+  void helpManage.unlinkEvent(HELP_MANAGE_LINK_SUCCESS);
+}
+function handleHelpManageResolve() {
+  void helpManage.markResolved(HELP_MANAGE_RESOLVE_SUCCESS);
+}
+function handleHelpManageClose() {
+  void helpManage.markClosed(HELP_MANAGE_CLOSE_SUCCESS);
+}
+
 function handleLike() {
   const currentId = postId.value;
   return rawHandleLike(currentId, () => postId.value === currentId);
@@ -334,6 +361,9 @@ void audience;
             :help-plan="helpVote.plan.value"
             :help-busy="helpVote.busy.value"
             :help-action-error="helpVote.actionError.value"
+            :help-manage-plan="helpManage.plan.value"
+            :help-manage-busy="helpManage.busy.value"
+            :help-manage-action-error="helpManage.actionError.value"
             @gallery-pointer-down="handleGalleryPointerDown"
             @gallery-pointer-move="handleGalleryPointerMove"
             @open-gallery-image="openGalleryImage"
@@ -344,6 +374,10 @@ void audience;
             @event-act="handleEventAct"
             @help-act="handleHelpAct"
             @help-open-linked-event="handleHelpOpenLinkedEvent"
+            @help-manage-link-event="handleHelpManageLinkEvent"
+            @help-manage-unlink-event="handleHelpManageUnlinkEvent"
+            @help-manage-resolve="handleHelpManageResolve"
+            @help-manage-close="handleHelpManageClose"
             @update:report-category="reportCategory = $event"
             @update:report-reason="reportReason = $event"
             @update:place-sheet-open="placeSheetOpen = $event"

@@ -52,6 +52,7 @@ export function normalizePostDetail(value: unknown, fallbackId: FeedItemId): Pos
   const eventJoined = "eventJoined" in record ? asBoolean(record.eventJoined) : undefined;
   const help = normalizeHelpExtension(record.help);
   const helpVoted = "helpVoted" in record ? asBoolean(record.helpVoted) : undefined;
+  const helpManageable = "helpManageable" in record ? asBoolean(record.helpManageable) : undefined;
 
   return {
     tid,
@@ -75,6 +76,7 @@ export function normalizePostDetail(value: unknown, fallbackId: FeedItemId): Pos
     ...(eventJoined !== undefined ? { eventJoined } : {}),
     ...(help ? { help } : {}),
     ...(helpVoted !== undefined ? { helpVoted } : {}),
+    ...(helpManageable !== undefined ? { helpManageable } : {}),
   };
 }
 
