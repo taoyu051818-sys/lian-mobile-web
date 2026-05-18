@@ -40,12 +40,22 @@ describe("Feed read-history string id normalization", () => {
     expect(browserStorageSource).toMatch(/String\(entry\.tid\) !== normalizedId/);
   });
 
-  it("reuses the helper in detail guard paths", () => {
-    expect(feedDetailSource).toMatch(/import \{ normalizeFeedItemId \} from "\.\/feedItemId";/);
-    expect(feedDetailSource).toMatch(/const normalizedId = normalizeFeedItemId\(id\);/);
-    expect(feedDetailSource).toMatch(
+  it("loadDetail uses a request-token guard, not an id-equality guard", () => {
+    // The id-equality guard regressed in PR #601 — anything that mutated
+    // selectedPostId mid-flight (e.g. the new detailTid watch) caused the
+    // finally branch to skip `detailLoading.value = false` and the panel
+    // stayed stuck on "正在加载详情…". The token guard does not depend on
+    // external state, so it cannot be broken that way.
+    expect(feedDetailSource).toMatch(/let pendingToken = 0;/);
+    expect(feedDetailSource).toMatch(/const token = \+\+pendingToken;/);
+    expect(feedDetailSource).toMatch(/token !== pendingToken/);
+    expect(feedDetailSource).toMatch(/token === pendingToken/);
+    // The brittle id-equality guard must not return.
+    expect(feedDetailSource).not.toMatch(
       /normalizeFeedItemId\(selectedPostId\.value\) === normalizedId/,
     );
-    expect(feedDetailSource).not.toMatch(/Number\(selectedPostId\.value\) === Number\(id\)/);
+    // resetLoaderState must invalidate any in-flight fetch so it does not
+    // write back to the cleared state.
+    expect(feedDetailSource).toMatch(/function resetLoaderState\(\) \{[\s\S]*?pendingToken/);
   });
 });
