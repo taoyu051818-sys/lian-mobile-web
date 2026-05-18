@@ -8,7 +8,7 @@ const PAGE_SIZE = 12;
 
 export function useFeedData(options: {
   detailOpen: () => boolean;
-  closeDetailWithCardify: () => void;
+  closeDetail: () => void;
   resetDetailState: () => void;
 }) {
   const tabs = ref<FeedTab[]>(DEFAULT_TABS);
@@ -35,7 +35,7 @@ export function useFeedData(options: {
       page.value = 1;
       hasMore.value = true;
       if (options.detailOpen()) {
-        options.closeDetailWithCardify();
+        options.closeDetail();
       } else {
         options.resetDetailState();
       }

@@ -23,30 +23,14 @@ describe("floating chrome reduced-motion", () => {
 });
 
 describe("Feed detail reduced-motion guards", () => {
-  const viewSource = readRepoFile("../../src/features/feed/FeedView.vue");
-  const detailSource = readRepoFile("../../src/features/feed/useFeedDetail.ts");
   const sharedSource = readRepoFile("../../src/composables/useReducedMotion.ts");
   const immersiveSource = readRepoFile("../../src/styles/content-immersive-ui.css");
   const immersiveReducedMotionBlock = getReducedMotionBlock(immersiveSource);
-
-  it("FeedView imports prefersReducedMotion from the shared module instead of defining it locally", () => {
-    expect(viewSource).toContain(
-      'import { prefersReducedMotion } from "../../composables/useReducedMotion"',
-    );
-    // Local function definition must be gone
-    expect(viewSource).not.toContain("function prefersReducedMotion()");
-  });
 
   it("shared module exports prefersReducedMotion with SSR-safe matchMedia check", () => {
     expect(sharedSource).toContain("export function prefersReducedMotion");
     expect(sharedSource).toContain("window.matchMedia");
     expect(sharedSource).toContain("prefers-reduced-motion: reduce");
-  });
-
-  it("short-circuits detail close motion when reduced motion is enabled", () => {
-    expect(detailSource).toContain(
-      "if (deps.prefersReducedMotion()) {\n      resetDetailState();\n      return;\n    }",
-    );
   });
 
   it("disables non-essential transitions without globally disabling all animation", () => {
@@ -64,31 +48,5 @@ describe("shell chrome tabs reduced-motion stylesheet", () => {
     expect(reducedMotionBlock).toContain(".shell-chrome__tab");
     expect(reducedMotionBlock).not.toContain(".feed-view__tab");
     expect(reducedMotionBlock).toContain("transition: none");
-  });
-});
-
-describe("detail return timer hygiene (#254)", () => {
-  const detailSource = readRepoFile("../../src/features/feed/useFeedDetail.ts");
-  const motionSource = readRepoFile("../../src/features/feed/useDetailCardifyMotion.ts");
-
-  it("useDetailCardifyMotion saves and cancels return animation timeout handle", () => {
-    expect(motionSource).toContain("let pendingReturnTimer: ReturnType<typeof setTimeout>");
-    expect(motionSource).toContain("clearTimeout(pendingReturnTimer)");
-    expect(motionSource).toContain("pendingReturnTimer = window.setTimeout(");
-    expect(motionSource).toContain("cancelPendingReturnTimer()");
-  });
-
-  it("useFeedDetail cancels return timer on unmount", () => {
-    const unmountMatch = detailSource.match(
-      /onBeforeUnmount\(\(\) => \{[\s\S]*?cancelPendingReturnTimer\(\)/,
-    );
-    expect(unmountMatch).toBeTruthy();
-  });
-
-  it("useFeedDetail delegates to motion.cancelPendingReturnTimer in closeDetailWithCardify", () => {
-    const closeMatch = detailSource.match(
-      /function closeDetailWithCardify[\s\S]*?motion\.cancelPendingReturnTimer\(\)/,
-    );
-    expect(closeMatch).toBeTruthy();
   });
 });
