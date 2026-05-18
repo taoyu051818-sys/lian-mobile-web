@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
-import { buildPostDetailHash, parseDeepLink } from "../../src/app/deepLink";
+import { buildPostDetailHash, buildViewHash, parseDeepLink } from "../../src/app/deepLink";
 
 function readRepoFile(rel: string) {
   return readFileSync(new URL(rel, import.meta.url), "utf8").replace(/\r\n/g, "\n");
@@ -14,11 +14,11 @@ describe("Phase 4 (deeplink): parseDeepLink", () => {
 
   it("returns null for empty / non-matching / non-positive hashes", () => {
     expect(parseDeepLink("")).toBeNull();
-    expect(parseDeepLink("#/feed")).toBeNull();
     expect(parseDeepLink("#/post/")).toBeNull();
     expect(parseDeepLink("#/post/abc")).toBeNull();
     expect(parseDeepLink("#/post/0")).toBeNull();
     expect(parseDeepLink("#/post/-3")).toBeNull();
+    expect(parseDeepLink("#/unknown")).toBeNull();
     expect(parseDeepLink(null)).toBeNull();
     expect(parseDeepLink(undefined)).toBeNull();
   });
@@ -27,11 +27,33 @@ describe("Phase 4 (deeplink): parseDeepLink", () => {
     expect(parseDeepLink("#/post/42/")).toEqual({ view: "post-detail", tid: 42 });
     expect(parseDeepLink("#/post/42?ref=share")).toEqual({ view: "post-detail", tid: 42 });
   });
+
+  it("parses #/{view} into a top-level tab link for all five views", () => {
+    expect(parseDeepLink("#/feed")).toEqual({ view: "feed" });
+    expect(parseDeepLink("#/map")).toEqual({ view: "map" });
+    expect(parseDeepLink("#/publish")).toEqual({ view: "publish" });
+    expect(parseDeepLink("#/messages")).toEqual({ view: "messages" });
+    expect(parseDeepLink("#/profile")).toEqual({ view: "profile" });
+    expect(parseDeepLink("/feed")).toEqual({ view: "feed" });
+    expect(parseDeepLink("#/feed/")).toEqual({ view: "feed" });
+  });
+
+  it("post-detail hashes win precedence over view-shaped paths", () => {
+    expect(parseDeepLink("#/post/7")).toEqual({ view: "post-detail", tid: 7 });
+  });
 });
 
-describe("Phase 4 (deeplink): buildPostDetailHash", () => {
-  it("produces the canonical hash fragment", () => {
+describe("Phase 4 (deeplink): builders", () => {
+  it("buildPostDetailHash produces the canonical post hash", () => {
     expect(buildPostDetailHash(42)).toBe("#/post/42");
+  });
+
+  it("buildViewHash produces #/{view} for every top-level tab", () => {
+    expect(buildViewHash("feed")).toBe("#/feed");
+    expect(buildViewHash("map")).toBe("#/map");
+    expect(buildViewHash("publish")).toBe("#/publish");
+    expect(buildViewHash("messages")).toBe("#/messages");
+    expect(buildViewHash("profile")).toBe("#/profile");
   });
 });
 
@@ -54,6 +76,14 @@ describe("Phase 4 (deeplink): useDeepLink singleton (source-level guards)", () =
     expect(useDeepLink).toMatch(/export function pushPostDetailHash/);
     expect(useDeepLink).toMatch(/export function clearPostDetailHash/);
     expect(useDeepLink).toMatch(/export function getDetailTidRef/);
+  });
+
+  it("exports view-hash singleton helpers", () => {
+    expect(useDeepLink).toMatch(/export function pushViewHash/);
+    expect(useDeepLink).toMatch(/export function getViewFromHashRef/);
+    // The singleton ref must default to "feed" so the bottom tab bar has a
+    // sensible initial value before any hash is read.
+    expect(useDeepLink).toMatch(/viewFromHash = ref<AppViewKey>\("feed"\)/);
   });
 });
 
@@ -81,6 +111,18 @@ describe("Phase 4 (deeplink): consumers wire the hash into the SPA", () => {
     expect(useActiveView).toMatch(/getDetailTidRef|useDeepLink/);
     expect(useActiveView).toMatch(/detailTid/);
     expect(useActiveView).toMatch(/"feed"/);
+  });
+
+  it("useActiveView reads from the view-hash singleton and writes via pushViewHash", () => {
+    expect(useActiveView).toMatch(/getViewFromHashRef/);
+    expect(useActiveView).toMatch(/pushViewHash/);
+    // setActiveView must drive the URL, not a private ref.
+    const setActiveBlock =
+      useActiveView.match(/function setActiveView[\s\S]*?\n {2}}/)?.[0] ?? "";
+    expect(setActiveBlock).toMatch(/pushViewHash\(key\)/);
+    // The legacy private activeViewKey ref must be gone — viewFromHash is now
+    // the single source of truth.
+    expect(useActiveView).not.toMatch(/activeViewKey = ref/);
   });
 
   it("FeedView watches detailTid and opens the panel without re-pushing history", () => {
