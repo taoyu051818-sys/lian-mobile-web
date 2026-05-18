@@ -81,17 +81,17 @@ test("content-immersive-ui reduced-motion disables transitions on interactive el
   assert.match(rmBlock, /transition:\s*none/);
 });
 
-// --- FeedView reduced-motion usage ---
+// --- FeedView reduced-motion: declarative chrome takes over from JS short-circuits ---
+// Earlier versions short-circuited detail open/close in JS via prefersReducedMotion().
+// Since PR #599, FeedView routes detail phase through useFloatingChromeState().setDetailPhase(),
+// and the actual motion suppression lives in CSS (chrome-surface.css + shell-chrome.css
+// reduced-motion blocks). The JS short-circuit is no longer needed.
 
-test("FeedView imports prefersReducedMotion from shared module", () => {
+test("FeedView routes detail phase through floating chrome state (no JS reduced-motion short-circuit)", () => {
   const src = read("src/features/feed/FeedView.vue");
-  assert.match(src, /import.*prefersReducedMotion.*from.*motion\/useReducedMotion/);
+  assert.match(src, /useFloatingChromeState\(\)/);
+  assert.match(src, /setDetailPhase\(/);
   assert.doesNotMatch(src, /function prefersReducedMotion\(\)/);
-});
-
-test("FeedView short-circuits detail motion when reduced motion is active", () => {
-  const src = read("src/features/feed/FeedView.vue");
-  assert.match(src, /prefersReducedMotion\(\)/);
 });
 
 // --- MessagesView reduced-motion awareness ---
@@ -101,3 +101,40 @@ test("MessagesView uses declarative chrome (no floating chrome data attributes)"
   assert.doesNotMatch(src, /data-floating-state/);
   assert.match(src, /PageChromeSpec/);
 });
+
+// --- Motion token consumption: every transition must reference a --motion-* var ---
+// Hard-coded durations / easings drift over time and break the "everything moves
+// together" feel of Dynamic Island. Guard the surfaces that own real motion.
+
+const motionTrackedFiles = [
+  "src/features/map/map-canvas.css",
+  "src/shell/shell-chrome.css",
+  "src/styles/content-immersive-ui.css",
+  "src/features/feed/FeedItemCard.vue",
+];
+
+for (const rel of motionTrackedFiles) {
+  test(`${rel} has no hard-coded transition duration (must use --motion-* token)`, () => {
+    const src = read(rel);
+    // Match `transition` / `transition-duration` declarations with a literal time
+    // (e.g. `0.15s`, `220ms`). Allow `transition: none` and var(--motion-...).
+    const offenders = [];
+    const re = /transition(?:-duration)?:\s*([^;}]+)[;}]/g;
+    let m;
+    while ((m = re.exec(src)) !== null) {
+      const value = m[1];
+      if (/^\s*none\s*$/.test(value)) continue;
+      if (/var\(--motion-/.test(value)) continue;
+      // Tolerate transitions that reference a chained custom prop resolving to --motion-*
+      if (/var\(--floating-chrome-motion-duration/.test(value)) continue;
+      if (/\b\d+(?:\.\d+)?(?:ms|s)\b/.test(value)) {
+        offenders.push(value.trim());
+      }
+    }
+    assert.deepEqual(
+      offenders,
+      [],
+      `hard-coded transition durations in ${rel}: ${offenders.join(" | ")}`,
+    );
+  });
+}

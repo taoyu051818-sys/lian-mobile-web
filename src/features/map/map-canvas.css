@@ -47,7 +47,7 @@
 
 :deep(.vue-map-scaled-icon-inner) {
   display: block;
-  transition: transform 0.15s ease-out;
+  transition: transform var(--motion-fast) var(--motion-ease-standard);
 }
 
 :deep(.vue-map-location-pin) {

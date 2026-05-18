@@ -117,7 +117,7 @@ Total files: 234
 | `features/detail/PostDetailInfoStrip.vue`       | Vue SFC                                                                                                                  |   113 |
 | `features/detail/PostDetailLightbox.vue`        | Vue SFC                                                                                                                  |    43 |
 | `features/detail/PostDetailMainBody.vue`        | Vue SFC                                                                                                                  |    44 |
-| `features/detail/PostDetailPanel.vue`           | V0.1 surface — emit retry so the panel reloads to the linked-event tid                                                   |   369 |
+| `features/detail/PostDetailPanel.vue`           | V0.1 surface — emit retry so the panel reloads to the linked-event tid                                                   |   363 |
 | `features/detail/PostDetailTopbar.vue`          | Vue SFC                                                                                                                  |   132 |
 | `features/detail/PostPlaceSheetBlock.vue`       | Vue SFC                                                                                                                  |   192 |
 | `features/detail/PostReplies.vue`               | Vue SFC                                                                                                                  |   102 |

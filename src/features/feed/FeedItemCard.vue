@@ -218,8 +218,8 @@ const {
   touch-action: manipulation;
   user-select: none;
   transition:
-    transform 160ms ease,
-    box-shadow 160ms ease;
+    transform var(--motion-fast) var(--motion-ease-standard),
+    box-shadow var(--motion-fast) var(--motion-ease-standard);
 }
 
 .feed-item-card:focus-visible {

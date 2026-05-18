@@ -359,10 +359,4 @@ void audience;
   color: currentColor;
   font-weight: 900;
 }
-
-@media (prefers-reduced-motion: reduce) {
-  .post-detail-panel__stage {
-    transition: none;
-  }
-}
 </style>
