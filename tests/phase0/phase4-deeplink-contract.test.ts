@@ -117,8 +117,7 @@ describe("Phase 4 (deeplink): consumers wire the hash into the SPA", () => {
     expect(useActiveView).toMatch(/getViewFromHashRef/);
     expect(useActiveView).toMatch(/pushViewHash/);
     // setActiveView must drive the URL, not a private ref.
-    const setActiveBlock =
-      useActiveView.match(/function setActiveView[\s\S]*?\n {2}}/)?.[0] ?? "";
+    const setActiveBlock = useActiveView.match(/function setActiveView[\s\S]*?\n {2}}/)?.[0] ?? "";
     expect(setActiveBlock).toMatch(/pushViewHash\(key\)/);
     // The legacy private activeViewKey ref must be gone — viewFromHash is now
     // the single source of truth.

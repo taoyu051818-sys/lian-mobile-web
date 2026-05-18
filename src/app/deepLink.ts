@@ -17,9 +17,7 @@ import type { AppViewKey } from "./view-types";
 const POST_HASH_PATTERN = /^#?\/post\/(\d+)(?:[/?#].*)?$/;
 const VIEW_HASH_PATTERN = /^#?\/(feed|map|publish|messages|profile)\/?(?:[?#].*)?$/;
 
-export type DeepLink =
-  | { view: "post-detail"; tid: number }
-  | { view: AppViewKey };
+export type DeepLink = { view: "post-detail"; tid: number } | { view: AppViewKey };
 
 /**
  * Parse a hash string (with or without leading `#`) into a DeepLink. Post

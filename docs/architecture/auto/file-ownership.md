@@ -35,9 +35,9 @@ Total files: 236
 | `app/AppViewHost.vue`         | Vue SFC                                                                                                                  |    42 |
 | `app/ViewAsyncError.vue`      | Vue SFC                                                                                                                  |    50 |
 | `app/ViewLoadingFallback.vue` | Vue SFC                                                                                                                  |    39 |
-| `app/deepLink.ts`             | Pure parsing/building helpers for the `#/post/{tid}` deep link. The app routes on `window.location.hash` (no vue-rou...  |    37 |
-| `app/useActiveView.ts`        | export function useActiveView()                                                                                          |    30 |
-| `app/useDeepLink.ts`          | Module-scoped singleton — `window.location.hash` has exactly one value at a time, so multiple consumers (App, FeedVie... |    89 |
+| `app/deepLink.ts`             | Pure parsing/building helpers for the SPA's hash-based deep links. The app routes on `window.location.hash` (no vue-...  |    53 |
+| `app/useActiveView.ts`        | export function useActiveView()                                                                                          |    34 |
+| `app/useDeepLink.ts`          | Module-scoped singletons — `window.location.hash` has exactly one value at a time, so multiple consumers (App, FeedVi... |   132 |
 | `app/view-types.ts`           | export type AppViewKey = "feed" \| "map" \| "publish" \| "messages" \| "profile";                                        |    56 |
 
 ## src/composables/ (13 files)
