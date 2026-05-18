@@ -9,6 +9,7 @@ import {
 import type { PageChromeSpec } from "./page-model";
 
 const state: ShellChromeState = reactive(createDefaultChromeState());
+let detailChromeLockCount = 0;
 
 function mergeRegion(target: ShellChromeRegionSpec, patch: ShellChromeRegionSpec) {
   if (patch.buttons !== undefined) {
@@ -44,12 +45,38 @@ function setRegion(key: ShellRegionKey, spec: ShellChromeRegionSpec) {
   mergeRegion(state[key], spec);
 }
 
+function forceDetailChromeSlots() {
+  state.top.slot = "detail-topbar";
+  state.top.visible = true;
+  state.top.tabs = null;
+  state.bottom.slot = "reply-dock";
+  state.bottom.visible = true;
+}
+
+function beginDetailChrome() {
+  detailChromeLockCount += 1;
+  forceDetailChromeSlots();
+}
+
+function endDetailChrome() {
+  detailChromeLockCount = Math.max(0, detailChromeLockCount - 1);
+  if (detailChromeLockCount > 0) {
+    forceDetailChromeSlots();
+    return;
+  }
+  state.top.slot = null;
+  state.bottom.slot = "tabs";
+  state.top.visible = true;
+  state.bottom.visible = true;
+}
+
 function applyRegions(map: ShellChromeRegionMap) {
   if (map.top) setRegion("top", map.top);
   if (map.bottom) setRegion("bottom", map.bottom);
 }
 
 function resetRegions() {
+  detailChromeLockCount = 0;
   const defaults = createDefaultChromeState();
   mergeRegion(state.top, defaults.top);
   mergeRegion(state.bottom, defaults.bottom);
@@ -73,6 +100,9 @@ function applyPageChrome(spec: PageChromeSpec) {
   if (spec.bottom) {
     setRegion("bottom", spec.bottom);
   }
+  if (detailChromeLockCount > 0) {
+    forceDetailChromeSlots();
+  }
 }
 
 export function useShellChrome(): {
@@ -81,6 +111,8 @@ export function useShellChrome(): {
   applyRegions: (map: ShellChromeRegionMap) => void;
   resetRegions: () => void;
   applyPageChrome: (spec: PageChromeSpec) => void;
+  beginDetailChrome: () => void;
+  endDetailChrome: () => void;
 } {
   return {
     state: readonly(state) as Readonly<ShellChromeState>,
@@ -88,5 +120,7 @@ export function useShellChrome(): {
     applyRegions,
     resetRegions,
     applyPageChrome,
+    beginDetailChrome,
+    endDetailChrome,
   };
 }

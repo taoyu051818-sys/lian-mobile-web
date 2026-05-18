@@ -41,13 +41,9 @@ const emit = defineEmits<{
 
 useVisualViewport();
 
-const { setRegion } = useShellChrome();
-setRegion("top", { slot: "detail-topbar", visible: true });
-setRegion("bottom", { slot: "reply-dock", visible: true });
-onBeforeUnmount(() => {
-  setRegion("top", { slot: null, visible: true });
-  setRegion("bottom", { slot: "tabs", visible: true });
-});
+const { beginDetailChrome, endDetailChrome } = useShellChrome();
+beginDetailChrome();
+onBeforeUnmount(endDetailChrome);
 
 const actionError = ref("");
 const actionMessage = ref("");

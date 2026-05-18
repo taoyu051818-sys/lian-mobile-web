@@ -131,7 +131,7 @@ Total files: 249
 | `features/detail/PostDetailInfoStrip.vue`       | Vue SFC                                                                                                                  |   113 |
 | `features/detail/PostDetailLightbox.vue`        | Vue SFC                                                                                                                  |    43 |
 | `features/detail/PostDetailMainBody.vue`        | Vue SFC                                                                                                                  |    44 |
-| `features/detail/PostDetailPanel.vue`           | V0.1 surface — emit retry so the panel reloads to the linked-event tid                                                   |   363 |
+| `features/detail/PostDetailPanel.vue`           | V0.1 surface — emit retry so the panel reloads to the linked-event tid                                                   |   359 |
 | `features/detail/PostDetailTopbar.vue`          | Vue SFC                                                                                                                  |   132 |
 | `features/detail/PostPlaceSheetBlock.vue`       | Vue SFC                                                                                                                  |   192 |
 | `features/detail/PostReplies.vue`               | Vue SFC                                                                                                                  |   102 |
@@ -260,7 +260,7 @@ Total files: 249
 | `shell/shell-chrome-types.ts`  | Named slot kinds rendered inside a shell region. The slot value drives which sub-component (tabs / detail topbar / re... |    81 |
 | `shell/shell-chrome.css`       | Stylesheet                                                                                                               |   273 |
 | `shell/useDetailSheet.ts`      | export function useDetailSheet():                                                                                        |    30 |
-| `shell/useShellChrome.ts`      | export function useShellChrome():                                                                                        |    93 |
+| `shell/useShellChrome.ts`      | export function useShellChrome():                                                                                        |   127 |
 
 ## src/styles/ (5 files)
 
