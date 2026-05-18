@@ -34,11 +34,6 @@ export function useFeedData(options: {
       loading.value = true;
       page.value = 1;
       hasMore.value = true;
-      if (options.detailOpen()) {
-        options.closeDetail();
-      } else {
-        options.resetDetailState();
-      }
     } else {
       loadingMore.value = true;
     }
@@ -65,12 +60,16 @@ export function useFeedData(options: {
     }
   }
 
+  // Tab switch is a user-initiated context change, so it closes the detail
+  // panel. The initial mount load does not — that path needs to leave a
+  // deep-linked detail (#/post/{tid}) intact.
   function switchTab(tabId: string) {
-    if (activeTab.value === tabId) {
-      void loadFeed(true);
-      return;
+    if (options.detailOpen()) {
+      options.closeDetail();
+    } else {
+      options.resetDetailState();
     }
-    activeTab.value = tabId;
+    if (activeTab.value !== tabId) activeTab.value = tabId;
     void loadFeed(true);
   }
 
