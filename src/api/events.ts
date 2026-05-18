@@ -11,13 +11,14 @@
  */
 
 import { apiGet, apiSend } from "./http";
+import { normalizeEventJoinResult } from "../platform/api-normalizers";
 import type {
   ErrandMode,
   ErrandOrder,
   ErrandRunnerLocation,
   EventJoinPolicy,
+  EventJoinResult,
   EventPostExtension,
-  EventReward,
   HelpPostExtension,
   HelpStatus,
 } from "../types/post-extensions";
@@ -33,11 +34,11 @@ export interface CreateEventInput {
   body: string;
   participantScope: Audience;
   allowedOrganizations?: string[];
-  reward?: EventReward;
-  startAt?: string;
-  endAt?: string;
+  startsAt?: string;
+  endsAt?: string;
   location?: PostLocation;
   capacity?: number;
+  rewardSummary?: string;
   joinPolicy: EventJoinPolicy;
 }
 
@@ -57,22 +58,18 @@ export async function fetchEvent(eventId: string): Promise<EventPostExtension> {
   return apiGet<EventPostExtension>(`/api/events/${encodeURIComponent(eventId)}`);
 }
 
-export async function joinEvent(eventId: string): Promise<EventPostExtension> {
-  return apiSend<EventPostExtension>(`/api/events/${encodeURIComponent(eventId)}/join`, {
+export async function joinEvent(eventId: string): Promise<EventJoinResult> {
+  const data = await apiSend<unknown>(`/api/events/${encodeURIComponent(eventId)}/join`, {
     method: "POST",
   });
+  return normalizeEventJoinResult(data);
 }
 
-export async function cancelJoinEvent(eventId: string): Promise<EventPostExtension> {
-  return apiSend<EventPostExtension>(`/api/events/${encodeURIComponent(eventId)}/cancel-join`, {
+export async function cancelJoinEvent(eventId: string): Promise<EventJoinResult> {
+  const data = await apiSend<unknown>(`/api/events/${encodeURIComponent(eventId)}/cancel-join`, {
     method: "POST",
   });
-}
-
-export async function completeEvent(eventId: string): Promise<EventPostExtension> {
-  return apiSend<EventPostExtension>(`/api/events/${encodeURIComponent(eventId)}/complete`, {
-    method: "POST",
-  });
+  return normalizeEventJoinResult(data);
 }
 
 // ---------------------------------------------------------------------------

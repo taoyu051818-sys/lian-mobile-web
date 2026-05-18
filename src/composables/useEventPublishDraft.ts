@@ -1,7 +1,7 @@
 /**
  * Event-publish draft state (PRD V0.1 §6.3 / §11.2).
  *
- * Adds a postType selector plus the event-only fields (startAt, endAt,
+ * Adds a postType selector plus the event-only fields (startsAt, endsAt,
  * capacity, joinPolicy) on top of the base publish draft. Kept as a
  * standalone composable so the existing usePublishDraft stays focused on
  * the post fields shared across all post types.
@@ -18,8 +18,8 @@ export type PublishPostType = "post" | "event";
 
 export function useEventPublishDraft() {
   const postType = ref<PublishPostType>("post");
-  const startAt = ref("");
-  const endAt = ref("");
+  const startsAt = ref("");
+  const endsAt = ref("");
   const capacity = ref("");
   const joinPolicy = ref<EventJoinPolicy>("open");
 
@@ -27,16 +27,16 @@ export function useEventPublishDraft() {
 
   function reset() {
     postType.value = "post";
-    startAt.value = "";
-    endAt.value = "";
+    startsAt.value = "";
+    endsAt.value = "";
     capacity.value = "";
     joinPolicy.value = "open";
   }
 
   return {
     postType,
-    startAt,
-    endAt,
+    startsAt,
+    endsAt,
     capacity,
     joinPolicy,
     isEvent,

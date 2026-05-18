@@ -1,9 +1,12 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
-import { planEventAction } from "../../src/domain/eventActionPolicy";
-import { normalizeEventExtension } from "../../src/platform/api-normalizers";
+import { derivedEventStatus, planEventAction } from "../../src/domain/eventActionPolicy";
+import {
+  normalizeEventExtension,
+  normalizeEventJoinResult,
+} from "../../src/platform/api-normalizers";
 import { normalizePostDetail } from "../../src/api/posts";
-import { DEFAULT_AUDIENCE, type Audience } from "../../src/types/audience";
+import type { Audience } from "../../src/types/audience";
 import type { EventPostExtension } from "../../src/types/post-extensions";
 
 function readRepoFile(rel: string) {
@@ -13,11 +16,7 @@ function readRepoFile(rel: string) {
 function makeEvent(overrides: Partial<EventPostExtension> = {}): EventPostExtension {
   return {
     eventId: "evt-1",
-    participantScope: { ...DEFAULT_AUDIENCE },
-    allowedOrganizations: [],
-    eventStatus: "open",
-    participantCount: 0,
-    joinPolicy: "open",
+    joinedCount: 0,
     ...overrides,
   };
 }
@@ -25,10 +24,35 @@ function makeEvent(overrides: Partial<EventPostExtension> = {}): EventPostExtens
 const allow = (_scope: Audience) => true;
 const deny = (_scope: Audience) => false;
 
+// Wall-clock anchor used in derivedEventStatus tests so they're stable.
+const WALL_2026_06_01_11Z = () => Date.parse("2026-06-01T11:00:00Z");
+
+describe("Phase 4: derivedEventStatus", () => {
+  it("returns 'completed' when endsAt is in the past", () => {
+    const e = makeEvent({ endsAt: "2026-06-01T10:00:00Z" });
+    expect(derivedEventStatus(e, WALL_2026_06_01_11Z)).toBe("completed");
+  });
+
+  it("returns 'full' when capacity reached and endsAt is future/absent", () => {
+    const e = makeEvent({ capacity: 5, joinedCount: 5 });
+    expect(derivedEventStatus(e)).toBe("full");
+  });
+
+  it("treats capacity 0 as unlimited (not full)", () => {
+    const e = makeEvent({ capacity: 0, joinedCount: 999 });
+    expect(derivedEventStatus(e)).toBe("open");
+  });
+
+  it("returns 'open' when capacity not reached and end is future", () => {
+    const e = makeEvent({ capacity: 10, joinedCount: 3, endsAt: "2030-01-01T00:00:00Z" });
+    expect(derivedEventStatus(e)).toBe("open");
+  });
+});
+
 describe("Phase 4: planEventAction (domain/eventActionPolicy)", () => {
   it("authenticated viewer with capacity left and matching scope can join", () => {
     const plan = planEventAction({
-      event: makeEvent({ capacity: 10, participantCount: 3 }),
+      event: makeEvent({ capacity: 10, joinedCount: 3 }),
       isAuthenticated: true,
       hasJoined: false,
       isEligibleForScope: allow,
@@ -51,7 +75,7 @@ describe("Phase 4: planEventAction (domain/eventActionPolicy)", () => {
 
   it("event already joined → cancel button enabled", () => {
     const plan = planEventAction({
-      event: makeEvent({ participantCount: 1 }),
+      event: makeEvent({ joinedCount: 1 }),
       isAuthenticated: true,
       hasJoined: true,
       isEligibleForScope: allow,
@@ -60,20 +84,9 @@ describe("Phase 4: planEventAction (domain/eventActionPolicy)", () => {
     expect(plan.enabled).toBe(true);
   });
 
-  it("non-open status disables join even when eligible and authenticated", () => {
+  it("derived 'full' disables join with `full` reason", () => {
     const plan = planEventAction({
-      event: makeEvent({ eventStatus: "full" }),
-      isAuthenticated: true,
-      hasJoined: false,
-      isEligibleForScope: allow,
-    });
-    expect(plan.mode).toBe("disabled");
-    expect(plan.reasonKey).toBe("notOpen");
-  });
-
-  it("capacity reached disables join with `full` reason", () => {
-    const plan = planEventAction({
-      event: makeEvent({ capacity: 5, participantCount: 5 }),
+      event: makeEvent({ capacity: 5, joinedCount: 5 }),
       isAuthenticated: true,
       hasJoined: false,
       isEligibleForScope: allow,
@@ -82,9 +95,21 @@ describe("Phase 4: planEventAction (domain/eventActionPolicy)", () => {
     expect(plan.reasonKey).toBe("full");
   });
 
+  it("derived 'completed' (endsAt in the past) disables both modes", () => {
+    const plan = planEventAction({
+      event: makeEvent({ endsAt: "2026-06-01T10:00:00Z" }),
+      isAuthenticated: true,
+      hasJoined: false,
+      isEligibleForScope: allow,
+      now: WALL_2026_06_01_11Z,
+    });
+    expect(plan.mode).toBe("disabled");
+    expect(plan.reasonKey).toBe("alreadyEnded");
+  });
+
   it("ineligible scope disables join with `outOfScope` reason", () => {
     const plan = planEventAction({
-      event: makeEvent({ capacity: 10, participantCount: 0 }),
+      event: makeEvent({ capacity: 10, joinedCount: 0 }),
       isAuthenticated: true,
       hasJoined: false,
       isEligibleForScope: deny,
@@ -92,87 +117,74 @@ describe("Phase 4: planEventAction (domain/eventActionPolicy)", () => {
     expect(plan.mode).toBe("disabled");
     expect(plan.reasonKey).toBe("outOfScope");
   });
-
-  it("terminal status (completed/cancelled/closed) disables both modes", () => {
-    for (const status of ["completed", "cancelled", "closed"] as const) {
-      const plan = planEventAction({
-        event: makeEvent({ eventStatus: status }),
-        isAuthenticated: true,
-        hasJoined: false,
-        isEligibleForScope: allow,
-      });
-      expect(plan.mode).toBe("disabled");
-      expect(plan.reasonKey).toBe("alreadyEnded");
-    }
-  });
-
-  it("capacity 0 means unlimited (no cap), not full", () => {
-    const plan = planEventAction({
-      event: makeEvent({ capacity: 0, participantCount: 999 }),
-      isAuthenticated: true,
-      hasJoined: false,
-      isEligibleForScope: allow,
-    });
-    expect(plan.mode).toBe("join");
-    expect(plan.enabled).toBe(true);
-  });
 });
 
 describe("Phase 4: normalizeEventExtension (platform/api-normalizers)", () => {
   it("returns undefined when eventId is missing", () => {
-    expect(normalizeEventExtension({ eventStatus: "open" })).toBeUndefined();
+    expect(normalizeEventExtension({ joinedCount: 3 })).toBeUndefined();
   });
 
-  it("returns undefined when eventStatus is unknown", () => {
-    expect(normalizeEventExtension({ eventId: "x", eventStatus: "wat" })).toBeUndefined();
-  });
-
-  it("normalizes a well-formed payload", () => {
+  it("normalizes a well-formed PR-V4b payload", () => {
     const ext = normalizeEventExtension({
       eventId: "evt-1",
-      eventStatus: "open",
-      joinPolicy: "approval_required",
-      participantCount: 4,
+      startsAt: "2026-06-01T10:00:00Z",
+      endsAt: "2026-06-01T12:00:00Z",
+      location: "图书馆三层",
       capacity: 10,
-      participantScope: { visibility: "school", schoolIds: ["s1"] },
-      allowedOrganizations: ["org-a"],
-      reward: { type: "honor", amount: 5, label: "荣誉" },
-      startAt: "2026-06-01T10:00:00Z",
-      endAt: "2026-06-01T12:00:00Z",
+      rewardSummary: "义工时 +1",
+      joinedCount: 4,
     });
     expect(ext?.eventId).toBe("evt-1");
-    expect(ext?.eventStatus).toBe("open");
-    expect(ext?.joinPolicy).toBe("approval_required");
-    expect(ext?.participantCount).toBe(4);
+    expect(ext?.startsAt).toBe("2026-06-01T10:00:00Z");
+    expect(ext?.endsAt).toBe("2026-06-01T12:00:00Z");
+    expect(ext?.location).toBe("图书馆三层");
     expect(ext?.capacity).toBe(10);
-    expect(ext?.participantScope.visibility).toBe("school");
-    expect(ext?.participantScope.schoolIds).toEqual(["s1"]);
-    expect(ext?.allowedOrganizations).toEqual(["org-a"]);
-    expect(ext?.reward?.type).toBe("honor");
-    expect(ext?.reward?.amount).toBe(5);
-    expect(ext?.startAt).toBe("2026-06-01T10:00:00Z");
+    expect(ext?.rewardSummary).toBe("义工时 +1");
+    expect(ext?.joinedCount).toBe(4);
   });
 
-  it("clamps participantCount to >= 0 and falls back joinPolicy → open", () => {
+  it("clamps joinedCount to >= 0 and tolerates missing optionals", () => {
     const ext = normalizeEventExtension({
       eventId: "x",
-      eventStatus: "open",
-      participantCount: -3,
-      joinPolicy: "made_up",
+      joinedCount: -3,
     });
-    expect(ext?.participantCount).toBe(0);
-    expect(ext?.joinPolicy).toBe("open");
+    expect(ext?.joinedCount).toBe(0);
+    expect(ext?.startsAt).toBeUndefined();
+    expect(ext?.location).toBeUndefined();
+    expect(ext?.capacity).toBeUndefined();
   });
 
-  it("drops malformed reward and unknown participant scope visibility", () => {
+  it("falls back to legacy startAt/endAt/participantCount field names", () => {
     const ext = normalizeEventExtension({
       eventId: "x",
-      eventStatus: "open",
-      reward: { type: "pizza" },
-      participantScope: { visibility: "private-cult" },
+      startAt: "2026-06-01T10:00:00Z",
+      endAt: "2026-06-01T12:00:00Z",
+      participantCount: 7,
     });
-    expect(ext?.reward).toBeUndefined();
-    expect(ext?.participantScope.visibility).toBe("public");
+    expect(ext?.startsAt).toBe("2026-06-01T10:00:00Z");
+    expect(ext?.endsAt).toBe("2026-06-01T12:00:00Z");
+    expect(ext?.joinedCount).toBe(7);
+  });
+});
+
+describe("Phase 4: normalizeEventJoinResult (join/cancel-join response)", () => {
+  it("extracts eventId/joinedCount/joined", () => {
+    const r = normalizeEventJoinResult({
+      ok: true,
+      eventId: "evt-7",
+      joinedCount: 12,
+      joined: true,
+    });
+    expect(r.eventId).toBe("evt-7");
+    expect(r.joinedCount).toBe(12);
+    expect(r.joined).toBe(true);
+  });
+
+  it("clamps joinedCount and falls back joined=false on garbage", () => {
+    const r = normalizeEventJoinResult({ joinedCount: -5 });
+    expect(r.eventId).toBe("");
+    expect(r.joinedCount).toBe(0);
+    expect(r.joined).toBe(false);
   });
 });
 
@@ -184,18 +196,20 @@ describe("Phase 4: post detail wires the event extension", () => {
         title: "Trail run",
         event: {
           eventId: "evt-1",
-          eventStatus: "open",
-          participantCount: 1,
+          startsAt: "2026-06-01T10:00:00Z",
+          endsAt: "2026-06-01T12:00:00Z",
+          location: "图书馆门口",
           capacity: 20,
-          participantScope: { visibility: "campus" },
-          joinPolicy: "open",
+          rewardSummary: "",
+          joinedCount: 1,
         },
         eventJoined: true,
       },
       42,
     );
     expect(detail.event?.eventId).toBe("evt-1");
-    expect(detail.event?.eventStatus).toBe("open");
+    expect(detail.event?.joinedCount).toBe(1);
+    expect(detail.event?.location).toBe("图书馆门口");
     expect(detail.eventJoined).toBe(true);
   });
 
@@ -213,9 +227,15 @@ describe("Phase 4: composable + view wiring", () => {
 
   it("useEventActions delegates the rule decision to planEventAction", () => {
     expect(composable).toMatch(/planEventAction/);
-    // The composable must not reinvent the rules — no embedded status checks.
-    expect(composable).not.toMatch(/eventStatus\s*===\s*['"]open/);
-    expect(composable).not.toMatch(/participantCount\s*>=\s*[A-Za-z0-9_.]*capacity/);
+    // Composable must not reinvent rules — no embedded status checks.
+    expect(composable).not.toMatch(/joinedCount\s*>=\s*[A-Za-z0-9_.]*capacity/);
+  });
+
+  it("useEventActions merges join response (does not replace the event block)", () => {
+    // Guard against regressing back to `options.onChange({ event: next, ... })`
+    // where `next` was the join response — that would drop time/location/etc.
+    expect(composable).toMatch(/\.\.\.event/);
+    expect(composable).toMatch(/joinedCount:\s*result\.joinedCount/);
   });
 
   it("useEventActions falls back to brand string on action failure (soft-fail)", () => {
@@ -232,6 +252,11 @@ describe("Phase 4: composable + view wiring", () => {
     expect(view).toMatch(/EVENT_DISABLED_OUT_OF_SCOPE/);
     expect(view).not.toMatch(/活动信息/);
     expect(view).not.toMatch(/'报名'/);
+  });
+
+  it("PostDetailEventBlock derives status from time + capacity (no eventStatus field on wire)", () => {
+    expect(view).toMatch(/derivedEventStatus/);
+    expect(view).not.toMatch(/event\.eventStatus/);
   });
 
   it("PostDetailPanel wires useEventActions through usePostDetailExtensions", () => {

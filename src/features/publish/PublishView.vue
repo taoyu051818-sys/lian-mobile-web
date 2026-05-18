@@ -78,8 +78,8 @@ const { postDetailUrl, submitPublish } = usePublishSubmit({
   validate: draft.validate,
   resetForm: clearPublishState,
   postType: eventDraft.postType,
-  eventStartAt: eventDraft.startAt,
-  eventEndAt: eventDraft.endAt,
+  eventStartAt: eventDraft.startsAt,
+  eventEndAt: eventDraft.endsAt,
   eventCapacity: eventDraft.capacity,
   eventJoinPolicy: eventDraft.joinPolicy,
   audienceVisibility: draft.visibility,
@@ -240,13 +240,13 @@ onMounted(() => {
 
         <PublishEventControls
           :post-type="eventDraft.postType.value"
-          :start-at="eventDraft.startAt.value"
-          :end-at="eventDraft.endAt.value"
+          :starts-at="eventDraft.startsAt.value"
+          :ends-at="eventDraft.endsAt.value"
           :capacity="eventDraft.capacity.value"
           :join-policy="eventDraft.joinPolicy.value"
           @update:post-type="eventDraft.postType.value = $event"
-          @update:start-at="eventDraft.startAt.value = $event"
-          @update:end-at="eventDraft.endAt.value = $event"
+          @update:starts-at="eventDraft.startsAt.value = $event"
+          @update:ends-at="eventDraft.endsAt.value = $event"
           @update:capacity="eventDraft.capacity.value = $event"
           @update:join-policy="eventDraft.joinPolicy.value = $event"
         />

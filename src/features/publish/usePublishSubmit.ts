@@ -63,8 +63,8 @@ export function usePublishSubmit(options: {
     if (!options.postType || options.postType.value !== "event") return "";
     return validateEventPublishForm(
       {
-        startAt: options.eventStartAt?.value || "",
-        endAt: options.eventEndAt?.value || "",
+        startsAt: options.eventStartAt?.value || "",
+        endsAt: options.eventEndAt?.value || "",
         capacity: options.eventCapacity?.value || "",
         joinPolicy: options.eventJoinPolicy?.value || "open",
       },
@@ -80,8 +80,8 @@ export function usePublishSubmit(options: {
   async function submitEvent() {
     const cap = parseCapacityInput(options.eventCapacity?.value || "");
     const capacity = cap.ok ? cap.capacity : undefined;
-    const startAt = (options.eventStartAt?.value || "").trim();
-    const endAt = (options.eventEndAt?.value || "").trim();
+    const startsAt = (options.eventStartAt?.value || "").trim();
+    const endsAt = (options.eventEndAt?.value || "").trim();
     const audience = normalizeAudience({
       visibility: options.audienceVisibility?.value || options.visibility.value,
     });
@@ -91,8 +91,8 @@ export function usePublishSubmit(options: {
         body: options.body.value,
         participantScope: audience,
         joinPolicy: options.eventJoinPolicy?.value || "open",
-        ...(startAt ? { startAt } : {}),
-        ...(endAt ? { endAt } : {}),
+        ...(startsAt ? { startsAt } : {}),
+        ...(endsAt ? { endsAt } : {}),
         ...(capacity !== undefined ? { capacity } : {}),
       });
       options.lastTid.value = response.tid || null;

@@ -28,8 +28,12 @@ import {
   EVENT_DISABLED_FULL,
   EVENT_DISABLED_OUT_OF_SCOPE,
 } from "../../config/brand";
-import type { EventActionPlan } from "../../domain/eventActionPolicy";
-import type { EventPostExtension, EventStatus } from "../../types/post-extensions";
+import {
+  derivedEventStatus,
+  type EventActionPlan,
+  type EventStatus,
+} from "../../domain/eventActionPolicy";
+import type { EventPostExtension } from "../../types/post-extensions";
 
 const props = defineProps<{
   event: EventPostExtension;
@@ -50,21 +54,22 @@ const STATUS_LABEL: Record<EventStatus, string> = {
   cancelled: EVENT_STATUS_CANCELLED,
 };
 
-const statusLabel = computed(() => STATUS_LABEL[props.event.eventStatus]);
+const status = computed<EventStatus>(() => derivedEventStatus(props.event));
+const statusLabel = computed(() => STATUS_LABEL[status.value]);
 
 const participantLabel = computed(() => {
   const cap =
     typeof props.event.capacity === "number" && props.event.capacity > 0
       ? String(props.event.capacity)
       : EVENT_CAPACITY_UNLIMITED;
-  return `${EVENT_PARTICIPANT_PREFIX} ${props.event.participantCount}${EVENT_PARTICIPANT_OF}${cap}`;
+  return `${EVENT_PARTICIPANT_PREFIX} ${props.event.joinedCount}${EVENT_PARTICIPANT_OF}${cap}`;
 });
 
 const timeRangeLabel = computed(() => {
-  const { startAt, endAt } = props.event;
-  if (startAt && endAt) return `${startAt} ${EVENT_TIME_RANGE_SEPARATOR} ${endAt}`;
-  if (startAt) return startAt;
-  if (endAt) return endAt;
+  const { startsAt, endsAt } = props.event;
+  if (startsAt && endsAt) return `${startsAt} ${EVENT_TIME_RANGE_SEPARATOR} ${endsAt}`;
+  if (startsAt) return startsAt;
+  if (endsAt) return endsAt;
   return "";
 });
 
@@ -96,9 +101,7 @@ const disabledReason = computed(() => {
     data-testid="post-detail-event-block"
   >
     <header class="post-detail-event-block__header">
-      <span class="post-detail-event-block__status" :data-status="event.eventStatus">{{
-        statusLabel
-      }}</span>
+      <span class="post-detail-event-block__status" :data-status="status">{{ statusLabel }}</span>
       <span v-if="timeRangeLabel" class="post-detail-event-block__time">{{ timeRangeLabel }}</span>
     </header>
 

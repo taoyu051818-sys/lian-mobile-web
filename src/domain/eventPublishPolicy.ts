@@ -7,7 +7,7 @@
  * refs and can be reused from the publish composable, future inline
  * validation, or contract tests.
  *
- * V0.1 scope: validate startAt < endAt, capacity >= 0 (or undefined),
+ * V0.1 scope: validate startsAt < endsAt, capacity >= 0 (or undefined),
  * joinPolicy is a known token. participantScope is reused from the post
  * audience and validated by the audience composable, so it is not
  * re-checked here.
@@ -23,8 +23,8 @@ const KNOWN_JOIN_POLICIES: ReadonlySet<EventJoinPolicy> = new Set([
 ]);
 
 export interface EventPublishDraft {
-  startAt: string;
-  endAt: string;
+  startsAt: string;
+  endsAt: string;
   capacity: string;
   joinPolicy: EventJoinPolicy;
 }
@@ -69,8 +69,8 @@ export function validateEventPublishForm(
     return cap.reason === "negative" ? messages.capacityNegative : messages.capacityNotInt;
   }
 
-  const start = draft.startAt.trim();
-  const end = draft.endAt.trim();
+  const start = draft.startsAt.trim();
+  const end = draft.endsAt.trim();
   if (start && end) {
     const startMs = Date.parse(start);
     const endMs = Date.parse(end);

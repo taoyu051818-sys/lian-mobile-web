@@ -1,16 +1,6 @@
 import type { DisplayActor, SourceSignal } from "../types/feed";
 import type { PlaceRef, PlaceStatus } from "../types/place";
-import type { Audience } from "../types/audience";
-import { normalizeAudience } from "../types/audience";
-import type {
-  EventJoinPolicy,
-  EventPostExtension,
-  EventReward,
-  EventStatus,
-  HelpPostExtension,
-  HelpStatus,
-} from "../types/post-extensions";
-import type { PostLocation } from "../types/post";
+import type { EventPostExtension, HelpPostExtension, HelpStatus } from "../types/post-extensions";
 
 type JsonRecord = Record<string, unknown>;
 
@@ -127,84 +117,21 @@ export function normalizePlaceRef(value: unknown): PlaceRef | undefined {
   };
 }
 
-const EVENT_STATUSES: ReadonlySet<EventStatus> = new Set([
-  "open",
-  "full",
-  "closed",
-  "completed",
-  "cancelled",
-]);
-
-const EVENT_JOIN_POLICIES: ReadonlySet<EventJoinPolicy> = new Set([
-  "open",
-  "approval_required",
-  "org_only",
-  "school_only",
-]);
-
-const EVENT_REWARD_TYPES: ReadonlySet<EventReward["type"]> = new Set([
-  "contribution",
-  "honor",
-  "coupon",
-  "credit",
-  "custom",
-]);
-
-function normalizeEventReward(value: unknown): EventReward | undefined {
-  const record = asRecord(value);
-  const rawType = optionalString(record.type);
-  if (!rawType || !EVENT_REWARD_TYPES.has(rawType as EventReward["type"])) return undefined;
-  const reward: EventReward = { type: rawType as EventReward["type"] };
-  if (typeof record.amount === "number" && Number.isFinite(record.amount)) {
-    reward.amount = record.amount;
-  } else if (typeof record.amount === "string" && record.amount.trim()) {
-    const parsed = Number(record.amount);
-    if (Number.isFinite(parsed)) reward.amount = parsed;
-  }
-  const label = optionalString(record.label);
-  if (label) reward.label = label;
-  return reward;
-}
-
-function normalizePostLocation(value: unknown): PostLocation | undefined {
-  if (!value || typeof value !== "object") return undefined;
-  const record = value as Record<string, unknown>;
-  const placeId = asString(record.placeId);
-  const label = asString(record.label);
-  if (!placeId && !label) return undefined;
-  const lat = typeof record.lat === "number" && Number.isFinite(record.lat) ? record.lat : null;
-  const lng = typeof record.lng === "number" && Number.isFinite(record.lng) ? record.lng : null;
-  return {
-    placeId,
-    label,
-    lat,
-    lng,
-    place: normalizePlaceRef(record.place),
-  };
-}
-
 /**
- * Coerce a raw payload into an EventPostExtension. Returns undefined when the
- * payload does not look like an event (no eventId or unknown status). Never
- * throws — callers can render the post even when the event extension is
- * missing or malformed.
+ * Coerce a raw payload into an EventPostExtension. Returns undefined only when
+ * eventId is absent — every other field is optional and degrades gracefully.
+ * Wire shape mirrors backend `metadata.event` after PR-V4b: additive,
+ * time/capacity/joinedCount only. The frontend derives event status from
+ * those fields (see `derivedEventStatus` in domain/eventActionPolicy).
  */
 export function normalizeEventExtension(value: unknown): EventPostExtension | undefined {
   const record = asRecord(value);
   const eventId = optionalString(record.eventId);
   if (!eventId) return undefined;
-  const rawStatus = optionalString(record.eventStatus);
-  if (!rawStatus || !EVENT_STATUSES.has(rawStatus as EventStatus)) return undefined;
-  const rawJoin = optionalString(record.joinPolicy);
-  const joinPolicy: EventJoinPolicy = EVENT_JOIN_POLICIES.has(rawJoin as EventJoinPolicy)
-    ? (rawJoin as EventJoinPolicy)
-    : "open";
-  const participantScope: Audience = normalizeAudience(record.participantScope);
-  const allowedOrganizations = asStringArray(record.allowedOrganizations);
-  const reward = normalizeEventReward(record.reward);
-  const startAt = optionalString(record.startAt);
-  const endAt = optionalString(record.endAt);
-  const location = normalizePostLocation(record.location);
+  const startsAt = optionalString(record.startsAt) || optionalString(record.startAt);
+  const endsAt = optionalString(record.endsAt) || optionalString(record.endAt);
+  const location = optionalString(record.location);
+  const rewardSummary = optionalString(record.rewardSummary);
   const capacityRaw = record.capacity;
   let capacity: number | undefined;
   if (typeof capacityRaw === "number" && Number.isFinite(capacityRaw) && capacityRaw >= 0) {
@@ -213,20 +140,37 @@ export function normalizeEventExtension(value: unknown): EventPostExtension | un
     const parsed = Number(capacityRaw);
     if (Number.isFinite(parsed) && parsed >= 0) capacity = Math.trunc(parsed);
   }
-  const participantCount = Math.max(0, Math.trunc(asNumber(record.participantCount, 0)));
+  const joinedCount = Math.max(
+    0,
+    Math.trunc(asNumber(record.joinedCount ?? record.participantCount, 0)),
+  );
 
   return {
     eventId,
-    participantScope,
-    allowedOrganizations,
-    ...(reward ? { reward } : {}),
-    eventStatus: rawStatus as EventStatus,
-    ...(startAt ? { startAt } : {}),
-    ...(endAt ? { endAt } : {}),
+    ...(startsAt ? { startsAt } : {}),
+    ...(endsAt ? { endsAt } : {}),
     ...(location ? { location } : {}),
     ...(capacity !== undefined ? { capacity } : {}),
-    participantCount,
-    joinPolicy,
+    ...(rewardSummary ? { rewardSummary } : {}),
+    joinedCount,
+  };
+}
+
+/**
+ * Coerce the join/cancel-join response shape `{ ok, eventId, joinedCount, joined }`
+ * — the backend returns only these three authoritative fields, the rest of the
+ * event block stays as the previously fetched detail.
+ */
+export function normalizeEventJoinResult(value: unknown): {
+  eventId: string;
+  joinedCount: number;
+  joined: boolean;
+} {
+  const record = asRecord(value);
+  return {
+    eventId: optionalString(record.eventId) || "",
+    joinedCount: Math.max(0, Math.trunc(asNumber(record.joinedCount, 0))),
+    joined: asBoolean(record.joined),
   };
 }
 

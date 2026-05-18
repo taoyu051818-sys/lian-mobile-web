@@ -30,16 +30,16 @@ import type { PublishPostType } from "../../composables/useEventPublishDraft";
 
 defineProps<{
   postType: PublishPostType;
-  startAt: string;
-  endAt: string;
+  startsAt: string;
+  endsAt: string;
   capacity: string;
   joinPolicy: EventJoinPolicy;
 }>();
 
 const emit = defineEmits<{
   "update:postType": [value: PublishPostType];
-  "update:startAt": [value: string];
-  "update:endAt": [value: string];
+  "update:startsAt": [value: string];
+  "update:endsAt": [value: string];
   "update:capacity": [value: string];
   "update:joinPolicy": [value: EventJoinPolicy];
 }>();
@@ -94,9 +94,9 @@ const JOIN_POLICY_OPTIONS: Array<{ value: EventJoinPolicy; label: string }> = [
       <span>{{ PUBLISH_EVENT_START_AT }}</span>
       <input
         type="datetime-local"
-        :value="startAt"
+        :value="startsAt"
         data-testid="publish-event-start-at"
-        @input="emit('update:startAt', ($event.target as HTMLInputElement).value)"
+        @input="emit('update:startsAt', ($event.target as HTMLInputElement).value)"
       />
     </label>
 
@@ -104,9 +104,9 @@ const JOIN_POLICY_OPTIONS: Array<{ value: EventJoinPolicy; label: string }> = [
       <span>{{ PUBLISH_EVENT_END_AT }}</span>
       <input
         type="datetime-local"
-        :value="endAt"
+        :value="endsAt"
         data-testid="publish-event-end-at"
-        @input="emit('update:endAt', ($event.target as HTMLInputElement).value)"
+        @input="emit('update:endsAt', ($event.target as HTMLInputElement).value)"
       />
     </label>
 
