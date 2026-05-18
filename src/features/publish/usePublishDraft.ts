@@ -23,6 +23,9 @@ import type { AudienceVisibility } from "../../types/audience";
 import { useAudienceOptions } from "../../composables/useAudienceOptions";
 import { usePublishIdentity } from "./usePublishIdentity";
 import { usePublishAi } from "./usePublishAi";
+import { useMerchantPublishDraft } from "./useMerchantPublishDraft";
+
+export type PublishKind = "regular" | "merchant";
 
 /**
  * Composes the three slices of publish-form state — form fields & uploads
@@ -73,6 +76,9 @@ export function usePublishDraft() {
 
   const identity = usePublishIdentity();
 
+  const merchant = useMerchantPublishDraft();
+  const publishKind = ref<PublishKind>("regular");
+
   // AI draft (PRD V0.1 Phase 3). Suggestions only fill empty fields, and AI
   // failures stay silent — manual entry always works. Decision lives in
   // domain/publishAiPolicy; this composable just owns the wiring.
@@ -92,13 +98,13 @@ export function usePublishDraft() {
       PUBLISH_VIS_PUBLIC,
   );
 
-  const canSubmit = computed(
-    () =>
-      title.value.trim().length > 0 &&
-      body.value.trim().length > 0 &&
-      !uploading.value &&
-      !publishing.value,
-  );
+  const canSubmit = computed(() => {
+    if (title.value.trim().length === 0) return false;
+    if (body.value.trim().length === 0) return false;
+    if (uploading.value || publishing.value) return false;
+    if (publishKind.value === "merchant") return merchant.canSubmit.value;
+    return true;
+  });
   const titleCount = computed(() => title.value.length);
   const bodyCount = computed(() => body.value.length);
   const imageStatus = computed(() => {
@@ -204,6 +210,8 @@ export function usePublishDraft() {
     uploadedImageUrls.value = [];
     tagPanelOpen.value = false;
     visibilityPanelOpen.value = false;
+    publishKind.value = "regular";
+    merchant.reset();
     clearLocation();
     revokePreviewUrls();
   }
@@ -258,5 +266,7 @@ export function usePublishDraft() {
     aiRiskFlags: ai.aiRiskFlags,
     aiRefresh: ai.aiRefresh,
     notifyFirstUploadComplete,
+    publishKind,
+    merchant,
   };
 }

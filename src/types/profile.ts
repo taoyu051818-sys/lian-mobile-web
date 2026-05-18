@@ -1,4 +1,5 @@
 import type { FeedItemId } from "./feed";
+import type { VerificationState, VerificationTag } from "./verification";
 
 export type ProfileTabKey = "history" | "saved" | "liked";
 
@@ -26,6 +27,19 @@ export interface ProfileUser {
   activeAliasId?: string | null;
   invitePermission?: boolean;
   status?: string;
+  /**
+   * PRD V0.1 §17 — verification records keyed by tag (campus_verified,
+   * merchant_verified, ...). Backend `/api/auth/me` returns this after #381.
+   * Use `verificationState[tag]?.active` for the gate; reading `revokedAt`
+   * directly will mis-classify expired-but-not-revoked records.
+   */
+  verificationState?: VerificationState;
+  /**
+   * Flat list of currently-active verification tags. Mirrors
+   * `Object.entries(verificationState).filter(([, r]) => r.active)`. Kept
+   * as a convenience for places that just need a yes/no answer.
+   */
+  verificationTags?: VerificationTag[];
 }
 
 export interface ProfileListItem {

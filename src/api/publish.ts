@@ -1,6 +1,8 @@
 import { apiSend, apiUpload } from "./http";
 import type { PlaceRef } from "../types/place";
 import type {
+  MerchantContentType,
+  MerchantPublishInput,
   PublishLocationDraft,
   PublishPayload,
   PublishResponse,
@@ -169,6 +171,13 @@ export function buildPublishPayload(input: {
   aliasId?: string;
   locationDraft?: PublishLocationDraft | null;
   audience?: Audience;
+  /**
+   * PRD §10 — when present, the post enters the merchant publish path:
+   * `metadata.presentationIntent = "merchant"` + top-level `contentType`
+   * (`merchant_food` / `_service` / `_retail`) + top-level `merchant` block.
+   * Backend (#383) requires `merchant_verified` on the actor for this path.
+   */
+  merchant?: { input: MerchantPublishInput; contentType: MerchantContentType };
 }): PublishPayload {
   const locationDraft = input.locationDraft || createManualLocationDraft(input.placeName);
   const locationArea = locationDraft.skipped ? "" : locationDraft.locationArea;
@@ -185,6 +194,9 @@ export function buildPublishPayload(input: {
   if (!isDefaultAudience(audience)) {
     metadata.audience = audience;
   }
+  if (input.merchant) {
+    metadata.presentationIntent = "merchant";
+  }
 
   return {
     imageUrl: input.imageUrls[0] || "",
@@ -200,6 +212,9 @@ export function buildPublishPayload(input: {
     needsHumanReview: false,
     aiMode: locationDraft.source === "map_v2" ? "manual-vue-map-v2" : "manual-vue",
     aliasId: input.aliasId,
+    ...(input.merchant
+      ? { contentType: input.merchant.contentType, merchant: input.merchant.input }
+      : {}),
   };
 }
 

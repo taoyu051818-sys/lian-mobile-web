@@ -10,6 +10,8 @@ import {
   PUBLISH_EVENT_CAPACITY_NOT_INT,
   PUBLISH_EVENT_CAPACITY_NEGATIVE,
   PUBLISH_EVENT_JOIN_POLICY_UNKNOWN,
+  PUBLISH_MERCHANT_GATE_BLOCK,
+  PUBLISH_MERCHANT_NAME_REQUIRED,
 } from "../../config/brand";
 import { extractErrorMessage } from "../../utils/extractErrorMessage";
 import { buildPublishPayload, publishPost } from "../../api/publish";
@@ -17,8 +19,14 @@ import { createEvent } from "../../api/events";
 import { parseCapacityInput, validateEventPublishForm } from "../../domain/eventPublishPolicy";
 import { normalizeAudience } from "../../types/audience";
 import type { EventJoinPolicy } from "../../types/post-extensions";
-import type { PublishLocationDraft, PublishVisibility } from "../../types/publish";
+import type {
+  MerchantContentType,
+  MerchantPublishInput,
+  PublishLocationDraft,
+  PublishVisibility,
+} from "../../types/publish";
 import type { PublishPostType } from "../../composables/useEventPublishDraft";
+import type { PublishKind } from "./usePublishDraft";
 
 export function usePublishSubmit(options: {
   title: Ref<string>;
@@ -48,6 +56,13 @@ export function usePublishSubmit(options: {
   eventCapacity?: Ref<string>;
   eventJoinPolicy?: Ref<EventJoinPolicy>;
   audienceVisibility?: Ref<PublishVisibility>;
+  // PRD §10 — when `publishKind=merchant`, the post enters the merchant
+  // publish path and the gate/payload are required. The composable resolves
+  // the payload lazily via `merchantPayload()` so the caller can keep its
+  // own draft state (form fields, validation) without leaking refs here.
+  publishKind?: Ref<PublishKind>;
+  merchantPayload?: () => { input: MerchantPublishInput; contentType: MerchantContentType };
+  merchantVerified?: Ref<boolean>;
 }) {
   const postDetailUrl = computed(() => {
     const tid = options.lastTid.value;
@@ -77,6 +92,15 @@ export function usePublishSubmit(options: {
     );
   }
 
+  function validateMerchantFields(): string {
+    if (options.publishKind?.value !== "merchant") return "";
+    if (!options.merchantVerified?.value) return PUBLISH_MERCHANT_GATE_BLOCK;
+    if (!options.merchantPayload) return "";
+    const { input } = options.merchantPayload();
+    if (!input.name) return PUBLISH_MERCHANT_NAME_REQUIRED;
+    return "";
+  }
+
   async function submitEvent() {
     const cap = parseCapacityInput(options.eventCapacity?.value || "");
     const capacity = cap.ok ? cap.capacity : undefined;
@@ -104,7 +128,7 @@ export function usePublishSubmit(options: {
   }
 
   async function submitPublish() {
-    const validation = options.validate() || validateEventFields();
+    const validation = options.validate() || validateEventFields() || validateMerchantFields();
     options.errorMessage.value = validation;
     options.successMessage.value = "";
     options.lastTid.value = null;
@@ -116,6 +140,10 @@ export function usePublishSubmit(options: {
         await submitEvent();
         return;
       }
+      const merchant =
+        options.publishKind?.value === "merchant" && options.merchantPayload
+          ? options.merchantPayload()
+          : undefined;
       const publishedLocationLabel = options.locationPreviewLabel.value;
       const payload = buildPublishPayload({
         imageUrls: options.uploadedImageUrls.value,
@@ -127,6 +155,7 @@ export function usePublishSubmit(options: {
         visibility: options.visibility.value,
         aliasId: options.aliasId.value,
         locationDraft: options.selectedLocationDraft.value,
+        ...(merchant ? { merchant } : {}),
       });
       const response = await publishPost(payload);
       options.lastTid.value = response.tid || null;
