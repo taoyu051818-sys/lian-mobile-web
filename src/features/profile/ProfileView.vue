@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
+import { computed, onMounted, ref } from "vue";
 import { fetchAuthMe, logoutAuth } from "../../api/profile";
 import {
+  ADMIN_ENTER_LABEL,
   LOADING_PROFILE,
   ERROR_LOAD_GENERIC,
   ERROR_LOGOUT,
@@ -24,10 +25,14 @@ import { useProfileSession } from "./useProfileSession";
 import { useProfileTabs } from "./useProfileTabs";
 import { useProfileChrome } from "./useProfileChrome";
 import { useProfileAliasPicker } from "./useProfileAliasPicker";
+import { useActiveView } from "../../app/useActiveView";
 
 const emit = defineEmits<{
   chrome: [spec: PageChromeSpec];
 }>();
+
+const { setActiveView } = useActiveView();
+const adminEntryVisible = computed(() => import.meta.env.VITE_ADMIN_VISIBLE === "true");
 
 const { user, loading, errorMessage, isMissingSessionError, refreshCurrentSession } =
   useProfileSession();
@@ -187,6 +192,12 @@ onMounted(() => {
         @close="closeDetail"
         @retry="retryDetail"
       />
+
+      <footer v-if="adminEntryVisible" class="profile-view__admin-entry">
+        <button type="button" class="profile-view__admin-link" @click="setActiveView('admin')">
+          {{ ADMIN_ENTER_LABEL }}
+        </button>
+      </footer>
     </template>
 
     <section v-else class="profile-view__guest">
@@ -226,6 +237,32 @@ onMounted(() => {
   display: grid;
   gap: var(--space-4);
   padding-top: var(--space-6);
+}
+
+.profile-view__admin-entry {
+  display: flex;
+  justify-content: center;
+  margin-top: var(--space-6);
+  padding-top: var(--space-4);
+  border-top: 1px dashed var(--lian-line);
+}
+
+.profile-view__admin-link {
+  padding: var(--space-1) var(--space-3);
+  border: 0;
+  background: none;
+  color: var(--lian-muted);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  opacity: 0.6;
+  transition: opacity var(--motion-fast) var(--motion-ease-standard);
+}
+
+.profile-view__admin-link:hover,
+.profile-view__admin-link:focus-visible {
+  opacity: 1;
+  text-decoration: underline;
 }
 
 .inline-error button {

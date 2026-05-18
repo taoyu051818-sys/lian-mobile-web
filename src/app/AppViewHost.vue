@@ -21,6 +21,7 @@ const viewComponents: Record<AppViewKey, Component> = {
   publish: asyncView(() => import("../features/publish").then((m) => m.PublishView)),
   messages: asyncView(() => import("../features/messages").then((m) => m.MessagesView)),
   profile: asyncView(() => import("../features/profile").then((m) => m.ProfileView)),
+  admin: asyncView(() => import("../features/admin").then((m) => m.AdminView)),
 };
 
 const props = defineProps({
@@ -29,13 +30,18 @@ const props = defineProps({
 
 const emit = defineEmits<{
   chrome: [payload: PageChromeSpec];
+  close: [];
 }>();
 </script>
 
 <template>
   <div class="app-view-host">
     <KeepAlive include="MapLeafletView">
-      <component :is="viewComponents[props.activeViewKey]" @chrome="emit('chrome', $event)" />
+      <component
+        :is="viewComponents[props.activeViewKey]"
+        @chrome="emit('chrome', $event)"
+        @close="emit('close')"
+      />
     </KeepAlive>
   </div>
 </template>
