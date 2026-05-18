@@ -117,8 +117,8 @@ Total files: 234
 | `features/detail/PostDetailInfoStrip.vue`       | Vue SFC                                                                                                                  |   113 |
 | `features/detail/PostDetailLightbox.vue`        | Vue SFC                                                                                                                  |    43 |
 | `features/detail/PostDetailMainBody.vue`        | Vue SFC                                                                                                                  |    44 |
-| `features/detail/PostDetailPanel.vue`           | V0.1 surface — emit retry so the panel reloads to the linked-event tid                                                   |   364 |
-| `features/detail/PostDetailTopbar.vue`          | Vue SFC                                                                                                                  |   152 |
+| `features/detail/PostDetailPanel.vue`           | V0.1 surface — emit retry so the panel reloads to the linked-event tid                                                   |   369 |
+| `features/detail/PostDetailTopbar.vue`          | Vue SFC                                                                                                                  |   132 |
 | `features/detail/PostPlaceSheetBlock.vue`       | Vue SFC                                                                                                                  |   192 |
 | `features/detail/PostReplies.vue`               | Vue SFC                                                                                                                  |   102 |
 | `features/detail/PostReplyDock.vue`             | Vue SFC                                                                                                                  |   161 |
@@ -236,17 +236,17 @@ Total files: 234
 | `shell/AppShell.vue`           | Vue SFC                                                                                                                  |    63 |
 | `shell/ContentFrame.vue`       | Vue SFC                                                                                                                  |    28 |
 | `shell/DetailSheet.vue`        | Vue SFC                                                                                                                  |    65 |
-| `shell/ShellChrome.vue`        | Bottom region stays mounted across detail open/close because it now hosts                                                |   159 |
+| `shell/ShellChrome.vue`        | Both regions stay mounted across detail open/close when they host a slot                                                 |   183 |
 | `shell/content-frame.css`      | Stylesheet                                                                                                               |    22 |
 | `shell/detail-sheet-types.ts`  | suppressLoading?: boolean; } export interface DetailSheetPlacePayload { placeId: string; } export interface DetailS...   |    32 |
 | `shell/detail-sheet.css`       | Stylesheet                                                                                                               |    81 |
 | `shell/floatingChromeState.ts` | export type ChromePhase = "idle" \| "opening" \| "open" \| "dragging" \| "returning";                                    |    20 |
 | `shell/index.ts`               | export type                                                                                                              |    25 |
 | `shell/page-model.ts`          | export interface PageChromeTopSpec                                                                                       |    28 |
-| `shell/shell-chrome-types.ts`  | Named slot kinds rendered inside a shell region. The slot value drives which sub-component (tabs / detail topbar / re... |    80 |
-| `shell/shell-chrome.css`       | Stylesheet                                                                                                               |   225 |
+| `shell/shell-chrome-types.ts`  | Named slot kinds rendered inside a shell region. The slot value drives which sub-component (tabs / detail topbar / re... |    81 |
+| `shell/shell-chrome.css`       | Stylesheet                                                                                                               |   273 |
 | `shell/useDetailSheet.ts`      | export function useDetailSheet():                                                                                        |    30 |
-| `shell/useShellChrome.ts`      | export function useShellChrome():                                                                                        |    90 |
+| `shell/useShellChrome.ts`      | export function useShellChrome():                                                                                        |    93 |
 
 ## src/styles/ (5 files)
 
@@ -254,7 +254,7 @@ Total files: 234
 | --------------------------------- | ---------- | ----: |
 | `styles/chrome-surface.css`       | Stylesheet |    36 |
 | `styles/content-immersive-ui.css` | Stylesheet |    92 |
-| `styles/floating-chrome.css`      | Stylesheet |    31 |
+| `styles/floating-chrome.css`      | Stylesheet |    20 |
 | `styles/lian-tokens.css`          | Stylesheet |   106 |
 | `styles/main.css`                 | Stylesheet |   164 |
 

@@ -44,8 +44,9 @@ export interface ChromeIdentitySpec {
 export interface ShellChromeRegionSpec {
   buttons?: ChromeButtonSpec[];
   visible?: boolean;
-  /** Named slot rendered by ShellChrome. See ChromeSlotKind for valid values. */
-  slot?: ChromeSlotKind;
+  /** Named slot rendered by ShellChrome. See ChromeSlotKind for valid values.
+   * Pass null to clear an active slot (mirrors the tabs/onTabSelect pattern). */
+  slot?: ChromeSlotKind | null;
   /** Typed tab spec. When set, ShellChrome renders the tab nav directly. */
   tabs?: ChromeTabSpec | null;
   /** Filter toggle buttons (e.g. map layers). */
