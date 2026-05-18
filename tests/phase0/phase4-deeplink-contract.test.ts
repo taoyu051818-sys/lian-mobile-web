@@ -106,6 +106,23 @@ describe("Phase 4 (deeplink): consumers wire the hash into the SPA", () => {
     expect(useFeedDetailHistory).not.toMatch(/window\.location\.href/);
   });
 
+  it("onWindowPopState only closes the panel when the URL no longer points to a detail", () => {
+    // A spurious popstate fired while detailTid is still non-null used to call
+    // closeDetail mid-flight, which (a) bumped the loader token so the in-flight
+    // fetch's finally branch skipped clearing detailLoading, and (b) tore down
+    // the PostDetailPanel mid-render — leaving the panel stuck on
+    // "正在加载详情…". The handler must early-return when detailTid is still
+    // set; FeedView's detailTid watch handles legitimate forward-nav itself.
+    const block = useFeedDetailHistory.match(/function onWindowPopState[\s\S]*?\n {2}}/)?.[0] ?? "";
+    expect(block.length).toBeGreaterThan(0);
+    expect(block).toMatch(/detailTid\.value !== null/);
+    expect(block).toMatch(/return;?\s*\n/);
+    // The old guard `!detailOpen.value && detailTid.value === null` always fell
+    // through to onPopState() when the panel was open. The new handler must
+    // not call onPopState() while detailTid is still non-null.
+    expect(block).not.toMatch(/!options\.detailOpen\.value && detailTid\.value === null/);
+  });
+
   it("useFeedData no longer closes the detail on initial mount load", () => {
     // Initial mount must not clobber a deep-link-opened detail. The close-detail
     // wiring should live in the user-initiated switchTab path only.
