@@ -11,6 +11,7 @@ import {
   PUBLISH_TYPE_LABEL,
   PUBLISH_TYPE_REGULAR,
   PUBLISH_TYPE_MERCHANT,
+  PUBLISH_TYPE_TRADE,
 } from "../../config/brand";
 import { GlassPanel, InlineError } from "../../ui";
 import PublishActionBar from "./PublishActionBar.vue";
@@ -19,6 +20,7 @@ import PublishLocationControls from "./PublishLocationControls.vue";
 import PublishMetaControls from "./PublishMetaControls.vue";
 import PublishEventControls from "./PublishEventControls.vue";
 import PublishMerchantControls from "./PublishMerchantControls.vue";
+import PublishTradeControls from "./PublishTradeControls.vue";
 import { usePublishDraft } from "./usePublishDraft";
 import { usePublishLocationOptions } from "./usePublishLocationOptions";
 import { clearPublishDraft } from "./publishDraftSession";
@@ -49,6 +51,9 @@ watch(
   (kind) => {
     if (kind === "merchant" && !draft.merchant.verificationLoaded.value) {
       void draft.merchant.refreshVerification();
+    }
+    if (kind === "trade" && !draft.trade.verificationLoaded.value) {
+      void draft.trade.refreshVerification();
     }
   },
   { immediate: false },
@@ -106,6 +111,8 @@ const { postDetailUrl, submitPublish } = usePublishSubmit({
   publishKind: draft.publishKind,
   merchantPayload: () => draft.merchant.payload(),
   merchantVerified: draft.merchant.merchantVerified,
+  tradePayload: () => draft.trade.payload(),
+  tradeVerified: draft.trade.campusVerified,
 });
 
 function requestResetForm() {
@@ -230,6 +237,20 @@ onMounted(() => {
             />
             <span>{{ PUBLISH_TYPE_MERCHANT }}</span>
           </label>
+          <label
+            class="publish-view__type-option"
+            :class="{ 'is-active': draft.publishKind.value === 'trade' }"
+          >
+            <input
+              type="radio"
+              name="publish-kind"
+              value="trade"
+              data-testid="publish-type-trade"
+              :checked="draft.publishKind.value === 'trade'"
+              @change="draft.publishKind.value = 'trade'"
+            />
+            <span>{{ PUBLISH_TYPE_TRADE }}</span>
+          </label>
         </fieldset>
 
         <PublishMerchantControls
@@ -246,6 +267,19 @@ onMounted(() => {
           @update:hours="draft.merchant.hours.value = $event"
           @update:contact="draft.merchant.contact.value = $event"
           @update:errand-supported="draft.merchant.errandSupported.value = $event"
+          @go-verify="goToVerification"
+        />
+
+        <PublishTradeControls
+          v-if="draft.publishKind.value === 'trade'"
+          :campus-verified="draft.trade.campusVerified.value"
+          :verification-loaded="draft.trade.verificationLoaded.value"
+          :price="draft.trade.price.value"
+          :state="draft.trade.state.value"
+          :category="draft.trade.category.value"
+          @update:price="draft.trade.price.value = $event"
+          @update:state="draft.trade.state.value = $event"
+          @update:category="draft.trade.category.value = $event"
           @go-verify="goToVerification"
         />
         <PublishComposer

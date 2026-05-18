@@ -12,6 +12,8 @@ import {
   PUBLISH_EVENT_JOIN_POLICY_UNKNOWN,
   PUBLISH_MERCHANT_GATE_BLOCK,
   PUBLISH_MERCHANT_NAME_REQUIRED,
+  PUBLISH_TRADE_GATE_BLOCK,
+  PUBLISH_TRADE_PRICE_REQUIRED,
 } from "../../config/brand";
 import { extractErrorMessage } from "../../utils/extractErrorMessage";
 import { buildPublishPayload, publishPost } from "../../api/publish";
@@ -24,6 +26,8 @@ import type {
   MerchantPublishInput,
   PublishLocationDraft,
   PublishVisibility,
+  TradeContentType,
+  TradePublishInput,
 } from "../../types/publish";
 import type { PublishPostType } from "../../composables/useEventPublishDraft";
 import type { PublishKind } from "./usePublishDraft";
@@ -63,6 +67,10 @@ export function usePublishSubmit(options: {
   publishKind?: Ref<PublishKind>;
   merchantPayload?: () => { input: MerchantPublishInput; contentType: MerchantContentType };
   merchantVerified?: Ref<boolean>;
+  // PRD §11 — same shape for trade. campus_verified gate, single
+  // contentType="trade", price-required validation.
+  tradePayload?: () => { input: TradePublishInput; contentType: TradeContentType };
+  tradeVerified?: Ref<boolean>;
 }) {
   const postDetailUrl = computed(() => {
     const tid = options.lastTid.value;
@@ -101,6 +109,15 @@ export function usePublishSubmit(options: {
     return "";
   }
 
+  function validateTradeFields(): string {
+    if (options.publishKind?.value !== "trade") return "";
+    if (!options.tradeVerified?.value) return PUBLISH_TRADE_GATE_BLOCK;
+    if (!options.tradePayload) return "";
+    const { input } = options.tradePayload();
+    if (!input.price) return PUBLISH_TRADE_PRICE_REQUIRED;
+    return "";
+  }
+
   async function submitEvent() {
     const cap = parseCapacityInput(options.eventCapacity?.value || "");
     const capacity = cap.ok ? cap.capacity : undefined;
@@ -128,7 +145,11 @@ export function usePublishSubmit(options: {
   }
 
   async function submitPublish() {
-    const validation = options.validate() || validateEventFields() || validateMerchantFields();
+    const validation =
+      options.validate() ||
+      validateEventFields() ||
+      validateMerchantFields() ||
+      validateTradeFields();
     options.errorMessage.value = validation;
     options.successMessage.value = "";
     options.lastTid.value = null;
@@ -144,6 +165,10 @@ export function usePublishSubmit(options: {
         options.publishKind?.value === "merchant" && options.merchantPayload
           ? options.merchantPayload()
           : undefined;
+      const trade =
+        options.publishKind?.value === "trade" && options.tradePayload
+          ? options.tradePayload()
+          : undefined;
       const publishedLocationLabel = options.locationPreviewLabel.value;
       const payload = buildPublishPayload({
         imageUrls: options.uploadedImageUrls.value,
@@ -156,6 +181,7 @@ export function usePublishSubmit(options: {
         aliasId: options.aliasId.value,
         locationDraft: options.selectedLocationDraft.value,
         ...(merchant ? { merchant } : {}),
+        ...(trade ? { trade } : {}),
       });
       const response = await publishPost(payload);
       options.lastTid.value = response.tid || null;

@@ -7,6 +7,8 @@ import type {
   PublishPayload,
   PublishResponse,
   PublishVisibility,
+  TradeContentType,
+  TradePublishInput,
   UploadImageResponse,
 } from "../types/publish";
 import {
@@ -178,6 +180,12 @@ export function buildPublishPayload(input: {
    * Backend (#383) requires `merchant_verified` on the actor for this path.
    */
   merchant?: { input: MerchantPublishInput; contentType: MerchantContentType };
+  /**
+   * PRD §11 — when present, the post enters the trade publish path:
+   * `metadata.presentationIntent = "trade"` + top-level `contentType="trade"`
+   * + top-level `trade` block. Backend (#387) requires `campus_verified`.
+   */
+  trade?: { input: TradePublishInput; contentType: TradeContentType };
 }): PublishPayload {
   const locationDraft = input.locationDraft || createManualLocationDraft(input.placeName);
   const locationArea = locationDraft.skipped ? "" : locationDraft.locationArea;
@@ -196,6 +204,8 @@ export function buildPublishPayload(input: {
   }
   if (input.merchant) {
     metadata.presentationIntent = "merchant";
+  } else if (input.trade) {
+    metadata.presentationIntent = "trade";
   }
 
   return {
@@ -215,6 +225,7 @@ export function buildPublishPayload(input: {
     ...(input.merchant
       ? { contentType: input.merchant.contentType, merchant: input.merchant.input }
       : {}),
+    ...(input.trade ? { contentType: input.trade.contentType, trade: input.trade.input } : {}),
   };
 }
 

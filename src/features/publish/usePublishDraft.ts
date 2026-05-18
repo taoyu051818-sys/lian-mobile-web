@@ -24,8 +24,9 @@ import { useAudienceOptions } from "../../composables/useAudienceOptions";
 import { usePublishIdentity } from "./usePublishIdentity";
 import { usePublishAi } from "./usePublishAi";
 import { useMerchantPublishDraft } from "./useMerchantPublishDraft";
+import { useTradePublishDraft } from "./useTradePublishDraft";
 
-export type PublishKind = "regular" | "merchant";
+export type PublishKind = "regular" | "merchant" | "trade";
 
 /**
  * Composes the three slices of publish-form state — form fields & uploads
@@ -77,6 +78,7 @@ export function usePublishDraft() {
   const identity = usePublishIdentity();
 
   const merchant = useMerchantPublishDraft();
+  const trade = useTradePublishDraft();
   const publishKind = ref<PublishKind>("regular");
 
   // AI draft (PRD V0.1 Phase 3). Suggestions only fill empty fields, and AI
@@ -103,6 +105,7 @@ export function usePublishDraft() {
     if (body.value.trim().length === 0) return false;
     if (uploading.value || publishing.value) return false;
     if (publishKind.value === "merchant") return merchant.canSubmit.value;
+    if (publishKind.value === "trade") return trade.canSubmit();
     return true;
   });
   const titleCount = computed(() => title.value.length);
@@ -212,6 +215,7 @@ export function usePublishDraft() {
     visibilityPanelOpen.value = false;
     publishKind.value = "regular";
     merchant.reset();
+    trade.reset();
     clearLocation();
     revokePreviewUrls();
   }
@@ -268,5 +272,6 @@ export function usePublishDraft() {
     notifyFirstUploadComplete,
     publishKind,
     merchant,
+    trade,
   };
 }
