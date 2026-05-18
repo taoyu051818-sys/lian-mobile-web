@@ -3,7 +3,7 @@ import { computed, ref, watch } from "vue";
 import { appViews, getViewDefinition, type AppViewKey } from "./view-types";
 import { getDetailTidRef, getViewFromHashRef, pushViewHash } from "./useDeepLink";
 
-const SECRET_VIEWS: AppViewKey[] = ["admin"];
+const SECRET_VIEWS: AppViewKey[] = ["admin", "verification"];
 const detailTid = getDetailTidRef();
 const viewFromHash = getViewFromHashRef();
 const secretActiveViewKey = ref<AppViewKey | null>(null);
