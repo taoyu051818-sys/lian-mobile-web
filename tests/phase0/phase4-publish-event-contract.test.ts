@@ -53,8 +53,8 @@ describe("Phase 4 (publish): parseCapacityInput", () => {
 
 describe("Phase 4 (publish): validateEventPublishForm", () => {
   const baseDraft = {
-    startAt: "",
-    endAt: "",
+    startsAt: "",
+    endsAt: "",
     capacity: "",
     joinPolicy: "open" as const,
   };
@@ -89,8 +89,8 @@ describe("Phase 4 (publish): validateEventPublishForm", () => {
       validateEventPublishForm(
         {
           ...baseDraft,
-          startAt: "2026-05-20T10:00",
-          endAt: "2026-05-20T09:00",
+          startsAt: "2026-05-20T10:00",
+          endsAt: "2026-05-20T09:00",
         },
         MESSAGES,
       ),
@@ -98,10 +98,10 @@ describe("Phase 4 (publish): validateEventPublishForm", () => {
   });
 
   it("ignores time check when only one endpoint is present", () => {
-    expect(validateEventPublishForm({ ...baseDraft, startAt: "2026-05-20T10:00" }, MESSAGES)).toBe(
+    expect(validateEventPublishForm({ ...baseDraft, startsAt: "2026-05-20T10:00" }, MESSAGES)).toBe(
       "",
     );
-    expect(validateEventPublishForm({ ...baseDraft, endAt: "2026-05-20T10:00" }, MESSAGES)).toBe(
+    expect(validateEventPublishForm({ ...baseDraft, endsAt: "2026-05-20T10:00" }, MESSAGES)).toBe(
       "",
     );
   });
@@ -137,8 +137,8 @@ describe("Phase 4 (publish): wiring greps", () => {
   it("PublishView wires the event draft refs into the submit composable", () => {
     expect(view).toMatch(/useEventPublishDraft/);
     expect(view).toMatch(/eventDraft\.postType/);
-    expect(view).toMatch(/eventDraft\.startAt/);
-    expect(view).toMatch(/eventDraft\.endAt/);
+    expect(view).toMatch(/eventDraft\.startsAt/);
+    expect(view).toMatch(/eventDraft\.endsAt/);
     expect(view).toMatch(/eventDraft\.capacity/);
     expect(view).toMatch(/eventDraft\.joinPolicy/);
   });

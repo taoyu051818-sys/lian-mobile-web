@@ -4,12 +4,13 @@
  * Wires the pure `planEventAction` policy to live event state, and exposes a
  * single `act()` entry point that calls the appropriate join/cancel route.
  *
- * AI / new backend routes return 404 in environments where the events service
- * is not deployed yet — we surface a soft-fail message via `actionError` and
- * leave the event state untouched. The view never throws.
+ * Backends without these routes return 404 — we surface a soft-fail message
+ * via `actionError` and leave the event state untouched. The view never
+ * throws.
  *
- * State stays in this composable; the view binds to flat refs only, so it
- * cannot reach into nested objects (the same pattern as `usePublishAiDraft`).
+ * The join/cancel-join response only carries `{ eventId, joinedCount, joined }`,
+ * so we MERGE that authoritative count into the existing event ref instead of
+ * replacing the whole block (we'd lose startsAt/endsAt/capacity/location).
  */
 
 import { computed, ref, type Ref } from "vue";
@@ -54,9 +55,13 @@ export function useEventActions(options: UseEventActionsOptions) {
     busy.value = true;
     actionError.value = "";
     try {
-      const next =
+      const result =
         mode === "join" ? await joinEvent(event.eventId) : await cancelJoinEvent(event.eventId);
-      options.onChange({ event: next, joined: mode === "join" });
+      const next: EventPostExtension = {
+        ...event,
+        joinedCount: result.joinedCount,
+      };
+      options.onChange({ event: next, joined: result.joined });
       if (successMessage && options.onMessage) options.onMessage(successMessage);
     } catch (error) {
       actionError.value = extractErrorMessage(error, EVENT_ACTION_UNAVAILABLE);

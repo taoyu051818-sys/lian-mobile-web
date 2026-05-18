@@ -98,7 +98,6 @@ describe("Phase 4/5: event/help/errand contracts", () => {
     expect(source).toMatch(/export interface HelpPostExtension/);
     expect(source).toMatch(/export interface MerchantPostExtension/);
     expect(source).toMatch(/export interface ErrandOrder/);
-    expect(source).toMatch(/EventStatus/);
     expect(source).toMatch(/HelpStatus/);
     expect(source).toMatch(/ErrandStatus/);
     expect(source).toMatch(/InteractionKind/);

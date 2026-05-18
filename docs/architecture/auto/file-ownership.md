@@ -17,7 +17,7 @@ Total files: 233
 | `api/aiPublish.ts`   | AI publish API client (PRD V0.1 §3 / §7.4 / Phase 3). Three endpoints, all already in the backend live surface: PO...    |   165 |
 | `api/audience.ts`    | Audience options API client. Backend route (PRD V0.1 §11.1): GET /api/audience/options The route may be missing in o...  |    81 |
 | `api/auth.ts`        | export type AuthMode = "login" \| "register";                                                                            |    66 |
-| `api/events.ts`      | Event / Help / Errand API client stubs (PRD V0.1 §11.2, §11.3, §11.4). Every function below is intentionally thin — ...  |   134 |
+| `api/events.ts`      | Event / Help / Errand API client stubs (PRD V0.1 §11.2, §11.3, §11.4). Every function below is intentionally thin — ...  |   131 |
 | `api/feed.ts`        | export const DEFAULT_TABS: FeedTab[] = [                                                                                 |   192 |
 | `api/http.ts`        | export class LianApiError extends Error                                                                                  |   132 |
 | `api/interaction.ts` | Like/vote unified interaction API (PRD V0.1 §7.1.2, §11.3). Backend already exposes `/api/posts/:tid/like` for likes...  |    65 |
@@ -46,8 +46,8 @@ Total files: 233
 | `composables/useAutoLoadSentinel.ts`     | export function useAutoLoadSentinel(                                                                                     |    76 |
 | `composables/useBodyScrollLock.ts`       | export function useBodyScrollLock(active: Ref<boolean>)                                                                  |    30 |
 | `composables/useEscapeListener.ts`       | export function useEscapeListener(active: Ref<boolean>, onEscape: () => void)                                            |    18 |
-| `composables/useEventActions.ts`         | Event detail composable (PRD V0.1 §6.3 / §11.2). Wires the pure `planEventAction` policy to live event state, and ex...  |    75 |
-| `composables/useEventPublishDraft.ts`    | Event-publish draft state (PRD V0.1 §6.3 / §11.2). Adds a postType selector plus the event-only fields (startAt, end...  |    46 |
+| `composables/useEventActions.ts`         | Event detail composable (PRD V0.1 §6.3 / §11.2). Wires the pure `planEventAction` policy to live event state, and ex...  |    80 |
+| `composables/useEventPublishDraft.ts`    | Event-publish draft state (PRD V0.1 §6.3 / §11.2). Adds a postType selector plus the event-only fields (startsAt, en...  |    46 |
 | `composables/useFocusRestore.ts`         | export function useFocusRestore()                                                                                        |    15 |
 | `composables/useHelpManage.ts`           | Help manage composable (PRD V0.1 §6.5 / §11.3). Wires `planHelpManage` to live state and exposes one entry point per...  |    85 |
 | `composables/useHelpVote.ts`             | Help vote composable (PRD V0.1 §6.5 / §11.3). Wires `planHelpVote` to live state and exposes a single `act()` that c...  |    71 |
@@ -83,7 +83,7 @@ Total files: 233
 | File                           | Summary                                                                                                                 | Lines |
 | ------------------------------ | ----------------------------------------------------------------------------------------------------------------------- | ----: |
 | `domain/actor.ts`              | export function actorDisplayName(actor?: DisplayActor \| null, fallback = ""): string                                   |    14 |
-| `domain/eventActionPolicy.ts`  | Event action policy (PRD V0.1 §6.3 / §11.2). Pure function — given the event extension, the viewer's audience eligib... |    86 |
+| `domain/eventActionPolicy.ts`  | Event action policy (PRD V0.1 §6.3 / §11.2). Pure function — given the event extension, the viewer's audience eligib... |   118 |
 | `domain/eventPublishPolicy.ts` | Event publish form validation (PRD V0.1 §6.3 / §11.2). Pure function — given the event-only fields, returns either a... |    84 |
 | `domain/helpManagePolicy.ts`   | Help manage action policy (PRD V0.1 §6.5 / §11.3). Pure function — given the help extension, decide which manage act... |    64 |
 | `domain/helpVotePolicy.ts`     | Help vote action policy (PRD V0.1 §6.5 / §11.3). Pure function — given the help extension and viewer state, decide w... |    60 |
@@ -109,7 +109,7 @@ Total files: 233
 | `features/auth/useEmailCodeCooldown.ts`         | export const AUTH_EMAIL_CODE_DEFAULT_COOLDOWN_SECONDS = 60;                                                              |   148 |
 | `features/detail/PostActionFeedback.vue`        | Vue SFC                                                                                                                  |    38 |
 | `features/detail/PostDetailContent.vue`         | Vue SFC                                                                                                                  |   159 |
-| `features/detail/PostDetailEventBlock.vue`      | Vue SFC                                                                                                                  |   216 |
+| `features/detail/PostDetailEventBlock.vue`      | Vue SFC                                                                                                                  |   219 |
 | `features/detail/PostDetailGallery.vue`         | Vue SFC                                                                                                                  |    78 |
 | `features/detail/PostDetailHelpBlock.vue`       | Vue SFC                                                                                                                  |   221 |
 | `features/detail/PostDetailHelpManageBlock.vue` | Vue SFC                                                                                                                  |   241 |
@@ -221,7 +221,7 @@ Total files: 233
 
 | File                          | Summary                                                                                                                  | Lines |
 | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------ | ----: |
-| `platform/api-normalizers.ts` | Coerce a raw payload into an EventPostExtension. Returns undefined when the payload does not look like an event (no e... |   270 |
+| `platform/api-normalizers.ts` | Coerce a raw payload into an EventPostExtension. Returns undefined only when eventId is absent — every other field is... |   214 |
 | `platform/browser-storage.ts` | Centralized localStorage key surface for the Vue canary app. Every key written by Vue source code is declared here s...  |    78 |
 | `platform/clientIdentity.ts`  | export const CLIENT_ID_KEY = "lian.clientId";                                                                            |    60 |
 | `platform/leaflet.ts`         | Platform adapter for Leaflet bundled through Vite. All `any` usage is quarantined inside this file. Vue components m...  |   170 |
@@ -267,7 +267,7 @@ Total files: 233
 | `types/map.ts`             | export interface MapBounds                                                                                                |   141 |
 | `types/messages.ts`        | export type MessageTabKey = "channel" \| "notifications";                                                                 |    59 |
 | `types/place.ts`           | export type PlaceStatus =                                                                                                 |    54 |
-| `types/post-extensions.ts` | Event / Help / Merchant / Trade / Errand domain types (PRD V0.1 §6). V0.1 ships shapes only — no UI yet. The point i...   |   120 |
+| `types/post-extensions.ts` | Event / Help / Merchant / Trade / Errand domain types (PRD V0.1 §6). V0.1 ships shapes only — no UI yet. The point i...   |   152 |
 | `types/post.ts`            | event?: EventPostExtension; eventJoined?: boolean; help?: HelpPostExtension; helpVoted?: boolean; helpManageable?: bo...  |   119 |
 | `types/profile.ts`         | export type ProfileTabKey = "history" \| "saved" \| "liked";                                                              |    42 |
 | `types/publish.ts`         | export type PublishMapVersion = "legacy" \| "manual" \| "gaode_v2"; export interface PublishLocationDraft { source: Pu... |    62 |

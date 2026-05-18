@@ -13,29 +13,61 @@ import type { PostLocation } from "./post";
 // Event (PRD V0.1 §6.3)
 // ---------------------------------------------------------------------------
 
+/**
+ * Event lifecycle state — derived from time/capacity/joinedCount on the
+ * frontend (see `derivedEventStatus` in domain/eventActionPolicy). The backend
+ * does NOT ship a status enum on the wire (decision: time + capacity express
+ * lifecycle). Kept here so views can branch on a single computed value.
+ */
 export type EventStatus = "open" | "full" | "closed" | "completed" | "cancelled";
 
+/**
+ * Publish-side join policy. Not on the read DTO yet — only validated in the
+ * publish form. When the backend grows server-driven join policy, this moves
+ * onto `EventPostExtension`.
+ */
 export type EventJoinPolicy = "open" | "approval_required" | "org_only" | "school_only";
 
-export interface EventReward {
-  /** Symbolic reward identifier — backend authoritative; UI shows label only. */
-  type: "contribution" | "honor" | "coupon" | "credit" | "custom";
-  amount?: number;
-  label?: string;
-}
-
+/**
+ * Read-side event extension as returned by `GET /api/posts/:tid` after PR-V4b.
+ * Wire shape mirrors backend `metadata.event` exactly: additive, no enum, no
+ * audience scope (audience lives on the post itself).
+ */
 export interface EventPostExtension {
   eventId: string;
-  participantScope: Audience;
-  allowedOrganizations: string[];
-  reward?: EventReward;
-  eventStatus: EventStatus;
-  startAt?: string;
-  endAt?: string;
-  location?: PostLocation;
+  startsAt?: string;
+  endsAt?: string;
+  /** Free-text location label; backend stores it as a string. */
+  location?: string;
   capacity?: number;
-  participantCount: number;
+  rewardSummary?: string;
+  joinedCount: number;
+}
+
+/**
+ * Publish-side event input — kept separate from the read shape because the
+ * publish form collects fields the read side does not return (participantScope,
+ * joinPolicy, allowedOrganizations).
+ */
+export interface EventPublishInput {
+  startsAt?: string;
+  endsAt?: string;
+  capacity?: number;
+  rewardSummary?: string;
+  participantScope: Audience;
+  allowedOrganizations?: string[];
   joinPolicy: EventJoinPolicy;
+}
+
+/**
+ * Response from `POST /api/events/:eventId/{join,cancel-join}` — only the
+ * count + flag are authoritative; other event fields stay as the previously
+ * fetched detail.
+ */
+export interface EventJoinResult {
+  eventId: string;
+  joinedCount: number;
+  joined: boolean;
 }
 
 // ---------------------------------------------------------------------------
