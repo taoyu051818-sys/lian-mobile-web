@@ -177,6 +177,47 @@ describe("useShellChrome", () => {
       expect(chrome.state.bottom.visible).toBe(true);
     });
   });
+
+  describe("detail chrome lock", () => {
+    it("keeps teleport slot targets available when page chrome re-emits tabs", () => {
+      chrome.applyPageChrome({
+        top: {
+          tabs: {
+            kind: "tabs",
+            items: [{ id: "feed", label: "动态" }],
+            activeKey: "feed",
+          },
+        },
+        bottom: { visible: true },
+      });
+
+      chrome.beginDetailChrome();
+
+      expect(chrome.state.top.slot).toBe("detail-topbar");
+      expect(chrome.state.top.tabs).toBeNull();
+      expect(chrome.state.bottom.slot).toBe("reply-dock");
+
+      chrome.applyPageChrome({
+        top: {
+          tabs: {
+            kind: "tabs",
+            items: [{ id: "feed", label: "动态" }],
+            activeKey: "feed",
+          },
+        },
+        bottom: { visible: true },
+      });
+
+      expect(chrome.state.top.slot).toBe("detail-topbar");
+      expect(chrome.state.top.tabs).toBeNull();
+      expect(chrome.state.bottom.slot).toBe("reply-dock");
+
+      chrome.endDetailChrome();
+
+      expect(chrome.state.top.slot).toBeNull();
+      expect(chrome.state.bottom.slot).toBe("tabs");
+    });
+  });
 });
 
 describe("shell chrome and active view state", () => {
