@@ -50,15 +50,20 @@ if (typeof window !== "undefined") {
 export function pushPostDetailHash(tid: number, options: { replace?: boolean } = {}) {
   if (typeof window === "undefined") return;
   const target = `${window.location.pathname}${window.location.search}${buildPostDetailHash(tid)}`;
+  // history.pushState/replaceState can throw in sandboxed iframes or when the
+  // page exceeds the per-document history quota. The SPA still needs to advance
+  // its in-memory routing state in those cases — the URL bar will simply be
+  // out of sync until the next successful navigation.
   try {
     if (options.replace) {
       window.history.replaceState(window.history.state, "", target);
     } else {
       window.history.pushState(window.history.state, "", target);
     }
-  } finally {
-    detailTid.value = tid;
+  } catch {
+    /* swallow — SPA state below stays authoritative */
   }
+  detailTid.value = tid;
 }
 
 /**
@@ -77,11 +82,13 @@ export function clearPostDetailHash() {
     return;
   }
   const target = `${window.location.pathname}${window.location.search}${buildViewHash(viewFromHash.value)}`;
+  // See note in pushPostDetailHash — history can throw, SPA state still advances.
   try {
     window.history.replaceState(window.history.state, "", target);
-  } finally {
-    detailTid.value = null;
+  } catch {
+    /* swallow — SPA state below stays authoritative */
   }
+  detailTid.value = null;
 }
 
 /**

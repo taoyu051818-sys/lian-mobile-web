@@ -15,6 +15,9 @@ function asyncView(loader: () => Promise<Component>) {
   });
 }
 
+// `feed` is the cold-start view, so it is intentionally eager-imported — first
+// paint should not flash a skeleton. The other four tabs are async so the
+// initial bundle stays small.
 const viewComponents: Record<AppViewKey, Component> = {
   feed: FeedView,
   map: asyncView(() => import("../features/map").then((m) => m.MapLeafletView)),

@@ -11,6 +11,13 @@ export interface ChannelMessageActor extends DisplayActor {
 
 export interface ChannelMessage {
   id: string | number;
+  /**
+   * Client-generated nonce stamped on the optimistic item so we can match the
+   * server echo back to it without depending on content equality. Backends
+   * that haven't shipped the field yet are tolerated by the content fallback
+   * in `useChannelMessages.replacePendingWithLatest`.
+   */
+  clientNonce?: string;
   content?: string;
   contentHtml?: string;
   plainText?: string;
@@ -50,6 +57,7 @@ export interface NotificationResponse {
 export interface SendChannelMessagePayload {
   content: string;
   identityTag?: string;
+  clientNonce?: string;
 }
 
 export interface ChannelReadPayload {

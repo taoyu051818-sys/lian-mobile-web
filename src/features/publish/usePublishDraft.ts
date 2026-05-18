@@ -1,10 +1,6 @@
 import { computed, onBeforeUnmount, ref } from "vue";
-import type { PageChromeSpec } from "../../shell/page-model";
 import {
-  DEFAULT_USER_LABEL,
   ERROR_PUBLISH_IMAGE,
-  PUBLISH_IDENTITY_META,
-  PUBLISH_IDENTITY_UNCONFIRMED,
   PUBLISH_IMAGE_MAX,
   PUBLISH_IMAGE_UPLOADING,
   PUBLISH_IMAGE_READY,
@@ -13,38 +9,40 @@ import {
   PUBLISH_VIS_CAMPUS,
   PUBLISH_VIS_SCHOOL,
   PUBLISH_VIS_PRIVATE,
-  USER_AVATAR_FALLBACK,
 } from "../../config/brand";
 import { extractErrorMessage } from "../../utils/extractErrorMessage";
 import {
   MAX_PUBLISH_IMAGE_COUNT,
-  normalizeIdentityTag,
   normalizePublishTag,
   uploadPublishImage,
   validatePublishImageSelection,
 } from "../../api/publish";
 import { validatePublishForm } from "../../domain/validation/forms";
-import { fetchAuthMe } from "../../api/profile";
 import type { PublishVisibility } from "../../types/publish";
-import { useAudienceOptions } from "../../composables/useAudienceOptions";
-import { usePublishAiDraft } from "../../composables/usePublishAiDraft";
-import { planAiSuggestionPatch } from "../../domain/publishAiPolicy";
 import type { AudienceVisibility } from "../../types/audience";
+import { useAudienceOptions } from "../../composables/useAudienceOptions";
+import { usePublishIdentity } from "./usePublishIdentity";
+import { usePublishAi } from "./usePublishAi";
 
+/**
+ * Composes the three slices of publish-form state — form fields & uploads
+ * (this file), identity (`usePublishIdentity`), and AI suggestions
+ * (`usePublishAi`) — into the single object PublishView consumes. Splitting
+ * out identity/AI is a deliberate carve-out: this file used to mix all three
+ * concerns into one 314-line composable that returned 27 fields.
+ *
+ * Public surface kept stable so PublishView, usePublishSubmit, and
+ * usePublishDraftSession don't need to change shape.
+ */
 export function usePublishDraft() {
   const title = ref("");
   const body = ref("");
   const tagInput = ref("");
-  const identityTag = ref("");
-  const identityTagOptions = ref<string[]>([]);
   const placeName = ref("");
   const visibility = ref<PublishVisibility>("public");
   const selectedFiles = ref<File[]>([]);
   const localPreviewUrls = ref<string[]>([]);
   const uploadedImageUrls = ref<string[]>([]);
-  const aliasId = ref<string | undefined>(undefined);
-  const identityName = ref(DEFAULT_USER_LABEL);
-  const identityMeta = ref(PUBLISH_IDENTITY_META);
   const uploading = ref(false);
   const publishing = ref(false);
   const errorMessage = ref("");
@@ -52,8 +50,6 @@ export function usePublishDraft() {
   const lastTid = ref<string | number | null>(null);
 
   const normalizedTag = computed(() => normalizePublishTag(tagInput.value));
-  const normalizedIdentityTag = computed(() => normalizeIdentityTag(identityTag.value));
-  const avatarText = computed(() => identityName.value.slice(0, 2) || USER_AVATAR_FALLBACK);
 
   const tagPanelOpen = ref(false);
   const visibilityPanelOpen = ref(false);
@@ -75,38 +71,20 @@ export function usePublishDraft() {
     return audience.disabledReason(value as AudienceVisibility);
   }
 
-  // AI draft (PRD V0.1 Phase 3 / §7.4.2). Suggestions only fill empty fields,
-  // and AI failures are silent — manual entry always works. The decision of
-  // *what* to apply lives in domain/publishAiPolicy so it can be unit-tested
-  // without Vue refs; this composable just wires the policy to live state.
-  const aiInternal = usePublishAiDraft({
+  const identity = usePublishIdentity();
+
+  // AI draft (PRD V0.1 Phase 3). Suggestions only fill empty fields, and AI
+  // failures stay silent — manual entry always works. Decision lives in
+  // domain/publishAiPolicy; this composable just owns the wiring.
+  const ai = usePublishAi({
     uploadedImageUrls,
     title,
     body,
-    locationLabel: placeName,
-    onSuggestion: (suggestion) => {
-      const patch = planAiSuggestionPatch(
-        {
-          title: title.value,
-          body: body.value,
-          tag: tagInput.value,
-          visibility: visibility.value,
-        },
-        suggestion,
-        (value) => audience.isAllowed(value as AudienceVisibility),
-      );
-      if (patch.title !== undefined) title.value = patch.title;
-      if (patch.body !== undefined) body.value = patch.body;
-      if (patch.tag !== undefined) tagInput.value = patch.tag;
-      if (patch.visibility !== undefined) visibility.value = patch.visibility;
-    },
+    tagInput,
+    placeName,
+    visibility,
+    isAllowed: (value) => audience.isAllowed(value),
   });
-
-  // Flat re-exports so the view never reaches into nested `ai.*.value`.
-  const aiLoading = aiInternal.loading;
-  const aiError = aiInternal.error;
-  const aiRiskFlags = aiInternal.riskFlags;
-  const aiRefresh = aiInternal.refresh;
 
   const visibilityLabel = computed(
     () =>
@@ -130,16 +108,6 @@ export function usePublishDraft() {
       return `${PUBLISH_IMAGE_UPLOADING} ${uploadedImageUrls.value.length}/${selectedFiles.value.length}`;
     return `${PUBLISH_IMAGE_READY} ${uploadedImageUrls.value.length}/${selectedFiles.value.length} ${PUBLISH_IMAGE_COUNT_SUFFIX}`;
   });
-
-  const pageChrome = computed<PageChromeSpec>(() => ({
-    top: {
-      identity: {
-        avatarText: avatarText.value,
-        name: identityName.value,
-        meta: identityMeta.value,
-      },
-    },
-  }));
 
   function revokePreviewUrls() {
     localPreviewUrls.value.forEach((url) => URL.revokeObjectURL(url));
@@ -217,25 +185,6 @@ export function usePublishDraft() {
     });
   }
 
-  async function loadIdentity() {
-    try {
-      const user = await fetchAuthMe();
-      identityName.value = user?.username || DEFAULT_USER_LABEL;
-      aliasId.value = user?.activeAliasId || undefined;
-      identityTagOptions.value = user?.identityTags || [];
-      identityTag.value = "";
-      const activeAlias = aliasId.value
-        ? user?.aliases?.find((alias) => alias.id === aliasId.value)
-        : null;
-      identityMeta.value = activeAlias?.name || user?.institution || PUBLISH_IDENTITY_META;
-    } catch {
-      identityName.value = DEFAULT_USER_LABEL;
-      identityMeta.value = PUBLISH_IDENTITY_UNCONFIRMED;
-      identityTagOptions.value = [];
-      identityTag.value = "";
-    }
-  }
-
   function toggleTagPanel() {
     tagPanelOpen.value = !tagPanelOpen.value;
   }
@@ -248,7 +197,7 @@ export function usePublishDraft() {
     title.value = "";
     body.value = "";
     tagInput.value = "";
-    identityTag.value = "";
+    identity.identityTag.value = "";
     placeName.value = "";
     visibility.value = "public";
     selectedFiles.value = [];
@@ -267,16 +216,16 @@ export function usePublishDraft() {
     title,
     body,
     tagInput,
-    identityTag,
-    identityTagOptions,
+    identityTag: identity.identityTag,
+    identityTagOptions: identity.identityTagOptions,
     placeName,
     visibility,
     selectedFiles,
     localPreviewUrls,
     uploadedImageUrls,
-    aliasId,
-    identityName,
-    identityMeta,
+    aliasId: identity.aliasId,
+    identityName: identity.identityName,
+    identityMeta: identity.identityMeta,
     uploading,
     publishing,
     errorMessage,
@@ -285,29 +234,29 @@ export function usePublishDraft() {
     tagPanelOpen,
     visibilityPanelOpen,
     normalizedTag,
-    normalizedIdentityTag,
-    avatarText,
+    normalizedIdentityTag: identity.normalizedIdentityTag,
+    avatarText: identity.avatarText,
     canSubmit,
     titleCount,
     bodyCount,
     imageStatus,
     visibilityLabel,
     visibilityOptions,
-    pageChrome,
+    pageChrome: identity.pageChrome,
     handleFiles,
     removeImage,
     validate,
-    loadIdentity,
+    loadIdentity: identity.loadIdentity,
     resetForm,
     toggleTagPanel,
     toggleVisibilityPanel,
     audience,
     isVisibilityAllowed,
     visibilityDisabledReason,
-    aiLoading,
-    aiError,
-    aiRiskFlags,
-    aiRefresh,
+    aiLoading: ai.aiLoading,
+    aiError: ai.aiError,
+    aiRiskFlags: ai.aiRiskFlags,
+    aiRefresh: ai.aiRefresh,
     notifyFirstUploadComplete,
   };
 }

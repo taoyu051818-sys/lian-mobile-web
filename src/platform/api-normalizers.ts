@@ -48,6 +48,41 @@ export function asStringArray(value: unknown): string[] {
   return value.map((entry) => asString(entry)).filter((entry) => entry.length > 0);
 }
 
+/**
+ * Coerce to a non-negative integer, defaulting to 0. Convenience wrapper for
+ * the count/capacity fields backends sometimes ship as strings or floats —
+ * `Math.max(0, Math.trunc(asNumber(x, 0)))` was repeated in every normalizer.
+ */
+export function asNonNegInt(value: unknown): number {
+  return Math.max(0, Math.trunc(asNumber(value, 0)));
+}
+
+/**
+ * Coerce to a positive integer, returning undefined for missing/invalid input.
+ * Used for optional fields like `linkedEventTid` and `capacity` that backends
+ * may omit entirely — distinct from 0, which is a valid count.
+ */
+export function asOptionalPositiveInt(value: unknown): number | undefined {
+  if (typeof value === "number" && Number.isFinite(value) && value > 0) {
+    return Math.trunc(value);
+  }
+  if (typeof value === "string" && value.trim()) {
+    const parsed = Number(value);
+    if (Number.isFinite(parsed) && parsed > 0) return Math.trunc(parsed);
+  }
+  return undefined;
+}
+
+/**
+ * Coerce to a value from a known enum set, or undefined when the input is
+ * unrecognized. Replaces the `optionalString(x) && SET.has(x as T) ? (x as T)
+ * : undefined` pattern that recurred for status enums.
+ */
+export function asEnum<E extends string>(value: unknown, allowed: ReadonlySet<E>): E | undefined {
+  const str = asString(value);
+  return str && allowed.has(str as E) ? (str as E) : undefined;
+}
+
 export function normalizeFeedItemId(value: unknown, fallback = 0): number {
   const normalized = Math.trunc(asNumber(value, Number.NaN));
   return Number.isFinite(normalized) ? normalized : fallback;
@@ -103,11 +138,7 @@ export function normalizePlaceRef(value: unknown): PlaceRef | undefined {
   if (!id || !name) return undefined;
 
   const type = optionalString(record.type);
-  const rawStatus = optionalString(record.status);
-  const status =
-    rawStatus && PLACE_STATUSES.has(rawStatus as PlaceStatus)
-      ? (rawStatus as PlaceStatus)
-      : undefined;
+  const status = asEnum(record.status, PLACE_STATUSES);
 
   return {
     id,
@@ -132,18 +163,8 @@ export function normalizeEventExtension(value: unknown): EventPostExtension | un
   const endsAt = optionalString(record.endsAt) || optionalString(record.endAt);
   const location = optionalString(record.location);
   const rewardSummary = optionalString(record.rewardSummary);
-  const capacityRaw = record.capacity;
-  let capacity: number | undefined;
-  if (typeof capacityRaw === "number" && Number.isFinite(capacityRaw) && capacityRaw >= 0) {
-    capacity = Math.trunc(capacityRaw);
-  } else if (typeof capacityRaw === "string" && capacityRaw.trim()) {
-    const parsed = Number(capacityRaw);
-    if (Number.isFinite(parsed) && parsed >= 0) capacity = Math.trunc(parsed);
-  }
-  const joinedCount = Math.max(
-    0,
-    Math.trunc(asNumber(record.joinedCount ?? record.participantCount, 0)),
-  );
+  const capacity = asOptionalPositiveInt(record.capacity);
+  const joinedCount = asNonNegInt(record.joinedCount ?? record.participantCount);
 
   return {
     eventId,
@@ -169,7 +190,7 @@ export function normalizeEventJoinResult(value: unknown): {
   const record = asRecord(value);
   return {
     eventId: optionalString(record.eventId) || "",
-    joinedCount: Math.max(0, Math.trunc(asNumber(record.joinedCount, 0))),
+    joinedCount: asNonNegInt(record.joinedCount),
     joined: asBoolean(record.joined),
   };
 }
@@ -191,23 +212,16 @@ export function normalizeHelpExtension(value: unknown): HelpPostExtension | unde
   const record = asRecord(value);
   const helpId = optionalString(record.helpId);
   if (!helpId) return undefined;
-  const rawStatus = optionalString(record.status);
-  if (!rawStatus || !HELP_STATUSES.has(rawStatus as HelpStatus)) return undefined;
-  const voteCount = Math.max(0, Math.trunc(asNumber(record.voteCount, 0)));
-  const commentCount = Math.max(0, Math.trunc(asNumber(record.commentCount, 0)));
-  const linkedRaw = record.linkedEventTid;
-  let linkedEventTid: number | undefined;
-  if (typeof linkedRaw === "number" && Number.isFinite(linkedRaw) && linkedRaw > 0) {
-    linkedEventTid = Math.trunc(linkedRaw);
-  } else if (typeof linkedRaw === "string" && linkedRaw.trim()) {
-    const parsed = Number(linkedRaw);
-    if (Number.isFinite(parsed) && parsed > 0) linkedEventTid = Math.trunc(parsed);
-  }
+  const status = asEnum(record.status, HELP_STATUSES);
+  if (!status) return undefined;
+  const voteCount = asNonNegInt(record.voteCount);
+  const commentCount = asNonNegInt(record.commentCount);
+  const linkedEventTid = asOptionalPositiveInt(record.linkedEventTid);
   return {
     helpId,
     voteCount,
     commentCount,
-    status: rawStatus as HelpStatus,
+    status,
     ...(linkedEventTid !== undefined ? { linkedEventTid } : {}),
   };
 }
