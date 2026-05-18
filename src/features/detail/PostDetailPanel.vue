@@ -343,23 +343,6 @@ void audience;
 .post-detail-panel__stage {
   display: grid;
   gap: var(--space-4);
-  overflow: hidden;
-  border-radius: var(--detail-card-radius, 0px);
-  transform: translate3d(
-      var(--detail-card-translate-x, 0px),
-      var(--detail-card-translate-y, 0px),
-      0
-    )
-    scale(var(--detail-card-scale, 1));
-  transform-origin: center center;
-  will-change: transform, border-radius;
-  transition: none;
-}
-
-.post-detail-panel.is-returning .post-detail-panel__stage {
-  transition:
-    transform var(--motion-return) var(--motion-ease-standard),
-    border-radius var(--motion-return) var(--motion-ease-standard);
 }
 
 .post-detail-panel__state {
