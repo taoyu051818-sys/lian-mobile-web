@@ -89,6 +89,12 @@ export async function linkHelpToEvent(
   });
 }
 
+export async function unlinkHelpFromEvent(helpId: string): Promise<HelpPostExtension> {
+  return apiSend<HelpPostExtension>(`/api/help/${encodeURIComponent(helpId)}/unlink-event`, {
+    method: "POST",
+  });
+}
+
 export async function resolveHelp(helpId: string, status: HelpStatus): Promise<HelpPostExtension> {
   return apiSend<HelpPostExtension>(`/api/help/${encodeURIComponent(helpId)}/resolve`, {
     method: "POST",
