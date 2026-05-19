@@ -218,7 +218,7 @@ Total files: 267
 | `features/publish/PublishMetaControls.vue`       | PRD V0.1 §3.1 — backend-driven gating. Optional: when omitted (older                                                     |   245 |
 | `features/publish/PublishResetConfirm.vue`       | Vue SFC                                                                                                                  |    59 |
 | `features/publish/PublishTradeControls.vue`      | Vue SFC                                                                                                                  |   212 |
-| `features/publish/PublishView.vue`               | PRD §7.4.2 step 4: after the first successful upload, surface the                                                        |   510 |
+| `features/publish/PublishView.vue`               | PRD §7.4.2 step 4: after the first successful upload, surface the                                                        |   610 |
 | `features/publish/index.ts`                      | TypeScript module                                                                                                        |     2 |
 | `features/publish/publishDraftSession.ts`        | export const PUBLISH_DRAFT_SESSION_KEY = "lian.publishDraft.sameSession";                                                |   189 |
 | `features/publish/useMerchantPublishDraft.ts`    | Publish-side merchant draft + verification gate. Owns: - merchant form fields (name / category / hours / contact / ...   |   100 |

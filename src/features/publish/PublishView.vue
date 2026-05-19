@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref, watch } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import type { PageChromeSpec } from "../../shell/page-model";
 import {
   PUBLISH_SECTION_LABEL,
@@ -12,6 +12,10 @@ import {
   PUBLISH_TYPE_REGULAR,
   PUBLISH_TYPE_MERCHANT,
   PUBLISH_TYPE_TRADE,
+  PUBLISH_MERCHANT_GATE_TITLE,
+  PUBLISH_MERCHANT_GATE_HINT,
+  PUBLISH_MERCHANT_GATE_BLOCK,
+  PUBLISH_MERCHANT_GATE_CTA,
 } from "../../config/brand";
 import { GlassPanel, InlineError } from "../../ui";
 import PublishActionBar from "./PublishActionBar.vue";
@@ -41,9 +45,17 @@ const eventDraft = useEventPublishDraft();
 const locationOptions = usePublishLocationOptions(draft.placeName);
 const resetConfirmationVisible = ref(false);
 const { setActiveView } = useActiveView();
+const merchantAffordanceLocked = computed(
+  () => draft.merchant.verificationLoaded.value && !draft.merchant.merchantVerified.value,
+);
 
 function goToVerification() {
   setActiveView("verification");
+}
+
+function selectPublishKind(kind: "regular" | "merchant" | "trade") {
+  if (kind === "merchant" && merchantAffordanceLocked.value) return;
+  draft.publishKind.value = kind;
 }
 
 watch(
@@ -58,6 +70,12 @@ watch(
   },
   { immediate: false },
 );
+
+watch(merchantAffordanceLocked, (locked) => {
+  if (locked && draft.publishKind.value === "merchant") {
+    draft.publishKind.value = "regular";
+  }
+});
 
 const { draftNotice, hasUnsavedDraft } = usePublishDraftSession({
   title: draft.title,
@@ -159,6 +177,9 @@ watch(hasUnsavedDraft, (value) => {
 
 onMounted(() => {
   emit("chrome", draft.pageChrome.value);
+  if (!draft.merchant.verificationLoaded.value) {
+    void draft.merchant.refreshVerification();
+  }
 });
 </script>
 
@@ -219,13 +240,16 @@ onMounted(() => {
               name="publish-kind"
               value="regular"
               :checked="draft.publishKind.value === 'regular'"
-              @change="draft.publishKind.value = 'regular'"
+              @change="selectPublishKind('regular')"
             />
             <span>{{ PUBLISH_TYPE_REGULAR }}</span>
           </label>
           <label
             class="publish-view__type-option"
-            :class="{ 'is-active': draft.publishKind.value === 'merchant' }"
+            :class="{
+              'is-active': draft.publishKind.value === 'merchant',
+              'is-disabled': merchantAffordanceLocked,
+            }"
           >
             <input
               type="radio"
@@ -233,7 +257,8 @@ onMounted(() => {
               value="merchant"
               data-testid="publish-type-merchant"
               :checked="draft.publishKind.value === 'merchant'"
-              @change="draft.publishKind.value = 'merchant'"
+              :disabled="merchantAffordanceLocked"
+              @change="selectPublishKind('merchant')"
             />
             <span>{{ PUBLISH_TYPE_MERCHANT }}</span>
           </label>
@@ -247,11 +272,32 @@ onMounted(() => {
               value="trade"
               data-testid="publish-type-trade"
               :checked="draft.publishKind.value === 'trade'"
-              @change="draft.publishKind.value = 'trade'"
+              @change="selectPublishKind('trade')"
             />
             <span>{{ PUBLISH_TYPE_TRADE }}</span>
           </label>
         </fieldset>
+
+        <section
+          v-if="merchantAffordanceLocked"
+          class="publish-view__affordance-gate"
+          data-testid="publish-merchant-affordance-gate"
+          :aria-label="PUBLISH_MERCHANT_GATE_TITLE"
+        >
+          <div class="publish-view__affordance-copy">
+            <strong>{{ PUBLISH_MERCHANT_GATE_TITLE }}</strong>
+            <p>{{ PUBLISH_MERCHANT_GATE_HINT }}</p>
+            <p class="publish-view__affordance-block">{{ PUBLISH_MERCHANT_GATE_BLOCK }}</p>
+          </div>
+          <button
+            type="button"
+            class="publish-view__affordance-cta"
+            data-testid="publish-merchant-affordance-cta"
+            @click="goToVerification"
+          >
+            {{ PUBLISH_MERCHANT_GATE_CTA }}
+          </button>
+        </section>
 
         <PublishMerchantControls
           v-if="draft.publishKind.value === 'merchant'"
@@ -505,5 +551,59 @@ onMounted(() => {
 .publish-view__type-option.is-active {
   border-color: rgba(31, 167, 160, 0.35);
   background: rgba(31, 167, 160, 0.14);
+}
+
+.publish-view__type-option.is-disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.publish-view__type-option.is-disabled input {
+  cursor: not-allowed;
+}
+
+.publish-view__affordance-gate {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border: 1px dashed rgba(31, 167, 160, 0.32);
+  border-radius: calc(var(--radius-card) + 2px);
+  background: rgba(31, 167, 160, 0.08);
+}
+
+.publish-view__affordance-copy {
+  display: grid;
+  gap: 4px;
+  flex: 1 1 240px;
+}
+
+.publish-view__affordance-copy strong {
+  font-size: 15px;
+}
+
+.publish-view__affordance-copy p {
+  color: var(--lian-muted);
+  font-size: 13px;
+}
+
+.publish-view__affordance-block {
+  color: #a14040;
+  font-weight: 700;
+}
+
+.publish-view__affordance-cta {
+  justify-self: start;
+  appearance: none;
+  border: 0;
+  border-radius: var(--radius-chip, 999px);
+  background: var(--lian-primary, #1fa7a0);
+  color: white;
+  font-weight: 800;
+  height: 40px;
+  padding: 0 var(--space-4);
+  cursor: pointer;
 }
 </style>

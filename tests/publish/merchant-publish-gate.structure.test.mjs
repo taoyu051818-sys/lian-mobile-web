@@ -69,8 +69,17 @@ test("PublishView exposes a merchant/regular type switch", () => {
   assert.match(src, /data-testid="publish-type-switch"/);
   assert.match(src, /data-testid="publish-type-merchant"/);
   // Vue templates use single quotes inside attributes; allow either quote style.
-  assert.match(src, /draft\.publishKind\.value\s*=\s*['"]merchant['"]/);
-  assert.match(src, /draft\.publishKind\.value\s*=\s*['"]regular['"]/);
+  assert.match(src, /selectPublishKind\('merchant'\)/);
+  assert.match(src, /selectPublishKind\('regular'\)/);
+});
+
+test("PublishView locks the merchant affordance when merchant_verified is inactive", () => {
+  const src = read("src/features/publish/PublishView.vue");
+  assert.match(src, /merchantAffordanceLocked/);
+  assert.match(src, /data-testid="publish-merchant-affordance-gate"/);
+  assert.match(src, /data-testid="publish-merchant-affordance-cta"/);
+  assert.match(src, /:disabled="merchantAffordanceLocked"/);
+  assert.match(src, /PUBLISH_MERCHANT_GATE_BLOCK/);
 });
 
 test("PublishView routes the verification CTA to the verification view", () => {
@@ -78,12 +87,13 @@ test("PublishView routes the verification CTA to the verification view", () => {
   assert.match(src, /useActiveView/);
   assert.match(src, /setActiveView\("verification"\)/);
   assert.match(src, /@go-verify="goToVerification"/);
+  assert.match(src, /@click="goToVerification"/);
 });
 
-test("PublishView refreshes verification when switching to merchant", () => {
+test("PublishView refreshes merchant verification before and during merchant entry", () => {
   const src = read("src/features/publish/PublishView.vue");
-  // first switch to merchant lazily fetches /api/auth/me — avoids a request on cold start
-  assert.match(src, /draft\.publishKind/);
+  assert.match(src, /onMounted\([\s\S]*merchant\.refreshVerification/);
+  assert.match(src, /kind === "merchant"/);
   assert.match(src, /merchant\.refreshVerification/);
 });
 
