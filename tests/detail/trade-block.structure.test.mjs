@@ -12,11 +12,11 @@ function read(rel) {
 
 // --- types: TradePostExtension surfaces on PostDetail ---
 
-test("TradePostExtension is exported with the wire shape mirrored from backend #387", () => {
+test("TradePostExtension exposes the merged backend state vocabulary including hidden", () => {
   const src = read("src/types/post-extensions.ts");
   assert.match(
     src,
-    /export type TradeState\s*=\s*"available"\s*\|\s*"reserved"\s*\|\s*"sold"\s*\|\s*"cancelled"/,
+    /export type TradeState\s*=\s*"available"\s*\|\s*"reserved"\s*\|\s*"sold"\s*\|\s*"cancelled"\s*\|\s*"hidden"/,
   );
   assert.match(src, /export interface TradePostExtension\s*{/);
   for (const field of ["price", "state", "category", "verifiedAt"]) {
@@ -24,32 +24,27 @@ test("TradePostExtension is exported with the wire shape mirrored from backend #
   }
 });
 
-test("PostDetail surfaces optional trade block", () => {
+test("PostDetail surfaces optional trade block plus tradeManageable gate", () => {
   const src = read("src/types/post.ts");
   assert.match(src, /trade\?:\s*TradePostExtension/);
-  assert.match(src, /TradePostExtension/);
+  assert.match(src, /tradeManageable\?:\s*boolean/);
 });
 
-// --- normalizer ---
+// --- normalizer + client ---
 
-test("normalizeTradeExtension exists and gates on price + clamps state", () => {
-  const src = read("src/platform/api-normalizers.ts");
-  assert.match(src, /export function normalizeTradeExtension/);
-  assert.match(src, /TRADE_STATES/);
-  for (const slug of ["available", "reserved", "sold", "cancelled"]) {
-    assert.match(src, new RegExp(`"${slug}"`));
-  }
-});
-
-test("normalizePostDetail wires trade through to PostDetail", () => {
+test("trade detail client preserves hidden state and exposes the PATCH transition route", () => {
   const src = read("src/api/posts.ts");
-  assert.match(src, /normalizeTradeExtension\(record\.trade\)/);
-  assert.match(src, /\.\.\.\(trade \? \{ trade \} : \{\}\)/);
+  assert.match(src, /function normalizeTradeExtensionFromDetail/);
+  assert.match(src, /raw === "reserved" \|\| raw === "sold" \|\| raw === "cancelled" \|\| raw === "hidden"/);
+  assert.match(src, /tradeManageable/);
+  assert.match(src, /export async function patchTradeState/);
+  assert.match(src, /\/trade-state/);
+  assert.match(src, /method: "PATCH"/);
 });
 
 // --- detail block ---
 
-test("PostDetailTradeBlock renders state badge, price, risk hint, contact cue", () => {
+test("PostDetailTradeBlock renders hidden alongside the shipped trade badges", () => {
   const src = read("src/features/detail/PostDetailTradeBlock.vue");
   assert.match(src, /data-testid="post-detail-trade-block"/);
   assert.match(src, /data-testid="post-detail-trade-price"/);
@@ -64,19 +59,21 @@ test("PostDetailTradeBlock renders state badge, price, risk hint, contact cue", 
   ]) {
     assert.match(src, new RegExp(slug));
   }
+  assert.match(src, /hidden:\s*"已隐藏"/);
+  assert.match(src, /data-state="hidden"/);
   assert.match(src, /TRADE_RISK_HINT/);
 });
 
-// --- mounting ---
+// --- panel manage surface ---
 
-test("PostDetailContent mounts the trade block under v-if=trade", () => {
-  const src = read("src/features/detail/PostDetailContent.vue");
-  assert.match(src, /import PostDetailTradeBlock from "\.\/PostDetailTradeBlock\.vue"/);
-  assert.match(src, /<PostDetailTradeBlock\s+v-if="trade"\s+:trade="trade"\s*\/>/);
-  assert.match(src, /trade\?:\s*TradePostExtension/);
-});
-
-test("PostDetailPanel forwards post.trade into PostDetailContent", () => {
+test("PostDetailPanel adds author-only trade transition controls and refresh wiring", () => {
   const src = read("src/features/detail/PostDetailPanel.vue");
-  assert.match(src, /:trade="post\?\.trade"/);
+  assert.match(src, /import \{ patchTradeState \} from "\.\.\/\.\.\/api\/posts"/);
+  assert.match(src, /import \{ fetchAuthMe \} from "\.\.\/\.\.\/api\/profile"/);
+  assert.match(src, /const TRADE_TRANSITIONS: Record<TradeState, TradeState\[]>/);
+  assert.match(src, /tradeManageable/);
+  assert.match(src, /data-testid="post-detail-trade-manage"/);
+  assert.match(src, /data-testid="post-detail-trade-manage-action"/);
+  assert.match(src, /await patchTradeState\(currentId, nextState\)/);
+  assert.match(src, /emit\("retry"\)/);
 });
