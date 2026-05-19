@@ -77,11 +77,15 @@ function group(rel) {
 
 async function main() {
   const files = await walk(SRC);
-  files.sort();
+  // Sort by POSIX-normalized relative path so output is identical across
+  // platforms — raw absolute paths on Windows use `\` (0x5C) and on Linux use
+  // `/` (0x2F), which sort siblings like `api/` vs `api2` differently.
+  const entries = files
+    .map((abs) => ({ abs, rel: path.relative(SRC, abs).replace(/\\/g, "/") }))
+    .sort((a, b) => (a.rel < b.rel ? -1 : a.rel > b.rel ? 1 : 0));
 
   const groups = new Map();
-  for (const abs of files) {
-    const rel = path.relative(SRC, abs).replace(/\\/g, "/");
+  for (const { abs, rel } of entries) {
     const top = group(rel);
     const ext = path.extname(abs);
     const content = await fs.readFile(abs, "utf8");
