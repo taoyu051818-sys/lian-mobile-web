@@ -53,3 +53,17 @@ export interface ProfileListItem {
 export interface ProfileListResponse {
   items?: ProfileListItem[];
 }
+
+/**
+ * Mirrors the backend `/api/me/stats` shape (DEFAULT_PROFILE_STATS in
+ * `lian-platform-server/src/server/profile-service.js`). All counts are
+ * non-negative integers; stats degrade to 0 when NodeBB data is unreachable.
+ */
+export interface ProfileStats {
+  posts: number;
+  replies: number;
+  saved: number;
+  liked: number;
+  drafts: number;
+  mapContributions: number;
+}

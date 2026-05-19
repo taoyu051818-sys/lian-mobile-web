@@ -60,6 +60,21 @@ export const PROFILE_INVITE_UNAVAILABLE = "暂无权限";
 export const PROFILE_EDITOR_TITLE = "编辑资料";
 export const PROFILE_EDITOR_CHIP = "资料管理";
 
+/** 个人贡献 / 点券 / 荣誉（PRD V0.1 §N3） */
+export const PROFILE_STATS_SECTION_LABEL = "我的贡献";
+export const PROFILE_STATS_POSTS = "发帖";
+export const PROFILE_STATS_REPLIES = "回复";
+export const PROFILE_STATS_SAVED = "收藏";
+export const PROFILE_STATS_LIKED = "喜欢";
+export const PROFILE_STATS_MAP_CONTRIBUTIONS = "地点贡献";
+export const PROFILE_STATS_DRAFTS = "草稿";
+export const PROFILE_STATS_LOAD_ERROR = "贡献数据加载失败，可以稍后再试。";
+export const PROFILE_STATS_RELOAD = "重新加载";
+export const PROFILE_REWARDS_SECTION_LABEL = "点券与荣誉";
+export const PROFILE_REWARDS_POINTS_LABEL = "点券";
+export const PROFILE_REWARDS_HONORS_LABEL = "荣誉";
+export const PROFILE_REWARDS_PLACEHOLDER = "敬请期待，奖励账本暂未开放。";
+
 /** 个人资料操作反馈 */
 export const PROFILE_AVATAR_UPDATED = "头像已更新。";
 export const PROFILE_IDENTITY_SWITCHED = "发布身份已切换。";
