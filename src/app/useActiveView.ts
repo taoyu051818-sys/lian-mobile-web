@@ -7,9 +7,10 @@ const SECRET_VIEWS: AppViewKey[] = ["admin", "verification", "merchant", "errand
 const viewFromHash = getViewFromHashRef();
 const secretActiveViewKey = ref<AppViewKey | null>(null);
 
-// Active view is independent of the detail-navigation FSM. Post detail is now
-// an App-level overlay (see src/app/DetailSurface.vue, issue #636), so opening
-// or closing a detail must not move the user off whichever tab they're on.
+// Active view is independent of the detail-navigation FSM.
+// Post detail is now an App-level overlay (see src/app/DetailSurface.vue,
+// issue #636), so opening or closing a detail must not move the user off
+// whichever tab they're on.
 const effectiveActiveViewKey = computed<AppViewKey>(
   () => secretActiveViewKey.value ?? viewFromHash.value,
 );
@@ -24,8 +25,8 @@ export function useActiveView() {
   function setActiveView(key: AppViewKey) {
     if (appViews.some((view) => view.key === key)) {
       secretActiveViewKey.value = null;
-      // URL is the source of truth. The view hash is the only writer here —
-      // a separate detail-navigation/url-sync listener will close any open
+      // URL is the source of truth. The view hash is the only writer here.
+      // A separate detail-navigation/url-sync listener will close any open
       // post-detail overlay when this hashchange lands.
       pushViewHash(key);
       return;
