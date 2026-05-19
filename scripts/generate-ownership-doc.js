@@ -124,10 +124,25 @@ async function main() {
     } catch {
       /* file not present */
     }
-    if (existing.replace(/\r\n/g, "\n") !== md) {
+    const normalized = existing.replace(/\r\n/g, "\n");
+    if (normalized !== md) {
       console.error(
         `[ownership-doc] ${path.relative(ROOT, OUT)} is stale. Run: node scripts/generate-ownership-doc.js`,
       );
+      // Emit a small diff so CI logs reveal what's diverging across platforms.
+      const a = normalized.split("\n");
+      const b = md.split("\n");
+      const max = Math.max(a.length, b.length);
+      let shown = 0;
+      for (let i = 0; i < max && shown < 12; i++) {
+        if (a[i] !== b[i]) {
+          console.error(`  line ${i + 1}:`);
+          console.error(`    on-disk:    ${JSON.stringify(a[i])}`);
+          console.error(`    regenerated: ${JSON.stringify(b[i])}`);
+          shown++;
+        }
+      }
+      console.error(`  on-disk lines: ${a.length}, regenerated lines: ${b.length}`);
       process.exit(1);
     }
     return;
