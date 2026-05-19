@@ -5,7 +5,11 @@ import type {
   ChannelMessage,
   ChannelReadPayload,
   ChannelResponse,
+  NotificationActor,
+  NotificationItem,
+  NotificationKind,
   NotificationResponse,
+  NotificationTarget,
   SendChannelMessagePayload,
 } from "../types/messages";
 
@@ -95,8 +99,219 @@ export async function fetchChannelMessages(offset = 0, limit = 30): Promise<Chan
   return normalizeChannelResponse(response, requestedOffset);
 }
 
+type UnknownRecord = Record<string, unknown>;
+
+interface RawNotificationItem {
+  id?: string | number;
+  tid?: string | number;
+  targetTid?: string | number;
+  postId?: string | number;
+  targetId?: string | number;
+  type?: string;
+  title?: string;
+  excerpt?: string;
+  body?: string;
+  text?: string;
+  actor?: NotificationActor;
+  read?: boolean;
+  time?: string;
+  timestampISO?: string;
+  path?: string;
+  href?: string;
+  url?: string;
+  link?: string;
+  data?: UnknownRecord | null;
+  meta?: UnknownRecord | null;
+  target?: UnknownRecord | null;
+}
+
+interface RawNotificationResponse {
+  items?: RawNotificationItem[];
+  notifications?: RawNotificationItem[];
+}
+
+const REPLY_NOTIFICATION_TYPES = ["reply", "post-reply", "new-reply", "new-post", "comment"];
+const VERIFICATION_NOTIFICATION_TYPES = [
+  "verification",
+  "campus",
+  "merchant",
+  "runner",
+  "realname",
+  "approved",
+  "rejected",
+];
+const ORDER_NOTIFICATION_TYPES = ["order", "errand", "trade", "delivery"];
+
+function asRecord(value: unknown): UnknownRecord | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  return value as UnknownRecord;
+}
+
+function stringValue(value: unknown): string {
+  if (typeof value === "string") return value.trim();
+  if (typeof value === "number" && Number.isFinite(value)) return String(value);
+  return "";
+}
+
+function firstString(...values: unknown[]): string {
+  for (const value of values) {
+    const candidate = stringValue(value);
+    if (candidate) return candidate;
+  }
+  return "";
+}
+
+function numberValue(value: unknown): number | null {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (!trimmed) return null;
+    const parsed = Number(trimmed);
+    if (Number.isFinite(parsed)) return parsed;
+  }
+  return null;
+}
+
+function firstNumber(...values: unknown[]): number | null {
+  for (const value of values) {
+    const candidate = numberValue(value);
+    if (candidate !== null) return candidate;
+  }
+  return null;
+}
+
+function notificationHaystack(raw: RawNotificationItem): string {
+  const data = asRecord(raw.data);
+  const meta = asRecord(raw.meta);
+  const target = asRecord(raw.target);
+  return [
+    raw.type,
+    raw.title,
+    raw.excerpt,
+    raw.body,
+    raw.text,
+    raw.path,
+    raw.href,
+    raw.url,
+    raw.link,
+    data?.type,
+    data?.title,
+    data?.targetType,
+    meta?.type,
+    meta?.title,
+    meta?.targetType,
+    target?.type,
+    target?.targetType,
+  ]
+    .map((value) => firstString(value))
+    .join(" ")
+    .toLowerCase();
+}
+
+function includesAny(haystack: string, needles: string[]): boolean {
+  return needles.some((needle) => haystack.includes(needle));
+}
+
+function resolveNotificationKind(raw: RawNotificationItem): NotificationKind {
+  const haystack = notificationHaystack(raw);
+  if (includesAny(haystack, REPLY_NOTIFICATION_TYPES)) return "reply";
+  if (includesAny(haystack, VERIFICATION_NOTIFICATION_TYPES)) return "verification";
+  if (includesAny(haystack, ORDER_NOTIFICATION_TYPES)) return "order";
+  return "generic";
+}
+
+function resolveNotificationTid(raw: RawNotificationItem): number | null {
+  const data = asRecord(raw.data);
+  const meta = asRecord(raw.meta);
+  const target = asRecord(raw.target);
+  return firstNumber(
+    raw.tid,
+    raw.targetTid,
+    raw.postId,
+    raw.targetId,
+    data?.tid,
+    data?.targetTid,
+    data?.postId,
+    data?.targetId,
+    meta?.tid,
+    meta?.targetTid,
+    meta?.postId,
+    meta?.targetId,
+    target?.tid,
+    target?.targetTid,
+    target?.postId,
+    target?.targetId,
+  );
+}
+
+function resolveNotificationTarget(raw: RawNotificationItem, kind: NotificationKind): NotificationTarget {
+  const tid = resolveNotificationTid(raw);
+  if (kind === "reply") {
+    return tid
+      ? { kind: "detail", tid }
+      : { kind: "none", reason: "该回复通知暂时无法直接打开。" };
+  }
+  if (kind === "verification") {
+    return { kind: "verification" };
+  }
+  if (kind === "order") {
+    return { kind: "none", reason: "订单类通知会在后续版本接入目标页。" };
+  }
+  return tid ? { kind: "detail", tid } : { kind: "none", reason: "该系统通知暂时只支持查看摘要。" };
+}
+
+function resolveNotificationActionLabel(kind: NotificationKind, target: NotificationTarget): string {
+  if (target.kind === "detail") {
+    return kind === "reply" ? "查看回复详情" : "查看详情";
+  }
+  if (target.kind === "verification") {
+    return "前往认证中心";
+  }
+  return target.reason;
+}
+
+export function normalizeNotificationItem(raw: RawNotificationItem): NotificationItem {
+  const data = asRecord(raw.data);
+  const meta = asRecord(raw.meta);
+  const targetRecord = asRecord(raw.target);
+  const kind = resolveNotificationKind(raw);
+  const target = resolveNotificationTarget(raw, kind);
+  const tid = resolveNotificationTid(raw);
+  const title = firstString(raw.title, data?.title, meta?.title, targetRecord?.title);
+  const excerpt = firstString(raw.excerpt, raw.body, raw.text, data?.excerpt, meta?.excerpt);
+  const type = firstString(raw.type, data?.type, meta?.type, targetRecord?.type);
+
+  return {
+    id: raw.id || raw.targetId || tid || title,
+    tid: tid ?? undefined,
+    type: type || undefined,
+    title: title || undefined,
+    excerpt: excerpt || undefined,
+    actor: raw.actor,
+    read: raw.read ?? true,
+    time: firstString(raw.time, data?.time, meta?.time) || undefined,
+    timestampISO:
+      firstString(raw.timestampISO, data?.timestampISO, meta?.timestampISO) || undefined,
+    kind,
+    actionLabel: resolveNotificationActionLabel(kind, target),
+    fallbackText: target.kind === "none" ? target.reason : undefined,
+    target,
+  };
+}
+
+export function normalizeNotificationResponse(
+  response: RawNotificationResponse | NotificationResponse,
+): NotificationResponse {
+  const rawItems = "notifications" in response ? response.notifications || [] : response.items || [];
+  return {
+    ...response,
+    items: rawItems.map((item) => normalizeNotificationItem(item as RawNotificationItem)),
+  };
+}
+
 export async function fetchNotifications(): Promise<NotificationResponse> {
-  return apiGet<NotificationResponse>("/api/messages");
+  const response = await apiGet<RawNotificationResponse>("/api/messages");
+  return normalizeNotificationResponse(response);
 }
 
 export function buildPendingChannelMessage(
