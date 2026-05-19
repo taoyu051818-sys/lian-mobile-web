@@ -19,6 +19,7 @@ export default defineConfig({
       "src/utils/__tests__/**/*.test.ts",
       "tests/motion/**/*.test.ts",
       "tests/phase0/**/*.test.ts",
+      "tests/detail-navigation/**/*.test.ts",
     ],
   },
 });

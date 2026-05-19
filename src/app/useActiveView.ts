@@ -1,17 +1,18 @@
 import { computed, ref, watch } from "vue";
 
 import { appViews, getViewDefinition, type AppViewKey } from "./view-types";
-import { getDetailTidRef, getViewFromHashRef, pushViewHash } from "./useDeepLink";
+import { getViewFromHashRef, pushViewHash } from "./useDeepLink";
+import { useDetailNavigation } from "./detail-navigation";
 
 const SECRET_VIEWS: AppViewKey[] = ["admin", "verification"];
-const detailTid = getDetailTidRef();
 const viewFromHash = getViewFromHashRef();
 const secretActiveViewKey = ref<AppViewKey | null>(null);
+const detailNav = useDetailNavigation();
 
 // Detail panel lives inside FeedView, so a `#/post/{tid}` deep link must
 // resolve to the feed tab regardless of whatever else was active.
 const effectiveActiveViewKey = computed<AppViewKey>(() =>
-  detailTid.value !== null ? "feed" : (secretActiveViewKey.value ?? viewFromHash.value),
+  detailNav.detailOpen.value ? "feed" : (secretActiveViewKey.value ?? viewFromHash.value),
 );
 
 watch(viewFromHash, () => {

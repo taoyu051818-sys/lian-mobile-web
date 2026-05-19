@@ -9,6 +9,7 @@ import { PostDetailPanel } from "../detail";
 import { useMapChrome } from "./useMapChrome";
 import { useMapDataCache } from "./useMapDataCache";
 import { useMapSelection } from "./useMapSelection";
+import { useDetailNavigation } from "../../app/detail-navigation";
 import { MAP_ARIA_LABEL } from "../../config/brand";
 import { DEFAULT_MAP_VIEWPORT_POLICY } from "../../types/map-policy";
 
@@ -22,17 +23,11 @@ const { filterActive, toggleFilter, MAP_FILTERS } = useMapChrome();
 
 const { mapData, roadPreview, loading, errorMessage, loadMap } = useMapDataCache();
 
-const {
-  selectedTarget,
-  selectedPost,
-  detailLoading,
-  detailError,
-  selectLocation,
-  closePlaceSheet,
-  openPost,
-  retryDetail,
-  closeDetail,
-} = useMapSelection(() => mapData.value?.posts || []);
+const { selectedTarget, selectLocation, closePlaceSheet } = useMapSelection(
+  () => mapData.value?.posts || [],
+);
+
+const detail = useDetailNavigation();
 
 const selectedPlace = computed<MapLocation | MapPost | null>(() => {
   const target = selectedTarget.value;
@@ -51,7 +46,7 @@ function isMapPost(place: MapLocation | MapPost): place is MapPost {
 
 function handlePlaceSelect(place: MapLocation | MapPost) {
   if (isMapPost(place)) {
-    void openPost(place);
+    detail.open(Number(place.tid), "card");
   } else {
     selectLocation(place);
   }
@@ -103,13 +98,13 @@ onActivated(() => {
       <MapStatus :loading="loading" :error-message="errorMessage" />
       <MapPlaceSheet :selected-place="selectedPlace" @close="closePlaceSheet" />
       <PostDetailPanel
-        v-if="selectedPost !== null || detailLoading"
+        v-if="detail.detailOpen.value"
         class="map-view__post-detail"
-        :post="selectedPost"
-        :loading="detailLoading"
-        :error="detailError"
-        @close="closeDetail"
-        @retry="retryDetail"
+        :post="detail.detailPost.value"
+        :loading="detail.detailLoading.value"
+        :error="detail.detailError.value"
+        @close="detail.close('user-tap')"
+        @retry="detail.retry()"
       />
     </section>
   </section>

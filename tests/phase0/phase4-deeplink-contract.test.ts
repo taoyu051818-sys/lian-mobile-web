@@ -103,13 +103,14 @@ describe("Phase 4 (deeplink): producers point at the canonical hash shape", () =
 describe("Phase 4 (deeplink): consumers wire the hash into the SPA", () => {
   const useActiveView = readRepoFile("../../src/app/useActiveView.ts");
   const feedView = readRepoFile("../../src/features/feed/FeedView.vue");
-  const useFeedDetail = readRepoFile("../../src/features/feed/useFeedDetail.ts");
-  const useFeedDetailHistory = readRepoFile("../../src/features/feed/useFeedDetailHistory.ts");
+  const detailStore = readRepoFile("../../src/app/detail-navigation/store.ts");
+  const detailUrlSync = readRepoFile("../../src/app/detail-navigation/url-sync.ts");
+  const detailReducer = readRepoFile("../../src/app/detail-navigation/state.ts");
   const useFeedData = readRepoFile("../../src/features/feed/useFeedData.ts");
 
-  it("useActiveView forces the feed tab when a deep-linked tid is present", () => {
-    expect(useActiveView).toMatch(/getDetailTidRef|useDeepLink/);
-    expect(useActiveView).toMatch(/detailTid/);
+  it("useActiveView forces the feed tab when the detail-navigation store is open", () => {
+    expect(useActiveView).toMatch(/useDetailNavigation/);
+    expect(useActiveView).toMatch(/detailOpen/);
     expect(useActiveView).toMatch(/"feed"/);
   });
 
@@ -124,44 +125,30 @@ describe("Phase 4 (deeplink): consumers wire the hash into the SPA", () => {
     expect(useActiveView).not.toMatch(/activeViewKey = ref/);
   });
 
-  it("FeedView watches detailTid and opens the panel without re-pushing history", () => {
-    expect(feedView).toMatch(/useDeepLink/);
-    expect(feedView).toMatch(/watch\(\s*detailTid/);
-    expect(feedView).toMatch(/openFromDeepLink/);
+  it("FeedView opens detail through the navigation store, not a feed-local composable", () => {
+    expect(feedView).toMatch(/useDetailNavigation/);
+    expect(feedView).toMatch(/detail\.open\(/);
+    expect(feedView).not.toMatch(/useFeedDetail|usePostDetailLoader|useFeedDetailHistory/);
   });
 
-  it("useFeedDetail exposes openFromDeepLink that skips pushDetailHistory", () => {
-    expect(useFeedDetail).toMatch(/openFromDeepLink/);
-    // Sanity: the deep-link path must not call pushDetailHistory (would loop).
-    // Match the inner function block (closing brace at 2-space indent).
-    const block = useFeedDetail.match(/async function openFromDeepLink[\s\S]*?\n {2}}/)?.[0] ?? "";
-    expect(block.length).toBeGreaterThan(0);
-    expect(block).not.toMatch(/pushDetailHistory/);
+  it("detail-navigation store dispatches push/clear via the deep-link helpers", () => {
+    expect(detailStore).toMatch(/pushPostDetailHash/);
+    expect(detailStore).toMatch(/clearPostDetailHash/);
+    expect(detailStore).not.toMatch(/window\.location\.href/);
   });
 
-  it("useFeedDetailHistory delegates URL push/clear to the deep-link helpers", () => {
-    expect(useFeedDetailHistory).toMatch(/pushPostDetailHash/);
-    expect(useFeedDetailHistory).toMatch(/clearPostDetailHash/);
-    // Guard against the legacy "pushState with current href" pattern that left
-    // the URL unchanged — that's the regression we're fixing.
-    expect(useFeedDetailHistory).not.toMatch(/window\.location\.href/);
+  it("url-sync handles popstate without racing in-flight fetches", () => {
+    // The reducer makes url-sync(currentTid) idempotent — no need for the old
+    // defensive "early return when detailTid is still set" guard. The popstate
+    // handler simply dispatches close or url-sync; the reducer drops repeats.
+    expect(detailUrlSync).toMatch(/popstate/);
+    expect(detailUrlSync).toMatch(/dispatch\(\{ type: "close", source: "popstate" \}\)/);
+    expect(detailUrlSync).toMatch(/dispatch\(\{ type: "url-sync", tid \}\)/);
   });
 
-  it("onWindowPopState only closes the panel when the URL no longer points to a detail", () => {
-    // A spurious popstate fired while detailTid is still non-null used to call
-    // closeDetail mid-flight, which (a) bumped the loader token so the in-flight
-    // fetch's finally branch skipped clearing detailLoading, and (b) tore down
-    // the PostDetailPanel mid-render — leaving the panel stuck on
-    // "正在加载详情…". The handler must early-return when detailTid is still
-    // set; FeedView's detailTid watch handles legitimate forward-nav itself.
-    const block = useFeedDetailHistory.match(/function onWindowPopState[\s\S]*?\n {2}}/)?.[0] ?? "";
-    expect(block.length).toBeGreaterThan(0);
-    expect(block).toMatch(/detailTid\.value !== null/);
-    expect(block).toMatch(/return;?\s*\n/);
-    // The old guard `!detailOpen.value && detailTid.value === null` always fell
-    // through to onPopState() when the panel was open. The new handler must
-    // not call onPopState() while detailTid is still non-null.
-    expect(block).not.toMatch(/!options\.detailOpen\.value && detailTid\.value === null/);
+  it("reducer's url-sync action is idempotent on the same tid (kills the stuck-loading race)", () => {
+    expect(detailReducer).toMatch(/case "url-sync":/);
+    expect(detailReducer).toMatch(/currentTid\(state\) === desired/);
   });
 
   it("useFeedData no longer closes the detail on initial mount load", () => {
@@ -170,8 +157,7 @@ describe("Phase 4 (deeplink): consumers wire the hash into the SPA", () => {
     const loadFeedBody = useFeedData.match(/async function loadFeed[\s\S]*?\n {2}}/)?.[0] ?? "";
     expect(loadFeedBody.length).toBeGreaterThan(0);
     expect(loadFeedBody).not.toMatch(/closeDetail/);
-    expect(loadFeedBody).not.toMatch(/resetDetailState/);
     const switchTabBody = useFeedData.match(/function switchTab[\s\S]*?\n {2}}/)?.[0] ?? "";
-    expect(switchTabBody).toMatch(/closeDetail|resetDetailState/);
+    expect(switchTabBody).toMatch(/closeDetail/);
   });
 });

@@ -12,7 +12,7 @@ import {
   VERIFICATION_ENTER_LABEL,
 } from "../../config/brand";
 import { extractErrorMessage } from "../../utils/extractErrorMessage";
-import { usePostDetail } from "../detail";
+import { useDetailNavigation } from "../../app/detail-navigation";
 import type { PageChromeSpec } from "../../shell/page-model";
 import type { ProfileUser } from "../../types/profile";
 import { InlineError } from "../../ui";
@@ -57,16 +57,10 @@ const {
   refreshCurrentSession,
 });
 
-const {
-  selectedPostId: _selectedPostId,
-  selectedPost,
-  detailLoading,
-  detailError,
-  detailOpen,
-  openDetail: openItem,
-  closeDetail,
-  retryDetail,
-} = usePostDetail();
+const detail = useDetailNavigation();
+function openItem(id: number | string) {
+  detail.open(Number(id), "card");
+}
 
 const {
   aliasPickerOpen,
@@ -189,12 +183,12 @@ onMounted(() => {
       />
 
       <ProfileDetailOverlay
-        v-if="detailOpen"
-        :post="selectedPost"
-        :loading="detailLoading"
-        :error="detailError"
-        @close="closeDetail"
-        @retry="retryDetail"
+        v-if="detail.detailOpen.value"
+        :post="detail.detailPost.value"
+        :loading="detail.detailLoading.value"
+        :error="detail.detailError.value"
+        @close="detail.close('user-tap')"
+        @retry="detail.retry()"
       />
 
       <footer class="profile-view__verification-entry">

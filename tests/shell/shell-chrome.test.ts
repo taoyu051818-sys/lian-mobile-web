@@ -178,26 +178,14 @@ describe("useShellChrome", () => {
     });
   });
 
-  describe("slot stack", () => {
-    it("keeps teleport slot targets available when page chrome re-emits tabs", () => {
-      chrome.applyPageChrome({
-        top: {
-          tabs: {
-            kind: "tabs",
-            items: [{ id: "feed", label: "动态" }],
-            activeKey: "feed",
-          },
-        },
-        bottom: { visible: true },
-      });
-      chrome.setRegion("bottom", { slot: "tabs" });
-
-      const releaseTop = chrome.pushSlot("top", "detail-topbar");
-      const releaseBottom = chrome.pushSlot("bottom", "reply-dock");
-
-      expect(chrome.state.top.slot).toBe("detail-topbar");
-      expect(chrome.state.top.tabs).toBeDefined();
-      expect(chrome.state.bottom.slot).toBe("reply-dock");
+  describe("slot ownership (FSM-driven)", () => {
+    it("applyPageChrome must not touch slot — slots are owned by setSlot", () => {
+      // The detail-navigation FSM is the only writer of `slot`. Page chrome
+      // re-paints (e.g. tab toggles, filter updates) used to dislodge an
+      // active teleport target via the old push/pop stack; the new contract
+      // is simpler — applyPageChrome literally cannot write slots.
+      chrome.setSlot("top", "detail-topbar");
+      chrome.setSlot("bottom", "reply-dock");
 
       chrome.applyPageChrome({
         top: {
@@ -214,9 +202,8 @@ describe("useShellChrome", () => {
       expect(chrome.state.top.tabs).toBeDefined();
       expect(chrome.state.bottom.slot).toBe("reply-dock");
 
-      releaseTop();
-      releaseBottom();
-
+      chrome.setSlot("top", null);
+      chrome.setSlot("bottom", "tabs");
       expect(chrome.state.top.slot).toBeNull();
       expect(chrome.state.bottom.slot).toBe("tabs");
     });

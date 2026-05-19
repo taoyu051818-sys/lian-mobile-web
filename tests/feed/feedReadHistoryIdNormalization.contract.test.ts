@@ -9,8 +9,8 @@ const feedDataSource = fs.readFileSync(
   path.join(repoRoot, "src/features/feed/useFeedData.ts"),
   "utf8",
 );
-const feedDetailSource = fs.readFileSync(
-  path.join(repoRoot, "src/features/feed/usePostDetailLoader.ts"),
+const detailStateSource = fs.readFileSync(
+  path.join(repoRoot, "src/app/detail-navigation/state.ts"),
   "utf8",
 );
 const browserStorageSource = fs.readFileSync(
@@ -40,22 +40,15 @@ describe("Feed read-history string id normalization", () => {
     expect(browserStorageSource).toMatch(/String\(entry\.tid\) !== normalizedId/);
   });
 
-  it("loadDetail uses a request-token guard, not an id-equality guard", () => {
-    // The id-equality guard regressed in PR #601 — anything that mutated
-    // selectedPostId mid-flight (e.g. the new detailTid watch) caused the
-    // finally branch to skip `detailLoading.value = false` and the panel
-    // stayed stuck on "正在加载详情…". The token guard does not depend on
-    // external state, so it cannot be broken that way.
-    expect(feedDetailSource).toMatch(/let pendingToken = 0;/);
-    expect(feedDetailSource).toMatch(/const token = \+\+pendingToken;/);
-    expect(feedDetailSource).toMatch(/token !== pendingToken/);
-    expect(feedDetailSource).toMatch(/token === pendingToken/);
-    // The brittle id-equality guard must not return.
-    expect(feedDetailSource).not.toMatch(
-      /normalizeFeedItemId\(selectedPostId\.value\) === normalizedId/,
-    );
-    // resetLoaderState must invalidate any in-flight fetch so it does not
-    // write back to the cleared state.
-    expect(feedDetailSource).toMatch(/function resetLoaderState\(\) \{[\s\S]*?pendingToken/);
+  it("detail-navigation reducer uses a token guard, not an id-equality guard", () => {
+    // The id-equality guard regressed in PR #601: anything that mutated
+    // selectedPostId mid-flight (e.g. the deep-link watch) caused the finally
+    // branch to skip clearing detailLoading and the panel stayed stuck on
+    // "正在加载详情…". The reducer drops stale fetch-result actions whose
+    // token does not match the current loading token — a check that does not
+    // depend on any external state.
+    expect(detailStateSource).toMatch(/token: number/);
+    expect(detailStateSource).toMatch(/action\.token !== state\.token/);
+    expect(detailStateSource).toMatch(/kind: "loading"/);
   });
 });

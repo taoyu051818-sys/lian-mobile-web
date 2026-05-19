@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from "vue";
-import { PostDetailPanel, usePostDetail } from "../detail";
+import { PostDetailPanel } from "../detail";
+import { useDetailNavigation } from "../../app/detail-navigation";
 import { useVisualViewport } from "../../composables/useVisualViewport";
 import type { MessageTabKey } from "../../types/messages";
 import type { PageChromeSpec } from "../../shell/page-model";
@@ -51,16 +52,10 @@ const {
   onRetry: channelRetryMessage,
 });
 
-const {
-  selectedPostId: _selectedPostId,
-  selectedPost,
-  detailLoading,
-  detailError,
-  detailOpen,
-  openDetail: openNotification,
-  closeDetail,
-  retryDetail,
-} = usePostDetail();
+const detail = useDetailNavigation();
+function openNotification(id: number | string) {
+  detail.open(Number(id), "card");
+}
 
 useVisualViewport();
 
@@ -149,18 +144,18 @@ onMounted(async () => {
     />
 
     <div
-      v-if="detailOpen"
+      v-if="detail.detailOpen.value"
       class="messages-view__detail-overlay"
       role="dialog"
       aria-modal="true"
       :aria-label="POST_DETAIL_DIALOG_LABEL"
     >
       <PostDetailPanel
-        :post="selectedPost"
-        :loading="detailLoading"
-        :error="detailError"
-        @close="closeDetail"
-        @retry="retryDetail"
+        :post="detail.detailPost.value"
+        :loading="detail.detailLoading.value"
+        :error="detail.detailError.value"
+        @close="detail.close('user-tap')"
+        @retry="detail.retry()"
       />
     </div>
   </section>
