@@ -11,7 +11,7 @@
  * which flips the same secret view into its timeline branch — same view
  * key, no second registration needed in `useActiveView`.
  */
-import { computed, onMounted, watch } from "vue";
+import { computed, onBeforeUnmount, onMounted, watch } from "vue";
 import {
   ERRAND_ORDER_BACK,
   ERRAND_ORDER_BALANCE_LABEL,
@@ -47,23 +47,42 @@ const route = useErrandOrderRoute();
 const { setActiveView } = useActiveView();
 
 const initialMerchantPostId = route.merchantPostId.value || 0;
-const draftCtx = useErrandOrderDraft(initialMerchantPostId);
+// Destructure refs so the template can read them via auto-unwrap instead of
+// `draftCtx.foo.value` everywhere — Vue's auto-unwrap only applies to refs
+// returned at the top level of <script setup>, not nested keys on an object.
+const {
+  draft,
+  gate,
+  gateLoading,
+  gateLoaded,
+  gateError,
+  submitting,
+  submitError,
+  canSubmit,
+  refresh: refreshDraft,
+  setMode,
+  setNotes,
+  setPickup,
+  setDropoff,
+  submit: submitDraft,
+  reset: resetDraft,
+} = useErrandOrderDraft(initialMerchantPostId);
 
 const isTimelineMode = computed(() => Boolean(route.orderId.value));
 
 const pickupLabel = computed({
-  get: () => draftCtx.draft.value.pickupLocation?.label || "",
-  set: (next: string) => draftCtx.setPickup(next),
+  get: () => draft.value.pickupLocation?.label || "",
+  set: (next: string) => setPickup(next),
 });
 
 const dropoffLabel = computed({
-  get: () => draftCtx.draft.value.dropoffLocation?.label || "",
-  set: (next: string) => draftCtx.setDropoff(next),
+  get: () => draft.value.dropoffLocation?.label || "",
+  set: (next: string) => setDropoff(next),
 });
 
 const notesValue = computed({
-  get: () => draftCtx.draft.value.notes,
-  set: (next: string) => draftCtx.setNotes(next),
+  get: () => draft.value.notes,
+  set: (next: string) => setNotes(next),
 });
 
 const modes: { value: ErrandMode; hint: string }[] = [
@@ -73,7 +92,7 @@ const modes: { value: ErrandMode; hint: string }[] = [
 
 onMounted(() => {
   if (!isTimelineMode.value && route.merchantPostId.value) {
-    void draftCtx.refresh(route.merchantPostId.value);
+    void refreshDraft(route.merchantPostId.value);
   }
 });
 
@@ -84,23 +103,33 @@ watch(
   () => route.merchantPostId.value,
   (next) => {
     if (next && !isTimelineMode.value) {
-      draftCtx.reset(next);
-      void draftCtx.refresh(next);
+      resetDraft(next);
+      void refreshDraft(next);
     }
   },
 );
 
-function handleClose() {
+// Belt-and-suspenders: the route singleton lives at module scope, so a
+// tab-bar switch (which unmounts this view without going through the close
+// button) would otherwise leave merchantPostId/orderId set, and the next
+// re-entry would render with stale state. Reset on unmount so the view is
+// always re-armed via an explicit enterFor* call.
+onBeforeUnmount(() => {
   route.reset();
-  setActiveView("feed");
+});
+
+function handleClose() {
+  const back = route.origin.value;
+  route.reset();
+  setActiveView(back);
 }
 
 function goLogin() {
-  // Auth lives on the publish/profile flow; sending the user back to feed
-  // surfaces the login affordance there. Wallet / verification dispatch is
-  // explicit (verification/profile) but login does not have a dedicated
-  // secret view, so feed is the closest re-entry surface.
-  setActiveView("feed");
+  // The auth panel lives on the profile tab — sending the user there gives
+  // them the login surface. We deliberately do NOT reset the route here:
+  // once they finish logging in and return to errand-order, we want the
+  // merchantPostId still in place so the form opens against the right post.
+  setActiveView("profile");
 }
 
 function goVerify() {
@@ -112,15 +141,16 @@ function goWallet() {
 }
 
 async function handleSubmit() {
-  const orderId = await draftCtx.submit();
+  const orderId = await submitDraft();
   if (orderId) {
     route.enterForOrder(orderId);
   }
 }
 
 function handleTimelineBack() {
+  const back = route.origin.value;
   route.reset();
-  setActiveView("feed");
+  setActiveView(back);
 }
 </script>
 
@@ -149,42 +179,38 @@ function handleTimelineBack() {
       <h2>{{ ERRAND_ORDER_SECTION_LABEL }}</h2>
     </header>
 
-    <p
-      v-if="draftCtx.gateLoading.value && !draftCtx.gateLoaded.value"
-      class="errand-order-view__status"
-      role="status"
-    >
+    <p v-if="gateLoading && !gateLoaded" class="errand-order-view__status" role="status">
       {{ ERRAND_ORDER_LOADING }}
     </p>
 
     <p
-      v-else-if="draftCtx.gateError.value"
+      v-else-if="gateError"
       class="errand-order-view__status is-error"
       role="alert"
       data-testid="errand-order-load-error"
     >
-      {{ draftCtx.gateError.value || ERRAND_ORDER_LOAD_ERROR }}
+      {{ gateError || ERRAND_ORDER_LOAD_ERROR }}
       <button
         type="button"
         class="errand-order-view__retry"
-        @click="() => void draftCtx.refresh(route.merchantPostId.value || 0)"
+        @click="() => void refreshDraft(route.merchantPostId.value || 0)"
       >
         {{ ERRAND_ORDER_RETRY }}
       </button>
     </p>
 
     <ErrandOrderGate
-      v-else-if="draftCtx.gateLoaded.value && !draftCtx.gate.value.ok"
-      :gate="draftCtx.gate.value"
+      v-else-if="gateLoaded && !gate.ok"
+      :gate="gate"
       data-testid="errand-order-view-gate"
       @go-login="goLogin"
       @go-verify="goVerify"
       @go-wallet="goWallet"
-      @retry="() => void draftCtx.refresh(route.merchantPostId.value || 0)"
+      @retry="() => void refreshDraft(route.merchantPostId.value || 0)"
     />
 
     <form
-      v-else-if="draftCtx.gateLoaded.value"
+      v-else-if="gateLoaded"
       class="errand-order-view__form"
       data-testid="errand-order-form"
       @submit.prevent="() => void handleSubmit()"
@@ -227,14 +253,14 @@ function handleTimelineBack() {
           v-for="mode in modes"
           :key="mode.value"
           class="errand-order-view__mode"
-          :class="{ 'is-selected': draftCtx.draft.value.mode === mode.value }"
+          :class="{ 'is-selected': draft.mode === mode.value }"
         >
           <input
             type="radio"
             name="errand-order-mode"
             :value="mode.value"
-            :checked="draftCtx.draft.value.mode === mode.value"
-            @change="draftCtx.setMode(mode.value)"
+            :checked="draft.mode === mode.value"
+            @change="setMode(mode.value)"
           />
           <span class="errand-order-view__mode-label">{{ modeLabel(mode.value) }}</span>
           <small>{{ mode.hint }}</small>
@@ -244,30 +270,30 @@ function handleTimelineBack() {
       <dl class="errand-order-view__totals">
         <div>
           <dt>{{ ERRAND_ORDER_FEE_LABEL }}</dt>
-          <dd>{{ draftCtx.gate.value.estimatedFeePoints }} {{ ERRAND_ORDER_POINTS_SUFFIX }}</dd>
+          <dd>{{ gate.estimatedFeePoints }} {{ ERRAND_ORDER_POINTS_SUFFIX }}</dd>
         </div>
         <div>
           <dt>{{ ERRAND_ORDER_BALANCE_LABEL }}</dt>
-          <dd>{{ draftCtx.gate.value.availablePoints }} {{ ERRAND_ORDER_POINTS_SUFFIX }}</dd>
+          <dd>{{ gate.availablePoints }} {{ ERRAND_ORDER_POINTS_SUFFIX }}</dd>
         </div>
       </dl>
 
       <p
-        v-if="draftCtx.submitError.value"
+        v-if="submitError"
         class="errand-order-view__status is-error"
         role="alert"
         data-testid="errand-order-submit-error"
       >
-        {{ draftCtx.submitError.value }}
+        {{ submitError }}
       </p>
 
       <button
         type="submit"
         class="errand-order-view__submit"
-        :disabled="!draftCtx.canSubmit.value"
+        :disabled="!canSubmit"
         data-testid="errand-order-submit"
       >
-        {{ draftCtx.submitting.value ? ERRAND_ORDER_SUBMITTING : ERRAND_ORDER_SUBMIT }}
+        {{ submitting ? ERRAND_ORDER_SUBMITTING : ERRAND_ORDER_SUBMIT }}
       </button>
     </form>
   </section>

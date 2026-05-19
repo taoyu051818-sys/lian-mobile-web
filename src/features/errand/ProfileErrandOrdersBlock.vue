@@ -24,15 +24,22 @@ import { useMyErrandOrders } from "./useMyErrandOrders";
 
 const route = useErrandOrderRoute();
 const { setActiveView } = useActiveView();
-const orders = useMyErrandOrders();
+
+// Destructure refs so the template can read them via auto-unwrap. Matching
+// the pattern used by RunnerCenterView / ErrandOrderView — Vue only auto-
+// unwraps refs returned at the top level of <script setup>, not nested keys
+// on a returned object.
+const { items, loading, loaded, errorMessage, refresh: refreshOrders } = useMyErrandOrders();
 
 onMounted(() => {
-  void orders.refresh();
+  void refreshOrders();
 });
 
 function openOrder(orderId: string) {
   if (!orderId) return;
-  route.enterForOrder(orderId);
+  // Tag the entry surface as "profile" so the timeline back/close handlers
+  // return the user here instead of dropping them on the feed tab.
+  route.enterForOrder(orderId, "profile");
   setActiveView("errand-order");
 }
 </script>
@@ -46,36 +53,32 @@ function openOrder(orderId: string) {
     <header class="profile-errand-orders__header">
       <h3>{{ PROFILE_ERRAND_ORDERS_SECTION_LABEL }}</h3>
       <button
-        v-if="orders.loaded.value || orders.errorMessage.value"
+        v-if="loaded || errorMessage"
         type="button"
         class="profile-errand-orders__reload"
-        :disabled="orders.loading.value"
+        :disabled="loading"
         data-testid="profile-errand-orders-reload"
-        @click="() => void orders.refresh()"
+        @click="() => void refreshOrders()"
       >
         {{ PROFILE_ERRAND_ORDERS_RELOAD }}
       </button>
     </header>
 
-    <p
-      v-if="orders.loading.value && !orders.loaded.value"
-      class="profile-errand-orders__hint"
-      role="status"
-    >
+    <p v-if="loading && !loaded" class="profile-errand-orders__hint" role="status">
       {{ PROFILE_ERRAND_ORDERS_LOADING }}
     </p>
 
     <p
-      v-else-if="orders.errorMessage.value"
+      v-else-if="errorMessage"
       class="profile-errand-orders__hint is-error"
       role="alert"
       data-testid="profile-errand-orders-error"
     >
-      {{ orders.errorMessage.value }}
+      {{ errorMessage }}
     </p>
 
     <p
-      v-else-if="!orders.items.value.length"
+      v-else-if="!items.length"
       class="profile-errand-orders__hint"
       data-testid="profile-errand-orders-empty"
     >
@@ -84,7 +87,7 @@ function openOrder(orderId: string) {
 
     <ul v-else class="profile-errand-orders__list" data-testid="profile-errand-orders-list">
       <li
-        v-for="order in orders.items.value"
+        v-for="order in items"
         :key="order.orderId"
         class="profile-errand-orders__item"
         data-testid="profile-errand-orders-item"

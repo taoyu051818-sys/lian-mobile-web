@@ -23,6 +23,7 @@ import {
   ERRAND_ORDER_MODE_TITLE,
   ERRAND_ORDER_PICKUP_TITLE,
   ERRAND_ORDER_POINTS_SUFFIX,
+  ERRAND_ORDER_RETRY,
 } from "../../config/brand";
 import { useErrandOrderDetail } from "./useErrandOrderDetail";
 import {
@@ -40,30 +41,42 @@ const emit = defineEmits<{
   back: [];
 }>();
 
-const detail = useErrandOrderDetail();
+// Destructure refs so the template can read them via auto-unwrap. Vue's
+// auto-unwrap only applies to top-level refs returned from setup, not nested
+// keys on a returned object — the previous `detail.loading.value` access
+// pattern worked at runtime but bypassed the unwrap rule.
+const {
+  detail: detailRef,
+  loading,
+  loaded,
+  errorMessage,
+  refresh: refreshDetail,
+  start: startDetail,
+  stop: stopDetail,
+} = useErrandOrderDetail();
 
 onMounted(() => {
-  if (props.orderId) detail.start(props.orderId);
+  if (props.orderId) startDetail(props.orderId);
 });
 
 watch(
   () => props.orderId,
   (next) => {
-    if (next) detail.start(next);
-    else detail.stop();
+    if (next) startDetail(next);
+    else stopDetail();
   },
 );
 
 onBeforeUnmount(() => {
-  detail.stop();
+  stopDetail();
 });
 
-const order = computed(() => detail.detail.value?.order || null);
-const timeline = computed(() => detail.detail.value?.timeline || []);
+const order = computed(() => detailRef.value?.order || null);
+const timeline = computed(() => detailRef.value?.timeline || []);
 const isLivePolling = computed(() => !!order.value && !isTerminalErrandStatus(order.value.status));
 
 function handleRefresh() {
-  if (props.orderId) void detail.refresh(props.orderId);
+  if (props.orderId) void refreshDetail(props.orderId);
 }
 </script>
 
@@ -86,11 +99,11 @@ function handleRefresh() {
       <button
         type="button"
         class="errand-order-timeline-view__refresh"
-        :disabled="detail.loading.value"
+        :disabled="loading"
         data-testid="errand-order-timeline-refresh"
         @click="handleRefresh"
       >
-        {{ detail.loading.value ? ERRAND_ORDER_DETAIL_REFRESHING : ERRAND_ORDER_DETAIL_REFRESH }}
+        {{ loading ? ERRAND_ORDER_DETAIL_REFRESHING : ERRAND_ORDER_DETAIL_REFRESH }}
       </button>
     </header>
 
@@ -102,22 +115,27 @@ function handleRefresh() {
       {{ ERRAND_ORDER_DETAIL_AUTO_REFRESH_HINT }}
     </p>
 
-    <p
-      v-if="detail.loading.value && !detail.loaded.value"
-      class="errand-order-timeline-view__status"
-      role="status"
-    >
+    <p v-if="loading && !loaded" class="errand-order-timeline-view__status" role="status">
       {{ ERRAND_ORDER_LOADING }}
     </p>
 
-    <p
-      v-else-if="detail.errorMessage.value"
+    <div
+      v-else-if="errorMessage"
       class="errand-order-timeline-view__status is-error"
       role="alert"
       data-testid="errand-order-timeline-error"
     >
-      {{ detail.errorMessage.value || ERRAND_ORDER_DETAIL_LOAD_ERROR }}
-    </p>
+      <span>{{ errorMessage || ERRAND_ORDER_DETAIL_LOAD_ERROR }}</span>
+      <button
+        type="button"
+        class="errand-order-timeline-view__retry"
+        data-testid="errand-order-timeline-retry"
+        :disabled="loading"
+        @click="handleRefresh"
+      >
+        {{ ERRAND_ORDER_RETRY }}
+      </button>
+    </div>
 
     <template v-else-if="order">
       <dl class="errand-order-timeline-view__meta">
@@ -138,12 +156,12 @@ function handleRefresh() {
           <dd>{{ order.feeAmount }} {{ ERRAND_ORDER_POINTS_SUFFIX }}</dd>
         </div>
         <div
-          v-if="detail.detail.value?.notes"
+          v-if="detailRef?.notes"
           class="errand-order-timeline-view__row"
           data-testid="errand-order-timeline-notes"
         >
           <dt>{{ ERRAND_ORDER_DETAIL_NOTES_LABEL }}</dt>
-          <dd>{{ detail.detail.value?.notes }}</dd>
+          <dd>{{ detailRef?.notes }}</dd>
         </div>
       </dl>
 
