@@ -48,7 +48,7 @@ Total files: 304
 | `app/detail-navigation/store.ts`    | Module-scoped reactive wrapper around the pure detail-navigation reducer. Why a module singleton: the URL hash, the ...  |   157 |
 | `app/detail-navigation/url-sync.ts` | Bridges window.location.hash → reducer for the post-detail tid. The detail-navigation reducer is the single source o...  |    58 |
 | `app/post-detail-hash.ts`           | Post-detail hash writer — `#/post/{tid}`. Pure history I/O. No module-scoped tid ref, no listener: the detail-naviga...  |    69 |
-| `app/useActiveView.ts`              | export function useActiveView()                                                                                          |    45 |
+| `app/useActiveView.ts`              | export function useActiveView()                                                                                          |    46 |
 | `app/view-hash.ts`                  | View-hash singleton — `#/feed`, `#/map`, `#/publish`, `#/messages`, `#/profile` (and the secret `#/admin`, `#/verific... |    73 |
 | `app/view-types.ts`                 | export type AppViewKey =                                                                                                 |    71 |
 
@@ -207,7 +207,7 @@ Total files: 304
 | `features/messages/ChannelComposer.vue`          | Vue SFC                                                                                                                       |   147 |
 | `features/messages/ChannelThread.vue`            | Vue SFC                                                                                                                       |   268 |
 | `features/messages/MessagesTabs.vue`             | Vue SFC                                                                                                                       |    58 |
-| `features/messages/MessagesView.vue`             | Vue SFC                                                                                                                       |   183 |
+| `features/messages/MessagesView.vue`             | Vue SFC                                                                                                                       |   184 |
 | `features/messages/NotificationList.vue`         | Vue SFC                                                                                                                       |   203 |
 | `features/messages/index.ts`                     | TypeScript module                                                                                                             |     6 |
 | `features/messages/useChannelMessages.ts`        | export function useChannelMessages()                                                                                          |   227 |
