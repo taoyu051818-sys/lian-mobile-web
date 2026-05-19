@@ -23,7 +23,6 @@ import ProfileSettingsBlock from "./ProfileSettingsBlock.vue";
 import ProfileStatsBlock from "./ProfileStatsBlock.vue";
 import ProfileTabs from "./ProfileTabs.vue";
 import ProfileCollectionList from "./ProfileCollectionList.vue";
-import ProfileDetailOverlay from "./ProfileDetailOverlay.vue";
 import { useProfileSession } from "./useProfileSession";
 import { useProfileTabs } from "./useProfileTabs";
 import { useProfileChrome } from "./useProfileChrome";
@@ -183,15 +182,6 @@ onMounted(() => {
         :error="listError"
         @retry="loadProfileList(activeTab)"
         @open-item="openItem"
-      />
-
-      <ProfileDetailOverlay
-        v-if="detail.detailOpen.value"
-        :post="detail.detailPost.value"
-        :loading="detail.detailLoading.value"
-        :error="detail.detailError.value"
-        @close="detail.close('user-tap')"
-        @retry="detail.retry()"
       />
 
       <footer class="profile-view__verification-entry">

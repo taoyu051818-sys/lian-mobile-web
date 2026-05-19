@@ -108,10 +108,14 @@ describe("Phase 4 (deeplink): consumers wire the hash into the SPA", () => {
   const detailReducer = readRepoFile("../../src/app/detail-navigation/state.ts");
   const useFeedData = readRepoFile("../../src/features/feed/useFeedData.ts");
 
-  it("useActiveView forces the feed tab when the detail-navigation store is open", () => {
-    expect(useActiveView).toMatch(/useDetailNavigation/);
-    expect(useActiveView).toMatch(/detailOpen/);
-    expect(useActiveView).toMatch(/"feed"/);
+  it("useActiveView is independent of the detail-navigation FSM (post-#636)", () => {
+    // Active view is no longer forced to feed when detail opens — detail is an
+    // App-level overlay (DetailSurface), so opening/closing a detail must not
+    // shuffle which tab is active.
+    expect(useActiveView).not.toMatch(/useDetailNavigation/);
+    expect(useActiveView).not.toMatch(/detailOpen/);
+    expect(useActiveView).toMatch(/getViewFromHashRef/);
+    expect(useActiveView).toMatch(/pushViewHash/);
   });
 
   it("useActiveView reads from the view-hash singleton and writes via pushViewHash", () => {
@@ -125,10 +129,12 @@ describe("Phase 4 (deeplink): consumers wire the hash into the SPA", () => {
     expect(useActiveView).not.toMatch(/activeViewKey = ref/);
   });
 
-  it("FeedView opens detail through the navigation store, not a feed-local composable", () => {
+  it("FeedView opens detail through the navigation store and no longer mounts the panel locally", () => {
     expect(feedView).toMatch(/useDetailNavigation/);
     expect(feedView).toMatch(/detail\.open\(/);
     expect(feedView).not.toMatch(/useFeedDetail|usePostDetailLoader|useFeedDetailHistory/);
+    // Detail panel is mounted by the App-level DetailSurface, not FeedView.
+    expect(feedView).not.toMatch(/<PostDetailPanel/);
   });
 
   it("detail-navigation store dispatches push/clear via the deep-link helpers", () => {
