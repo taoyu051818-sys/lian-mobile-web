@@ -15,6 +15,7 @@ import { fetchAuthMe } from "../../api/profile";
 import { useActiveView } from "../../app/useActiveView";
 import type { PageChromeSpec } from "../../shell/page-model";
 import type { ProfileUser } from "../../types/profile";
+import { LianButton } from "../../ui";
 import RunnerGate from "./RunnerGate.vue";
 import RunnerOrderCard from "./RunnerOrderCard.vue";
 import { useIsRunnerVerified, useRunnerCenter, type RunnerCenterTab } from "./useRunnerCenter";
@@ -32,7 +33,28 @@ const sessionError = ref("");
 
 const isRunnerVerified = useIsRunnerVerified(user);
 
-const runner = useRunnerCenter();
+// Destructure so the template can read these refs without `.value` — Vue's
+// auto-unwrap only applies to top-level refs returned from setup, not to
+// nested keys on a returned object.
+const {
+  availableOrders,
+  activeOrders,
+  availableLoading,
+  activeLoading,
+  availableError,
+  activeError,
+  actionMessage,
+  actionError,
+  pendingActionFor,
+  loadAvailable,
+  loadActive,
+  accept,
+  markAtShop,
+  markPickedUp,
+  markDelivered,
+  clearMessages,
+} = useRunnerCenter();
+
 const activeTab = ref<RunnerCenterTab>("available");
 
 const tabs: Array<{ key: RunnerCenterTab; label: string }> = [
@@ -73,9 +95,13 @@ function handleChromeButtonClick(buttonId: string) {
 }
 
 function selectTab(key: RunnerCenterTab) {
+  if (activeTab.value === key) return;
   activeTab.value = key;
-  if (key === "active") void runner.loadActive();
-  else void runner.loadAvailable();
+  // Drop any prior tab's success/failure feedback so it doesn't haunt the
+  // new tab — the message belongs to a transition that's no longer visible.
+  clearMessages();
+  if (key === "active") void loadActive();
+  else void loadAvailable();
 }
 
 async function refreshUser() {
@@ -98,18 +124,20 @@ function goVerify() {
 
 watch(pageChrome, (spec) => emit("chrome", spec), { deep: true, immediate: false });
 
+// Initial load is owned by this watcher: it fires both when the user record
+// resolves to a runner-verified account on first mount AND when the user
+// completes verification in another tab and comes back. onMounted only
+// kicks the session refresh — it must NOT also call loadAvailable, otherwise
+// we double-fetch on the happy path.
 watch(isRunnerVerified, (verified) => {
   if (verified) {
-    void runner.loadAvailable();
+    void loadAvailable();
   }
 });
 
 onMounted(async () => {
   emit("chrome", pageChrome.value);
   await refreshUser();
-  if (isRunnerVerified.value) {
-    await runner.loadAvailable();
-  }
 });
 </script>
 
@@ -121,83 +149,75 @@ onMounted(async () => {
 
     <template v-else>
       <p
-        v-if="runner.actionMessage.value || runner.actionError.value"
+        v-if="actionMessage || actionError"
         class="runner-view__feedback"
-        :class="{ 'is-error': runner.actionError.value }"
+        :class="{ 'is-error': actionError }"
         role="status"
       >
-        {{ runner.actionError.value || runner.actionMessage.value }}
+        {{ actionError || actionMessage }}
       </p>
 
       <template v-if="activeTab === 'available'">
         <p
-          v-if="runner.availableLoading.value && !runner.availableOrders.value.length"
+          v-if="availableLoading && !availableOrders.length"
           class="runner-view__state"
           role="status"
         >
           {{ RUNNER_LIST_LOADING }}
         </p>
-        <div v-else-if="runner.availableError.value" class="runner-view__error" role="alert">
-          {{ runner.availableError.value }}
-          <button type="button" @click="runner.loadAvailable">{{ RUNNER_LIST_RELOAD }}</button>
+        <div v-else-if="availableError" class="runner-view__error" role="alert">
+          <span>{{ availableError }}</span>
+          <LianButton variant="tonal" size="sm" @click="loadAvailable">
+            {{ RUNNER_LIST_RELOAD }}
+          </LianButton>
         </div>
         <p
-          v-else-if="!runner.availableOrders.value.length"
+          v-else-if="!availableOrders.length"
           class="runner-view__empty"
           data-testid="runner-empty-available"
         >
           {{ RUNNER_LIST_EMPTY_AVAILABLE }}
         </p>
         <ul v-else class="runner-view__list" data-testid="runner-list-available">
-          <li
-            v-for="order in runner.availableOrders.value"
-            :key="order.id"
-            class="runner-view__list-item"
-          >
+          <li v-for="order in availableOrders" :key="order.id" class="runner-view__list-item">
             <RunnerOrderCard
               :order="order"
-              :pending-action="runner.pendingActionFor(order.id)"
-              @accept="runner.accept"
-              @at-shop="runner.markAtShop"
-              @pickup="runner.markPickedUp"
-              @deliver="runner.markDelivered"
+              :pending-action="pendingActionFor(order.id)"
+              @accept="accept"
+              @at-shop="markAtShop"
+              @pickup="markPickedUp"
+              @deliver="markDelivered"
             />
           </li>
         </ul>
       </template>
 
       <template v-else>
-        <p
-          v-if="runner.activeLoading.value && !runner.activeOrders.value.length"
-          class="runner-view__state"
-          role="status"
-        >
+        <p v-if="activeLoading && !activeOrders.length" class="runner-view__state" role="status">
           {{ RUNNER_LIST_LOADING }}
         </p>
-        <div v-else-if="runner.activeError.value" class="runner-view__error" role="alert">
-          {{ runner.activeError.value }}
-          <button type="button" @click="runner.loadActive">{{ RUNNER_LIST_RELOAD }}</button>
+        <div v-else-if="activeError" class="runner-view__error" role="alert">
+          <span>{{ activeError }}</span>
+          <LianButton variant="tonal" size="sm" @click="loadActive">
+            {{ RUNNER_LIST_RELOAD }}
+          </LianButton>
         </div>
         <p
-          v-else-if="!runner.activeOrders.value.length"
+          v-else-if="!activeOrders.length"
           class="runner-view__empty"
           data-testid="runner-empty-active"
         >
           {{ RUNNER_LIST_EMPTY_ACTIVE }}
         </p>
         <ul v-else class="runner-view__list" data-testid="runner-list-active">
-          <li
-            v-for="order in runner.activeOrders.value"
-            :key="order.id"
-            class="runner-view__list-item"
-          >
+          <li v-for="order in activeOrders" :key="order.id" class="runner-view__list-item">
             <RunnerOrderCard
               :order="order"
-              :pending-action="runner.pendingActionFor(order.id)"
-              @accept="runner.accept"
-              @at-shop="runner.markAtShop"
-              @pickup="runner.markPickedUp"
-              @deliver="runner.markDelivered"
+              :pending-action="pendingActionFor(order.id)"
+              @accept="accept"
+              @at-shop="markAtShop"
+              @pickup="markPickedUp"
+              @deliver="markDelivered"
             />
           </li>
         </ul>
@@ -240,6 +260,9 @@ onMounted(async () => {
 }
 
 .runner-view__error {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
   margin: 0;
   padding: var(--space-2) var(--space-3);
   border-radius: var(--radius-card);
@@ -247,16 +270,6 @@ onMounted(async () => {
   color: rgb(185, 28, 28);
   font-size: 13px;
   font-weight: 800;
-}
-
-.runner-view__error button {
-  min-height: 32px;
-  margin-left: var(--space-2);
-  border: 0;
-  border-radius: var(--radius-chip);
-  background: rgba(255, 255, 255, 0.72);
-  color: currentColor;
-  font-weight: 900;
 }
 
 .runner-view__list {
