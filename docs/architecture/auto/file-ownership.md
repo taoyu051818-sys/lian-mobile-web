@@ -169,7 +169,7 @@ Total files: 275
 | `features/feed/useCardPointerInteraction.ts`     | export function useCardPointerInteraction(emitOpen: (target: HTMLElement \| null) => void)                               |   119 |
 | `features/feed/useFeedData.ts`                   | export function useFeedData(options: { detailOpen: () => boolean; closeDetail: () => void })                             |    93 |
 | `features/map/MapCanvas.vue`                     | Prefer the dataset bounds for the image overlay, but let an explicit                                                     |   206 |
-| `features/map/MapLeafletView.vue`                | KeepAlive caches this view, so onMounted only fires the first time.                                                      |   139 |
+| `features/map/MapLeafletView.vue`                | KeepAlive caches this view, so onMounted only fires the first time.                                                      |   123 |
 | `features/map/MapPlaceSheet.vue`                 | Vue SFC                                                                                                                  |    70 |
 | `features/map/MapStatus.vue`                     | Vue SFC                                                                                                                  |    34 |
 | `features/map/index.ts`                          | TypeScript module                                                                                                        |     2 |
