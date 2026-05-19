@@ -207,6 +207,22 @@ describe("useShellChrome", () => {
       expect(chrome.state.top.slot).toBeNull();
       expect(chrome.state.bottom.slot).toBe("tabs");
     });
+
+    it("does not replace an existing detail slot when installing the bottom default", () => {
+      chrome.setSlot("bottom", "reply-dock");
+
+      chrome.ensureBottomSlot("tabs");
+
+      expect(chrome.state.bottom.slot).toBe("reply-dock");
+    });
+
+    it("installs the bottom default slot only when no owner has claimed it", () => {
+      chrome.setSlot("bottom", null);
+
+      chrome.ensureBottomSlot("tabs");
+
+      expect(chrome.state.bottom.slot).toBe("tabs");
+    });
   });
 });
 

@@ -75,6 +75,12 @@ function setSlot(key: ShellRegionKey, slot: ChromeSlotKind | null) {
   state[key].slot = slot;
 }
 
+function ensureBottomSlot(slot: ChromeSlotKind) {
+  if (state.bottom.slot == null) {
+    setSlot("bottom", slot);
+  }
+}
+
 export function useShellChrome(): {
   state: Readonly<ShellChromeState>;
   setRegion: (key: ShellRegionKey, spec: ShellChromeRegionSpec) => void;
@@ -82,6 +88,7 @@ export function useShellChrome(): {
   resetRegions: () => void;
   applyPageChrome: (spec: PageChromeSpec) => void;
   setSlot: (key: ShellRegionKey, slot: ChromeSlotKind | null) => void;
+  ensureBottomSlot: (slot: ChromeSlotKind) => void;
 } {
   return {
     state: readonly(state) as Readonly<ShellChromeState>,
@@ -90,5 +97,6 @@ export function useShellChrome(): {
     resetRegions,
     applyPageChrome,
     setSlot,
+    ensureBottomSlot,
   };
 }
