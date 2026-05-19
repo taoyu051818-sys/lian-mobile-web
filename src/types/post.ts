@@ -5,6 +5,7 @@ import type {
   EventPostExtension,
   HelpPostExtension,
   MerchantPostExtension,
+  TradePostExtension,
 } from "./post-extensions";
 
 export interface PostReply {
@@ -51,6 +52,8 @@ export interface PostDetail {
    * destructuring the merchant block.
    */
   errandEntryAvailable?: boolean;
+  /** PRD V0.1 §6.4 / §11 — present iff metadata.trade exists. */
+  trade?: TradePostExtension;
 }
 
 /**

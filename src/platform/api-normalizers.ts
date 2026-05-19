@@ -6,6 +6,8 @@ import type {
   HelpStatus,
   MerchantCategory,
   MerchantPostExtension,
+  TradePostExtension,
+  TradeState,
 } from "../types/post-extensions";
 
 type JsonRecord = Record<string, unknown>;
@@ -255,6 +257,34 @@ export function normalizeMerchantExtension(value: unknown): MerchantPostExtensio
     hours: asString(record.hours),
     contact: asString(record.contact),
     errandSupported: asBoolean(record.errandSupported),
+    verifiedAt: asString(record.verifiedAt),
+  };
+}
+
+const TRADE_STATES: ReadonlySet<TradeState> = new Set([
+  "available",
+  "reserved",
+  "sold",
+  "cancelled",
+]);
+
+/**
+ * Coerce a raw payload into a TradePostExtension. Returns undefined when
+ * `price` is missing — backend `normalizeTradeMetadata` rejects priceless
+ * input, so a missing price on the wire means the publisher never intended a
+ * trade block. Unknown states fall back to "available" to mirror the backend
+ * default.
+ */
+export function normalizeTradeExtension(value: unknown): TradePostExtension | undefined {
+  const record = asRecord(value);
+  const price = optionalString(record.price);
+  if (!price) return undefined;
+  const rawState = (optionalString(record.state) || "").toLowerCase();
+  const state = TRADE_STATES.has(rawState as TradeState) ? (rawState as TradeState) : "available";
+  return {
+    price,
+    state,
+    category: asString(record.category),
     verifiedAt: asString(record.verifiedAt),
   };
 }
