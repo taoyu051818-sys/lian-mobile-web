@@ -1,0 +1,271 @@
+/**
+ * Errand order API client (issue #647).
+ *
+ * Surface:
+ *   - GET  /api/errand-orders/eligibility?merchantPostId=:id  — pre-submit gate
+ *   - POST /api/errand-orders                                 — create
+ *   - GET  /api/errand-orders/:orderId                        — read + timeline
+ *
+ * The wire shapes follow the same conservative-normalization style as
+ * `src/api/posts.ts` and `src/api/merchant.ts`: the backend may add fields
+ * but never break existing ones, and unknown enum values collapse to a
+ * documented sentinel (`unknown` reason / `created` status) rather than
+ * surfacing as garbage.
+ */
+import { apiGet, apiSend } from "./http";
+import {
+  asBoolean,
+  asEnum,
+  asNonNegInt,
+  asNumber,
+  asRecord,
+  asString,
+} from "../platform/api-normalizers";
+import type {
+  ErrandMode,
+  ErrandOrder,
+  ErrandOrderCreateResponse,
+  ErrandOrderDetail,
+  ErrandOrderGate,
+  ErrandOrderGateReason,
+  ErrandOrderListResponse,
+  ErrandOrderRequest,
+  ErrandOrderSummary,
+  ErrandOrderTimelineEvent,
+  ErrandRunnerLocation,
+  ErrandStatus,
+} from "../types/errand";
+import type { PostLocation } from "../types/post";
+
+const GATE_REASON_CODES = new Set<ErrandOrderGateReason>([
+  "not_logged_in",
+  "not_verified",
+  "insufficient_balance",
+  "merchant_paused",
+  "no_runner_coverage",
+  "unknown",
+]);
+
+const ERRAND_STATUSES = new Set<ErrandStatus>([
+  "created",
+  "paid_locked",
+  "assigned",
+  "picked_up",
+  "delivering",
+  "delivered",
+  "cancelled",
+  "refunded",
+  "disputed",
+]);
+
+const ERRAND_MODES = new Set<ErrandMode>(["dedicated", "meal_peak_batch"]);
+
+const TIMELINE_ACTORS = new Set<ErrandOrderTimelineEvent["actor"]>([
+  "system",
+  "requester",
+  "runner",
+  "platform",
+]);
+
+function normalizePostLocation(value: unknown): PostLocation | null {
+  const record = asRecord(value);
+  const placeId = asString(record.placeId);
+  const label = asString(record.label);
+  if (!placeId && !label) return null;
+  const lat = typeof record.lat === "number" && Number.isFinite(record.lat) ? record.lat : null;
+  const lng = typeof record.lng === "number" && Number.isFinite(record.lng) ? record.lng : null;
+  return { placeId, label, lat, lng };
+}
+
+export function normalizeErrandOrderGate(value: unknown): ErrandOrderGate {
+  const record = asRecord(value);
+  const ok = asBoolean(record.ok);
+  const rawReason = asString(record.reason);
+  // Treat unknown codes as the documented "unknown" sentinel — never let a
+  // server-side string leak into UI dispatch.
+  const reason =
+    !ok && rawReason
+      ? GATE_REASON_CODES.has(rawReason as ErrandOrderGateReason)
+        ? (rawReason as ErrandOrderGateReason)
+        : "unknown"
+      : "";
+  return {
+    ok,
+    reason,
+    reasonText: ok ? "" : asString(record.reasonText),
+    availablePoints: asNonNegInt(record.availablePoints),
+    estimatedFeePoints: asNonNegInt(record.estimatedFeePoints),
+  };
+}
+
+function normalizeRunnerLocation(value: unknown): ErrandRunnerLocation | undefined {
+  const record = asRecord(value);
+  const lat = asNumber(record.lat, Number.NaN);
+  const lng = asNumber(record.lng, Number.NaN);
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return undefined;
+  return {
+    lat,
+    lng,
+    updatedAt: asString(record.updatedAt),
+  };
+}
+
+function normalizeErrandOrder(value: unknown): ErrandOrder | null {
+  const record = asRecord(value);
+  const orderId = asString(record.orderId);
+  if (!orderId) return null;
+  const pickup = normalizePostLocation(record.pickupLocation);
+  const dropoff = normalizePostLocation(record.dropoffLocation);
+  if (!pickup || !dropoff) return null;
+  const status = asEnum(record.status, ERRAND_STATUSES) || "created";
+  const mode = asEnum(record.mode, ERRAND_MODES) || "dedicated";
+  const merchantPostIdRaw = asNumber(record.merchantPostId, Number.NaN);
+  const merchantPostId = Number.isFinite(merchantPostIdRaw)
+    ? Math.trunc(merchantPostIdRaw)
+    : undefined;
+  const runnerUserId = asString(record.runnerUserId);
+  const etaSecondsRaw = asNumber(record.etaSeconds, Number.NaN);
+  const etaSeconds =
+    Number.isFinite(etaSecondsRaw) && etaSecondsRaw > 0 ? etaSecondsRaw : undefined;
+  const runnerLocation = normalizeRunnerLocation(record.runnerLocation);
+  return {
+    orderId,
+    requesterUserId: asString(record.requesterUserId),
+    ...(runnerUserId ? { runnerUserId } : {}),
+    ...(merchantPostId !== undefined ? { merchantPostId } : {}),
+    pickupLocation: pickup,
+    dropoffLocation: dropoff,
+    mode,
+    status,
+    feeAmount: asNonNegInt(record.feeAmount),
+    lockedBalanceAmount: asNonNegInt(record.lockedBalanceAmount),
+    ...(etaSeconds !== undefined ? { etaSeconds } : {}),
+    ...(runnerLocation ? { runnerLocation } : {}),
+  };
+}
+
+function normalizeTimelineEvent(value: unknown): ErrandOrderTimelineEvent | null {
+  const record = asRecord(value);
+  const status = asEnum(record.status, ERRAND_STATUSES);
+  const at = asString(record.at);
+  if (!status || !at) return null;
+  const actor = asEnum(record.actor, TIMELINE_ACTORS) || "system";
+  const note = asString(record.note);
+  return {
+    status,
+    at,
+    actor,
+    ...(note ? { note } : {}),
+  };
+}
+
+export function normalizeErrandOrderDetail(value: unknown): ErrandOrderDetail | null {
+  const record = asRecord(value);
+  const order = normalizeErrandOrder(record.order ?? record);
+  if (!order) return null;
+  const rawTimeline = Array.isArray(record.timeline) ? record.timeline : [];
+  const timeline = rawTimeline
+    .map((entry) => normalizeTimelineEvent(entry))
+    .filter((entry): entry is ErrandOrderTimelineEvent => entry !== null);
+  // Backend usually ships `created` first; if the timeline is empty, synthesize
+  // a single entry from the order record so the detail view always renders at
+  // least one row.
+  if (!timeline.length) {
+    timeline.push({
+      status: order.status,
+      at: asString(record.createdAt),
+      actor: "system",
+    });
+  }
+  return {
+    order,
+    timeline,
+    notes: asString(record.notes),
+    createdAt: asString(record.createdAt) || timeline[0]?.at || "",
+  };
+}
+
+export function normalizeErrandOrderCreateResponse(value: unknown): ErrandOrderCreateResponse {
+  const record = asRecord(value);
+  const ok = asBoolean(record.ok);
+  if (ok) {
+    const detail = normalizeErrandOrderDetail(record.order ?? record);
+    return detail ? { ok: true, order: detail } : { ok: true };
+  }
+  const rawReason = asString(record.reason);
+  const reason = GATE_REASON_CODES.has(rawReason as ErrandOrderGateReason)
+    ? (rawReason as ErrandOrderGateReason)
+    : "unknown";
+  return {
+    ok: false,
+    reason,
+    reasonText: asString(record.reasonText),
+  };
+}
+
+export async function fetchErrandOrderEligibility(
+  merchantPostId: number,
+): Promise<ErrandOrderGate> {
+  const data = await apiGet<unknown>(
+    `/api/errand-orders/eligibility?merchantPostId=${encodeURIComponent(String(merchantPostId))}`,
+  );
+  return normalizeErrandOrderGate(data);
+}
+
+export async function createErrandOrder(
+  request: ErrandOrderRequest,
+): Promise<ErrandOrderCreateResponse> {
+  const body: Record<string, unknown> = {
+    merchantPostId: request.merchantPostId,
+    pickupLocation: request.pickupLocation,
+    dropoffLocation: request.dropoffLocation,
+    mode: request.mode,
+  };
+  const trimmedNotes = (request.notes || "").trim();
+  if (trimmedNotes) body.notes = trimmedNotes;
+  const data = await apiSend<unknown>("/api/errand-orders", {
+    method: "POST",
+    body: JSON.stringify(body),
+  });
+  return normalizeErrandOrderCreateResponse(data);
+}
+
+export async function fetchErrandOrder(orderId: string): Promise<ErrandOrderDetail | null> {
+  const data = await apiGet<unknown>(`/api/errand-orders/${encodeURIComponent(orderId)}`);
+  return normalizeErrandOrderDetail(data);
+}
+
+function normalizeErrandOrderSummary(value: unknown): ErrandOrderSummary | null {
+  const record = asRecord(value);
+  const orderId = asString(record.orderId);
+  if (!orderId) return null;
+  const status = asEnum(record.status, ERRAND_STATUSES) || "created";
+  const mode = asEnum(record.mode, ERRAND_MODES) || "dedicated";
+  const pickup = normalizePostLocation(record.pickupLocation);
+  const dropoff = normalizePostLocation(record.dropoffLocation);
+  return {
+    orderId,
+    status,
+    mode,
+    feeAmount: asNonNegInt(record.feeAmount),
+    pickupLabel: pickup?.label || asString(record.pickupLabel),
+    dropoffLabel: dropoff?.label || asString(record.dropoffLabel),
+    createdAt: asString(record.createdAt),
+  };
+}
+
+/**
+ * Fetch the requester's own errand orders. The backend response may be a
+ * bare array or `{ items: [...] }` — both are accepted so the route can
+ * grow pagination later without a frontend release. Unparseable rows are
+ * dropped (same conservative-normalization stance as `fetchErrandOrder`).
+ */
+export async function fetchMyErrandOrders(): Promise<ErrandOrderListResponse> {
+  const data = await apiGet<unknown>(`/api/errand-orders?mine=1`);
+  const record = asRecord(data);
+  const rawItems = Array.isArray(data) ? data : Array.isArray(record.items) ? record.items : [];
+  const items = rawItems
+    .map((entry) => normalizeErrandOrderSummary(entry))
+    .filter((entry): entry is ErrandOrderSummary => entry !== null);
+  return { items };
+}

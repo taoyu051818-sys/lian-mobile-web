@@ -375,6 +375,7 @@ watch(
             :help-manage-action-error="helpManageActionError"
             :merchant="post?.merchant"
             :errand-entry-available="post?.errandEntryAvailable"
+            :merchant-post-id="post?.tid"
             :errand-unavailable-reason="post?.errandUnavailableReason"
             :errand-unavailable-reason-text="post?.errandUnavailableReasonText"
             :trade="post?.trade"

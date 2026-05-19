@@ -27,13 +27,20 @@ import {
   MERCHANT_VERIFIED_AT_PREFIX,
   MERCHANT_VERIFIED_PREFIX,
 } from "../../config/brand";
+import { useActiveView } from "../../app/useActiveView";
 import { errandReasonText } from "../merchant";
+// Import directly from the route module instead of `../errand` so the detail
+// chunk doesn't statically pull the heavy ErrandOrder*View SFCs from the
+// barrel — those SFCs are async-mounted by AppViewHost and should stay out
+// of the detail bundle.
+import { useErrandOrderRoute } from "../errand/useErrandOrderRoute";
 import type { MerchantErrandUnavailableReason } from "../../types/merchant";
 import type { MerchantCategory, MerchantPostExtension } from "../../types/post-extensions";
 
 const props = defineProps<{
   merchant: MerchantPostExtension;
   errandEntryAvailable?: boolean;
+  merchantPostId?: number;
   errandUnavailableReason?: MerchantErrandUnavailableReason | "";
   errandUnavailableReasonText?: string;
 }>();
@@ -64,6 +71,11 @@ const verifiedAtLabel = computed(() => {
 // merchant does not support errand at all — we render nothing in that case
 // so non-errand merchants don't grow a "暂未开放" chip.
 const errandUnavailable = computed(() => props.errandEntryAvailable === false);
+const errandRoute = useErrandOrderRoute();
+const { setActiveView } = useActiveView();
+const errandEntryClickable = computed(
+  () => props.errandEntryAvailable === true && (props.merchantPostId ?? 0) > 0,
+);
 const unavailableReasonLabel = computed(() => {
   if (!errandUnavailable.value) return "";
   return (
@@ -74,6 +86,12 @@ const unavailableReasonLabel = computed(() => {
     }) || MERCHANT_ERRAND_UNAVAILABLE_FALLBACK
   );
 });
+
+function handleErrandClick() {
+  if (!errandEntryClickable.value) return;
+  errandRoute.enterForMerchant(props.merchantPostId as number);
+  setActiveView("errand-order");
+}
 </script>
 
 <template>
@@ -120,8 +138,10 @@ const unavailableReasonLabel = computed(() => {
       <button
         type="button"
         class="post-detail-merchant-block__errand-cta"
-        disabled
-        aria-disabled="true"
+        :disabled="!errandEntryClickable"
+        :aria-disabled="!errandEntryClickable"
+        data-testid="post-detail-merchant-errand-cta"
+        @click="handleErrandClick"
       >
         {{ MERCHANT_ERRAND_CTA }}
       </button>
@@ -263,11 +283,16 @@ const unavailableReasonLabel = computed(() => {
   appearance: none;
   border: 0;
   border-radius: var(--radius-chip, 999px);
-  background: rgba(120, 120, 120, 0.32);
+  background: var(--lian-primary, #1fa7a0);
   color: rgba(255, 255, 255, 0.9);
   font-weight: 800;
   height: 36px;
   padding: 0 var(--space-3);
+  cursor: pointer;
+}
+
+.post-detail-merchant-block__errand-cta:disabled {
+  background: rgba(120, 120, 120, 0.32);
   cursor: not-allowed;
 }
 

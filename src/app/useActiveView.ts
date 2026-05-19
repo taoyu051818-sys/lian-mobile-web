@@ -3,7 +3,13 @@ import { computed, ref, watch } from "vue";
 import { appViews, getViewDefinition, type AppViewKey } from "./view-types";
 import { getViewFromHashRef, pushViewHash } from "./view-hash";
 
-const SECRET_VIEWS: AppViewKey[] = ["admin", "verification", "merchant", "runner"];
+const SECRET_VIEWS: AppViewKey[] = [
+  "admin",
+  "verification",
+  "merchant",
+  "errand-order",
+  "runner",
+];
 const viewFromHash = getViewFromHashRef();
 const secretActiveViewKey = ref<AppViewKey | null>(null);
 
