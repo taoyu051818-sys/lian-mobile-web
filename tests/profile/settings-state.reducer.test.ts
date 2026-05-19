@@ -3,7 +3,6 @@ import {
   initialState,
   reduce,
   select,
-  type SettingsAction,
   type SettingsState,
 } from "../../src/features/profile/settings-state/state";
 import type { ProfileSettings } from "../../src/types/profile";

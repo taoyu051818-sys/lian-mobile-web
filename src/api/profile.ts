@@ -22,9 +22,7 @@ export async function fetchProfileSettings(): Promise<ProfileSettings> {
   return apiGet<ProfileSettings>("/api/me/settings");
 }
 
-export async function patchProfileSettings(
-  patch: ProfileSettingsPatch,
-): Promise<ProfileSettings> {
+export async function patchProfileSettings(patch: ProfileSettingsPatch): Promise<ProfileSettings> {
   return apiSend<ProfileSettings>("/api/me/settings", {
     method: "PATCH",
     body: JSON.stringify(patch),
