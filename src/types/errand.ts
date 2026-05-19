@@ -130,3 +130,28 @@ export interface ErrandOrderCreateResponse {
   reason?: ErrandOrderGateReason;
   reasonText?: string;
 }
+
+/**
+ * Single row in "我的跑腿订单" (the requester's order list). Only the fields
+ * the row needs to render are surfaced — full detail lives behind
+ * `GET /api/errand-orders/:id` once the user taps in. Status drives the
+ * sort + visual state on the list; createdAt is the secondary sort key.
+ */
+export interface ErrandOrderSummary {
+  orderId: string;
+  status: ErrandStatus;
+  mode: ErrandMode;
+  feeAmount: number;
+  pickupLabel: string;
+  dropoffLabel: string;
+  createdAt: string;
+}
+
+/**
+ * Response shape for `GET /api/errand-orders?mine=1`. Backend may also ship
+ * a server-side cursor in the future; for now the list is whole-history with
+ * the active orders sorted ahead of finished ones (server side).
+ */
+export interface ErrandOrderListResponse {
+  items: ErrandOrderSummary[];
+}

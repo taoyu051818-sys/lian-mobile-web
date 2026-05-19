@@ -7,12 +7,15 @@
  * transitions via the runner side, so the user-facing read view simply
  * shows whatever the backend currently has.
  */
-import { computed, onMounted, watch } from "vue";
+import { computed, onMounted, onBeforeUnmount, watch } from "vue";
 import {
+  ERRAND_ORDER_DETAIL_AUTO_REFRESH_HINT,
   ERRAND_ORDER_DETAIL_BACK,
   ERRAND_ORDER_DETAIL_LABEL,
   ERRAND_ORDER_DETAIL_LOAD_ERROR,
   ERRAND_ORDER_DETAIL_NOTES_LABEL,
+  ERRAND_ORDER_DETAIL_REFRESH,
+  ERRAND_ORDER_DETAIL_REFRESHING,
   ERRAND_ORDER_DETAIL_TIMELINE,
   ERRAND_ORDER_DROPOFF_TITLE,
   ERRAND_ORDER_FEE_LABEL,
@@ -22,7 +25,12 @@ import {
   ERRAND_ORDER_POINTS_SUFFIX,
 } from "../../config/brand";
 import { useErrandOrderDetail } from "./useErrandOrderDetail";
-import { formatTimelineTimestamp, modeLabel, statusLabel } from "./errand-format";
+import {
+  formatTimelineTimestamp,
+  isTerminalErrandStatus,
+  modeLabel,
+  statusLabel,
+} from "./errand-format";
 
 const props = defineProps<{
   orderId: string;
@@ -35,18 +43,28 @@ const emit = defineEmits<{
 const detail = useErrandOrderDetail();
 
 onMounted(() => {
-  if (props.orderId) void detail.refresh(props.orderId);
+  if (props.orderId) detail.start(props.orderId);
 });
 
 watch(
   () => props.orderId,
   (next) => {
-    if (next) void detail.refresh(next);
+    if (next) detail.start(next);
+    else detail.stop();
   },
 );
 
+onBeforeUnmount(() => {
+  detail.stop();
+});
+
 const order = computed(() => detail.detail.value?.order || null);
 const timeline = computed(() => detail.detail.value?.timeline || []);
+const isLivePolling = computed(() => !!order.value && !isTerminalErrandStatus(order.value.status));
+
+function handleRefresh() {
+  if (props.orderId) void detail.refresh(props.orderId);
+}
 </script>
 
 <template>
@@ -65,7 +83,24 @@ const timeline = computed(() => detail.detail.value?.timeline || []);
         {{ ERRAND_ORDER_DETAIL_BACK }}
       </button>
       <h2>{{ ERRAND_ORDER_DETAIL_LABEL }}</h2>
+      <button
+        type="button"
+        class="errand-order-timeline-view__refresh"
+        :disabled="detail.loading.value"
+        data-testid="errand-order-timeline-refresh"
+        @click="handleRefresh"
+      >
+        {{ detail.loading.value ? ERRAND_ORDER_DETAIL_REFRESHING : ERRAND_ORDER_DETAIL_REFRESH }}
+      </button>
     </header>
+
+    <p
+      v-if="isLivePolling"
+      class="errand-order-timeline-view__poll-hint"
+      data-testid="errand-order-timeline-poll-hint"
+    >
+      {{ ERRAND_ORDER_DETAIL_AUTO_REFRESH_HINT }}
+    </p>
 
     <p
       v-if="detail.loading.value && !detail.loaded.value"
@@ -159,6 +194,7 @@ const timeline = computed(() => detail.detail.value?.timeline || []);
   margin: 0;
   font-size: 18px;
   font-weight: 900;
+  flex: 1;
 }
 
 .errand-order-timeline-view__back {
@@ -170,6 +206,29 @@ const timeline = computed(() => detail.detail.value?.timeline || []);
   font-weight: 800;
   height: 32px;
   padding: 0 var(--space-3);
+}
+
+.errand-order-timeline-view__refresh {
+  appearance: none;
+  border: 0;
+  background: rgba(31, 167, 160, 0.16);
+  border-radius: var(--radius-chip, 999px);
+  color: var(--lian-primary-deep, #0f6b66);
+  font-weight: 800;
+  height: 32px;
+  padding: 0 var(--space-3);
+  cursor: pointer;
+}
+
+.errand-order-timeline-view__refresh:disabled {
+  opacity: 0.5;
+  cursor: progress;
+}
+
+.errand-order-timeline-view__poll-hint {
+  margin: 0;
+  color: var(--lian-muted);
+  font-size: 12px;
 }
 
 .errand-order-timeline-view__status {

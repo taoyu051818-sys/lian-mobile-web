@@ -62,6 +62,9 @@ export const ERRAND_ORDER_DETAIL_TIMELINE = "进度";
 export const ERRAND_ORDER_DETAIL_NOTES_LABEL = "备注";
 export const ERRAND_ORDER_DETAIL_BACK = "返回";
 export const ERRAND_ORDER_DETAIL_LOAD_ERROR = "订单详情加载失败，可以稍后再试。";
+export const ERRAND_ORDER_DETAIL_REFRESH = "刷新";
+export const ERRAND_ORDER_DETAIL_REFRESHING = "正在刷新…";
+export const ERRAND_ORDER_DETAIL_AUTO_REFRESH_HINT = "进行中订单每 12 秒自动刷新。";
 export const ERRAND_ORDER_STATUS_CREATED = "已下单";
 export const ERRAND_ORDER_STATUS_PAID_LOCKED = "已扣款锁定";
 export const ERRAND_ORDER_STATUS_ASSIGNED = "已分配跑腿";
@@ -71,6 +74,16 @@ export const ERRAND_ORDER_STATUS_DELIVERED = "已送达";
 export const ERRAND_ORDER_STATUS_CANCELLED = "已取消";
 export const ERRAND_ORDER_STATUS_REFUNDED = "已退款";
 export const ERRAND_ORDER_STATUS_DISPUTED = "申诉中";
+
+/** 我的跑腿订单 (profile 入口 / issue #647 follow-up) */
+export const PROFILE_ERRAND_ORDERS_SECTION_LABEL = "我的跑腿订单";
+export const PROFILE_ERRAND_ORDERS_RELOAD = "重新加载";
+export const PROFILE_ERRAND_ORDERS_LOAD_ERROR = "跑腿订单加载失败，可以稍后再试。";
+export const PROFILE_ERRAND_ORDERS_EMPTY = "还没有下过帮我取订单。";
+export const PROFILE_ERRAND_ORDERS_LOADING = "加载跑腿订单中…";
+export const PROFILE_ERRAND_ORDERS_OPEN = "查看进度";
+export const PROFILE_ERRAND_ORDERS_PICKUP_PREFIX = "取";
+export const PROFILE_ERRAND_ORDERS_DROPOFF_PREFIX = "送";
 
 /** 商家中心 (issue #646) */
 export const MERCHANT_CENTER_SECTION_LABEL = "商家中心";

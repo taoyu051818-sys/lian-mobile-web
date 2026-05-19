@@ -78,6 +78,21 @@ export function modeLabel(mode: ErrandMode): string {
   return MODE_LABELS[mode];
 }
 
+/**
+ * Statuses where there is nothing left for the backend to transition to —
+ * polling stops once we reach one of these, otherwise we keep ticking. Kept
+ * here (instead of inside the timeline view) so `useErrandOrderDetail` and
+ * any future "my orders" list dispatch off the same source of truth.
+ *
+ * `disputed` is intentionally NOT terminal: a dispute can still resolve to
+ * delivered or refunded, and the user expects to see that pivot live.
+ */
+const TERMINAL_ERRAND_STATUSES = new Set<ErrandStatus>(["delivered", "cancelled", "refunded"]);
+
+export function isTerminalErrandStatus(status: ErrandStatus | undefined | null): boolean {
+  return !!status && TERMINAL_ERRAND_STATUSES.has(status);
+}
+
 export function formatTimelineTimestamp(value: string | undefined): string {
   const raw = (value || "").trim();
   if (!raw) return "";

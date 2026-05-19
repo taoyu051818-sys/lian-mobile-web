@@ -23,6 +23,7 @@ import ProfileSettingsBlock from "./ProfileSettingsBlock.vue";
 import ProfileStatsBlock from "./ProfileStatsBlock.vue";
 import ProfileTabs from "./ProfileTabs.vue";
 import ProfileCollectionList from "./ProfileCollectionList.vue";
+import { ProfileErrandOrdersBlock } from "../errand";
 import { useProfileSession } from "./useProfileSession";
 import { useProfileTabs } from "./useProfileTabs";
 import { useProfileChrome } from "./useProfileChrome";
@@ -183,6 +184,8 @@ onMounted(() => {
         @retry="loadProfileList(activeTab)"
         @open-item="openItem"
       />
+
+      <ProfileErrandOrdersBlock />
 
       <footer class="profile-view__verification-entry">
         <button

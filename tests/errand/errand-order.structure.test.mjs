@@ -118,6 +118,57 @@ test("useErrandOrderDetail owns the read-side fetch", () => {
   const src = read("src/features/errand/useErrandOrderDetail.ts");
   assert.match(src, /export function useErrandOrderDetail/);
   assert.match(src, /fetchErrandOrder/);
+  // Polling lifecycle is exposed so the timeline view can drive it from
+  // mount/unmount — start/stop must be there or the view leaks a timer.
+  assert.match(src, /function start/);
+  assert.match(src, /function stop/);
+  assert.match(src, /isTerminalErrandStatus/);
+});
+
+test("isTerminalErrandStatus only blesses the truly-terminal codes", () => {
+  const src = read("src/features/errand/errand-format.ts");
+  assert.match(src, /isTerminalErrandStatus/);
+  // Cheap structural guard: the terminal set must include delivered /
+  // cancelled / refunded but must NOT include disputed (a dispute can still
+  // resolve to delivered or refunded).
+  const setMatch = src.match(
+    /TERMINAL_ERRAND_STATUSES\s*=\s*new Set<ErrandStatus>\(\[(?<body>[\s\S]*?)\]\)/,
+  );
+  assert.ok(setMatch, "TERMINAL_ERRAND_STATUSES must be defined");
+  for (const code of ["delivered", "cancelled", "refunded"]) {
+    assert.match(setMatch.groups.body, new RegExp(`"${code}"`));
+  }
+  assert.doesNotMatch(setMatch.groups.body, /"disputed"/);
+});
+
+test("api/errands.ts ships the my-orders fetch", () => {
+  const src = read("src/api/errands.ts");
+  assert.match(src, /export async function fetchMyErrandOrders/);
+  assert.match(src, /\/api\/errand-orders\?mine=1/);
+});
+
+test("useMyErrandOrders is a thin wrapper over fetchMyErrandOrders", () => {
+  const src = read("src/features/errand/useMyErrandOrders.ts");
+  assert.match(src, /export function useMyErrandOrders/);
+  assert.match(src, /fetchMyErrandOrders/);
+});
+
+test("ProfileErrandOrdersBlock dispatches taps into the route singleton", () => {
+  const src = read("src/features/errand/ProfileErrandOrdersBlock.vue");
+  assert.match(src, /data-testid="profile-errand-orders"/);
+  assert.match(src, /data-testid="profile-errand-orders-list"/);
+  assert.match(src, /data-testid="profile-errand-orders-open"/);
+  assert.match(src, /useErrandOrderRoute/);
+  assert.match(src, /enterForOrder/);
+  assert.match(src, /setActiveView\("errand-order"\)/);
+});
+
+test("ProfileView mounts the my-orders block via the errand barrel", () => {
+  const src = read("src/features/profile/ProfileView.vue");
+  assert.match(src, /ProfileErrandOrdersBlock/);
+  // Must come from the errand barrel, not a deep import — the barrel
+  // export is the public surface.
+  assert.match(src, /from\s+"\.\.\/errand"/);
 });
 
 test("useErrandOrderRoute is a singleton route store", () => {

@@ -28,7 +28,9 @@ import type {
   ErrandOrderDetail,
   ErrandOrderGate,
   ErrandOrderGateReason,
+  ErrandOrderListResponse,
   ErrandOrderRequest,
+  ErrandOrderSummary,
   ErrandOrderTimelineEvent,
   ErrandRunnerLocation,
   ErrandStatus,
@@ -231,4 +233,39 @@ export async function createErrandOrder(
 export async function fetchErrandOrder(orderId: string): Promise<ErrandOrderDetail | null> {
   const data = await apiGet<unknown>(`/api/errand-orders/${encodeURIComponent(orderId)}`);
   return normalizeErrandOrderDetail(data);
+}
+
+function normalizeErrandOrderSummary(value: unknown): ErrandOrderSummary | null {
+  const record = asRecord(value);
+  const orderId = asString(record.orderId);
+  if (!orderId) return null;
+  const status = asEnum(record.status, ERRAND_STATUSES) || "created";
+  const mode = asEnum(record.mode, ERRAND_MODES) || "dedicated";
+  const pickup = normalizePostLocation(record.pickupLocation);
+  const dropoff = normalizePostLocation(record.dropoffLocation);
+  return {
+    orderId,
+    status,
+    mode,
+    feeAmount: asNonNegInt(record.feeAmount),
+    pickupLabel: pickup?.label || asString(record.pickupLabel),
+    dropoffLabel: dropoff?.label || asString(record.dropoffLabel),
+    createdAt: asString(record.createdAt),
+  };
+}
+
+/**
+ * Fetch the requester's own errand orders. The backend response may be a
+ * bare array or `{ items: [...] }` — both are accepted so the route can
+ * grow pagination later without a frontend release. Unparseable rows are
+ * dropped (same conservative-normalization stance as `fetchErrandOrder`).
+ */
+export async function fetchMyErrandOrders(): Promise<ErrandOrderListResponse> {
+  const data = await apiGet<unknown>(`/api/errand-orders?mine=1`);
+  const record = asRecord(data);
+  const rawItems = Array.isArray(data) ? data : Array.isArray(record.items) ? record.items : [];
+  const items = rawItems
+    .map((entry) => normalizeErrandOrderSummary(entry))
+    .filter((entry): entry is ErrandOrderSummary => entry !== null);
+  return { items };
 }
