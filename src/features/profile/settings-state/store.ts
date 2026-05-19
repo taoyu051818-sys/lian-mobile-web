@@ -15,10 +15,7 @@
 
 import { computed, ref, type ComputedRef, type Ref } from "vue";
 import type { ProfileSettings, ProfileSettingsPatch } from "../../../types/profile";
-import {
-  PROFILE_SETTINGS_LOAD_ERROR,
-  PROFILE_SETTINGS_PATCH_ERROR,
-} from "../../../config/brand";
+import { PROFILE_SETTINGS_LOAD_ERROR, PROFILE_SETTINGS_PATCH_ERROR } from "../../../config/brand";
 import {
   initialState,
   reduce,

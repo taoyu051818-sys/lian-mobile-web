@@ -26,7 +26,7 @@ Total files: 274
 | `api/messages.ts`     | export function extractChannelMessagePlainText(html?: string): string                                                    |   159 |
 | `api/places.ts`       | TypeScript module                                                                                                        |    10 |
 | `api/posts.ts`        | export interface PostLikeResponse                                                                                        |   149 |
-| `api/profile.ts`      | TypeScript module                                                                                                        |    93 |
+| `api/profile.ts`      | TypeScript module                                                                                                        |    91 |
 | `api/publish.ts`      | Creates a display-only fallback draft from free-text place name. When `placeName` is non-empty the source is "manual"... |   254 |
 | `api/verification.ts` | TypeScript module                                                                                                        |    20 |
 
@@ -206,9 +206,9 @@ Total files: 274
 | `features/profile/index.ts`                      | TypeScript module                                                                                                        |     2 |
 | `features/profile/profile-header.css`            | Stylesheet                                                                                                               |   187 |
 | `features/profile/settings-state/fetcher.ts`     | Side-effect helper that bridges the settings reducer's `fetch` and `patch` effects to the network. The reducer is pur... |    39 |
-| `features/profile/settings-state/index.ts`       | export type { ProfileSettingsView } from "./store";                                                                      |    10 |
+| `features/profile/settings-state/index.ts`       | export type { ProfileSettingsView } from "./store";                                                                      |     6 |
 | `features/profile/settings-state/state.ts`       | Pure state machine for the profile-settings flow. The settings block — load, three optimistic toggles, error/rollbac...  |   191 |
-| `features/profile/settings-state/store.ts`       | Module-scoped reactive wrapper around the pure profile-settings reducer. Mirrors the structure of `src/app/detail-na...  |   137 |
+| `features/profile/settings-state/store.ts`       | Module-scoped reactive wrapper around the pure profile-settings reducer. Mirrors the structure of `src/app/detail-na...  |   134 |
 | `features/profile/useAvatarCropper.ts`           | export interface UseAvatarCropperOptions                                                                                 |   175 |
 | `features/profile/useInviteCode.ts`              | export function useInviteCode()                                                                                          |    33 |
 | `features/profile/useProfileAliasPicker.ts`      | export function useProfileAliasPicker(options:                                                                           |    92 |
