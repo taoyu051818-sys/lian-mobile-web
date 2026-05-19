@@ -2,6 +2,21 @@ name: E2E Journey
 
 on:
   workflow_dispatch:
+    inputs:
+      journey_group:
+        description: "Which journey slice to run (default: all). Maps to a Playwright --grep tag."
+        required: false
+        default: "all"
+        type: choice
+        options:
+          - all
+          - account-fixture
+          - anonymous
+          - registered
+          - campus
+          - merchant
+          - runner
+          - admin
   schedule:
     - cron: "17 18 * * *"
 
@@ -11,8 +26,23 @@ jobs:
     timeout-minutes: 15
     env:
       APP_BASE_URL: https://lian.nat100.top
+      # Legacy single-account env retained for the existing journey.spec.ts.
       LIAN_E2E_USERNAME: ${{ secrets.LIAN_E2E_USERNAME }}
       LIAN_E2E_PASSWORD: ${{ secrets.LIAN_E2E_PASSWORD }}
+      # Multi-account matrix (#644). Roles are skipped when their secrets are
+      # absent — see tests/e2e/fixtures/accounts.ts for the env name contract.
+      LIAN_E2E_REGISTERED_USERNAME: ${{ secrets.LIAN_E2E_REGISTERED_USERNAME }}
+      LIAN_E2E_REGISTERED_PASSWORD: ${{ secrets.LIAN_E2E_REGISTERED_PASSWORD }}
+      LIAN_E2E_CAMPUS_USERNAME: ${{ secrets.LIAN_E2E_CAMPUS_USERNAME }}
+      LIAN_E2E_CAMPUS_PASSWORD: ${{ secrets.LIAN_E2E_CAMPUS_PASSWORD }}
+      LIAN_E2E_MERCHANT_USERNAME: ${{ secrets.LIAN_E2E_MERCHANT_USERNAME }}
+      LIAN_E2E_MERCHANT_PASSWORD: ${{ secrets.LIAN_E2E_MERCHANT_PASSWORD }}
+      LIAN_E2E_RUNNER_USERNAME: ${{ secrets.LIAN_E2E_RUNNER_USERNAME }}
+      LIAN_E2E_RUNNER_PASSWORD: ${{ secrets.LIAN_E2E_RUNNER_PASSWORD }}
+      LIAN_E2E_ADMIN_USERNAME: ${{ secrets.LIAN_E2E_ADMIN_USERNAME }}
+      LIAN_E2E_ADMIN_PASSWORD: ${{ secrets.LIAN_E2E_ADMIN_PASSWORD }}
+      # Picked up by playwright.config.ts to filter via --grep when set.
+      LIAN_E2E_JOURNEY_GROUP: ${{ inputs.journey_group || 'all' }}
 
     steps:
       - name: Checkout
