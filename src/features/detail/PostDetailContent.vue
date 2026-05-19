@@ -58,6 +58,7 @@ defineProps<{
   helpManageActionError?: string;
   merchant?: MerchantPostExtension;
   errandEntryAvailable?: boolean;
+  merchantPostId?: number;
   errandUnavailableReason?: MerchantErrandUnavailableReason | "";
   errandUnavailableReasonText?: string;
   trade?: TradePostExtension;
@@ -130,6 +131,7 @@ const emit = defineEmits<{
       v-if="merchant"
       :merchant="merchant"
       :errand-entry-available="errandEntryAvailable"
+      :merchant-post-id="merchantPostId"
       :errand-unavailable-reason="errandUnavailableReason"
       :errand-unavailable-reason-text="errandUnavailableReasonText"
     />
