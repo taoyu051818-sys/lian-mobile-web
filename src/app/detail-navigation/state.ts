@@ -7,7 +7,9 @@
  * same state spread across `useDeepLink`, `usePostDetailLoader`,
  * `usePostDetail`, `useFeedDetail`, `useFeedDetailHistory` and
  * `useShellChrome`. Collapsing it into one reducer makes those races
- * unrepresentable.
+ * unrepresentable. (Post-#636 PR2: `useDeepLink` was split into the narrower
+ * `view-hash` and `post-detail-hash` modules; the FSM here is the only owner
+ * of "is a detail open" state.)
  *
  * Invariants the reducer guarantees:
  * - Token strictly monotonically increases per state transition that begins a

@@ -25,7 +25,7 @@ import {
   type SideEffect,
 } from "./state";
 import { fetchDetailWithToken } from "./fetcher";
-import { clearPostDetailHash, pushPostDetailHash } from "../useDeepLink";
+import { clearPostDetailHash, pushPostDetailHash } from "../post-detail-hash";
 import { useShellChrome } from "../../shell/useShellChrome";
 
 const stateRef = ref<DetailState>(initialState());

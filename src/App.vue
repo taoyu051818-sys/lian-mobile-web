@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ToastHost } from "./ui";
 import AppViewHost from "./app/AppViewHost.vue";
+import DetailSurface from "./app/DetailSurface.vue";
 import { AppShell } from "./shell";
 import { appViews, getShellLayoutMode, type AppViewKey } from "./app/view-types";
 import { useActiveView } from "./app/useActiveView";
@@ -39,5 +40,6 @@ function handleViewChange(key: string) {
       />
     </template>
   </AppShell>
+  <DetailSurface />
   <ToastHost />
 </template>

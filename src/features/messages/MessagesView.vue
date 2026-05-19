@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from "vue";
-import { PostDetailPanel } from "../detail";
 import { useDetailNavigation } from "../../app/detail-navigation";
 import { useVisualViewport } from "../../composables/useVisualViewport";
 import type { MessageTabKey } from "../../types/messages";
@@ -11,7 +10,6 @@ import {
   MESSAGE_TAB_NOTIFICATION,
   MESSAGE_SECTION_LABEL,
   MESSAGE_TAB_LABEL,
-  POST_DETAIL_DIALOG_LABEL,
 } from "../../config/brand";
 import { useChannelMessages } from "./useChannelMessages";
 import { useNotifications } from "./useNotifications";
@@ -142,22 +140,6 @@ onMounted(async () => {
       @update:identity-tag="composerIdentityTag = $event"
       @submit="submitMessage"
     />
-
-    <div
-      v-if="detail.detailOpen.value"
-      class="messages-view__detail-overlay"
-      role="dialog"
-      aria-modal="true"
-      :aria-label="POST_DETAIL_DIALOG_LABEL"
-    >
-      <PostDetailPanel
-        :post="detail.detailPost.value"
-        :loading="detail.detailLoading.value"
-        :error="detail.detailError.value"
-        @close="detail.close('user-tap')"
-        @retry="detail.retry()"
-      />
-    </div>
   </section>
 </template>
 
@@ -185,13 +167,5 @@ onMounted(async () => {
   background: var(--glass-bg-strong);
   box-shadow: var(--shadow-floating);
   backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
-}
-
-.messages-view__detail-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 30;
-  overflow-y: auto;
-  background: var(--lian-surface, #fff);
 }
 </style>
