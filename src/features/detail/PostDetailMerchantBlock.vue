@@ -20,16 +20,22 @@ import {
   MERCHANT_ERRAND_AVAILABLE,
   MERCHANT_ERRAND_CTA,
   MERCHANT_ERRAND_HINT,
+  MERCHANT_ERRAND_UNAVAILABLE_FALLBACK,
+  MERCHANT_ERRAND_UNAVAILABLE_LABEL,
   MERCHANT_HOURS_LABEL,
   MERCHANT_HOURS_UNSET,
   MERCHANT_VERIFIED_AT_PREFIX,
   MERCHANT_VERIFIED_PREFIX,
 } from "../../config/brand";
+import { errandReasonText } from "../merchant";
+import type { MerchantErrandUnavailableReason } from "../../types/merchant";
 import type { MerchantCategory, MerchantPostExtension } from "../../types/post-extensions";
 
 const props = defineProps<{
   merchant: MerchantPostExtension;
   errandEntryAvailable?: boolean;
+  errandUnavailableReason?: MerchantErrandUnavailableReason | "";
+  errandUnavailableReasonText?: string;
 }>();
 
 const CATEGORY_LABEL: Record<MerchantCategory, string> = {
@@ -51,6 +57,22 @@ const verifiedAtLabel = computed(() => {
   const mm = String(date.getMonth() + 1).padStart(2, "0");
   const dd = String(date.getDate()).padStart(2, "0");
   return `${MERCHANT_VERIFIED_AT_PREFIX} ${yyyy}-${mm}-${dd}`;
+});
+
+// `errandEntryAvailable === false` is the unavailable case (the merchant
+// supports errand but it's currently turned off). `undefined` means the
+// merchant does not support errand at all — we render nothing in that case
+// so non-errand merchants don't grow a "暂未开放" chip.
+const errandUnavailable = computed(() => props.errandEntryAvailable === false);
+const unavailableReasonLabel = computed(() => {
+  if (!errandUnavailable.value) return "";
+  return (
+    errandReasonText({
+      available: false,
+      reason: props.errandUnavailableReason || "",
+      reasonText: props.errandUnavailableReasonText || "",
+    }) || MERCHANT_ERRAND_UNAVAILABLE_FALLBACK
+  );
 });
 </script>
 
@@ -104,6 +126,28 @@ const verifiedAtLabel = computed(() => {
         {{ MERCHANT_ERRAND_CTA }}
       </button>
       <p class="post-detail-merchant-block__errand-hint">{{ MERCHANT_ERRAND_HINT }}</p>
+    </div>
+
+    <div
+      v-else-if="errandUnavailable"
+      class="post-detail-merchant-block__errand is-unavailable"
+      data-testid="post-detail-merchant-errand-unavailable"
+    >
+      <p class="post-detail-merchant-block__errand-line">{{ MERCHANT_ERRAND_UNAVAILABLE_LABEL }}</p>
+      <button
+        type="button"
+        class="post-detail-merchant-block__errand-cta"
+        disabled
+        aria-disabled="true"
+      >
+        {{ MERCHANT_ERRAND_CTA }}
+      </button>
+      <p
+        class="post-detail-merchant-block__errand-hint"
+        data-testid="post-detail-merchant-errand-reason"
+      >
+        {{ unavailableReasonLabel }}
+      </p>
     </div>
   </section>
 </template>
@@ -200,6 +244,11 @@ const verifiedAtLabel = computed(() => {
   border: 1px dashed rgba(31, 167, 160, 0.35);
   border-radius: var(--radius-card, 12px);
   background: rgba(31, 167, 160, 0.06);
+}
+
+.post-detail-merchant-block__errand.is-unavailable {
+  border-color: rgba(120, 120, 120, 0.32);
+  background: rgba(120, 120, 120, 0.06);
 }
 
 .post-detail-merchant-block__errand-line {

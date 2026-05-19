@@ -4,7 +4,7 @@ import { appViews, getViewDefinition, type AppViewKey } from "./view-types";
 import { getViewFromHashRef, pushViewHash } from "./useDeepLink";
 import { useDetailNavigation } from "./detail-navigation";
 
-const SECRET_VIEWS: AppViewKey[] = ["admin", "verification"];
+const SECRET_VIEWS: AppViewKey[] = ["admin", "verification", "merchant"];
 const viewFromHash = getViewFromHashRef();
 const secretActiveViewKey = ref<AppViewKey | null>(null);
 const detailNav = useDetailNavigation();

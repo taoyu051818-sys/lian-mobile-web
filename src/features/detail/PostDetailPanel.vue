@@ -276,6 +276,8 @@ watch(
             :help-manage-action-error="helpManageActionError"
             :merchant="post?.merchant"
             :errand-entry-available="post?.errandEntryAvailable"
+            :errand-unavailable-reason="post?.errandUnavailableReason"
+            :errand-unavailable-reason-text="post?.errandUnavailableReasonText"
             :trade="post?.trade"
             @gallery-pointer-down="handleGalleryPointerDown"
             @gallery-pointer-move="handleGalleryPointerMove"
