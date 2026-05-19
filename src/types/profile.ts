@@ -67,3 +67,23 @@ export interface ProfileStats {
   drafts: number;
   mapContributions: number;
 }
+
+/**
+ * Visibility values accepted by the backend `/api/me/settings` PATCH endpoint.
+ * Mirrors `PROFILE_VISIBILITY_OPTIONS` in profile-service.js.
+ */
+export type ProfileVisibility = "public" | "campus" | "private";
+
+/**
+ * Mirrors the backend `/api/me/settings` shape
+ * (`DEFAULT_PROFILE_SETTINGS` in profile-service.js). Each field has a
+ * defined default — the backend never returns a partial settings object.
+ */
+export interface ProfileSettings {
+  notificationEnabled: boolean;
+  profileVisibility: ProfileVisibility;
+  allowMessageMentions: boolean;
+}
+
+/** Patch shape — at least one supported field is required by the backend. */
+export type ProfileSettingsPatch = Partial<ProfileSettings>;

@@ -75,6 +75,22 @@ export const PROFILE_REWARDS_POINTS_LABEL = "点券";
 export const PROFILE_REWARDS_HONORS_LABEL = "荣誉";
 export const PROFILE_REWARDS_PLACEHOLDER = "敬请期待，奖励账本暂未开放。";
 
+/** 个人设置（PRD V0.1 §N3 — backend `/api/me/settings`） */
+export const PROFILE_SETTINGS_SECTION_LABEL = "我的设置";
+export const PROFILE_SETTINGS_NOTIFICATION_LABEL = "通知";
+export const PROFILE_SETTINGS_NOTIFICATION_HINT = "接收点赞、回复、@ 我的提醒。";
+export const PROFILE_SETTINGS_VISIBILITY_LABEL = "主页可见性";
+export const PROFILE_SETTINGS_VISIBILITY_HINT = "决定谁能看到我的发布列表与基础资料。";
+export const PROFILE_SETTINGS_VISIBILITY_PUBLIC = "公开";
+export const PROFILE_SETTINGS_VISIBILITY_CAMPUS = "仅校园";
+export const PROFILE_SETTINGS_VISIBILITY_PRIVATE = "仅自己";
+export const PROFILE_SETTINGS_MENTIONS_LABEL = "允许私信提醒";
+export const PROFILE_SETTINGS_MENTIONS_HINT = "关闭后，我不会收到他人 @ 我或私信的通知。";
+export const PROFILE_SETTINGS_LOAD_ERROR = "设置加载失败，可以稍后再试。";
+export const PROFILE_SETTINGS_PATCH_ERROR = "设置没有保存成功，可以稍后再试。";
+export const PROFILE_SETTINGS_SAVING = "保存中…";
+export const PROFILE_SETTINGS_RELOAD = "重新加载";
+
 /** 个人资料操作反馈 */
 export const PROFILE_AVATAR_UPDATED = "头像已更新。";
 export const PROFILE_IDENTITY_SWITCHED = "发布身份已切换。";

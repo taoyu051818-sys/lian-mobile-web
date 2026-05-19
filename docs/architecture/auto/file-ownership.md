@@ -26,26 +26,21 @@ Total files: 269
 | `api/messages.ts`     | export function extractChannelMessagePlainText(html?: string): string                                                    |   159 |
 | `api/places.ts`       | TypeScript module                                                                                                        |    10 |
 | `api/posts.ts`        | export interface PostLikeResponse                                                                                        |   149 |
-| `api/profile.ts`      | TypeScript module                                                                                                        |    78 |
+| `api/profile.ts`      | TypeScript module                                                                                                        |    91 |
 | `api/publish.ts`      | Creates a display-only fallback draft from free-text place name. When `placeName` is non-empty the source is "manual"... |   254 |
 | `api/verification.ts` | TypeScript module                                                                                                        |    20 |
 
-## src/app/ (12 files)
+## src/app/ (7 files)
 
-| File                                | Summary                                                                                                                  | Lines |
-| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------ | ----: |
-| `app/AppViewHost.vue`               | `feed` is the cold-start view, so it is intentionally eager-imported — first                                             |    52 |
-| `app/ViewAsyncError.vue`            | Vue SFC                                                                                                                  |    50 |
-| `app/ViewLoadingFallback.vue`       | Vue SFC                                                                                                                  |    39 |
-| `app/deepLink.ts`                   | Pure parsing/building helpers for the SPA's hash-based deep links. The app routes on `window.location.hash` (no vue-...  |    53 |
-| `app/detail-navigation/fetcher.ts`  | Side-effect helper that bridges the reducer's `fetch` effect to the network. The reducer is pure; it never holds a P...  |    27 |
-| `app/detail-navigation/index.ts`    | export type { DetailNavigation } from "./store";                                                                         |     8 |
-| `app/detail-navigation/state.ts`    | Pure state machine for the post-detail navigation flow. The whole detail panel — open/close, fetch lifecycle, URL ha...  |   176 |
-| `app/detail-navigation/store.ts`    | Module-scoped reactive wrapper around the pure detail-navigation reducer. Why a module singleton: the URL hash, the ...  |   157 |
-| `app/detail-navigation/url-sync.ts` | Bridges window.location.hash → reducer. The detail-navigation reducer is the single source of truth; the URL is one ...  |    58 |
-| `app/useActiveView.ts`              | export function useActiveView()                                                                                          |    47 |
-| `app/useDeepLink.ts`                | Module-scoped singletons — `window.location.hash` has exactly one value at a time, so multiple consumers (App, FeedVi... |   139 |
-| `app/view-types.ts`                 | export type AppViewKey =                                                                                                 |    65 |
+| File                          | Summary                                                                                                                  | Lines |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------ | ----: |
+| `app/AppViewHost.vue`         | `feed` is the cold-start view, so it is intentionally eager-imported — first                                             |    52 |
+| `app/ViewAsyncError.vue`      | Vue SFC                                                                                                                  |    50 |
+| `app/ViewLoadingFallback.vue` | Vue SFC                                                                                                                  |    39 |
+| `app/deepLink.ts`             | Pure parsing/building helpers for the SPA's hash-based deep links. The app routes on `window.location.hash` (no vue-...  |    53 |
+| `app/useActiveView.ts`        | export function useActiveView()                                                                                          |    46 |
+| `app/useDeepLink.ts`          | Module-scoped singletons — `window.location.hash` has exactly one value at a time, so multiple consumers (App, FeedVi... |   139 |
+| `app/view-types.ts`           | export type AppViewKey =                                                                                                 |    65 |
 
 ## src/composables/ (13 files)
 
@@ -80,7 +75,7 @@ Total files: 269
 | `config/brand/merchant.ts`     | export const MERCHANT_BLOCK_LABEL = "商家信息"; export const MERCHANT_CATEGORY_FOOD = "餐饮"; export const MERCHANT_CATEGOR...                        |    36 |
 | `config/brand/messages.ts`     | export const MESSAGE_EMPTY_CONTENT = "这条消息暂时没有内容。"; export const MESSAGE_TAB_LABEL = "消息分类"; export const MESSAGE_S...                 |    33 |
 | `config/brand/notification.ts` | export const NOTIFICATION_SECTION_LABEL = "通知"; export const NOTIFICATION_READ = "已读"; export const NOTIFICATION_UNRE...                          |    10 |
-| `config/brand/profile.ts`      | export const PROFILE*CAMPUS_USER = "校园用户"; export const PROFILE_INVITE_USER = "邀请码用户"; export const PROFILE_IDENTITY*...                     |    87 |
+| `config/brand/profile.ts`      | export const PROFILE*CAMPUS_USER = "校园用户"; export const PROFILE_INVITE_USER = "邀请码用户"; export const PROFILE_IDENTITY*...                     |   103 |
 | `config/brand/publish.ts`      | export const PUBLISH_CLEAR = "清空"; export const PUBLISH_SUBMIT = "发布"; export const PUBLISH_LOCATION_LABEL = "地点"; e...                         |    96 |
 | `config/brand/report.ts`       | export const REPORT_CAT_PRIVACY = "隐私问题"; export const REPORT_CAT_FALSE_INFO = "虚假信息"; export const REPORT_CAT_ABUSE ...                      |    19 |
 | `config/brand/share.ts`        | export const SHARE_ERROR_NO_URL = "无法生成分享链接。"; export const SHARE_ERROR_SHARE_FAILED = "分享没有完成，可以稍后再试。"; export const...       |     9 |
@@ -104,7 +99,7 @@ Total files: 269
 | `domain/publishAiPolicy.ts`    | Pure rules for applying AI publish suggestions to a draft (PRD V0.1 Phase 3). Lives in the domain layer because it e... |    78 |
 | `domain/validation/forms.ts`   | export const AUTH_PASSWORD_MIN_LENGTH = 8;                                                                              |    99 |
 
-## src/features/ (127 files)
+## src/features/ (132 files)
 
 | File                                             | Summary                                                                                                                  | Lines |
 | ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------ | ----: |
@@ -141,17 +136,18 @@ Total files: 269
 | `features/detail/PostDetailLightbox.vue`         | Vue SFC                                                                                                                  |    43 |
 | `features/detail/PostDetailMainBody.vue`         | Vue SFC                                                                                                                  |    44 |
 | `features/detail/PostDetailMerchantBlock.vue`    | Vue SFC                                                                                                                  |   231 |
-| `features/detail/PostDetailPanel.vue`            | Shell chrome slots (`top: detail-topbar`, `bottom: reply-dock`) are now                                                  |   358 |
+| `features/detail/PostDetailPanel.vue`            | V0.1 surface — emit retry so the panel reloads to the linked-event tid                                                   |   362 |
 | `features/detail/PostDetailTopbar.vue`           | Vue SFC                                                                                                                  |   132 |
 | `features/detail/PostDetailTradeBlock.vue`       | Vue SFC                                                                                                                  |   220 |
 | `features/detail/PostPlaceSheetBlock.vue`        | Vue SFC                                                                                                                  |   192 |
 | `features/detail/PostReplies.vue`                | Vue SFC                                                                                                                  |   102 |
 | `features/detail/PostReplyDock.vue`              | Vue SFC                                                                                                                  |   161 |
 | `features/detail/PostReportBlock.vue`            | Vue SFC                                                                                                                  |   150 |
-| `features/detail/index.ts`                       | TypeScript module                                                                                                        |     2 |
+| `features/detail/index.ts`                       | TypeScript module                                                                                                        |     3 |
 | `features/detail/reportFlow.ts`                  | export interface ReportCategoryOption                                                                                    |    98 |
 | `features/detail/useDetailGallery.ts`            | export function useDetailGallery(options:                                                                                |    48 |
 | `features/detail/usePlaceSheetLoader.ts`         | export function usePlaceSheetLoader(post: ComputedRef<PostDetail \| null>)                                               |    56 |
+| `features/detail/usePostDetail.ts`               | export function usePostDetail()                                                                                          |    64 |
 | `features/detail/usePostDetailPresentation.ts`   | export function usePostDetailPresentation(                                                                               |   142 |
 | `features/detail/usePostReactions.ts`            | export function usePostReactions(options:                                                                                |    79 |
 | `features/detail/usePostReplyComposer.ts`        | export function usePostReplyComposer(options:                                                                            |    59 |
@@ -163,13 +159,16 @@ Total files: 269
 | `features/feed/FeedItemCardMedia.vue`            | Vue SFC                                                                                                                  |   103 |
 | `features/feed/FeedList.vue`                     | Vue SFC                                                                                                                  |    72 |
 | `features/feed/FeedLoadMore.vue`                 | Vue SFC                                                                                                                  |    55 |
-| `features/feed/FeedView.vue`                     | Vue SFC                                                                                                                  |   158 |
+| `features/feed/FeedView.vue`                     | Reconcile the panel against `#/post/{tid}`. Triggers on:                                                                 |   192 |
 | `features/feed/feedItemId.ts`                    | export function normalizeFeedItemId(id: FeedItemId \| string \| number \| null \| undefined)                             |     6 |
 | `features/feed/index.ts`                         | TypeScript module                                                                                                        |     2 |
 | `features/feed/useCardPointerInteraction.ts`     | export function useCardPointerInteraction(emitOpen: (target: HTMLElement \| null) => void)                               |   119 |
-| `features/feed/useFeedData.ts`                   | export function useFeedData(options: { detailOpen: () => boolean; closeDetail: () => void })                             |    93 |
+| `features/feed/useFeedData.ts`                   | export function useFeedData(options:                                                                                     |   101 |
+| `features/feed/useFeedDetail.ts`                 | export interface CardOpenPayload                                                                                         |    66 |
+| `features/feed/useFeedDetailHistory.ts`          | Mirrors detail-panel open state into `window.location.hash` (`#/post/{tid}`) and listens to popstate so the back butt... |    71 |
+| `features/feed/usePostDetailLoader.ts`           | export function usePostDetailLoader()                                                                                    |    66 |
 | `features/map/MapCanvas.vue`                     | Prefer the dataset bounds for the image overlay, but let an explicit                                                     |   206 |
-| `features/map/MapLeafletView.vue`                | KeepAlive caches this view, so onMounted only fires the first time.                                                      |   139 |
+| `features/map/MapLeafletView.vue`                | KeepAlive caches this view, so onMounted only fires the first time.                                                      |   144 |
 | `features/map/MapPlaceSheet.vue`                 | Vue SFC                                                                                                                  |    70 |
 | `features/map/MapStatus.vue`                     | Vue SFC                                                                                                                  |    34 |
 | `features/map/index.ts`                          | TypeScript module                                                                                                        |     2 |
@@ -181,11 +180,11 @@ Total files: 269
 | `features/map/useMapIconScale.ts`                | export function createMapIconScale(getMap: () => LeafletMapLike \| null)                                                 |    46 |
 | `features/map/useMapLayers.ts`                   | export type LayerKey =                                                                                                   |   204 |
 | `features/map/useMapRoads.ts`                    | export type RoadVisualStyle =                                                                                            |   238 |
-| `features/map/useMapSelection.ts`                | Map-only selection state. Post-detail navigation is owned by the detail-navigation FSM at the app level, so this comp... |    78 |
+| `features/map/useMapSelection.ts`                | export type MapTarget = { kind: "location"; item: MapLocation } \| { kind: "post"; item: MapPost };                      |   137 |
 | `features/messages/ChannelComposer.vue`          | Vue SFC                                                                                                                  |   147 |
 | `features/messages/ChannelThread.vue`            | Vue SFC                                                                                                                  |   268 |
 | `features/messages/MessagesTabs.vue`             | Vue SFC                                                                                                                  |    58 |
-| `features/messages/MessagesView.vue`             | Vue SFC                                                                                                                  |   198 |
+| `features/messages/MessagesView.vue`             | Vue SFC                                                                                                                  |   203 |
 | `features/messages/NotificationList.vue`         | Vue SFC                                                                                                                  |   145 |
 | `features/messages/index.ts`                     | TypeScript module                                                                                                        |     6 |
 | `features/messages/useChannelMessages.ts`        | export function useChannelMessages()                                                                                     |   227 |
@@ -198,10 +197,11 @@ Total files: 269
 | `features/profile/ProfileEditorPanel.vue`        | Vue SFC                                                                                                                  |   197 |
 | `features/profile/ProfileHeader.vue`             | Vue SFC                                                                                                                  |   128 |
 | `features/profile/ProfileInviteCodePanel.vue`    | Vue SFC                                                                                                                  |    55 |
+| `features/profile/ProfileSettingsBlock.vue`      | Optimistic update so the toggle / select feels immediate. Revert                                                         |   332 |
 | `features/profile/ProfileStatsBlock.vue`         | Vue SFC                                                                                                                  |   217 |
 | `features/profile/ProfileTabs.vue`               | Vue SFC                                                                                                                  |    64 |
 | `features/profile/ProfileVerificationBadges.vue` | Header surfaces only currently-active grants. Expired/revoked records                                                    |    97 |
-| `features/profile/ProfileView.vue`               | Vue SFC                                                                                                                  |   286 |
+| `features/profile/ProfileView.vue`               | Vue SFC                                                                                                                  |   295 |
 | `features/profile/index.ts`                      | TypeScript module                                                                                                        |     2 |
 | `features/profile/profile-header.css`            | Stylesheet                                                                                                               |   187 |
 | `features/profile/useAvatarCropper.ts`           | export interface UseAvatarCropperOptions                                                                                 |   175 |
@@ -279,7 +279,7 @@ Total files: 269
 | `shell/shell-chrome-types.ts`  | Named slot kinds rendered inside a shell region. The slot value drives which sub-component (tabs / detail topbar / re... |    81 |
 | `shell/shell-chrome.css`       | Stylesheet                                                                                                               |   273 |
 | `shell/useDetailSheet.ts`      | export function useDetailSheet():                                                                                        |    30 |
-| `shell/useShellChrome.ts`      | Apply a page-level chrome spec. Page chrome owns tabs / buttons / identity, but it MUST NOT touch `slot` — slots are ... |    95 |
+| `shell/useShellChrome.ts`      | Per-region slot stack. The base entry is owned by AppShell/page chrome; pushed entries are owned by mounted children ... |   121 |
 
 ## src/styles/ (5 files)
 
@@ -304,7 +304,7 @@ Total files: 269
 | `types/place.ts`           | export type PlaceStatus =                                                                                                 |    54 |
 | `types/post-extensions.ts` | Event / Help / Merchant / Trade / Errand domain types (PRD V0.1 §6). V0.1 ships shapes only — no UI yet. The point i...   |   194 |
 | `types/post.ts`            | event?: EventPostExtension; eventJoined?: boolean; help?: HelpPostExtension; helpVoted?: boolean; helpManageable?: bo...  |   134 |
-| `types/profile.ts`         | PRD V0.1 §17 — verification records keyed by tag (campus_verified, merchant_verified, ...). Backend `/api/auth/me` re...  |    70 |
+| `types/profile.ts`         | PRD V0.1 §17 — verification records keyed by tag (campus_verified, merchant_verified, ...). Backend `/api/auth/me` re...  |    90 |
 | `types/publish.ts`         | export type PublishMapVersion = "legacy" \| "manual" \| "gaode_v2"; Backend (#383) accepts these contentType values fo... |   116 |
 | `types/verification.ts`    | export type VerificationTag =                                                                                             |    36 |
 

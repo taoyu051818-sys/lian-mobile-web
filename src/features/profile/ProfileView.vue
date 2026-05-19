@@ -19,6 +19,7 @@ import { InlineError } from "../../ui";
 import { AuthPanel } from "../auth";
 import ProfileEditorPanel from "./ProfileEditorPanel.vue";
 import ProfileHeader from "./ProfileHeader.vue";
+import ProfileSettingsBlock from "./ProfileSettingsBlock.vue";
 import ProfileStatsBlock from "./ProfileStatsBlock.vue";
 import ProfileTabs from "./ProfileTabs.vue";
 import ProfileCollectionList from "./ProfileCollectionList.vue";
@@ -170,6 +171,8 @@ onMounted(() => {
       <ProfileEditorPanel v-if="editorOpen" :user="user" @updated="handleProfileUpdated" />
 
       <ProfileStatsBlock />
+
+      <ProfileSettingsBlock />
 
       <ProfileTabs :tabs="tabs" :active-tab="activeTab" @select="loadProfileList" />
 
