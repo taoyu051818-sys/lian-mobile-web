@@ -83,9 +83,7 @@ test.describe("messages notification routing proof @anonymous @messages", () => 
     await page.goto("/#/messages");
     await notificationsTab.click();
 
-    const fallbackItem = page.locator(
-      '[data-testid="notification-item"][data-target-kind="none"]',
-    );
+    const fallbackItem = page.locator('[data-testid="notification-item"][data-target-kind="none"]');
     await expect(fallbackItem).toContainText("订单类通知会在后续版本接入目标页。");
     await expect(page).toHaveURL(/#\/messages$/);
   });

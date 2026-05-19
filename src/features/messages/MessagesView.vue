@@ -32,12 +32,8 @@ const {
   sendMessage,
   retryMessage: channelRetryMessage,
 } = useChannelMessages();
-const {
-  notificationItems,
-  notificationLoading,
-  notificationError,
-  loadNotifications,
-} = useNotifications();
+const { notificationItems, notificationLoading, notificationError, loadNotifications } =
+  useNotifications();
 const {
   composerContent,
   composerIdentityTag,
@@ -164,9 +160,7 @@ onMounted(async () => {
   display: grid;
   gap: var(--space-4);
   padding-top: calc(var(--floating-bar-height) + env(safe-area-inset-top));
-  padding-bottom: calc(
-    var(--space-8) + env(safe-area-inset-bottom) + var(--keyboard-inset-bottom)
-  );
+  padding-bottom: calc(var(--space-8) + env(safe-area-inset-bottom) + var(--keyboard-inset-bottom));
 }
 
 .messages-view__chrome-composer {
