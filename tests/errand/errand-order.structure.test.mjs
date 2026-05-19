@@ -178,6 +178,10 @@ test("useErrandOrderRoute is a singleton route store", () => {
   // Setting one mode must clear the other (otherwise both branches render).
   assert.match(src, /merchantPostId\.value\s*=\s*null/);
   assert.match(src, /orderId\.value\s*=\s*""/);
+  // Origin tracking lets close/back handlers return the user to the surface
+  // they came from instead of dumping everyone on feed.
+  assert.match(src, /origin/);
+  assert.match(src, /AppViewKey/);
 });
 
 // --- view branches ---
@@ -195,6 +199,14 @@ test("ErrandOrderView surfaces the gate, form, and submit affordances", () => {
   // Submit must dispatch through the route singleton — otherwise the
   // post-submit view does not pivot into timeline mode.
   assert.match(src, /enterForOrder/);
+  // Close/back hands the user back to the origin surface (issue #647 review
+  // A1) instead of always routing to feed.
+  assert.match(src, /route\.origin\.value/);
+  // goLogin must NOT route to feed — auth lives on the profile tab.
+  assert.doesNotMatch(src, /function goLogin\(\)\s*\{[^}]*setActiveView\("feed"\)/);
+  // Module-scope route singleton must reset on unmount so a tab-bar switch
+  // doesn't leak merchantPostId/orderId across remounts (review A3).
+  assert.match(src, /onBeforeUnmount/);
 });
 
 test("ErrandOrderGate exposes the four gate CTAs", () => {
@@ -213,6 +225,10 @@ test("ErrandOrderTimelineView lists timeline events + pickup/dropoff", () => {
   assert.match(src, /data-testid="errand-order-timeline-entry"/);
   assert.match(src, /data-testid="errand-order-timeline-pickup"/);
   assert.match(src, /data-testid="errand-order-timeline-dropoff"/);
+  // Error branch must offer a manual retry — without it polling+initial
+  // fetch failures leave the user stuck on an alert with nothing to do
+  // (review A4).
+  assert.match(src, /data-testid="errand-order-timeline-retry"/);
 });
 
 // --- merchant detail wiring (CTA dispatch) ---
