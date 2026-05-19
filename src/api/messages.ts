@@ -53,10 +53,7 @@ function channelMessageSortValue(item: ChannelMessage) {
   return item.timestampISO || item.time || "";
 }
 
-function compareChannelMessagesChronologically(
-  a: ChannelMessage,
-  b: ChannelMessage,
-) {
+function compareChannelMessagesChronologically(a: ChannelMessage, b: ChannelMessage) {
   const aTime = channelMessageSortValue(a);
   const bTime = channelMessageSortValue(b);
   if (aTime !== bTime) {
@@ -93,10 +90,7 @@ export function normalizeChannelResponse(
   };
 }
 
-export async function fetchChannelMessages(
-  offset = 0,
-  limit = 30,
-): Promise<ChannelResponse> {
+export async function fetchChannelMessages(offset = 0, limit = 30): Promise<ChannelResponse> {
   const params = new URLSearchParams();
   const requestedOffset = Math.max(0, offset);
   params.set("limit", String(limit));
@@ -136,13 +130,7 @@ interface RawNotificationResponse {
   notifications?: RawNotificationItem[];
 }
 
-const REPLY_NOTIFICATION_TYPES = [
-  "reply",
-  "post-reply",
-  "new-reply",
-  "new-post",
-  "comment",
-];
+const REPLY_NOTIFICATION_TYPES = ["reply", "post-reply", "new-reply", "new-post", "comment"];
 const VERIFICATION_NOTIFICATION_TYPES = [
   "verification",
   "campus",
@@ -262,9 +250,7 @@ function resolveNotificationTarget(
 ): NotificationTarget {
   const tid = resolveNotificationTid(raw);
   if (kind === "reply") {
-    return tid
-      ? { kind: "detail", tid }
-      : { kind: "none", reason: "该回复通知暂时无法直接打开。" };
+    return tid ? { kind: "detail", tid } : { kind: "none", reason: "该回复通知暂时无法直接打开。" };
   }
   if (kind === "verification") {
     return { kind: "verification" };
@@ -272,9 +258,7 @@ function resolveNotificationTarget(
   if (kind === "order") {
     return { kind: "none", reason: "订单类通知会在后续版本接入目标页。" };
   }
-  return tid
-    ? { kind: "detail", tid }
-    : { kind: "none", reason: "该系统通知暂时只支持查看摘要。" };
+  return tid ? { kind: "detail", tid } : { kind: "none", reason: "该系统通知暂时只支持查看摘要。" };
 }
 
 function resolveNotificationActionLabel(
@@ -322,7 +306,8 @@ export function normalizeNotificationItem(raw: RawNotificationItem): Notificatio
 export function normalizeNotificationResponse(
   response: RawNotificationResponse | NotificationResponse,
 ): NotificationResponse {
-  const rawItems = "notifications" in response ? response.notifications || [] : response.items || [];
+  const rawItems =
+    "notifications" in response ? response.notifications || [] : response.items || [];
   return {
     ...response,
     items: rawItems.map((item) => normalizeNotificationItem(item as RawNotificationItem)),
@@ -379,15 +364,11 @@ export async function sendChannelMessage(payload: SendChannelMessagePayload): Pr
   });
 }
 
-export function buildChannelReadPayload(
-  messageIds: Array<string | number>,
-): ChannelReadPayload {
+export function buildChannelReadPayload(messageIds: Array<string | number>): ChannelReadPayload {
   return { messageIds, readerId: ensureClientId() };
 }
 
-export async function markChannelMessagesRead(
-  messageIds: Array<string | number>,
-): Promise<void> {
+export async function markChannelMessagesRead(messageIds: Array<string | number>): Promise<void> {
   if (!messageIds.length) return;
   const payload = buildChannelReadPayload(messageIds);
   await apiSend("/api/channel/read", {
