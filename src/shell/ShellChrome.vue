@@ -46,6 +46,9 @@ const hasTabs = computed(() => regionSpec.value.tabs != null);
 const isSlottedTabs = computed(() => !hasTabs.value && regionSpec.value.slot === "tabs");
 const isReplyDockSlot = computed(() => regionSpec.value.slot === "reply-dock");
 const isDetailTopbarSlot = computed(() => regionSpec.value.slot === "detail-topbar");
+const rendersStableTopTarget = computed(() => props.region === "top");
+const rendersStableBottomTarget = computed(() => props.region === "bottom");
+const rendersRegularChrome = computed(() => !isReplyDockSlot.value && !isDetailTopbarSlot.value);
 
 function handleButtonClick(button: ChromeButtonSpec) {
   if (!button.disabled && isVisible.value) {
@@ -88,18 +91,26 @@ function handleFilterToggle(filterId: string) {
     :style="{ pointerEvents: isVisible ? 'auto' : 'none' }"
   >
     <div
-      v-if="isReplyDockSlot"
-      id="lian-shell-bottom-slot"
-      class="shell-chrome__bottom-slot lian-floating-chrome lian-floating-chrome--bottom"
-      data-floating-chrome="bottom"
+      v-if="rendersStableTopTarget"
+      id="lian-shell-top-slot"
+      class="shell-chrome__top-slot"
+      :class="{
+        'lian-floating-chrome': isDetailTopbarSlot,
+        'lian-floating-chrome--top': isDetailTopbarSlot,
+      }"
+      :data-floating-chrome="isDetailTopbarSlot ? 'top' : undefined"
     />
     <div
-      v-else-if="isDetailTopbarSlot"
-      id="lian-shell-top-slot"
-      class="shell-chrome__top-slot lian-floating-chrome lian-floating-chrome--top"
-      data-floating-chrome="top"
+      v-if="rendersStableBottomTarget"
+      id="lian-shell-bottom-slot"
+      class="shell-chrome__bottom-slot"
+      :class="{
+        'lian-floating-chrome': isReplyDockSlot,
+        'lian-floating-chrome--bottom': isReplyDockSlot,
+      }"
+      :data-floating-chrome="isReplyDockSlot ? 'bottom' : undefined"
     />
-    <Transition v-else :name="`shell-slot-${region}`" mode="out-in">
+    <Transition v-if="rendersRegularChrome" :name="`shell-slot-${region}`" mode="out-in">
       <template v-if="isSlottedTabs">
         <div key="tabs-slot" class="shell-chrome__slot-host">
           <slot />
