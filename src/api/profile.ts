@@ -1,10 +1,19 @@
 import { apiGet, apiSend, apiUpload } from "./http";
 import type { FeedItemId } from "../types/feed";
-import type { ProfileListResponse, ProfileTabKey, ProfileUser } from "../types/profile";
+import type {
+  ProfileListResponse,
+  ProfileStats,
+  ProfileTabKey,
+  ProfileUser,
+} from "../types/profile";
 
 export async function fetchAuthMe(): Promise<ProfileUser | null> {
   const data = await apiGet<{ user?: ProfileUser | null }>("/api/auth/me");
   return data.user || null;
+}
+
+export async function fetchProfileStats(): Promise<ProfileStats> {
+  return apiGet<ProfileStats>("/api/me/stats");
 }
 
 export async function fetchProfileTab(
