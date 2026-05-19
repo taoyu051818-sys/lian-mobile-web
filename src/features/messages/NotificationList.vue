@@ -27,7 +27,10 @@ const emit = defineEmits<{
 }>();
 
 function isReplyNotification(item: NotificationItem) {
-  return item.kind === "reply" || ["new-reply", "reply", "new-post", "post-reply"].includes(String(item.type || ""));
+  return (
+    item.kind === "reply" ||
+    ["new-reply", "reply", "new-post", "post-reply"].includes(String(item.type || ""))
+  );
 }
 
 function notificationActor(item: NotificationItem) {
@@ -98,9 +101,9 @@ function openNotification(item: NotificationItem) {
             <strong>{{ notificationActor(item) }}</strong>
             <small>{{ notificationKindLabel(item) }}</small>
           </div>
-          <TrustBadge :tone="item.read ? 'confirmed' : 'pending'">{{
-            item.read ? NOTIFICATION_READ : NOTIFICATION_UNREAD
-          }}</TrustBadge>
+          <TrustBadge :tone="item.read ? 'confirmed' : 'pending'">
+            {{ item.read ? NOTIFICATION_READ : NOTIFICATION_UNREAD }}
+          </TrustBadge>
         </header>
         <h3>{{ item.title || NOTIFICATION_DEFAULT_TITLE }}</h3>
         <p v-if="item.excerpt && item.excerpt !== item.title">{{ item.excerpt }}</p>
