@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import { normalizeNotificationItem, normalizeNotificationResponse } from "../../src/api/messages";
+import {
+  normalizeNotificationItem,
+  normalizeNotificationResponse,
+} from "../../src/api/messages";
 
 describe("notification routing normalization", () => {
   it("routes reply notifications to post detail", () => {
@@ -49,7 +52,9 @@ describe("notification routing normalization", () => {
 
   it("accepts the notifications alias used by some message payloads", () => {
     const response = normalizeNotificationResponse({
-      notifications: [{ id: "reply-2", type: "reply", tid: 7, title: "回复通知" }],
+      notifications: [
+        { id: "reply-2", type: "reply", tid: 7, title: "回复通知" },
+      ],
     });
 
     expect(response.items).toHaveLength(1);
