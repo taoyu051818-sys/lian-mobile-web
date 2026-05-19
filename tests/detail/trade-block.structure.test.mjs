@@ -35,7 +35,10 @@ test("PostDetail surfaces optional trade block plus tradeManageable gate", () =>
 test("trade detail client preserves hidden state and exposes the PATCH transition route", () => {
   const src = read("src/api/posts.ts");
   assert.match(src, /function normalizeTradeExtensionFromDetail/);
-  assert.match(src, /raw === "reserved" \|\| raw === "sold" \|\| raw === "cancelled" \|\| raw === "hidden"/);
+  assert.match(
+    src,
+    /raw === "reserved" \|\| raw === "sold" \|\| raw === "cancelled" \|\| raw === "hidden"/,
+  );
   assert.match(src, /tradeManageable/);
   assert.match(src, /export async function patchTradeState/);
   assert.match(src, /\/trade-state/);

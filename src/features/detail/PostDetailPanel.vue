@@ -229,7 +229,7 @@ const tradeManageable = computed(() => {
   if (!user) return false;
   return Boolean(
     (user.id && currentPost.actor?.id && user.id === currentPost.actor.id) ||
-      (user.username && currentPost.actor?.username && user.username === currentPost.actor.username),
+    (user.username && currentPost.actor?.username && user.username === currentPost.actor.username),
   );
 });
 

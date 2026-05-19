@@ -89,7 +89,8 @@ export function normalizePostDetail(value: unknown, fallbackId: FeedItemId): Pos
       : merchant.errandSupported
     : undefined;
   const trade = normalizeTradeExtensionFromDetail(record.trade);
-  const tradeManageable = "tradeManageable" in record ? asBoolean(record.tradeManageable) : undefined;
+  const tradeManageable =
+    "tradeManageable" in record ? asBoolean(record.tradeManageable) : undefined;
 
   return {
     tid,
