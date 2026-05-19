@@ -12,6 +12,7 @@ import {
   PROFILE_OFFICIAL_ALIAS,
 } from "../../config/brand";
 import type { ProfileAlias, ProfileUser } from "../../types/profile";
+import ProfileVerificationBadges from "./ProfileVerificationBadges.vue";
 
 const props = defineProps<{
   user: ProfileUser;
@@ -44,6 +45,8 @@ const hasMultipleAliases = computed(() => props.aliases.length > 0);
         {{ user.institution || PROFILE_CAMPUS_USER }} · {{ user.email || PROFILE_INVITE_USER }}
       </p>
     </div>
+
+    <ProfileVerificationBadges :user="user" />
 
     <div v-if="userTags.length" class="profile-header__chips" :aria-label="PROFILE_IDENTITY_TAGS">
       <TagChip v-for="tag in userTags" :key="tag" :tag="tag" />
