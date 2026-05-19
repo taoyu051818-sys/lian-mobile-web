@@ -1,6 +1,6 @@
 import type { PlaceRef } from "./place";
 import type { Audience } from "./audience";
-import type { MerchantCategory } from "./post-extensions";
+import type { MerchantCategory, TradeState } from "./post-extensions";
 
 export type PublishVisibility = "public" | "campus" | "school" | "private";
 export type PublishLocationSource = "manual" | "skipped" | "map_v2";
@@ -14,6 +14,12 @@ export type PublishMapVersion = "legacy" | "manual" | "gaode_v2";
 export type MerchantContentType = "merchant_food" | "merchant_service" | "merchant_retail";
 
 /**
+ * Backend (#387) accepts a single `trade` contentType. Category is free-text
+ * inside `metadata.trade.category` rather than a routing axis.
+ */
+export type TradeContentType = "trade";
+
+/**
  * Publish-side merchant input. Backend `normalizeMerchantMetadata` keeps only
  * the fields here; `verifiedAt` is injected server-side from the active
  * `merchant_verified` record so we do not send it.
@@ -24,6 +30,17 @@ export interface MerchantPublishInput {
   hours: string;
   contact: string;
   errandSupported: boolean;
+}
+
+/**
+ * Publish-side trade input. Backend `normalizeTradeMetadata` keeps only these
+ * fields; `verifiedAt` is injected server-side from the active
+ * `campus_verified` record so we do not send it.
+ */
+export interface TradePublishInput {
+  price: string;
+  state: TradeState;
+  category: string;
 }
 
 export interface PublishLocationDraft {
@@ -57,11 +74,12 @@ export interface PublishPayload {
     primaryTag?: string;
     identityTag?: string;
     /**
-     * PRD V0.1 §10 — set to "merchant" to opt the post into the merchant
-     * publish path. Backend then requires `contentType` to be one of the
-     * three merchant_* values and active `merchant_verified` on the actor.
+     * PRD V0.1 §10 / §11 — set to "merchant" to opt the post into the
+     * merchant publish path (requires merchant_verified + merchant_*
+     * contentType), or "trade" for the second-hand publish path
+     * (requires campus_verified + contentType="trade").
      */
-    presentationIntent?: "merchant";
+    presentationIntent?: "merchant" | "trade";
     /**
      * Optional full Audience descriptor (PRD V0.1 §6.2). Older backends ignore
      * this field and rely on `visibility` alone; newer backends use it to
@@ -71,11 +89,14 @@ export interface PublishPayload {
   };
   /**
    * Top-level alongside metadata, mirrors backend `normalizePostTaxonomy` —
-   * `merchant_food` / `merchant_service` / `merchant_retail`.
+   * `merchant_food` / `merchant_service` / `merchant_retail` for merchant,
+   * `trade` for second-hand.
    */
-  contentType?: MerchantContentType;
+  contentType?: MerchantContentType | TradeContentType;
   /** PRD §10 merchant block. Sent at top level, not inside metadata. */
   merchant?: MerchantPublishInput;
+  /** PRD §11 trade block. Sent at top level, not inside metadata. */
+  trade?: TradePublishInput;
   locationDraft: PublishLocationDraft;
   riskFlags: Array<{ message?: string }>;
   confidence: number;
