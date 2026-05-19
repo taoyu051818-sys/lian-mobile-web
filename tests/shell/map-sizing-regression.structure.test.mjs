@@ -49,6 +49,12 @@ test("useMapChrome exports composable with filter state and toggle", () => {
   assert.match(src, /MAP_FILTERS/);
 });
 
+test("MapLeafletView delegates post detail rendering to the global feed detail host", () => {
+  const src = read("src/features/map/MapLeafletView.vue");
+  assert.doesNotMatch(src, /PostDetailPanel/);
+  assert.match(src, /detail\.open\(Number\(place\.tid\), "card"\)/);
+});
+
 // --- MapCanvas leaflet integration ---
 
 test("MapCanvas.vue exists for leaflet rendering", () => {
