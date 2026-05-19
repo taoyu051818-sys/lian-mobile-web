@@ -38,6 +38,13 @@ export interface ChannelResponse {
 
 export type NotificationActor = DisplayActor;
 
+export type NotificationKind = "reply" | "verification" | "order" | "generic";
+
+export type NotificationTarget =
+  | { kind: "detail"; tid: number }
+  | { kind: "verification" }
+  | { kind: "none"; reason: string };
+
 export interface NotificationItem {
   id?: string | number;
   tid?: string | number;
@@ -48,6 +55,10 @@ export interface NotificationItem {
   read?: boolean;
   time?: string;
   timestampISO?: string;
+  kind?: NotificationKind;
+  actionLabel?: string;
+  fallbackText?: string;
+  target?: NotificationTarget;
 }
 
 export interface NotificationResponse {
