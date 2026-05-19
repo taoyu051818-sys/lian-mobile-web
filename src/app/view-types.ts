@@ -8,7 +8,8 @@ export type AppViewKey =
   | "profile"
   | "admin"
   | "verification"
-  | "merchant";
+  | "merchant"
+  | "runner";
 
 export type ShellLayoutMode = "content" | "full-bleed" | "composer-safe";
 
@@ -27,6 +28,7 @@ export const shellLayoutModes: Record<AppViewKey, ShellLayoutMode> = {
   admin: "content",
   verification: "content",
   merchant: "content",
+  runner: "content",
 };
 
 export function getShellLayoutMode(key: AppViewKey): ShellLayoutMode {

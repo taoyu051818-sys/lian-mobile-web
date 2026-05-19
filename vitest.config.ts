@@ -20,6 +20,7 @@ export default defineConfig({
       "tests/motion/**/*.test.ts",
       "tests/phase0/**/*.test.ts",
       "tests/detail-navigation/**/*.test.ts",
+      "tests/runner/**/*.test.ts",
     ],
   },
 });
