@@ -141,7 +141,7 @@ Total files: 275
 | `features/detail/PostDetailLightbox.vue`         | Vue SFC                                                                                                                  |    43 |
 | `features/detail/PostDetailMainBody.vue`         | Vue SFC                                                                                                                  |    44 |
 | `features/detail/PostDetailMerchantBlock.vue`    | Vue SFC                                                                                                                  |   231 |
-| `features/detail/PostDetailPanel.vue`            | Shell chrome slots (`top: detail-topbar`, `bottom: reply-dock`) are now                                                  |   358 |
+| `features/detail/PostDetailPanel.vue`            | Shell chrome slots (`top: detail-topbar`, `bottom: reply-dock`) are now                                                  |   365 |
 | `features/detail/PostDetailTopbar.vue`           | Vue SFC                                                                                                                  |   132 |
 | `features/detail/PostDetailTradeBlock.vue`       | Vue SFC                                                                                                                  |   220 |
 | `features/detail/PostPlaceSheetBlock.vue`        | Vue SFC                                                                                                                  |   192 |
@@ -193,7 +193,7 @@ Total files: 275
 | `features/messages/useNotifications.ts`          | export function useNotifications()                                                                                       |    34 |
 | `features/profile/ProfileAliasSelector.vue`      | Vue SFC                                                                                                                  |    84 |
 | `features/profile/ProfileAvatarEditor.vue`       | Vue SFC                                                                                                                  |   179 |
-| `features/profile/ProfileCollectionList.vue`     | Vue SFC                                                                                                                  |   162 |
+| `features/profile/ProfileCollectionList.vue`     | Vue SFC                                                                                                                  |   164 |
 | `features/profile/ProfileDetailOverlay.vue`      | Vue SFC                                                                                                                  |    44 |
 | `features/profile/ProfileEditorPanel.vue`        | Vue SFC                                                                                                                  |   197 |
 | `features/profile/ProfileHeader.vue`             | Vue SFC                                                                                                                  |   128 |

@@ -31,6 +31,7 @@
     "test:html-sanitizer": "node scripts/test-html-sanitizer.js",
     "ops:guard": "node scripts/guard-runtime-inventory.js",
     "test": "node scripts/smoke-vue-frontend.js http://127.0.0.1:4301",
+    "test:e2e": "playwright test",
     "test:unit": "vitest run",
     "test:runtime-exposure-guard": "node scripts/test-guard-public-runtime-exposure.js",
     "verify:static": "npm run check && npm run ops:guard && npm run build",
@@ -45,6 +46,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@playwright/test": "1.49.1",
     "@types/leaflet": "^1.9.20",
     "@vitejs/plugin-vue": "^5.2.1",
     "eslint": "^10.4.0",
