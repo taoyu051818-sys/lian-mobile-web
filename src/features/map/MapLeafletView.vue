@@ -5,7 +5,6 @@ import type { PageChromeSpec } from "../../shell/page-model";
 import MapCanvas from "./MapCanvas.vue";
 import MapPlaceSheet from "./MapPlaceSheet.vue";
 import MapStatus from "./MapStatus.vue";
-import { PostDetailPanel } from "../detail";
 import { useMapChrome } from "./useMapChrome";
 import { useMapDataCache } from "./useMapDataCache";
 import { useMapSelection } from "./useMapSelection";
@@ -97,15 +96,6 @@ onActivated(() => {
       />
       <MapStatus :loading="loading" :error-message="errorMessage" />
       <MapPlaceSheet :selected-place="selectedPlace" @close="closePlaceSheet" />
-      <PostDetailPanel
-        v-if="detail.detailOpen.value"
-        class="map-view__post-detail"
-        :post="detail.detailPost.value"
-        :loading="detail.detailLoading.value"
-        :error="detail.detailError.value"
-        @close="detail.close('user-tap')"
-        @retry="detail.retry()"
-      />
     </section>
   </section>
 </template>
@@ -128,11 +118,5 @@ onActivated(() => {
   border: 0;
   border-radius: 0;
   background: rgba(255, 255, 255, 0.42);
-}
-
-.map-view__post-detail {
-  position: sticky;
-  bottom: calc(92px + env(safe-area-inset-bottom));
-  z-index: 20;
 }
 </style>
