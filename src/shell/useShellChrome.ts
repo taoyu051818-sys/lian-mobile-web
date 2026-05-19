@@ -11,25 +11,6 @@ import type { PageChromeSpec } from "./page-model";
 
 const state: ShellChromeState = reactive(createDefaultChromeState());
 
-interface SlotEntry {
-  token: symbol;
-  slot: ChromeSlotKind | null;
-}
-
-/**
- * Per-region slot stack. The base entry is owned by AppShell/page chrome;
- * pushed entries are owned by mounted children such as PostDetailPanel.
- */
-const slotStacks: Record<ShellRegionKey, SlotEntry[]> = {
-  top: [],
-  bottom: [],
-};
-
-function syncSlot(key: ShellRegionKey) {
-  const stack = slotStacks[key];
-  state[key].slot = stack.length ? stack[stack.length - 1].slot : null;
-}
-
 function mergeRegion(target: ShellChromeRegionSpec, patch: ShellChromeRegionSpec) {
   if (patch.buttons !== undefined) target.buttons = patch.buttons;
   if (patch.visible !== undefined) target.visible = patch.visible;
@@ -41,19 +22,10 @@ function mergeRegion(target: ShellChromeRegionSpec, patch: ShellChromeRegionSpec
   if (patch.onFilterToggle !== undefined) target.onFilterToggle = patch.onFilterToggle;
 }
 
-function writeSlotBase(key: ShellRegionKey, slot: ChromeSlotKind | null) {
-  if (slotStacks[key].length === 0) {
-    slotStacks[key].push({ token: Symbol(`${key}:base`), slot });
-  } else {
-    slotStacks[key][0].slot = slot;
-  }
-  syncSlot(key);
-}
-
 function setRegion(key: ShellRegionKey, spec: ShellChromeRegionSpec) {
   mergeRegion(state[key], spec);
   if (spec.slot !== undefined) {
-    writeSlotBase(key, spec.slot);
+    state[key].slot = spec.slot;
   }
 }
 
@@ -66,39 +38,41 @@ function resetRegions() {
   const defaults = createDefaultChromeState();
   mergeRegion(state.top, defaults.top);
   mergeRegion(state.bottom, defaults.bottom);
-
-  // Top chrome is always page-owned, so reset clears any leftover base/detail
-  // slot. Bottom preserves AppShell's tabs base while dropping child-owned
-  // entries so a missed unmount cleanup cannot leak into the next view/test.
-  slotStacks.top.splice(0);
-  slotStacks.bottom.splice(1);
-  syncSlot("top");
-  syncSlot("bottom");
+  // Slots are owned by `setSlot` (currently driven by the detail-navigation
+  // FSM). A merge-state reset must leave them alone — pages don't expect
+  // their own guest/clear path to wipe AppShell's bottom-tabs base or a
+  // detail panel's active teleport target.
 }
 
+/**
+ * Apply a page-level chrome spec. Page chrome owns tabs / buttons / identity,
+ * but it MUST NOT touch `slot` — slots are written by `setSlot`, currently
+ * driven by the detail-navigation FSM. This decoupling is what makes the
+ * "open detail → switch tab → race" sequence safe: page chrome can repaint at
+ * any time without dislodging an active teleport target.
+ */
 function applyPageChrome(spec: PageChromeSpec) {
   const defaults = createDefaultChromeState();
   mergeRegion(state.top, defaults.top);
   mergeRegion(state.bottom, defaults.bottom);
-  if (spec.top) setRegion("top", spec.top);
-  if (spec.bottom) setRegion("bottom", spec.bottom);
-  // Slots are owned by setRegion({ slot }) or pushSlot(); page chrome updates
-  // must not remove active child-owned Teleport targets.
-  syncSlot("top");
-  syncSlot("bottom");
+  if (spec.top) {
+    const { ...topRest } = spec.top;
+    mergeRegion(state.top, topRest);
+  }
+  if (spec.bottom) {
+    const { ...bottomRest } = spec.bottom;
+    mergeRegion(state.bottom, bottomRest);
+  }
 }
 
-function pushSlot(key: ShellRegionKey, slot: ChromeSlotKind): () => void {
-  const token = Symbol(`${key}:${slot}`);
-  slotStacks[key].push({ token, slot });
-  syncSlot(key);
-
-  return () => {
-    const stack = slotStacks[key];
-    const index = stack.findIndex((entry) => entry.token === token);
-    if (index >= 0) stack.splice(index, 1);
-    syncSlot(key);
-  };
+/**
+ * Write a region's named slot directly. The FSM driving detail navigation is
+ * the single owner of slot transitions; legacy push/pop stack semantics are
+ * gone because there is exactly one component (PostDetailPanel) that needs a
+ * slot at a time, and the FSM tracks that for us.
+ */
+function setSlot(key: ShellRegionKey, slot: ChromeSlotKind | null) {
+  state[key].slot = slot;
 }
 
 export function useShellChrome(): {
@@ -107,7 +81,7 @@ export function useShellChrome(): {
   applyRegions: (map: ShellChromeRegionMap) => void;
   resetRegions: () => void;
   applyPageChrome: (spec: PageChromeSpec) => void;
-  pushSlot: (key: ShellRegionKey, slot: ChromeSlotKind) => () => void;
+  setSlot: (key: ShellRegionKey, slot: ChromeSlotKind | null) => void;
 } {
   return {
     state: readonly(state) as Readonly<ShellChromeState>,
@@ -115,6 +89,6 @@ export function useShellChrome(): {
     applyRegions,
     resetRegions,
     applyPageChrome,
-    pushSlot,
+    setSlot,
   };
 }

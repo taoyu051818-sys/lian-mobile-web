@@ -6,11 +6,7 @@ import { readHistoryQuery, rememberReadItem } from "../../platform/browser-stora
 
 const PAGE_SIZE = 12;
 
-export function useFeedData(options: {
-  detailOpen: () => boolean;
-  closeDetail: () => void;
-  resetDetailState: () => void;
-}) {
+export function useFeedData(options: { detailOpen: () => boolean; closeDetail: () => void }) {
   const tabs = ref<FeedTab[]>(DEFAULT_TABS);
   const activeTab = ref(DEFAULT_TABS[0].id);
   const items = ref<FeedItem[]>([]);
@@ -60,15 +56,11 @@ export function useFeedData(options: {
     }
   }
 
-  // Tab switch is a user-initiated context change, so it closes the detail
-  // panel. The initial mount load does not — that path needs to leave a
-  // deep-linked detail (#/post/{tid}) intact.
+  // Tab switch is a user-initiated context change. Closing the detail panel
+  // is a no-op when no detail is open (the FSM is `closed`), so we can drop
+  // the open-check that the legacy code needed.
   function switchTab(tabId: string) {
-    if (options.detailOpen()) {
-      options.closeDetail();
-    } else {
-      options.resetDetailState();
-    }
+    options.closeDetail();
     if (activeTab.value !== tabId) activeTab.value = tabId;
     void loadFeed(true);
   }

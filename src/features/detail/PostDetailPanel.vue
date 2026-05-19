@@ -1,7 +1,6 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, ref, watch } from "vue";
+import { computed, ref, watch } from "vue";
 import { useVisualViewport } from "../../composables/useVisualViewport";
-import { useShellChrome } from "../../shell/useShellChrome";
 import { InlineError } from "../../ui";
 import { LOADING_DETAIL, DETAIL_RELOAD, REPLY_IDENTITY_LABEL } from "../../config/brand";
 import { extractErrorMessage } from "../../utils/extractErrorMessage";
@@ -40,13 +39,10 @@ const emit = defineEmits<{
 
 useVisualViewport();
 
-const { pushSlot } = useShellChrome();
-const releaseTopSlot = pushSlot("top", "detail-topbar");
-const releaseBottomSlot = pushSlot("bottom", "reply-dock");
-onBeforeUnmount(() => {
-  releaseTopSlot();
-  releaseBottomSlot();
-});
+// Shell chrome slots (`top: detail-topbar`, `bottom: reply-dock`) are now
+// driven by the detail-navigation FSM at the app level, not by this component.
+// The teleport targets are guaranteed to be mounted whenever the FSM is in any
+// non-closed state — which is exactly when this panel is rendered.
 
 const actionError = ref("");
 const actionMessage = ref("");

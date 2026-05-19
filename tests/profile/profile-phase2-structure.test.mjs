@@ -114,49 +114,49 @@ test("ProfileView imports ProfileDetailOverlay component", () => {
 
 test("ProfileDetailOverlay imports PostDetailPanel", () => {
   const src = read("src/features/profile/ProfileDetailOverlay.vue");
-  assert.match(src, /import PostDetailPanel/);
-  assert.match(src, /from.*\.\/detail\/PostDetailPanel\.vue/);
+  assert.match(src, /import\s+\{\s*PostDetailPanel\s*\}/);
+  assert.match(src, /from.*\.\.\/detail/);
 });
 
-test("ProfileView uses usePostDetail composable", () => {
+test("ProfileView wires detail through useDetailNavigation", () => {
   const src = read("src/features/profile/ProfileView.vue");
-  assert.match(src, /import.*usePostDetail/);
-  assert.match(src, /from.*\.\/detail\/usePostDetail/);
+  assert.match(src, /import.*useDetailNavigation/);
+  assert.match(src, /from.*app\/detail-navigation/);
 });
 
-test("ProfileView destructures detail state from usePostDetail", () => {
+test("ProfileView reads detail state through the store's reactive computeds", () => {
   const src = read("src/features/profile/ProfileView.vue");
-  assert.match(src, /selectedPostId/);
-  assert.match(src, /selectedPost/);
-  assert.match(src, /detailLoading/);
-  assert.match(src, /detailError/);
-  assert.match(src, /detailOpen/);
+  assert.match(src, /detail\.detailOpen/);
+  assert.match(src, /detail\.detailPost/);
+  assert.match(src, /detail\.detailLoading/);
+  assert.match(src, /detail\.detailError/);
 });
 
 test("ProfileView renders ProfileDetailOverlay conditionally when detail is open", () => {
   const src = read("src/features/profile/ProfileView.vue");
   assert.match(src, /<ProfileDetailOverlay/);
-  assert.match(src, /v-if="detailOpen"/);
+  assert.match(src, /v-if="detail\.detailOpen\.value"/);
 });
 
 test("ProfileView passes detail state to ProfileDetailOverlay", () => {
   const src = read("src/features/profile/ProfileView.vue");
-  assert.match(src, /:post="selectedPost"/);
-  assert.match(src, /:loading="detailLoading"/);
-  assert.match(src, /:error="detailError"/);
-  assert.match(src, /@close="closeDetail"/);
-  assert.match(src, /@retry="retryDetail"/);
+  assert.match(src, /:post="detail\.detailPost\.value"/);
+  assert.match(src, /:loading="detail\.detailLoading\.value"/);
+  assert.match(src, /:error="detail\.detailError\.value"/);
+  assert.match(src, /@close="detail\.close\(/);
+  assert.match(src, /@retry="detail\.retry\(/);
 });
 
 test("ProfileView wires collection list open-item to detail opener", () => {
   const src = read("src/features/profile/ProfileView.vue");
   assert.match(src, /@open-item="openItem"/);
+  assert.match(src, /detail\.open\(/);
 });
 
-test("usePostDetail has openDetail function that calls fetchPostDetail", () => {
-  const src = read("src/features/detail/usePostDetail.ts");
-  assert.match(src, /async function openDetail/);
-  assert.match(src, /await fetchPostDetail\(/);
+test("detail-navigation reducer fetches via fetchPostDetail through the fetcher", () => {
+  const src = read("src/app/detail-navigation/fetcher.ts");
+  assert.match(src, /fetchPostDetail/);
+  assert.match(src, /fetch-result/);
 });
 
 // --- ProfileDetailOverlay wrapper ---
@@ -175,23 +175,6 @@ test("ProfileDetailOverlay has fixed positioning CSS", () => {
   assert.match(src, /position:\s*fixed/);
   assert.match(src, /inset:\s*0/);
   assert.match(src, /z-index:\s*30/);
-});
-
-test("usePostDetail saves scroll position when opening detail", () => {
-  const src = read("src/features/detail/usePostDetail.ts");
-  assert.match(src, /savedScrollY/);
-  assert.match(src, /window\.scrollY/);
-});
-
-test("usePostDetail restores scroll position when closing detail", () => {
-  const src = read("src/features/detail/usePostDetail.ts");
-  assert.match(src, /requestAnimationFrame/);
-  assert.match(src, /window\.scrollTo.*savedScrollY/);
-});
-
-test("usePostDetail initializes savedScrollY ref", () => {
-  const src = read("src/features/detail/usePostDetail.ts");
-  assert.match(src, /const savedScrollY = ref\(0\)/);
 });
 
 // --- ProfileView alias switching ---
@@ -261,13 +244,14 @@ test("ProfileView preserves editor panel integration", () => {
 
 test("ProfileHeader preserves centered hero layout", () => {
   const src = read("src/features/profile/ProfileHeader.vue");
+  const css = read("src/features/profile/profile-header.css");
   assert.match(src, /profile-header__hero/);
-  assert.match(src, /justify-items:\s*center/);
+  assert.match(css, /justify-items:\s*center/);
 });
 
 test("ProfileHeader preserves 80px avatar", () => {
-  const src = read("src/features/profile/ProfileHeader.vue");
-  assert.match(src, /80px/);
+  const css = read("src/features/profile/profile-header.css");
+  assert.match(css, /80px/);
 });
 
 test("ProfileHeader preserves no IdentityBadge import", () => {

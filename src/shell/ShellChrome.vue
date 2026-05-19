@@ -95,16 +95,16 @@ function handleFilterToggle(filterId: string) {
       </template>
       <template v-else-if="isReplyDockSlot">
         <div
-          key="reply-dock"
           id="lian-shell-bottom-slot"
+          key="reply-dock"
           class="shell-chrome__bottom-slot lian-floating-chrome lian-floating-chrome--bottom"
           data-floating-chrome="bottom"
         />
       </template>
       <template v-else-if="isDetailTopbarSlot">
         <div
-          key="detail-topbar"
           id="lian-shell-top-slot"
+          key="detail-topbar"
           class="shell-chrome__top-slot lian-floating-chrome lian-floating-chrome--top"
           data-floating-chrome="top"
         />

@@ -7,62 +7,23 @@ import { InlineError } from "../../ui";
 import { PostDetailPanel } from "../detail";
 import FeedList from "./FeedList.vue";
 import FeedLoadMore from "./FeedLoadMore.vue";
-import { useFeedDetail } from "./useFeedDetail";
 import { useFeedData } from "./useFeedData";
-import { useDeepLink } from "../../app/useDeepLink";
+import { useDetailNavigation } from "../../app/detail-navigation";
 import { CHANNEL_RELOAD, FEED_FILTER_LABEL, FEED_VIEW_TITLE } from "../../config/brand";
 
 const emit = defineEmits<{
   chrome: [spec: PageChromeSpec];
 }>();
 
-const {
-  selectedPostId,
-  selectedPost,
-  detailLoading,
-  detailError,
-  detailOpen,
-  openItem,
-  openFromDeepLink,
-  retryDetail,
-  closeDetail,
-  resetDetailState,
-} = useFeedDetail({
-  rememberReadItem(id: FeedItemId) {
-    feedData.rememberReadItem(id);
-  },
-});
-
-const { detailTid } = useDeepLink();
+const detail = useDetailNavigation();
 
 const feedData = useFeedData({
-  detailOpen: () => detailOpen.value,
-  closeDetail: () => closeDetail(),
-  resetDetailState,
+  detailOpen: () => detail.detailOpen.value,
+  closeDetail: () => detail.close("tab-switch"),
 });
 
 const { setDetailPhase } = useFloatingChromeState();
-watch(detailOpen, (open) => setDetailPhase(open ? "open" : "idle"), { immediate: true });
-
-// Reconcile the panel against `#/post/{tid}`. Triggers on:
-//  - cold-load with a deep-link URL (immediate: true)
-//  - back/forward navigation between detail URLs
-//  - back-out from a detail URL to a non-detail URL
-// Does NOT re-trigger when the user just opened a card (openItem already
-// pushed the same tid, so detailTid === selectedPostId here — no-op).
-watch(
-  detailTid,
-  (next) => {
-    if (next === null) {
-      if (detailOpen.value) closeDetail({ syncHistory: false });
-      return;
-    }
-    if (selectedPostId.value !== next) {
-      void openFromDeepLink(next);
-    }
-  },
-  { immediate: true },
-);
+watch(detail.detailOpen, (open) => setDetailPhase(open ? "open" : "idle"), { immediate: true });
 
 const pageChrome = computed<PageChromeSpec>(() => ({
   top: {
@@ -82,12 +43,17 @@ onMounted(() => {
   emit("chrome", pageChrome.value);
   void feedData.loadFeed(true);
 });
+
+function openItem(id: FeedItemId) {
+  feedData.rememberReadItem(id);
+  detail.open(Number(id), "card");
+}
 </script>
 
 <template>
   <section
     class="feed-view"
-    :class="{ 'is-detail-open': detailOpen }"
+    :class="{ 'is-detail-open': detail.detailOpen.value }"
     aria-labelledby="feed-view-title"
   >
     <h1 id="feed-view-title" class="feed-view__sr-title">{{ FEED_VIEW_TITLE }}</h1>
@@ -106,7 +72,7 @@ onMounted(() => {
       <span>{{ feedData.FEED_EMPTY_HINT }}</span>
     </div>
 
-    <div v-show="!detailOpen" class="feed-view__content">
+    <div v-show="!detail.detailOpen.value" class="feed-view__content">
       <FeedList
         v-if="!feedData.loading.value && !feedData.isEmpty.value"
         :items="feedData.items.value"
@@ -123,14 +89,14 @@ onMounted(() => {
     </div>
 
     <PostDetailPanel
-      v-if="detailOpen"
+      v-if="detail.detailOpen.value"
       key="feed-detail"
       class="feed-view__detail"
-      :post="selectedPost"
-      :loading="detailLoading"
-      :error="detailError"
-      @close="closeDetail"
-      @retry="retryDetail"
+      :post="detail.detailPost.value"
+      :loading="detail.detailLoading.value"
+      :error="detail.detailError.value"
+      @close="detail.close('user-tap')"
+      @retry="detail.retry()"
     />
   </section>
 </template>

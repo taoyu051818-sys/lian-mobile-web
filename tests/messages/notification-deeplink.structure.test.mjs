@@ -46,42 +46,28 @@ test("NotificationList has cursor pointer style for clickable notifications", ()
   assert.match(listSource, /cursor:\s*pointer/);
 });
 
-test("MessagesView uses usePostDetail composable for notification detail", () => {
-  assert.match(viewSource, /usePostDetail/);
+test("MessagesView wires notification detail through useDetailNavigation", () => {
+  assert.match(viewSource, /useDetailNavigation/);
 });
 
 test("MessagesView imports PostDetailPanel component", () => {
-  assert.match(
-    viewSource,
-    /import\s+PostDetailPanel\s+from\s*"\.\.\/detail\/PostDetailPanel\.vue"/,
-  );
+  assert.match(viewSource, /import\s+\{\s*PostDetailPanel\s*\}\s+from\s*"\.\.\/detail"/);
 });
 
-test("MessagesView declares detail state refs for notification deep-link", () => {
-  assert.match(viewSource, /selectedPostId/);
-  assert.match(viewSource, /selectedPost/);
-  assert.match(viewSource, /detailLoading/);
-  assert.match(viewSource, /detailError/);
-  assert.match(viewSource, /usePostDetail/);
+test("MessagesView renders detail using the detail-navigation store's reactive state", () => {
+  assert.match(viewSource, /detail\.detailOpen/);
+  assert.match(viewSource, /detail\.detailPost/);
+  assert.match(viewSource, /detail\.detailLoading/);
+  assert.match(viewSource, /detail\.detailError/);
 });
 
-test("MessagesView has detailOpen from usePostDetail composable", () => {
-  assert.match(viewSource, /detailOpen/);
-  assert.match(viewSource, /usePostDetail/);
+test("MessagesView opens notifications via store.open(...)", () => {
+  assert.match(viewSource, /detail\.open\(/);
 });
 
-test("MessagesView aliases openDetail as openNotification from composable", () => {
-  assert.match(viewSource, /openDetail:\s*openNotification/);
-});
-
-test("MessagesView uses closeDetail from usePostDetail composable", () => {
-  assert.match(viewSource, /closeDetail/);
-  assert.match(viewSource, /@close="closeDetail"/);
-});
-
-test("MessagesView uses retryDetail from usePostDetail composable", () => {
-  assert.match(viewSource, /retryDetail/);
-  assert.match(viewSource, /@retry="retryDetail"/);
+test("MessagesView closes/retries detail via store verbs", () => {
+  assert.match(viewSource, /detail\.close\(/);
+  assert.match(viewSource, /detail\.retry\(/);
 });
 
 test("MessagesView passes @open-item handler to NotificationList", () => {
@@ -89,16 +75,11 @@ test("MessagesView passes @open-item handler to NotificationList", () => {
 });
 
 test("MessagesView renders PostDetailPanel in a fixed overlay when detail is open", () => {
-  assert.match(viewSource, /v-if="detailOpen"/);
+  assert.match(viewSource, /v-if="detail\.detailOpen\.value"/);
   assert.match(viewSource, /class="messages-view__detail-overlay"/);
   assert.match(viewSource, /role="dialog"/);
   assert.match(viewSource, /aria-modal="true"/);
   assert.match(viewSource, /<PostDetailPanel/);
-  assert.match(viewSource, /:post="selectedPost"/);
-  assert.match(viewSource, /:loading="detailLoading"/);
-  assert.match(viewSource, /:error="detailError"/);
-  assert.match(viewSource, /@close="closeDetail"/);
-  assert.match(viewSource, /@retry="retryDetail"/);
 });
 
 test("MessagesView detail overlay uses fixed positioning with full viewport coverage", () => {
