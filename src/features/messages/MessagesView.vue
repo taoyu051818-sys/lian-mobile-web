@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from "vue";
+import { useActiveView } from "../../app/useActiveView";
 import { useDetailNavigation } from "../../app/detail-navigation";
 import { useVisualViewport } from "../../composables/useVisualViewport";
-import type { MessageTabKey } from "../../types/messages";
+import type { MessageTabKey, NotificationItem } from "../../types/messages";
 import type { PageChromeSpec } from "../../shell/page-model";
 import { ChannelComposer, ChannelThread, NotificationList } from "./";
 import {
@@ -50,9 +51,19 @@ const {
   onRetry: channelRetryMessage,
 });
 
+const { setActiveView } = useActiveView();
 const detail = useDetailNavigation();
-function openNotification(id: number | string) {
-  detail.open(Number(id), "card");
+
+function openNotification(item: NotificationItem) {
+  const target = item.target;
+  if (!target) return;
+  if (target.kind === "detail") {
+    detail.open(target.tid, "card");
+    return;
+  }
+  if (target.kind === "verification") {
+    setActiveView("verification");
+  }
 }
 
 useVisualViewport();
