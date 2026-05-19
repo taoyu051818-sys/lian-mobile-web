@@ -2,6 +2,8 @@ import { apiGet, apiSend, apiUpload } from "./http";
 import type { FeedItemId } from "../types/feed";
 import type {
   ProfileListResponse,
+  ProfileSettings,
+  ProfileSettingsPatch,
   ProfileStats,
   ProfileTabKey,
   ProfileUser,
@@ -14,6 +16,19 @@ export async function fetchAuthMe(): Promise<ProfileUser | null> {
 
 export async function fetchProfileStats(): Promise<ProfileStats> {
   return apiGet<ProfileStats>("/api/me/stats");
+}
+
+export async function fetchProfileSettings(): Promise<ProfileSettings> {
+  return apiGet<ProfileSettings>("/api/me/settings");
+}
+
+export async function patchProfileSettings(
+  patch: ProfileSettingsPatch,
+): Promise<ProfileSettings> {
+  return apiSend<ProfileSettings>("/api/me/settings", {
+    method: "PATCH",
+    body: JSON.stringify(patch),
+  });
 }
 
 export async function fetchProfileTab(

@@ -84,3 +84,19 @@ export const PROFILE_INVITE_ERROR = "邀请码没有生成成功，可以稍后�
 export const PROFILE_IDENTITY_SWITCH_ERROR = "发布身份没有切换成功，可以稍后再试。";
 export const PROFILE_AVATAR_CROP_UNSUPPORTED = "浏览器暂时不能裁剪头像，请换一个浏览器再试。";
 export const PROFILE_AVATAR_CROP_ERROR = "头像裁剪失败，请换一张图片再试。";
+
+/** 个人设置（PRD V0.2 §N3） */
+export const PROFILE_SETTINGS_SECTION_LABEL = "个人设置";
+export const PROFILE_SETTINGS_NOTIFICATION_LABEL = "推送通知";
+export const PROFILE_SETTINGS_NOTIFICATION_HINT = "新回复、点赞、关注会即时推送。";
+export const PROFILE_SETTINGS_VISIBILITY_LABEL = "主页可见性";
+export const PROFILE_SETTINGS_VISIBILITY_HINT = "决定谁可以浏览你的个人主页内容。";
+export const PROFILE_SETTINGS_VISIBILITY_PUBLIC = "公开";
+export const PROFILE_SETTINGS_VISIBILITY_CAMPUS = "仅校园";
+export const PROFILE_SETTINGS_VISIBILITY_PRIVATE = "仅自己";
+export const PROFILE_SETTINGS_MENTIONS_LABEL = "私信提醒";
+export const PROFILE_SETTINGS_MENTIONS_HINT = "他人在私信中 @ 你时会收到提醒。";
+export const PROFILE_SETTINGS_LOAD_ERROR = "设置加载失败，可以稍后再试。";
+export const PROFILE_SETTINGS_PATCH_ERROR = "设置没有保存成功，已恢复到上一个状态。";
+export const PROFILE_SETTINGS_SAVING = "保存中…";
+export const PROFILE_SETTINGS_RELOAD = "重新加载";
