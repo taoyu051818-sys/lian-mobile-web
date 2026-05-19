@@ -1,4 +1,5 @@
 import { apiGet, apiSend } from "./http";
+import { normalizeMerchantErrandEligibility } from "./merchant";
 import {
   asBoolean,
   asNumber,
@@ -88,6 +89,21 @@ export function normalizePostDetail(value: unknown, fallbackId: FeedItemId): Pos
       ? asBoolean(record.errandEntryAvailable)
       : merchant.errandSupported
     : undefined;
+  // Optional reason details for the unavailable case (issue #646). Backend
+  // attaches them either at the top level or under `errand` (the same shape
+  // the merchant-center DTO uses) — we accept both so the detail page works
+  // against either backend version.
+  const errandEligibility = merchant
+    ? normalizeMerchantErrandEligibility(record.errand)
+    : undefined;
+  const errandUnavailableReason =
+    merchant && errandEntryAvailable === false
+      ? asString(record.errandUnavailableReason) || errandEligibility?.reason || ""
+      : undefined;
+  const errandUnavailableReasonText =
+    merchant && errandEntryAvailable === false
+      ? asString(record.errandUnavailableReasonText) || errandEligibility?.reasonText || ""
+      : undefined;
   const trade = normalizeTradeExtensionFromDetail(record.trade);
   const tradeManageable =
     "tradeManageable" in record ? asBoolean(record.tradeManageable) : undefined;
@@ -117,6 +133,12 @@ export function normalizePostDetail(value: unknown, fallbackId: FeedItemId): Pos
     ...(helpManageable !== undefined ? { helpManageable } : {}),
     ...(merchant ? { merchant } : {}),
     ...(errandEntryAvailable !== undefined ? { errandEntryAvailable } : {}),
+    ...(errandUnavailableReason
+      ? {
+          errandUnavailableReason: errandUnavailableReason as PostDetail["errandUnavailableReason"],
+        }
+      : {}),
+    ...(errandUnavailableReasonText ? { errandUnavailableReasonText } : {}),
     ...(trade ? { trade } : {}),
     ...(tradeManageable !== undefined ? { tradeManageable } : {}),
   };

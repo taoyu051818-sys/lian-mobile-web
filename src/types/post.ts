@@ -1,6 +1,7 @@
 import type { DisplayActor, FeedItemId, SourceSignal } from "./feed";
 import type { PlaceRef } from "./place";
 import type { Audience } from "./audience";
+import type { MerchantErrandUnavailableReason } from "./merchant";
 import type {
   EventPostExtension,
   HelpPostExtension,
@@ -52,6 +53,19 @@ export interface PostDetail {
    * destructuring the merchant block.
    */
   errandEntryAvailable?: boolean;
+  /**
+   * Issue #646 — when the merchant supports errand but the entry is currently
+   * unavailable, the backend may attach a reason code so the detail page can
+   * explain why. Empty / undefined = no machine-readable reason; the UI falls
+   * back to the localized generic copy.
+   */
+  errandUnavailableReason?: MerchantErrandUnavailableReason | "";
+  /**
+   * Optional human-readable explanation paired with `errandUnavailableReason`.
+   * When present, the UI prefers it over the localized fallback so backend
+   * can hand-tailor wording without a frontend release.
+   */
+  errandUnavailableReasonText?: string;
   /** PRD V0.1 §6.4 / §11 — present iff metadata.trade exists. */
   trade?: TradePostExtension;
   /**
