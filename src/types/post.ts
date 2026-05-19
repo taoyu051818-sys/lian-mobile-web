@@ -38,7 +38,7 @@ export interface PostDetail {
   event?: EventPostExtension;
   /** Whether the current viewer has already joined this event. */
   eventJoined?: boolean;
-  /** PRD V0.1 §6.5 — present iff postType === "help". */
+  /** PRD V0.1 §6.5 — present iff metadata.help exists. */
   help?: HelpPostExtension;
   /** Whether the current viewer has already voted on this help post. */
   helpVoted?: boolean;
@@ -54,6 +54,11 @@ export interface PostDetail {
   errandEntryAvailable?: boolean;
   /** PRD V0.1 §6.4 / §11 — present iff metadata.trade exists. */
   trade?: TradePostExtension;
+  /**
+   * Backend-driven author gate for the trade state-transition surface.
+   * Frontend can fall back to `/api/auth/me` + actor matching when absent.
+   */
+  tradeManageable?: boolean;
 }
 
 /**
