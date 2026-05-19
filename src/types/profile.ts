@@ -67,3 +67,24 @@ export interface ProfileStats {
   drafts: number;
   mapContributions: number;
 }
+
+/**
+ * Mirrors backend `DEFAULT_PROFILE_SETTINGS` in `profile-service.js`.
+ * Three controls: notification opt-in, who can see this profile, and whether
+ * @-mentions in messages are allowed. The backend normalizes payloads on
+ * PATCH, so the client trusts whatever the server returns and rolls back to
+ * the entering-saving snapshot on a rejected patch (see settings-state).
+ */
+export type ProfileVisibility = "public" | "campus" | "private";
+
+export interface ProfileSettings {
+  notificationEnabled: boolean;
+  profileVisibility: ProfileVisibility;
+  allowMessageMentions: boolean;
+}
+
+/**
+ * PATCH payload — every field optional. Backend treats the request as a
+ * partial update and only validates / writes keys that are present.
+ */
+export type ProfileSettingsPatch = Partial<ProfileSettings>;
