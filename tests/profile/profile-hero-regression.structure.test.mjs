@@ -43,16 +43,20 @@ test("ProfileView renders guest AuthPanel without wrapper", () => {
   assert.match(src, /<AuthPanel/);
 });
 
-test("ProfileView renders ProfileEditorPanel for logged-in users", () => {
-  const src = read("src/features/profile/ProfileView.vue");
+// Editor panel + editorOpen ownership moved into ProfileIdentityGroup in PR-B.
+// ProfileView no longer references the editor — it just mounts the group.
+test("ProfileIdentityGroup renders ProfileEditorPanel for logged-in users", () => {
+  const src = read("src/features/profile/ProfileIdentityGroup.vue");
   assert.match(src, /ProfileEditorPanel/);
   assert.match(src, /editorOpen/);
 });
 
 // --- ProfileView shell chrome contract ---
 
-test("ProfileView imports useProfileChrome composable", () => {
-  const src = read("src/features/profile/ProfileView.vue");
+// useProfileChrome lives inside ProfileIdentityGroup since PR-B; ProfileView
+// only forwards the chrome emit up to AppViewHost.
+test("ProfileIdentityGroup imports useProfileChrome composable", () => {
+  const src = read("src/features/profile/ProfileIdentityGroup.vue");
   assert.match(src, /import.*useProfileChrome/);
   assert.match(src, /from.*\.\/useProfileChrome/);
 });

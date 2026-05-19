@@ -1,15 +1,13 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from "vue";
+import { onMounted } from "vue";
 import { fetchAuthMe, logoutAuth } from "../../api/profile";
 import {
-  ADMIN_ENTER_LABEL,
   LOADING_PROFILE,
   ERROR_LOAD_GENERIC,
   ERROR_LOGOUT,
   PROFILE_SECTION_LABEL,
   PROFILE_LOAD_ERROR_PREFIX,
   PROFILE_RELOAD,
-  VERIFICATION_ENTER_LABEL,
 } from "../../config/brand";
 import { extractErrorMessage } from "../../utils/extractErrorMessage";
 import { useDetailNavigation } from "../../app/detail-navigation";
@@ -17,17 +15,13 @@ import type { PageChromeSpec } from "../../shell/page-model";
 import type { ProfileUser } from "../../types/profile";
 import { InlineError } from "../../ui";
 import { AuthPanel } from "../auth";
-import ProfileEditorPanel from "./ProfileEditorPanel.vue";
-import ProfileHeader from "./ProfileHeader.vue";
-import ProfileSettingsBlock from "./ProfileSettingsBlock.vue";
-import ProfileStatsBlock from "./ProfileStatsBlock.vue";
+import ProfileAdminLink from "./ProfileAdminLink.vue";
+import ProfileIdentityGroup from "./ProfileIdentityGroup.vue";
 import ProfileTabs from "./ProfileTabs.vue";
 import ProfileCollectionList from "./ProfileCollectionList.vue";
 import ProfileDetailOverlay from "./ProfileDetailOverlay.vue";
 import { useProfileSession } from "./useProfileSession";
 import { useProfileTabs } from "./useProfileTabs";
-import { useProfileChrome } from "./useProfileChrome";
-import { useProfileAliasPicker } from "./useProfileAliasPicker";
 import { useActiveView } from "../../app/useActiveView";
 
 const emit = defineEmits<{
@@ -35,12 +29,9 @@ const emit = defineEmits<{
 }>();
 
 const { setActiveView } = useActiveView();
-const adminEntryVisible = computed(() => import.meta.env.VITE_ADMIN_VISIBLE === "true");
 
 const { user, loading, errorMessage, isMissingSessionError, refreshCurrentSession } =
   useProfileSession();
-
-const editorOpen = ref(false);
 
 const {
   listLoading,
@@ -63,33 +54,9 @@ function openItem(id: number | string) {
   detail.open(Number(id), "card");
 }
 
-const {
-  aliasPickerOpen,
-  activeAlias,
-  activeAliasSummary,
-  activeAliasHint,
-  identityMeta,
-  userTags,
-  aliases,
-  handleProfileUpdated,
-  switchAlias,
-} = useProfileAliasPicker({
-  user,
-  loadProfile: () => loadProfile(),
-});
-
-const { displayName, avatarText, pageChrome } = useProfileChrome({
-  user,
-  editorOpen,
-  identityMeta,
-  onLogout: () => logout(),
-  onChromeChange: (spec) => emit("chrome", spec),
-});
-
 function enterGuestState() {
   user.value = null;
   profileItems.value = [];
-  editorOpen.value = false;
   errorMessage.value = "";
   listError.value = "";
 }
@@ -136,7 +103,11 @@ async function handleAuthenticated(authenticatedUser: ProfileUser | null) {
 }
 
 onMounted(() => {
-  emit("chrome", pageChrome.value);
+  // Initial paint emits a no-op chrome spec because the IdentityGroup is gated
+  // behind v-else-if="user" — it doesn't mount during the loading/guest paths,
+  // so it can't drive chrome until after loadProfile resolves. Once user lands,
+  // the IdentityGroup re-emits the real spec via its own chrome watcher.
+  emit("chrome", { top: { visible: false }, bottom: { visible: false } });
   void loadProfile();
 });
 </script>
@@ -153,26 +124,13 @@ onMounted(() => {
     <template v-else-if="user">
       <div class="profile-view__hero-bg" aria-hidden="true"></div>
 
-      <ProfileHeader
+      <ProfileIdentityGroup
         :user="user"
-        :avatar-text="avatarText"
-        :display-name="displayName"
-        :identity-meta="identityMeta"
-        :user-tags="userTags"
-        :aliases="aliases"
-        :active-alias="activeAlias"
-        :active-alias-hint="activeAliasHint"
-        :active-alias-summary="activeAliasSummary"
-        :alias-picker-open="aliasPickerOpen"
-        @toggle-alias-picker="aliasPickerOpen = !aliasPickerOpen"
-        @select-alias="switchAlias"
+        :load-profile="loadProfile"
+        :on-logout="logout"
+        @chrome="(spec) => emit('chrome', spec)"
+        @enter-verification="setActiveView('verification')"
       />
-
-      <ProfileEditorPanel v-if="editorOpen" :user="user" @updated="handleProfileUpdated" />
-
-      <ProfileStatsBlock />
-
-      <ProfileSettingsBlock />
 
       <ProfileTabs :tabs="tabs" :active-tab="activeTab" @select="loadProfileList" />
 
@@ -194,21 +152,7 @@ onMounted(() => {
         @retry="detail.retry()"
       />
 
-      <footer class="profile-view__verification-entry">
-        <button
-          type="button"
-          class="profile-view__verification-link"
-          @click="setActiveView('verification')"
-        >
-          {{ VERIFICATION_ENTER_LABEL }}
-        </button>
-      </footer>
-
-      <footer v-if="adminEntryVisible" class="profile-view__admin-entry">
-        <button type="button" class="profile-view__admin-link" @click="setActiveView('admin')">
-          {{ ADMIN_ENTER_LABEL }}
-        </button>
-      </footer>
+      <ProfileAdminLink @enter-admin="setActiveView('admin')" />
     </template>
 
     <section v-else class="profile-view__guest">
@@ -248,32 +192,6 @@ onMounted(() => {
   display: grid;
   gap: var(--space-4);
   padding-top: var(--space-6);
-}
-
-.profile-view__admin-entry {
-  display: flex;
-  justify-content: center;
-  margin-top: var(--space-6);
-  padding-top: var(--space-4);
-  border-top: 1px dashed var(--lian-line);
-}
-
-.profile-view__admin-link {
-  padding: var(--space-1) var(--space-3);
-  border: 0;
-  background: none;
-  color: var(--lian-muted);
-  font-size: 11px;
-  font-weight: 600;
-  cursor: pointer;
-  opacity: 0.6;
-  transition: opacity var(--motion-fast) var(--motion-ease-standard);
-}
-
-.profile-view__admin-link:hover,
-.profile-view__admin-link:focus-visible {
-  opacity: 1;
-  text-decoration: underline;
 }
 
 .inline-error button {

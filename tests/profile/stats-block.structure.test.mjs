@@ -59,18 +59,21 @@ test("ProfileStatsBlock surfaces the rewards placeholder per PRD §N3 / 04_DECIS
   assert.match(src, /PROFILE_REWARDS_HONORS_LABEL/);
 });
 
-// --- ProfileView mounts the block above the tabs ---
+// --- ProfileIdentityGroup mounts the block above the verification footer ---
+//
+// Stats moved into ProfileIdentityGroup in PR-B (the four "identity" blocks share
+// composables there). ProfileView no longer references stats directly.
 
-test("ProfileView mounts ProfileStatsBlock between editor panel and tabs", () => {
-  const src = read("src/features/profile/ProfileView.vue");
+test("ProfileIdentityGroup mounts ProfileStatsBlock between editor panel and settings", () => {
+  const src = read("src/features/profile/ProfileIdentityGroup.vue");
   assert.match(src, /import ProfileStatsBlock/);
   assert.match(src, /<ProfileStatsBlock \/>/);
   const blockIdx = src.indexOf("<ProfileStatsBlock");
-  const tabsIdx = src.indexOf("<ProfileTabs");
   const editorIdx = src.indexOf("<ProfileEditorPanel");
-  assert.ok(editorIdx > -1 && blockIdx > -1 && tabsIdx > -1, "all three should be present");
+  const settingsIdx = src.indexOf("<ProfileSettingsBlock");
+  assert.ok(editorIdx > -1 && blockIdx > -1 && settingsIdx > -1, "all three should be present");
   assert.ok(editorIdx < blockIdx, "stats block sits below editor panel");
-  assert.ok(blockIdx < tabsIdx, "stats block sits above tabs");
+  assert.ok(blockIdx < settingsIdx, "stats block sits above settings block");
 });
 
 // --- Brand strings registered ---

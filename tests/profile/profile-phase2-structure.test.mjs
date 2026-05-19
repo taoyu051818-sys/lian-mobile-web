@@ -185,19 +185,23 @@ test("useProfileAliasPicker imports alias activation API functions", () => {
   assert.match(src, /deactivateProfileAlias/);
 });
 
-test("ProfileView manages alias picker open state", () => {
-  const src = read("src/features/profile/ProfileView.vue");
+// Alias picker now lives inside ProfileIdentityGroup (PR-B). ProfileView only
+// orchestrates load/error/guest/tabs/detail; the identity-related state stays
+// behind one container so the four "identity" subcomponents share refs cleanly.
+
+test("ProfileIdentityGroup manages alias picker open state", () => {
+  const src = read("src/features/profile/ProfileIdentityGroup.vue");
   assert.match(src, /aliasPickerOpen/);
 });
 
-test("ProfileView passes aliases and picker state to ProfileHeader", () => {
-  const src = read("src/features/profile/ProfileView.vue");
+test("ProfileIdentityGroup passes aliases and picker state to ProfileHeader", () => {
+  const src = read("src/features/profile/ProfileIdentityGroup.vue");
   assert.match(src, /:aliases="aliases"/);
   assert.match(src, /:alias-picker-open="aliasPickerOpen"/);
 });
 
-test("ProfileView wires alias picker toggle and select events", () => {
-  const src = read("src/features/profile/ProfileView.vue");
+test("ProfileIdentityGroup wires alias picker toggle and select events", () => {
+  const src = read("src/features/profile/ProfileIdentityGroup.vue");
   assert.match(src, /@toggle-alias-picker/);
   assert.match(src, /@select-alias="switchAlias"/);
 });
@@ -224,8 +228,8 @@ test("ProfileView preserves three states: loading, logged-in, guest", () => {
   assert.match(src, /v-else/);
 });
 
-test("ProfileView preserves chrome spec via useProfileChrome composable", () => {
-  const src = read("src/features/profile/ProfileView.vue");
+test("ProfileIdentityGroup preserves chrome spec via useProfileChrome composable", () => {
+  const src = read("src/features/profile/ProfileIdentityGroup.vue");
   assert.match(src, /import.*useProfileChrome/);
   assert.match(src, /useProfileChrome\(/);
 });
@@ -236,8 +240,8 @@ test("useProfileChrome preserves editor toggle and logout actions", () => {
   assert.match(src, /profile:logout/);
 });
 
-test("ProfileView preserves editor panel integration", () => {
-  const src = read("src/features/profile/ProfileView.vue");
+test("ProfileIdentityGroup preserves editor panel integration", () => {
+  const src = read("src/features/profile/ProfileIdentityGroup.vue");
   assert.match(src, /ProfileEditorPanel/);
   assert.match(src, /editorOpen/);
 });

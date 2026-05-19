@@ -52,8 +52,11 @@ test("ProfileCollectionList cards use shadow instead of border", () => {
   assert.doesNotMatch(src, /border: 1px solid rgba\(31, 41, 51, 0\.08\)/);
 });
 
-test("ProfileView imports useProfileChrome composable", () => {
-  const src = read("src/features/profile/ProfileView.vue");
+// Chrome composable moved into ProfileIdentityGroup in PR-B (the four "identity"
+// blocks share state via composables there). ProfileView only forwards the
+// chrome emit up to AppViewHost.
+test("ProfileIdentityGroup imports useProfileChrome composable", () => {
+  const src = read("src/features/profile/ProfileIdentityGroup.vue");
   assert.match(src, /import.*useProfileChrome/);
   assert.match(src, /from.*\.\/useProfileChrome/);
 });
@@ -66,11 +69,16 @@ test("useProfileChrome computes declarative PageChromeSpec with actions", () => 
   assert.match(src, /profile:logout/);
 });
 
-test("ProfileView preserves all three profile states: guest, logged-in, editor", () => {
+test("ProfileView preserves the loading / logged-in / guest tri-state", () => {
   const src = read("src/features/profile/ProfileView.vue");
   assert.match(src, /v-if="loading"/);
   assert.match(src, /v-else-if="user"/);
   assert.match(src, /v-else.*profile-view__guest/);
+});
+
+// Editor panel + editorOpen state moved into ProfileIdentityGroup in PR-B.
+test("ProfileIdentityGroup owns editorOpen and renders ProfileEditorPanel", () => {
+  const src = read("src/features/profile/ProfileIdentityGroup.vue");
   assert.match(src, /editorOpen/);
   assert.match(src, /ProfileEditorPanel/);
 });

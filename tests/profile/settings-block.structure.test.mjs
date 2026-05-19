@@ -163,18 +163,25 @@ test("ProfileSettingsBlock surfaces error message + retry only on load failure",
   assert.match(src, /settings\.errorPhase\.value === 'load'/);
 });
 
-// --- ProfileView mounts the block under stats, above tabs ---
+// --- ProfileIdentityGroup mounts the block under stats, above the verification footer ---
+//
+// Settings moved into ProfileIdentityGroup in PR-B (the four "identity" blocks
+// share state via composables there). ProfileView no longer references settings
+// directly — ProfileTabs is its next sibling, with the identity group above.
 
-test("ProfileView mounts ProfileSettingsBlock between stats and tabs", () => {
-  const src = read("src/features/profile/ProfileView.vue");
+test("ProfileIdentityGroup mounts ProfileSettingsBlock between stats and verification entry", () => {
+  const src = read("src/features/profile/ProfileIdentityGroup.vue");
   assert.match(src, /import ProfileSettingsBlock/);
   assert.match(src, /<ProfileSettingsBlock \/>/);
   const statsIdx = src.indexOf("<ProfileStatsBlock");
   const settingsIdx = src.indexOf("<ProfileSettingsBlock");
-  const tabsIdx = src.indexOf("<ProfileTabs");
-  assert.ok(statsIdx > -1 && settingsIdx > -1 && tabsIdx > -1, "all three should be present");
+  const verificationIdx = src.indexOf("profile-identity-group__verification");
+  assert.ok(
+    statsIdx > -1 && settingsIdx > -1 && verificationIdx > -1,
+    "all three should be present",
+  );
   assert.ok(statsIdx < settingsIdx, "settings sits below stats");
-  assert.ok(settingsIdx < tabsIdx, "settings sits above tabs");
+  assert.ok(settingsIdx < verificationIdx, "settings sits above verification entry");
 });
 
 // --- Brand strings registered ---
