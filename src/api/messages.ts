@@ -244,12 +244,13 @@ function resolveNotificationTid(raw: RawNotificationItem): number | null {
   );
 }
 
-function resolveNotificationTarget(raw: RawNotificationItem, kind: NotificationKind): NotificationTarget {
+function resolveNotificationTarget(
+  raw: RawNotificationItem,
+  kind: NotificationKind,
+): NotificationTarget {
   const tid = resolveNotificationTid(raw);
   if (kind === "reply") {
-    return tid
-      ? { kind: "detail", tid }
-      : { kind: "none", reason: "该回复通知暂时无法直接打开。" };
+    return tid ? { kind: "detail", tid } : { kind: "none", reason: "该回复通知暂时无法直接打开。" };
   }
   if (kind === "verification") {
     return { kind: "verification" };
@@ -260,7 +261,10 @@ function resolveNotificationTarget(raw: RawNotificationItem, kind: NotificationK
   return tid ? { kind: "detail", tid } : { kind: "none", reason: "该系统通知暂时只支持查看摘要。" };
 }
 
-function resolveNotificationActionLabel(kind: NotificationKind, target: NotificationTarget): string {
+function resolveNotificationActionLabel(
+  kind: NotificationKind,
+  target: NotificationTarget,
+): string {
   if (target.kind === "detail") {
     return kind === "reply" ? "查看回复详情" : "查看详情";
   }
@@ -302,7 +306,8 @@ export function normalizeNotificationItem(raw: RawNotificationItem): Notificatio
 export function normalizeNotificationResponse(
   response: RawNotificationResponse | NotificationResponse,
 ): NotificationResponse {
-  const rawItems = "notifications" in response ? response.notifications || [] : response.items || [];
+  const rawItems =
+    "notifications" in response ? response.notifications || [] : response.items || [];
   return {
     ...response,
     items: rawItems.map((item) => normalizeNotificationItem(item as RawNotificationItem)),

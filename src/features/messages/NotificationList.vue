@@ -27,7 +27,10 @@ const emit = defineEmits<{
 }>();
 
 function isReplyNotification(item: NotificationItem) {
-  return item.kind === "reply" || ["new-reply", "reply", "new-post", "post-reply"].includes(String(item.type || ""));
+  return (
+    item.kind === "reply" ||
+    ["new-reply", "reply", "new-post", "post-reply"].includes(String(item.type || ""))
+  );
 }
 
 function notificationActor(item: NotificationItem) {

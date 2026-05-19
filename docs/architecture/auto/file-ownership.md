@@ -25,7 +25,7 @@ Total files: 304
 | `api/interaction.ts`  | Like/vote unified interaction API (PRD V0.1 §7.1.2, §11.3). Backend already exposes `/api/posts/:tid/like` for likes...  |    65 |
 | `api/map.ts`          | TypeScript module                                                                                                        |    14 |
 | `api/merchant.ts`     | Merchant center API (issue #646). `GET /api/me/merchant-center` returns the merchant readout for the signed-in user....  |    89 |
-| `api/messages.ts`     | export function extractChannelMessagePlainText(html?: string): string                                                    |   373 |
+| `api/messages.ts`     | export function extractChannelMessagePlainText(html?: string): string                                                    |   379 |
 | `api/places.ts`       | TypeScript module                                                                                                        |    10 |
 | `api/posts.ts`        | export interface PostLikeResponse                                                                                        |   231 |
 | `api/profile.ts`      | TypeScript module                                                                                                        |   101 |
@@ -48,7 +48,7 @@ Total files: 304
 | `app/detail-navigation/store.ts`    | Module-scoped reactive wrapper around the pure detail-navigation reducer. Why a module singleton: the URL hash, the ...  |   157 |
 | `app/detail-navigation/url-sync.ts` | Bridges window.location.hash → reducer for the post-detail tid. The detail-navigation reducer is the single source o...  |    58 |
 | `app/post-detail-hash.ts`           | Post-detail hash writer — `#/post/{tid}`. Pure history I/O. No module-scoped tid ref, no listener: the detail-naviga...  |    69 |
-| `app/useActiveView.ts`              | export function useActiveView()                                                                                          |    51 |
+| `app/useActiveView.ts`              | export function useActiveView()                                                                                          |    45 |
 | `app/view-hash.ts`                  | View-hash singleton — `#/feed`, `#/map`, `#/publish`, `#/messages`, `#/profile` (and the secret `#/admin`, `#/verific... |    73 |
 | `app/view-types.ts`                 | export type AppViewKey =                                                                                                 |    71 |
 
@@ -207,8 +207,8 @@ Total files: 304
 | `features/messages/ChannelComposer.vue`          | Vue SFC                                                                                                                       |   147 |
 | `features/messages/ChannelThread.vue`            | Vue SFC                                                                                                                       |   268 |
 | `features/messages/MessagesTabs.vue`             | Vue SFC                                                                                                                       |    58 |
-| `features/messages/MessagesView.vue`             | Vue SFC                                                                                                                       |   182 |
-| `features/messages/NotificationList.vue`         | Vue SFC                                                                                                                       |   199 |
+| `features/messages/MessagesView.vue`             | Vue SFC                                                                                                                       |   183 |
+| `features/messages/NotificationList.vue`         | Vue SFC                                                                                                                       |   203 |
 | `features/messages/index.ts`                     | TypeScript module                                                                                                             |     6 |
 | `features/messages/useChannelMessages.ts`        | export function useChannelMessages()                                                                                          |   227 |
 | `features/messages/useMessageComposer.ts`        | export function useMessageComposer(options:                                                                                   |   102 |
@@ -334,7 +334,7 @@ Total files: 304
 | `types/map-policy.ts`      | Map viewport policy (PRD V0.1 §7.2.3). Bounds are deliberately permissive for V0.1 (large enough to cover any reason...   |    82 |
 | `types/map.ts`             | export interface MapBounds                                                                                                |   141 |
 | `types/merchant.ts`        | Merchant center (issue #646) types. Backend (`/api/me/merchant-center`) ships a profile readout for merchants who ho...   |    57 |
-| `types/messages.ts`        | Client-generated nonce stamped on the optimistic item so we can match the server echo back to it without depending on...  |    77 |
+| `types/messages.ts`        | Client-generated nonce stamped on the optimistic item so we can match the server echo back to it without depending on...  |    78 |
 | `types/place.ts`           | export type PlaceStatus =                                                                                                 |    54 |
 | `types/post-extensions.ts` | Event / Help / Merchant / Trade / Errand domain types (PRD V0.1 §6). V0.1 ships shapes only — no UI yet. The point i...   |   194 |
 | `types/post.ts`            | event?: EventPostExtension; eventJoined?: boolean; help?: HelpPostExtension; helpVoted?: boolean; helpManageable?: bo...  |   153 |
