@@ -46,6 +46,9 @@ const hasTabs = computed(() => regionSpec.value.tabs != null);
 const isSlottedTabs = computed(() => !hasTabs.value && regionSpec.value.slot === "tabs");
 const isReplyDockSlot = computed(() => regionSpec.value.slot === "reply-dock");
 const isDetailTopbarSlot = computed(() => regionSpec.value.slot === "detail-topbar");
+const rendersStableTopTarget = computed(() => props.region === "top");
+const rendersStableBottomTarget = computed(() => props.region === "bottom");
+const rendersRegularChrome = computed(() => !isReplyDockSlot.value && !isDetailTopbarSlot.value);
 
 function handleButtonClick(button: ChromeButtonSpec) {
   if (!button.disabled && isVisible.value) {
@@ -87,27 +90,31 @@ function handleFilterToggle(filterId: string) {
     :data-visible="isVisible"
     :style="{ pointerEvents: isVisible ? 'auto' : 'none' }"
   >
-    <Transition :name="`shell-slot-${region}`" mode="out-in">
+    <div
+      v-if="rendersStableTopTarget"
+      id="lian-shell-top-slot"
+      class="shell-chrome__top-slot"
+      :class="{
+        'lian-floating-chrome': isDetailTopbarSlot,
+        'lian-floating-chrome--top': isDetailTopbarSlot,
+      }"
+      :data-floating-chrome="isDetailTopbarSlot ? 'top' : undefined"
+    />
+    <div
+      v-if="rendersStableBottomTarget"
+      id="lian-shell-bottom-slot"
+      class="shell-chrome__bottom-slot"
+      :class="{
+        'lian-floating-chrome': isReplyDockSlot,
+        'lian-floating-chrome--bottom': isReplyDockSlot,
+      }"
+      :data-floating-chrome="isReplyDockSlot ? 'bottom' : undefined"
+    />
+    <Transition v-if="rendersRegularChrome" :name="`shell-slot-${region}`" mode="out-in">
       <template v-if="isSlottedTabs">
         <div key="tabs-slot" class="shell-chrome__slot-host">
           <slot />
         </div>
-      </template>
-      <template v-else-if="isReplyDockSlot">
-        <div
-          id="lian-shell-bottom-slot"
-          key="reply-dock"
-          class="shell-chrome__bottom-slot lian-floating-chrome lian-floating-chrome--bottom"
-          data-floating-chrome="bottom"
-        />
-      </template>
-      <template v-else-if="isDetailTopbarSlot">
-        <div
-          id="lian-shell-top-slot"
-          key="detail-topbar"
-          class="shell-chrome__top-slot lian-floating-chrome lian-floating-chrome--top"
-          data-floating-chrome="top"
-        />
       </template>
       <template v-else-if="hasTabs">
         <nav
