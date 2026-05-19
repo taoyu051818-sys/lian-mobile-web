@@ -2,6 +2,7 @@
 export const PROFILE_CAMPUS_USER = "校园用户";
 export const PROFILE_INVITE_USER = "邀请码用户";
 export const PROFILE_IDENTITY_TAGS = "身份标签";
+export const PROFILE_VERIFICATION_BADGES_LABEL = "认证身份";
 export const PROFILE_ALIAS_DESC = "马甲身份说明";
 export const PROFILE_REAL_IDENTITY = "真实身份";
 export const PROFILE_ALIAS_COUNT_SUFFIX = "个身份";
