@@ -64,7 +64,9 @@ test.describe("messages notification routing proof @anonymous @messages", () => 
     const notificationsTab = page.getByRole("tab").nth(1);
     await notificationsTab.click();
 
-    const replyItem = page.locator('[data-testid="notification-item"][data-notification-kind="reply"]');
+    const replyItem = page.locator(
+      '[data-testid="notification-item"][data-notification-kind="reply"]',
+    );
     await expect(replyItem).toContainText("查看回复详情");
     await replyItem.click();
     await expect(page.locator("#post-detail-title")).toContainText(String(feedItem?.title || ""));
@@ -81,7 +83,9 @@ test.describe("messages notification routing proof @anonymous @messages", () => 
     await page.goto("/#/messages");
     await notificationsTab.click();
 
-    const fallbackItem = page.locator('[data-testid="notification-item"][data-target-kind="none"]');
+    const fallbackItem = page.locator(
+      '[data-testid="notification-item"][data-target-kind="none"]',
+    );
     await expect(fallbackItem).toContainText("订单类通知会在后续版本接入目标页。");
     await expect(page).toHaveURL(/#\/messages$/);
   });
