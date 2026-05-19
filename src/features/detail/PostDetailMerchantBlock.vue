@@ -29,7 +29,11 @@ import {
 } from "../../config/brand";
 import { useActiveView } from "../../app/useActiveView";
 import { errandReasonText } from "../merchant";
-import { useErrandOrderRoute } from "../errand";
+// Import directly from the route module instead of `../errand` so the detail
+// chunk doesn't statically pull the heavy ErrandOrder*View SFCs from the
+// barrel — those SFCs are async-mounted by AppViewHost and should stay out
+// of the detail bundle.
+import { useErrandOrderRoute } from "../errand/useErrandOrderRoute";
 import type { MerchantErrandUnavailableReason } from "../../types/merchant";
 import type { MerchantCategory, MerchantPostExtension } from "../../types/post-extensions";
 

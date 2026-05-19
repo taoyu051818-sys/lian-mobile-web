@@ -84,19 +84,57 @@ export function useErrandOrderDraft(initialMerchantPostId: number) {
    *
    * Whichever blocks earliest wins. Server-supplied reason text wins over the
    * local fallback so backend can localize without a frontend release.
+   *
+   * Failure handling differs by call:
+   *  - /api/auth/me 401 is *expected* for anonymous users — that's how we
+   *    derive `not_logged_in`, so we tolerate a rejection by treating it as
+   *    "no user".
+   *  - Wallet and eligibility, however, must NOT be silently coerced to fake
+   *    defaults. A wallet failure with `points = 0` would mis-fire as
+   *    `insufficient_balance`; an eligibility failure swallowed as `null`
+   *    would let an unavailable merchant fall through to the form. Both are
+   *    surfaced as a retry-able `gateError` instead.
    */
   async function refresh(merchantPostId: number) {
     if (merchantPostId > 0) draft.value.merchantPostId = merchantPostId;
     gateLoading.value = true;
     gateError.value = "";
     try {
-      const [serverGate, me, wallet] = await Promise.all([
-        fetchErrandOrderEligibility(draft.value.merchantPostId).catch(() => null),
-        fetchAuthMe().catch(() => null),
-        fetchProfileWallet().catch(() => ({ points: 0, honor: 0, lockedPoints: 0 })),
+      const [serverGateResult, meResult, walletResult] = await Promise.allSettled([
+        fetchErrandOrderEligibility(draft.value.merchantPostId),
+        fetchAuthMe(),
+        fetchProfileWallet(),
       ]);
+      const me = meResult.status === "fulfilled" ? meResult.value : null;
       const loggedIn = Boolean(me && me.id);
       const campusVerified = Boolean(me?.verificationState?.campus_verified?.active);
+
+      // Anonymous user wins outright — no point bubbling the inevitable
+      // wallet/eligibility 401s as "load failed" when "请先登录" is the right
+      // copy.
+      if (!loggedIn) {
+        gate.value = {
+          ok: false,
+          reason: "not_logged_in",
+          reasonText: gateReasonFallback("not_logged_in"),
+          availablePoints: 0,
+          estimatedFeePoints: 0,
+        };
+        gateLoaded.value = true;
+        return;
+      }
+
+      if (walletResult.status === "rejected") {
+        gateError.value = extractErrorMessage(walletResult.reason, ERRAND_ORDER_LOAD_ERROR);
+        return;
+      }
+      if (serverGateResult.status === "rejected") {
+        gateError.value = extractErrorMessage(serverGateResult.reason, ERRAND_ORDER_LOAD_ERROR);
+        return;
+      }
+
+      const wallet = walletResult.value;
+      const serverGate = serverGateResult.value;
       const availablePoints = Math.max(0, wallet.points - wallet.lockedPoints);
       const estimatedFee = serverGate?.estimatedFeePoints ?? 0;
 
@@ -178,12 +216,21 @@ export function useErrandOrderDraft(initialMerchantPostId: number) {
       submitError.value = validationMessage;
       return "";
     }
+    // `validate()` already proved both locations are present, but it ran
+    // against `draft.value` which TS won't narrow across the await below.
+    // Bind locals so the request body doesn't need an `as` cast.
+    const pickup = draft.value.pickupLocation;
+    const dropoff = draft.value.dropoffLocation;
+    if (!pickup || !dropoff) {
+      submitError.value = ERRAND_ORDER_VALIDATE_PICKUP;
+      return "";
+    }
     submitting.value = true;
     try {
       const request: ErrandOrderRequest = {
         merchantPostId: draft.value.merchantPostId,
-        pickupLocation: draft.value.pickupLocation as PostLocation,
-        dropoffLocation: draft.value.dropoffLocation as PostLocation,
+        pickupLocation: pickup,
+        dropoffLocation: dropoff,
         mode: draft.value.mode,
         notes: draft.value.notes.trim(),
       };

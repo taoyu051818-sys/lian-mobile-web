@@ -25,7 +25,18 @@ export function useErrandOrderDetail() {
     loading.value = true;
     errorMessage.value = "";
     try {
-      detail.value = await fetchErrandOrder(orderId);
+      const next = await fetchErrandOrder(orderId);
+      // `fetchErrandOrder` returns null when the wire shape couldn't be
+      // normalized (e.g. backend dropped a required field). Without an
+      // explicit error here the timeline view would render an empty
+      // <template> with no message — surface it as a load failure so the
+      // user gets the same retry affordance as a network error.
+      if (!next) {
+        detail.value = null;
+        errorMessage.value = ERRAND_ORDER_DETAIL_LOAD_ERROR;
+        return;
+      }
+      detail.value = next;
       loaded.value = true;
     } catch (error) {
       errorMessage.value = extractErrorMessage(error, ERRAND_ORDER_DETAIL_LOAD_ERROR);
