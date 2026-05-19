@@ -57,33 +57,85 @@ describe("Phase 4 (deeplink): builders", () => {
   });
 });
 
-describe("Phase 4 (deeplink): useDeepLink singleton (source-level guards)", () => {
+describe("Phase 4 (deeplink): view-hash singleton (post-#636 PR2)", () => {
   // Runtime push/clear is exercised in the integration smoke; here we lock the
   // wiring at the source level so jsdom isn't a dependency for the contract.
-  const useDeepLink = readRepoFile("../../src/app/useDeepLink.ts");
+  const viewHash = readRepoFile("../../src/app/view-hash.ts");
 
-  it("eagerly attaches hashchange + popstate listeners at module load", () => {
-    expect(useDeepLink).toMatch(/window\.addEventListener\("hashchange"/);
-    expect(useDeepLink).toMatch(/window\.addEventListener\("popstate"/);
+  it("view-hash module owns the view-side hashchange + popstate listeners", () => {
+    expect(viewHash).toMatch(/window\.addEventListener\("hashchange"/);
+    expect(viewHash).toMatch(/window\.addEventListener\("popstate"/);
   });
 
-  it("pushPostDetailHash uses pushState and replace flag is honored", () => {
-    expect(useDeepLink).toMatch(/window\.history\.pushState/);
-    expect(useDeepLink).toMatch(/window\.history\.replaceState/);
+  it("pushViewHash writes #/{view} via pushState/replaceState", () => {
+    expect(viewHash).toMatch(/export function pushViewHash/);
+    expect(viewHash).toMatch(/window\.history\.pushState/);
+    expect(viewHash).toMatch(/window\.history\.replaceState/);
   });
 
-  it("exports getDetailTidRef + push/clear helpers", () => {
-    expect(useDeepLink).toMatch(/export function pushPostDetailHash/);
-    expect(useDeepLink).toMatch(/export function clearPostDetailHash/);
-    expect(useDeepLink).toMatch(/export function getDetailTidRef/);
-  });
-
-  it("exports view-hash singleton helpers", () => {
-    expect(useDeepLink).toMatch(/export function pushViewHash/);
-    expect(useDeepLink).toMatch(/export function getViewFromHashRef/);
+  it("exports getViewFromHashRef and defaults the singleton to feed", () => {
+    expect(viewHash).toMatch(/export function getViewFromHashRef/);
     // The singleton ref must default to "feed" so the bottom tab bar has a
     // sensible initial value before any hash is read.
-    expect(useDeepLink).toMatch(/viewFromHash = ref<AppViewKey>\("feed"\)/);
+    expect(viewHash).toMatch(/viewFromHash = ref<AppViewKey>\("feed"\)/);
+  });
+
+  it("view-hash module ignores #/post/{tid} hashes (detail FSM owns those)", () => {
+    // If a post-detail hash arrives, viewFromHash must stay where it was —
+    // closing a detail should never snap the user to a different tab.
+    expect(viewHash).toMatch(/link\.view === "post-detail"/);
+  });
+
+  it("view-hash module does not own a detail-tid ref or detail listener", () => {
+    // The legacy useDeepLink kept a detail-tid singleton next to the view-hash
+    // ref and a single listener that drove both. PR2 split them so the FSM is
+    // the single source of truth for "is a detail open."
+    expect(viewHash).not.toMatch(/detailTid/);
+    expect(viewHash).not.toMatch(/getDetailTidRef/);
+  });
+});
+
+describe("Phase 4 (deeplink): post-detail-hash writer (post-#636 PR2)", () => {
+  const postDetailHash = readRepoFile("../../src/app/post-detail-hash.ts");
+
+  it("exports the push/clear helpers", () => {
+    expect(postDetailHash).toMatch(/export function pushPostDetailHash/);
+    expect(postDetailHash).toMatch(/export function clearPostDetailHash/);
+  });
+
+  it("uses pushState/replaceState for the post-detail URL", () => {
+    expect(postDetailHash).toMatch(/window\.history\.pushState/);
+    expect(postDetailHash).toMatch(/window\.history\.replaceState/);
+  });
+
+  it("does not own a hashchange/popstate listener (detail FSM url-sync does)", () => {
+    // PR2 invariant: post-detail-hash is a pure writer. The listener for the
+    // post-detail tid lives in src/app/detail-navigation/url-sync.ts.
+    expect(postDetailHash).not.toMatch(/addEventListener/);
+  });
+
+  it("does not export a detailTid ref accessor", () => {
+    expect(postDetailHash).not.toMatch(/getDetailTidRef/);
+    expect(postDetailHash).not.toMatch(/export const detailTid/);
+  });
+
+  it("clearPostDetailHash falls back to the current view-hash for the URL", () => {
+    // The replacement target after clearing a post-detail hash is #/{view},
+    // not an empty hash — the address bar must stay consistent with the tab.
+    expect(postDetailHash).toMatch(/getViewFromHashRef/);
+    expect(postDetailHash).toMatch(/buildViewHash/);
+  });
+});
+
+describe("Phase 4 (deeplink): legacy useDeepLink module is removed (PR2)", () => {
+  it("src/app/useDeepLink.ts is deleted; consumers point at the split modules", () => {
+    let exists = true;
+    try {
+      readRepoFile("../../src/app/useDeepLink.ts");
+    } catch {
+      exists = false;
+    }
+    expect(exists).toBe(false);
   });
 });
 
