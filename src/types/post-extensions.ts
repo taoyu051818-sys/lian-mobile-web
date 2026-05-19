@@ -118,11 +118,11 @@ export interface MerchantPostExtension {
 
 /**
  * Lifecycle of a second-hand listing. PRD §J4. `available` → `reserved` →
- * `sold` is the happy path; `cancelled` is the terminal exit. The transitions
- * themselves are not in scope for #608 — backend ships create-only first; the
- * detail page just renders the badge.
+ * `sold` is the happy path; `cancelled` is the terminal exit. Backend #400
+ * also supports author-side `hidden` as a soft-delete that can return to
+ * `available`.
  */
-export type TradeState = "available" | "reserved" | "sold" | "cancelled";
+export type TradeState = "available" | "reserved" | "sold" | "cancelled" | "hidden";
 
 /**
  * Read-side trade block surfaced by `GET /api/posts/:tid` after backend #387.

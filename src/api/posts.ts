@@ -17,6 +17,7 @@ import {
 } from "../platform/api-normalizers";
 import type { FeedItemId } from "../types/feed";
 import type { PostDetail, PostReply } from "../types/post";
+import type { TradePostExtension, TradeState } from "../types/post-extensions";
 
 export interface PostLikeResponse {
   liked: boolean;
@@ -32,6 +33,13 @@ export interface ReportPostPayload {
   reason: string;
 }
 
+export interface PatchTradeStateResponse {
+  ok: boolean;
+  tid: FeedItemId;
+  state: TradeState;
+  trade: TradePostExtension;
+}
+
 function normalizePostReply(value: unknown, fallbackId: FeedItemId): PostReply {
   const record = asRecord(value);
 
@@ -42,6 +50,22 @@ function normalizePostReply(value: unknown, fallbackId: FeedItemId): PostReply {
     source: normalizeSourceSignal(record.source),
     timestampISO: asString(record.timestampISO ?? record.time),
   };
+}
+
+function normalizeTradeState(value: unknown): TradeState {
+  const raw = asString(value).toLowerCase();
+  if (raw === "reserved" || raw === "sold" || raw === "cancelled" || raw === "hidden") {
+    return raw;
+  }
+  return "available";
+}
+
+function normalizeTradeExtensionFromDetail(value: unknown): TradePostExtension | undefined {
+  const trade = normalizeTradeExtension(value);
+  if (!trade) return undefined;
+  const record = asRecord(value);
+  const state = normalizeTradeState(record.state);
+  return state === trade.state ? trade : { ...trade, state };
 }
 
 export function normalizePostDetail(value: unknown, fallbackId: FeedItemId): PostDetail {
@@ -80,7 +104,9 @@ export function normalizePostDetail(value: unknown, fallbackId: FeedItemId): Pos
     merchant && errandEntryAvailable === false
       ? asString(record.errandUnavailableReasonText) || errandEligibility?.reasonText || ""
       : undefined;
-  const trade = normalizeTradeExtension(record.trade);
+  const trade = normalizeTradeExtensionFromDetail(record.trade);
+  const tradeManageable =
+    "tradeManageable" in record ? asBoolean(record.tradeManageable) : undefined;
 
   return {
     tid,
@@ -114,6 +140,7 @@ export function normalizePostDetail(value: unknown, fallbackId: FeedItemId): Pos
       : {}),
     ...(errandUnavailableReasonText ? { errandUnavailableReasonText } : {}),
     ...(trade ? { trade } : {}),
+    ...(tradeManageable !== undefined ? { tradeManageable } : {}),
   };
 }
 
@@ -131,6 +158,28 @@ export function normalizePostSaveResponse(value: unknown): PostSaveResponse {
 
   return {
     saved: asBoolean(record.saved),
+  };
+}
+
+export function normalizePatchTradeStateResponse(
+  value: unknown,
+  fallbackId: FeedItemId,
+): PatchTradeStateResponse {
+  const record = asRecord(value);
+  const trade =
+    normalizeTradeExtensionFromDetail(record.trade) ||
+    ({
+      price: "",
+      state: normalizeTradeState(record.state),
+      category: "",
+      verifiedAt: "",
+    } satisfies TradePostExtension);
+
+  return {
+    ok: asBoolean(record.ok, true),
+    tid: normalizeFeedItemId(record.tid, fallbackId),
+    state: normalizeTradeState(record.state ?? trade.state),
+    trade,
   };
 }
 
@@ -153,6 +202,17 @@ export async function togglePostSave(id: FeedItemId, saved: boolean): Promise<Po
     body: JSON.stringify({ saved }),
   });
   return normalizePostSaveResponse(data);
+}
+
+export async function patchTradeState(
+  id: FeedItemId,
+  state: TradeState,
+): Promise<PatchTradeStateResponse> {
+  const data = await apiSend<unknown>(`/api/posts/${encodeURIComponent(String(id))}/trade-state`, {
+    method: "PATCH",
+    body: JSON.stringify({ state }),
+  });
+  return normalizePatchTradeStateResponse(data, id);
 }
 
 export async function reportPost(id: FeedItemId, payload: ReportPostPayload): Promise<void> {

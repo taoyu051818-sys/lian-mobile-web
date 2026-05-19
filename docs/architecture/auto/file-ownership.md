@@ -26,7 +26,7 @@ Total files: 284
 | `api/merchant.ts`     | Merchant center API (issue #646). `GET /api/me/merchant-center` returns the merchant readout for the signed-in user....  |    89 |
 | `api/messages.ts`     | export function extractChannelMessagePlainText(html?: string): string                                                    |   159 |
 | `api/places.ts`       | TypeScript module                                                                                                        |    10 |
-| `api/posts.ts`        | export interface PostLikeResponse                                                                                        |   171 |
+| `api/posts.ts`        | export interface PostLikeResponse                                                                                        |   231 |
 | `api/profile.ts`      | TypeScript module                                                                                                        |   101 |
 | `api/publish.ts`      | Creates a display-only fallback draft from free-text place name. When `placeName` is non-empty the source is "manual"... |   254 |
 | `api/verification.ts` | TypeScript module                                                                                                        |    20 |
@@ -145,9 +145,9 @@ Total files: 284
 | `features/detail/PostDetailLightbox.vue`         | Vue SFC                                                                                                                  |    43 |
 | `features/detail/PostDetailMainBody.vue`         | Vue SFC                                                                                                                  |    44 |
 | `features/detail/PostDetailMerchantBlock.vue`    | `errandEntryAvailable === false` is the unavailable case (the merchant                                                   |   280 |
-| `features/detail/PostDetailPanel.vue`            | Shell chrome slots (`top: detail-topbar`, `bottom: reply-dock`) are now                                                  |   367 |
+| `features/detail/PostDetailPanel.vue`            | Shell chrome slots (`top: detail-topbar`, `bottom: reply-dock`) are now                                                  |   552 |
 | `features/detail/PostDetailTopbar.vue`           | Vue SFC                                                                                                                  |   132 |
-| `features/detail/PostDetailTradeBlock.vue`       | Vue SFC                                                                                                                  |   220 |
+| `features/detail/PostDetailTradeBlock.vue`       | Vue SFC                                                                                                                  |   226 |
 | `features/detail/PostPlaceSheetBlock.vue`        | Vue SFC                                                                                                                  |   192 |
 | `features/detail/PostReplies.vue`                | Vue SFC                                                                                                                  |   102 |
 | `features/detail/PostReplyDock.vue`              | Vue SFC                                                                                                                  |   161 |
@@ -318,7 +318,7 @@ Total files: 284
 | `types/messages.ts`        | Client-generated nonce stamped on the optimistic item so we can match the server echo back to it without depending on...  |    67 |
 | `types/place.ts`           | export type PlaceStatus =                                                                                                 |    54 |
 | `types/post-extensions.ts` | Event / Help / Merchant / Trade / Errand domain types (PRD V0.1 §6). V0.1 ships shapes only — no UI yet. The point i...   |   194 |
-| `types/post.ts`            | event?: EventPostExtension; eventJoined?: boolean; help?: HelpPostExtension; helpVoted?: boolean; helpManageable?: bo...  |   148 |
+| `types/post.ts`            | event?: EventPostExtension; eventJoined?: boolean; help?: HelpPostExtension; helpVoted?: boolean; helpManageable?: bo...  |   153 |
 | `types/profile.ts`         | PRD V0.1 §17 — verification records keyed by tag (campus_verified, merchant_verified, ...). Backend `/api/auth/me` re...  |   119 |
 | `types/publish.ts`         | export type PublishMapVersion = "legacy" \| "manual" \| "gaode_v2"; Backend (#383) accepts these contentType values fo... |   116 |
 | `types/verification.ts`    | export type VerificationTag =                                                                                             |    36 |

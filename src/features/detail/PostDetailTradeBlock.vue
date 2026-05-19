@@ -33,6 +33,7 @@ const STATE_LABEL: Record<TradeState, string> = {
   reserved: TRADE_STATE_RESERVED,
   sold: TRADE_STATE_SOLD,
   cancelled: TRADE_STATE_CANCELLED,
+  hidden: "已隐藏",
 };
 
 const stateLabel = computed(() => STATE_LABEL[props.trade.state]);
@@ -135,6 +136,11 @@ const verifiedAtLabel = computed(() => {
 .post-detail-trade-block__state[data-state="cancelled"] {
   background: rgba(220, 60, 60, 0.16);
   color: #8a2020;
+}
+
+.post-detail-trade-block__state[data-state="hidden"] {
+  background: rgba(86, 96, 117, 0.16);
+  color: #3f495b;
 }
 
 .post-detail-trade-block__verified {
