@@ -47,7 +47,7 @@ Pages **must not**:
 
 - Mount their own copy of `PostDetailPanel`. Use `useDetailNavigation().open(tid, "card")` and let `DetailSurface` render the panel.
 - Render their own teleport target with id `lian-shell-top-slot` or `lian-shell-bottom-slot`. Those ids are owned by `ShellChrome`.
-- Read `window.location.hash` directly. Use `src/app/useDeepLink.ts` (view hash, view-from-hash ref) and `src/app/detail-navigation/url-sync.ts` (post-detail tid).
+- Read `window.location.hash` directly. Use `src/app/view-hash.ts` (view-hash singleton + `pushViewHash`) and `src/app/detail-navigation/url-sync.ts` (post-detail tid). The post-detail-hash writer in `src/app/post-detail-hash.ts` is the only other module that touches `window.history` for the post hash, and it is invoked exclusively from the detail FSM's side-effect handlers.
 
 A page **may**:
 
@@ -88,7 +88,7 @@ Two namespaces:
 - `#/feed`, `#/map`, `#/publish`, `#/messages`, `#/profile` (and the secret `#/admin`, `#/verification`) — view tabs.
 - `#/post/{tid}` — post detail. Top-level overlay, not a tab.
 
-Producers and consumers must use `src/app/deepLink.ts` (`buildPostDetailHash`, `buildViewHash`, `parseDeepLink`). Direct `window.location.hash` reads are limited to `src/app/useDeepLink.ts` and `src/app/detail-navigation/url-sync.ts`. New consumers go through those modules.
+Producers and consumers must use `src/app/deepLink.ts` (`buildPostDetailHash`, `buildViewHash`, `parseDeepLink`). Direct `window.location.hash` reads are limited to `src/app/view-hash.ts` and `src/app/detail-navigation/url-sync.ts`; direct `window.history` writes are limited to those two modules plus `src/app/post-detail-hash.ts`. New consumers go through those modules.
 
 Both `hashchange` and `popstate` are listened for — never just one. The reducer's `url-sync` action is idempotent; do not add defensive "already on this tid" early returns in callers.
 
@@ -118,7 +118,7 @@ Tracking: the four current warnings (`PublishView.vue`, `VerificationView.vue`, 
 
 - One responsibility per composable. If a composable is named `useFooBar` and exports two unrelated cluster of refs, split it.
 - Composables that return refs the parent should also write to must use `Ref<T>` in the return type, not `T`. Be explicit about read vs write contracts.
-- Module-level singletons (like `detail-navigation/store.ts`, `useDeepLink.ts`) are deliberate — when there can only be one instance of the underlying state in the browser (URL hash, single open detail), the singleton is the right shape. Don't try to "scope" them to a component lifecycle.
+- Module-level singletons (like `detail-navigation/store.ts`, `view-hash.ts`) are deliberate — when there can only be one instance of the underlying state in the browser (URL hash, single open detail), the singleton is the right shape. Don't try to "scope" them to a component lifecycle.
 - Guard SSR/test paths with `if (typeof window === "undefined")` for any code that touches `window`, `document`, or `history`.
 
 ## 9. Styling

@@ -1,7 +1,7 @@
 import { computed, ref, watch } from "vue";
 
 import { appViews, getViewDefinition, type AppViewKey } from "./view-types";
-import { getViewFromHashRef, pushViewHash } from "./useDeepLink";
+import { getViewFromHashRef, pushViewHash } from "./view-hash";
 
 const SECRET_VIEWS: AppViewKey[] = ["admin", "verification"];
 const viewFromHash = getViewFromHashRef();
@@ -24,8 +24,9 @@ export function useActiveView() {
   function setActiveView(key: AppViewKey) {
     if (appViews.some((view) => view.key === key)) {
       secretActiveViewKey.value = null;
-      // URL is the source of truth. pushViewHash also clears any in-flight
-      // detailTid singleton so legacy hash readers see the tab switch.
+      // URL is the source of truth. The view hash is the only writer here —
+      // a separate detail-navigation/url-sync listener will close any open
+      // post-detail overlay when this hashchange lands.
       pushViewHash(key);
       return;
     }
