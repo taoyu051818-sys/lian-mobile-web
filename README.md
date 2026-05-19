@@ -69,6 +69,33 @@ Current meanings:
 - `npm run verify:smoke` runs the Vite-preview-backed smoke flow.
 - `npm run verify` runs `verify:static`, unit tests, and `verify:smoke`.
 
+## Run E2E locally
+
+The Playwright journey test targets `https://lian.nat100.top` by default and does not
+require a local backend.
+
+```bash
+export APP_BASE_URL=https://lian.nat100.top
+export LIAN_E2E_USERNAME=<seeded account username>
+export LIAN_E2E_PASSWORD=<seeded account password>
+npx playwright install chromium
+npm run test:e2e
+```
+
+On PowerShell:
+
+```powershell
+$env:APP_BASE_URL = "https://lian.nat100.top"
+$env:LIAN_E2E_USERNAME = "<seeded account username>"
+$env:LIAN_E2E_PASSWORD = "<seeded account password>"
+npx playwright install chromium
+npm run test:e2e
+```
+
+The spec logs in through `/api/auth/login`, publishes an image post with an existing
+nat100 image URL, likes the new post, checks it is first in Profile -> Likes, logs
+out, and verifies the public share URL still renders.
+
 ## Agent documentation
 
 Before starting implementation, read:
