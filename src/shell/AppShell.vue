@@ -25,9 +25,9 @@ const emit = defineEmits<{
   "view-change": [key: string];
 }>();
 
-const { applyPageChrome, setRegion, state } = useShellChrome();
+const { applyPageChrome, ensureBottomSlot, state } = useShellChrome();
 
-setRegion("bottom", { slot: "tabs" });
+ensureBottomSlot("tabs");
 
 const bottomSlotKind = computed(() => state.bottom.slot);
 

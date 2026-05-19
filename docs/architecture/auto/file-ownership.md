@@ -284,7 +284,7 @@ Total files: 274
 | `shell/shell-chrome-types.ts`  | Named slot kinds rendered inside a shell region. The slot value drives which sub-component (tabs / detail topbar / re... |    81 |
 | `shell/shell-chrome.css`       | Stylesheet                                                                                                               |   273 |
 | `shell/useDetailSheet.ts`      | export function useDetailSheet():                                                                                        |    30 |
-| `shell/useShellChrome.ts`      | Apply a page-level chrome spec. Page chrome owns tabs / buttons / identity, but it MUST NOT touch `slot` — slots are ... |    95 |
+| `shell/useShellChrome.ts`      | Apply a page-level chrome spec. Page chrome owns tabs / buttons / identity, but it MUST NOT touch `slot` — slots are ... |   103 |
 
 ## src/styles/ (5 files)
 
