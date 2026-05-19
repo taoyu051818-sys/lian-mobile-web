@@ -73,7 +73,10 @@ export const PROFILE_STATS_RELOAD = "重新加载";
 export const PROFILE_REWARDS_SECTION_LABEL = "点券与荣誉";
 export const PROFILE_REWARDS_POINTS_LABEL = "点券";
 export const PROFILE_REWARDS_HONORS_LABEL = "荣誉";
+export const PROFILE_REWARDS_LOCKED_POINTS_LABEL = "冻结";
 export const PROFILE_REWARDS_PLACEHOLDER = "敬请期待，奖励账本暂未开放。";
+export const PROFILE_REWARDS_EMPTY = "暂无奖励记录。";
+export const PROFILE_REWARDS_LOAD_ERROR = "钱包数据加载失败，可以稍后再试。";
 
 /** 个人资料操作反馈 */
 export const PROFILE_AVATAR_UPDATED = "头像已更新。";

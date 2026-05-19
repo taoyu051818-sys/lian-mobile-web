@@ -2,11 +2,13 @@ import { apiGet, apiSend, apiUpload } from "./http";
 import type { FeedItemId } from "../types/feed";
 import type {
   ProfileListResponse,
+  ProfileRewards,
   ProfileSettings,
   ProfileSettingsPatch,
   ProfileStats,
   ProfileTabKey,
   ProfileUser,
+  ProfileWallet,
 } from "../types/profile";
 
 export async function fetchAuthMe(): Promise<ProfileUser | null> {
@@ -16,6 +18,14 @@ export async function fetchAuthMe(): Promise<ProfileUser | null> {
 
 export async function fetchProfileStats(): Promise<ProfileStats> {
   return apiGet<ProfileStats>("/api/me/stats");
+}
+
+export async function fetchProfileRewards(): Promise<ProfileRewards> {
+  return apiGet<ProfileRewards>("/api/me/rewards");
+}
+
+export async function fetchProfileWallet(): Promise<ProfileWallet> {
+  return apiGet<ProfileWallet>("/api/wallet/me");
 }
 
 export async function fetchProfileSettings(): Promise<ProfileSettings> {

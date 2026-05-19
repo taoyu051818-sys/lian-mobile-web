@@ -68,6 +68,34 @@ export interface ProfileStats {
   mapContributions: number;
 }
 
+export interface ProfileWallet {
+  points: number;
+  honor: number;
+  lockedPoints: number;
+}
+
+export interface ProfileRewardLedgerEntry {
+  id: string;
+  currency: "points" | "honor";
+  delta: number;
+  balanceAfter: number;
+  creditedBy: "platform" | "topup" | "reward" | "task";
+  ref?: string | null;
+  at: string;
+}
+
+export interface ProfileRewards {
+  ok?: boolean;
+  lifecycle?: "active" | "deferred";
+  balances?: ProfileWallet;
+  totals?: {
+    pointsEarned: number;
+    honorEarned: number;
+  };
+  entries?: ProfileRewardLedgerEntry[];
+  reason?: string;
+}
+
 /**
  * Mirrors backend `DEFAULT_PROFILE_SETTINGS` in `profile-service.js`.
  * Three controls: notification opt-in, who can see this profile, and whether

@@ -29,6 +29,14 @@ test("fetchProfileStats hits GET /api/me/stats and returns ProfileStats", () => 
   assert.match(src, /apiGet<ProfileStats>\("\/api\/me\/stats"\)/);
 });
 
+test("profile API wires wallet balances and rewards ledger endpoints", () => {
+  const src = read("src/api/profile.ts");
+  assert.match(src, /export async function fetchProfileWallet/);
+  assert.match(src, /apiGet<ProfileWallet>\("\/api\/wallet\/me"\)/);
+  assert.match(src, /export async function fetchProfileRewards/);
+  assert.match(src, /apiGet<ProfileRewards>\("\/api\/me\/rewards"\)/);
+});
+
 // --- ProfileStatsBlock component shape ---
 
 test("ProfileStatsBlock loads stats on mount and exposes a reload affordance", () => {
@@ -50,13 +58,21 @@ test("ProfileStatsBlock renders one cell per backend stat with a data-stat attri
   }
 });
 
-test("ProfileStatsBlock surfaces the rewards placeholder per PRD §N3 / 04_DECISIONS", () => {
-  const src = read("src/features/profile/ProfileStatsBlock.vue");
-  // Reward ledger is deferred server-side; PRD calls for a "敬请期待" placeholder.
+test("ProfileStatsBlock surfaces wallet balances plus rewards ledger fallback", () => {
+  const statsSrc = read("src/features/profile/ProfileStatsBlock.vue");
+  const src = read("src/features/profile/ProfileRewardsBlock.vue");
+  assert.match(statsSrc, /import ProfileRewardsBlock/);
+  assert.match(statsSrc, /<ProfileRewardsBlock \/>/);
+  assert.match(src, /fetchProfileWallet/);
+  assert.match(src, /fetchProfileRewards/);
+  assert.match(src, /data-testid="profile-wallet-summary"/);
+  assert.match(src, /data-testid="profile-rewards-ledger"/);
+  assert.match(src, /data-testid="profile-rewards-empty"/);
   assert.match(src, /data-testid="profile-rewards-placeholder"/);
-  assert.match(src, /PROFILE_REWARDS_PLACEHOLDER/);
+  assert.match(src, /rewards\.value\?\.lifecycle === "active"/);
   assert.match(src, /PROFILE_REWARDS_POINTS_LABEL/);
   assert.match(src, /PROFILE_REWARDS_HONORS_LABEL/);
+  assert.match(src, /PROFILE_REWARDS_LOCKED_POINTS_LABEL/);
 });
 
 // --- ProfileView mounts the block above the tabs ---
@@ -90,7 +106,10 @@ test("PROFILE_STATS_* and PROFILE_REWARDS_* strings live in config/brand/profile
     "PROFILE_REWARDS_SECTION_LABEL",
     "PROFILE_REWARDS_POINTS_LABEL",
     "PROFILE_REWARDS_HONORS_LABEL",
+    "PROFILE_REWARDS_LOCKED_POINTS_LABEL",
     "PROFILE_REWARDS_PLACEHOLDER",
+    "PROFILE_REWARDS_EMPTY",
+    "PROFILE_REWARDS_LOAD_ERROR",
   ]) {
     assert.match(src, new RegExp(`export const ${key}\\b`));
   }

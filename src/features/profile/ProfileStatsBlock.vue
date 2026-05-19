@@ -10,13 +10,10 @@ import {
   PROFILE_STATS_DRAFTS,
   PROFILE_STATS_LOAD_ERROR,
   PROFILE_STATS_RELOAD,
-  PROFILE_REWARDS_SECTION_LABEL,
-  PROFILE_REWARDS_POINTS_LABEL,
-  PROFILE_REWARDS_HONORS_LABEL,
-  PROFILE_REWARDS_PLACEHOLDER,
 } from "../../config/brand";
 import { fetchProfileStats } from "../../api/profile";
 import type { ProfileStats } from "../../types/profile";
+import ProfileRewardsBlock from "./ProfileRewardsBlock.vue";
 
 const stats = ref<ProfileStats | null>(null);
 const loading = ref(false);
@@ -94,19 +91,7 @@ defineExpose({ reload: loadStats });
       </div>
     </dl>
 
-    <section
-      class="profile-stats-block__rewards"
-      :aria-label="PROFILE_REWARDS_SECTION_LABEL"
-      data-testid="profile-rewards-placeholder"
-    >
-      <h3>{{ PROFILE_REWARDS_SECTION_LABEL }}</h3>
-      <p class="profile-stats-block__rewards-row">
-        <span>{{ PROFILE_REWARDS_POINTS_LABEL }}</span>
-        <span>·</span>
-        <span>{{ PROFILE_REWARDS_HONORS_LABEL }}</span>
-      </p>
-      <p class="profile-stats-block__rewards-hint">{{ PROFILE_REWARDS_PLACEHOLDER }}</p>
-    </section>
+    <ProfileRewardsBlock />
   </section>
 </template>
 
@@ -181,36 +166,5 @@ defineExpose({ reload: loadStats });
   color: var(--lian-ink);
   font-size: 18px;
   font-weight: 900;
-}
-
-.profile-stats-block__rewards {
-  display: grid;
-  gap: 4px;
-  padding: var(--space-3);
-  border-top: 1px dashed rgba(31, 167, 160, 0.18);
-}
-
-.profile-stats-block__rewards h3 {
-  margin: 0;
-  color: var(--lian-ink);
-  font-size: 13px;
-  font-weight: 900;
-}
-
-.profile-stats-block__rewards-row {
-  display: flex;
-  gap: var(--space-2);
-  align-items: center;
-  margin: 0;
-  color: var(--lian-primary-deep, #0f6b66);
-  font-size: 12px;
-  font-weight: 850;
-}
-
-.profile-stats-block__rewards-hint {
-  margin: 0;
-  color: var(--lian-muted);
-  font-size: 12px;
-  line-height: 1.5;
 }
 </style>
