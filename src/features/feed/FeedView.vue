@@ -1,10 +1,8 @@
 <script setup lang="ts">
 import { computed, onMounted, watch } from "vue";
 import type { PageChromeSpec } from "../../shell/page-model";
-import { useFloatingChromeState } from "../../shell/floatingChromeState";
 import type { FeedItemId } from "../../types/feed";
 import { InlineError } from "../../ui";
-import { PostDetailPanel } from "../detail";
 import FeedList from "./FeedList.vue";
 import FeedLoadMore from "./FeedLoadMore.vue";
 import { useFeedData } from "./useFeedData";
@@ -15,15 +13,17 @@ const emit = defineEmits<{
   chrome: [spec: PageChromeSpec];
 }>();
 
+// FeedView is the list surface only. The detail panel is mounted once at the
+// App level by DetailSurface (see src/app/DetailSurface.vue, issue #636) so a
+// `#/post/:tid` deep link no longer depends on FeedView's mount lifecycle.
+// We still consult the FSM here so card taps can call `detail.open(...)` and
+// auto-load-more / tab-switch can defer to the detail-open state.
 const detail = useDetailNavigation();
 
 const feedData = useFeedData({
   detailOpen: () => detail.detailOpen.value,
   closeDetail: () => detail.close("tab-switch"),
 });
-
-const { setDetailPhase } = useFloatingChromeState();
-watch(detail.detailOpen, (open) => setDetailPhase(open ? "open" : "idle"), { immediate: true });
 
 const pageChrome = computed<PageChromeSpec>(() => ({
   top: {
@@ -51,11 +51,7 @@ function openItem(id: FeedItemId) {
 </script>
 
 <template>
-  <section
-    class="feed-view"
-    :class="{ 'is-detail-open': detail.detailOpen.value }"
-    aria-labelledby="feed-view-title"
-  >
+  <section class="feed-view" aria-labelledby="feed-view-title">
     <h1 id="feed-view-title" class="feed-view__sr-title">{{ FEED_VIEW_TITLE }}</h1>
 
     <InlineError v-if="feedData.errorMessage.value">
@@ -72,7 +68,7 @@ function openItem(id: FeedItemId) {
       <span>{{ feedData.FEED_EMPTY_HINT }}</span>
     </div>
 
-    <div v-show="!detail.detailOpen.value" class="feed-view__content">
+    <div class="feed-view__content">
       <FeedList
         v-if="!feedData.loading.value && !feedData.isEmpty.value"
         :items="feedData.items.value"
@@ -87,17 +83,6 @@ function openItem(id: FeedItemId) {
         @load-more="feedData.triggerLoadMore"
       />
     </div>
-
-    <PostDetailPanel
-      v-if="detail.detailOpen.value"
-      key="feed-detail"
-      class="feed-view__detail"
-      :post="detail.detailPost.value"
-      :loading="detail.detailLoading.value"
-      :error="detail.detailError.value"
-      @close="detail.close('user-tap')"
-      @retry="detail.retry()"
-    />
   </section>
 </template>
 

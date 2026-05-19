@@ -2,17 +2,16 @@ import { computed, ref, watch } from "vue";
 
 import { appViews, getViewDefinition, type AppViewKey } from "./view-types";
 import { getViewFromHashRef, pushViewHash } from "./useDeepLink";
-import { useDetailNavigation } from "./detail-navigation";
 
 const SECRET_VIEWS: AppViewKey[] = ["admin", "verification"];
 const viewFromHash = getViewFromHashRef();
 const secretActiveViewKey = ref<AppViewKey | null>(null);
-const detailNav = useDetailNavigation();
 
-// Detail panel lives inside FeedView, so a `#/post/{tid}` deep link must
-// resolve to the feed tab regardless of whatever else was active.
-const effectiveActiveViewKey = computed<AppViewKey>(() =>
-  detailNav.detailOpen.value ? "feed" : (secretActiveViewKey.value ?? viewFromHash.value),
+// Active view is independent of the detail-navigation FSM. Post detail is now
+// an App-level overlay (see src/app/DetailSurface.vue, issue #636), so opening
+// or closing a detail must not move the user off whichever tab they're on.
+const effectiveActiveViewKey = computed<AppViewKey>(
+  () => secretActiveViewKey.value ?? viewFromHash.value,
 );
 
 watch(viewFromHash, () => {
@@ -25,10 +24,8 @@ export function useActiveView() {
   function setActiveView(key: AppViewKey) {
     if (appViews.some((view) => view.key === key)) {
       secretActiveViewKey.value = null;
-      // Source of truth is the URL hash. pushViewHash also clears any in-flight
-      // detailTid so opening a different tab while the post detail is open
-      // closes the detail (FeedView's detailTid watch handles the panel
-      // teardown).
+      // URL is the source of truth. pushViewHash also clears any in-flight
+      // detailTid singleton so legacy hash readers see the tab switch.
       pushViewHash(key);
       return;
     }

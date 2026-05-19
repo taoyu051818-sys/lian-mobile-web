@@ -8,7 +8,7 @@ Total files: 275
 
 | File      | Summary | Lines |
 | --------- | ------- | ----: |
-| `App.vue` | Vue SFC |    44 |
+| `App.vue` | Vue SFC |    46 |
 
 ## src/api/ (15 files)
 
@@ -30,11 +30,12 @@ Total files: 275
 | `api/publish.ts`      | Creates a display-only fallback draft from free-text place name. When `placeName` is non-empty the source is "manual"... |   254 |
 | `api/verification.ts` | TypeScript module                                                                                                        |    20 |
 
-## src/app/ (12 files)
+## src/app/ (13 files)
 
 | File                                | Summary                                                                                                                  | Lines |
 | ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------ | ----: |
 | `app/AppViewHost.vue`               | `feed` is the cold-start view, so it is intentionally eager-imported — first                                             |    52 |
+| `app/DetailSurface.vue`             | App-level detail overlay. The detail-navigation FSM is the single source                                                 |    51 |
 | `app/ViewAsyncError.vue`            | Vue SFC                                                                                                                  |    50 |
 | `app/ViewLoadingFallback.vue`       | Vue SFC                                                                                                                  |    39 |
 | `app/deepLink.ts`                   | Pure parsing/building helpers for the SPA's hash-based deep links. The app routes on `window.location.hash` (no vue-...  |    53 |
@@ -43,7 +44,7 @@ Total files: 275
 | `app/detail-navigation/state.ts`    | Pure state machine for the post-detail navigation flow. The whole detail panel — open/close, fetch lifecycle, URL ha...  |   176 |
 | `app/detail-navigation/store.ts`    | Module-scoped reactive wrapper around the pure detail-navigation reducer. Why a module singleton: the URL hash, the ...  |   157 |
 | `app/detail-navigation/url-sync.ts` | Bridges window.location.hash → reducer. The detail-navigation reducer is the single source of truth; the URL is one ...  |    58 |
-| `app/useActiveView.ts`              | export function useActiveView()                                                                                          |    47 |
+| `app/useActiveView.ts`              | export function useActiveView()                                                                                          |    44 |
 | `app/useDeepLink.ts`                | Module-scoped singletons — `window.location.hash` has exactly one value at a time, so multiple consumers (App, FeedVi... |   139 |
 | `app/view-types.ts`                 | export type AppViewKey =                                                                                                 |    65 |
 
@@ -104,7 +105,7 @@ Total files: 275
 | `domain/publishAiPolicy.ts`    | Pure rules for applying AI publish suggestions to a draft (PRD V0.1 Phase 3). Lives in the domain layer because it e... |    78 |
 | `domain/validation/forms.ts`   | export const AUTH_PASSWORD_MIN_LENGTH = 8;                                                                              |    99 |
 
-## src/features/ (133 files)
+## src/features/ (132 files)
 
 | File                                             | Summary                                                                                                                  | Lines |
 | ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------ | ----: |
@@ -163,7 +164,7 @@ Total files: 275
 | `features/feed/FeedItemCardMedia.vue`            | Vue SFC                                                                                                                  |   103 |
 | `features/feed/FeedList.vue`                     | Vue SFC                                                                                                                  |    72 |
 | `features/feed/FeedLoadMore.vue`                 | Vue SFC                                                                                                                  |    55 |
-| `features/feed/FeedView.vue`                     | Vue SFC                                                                                                                  |   158 |
+| `features/feed/FeedView.vue`                     | FeedView is the list surface only. The detail panel is mounted once at the                                               |   143 |
 | `features/feed/feedItemId.ts`                    | export function normalizeFeedItemId(id: FeedItemId \| string \| number \| null \| undefined)                             |     6 |
 | `features/feed/index.ts`                         | TypeScript module                                                                                                        |     2 |
 | `features/feed/useCardPointerInteraction.ts`     | export function useCardPointerInteraction(emitOpen: (target: HTMLElement \| null) => void)                               |   119 |
@@ -185,7 +186,7 @@ Total files: 275
 | `features/messages/ChannelComposer.vue`          | Vue SFC                                                                                                                  |   147 |
 | `features/messages/ChannelThread.vue`            | Vue SFC                                                                                                                  |   268 |
 | `features/messages/MessagesTabs.vue`             | Vue SFC                                                                                                                  |    58 |
-| `features/messages/MessagesView.vue`             | Vue SFC                                                                                                                  |   198 |
+| `features/messages/MessagesView.vue`             | Vue SFC                                                                                                                  |   172 |
 | `features/messages/NotificationList.vue`         | Vue SFC                                                                                                                  |   145 |
 | `features/messages/index.ts`                     | TypeScript module                                                                                                        |     6 |
 | `features/messages/useChannelMessages.ts`        | export function useChannelMessages()                                                                                     |   227 |
@@ -194,7 +195,6 @@ Total files: 275
 | `features/profile/ProfileAliasSelector.vue`      | Vue SFC                                                                                                                  |    84 |
 | `features/profile/ProfileAvatarEditor.vue`       | Vue SFC                                                                                                                  |   179 |
 | `features/profile/ProfileCollectionList.vue`     | Vue SFC                                                                                                                  |   164 |
-| `features/profile/ProfileDetailOverlay.vue`      | Vue SFC                                                                                                                  |    44 |
 | `features/profile/ProfileEditorPanel.vue`        | Vue SFC                                                                                                                  |   197 |
 | `features/profile/ProfileHeader.vue`             | Vue SFC                                                                                                                  |   128 |
 | `features/profile/ProfileInviteCodePanel.vue`    | Vue SFC                                                                                                                  |    55 |
@@ -203,7 +203,7 @@ Total files: 275
 | `features/profile/ProfileStatsBlock.vue`         | Vue SFC                                                                                                                  |   171 |
 | `features/profile/ProfileTabs.vue`               | Vue SFC                                                                                                                  |    64 |
 | `features/profile/ProfileVerificationBadges.vue` | Header surfaces only currently-active grants. Expired/revoked records                                                    |    97 |
-| `features/profile/ProfileView.vue`               | Vue SFC                                                                                                                  |   289 |
+| `features/profile/ProfileView.vue`               | Vue SFC                                                                                                                  |   279 |
 | `features/profile/index.ts`                      | TypeScript module                                                                                                        |     2 |
 | `features/profile/profile-header.css`            | Stylesheet                                                                                                               |   187 |
 | `features/profile/settings-state/fetcher.ts`     | Side-effect helper that bridges the settings reducer's `fetch` and `patch` effects to the network. The reducer is pur... |    39 |
