@@ -9,6 +9,7 @@ import {
   PROFILE_SECTION_LABEL,
   PROFILE_LOAD_ERROR_PREFIX,
   PROFILE_RELOAD,
+  RUNNER_ENTER_LABEL,
   VERIFICATION_ENTER_LABEL,
 } from "../../config/brand";
 import { extractErrorMessage } from "../../utils/extractErrorMessage";
@@ -17,6 +18,7 @@ import type { PageChromeSpec } from "../../shell/page-model";
 import type { ProfileUser } from "../../types/profile";
 import { InlineError } from "../../ui";
 import { AuthPanel } from "../auth";
+import { useIsRunnerVerified } from "../runner";
 import ProfileEditorPanel from "./ProfileEditorPanel.vue";
 import ProfileHeader from "./ProfileHeader.vue";
 import ProfileSettingsBlock from "./ProfileSettingsBlock.vue";
@@ -39,6 +41,8 @@ const adminEntryVisible = computed(() => import.meta.env.VITE_ADMIN_VISIBLE === 
 
 const { user, loading, errorMessage, isMissingSessionError, refreshCurrentSession } =
   useProfileSession();
+
+const isRunnerVerified = useIsRunnerVerified(user);
 
 const editorOpen = ref(false);
 
@@ -197,6 +201,16 @@ onMounted(() => {
         </button>
       </footer>
 
+      <footer
+        v-if="isRunnerVerified"
+        class="profile-view__runner-entry"
+        data-testid="profile-runner-entry"
+      >
+        <button type="button" class="profile-view__runner-link" @click="setActiveView('runner')">
+          {{ RUNNER_ENTER_LABEL }}
+        </button>
+      </footer>
+
       <footer v-if="adminEntryVisible" class="profile-view__admin-entry">
         <button type="button" class="profile-view__admin-link" @click="setActiveView('admin')">
           {{ ADMIN_ENTER_LABEL }}
@@ -249,6 +263,28 @@ onMounted(() => {
   margin-top: var(--space-6);
   padding-top: var(--space-4);
   border-top: 1px dashed var(--lian-line);
+}
+
+.profile-view__runner-entry {
+  display: flex;
+  justify-content: center;
+}
+
+.profile-view__runner-link {
+  padding: var(--space-2) var(--space-4);
+  border: 1px solid rgba(124, 92, 255, 0.32);
+  border-radius: var(--radius-chip);
+  background: rgba(124, 92, 255, 0.12);
+  color: #5a3fbf;
+  font-size: 13px;
+  font-weight: 850;
+  cursor: pointer;
+  transition: background var(--motion-fast) var(--motion-ease-standard);
+}
+
+.profile-view__runner-link:hover,
+.profile-view__runner-link:focus-visible {
+  background: rgba(124, 92, 255, 0.2);
 }
 
 .profile-view__admin-link {

@@ -28,6 +28,7 @@ const viewComponents: Record<AppViewKey, Component> = {
   verification: asyncView(() => import("../features/verification").then((m) => m.VerificationView)),
   merchant: asyncView(() => import("../features/merchant").then((m) => m.MerchantCenterView)),
   "errand-order": asyncView(() => import("../features/errand").then((m) => m.ErrandOrderView)),
+  runner: asyncView(() => import("../features/runner").then((m) => m.RunnerCenterView)),
 };
 
 const props = defineProps({

@@ -23,11 +23,11 @@ defineProps<{
 
 const emit = defineEmits<{
   retry: [];
-  "open-item": [tid: number];
+  "open-item": [item: NotificationItem];
 }>();
 
 function isReplyNotification(item: NotificationItem) {
-  return ["new-reply", "reply", "new-post", "post-reply"].includes(String(item.type || ""));
+  return item.kind === "reply" || ["new-reply", "reply", "new-post", "post-reply"].includes(String(item.type || ""));
 }
 
 function notificationActor(item: NotificationItem) {
@@ -37,9 +37,29 @@ function notificationActor(item: NotificationItem) {
   );
 }
 
+function notificationKindLabel(item: NotificationItem) {
+  switch (item.kind) {
+    case "reply":
+      return "回复通知";
+    case "verification":
+      return "认证结果";
+    case "order":
+      return "订单提醒";
+    default:
+      return "系统通知";
+  }
+}
+
+function notificationHint(item: NotificationItem) {
+  return item.fallbackText || item.actionLabel || "";
+}
+
+function isClickable(item: NotificationItem) {
+  return item.target?.kind === "detail" || item.target?.kind === "verification";
+}
+
 function openNotification(item: NotificationItem) {
-  const tid = Number(item.tid);
-  if (Number.isFinite(tid) && tid > 0) emit("open-item", tid);
+  if (isClickable(item)) emit("open-item", item);
 }
 </script>
 
@@ -59,20 +79,34 @@ function openNotification(item: NotificationItem) {
         v-for="item in items"
         :key="String(item.id || item.tid || item.title)"
         class="messages-view__notification"
-        :class="{ 'is-unread': !item.read, 'is-clickable': Number(item.tid) > 0 }"
-        role="button"
-        :tabindex="Number(item.tid) > 0 ? 0 : undefined"
+        :class="{
+          'is-unread': !item.read,
+          'is-clickable': isClickable(item),
+          'is-fallback': item.target?.kind === 'none',
+        }"
+        :role="isClickable(item) ? 'button' : undefined"
+        :tabindex="isClickable(item) ? 0 : undefined"
+        data-testid="notification-item"
+        :data-notification-kind="item.kind || 'generic'"
+        :data-target-kind="item.target?.kind || 'none'"
         @click="openNotification(item)"
         @keydown.enter="openNotification(item)"
+        @keydown.space.prevent="openNotification(item)"
       >
         <header>
-          <strong>{{ notificationActor(item) }}</strong>
+          <div class="messages-view__notification-heading">
+            <strong>{{ notificationActor(item) }}</strong>
+            <small>{{ notificationKindLabel(item) }}</small>
+          </div>
           <TrustBadge :tone="item.read ? 'confirmed' : 'pending'">{{
             item.read ? NOTIFICATION_READ : NOTIFICATION_UNREAD
           }}</TrustBadge>
         </header>
         <h3>{{ item.title || NOTIFICATION_DEFAULT_TITLE }}</h3>
         <p v-if="item.excerpt && item.excerpt !== item.title">{{ item.excerpt }}</p>
+        <p v-if="notificationHint(item)" class="messages-view__notification-hint">
+          {{ notificationHint(item) }}
+        </p>
         <time>{{ formatRelativeTime(item.timestampISO || item.time) }}</time>
       </article>
     </div>
@@ -94,6 +128,17 @@ function openNotification(item: NotificationItem) {
   justify-content: space-between;
 }
 
+.messages-view__notification-heading {
+  display: grid;
+  gap: 2px;
+}
+
+.messages-view__notification-heading small {
+  color: var(--lian-muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
 .messages-view__notification p {
   margin: 0;
 }
@@ -111,6 +156,12 @@ function openNotification(item: NotificationItem) {
   background: rgba(255, 255, 255, 0.48);
 }
 
+.messages-view__notification-hint {
+  color: var(--lian-ink);
+  font-size: 12px;
+  font-weight: 700;
+}
+
 .messages-view__state {
   display: grid;
   min-height: 112px;
@@ -125,6 +176,10 @@ function openNotification(item: NotificationItem) {
 
 .messages-view__notification.is-clickable {
   cursor: pointer;
+}
+
+.messages-view__notification.is-fallback {
+  border-style: dashed;
 }
 
 .messages-view__notification.is-clickable:focus-visible {
