@@ -31,11 +31,14 @@ test("ShellChrome uses isVisible for data-visible attribute", () => {
   assert.doesNotMatch(src, /chromePhase/);
 });
 
-test("ShellChrome renders detail teleport targets outside animated transitions", () => {
+test("ShellChrome keeps detail teleport targets stable outside animated transitions", () => {
   const src = read("src/shell/ShellChrome.vue");
-  assert.match(src, /v-if="isReplyDockSlot"[\s\S]*id="lian-shell-bottom-slot"/);
-  assert.match(src, /v-else-if="isDetailTopbarSlot"[\s\S]*id="lian-shell-top-slot"/);
-  assert.match(src, /<Transition v-else :name="`shell-slot-\$\{region\}`" mode="out-in">/);
+  assert.match(src, /v-if="rendersStableTopTarget"[\s\S]*id="lian-shell-top-slot"/);
+  assert.match(src, /v-if="rendersStableBottomTarget"[\s\S]*id="lian-shell-bottom-slot"/);
+  assert.match(
+    src,
+    /<Transition v-if="rendersRegularChrome" :name="`shell-slot-\$\{region\}`" mode="out-in">/,
+  );
 });
 
 test("DetailSheet owns overlay close behavior through body teleport, backdrop close, and Escape cleanup", () => {
