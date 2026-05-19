@@ -3,6 +3,7 @@ import type { PlaceRef, PlaceSheet } from "../../types/place";
 import type { EventActionPlan } from "../../domain/eventActionPolicy";
 import type { HelpVotePlan } from "../../domain/helpVotePolicy";
 import type { HelpManagePlan } from "../../domain/helpManagePolicy";
+import type { MerchantErrandUnavailableReason } from "../../types/merchant";
 import type {
   EventPostExtension,
   HelpPostExtension,
@@ -57,6 +58,8 @@ defineProps<{
   helpManageActionError?: string;
   merchant?: MerchantPostExtension;
   errandEntryAvailable?: boolean;
+  errandUnavailableReason?: MerchantErrandUnavailableReason | "";
+  errandUnavailableReasonText?: string;
   trade?: TradePostExtension;
 }>();
 
@@ -127,6 +130,8 @@ const emit = defineEmits<{
       v-if="merchant"
       :merchant="merchant"
       :errand-entry-available="errandEntryAvailable"
+      :errand-unavailable-reason="errandUnavailableReason"
+      :errand-unavailable-reason-text="errandUnavailableReasonText"
     />
 
     <PostDetailTradeBlock v-if="trade" :trade="trade" />
