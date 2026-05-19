@@ -21,7 +21,7 @@ test("App wires AppShell tab changes through active view state", () => {
 test("AppShell applies page chrome spec via useShellChrome", () => {
   const src = read("src/shell/AppShell.vue");
   assert.match(src, /applyPageChrome/);
-  assert.match(src, /setRegion\("bottom", \{ slot: "tabs" \}\)/);
+  assert.match(src, /ensureBottomSlot\("tabs"\)/);
   assert.match(src, /function handleChrome\(spec: PageChromeSpec\)/);
 });
 
@@ -29,6 +29,13 @@ test("ShellChrome uses isVisible for data-visible attribute", () => {
   const src = read("src/shell/ShellChrome.vue");
   assert.match(src, /:data-visible="isVisible"/);
   assert.doesNotMatch(src, /chromePhase/);
+});
+
+test("ShellChrome renders detail teleport targets outside animated transitions", () => {
+  const src = read("src/shell/ShellChrome.vue");
+  assert.match(src, /v-if="isReplyDockSlot"[\s\S]*id="lian-shell-bottom-slot"/);
+  assert.match(src, /v-else-if="isDetailTopbarSlot"[\s\S]*id="lian-shell-top-slot"/);
+  assert.match(src, /<Transition v-else :name="`shell-slot-\$\{region\}`" mode="out-in">/);
 });
 
 test("DetailSheet owns overlay close behavior through body teleport, backdrop close, and Escape cleanup", () => {
