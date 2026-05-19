@@ -50,43 +50,17 @@ test("MessagesView wires notification detail through useDetailNavigation", () =>
   assert.match(viewSource, /useDetailNavigation/);
 });
 
-test("MessagesView imports PostDetailPanel component", () => {
-  assert.match(viewSource, /import\s+\{\s*PostDetailPanel\s*\}\s+from\s*"\.\.\/detail"/);
-});
-
-test("MessagesView renders detail using the detail-navigation store's reactive state", () => {
-  assert.match(viewSource, /detail\.detailOpen/);
-  assert.match(viewSource, /detail\.detailPost/);
-  assert.match(viewSource, /detail\.detailLoading/);
-  assert.match(viewSource, /detail\.detailError/);
+test("MessagesView no longer mounts PostDetailPanel locally (App-level DetailSurface owns it)", () => {
+  assert.doesNotMatch(viewSource, /PostDetailPanel/);
+  assert.doesNotMatch(viewSource, /messages-view__detail-overlay/);
 });
 
 test("MessagesView opens notifications via store.open(...)", () => {
   assert.match(viewSource, /detail\.open\(/);
 });
 
-test("MessagesView closes/retries detail via store verbs", () => {
-  assert.match(viewSource, /detail\.close\(/);
-  assert.match(viewSource, /detail\.retry\(/);
-});
-
 test("MessagesView passes @open-item handler to NotificationList", () => {
   assert.match(viewSource, /@open-item="openNotification"/);
-});
-
-test("MessagesView renders PostDetailPanel in a fixed overlay when detail is open", () => {
-  assert.match(viewSource, /v-if="detail\.detailOpen\.value"/);
-  assert.match(viewSource, /class="messages-view__detail-overlay"/);
-  assert.match(viewSource, /role="dialog"/);
-  assert.match(viewSource, /aria-modal="true"/);
-  assert.match(viewSource, /<PostDetailPanel/);
-});
-
-test("MessagesView detail overlay uses fixed positioning with full viewport coverage", () => {
-  assert.match(viewSource, /\.messages-view__detail-overlay/);
-  assert.match(viewSource, /position:\s*fixed/);
-  assert.match(viewSource, /inset:\s*0/);
-  assert.match(viewSource, /z-index:\s*30/);
 });
 
 test("useChannelMessages preserves optimistic send behavior", () => {

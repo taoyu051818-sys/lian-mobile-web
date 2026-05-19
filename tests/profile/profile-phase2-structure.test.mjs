@@ -104,18 +104,18 @@ test("ProfileCollectionList items have interactive hover and focus styles", () =
   assert.match(src, /profile-collection__item:focus-visible/);
 });
 
-// --- ProfileView detail overlay integration ---
+// --- ProfileView detail integration (post-#636: detail is App-level) ---
 
-test("ProfileView imports ProfileDetailOverlay component", () => {
+test("ProfileView no longer imports ProfileDetailOverlay (detail lives in App-level DetailSurface)", () => {
   const src = read("src/features/profile/ProfileView.vue");
-  assert.match(src, /import ProfileDetailOverlay/);
-  assert.match(src, /from.*\.\/ProfileDetailOverlay\.vue/);
+  assert.doesNotMatch(src, /ProfileDetailOverlay/);
 });
 
-test("ProfileDetailOverlay imports PostDetailPanel", () => {
-  const src = read("src/features/profile/ProfileDetailOverlay.vue");
-  assert.match(src, /import\s+\{\s*PostDetailPanel\s*\}/);
-  assert.match(src, /from.*\.\.\/detail/);
+test("ProfileDetailOverlay component file is removed; App-level DetailSurface owns the panel", () => {
+  assert.doesNotMatch(
+    fs.readdirSync(path.join(repoRoot, "src/features/profile")).join("\n"),
+    /ProfileDetailOverlay\.vue/,
+  );
 });
 
 test("ProfileView wires detail through useDetailNavigation", () => {
@@ -124,33 +124,19 @@ test("ProfileView wires detail through useDetailNavigation", () => {
   assert.match(src, /from.*app\/detail-navigation/);
 });
 
-test("ProfileView reads detail state through the store's reactive computeds", () => {
+test("ProfileView opens items through the detail-navigation store", () => {
   const src = read("src/features/profile/ProfileView.vue");
-  assert.match(src, /detail\.detailOpen/);
-  assert.match(src, /detail\.detailPost/);
-  assert.match(src, /detail\.detailLoading/);
-  assert.match(src, /detail\.detailError/);
-});
-
-test("ProfileView renders ProfileDetailOverlay conditionally when detail is open", () => {
-  const src = read("src/features/profile/ProfileView.vue");
-  assert.match(src, /<ProfileDetailOverlay/);
-  assert.match(src, /v-if="detail\.detailOpen\.value"/);
-});
-
-test("ProfileView passes detail state to ProfileDetailOverlay", () => {
-  const src = read("src/features/profile/ProfileView.vue");
-  assert.match(src, /:post="detail\.detailPost\.value"/);
-  assert.match(src, /:loading="detail\.detailLoading\.value"/);
-  assert.match(src, /:error="detail\.detailError\.value"/);
-  assert.match(src, /@close="detail\.close\(/);
-  assert.match(src, /@retry="detail\.retry\(/);
+  assert.match(src, /detail\.open\(/);
 });
 
 test("ProfileView wires collection list open-item to detail opener", () => {
   const src = read("src/features/profile/ProfileView.vue");
   assert.match(src, /@open-item="openItem"/);
-  assert.match(src, /detail\.open\(/);
+});
+
+test("ProfileView does not mount PostDetailPanel locally", () => {
+  const src = read("src/features/profile/ProfileView.vue");
+  assert.doesNotMatch(src, /<PostDetailPanel/);
 });
 
 test("detail-navigation reducer fetches via fetchPostDetail through the fetcher", () => {
@@ -159,22 +145,19 @@ test("detail-navigation reducer fetches via fetchPostDetail through the fetcher"
   assert.match(src, /fetch-result/);
 });
 
-// --- ProfileDetailOverlay wrapper ---
+// --- App-level detail surface (issue #636) ---
 
-test("ProfileDetailOverlay wraps PostDetailPanel in a dialog overlay", () => {
-  const src = read("src/features/profile/ProfileDetailOverlay.vue");
-  assert.match(src, /class="profile-view__detail-overlay"/);
+test("App-level DetailSurface owns the post-detail dialog overlay", () => {
+  const src = read("src/app/DetailSurface.vue");
+  assert.match(src, /PostDetailPanel/);
   assert.match(src, /role="dialog"/);
   assert.match(src, /aria-modal="true"/);
-  assert.match(src, /aria-label/);
+  assert.match(src, /<Teleport to="body">/);
 });
 
-test("ProfileDetailOverlay has fixed positioning CSS", () => {
-  const src = read("src/features/profile/ProfileDetailOverlay.vue");
-  assert.match(src, /\.profile-view__detail-overlay/);
-  assert.match(src, /position:\s*fixed/);
-  assert.match(src, /inset:\s*0/);
-  assert.match(src, /z-index:\s*30/);
+test("App.vue mounts DetailSurface alongside the shell", () => {
+  const src = read("src/App.vue");
+  assert.match(src, /DetailSurface/);
 });
 
 // --- ProfileView alias switching ---

@@ -69,6 +69,68 @@ Current meanings:
 - `npm run verify:smoke` runs the Vite-preview-backed smoke flow.
 - `npm run verify` runs `verify:static`, unit tests, and `verify:smoke`.
 
+## Run E2E locally
+
+The Playwright journey tests target `https://lian.nat100.top` by default and do not
+require a local backend.
+
+```bash
+export APP_BASE_URL=https://lian.nat100.top
+export LIAN_E2E_USERNAME=<seeded account username>
+export LIAN_E2E_PASSWORD=<seeded account password>
+npx playwright install chromium
+npm run test:e2e
+```
+
+On PowerShell:
+
+```powershell
+$env:APP_BASE_URL = "https://lian.nat100.top"
+$env:LIAN_E2E_USERNAME = "<seeded account username>"
+$env:LIAN_E2E_PASSWORD = "<seeded account password>"
+npx playwright install chromium
+npm run test:e2e
+```
+
+The legacy `journey.spec.ts` logs in through `/api/auth/login`, exercises the public
+post journey, and verifies the public share URL still renders.
+
+### Multi-account fixture (#644)
+
+The Playwright account fixture in `tests/e2e/fixtures/accounts.ts` defines six roles
+the journey suites can target. Each role reads credentials from environment
+variables. Roles whose env vars are absent are **skipped** (not failed) so a missing
+seed never silently passes as green.
+
+| Role         | Env user                       | Env password                   | Expected verification tags                           |
+| ------------ | ------------------------------ | ------------------------------ | ---------------------------------------------------- |
+| `anonymous`  | _(none)_                       | _(none)_                       | _(none, never logs in)_                              |
+| `registered` | `LIAN_E2E_REGISTERED_USERNAME` | `LIAN_E2E_REGISTERED_PASSWORD` | _(none)_                                             |
+| `campus`     | `LIAN_E2E_CAMPUS_USERNAME`     | `LIAN_E2E_CAMPUS_PASSWORD`     | `campus_verified`                                    |
+| `merchant`   | `LIAN_E2E_MERCHANT_USERNAME`   | `LIAN_E2E_MERCHANT_PASSWORD`   | `merchant_verified` (often with `realname_verified`) |
+| `runner`     | `LIAN_E2E_RUNNER_USERNAME`     | `LIAN_E2E_RUNNER_PASSWORD`     | `runner`                                             |
+| `admin`      | `LIAN_E2E_ADMIN_USERNAME`      | `LIAN_E2E_ADMIN_PASSWORD`      | _(role asserted via NodeBB group, no LIAN tag)_      |
+
+Run only the fixture validation suite:
+
+```bash
+npm run test:e2e -- --grep @account-fixture
+```
+
+In CI, the **E2E Journey** workflow exposes a `journey_group` `workflow_dispatch`
+input. Choose `account-fixture`, `anonymous`, `registered`, `campus`, `merchant`,
+`runner`, `admin`, or `all`. The selection is wired through
+`LIAN_E2E_JOURNEY_GROUP` to Playwright's `grep` so unrelated suites are skipped.
+
+Locally, set the same env var to filter:
+
+```bash
+LIAN_E2E_JOURNEY_GROUP=account-fixture npm run test:e2e
+```
+
+Never paste the seeded passwords into PRs, issues, or commit messages — the only
+sources are GitHub Actions secrets and your local 1Password.
+
 ## Agent documentation
 
 Before starting implementation, read:

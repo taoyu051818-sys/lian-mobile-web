@@ -1,11 +1,11 @@
 /**
- * Bridges window.location.hash → reducer.
+ * Bridges window.location.hash → reducer for the post-detail tid.
  *
- * The detail-navigation reducer is the single source of truth; the URL is one
- * of its consumers. This module is the only place that listens to hashchange
- * and popstate for the post-detail tid — `app/useDeepLink` keeps the singleton
- * `detailTid` ref for legacy consumers, but the FSM derives its own tid from
- * the same parsed hash.
+ * The detail-navigation reducer is the single source of truth for "is a detail
+ * open, and which one." This module is the only place that listens to
+ * hashchange / popstate for the post-detail hash. The view-hash side has its
+ * own listener in `src/app/view-hash.ts`; the two are intentionally
+ * independent so opening or closing a detail does not move the active view.
  *
  * Why both hashchange and popstate: in-app pushState updates fire popstate
  * but not hashchange in some browsers; manual URL edits and bf-cache restores

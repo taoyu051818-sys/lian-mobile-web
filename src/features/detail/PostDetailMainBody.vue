@@ -9,7 +9,7 @@ defineProps<{
 
 <template>
   <section class="post-detail-main-body">
-    <h2 v-if="title" id="post-detail-title">{{ title }}</h2>
+    <h2 v-if="title" id="post-detail-title" data-testid="post-detail-title">{{ title }}</h2>
     <SafeHtml v-if="bodyHtml" :html="bodyHtml" as="div" class="lian-html" />
   </section>
 </template>

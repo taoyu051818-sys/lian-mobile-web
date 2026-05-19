@@ -56,17 +56,26 @@ test("api/admin attaches Bearer header on every request", () => {
   );
 });
 
-test("api/admin exposes the five admin operations", () => {
+test("api/admin exposes report, user action, audit, and verification operations", () => {
   const src = read("src/api/admin.ts");
   for (const fn of [
     "fetchAdminReports",
     "patchAdminReport",
     "postAdminPostAction",
     "patchAdminUserStatus",
+    "fetchAdminVerificationRequests",
+    "patchAdminVerificationRequest",
     "fetchAdminAuditLog",
   ]) {
     assert.match(src, new RegExp(`export async function ${fn}\\b`));
   }
+});
+
+test("api/admin wires verification queue and decision endpoints", () => {
+  const src = read("src/api/admin.ts");
+  assert.match(src, /\/api\/admin\/verifications/);
+  assert.match(src, /\/api\/admin\/verifications\/\$\{encodeURIComponent\(requestId\)\}/);
+  assert.match(src, /AdminVerificationDecisionStatus = "approved" \| "rejected"/);
 });
 
 // --- token gate: sessionStorage round-trip + auto-clear on 401 ---
@@ -114,6 +123,21 @@ test("AdminView exit button clears the token via clearToken", () => {
   const src = read("src/features/admin/AdminView.vue");
   assert.match(src, /admin:exit/);
   assert.match(src, /clearToken\(\)/);
+});
+
+test("AdminView mounts verification queue as a first-class admin tab", () => {
+  const src = read("src/features/admin/AdminView.vue");
+  assert.match(src, /AdminVerificationQueueList/);
+  assert.match(src, /"verifications"/);
+  assert.match(src, /loadVerificationRequests/);
+  assert.match(src, /reviewVerificationRequest/);
+});
+
+test("AdminVerificationQueueList exposes approve and reject decisions", () => {
+  const src = read("src/features/admin/AdminVerificationQueueList.vue");
+  assert.match(src, /submitReview\(request, 'approved'\)/);
+  assert.match(src, /submitReview\(request, 'rejected'\)/);
+  assert.match(src, /认证审核状态筛选/);
 });
 
 // --- brand registration ---

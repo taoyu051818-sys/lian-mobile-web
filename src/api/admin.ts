@@ -9,6 +9,31 @@ import type {
   AdminUserStatus,
   AdminUserStatusResult,
 } from "../types/admin";
+import type { VerificationTag } from "../types/verification";
+
+export type AdminVerificationStatus = "pending" | "reviewing" | "approved" | "rejected";
+export type AdminVerificationDecisionStatus = "approved" | "rejected";
+
+export interface AdminVerificationRequest {
+  requestId: string;
+  userId: string;
+  email?: string | null;
+  displayName?: string | null;
+  tag: VerificationTag;
+  status: AdminVerificationStatus;
+  payload?: Record<string, unknown> | null;
+  note?: string | null;
+  reviewerId?: string | null;
+  reviewedAt?: string | null;
+  submittedAt?: string | null;
+  createdAt?: string | null;
+  updatedAt?: string | null;
+}
+
+export interface AdminVerificationListResponse {
+  items: AdminVerificationRequest[];
+  total: number;
+}
 
 function withAuthHeader(token: string, init: RequestInit = {}): RequestInit {
   const headers = new Headers(init.headers || {});
@@ -92,6 +117,54 @@ export async function patchAdminUserStatus(
     statusReason: data.user?.statusReason || payload.reason || "",
     statusChangedAt: data.user?.statusChangedAt || new Date().toISOString(),
   };
+}
+
+export async function fetchAdminVerificationRequests(
+  token: string,
+  params: {
+    status?: AdminVerificationStatus | "";
+    tag?: VerificationTag | "";
+    limit?: number;
+    offset?: number;
+  } = {},
+): Promise<AdminVerificationListResponse> {
+  const search = new URLSearchParams();
+  if (params.status) search.set("status", params.status);
+  if (params.tag) search.set("tag", params.tag);
+  if (typeof params.limit === "number") search.set("limit", String(params.limit));
+  if (typeof params.offset === "number") search.set("offset", String(params.offset));
+  const query = search.toString();
+  const path = query ? `/api/admin/verifications?${query}` : "/api/admin/verifications";
+  const data = await apiGet<{
+    items?: AdminVerificationRequest[];
+    requests?: AdminVerificationRequest[];
+    total?: number;
+  }>(path, withAuthHeader(token));
+  const items = data.items || data.requests || [];
+  return { items, total: data.total ?? items.length };
+}
+
+export async function patchAdminVerificationRequest(
+  token: string,
+  requestId: string,
+  payload: {
+    status: AdminVerificationDecisionStatus;
+    note?: string | null;
+  },
+): Promise<AdminVerificationRequest> {
+  const data = await apiSend<{
+    request?: AdminVerificationRequest;
+    verification?: AdminVerificationRequest;
+  }>(
+    `/api/admin/verifications/${encodeURIComponent(requestId)}`,
+    withAuthHeader(token, {
+      method: "PATCH",
+      body: JSON.stringify(payload),
+    }),
+  );
+  const request = data.request || data.verification;
+  if (!request) throw new Error("管理员后台未返回 verification request 数据");
+  return request;
 }
 
 export async function fetchAdminAuditLog(

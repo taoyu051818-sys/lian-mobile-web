@@ -229,7 +229,14 @@ watch(
       />
     </Teleport>
     <div class="post-detail-panel__stage" @click="collapseReplyIfOpen">
-      <div v-if="loading" class="post-detail-panel__state" role="status">{{ LOADING_DETAIL }}</div>
+      <div
+        v-if="loading"
+        class="post-detail-panel__state"
+        data-testid="post-detail-loading"
+        role="status"
+      >
+        {{ LOADING_DETAIL }}
+      </div>
 
       <InlineError v-else-if="error">
         {{ error }}
