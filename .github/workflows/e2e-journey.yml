@@ -17,6 +17,7 @@ on:
           - merchant
           - runner
           - admin
+          - detail
   schedule:
     - cron: "17 18 * * *"
 
