@@ -87,27 +87,23 @@ function handleFilterToggle(filterId: string) {
     :data-visible="isVisible"
     :style="{ pointerEvents: isVisible ? 'auto' : 'none' }"
   >
-    <Transition :name="`shell-slot-${region}`" mode="out-in">
+    <div
+      v-if="isReplyDockSlot"
+      id="lian-shell-bottom-slot"
+      class="shell-chrome__bottom-slot lian-floating-chrome lian-floating-chrome--bottom"
+      data-floating-chrome="bottom"
+    />
+    <div
+      v-else-if="isDetailTopbarSlot"
+      id="lian-shell-top-slot"
+      class="shell-chrome__top-slot lian-floating-chrome lian-floating-chrome--top"
+      data-floating-chrome="top"
+    />
+    <Transition v-else :name="`shell-slot-${region}`" mode="out-in">
       <template v-if="isSlottedTabs">
         <div key="tabs-slot" class="shell-chrome__slot-host">
           <slot />
         </div>
-      </template>
-      <template v-else-if="isReplyDockSlot">
-        <div
-          id="lian-shell-bottom-slot"
-          key="reply-dock"
-          class="shell-chrome__bottom-slot lian-floating-chrome lian-floating-chrome--bottom"
-          data-floating-chrome="bottom"
-        />
-      </template>
-      <template v-else-if="isDetailTopbarSlot">
-        <div
-          id="lian-shell-top-slot"
-          key="detail-topbar"
-          class="shell-chrome__top-slot lian-floating-chrome lian-floating-chrome--top"
-          data-floating-chrome="top"
-        />
       </template>
       <template v-else-if="hasTabs">
         <nav
