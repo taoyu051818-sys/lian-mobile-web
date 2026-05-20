@@ -20,7 +20,11 @@ export const VERIFICATION_STATUS_REVOKED = "已撤销";
 export const VERIFICATION_GRANTED_AT_LABEL = "认证时间";
 export const VERIFICATION_EXPIRES_AT_LABEL = "有效期至";
 export const VERIFICATION_SOURCE_LABEL = "认证来源";
-export const VERIFICATION_NO_GRANT_HINT = "尚未完成认证。";
+export const VERIFICATION_NO_GRANT_HINT =
+  "当前还没有这项认证记录。开放申请或审核完成后，这里会显示对应状态与时间。";
+export const VERIFICATION_EMPTY_TITLE = "还没有生效中的认证";
+export const VERIFICATION_EMPTY_BODY =
+  "先从下方校园邮箱认证开始。通过后的校园、商户、跑腿员或组织成员结果都会回到上面的列表。";
 
 /** 校园邮箱写入流程 */
 export const VERIFICATION_CAMPUS_TITLE = "校园邮箱认证";
@@ -43,4 +47,5 @@ export const VERIFICATION_CAMPUS_SEND_FAIL = "验证码发送失败，可以稍�
 export const VERIFICATION_CAMPUS_CONFIRM_FAIL = "认证未完成，可以重新发送验证码再试。";
 
 /** 其它认证占位 */
-export const VERIFICATION_OTHER_PLACEHOLDER = "暂未开放申请，可在公告中关注开放进度。";
+export const VERIFICATION_OTHER_PLACEHOLDER =
+  "商户、跑腿员、组织成员等申请入口会按开放进度补到这里；现在可以先完成校园邮箱认证，后续结果也会统一回到本页。";
