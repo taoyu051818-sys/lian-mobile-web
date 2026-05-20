@@ -336,7 +336,7 @@ Total files: 305
 | `types/map.ts`             | export interface MapBounds                                                                                                |   141 |
 | `types/merchant.ts`        | Merchant center (issue #646) types. Backend (`/api/me/merchant-center`) ships a profile readout for merchants who ho...   |    57 |
 | `types/messages.ts`        | Client-generated nonce stamped on the optimistic item so we can match the server echo back to it without depending on...  |    78 |
-| `types/place.ts`           | export type PlaceStatus =                                                                                                 |    64 |
+| `types/place.ts`           | export type PlaceStatus =                                                                                                 |    60 |
 | `types/post-extensions.ts` | Event / Help / Merchant / Trade / Errand domain types (PRD V0.1 §6). V0.1 ships shapes only — no UI yet. The point i...   |   194 |
 | `types/post.ts`            | event?: EventPostExtension; eventJoined?: boolean; help?: HelpPostExtension; helpVoted?: boolean; helpManageable?: bo...  |   153 |
 | `types/profile.ts`         | PRD V0.1 §17 — verification records keyed by tag (campus_verified, merchant_verified, ...). Backend `/api/auth/me` re...  |   132 |

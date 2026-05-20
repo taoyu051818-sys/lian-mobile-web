@@ -187,9 +187,7 @@ describe("normalizePublishLocationDraft", () => {
     expect(normalized.draft.coordinateSystem).toBe("none");
     expect(normalized.draft.placeId).toBeUndefined();
     expect(normalized.draft.place).toBeUndefined();
-    expect(normalized.issues.map((issue) => issue.code)).toEqual([
-      "manual-place-identity-removed",
-    ]);
+    expect(normalized.issues.map((issue) => issue.code)).toEqual(["manual-place-identity-removed"]);
   });
 
   it("preserves stable place identity when a map selection carries place truth", () => {
@@ -223,9 +221,7 @@ describe("normalizePublishLocationDraft", () => {
     );
     expect(normalized.draft.identityKind).toBe("canonical_place");
     expect(normalized.draft.coordinateSystem).toBe("unknown");
-    expect(normalized.issues.map((issue) => issue.code)).toEqual([
-      "unknown-coordinate-system",
-    ]);
+    expect(normalized.issues.map((issue) => issue.code)).toEqual(["unknown-coordinate-system"]);
   });
 
   it("downgrades invalid lat/lng map data to display-only manual text", () => {
