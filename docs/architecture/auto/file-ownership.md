@@ -201,8 +201,9 @@ Total files: 304
 | `features/map/useMapSelection.ts`                | Map-only selection state. Post-detail navigation is owned by the detail-navigation FSM at the app level, so this comp...      |    78 |
 | `features/merchant/MerchantCenterGate.vue`       | Vue SFC                                                                                                                       |    87 |
 | `features/merchant/MerchantCenterView.vue`       | Vue SFC                                                                                                                       |   292 |
-| `features/merchant/index.ts`                     | TypeScript module                                                                                                             |    10 |
+| `features/merchant/index.ts`                     | TypeScript module                                                                                                             |    11 |
 | `features/merchant/merchant-format.ts`           | Maps merchant errand reason codes to localized copy. Centralized so the detail page (PostDetailMerchantBlock) and the...      |    61 |
+| `features/merchant/useIsMerchantVerified.ts`     | Returns true when the user record carries an active `merchant_verified` verification tag. Treats `verificationState.m...      |    27 |
 | `features/merchant/useMerchantCenter.ts`         | Merchant center state composable (issue #646). Owns the GET /api/me/merchant-center round-trip and exposes the snaps...       |    62 |
 | `features/messages/ChannelComposer.vue`          | Vue SFC                                                                                                                       |   147 |
 | `features/messages/ChannelThread.vue`            | Vue SFC                                                                                                                       |   268 |
@@ -224,7 +225,7 @@ Total files: 304
 | `features/profile/ProfileStatsBlock.vue`         | Vue SFC                                                                                                                       |   171 |
 | `features/profile/ProfileTabs.vue`               | Vue SFC                                                                                                                       |    71 |
 | `features/profile/ProfileVerificationBadges.vue` | Header surfaces only currently-active grants. Expired/revoked records                                                         |    97 |
-| `features/profile/ProfileView.vue`               | Vue SFC                                                                                                                       |   318 |
+| `features/profile/ProfileView.vue`               | Vue SFC                                                                                                                       |   353 |
 | `features/profile/index.ts`                      | TypeScript module                                                                                                             |     2 |
 | `features/profile/profile-header.css`            | Stylesheet                                                                                                                    |   187 |
 | `features/profile/settings-state/fetcher.ts`     | Side-effect helper that bridges the settings reducer's `fetch` and `patch` effects to the network. The reducer is pur...      |    39 |
