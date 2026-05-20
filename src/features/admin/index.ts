@@ -2,6 +2,7 @@ export { default as AdminView } from "./AdminView.vue";
 export { default as AdminTokenGate } from "./AdminTokenGate.vue";
 export { default as AdminQueueList } from "./AdminQueueList.vue";
 export { default as AdminQueueItem } from "./AdminQueueItem.vue";
+export { default as AdminVerificationQueueList } from "./AdminVerificationQueueList.vue";
 export { default as AdminUserActionPanel } from "./AdminUserActionPanel.vue";
 export { default as AdminAuditLogList } from "./AdminAuditLogList.vue";
 export { useAdminToken } from "./useAdminToken";
