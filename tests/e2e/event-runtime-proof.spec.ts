@@ -137,9 +137,7 @@ test.describe("@event event runtime proof @event-runtime", () => {
           state: "visible",
           timeout: 15000,
         });
-        await expect(
-          page.locator('[data-testid="post-detail-event-action"]'),
-        ).toBeVisible();
+        await expect(page.locator('[data-testid="post-detail-event-action"]')).toBeVisible();
         // Reward block is conditional — only assert that the testid is
         // present iff the API returned rewardSummary, otherwise confirm it
         // is genuinely absent (not silently swallowed).
