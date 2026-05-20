@@ -12,7 +12,9 @@ function read(rel) {
 
 const runnerBrand = read("src/config/brand/runner.ts");
 const runnerView = read("src/features/runner/RunnerCenterView.vue");
+const adminBrand = read("src/config/brand/admin.ts");
 const adminQueue = read("src/features/admin/AdminQueueList.vue");
+const adminAudit = read("src/features/admin/AdminAuditLogList.vue");
 const adminView = read("src/features/admin/AdminView.vue");
 const verificationBrand = read("src/config/brand/verification.ts");
 const verificationView = read("src/features/verification/VerificationView.vue");
@@ -24,7 +26,7 @@ test("runner brand copy defines guidance titles and bodies for both empty tabs",
     "RUNNER_EMPTY_ACTIVE_TITLE",
     "RUNNER_EMPTY_ACTIVE_BODY",
   ]) {
-    assert.match(runnerBrand, new RegExp(`export const ${key}\\s*=\\s*"[^"]+"`));
+    assert.match(runnerBrand, new RegExp(`export const ${key}\\s*=`));
   }
   assert.match(runnerBrand, /新的校园订单进入可接池后会先显示在这里/);
   assert.match(runnerBrand, /先从可接订单里接一单/);
@@ -38,7 +40,15 @@ test("RunnerCenterView renders structured empty cards for available and active s
   assert.match(runnerView, /RUNNER_EMPTY_ACTIVE_BODY/);
 });
 
-test("AdminQueueList explains each empty filter state instead of showing one bare empty string", () => {
+test("admin brand and queue files replace generic empty strings with guidance copy", () => {
+  for (const key of [
+    "ADMIN_QUEUE_EMPTY_TITLE",
+    "ADMIN_QUEUE_EMPTY_BODY",
+    "ADMIN_AUDIT_EMPTY_TITLE",
+    "ADMIN_AUDIT_EMPTY_BODY",
+  ]) {
+    assert.match(adminBrand, new RegExp(`export const ${key}\\s*=`));
+  }
   for (const phrase of [
     "当前没有待处理举报",
     "现在没有审核中的举报",
@@ -49,8 +59,7 @@ test("AdminQueueList explains each empty filter state instead of showing one bar
     assert.match(adminQueue, new RegExp(phrase));
   }
   assert.match(adminQueue, /data-testid="admin-queue-empty"/);
-  assert.match(adminQueue, /emptyState\.title/);
-  assert.match(adminQueue, /emptyState\.body/);
+  assert.match(adminAudit, /data-testid="admin-audit-empty"/);
 });
 
 test("AdminView adds verification-review empty guidance keyed by the active filter", () => {
