@@ -70,9 +70,9 @@ describe("safe diagnostics telemetry", () => {
       ),
     );
 
-    await expect(
-      apiGet("/api/messages/abc123def456ghi7?cursor=private"),
-    ).rejects.toBeInstanceOf(LianApiError);
+    await expect(apiGet("/api/messages/abc123def456ghi7?cursor=private")).rejects.toBeInstanceOf(
+      LianApiError,
+    );
 
     const [event] = getRecentDiagnosticsEvents();
     expect(event).toMatchObject({

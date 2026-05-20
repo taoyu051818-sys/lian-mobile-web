@@ -118,7 +118,7 @@ export function normalizeDiagnosticsRoute(path: string): string {
   const raw = typeof path === "string" ? path.trim() : "";
   if (!raw) return "/";
 
-  let pathname = raw;
+  let pathname: string;
   try {
     pathname = new URL(raw, "https://diagnostics.lian.invalid").pathname;
   } catch {

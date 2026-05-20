@@ -95,7 +95,7 @@ Total files: 305
 | `config/brand/trade.ts`        | export const TRADE_BLOCK_LABEL = "二手交易"; export const TRADE_PRICE_LABEL = "价格"; export const TRADE_CATEGORY_LABEL = "...                        |    30 |
 | `config/brand/validation.ts`   | export const VALIDATION_PASSWORD_MIN = "密码至少需要 {n} 位。"; export const VALIDATION_LOGIN_REQUIRED = "请填写邮箱或昵称。"; export ...             |    14 |
 | `config/brand/verification.ts` | export const VERIFICATION_SECTION_LABEL = "认证中心"; export const VERIFICATION_ENTER_LABEL = "认证中心"; export const VERIFI...                      |    47 |
-| `config/runtime-config.ts`     | Runtime config accessor for LIAN frontend. PUBLIC config – injected by the serve/rehearsal script into <head> BEFOR...                                |   222 |
+| `config/runtime-config.ts`     | Runtime config accessor for LIAN frontend. PUBLIC config – injected by the serve/rehearsal script into <head> BEFOR...                                |   217 |
 
 ## src/domain/ (8 files)
 

@@ -232,4 +232,4 @@ describe("runtime config", () => {
     // getImageProxyBase throws because empty is rejected outside dev
     expect(() => getImageProxyBase()).toThrow(/LIAN_IMAGE_PROXY_BASE_URL/);
   });
-}
+});

@@ -186,8 +186,7 @@ export function getReleaseDiagnostics(): ReleaseDiagnostics {
     releaseId: readOptionalMetadata("LIAN_RELEASE_ID", env.VITE_LIAN_RELEASE_ID),
     buildSha: readOptionalMetadata("LIAN_BUILD_SHA", env.VITE_LIAN_BUILD_SHA),
     buildTime: readOptionalMetadata("LIAN_BUILD_TIME", env.VITE_LIAN_BUILD_TIME),
-    runtimeLane:
-      readOptionalMetadata("LIAN_RUNTIME_LANE", env.VITE_LIAN_RUNTIME_LANE) || mode,
+    runtimeLane: readOptionalMetadata("LIAN_RUNTIME_LANE", env.VITE_LIAN_RUNTIME_LANE) || mode,
     mode,
     dev,
     apiBaseUrl,
@@ -198,11 +197,7 @@ export function getReleaseDiagnostics(): ReleaseDiagnostics {
 
 /** Convenience accessor – prefer getRuntimeConfig() when both values are needed. */
 export function getApiBase(): string {
-  return validateAbsoluteOrEmpty(
-    readRaw("LIAN_API_BASE_URL"),
-    "LIAN_API_BASE_URL",
-    isDevContext(),
-  );
+  return validateAbsoluteOrEmpty(readRaw("LIAN_API_BASE_URL"), "LIAN_API_BASE_URL", isDevContext());
 }
 
 /** Shared builder so API modules do not each duplicate base-url joining. */
