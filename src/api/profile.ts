@@ -1,6 +1,8 @@
 import { apiGet, apiSend, apiUpload } from "./http";
 import type { FeedItemId } from "../types/feed";
 import type {
+  ProfileActivityStatus,
+  ProfileListItem,
   ProfileListResponse,
   ProfileRewards,
   ProfileSettings,
@@ -39,23 +41,83 @@ export async function patchProfileSettings(patch: ProfileSettingsPatch): Promise
   });
 }
 
+function normalizeProfileActivityStatus(value: unknown): ProfileActivityStatus | undefined {
+  if (value === "published" || value === "draft" || value === "pending" || value === "hidden") {
+    return value;
+  }
+  return undefined;
+}
+
+function normalizeOptionalText(value: unknown): string | undefined {
+  const normalized = typeof value === "string" ? value.trim() : "";
+  return normalized || undefined;
+}
+
+function normalizeOptionalTid(value: unknown): FeedItemId | undefined {
+  const tid = Number(value);
+  return Number.isFinite(tid) && tid > 0 ? tid : undefined;
+}
+
+export function normalizeProfileListItem(item: unknown): ProfileListItem {
+  const candidate = item && typeof item === "object" ? (item as Record<string, unknown>) : {};
+  const tid = normalizeOptionalTid(candidate.tid);
+  const id = normalizeOptionalText(candidate.id) || (tid ? String(tid) : undefined);
+  return {
+    tid,
+    id,
+    title: normalizeOptionalText(candidate.title),
+    cover: normalizeOptionalText(candidate.cover),
+    timestampISO: normalizeOptionalText(candidate.timestampISO),
+    lastViewedAt: normalizeOptionalText(candidate.lastViewedAt),
+    timeLabel: normalizeOptionalText(candidate.timeLabel),
+    locationArea: normalizeOptionalText(candidate.locationArea),
+    status: normalizeProfileActivityStatus(candidate.status),
+  };
+}
+
+export function normalizeProfileListResponse(data: unknown): ProfileListResponse {
+  const items = Array.isArray((data as { items?: unknown[] } | null)?.items)
+    ? ((data as { items: unknown[] }).items || []).map(normalizeProfileListItem)
+    : [];
+  return { items };
+}
+
+export function resolveProfileTabRequest(
+  tab: ProfileTabKey,
+  tids: FeedItemId[] = [],
+): { path: string; method: "GET" | "POST"; body?: string } {
+  if (tab === "history") {
+    return {
+      path: "/api/me/history",
+      method: "POST",
+      body: JSON.stringify({ tids }),
+    };
+  }
+
+  if (tab === "saved") return { path: "/api/me/saved", method: "GET" };
+  if (tab === "liked") return { path: "/api/me/liked", method: "GET" };
+  if (tab === "posts") return { path: "/api/me/posts", method: "GET" };
+  if (tab === "replies") return { path: "/api/me/replies", method: "GET" };
+  if (tab === "drafts") return { path: "/api/me/drafts", method: "GET" };
+  return { path: "/api/me/map-contributions", method: "GET" };
+}
+
 export async function fetchProfileTab(
   tab: ProfileTabKey,
   tids: FeedItemId[] = [],
 ): Promise<ProfileListResponse> {
-  if (tab === "history") {
-    if (!tids.length) return { items: [] };
-    return apiSend<ProfileListResponse>("/api/me/history", {
-      method: "POST",
-      body: JSON.stringify({ tids }),
-    });
+  const request = resolveProfileTabRequest(tab, tids);
+  if (request.method === "POST") {
+    if (tab === "history" && !tids.length) return { items: [] };
+    return normalizeProfileListResponse(
+      await apiSend<ProfileListResponse>(request.path, {
+        method: request.method,
+        body: request.body,
+      }),
+    );
   }
 
-  if (tab === "saved") {
-    return apiGet<ProfileListResponse>("/api/me/saved");
-  }
-
-  return apiGet<ProfileListResponse>("/api/me/liked");
+  return normalizeProfileListResponse(await apiGet<ProfileListResponse>(request.path));
 }
 
 export async function uploadProfileAvatar(file: File): Promise<string> {
