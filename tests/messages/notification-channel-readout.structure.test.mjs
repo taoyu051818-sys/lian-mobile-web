@@ -51,10 +51,7 @@ test("NotificationList renders one row per channel with stable testids and data 
 });
 
 test("NotificationList tags pending channels with TrustBadge tone='pending' and connected with 'confirmed'", () => {
-  assert.match(
-    listSource,
-    /channel\.status === 'connected' \? 'confirmed' : 'pending'/,
-  );
+  assert.match(listSource, /channel\.status === 'connected' \? 'confirmed' : 'pending'/);
 });
 
 test("NotificationList renders an issue link only when the channel has issueUrl", () => {
