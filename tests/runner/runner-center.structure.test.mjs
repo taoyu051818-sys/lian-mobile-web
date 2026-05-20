@@ -120,11 +120,18 @@ test("RunnerCenterView renders the available-orders and active-orders tabs", () 
   const src = read("src/features/runner/RunnerCenterView.vue");
   assert.match(src, /RUNNER_TAB_AVAILABLE/);
   assert.match(src, /RUNNER_TAB_ACTIVE/);
-  // Two branches drive the body: an explicit `activeTab === 'available'`
-  // condition and the implicit `v-else` for the `active` slice. We only
-  // assert the explicit one — the else branch is structural sugar.
   assert.match(src, /activeTab === ['"]available['"]/);
-  assert.match(src, /RUNNER_LIST_EMPTY_ACTIVE/);
+});
+
+test("RunnerCenterView renders explained empty states for both tabs", () => {
+  const src = read("src/features/runner/RunnerCenterView.vue");
+  const brand = read("src/config/brand/runner.ts");
+  assert.match(src, /data-testid="runner-empty-available"/);
+  assert.match(src, /data-testid="runner-empty-active"/);
+  assert.match(src, /RUNNER_EMPTY_AVAILABLE_TITLE/);
+  assert.match(src, /RUNNER_EMPTY_ACTIVE_TITLE/);
+  assert.match(brand, /RUNNER_EMPTY_AVAILABLE_BODY/);
+  assert.match(brand, /RUNNER_EMPTY_ACTIVE_BODY/);
 });
 
 test("RunnerOrderCard renders a button per non-terminal status", () => {
