@@ -35,9 +35,13 @@ test("AppViewHost lazy-loads MerchantCenterView", () => {
 });
 
 test("useActiveView accepts secret view 'merchant'", () => {
-  const src = read("src/app/useActiveView.ts");
-  assert.match(src, /SECRET_VIEWS/);
-  assert.match(src, /"merchant"/);
+  const viewTypes = read("src/app/view-types.ts");
+  // After PR #676, useActiveView no longer keeps a SECRET_VIEWS allowlist —
+  // viewFromHash is the single source of truth and accepts the full
+  // AppViewKey union. Pin the type-level guarantee instead so the secret
+  // view stays reachable.
+  assert.match(viewTypes, /"merchant"/);
+  assert.match(viewTypes, /export type AppViewKey/);
 });
 
 // --- types: merchant-center DTO + errand reason union ---
@@ -175,6 +179,7 @@ test("merchant center brand strings are registered", () => {
   const src = read("src/config/brand/merchant.ts");
   for (const key of [
     "MERCHANT_CENTER_SECTION_LABEL",
+    "MERCHANT_CENTER_ENTER_LABEL",
     "MERCHANT_CENTER_GATE_TITLE",
     "MERCHANT_CENTER_GATE_CTA",
     "MERCHANT_CENTER_PROFILE_TITLE",
@@ -187,4 +192,29 @@ test("merchant center brand strings are registered", () => {
   ]) {
     assert.match(src, new RegExp(`export const ${key}\\b`));
   }
+});
+
+// --- ProfileView entry: gates on merchant_verified, opens secret view ---
+
+test("useIsMerchantVerified composable is exported from features/merchant", () => {
+  const src = read("src/features/merchant/index.ts");
+  assert.match(src, /export\s*\{\s*useIsMerchantVerified\s*\}/);
+
+  const composable = read("src/features/merchant/useIsMerchantVerified.ts");
+  // Authoritative source is verificationState.merchant_verified.active; fall
+  // back to the flat tag list so older /api/auth/me payloads still gate.
+  assert.match(composable, /verificationState\?\.merchant_verified/);
+  assert.match(composable, /record\.active/);
+  assert.match(composable, /verificationTags|tags/);
+  assert.match(composable, /"merchant_verified"/);
+});
+
+test("ProfileView mounts the merchant-center entry when the user holds merchant_verified", () => {
+  const src = read("src/features/profile/ProfileView.vue");
+  assert.match(src, /import \{ useIsMerchantVerified \} from "\.\.\/merchant"/);
+  assert.match(src, /const isMerchantVerified = useIsMerchantVerified\(user\)/);
+  assert.match(src, /data-testid="profile-merchant-entry"/);
+  assert.match(src, /v-if="isMerchantVerified"/);
+  assert.match(src, /setActiveView\('merchant'\)/);
+  assert.match(src, /MERCHANT_CENTER_ENTER_LABEL/);
 });
