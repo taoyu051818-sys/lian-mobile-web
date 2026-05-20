@@ -2,6 +2,7 @@ import { ref } from "vue";
 
 const STORAGE_KEY = "lian.adminToken";
 const tokenRef = ref<string>(readInitialToken());
+const sessionAdminRef = ref<boolean>(false);
 
 function readInitialToken(): string {
   if (typeof window === "undefined") return "";
@@ -34,5 +35,20 @@ export function useAdminToken() {
     writeStorage("");
   }
 
-  return { token: tokenRef, setToken, clearToken };
+  function setSessionAdmin(value: boolean) {
+    sessionAdminRef.value = Boolean(value);
+  }
+
+  function clearSessionAdmin() {
+    sessionAdminRef.value = false;
+  }
+
+  return {
+    token: tokenRef,
+    sessionAdmin: sessionAdminRef,
+    setToken,
+    clearToken,
+    setSessionAdmin,
+    clearSessionAdmin,
+  };
 }

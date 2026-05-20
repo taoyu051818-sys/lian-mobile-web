@@ -10,13 +10,16 @@ import {
   ADMIN_TAB_REPORTS,
 } from "../../config/brand";
 import type { PageChromeSpec } from "../../shell/page-model";
-import type {
-  AdminVerificationDecisionStatus,
-  AdminVerificationDetail,
-  AdminVerificationRequest,
-  AdminVerificationStatus,
-  AdminVerificationType,
+import {
+  fetchAdminMe,
+  isAdminMeRoleEligible,
+  type AdminVerificationDecisionStatus,
+  type AdminVerificationDetail,
+  type AdminVerificationRequest,
+  type AdminVerificationStatus,
+  type AdminVerificationType,
 } from "../../api/admin";
+import { LianApiError } from "../../api/http";
 import type {
   AdminPostAction,
   AdminReportStatus,
@@ -59,16 +62,25 @@ const emit = defineEmits<{
   close: [];
 }>();
 
-const { token, setToken, clearToken } = useAdminToken();
+const { token, sessionAdmin, setToken, clearToken, setSessionAdmin, clearSessionAdmin } =
+  useAdminToken();
 const tokenError = ref("");
+const probing = ref(false);
 const activeTab = ref<AdminTabKey>("reports");
 const statusFilter = ref<AdminReportStatus | "">("pending");
 const verificationStatusFilter = ref<AdminVerificationStatus | "">("pending");
 const verificationNotes = ref<Record<string, string>>({});
 
+const consoleEnabled = computed(() => Boolean(token.value) || sessionAdmin.value);
+
 const console = useAdminConsole({
   token,
   onTokenInvalid: () => {
+    if (sessionAdmin.value) {
+      clearSessionAdmin();
+      tokenError.value = "管理员会话不可用，可改用 ADMIN_TOKEN 进入。";
+      return;
+    }
     tokenError.value = "";
     clearToken();
   },
@@ -81,7 +93,7 @@ const tabs: Array<{ key: AdminTabKey; label: string }> = [
 ];
 
 const pageChrome = computed<PageChromeSpec>(() => {
-  if (!token.value) {
+  if (!consoleEnabled.value) {
     return {
       top: {
         visible: true,
@@ -112,6 +124,7 @@ function handleChromeButtonClick(buttonId: string) {
   if (buttonId === "admin:close") emit("close");
   else if (buttonId === "admin:exit") {
     clearToken();
+    clearSessionAdmin();
     emit("close");
   }
 }
@@ -248,17 +261,50 @@ function revealedDetail(request: AdminVerificationRequest) {
   return console.revealedVerificationDetails.value[request.verificationId];
 }
 
+async function probeAdminSession() {
+  if (token.value) return;
+  probing.value = true;
+  try {
+    const response = await fetchAdminMe();
+    if (isAdminMeRoleEligible(response)) {
+      setSessionAdmin(true);
+      void console.loadReports(statusFilter.value);
+    } else {
+      clearSessionAdmin();
+    }
+  } catch (error) {
+    clearSessionAdmin();
+    if (error instanceof LianApiError && error.status !== 401 && error.status !== 403) {
+      tokenError.value = "管理员会话探测失败，可改用 ADMIN_TOKEN 进入。";
+    }
+  } finally {
+    probing.value = false;
+  }
+}
+
 watch(pageChrome, (spec) => emit("chrome", spec), { deep: true, immediate: false });
 
 onMounted(() => {
   emit("chrome", pageChrome.value);
-  if (token.value) void console.loadReports(statusFilter.value);
+  if (token.value) {
+    void console.loadReports(statusFilter.value);
+  } else {
+    void probeAdminSession();
+  }
 });
 </script>
 
 <template>
   <section class="admin-view" :aria-label="ADMIN_SECTION_LABEL">
-    <AdminTokenGate v-if="!token" :error-message="tokenError" @submit="handleTokenSubmit" />
+    <p v-if="probing && !consoleEnabled" class="admin-view__probe-state" role="status">
+      正在确认管理员会话…
+    </p>
+
+    <AdminTokenGate
+      v-else-if="!consoleEnabled"
+      :error-message="tokenError"
+      @submit="handleTokenSubmit"
+    />
 
     <template v-else>
       <p
@@ -482,6 +528,14 @@ onMounted(() => {
   color: rgb(21, 128, 61);
   font-size: 13px;
   font-weight: 900;
+}
+
+.admin-view__probe-state {
+  margin: var(--space-6) auto 0;
+  padding: var(--space-3);
+  color: var(--lian-muted);
+  font-size: 13px;
+  text-align: center;
 }
 
 .admin-view__feedback.is-error {
