@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { computed } from "vue";
 import { InlineError } from "../../ui";
 import {
   UNTITLED_CONTENT,
@@ -9,10 +10,10 @@ import {
   TIME_UNKNOWN,
 } from "../../config/brand";
 import type { FeedItemId } from "../../types/feed";
-import type { ProfileListItem } from "../../types/profile";
+import type { ProfileActivityStatus, ProfileListItem } from "../../types/profile";
 import { formatRelativeTime } from "../../utils/time";
 
-defineProps<{
+const props = defineProps<{
   items: ProfileListItem[];
   loading: boolean;
   emptyText: string;
@@ -23,6 +24,45 @@ const emit = defineEmits<{
   retry: [];
   "open-item": [tid: FeedItemId];
 }>();
+
+const STATUS_LABELS: Record<ProfileActivityStatus, string> = {
+  published: "已发布",
+  draft: "草稿",
+  pending: "待审核",
+  hidden: "仅自己可见",
+};
+
+function canOpen(item: ProfileListItem) {
+  return typeof item.tid === "number" && item.tid > 0;
+}
+
+function openItem(item: ProfileListItem) {
+  if (!canOpen(item) || item.tid == null) return;
+  emit("open-item", item.tid);
+}
+
+function itemStatusLabel(item: ProfileListItem) {
+  if (!item.status || item.status === "published") return "";
+  return STATUS_LABELS[item.status] || "";
+}
+
+function itemMeta(item: ProfileListItem) {
+  const parts = [
+    formatRelativeTime(item.lastViewedAt || item.timestampISO) || item.timeLabel || TIME_UNKNOWN,
+  ];
+  if (item.locationArea) parts.push(item.locationArea);
+  return parts.filter(Boolean).join(" · ");
+}
+
+const itemStates = computed(() =>
+  props.items.map((item) => ({
+    key: item.id || String(item.tid || `${item.title || UNTITLED_CONTENT}-${item.timestampISO || ""}`),
+    dataTid: item.tid != null ? String(item.tid) : "",
+    statusLabel: itemStatusLabel(item),
+    meta: itemMeta(item),
+    canOpen: canOpen(item),
+  })),
+);
 </script>
 
 <template>
@@ -36,16 +76,17 @@ const emit = defineEmits<{
     <div v-else-if="!items.length" class="profile-collection__state">{{ emptyText }}</div>
     <div v-else class="profile-collection__list" aria-live="polite">
       <article
-        v-for="item in items"
-        :key="String(item.tid)"
+        v-for="(item, index) in items"
+        :key="itemStates[index]?.key"
         class="profile-collection__item"
+        :class="{ 'is-static': !itemStates[index]?.canOpen }"
         data-testid="profile-liked-item"
-        :data-tid="String(item.tid)"
-        role="button"
-        tabindex="0"
-        @click="emit('open-item', item.tid)"
-        @keydown.enter="emit('open-item', item.tid)"
-        @keydown.space.prevent="emit('open-item', item.tid)"
+        :data-tid="itemStates[index]?.dataTid"
+        :role="itemStates[index]?.canOpen ? 'button' : undefined"
+        :tabindex="itemStates[index]?.canOpen ? 0 : undefined"
+        @click="openItem(item)"
+        @keydown.enter="openItem(item)"
+        @keydown.space.prevent="openItem(item)"
       >
         <img
           v-if="item.cover"
@@ -56,9 +97,14 @@ const emit = defineEmits<{
         <div v-else class="profile-collection__thumb" aria-hidden="true">
           {{ (item.title || CONTENT_AVATAR_FALLBACK).slice(0, 1) }}
         </div>
-        <div>
-          <h3>{{ item.title || UNTITLED_CONTENT }}</h3>
-          <p>{{ formatRelativeTime(item.lastViewedAt || item.timestampISO) || TIME_UNKNOWN }}</p>
+        <div class="profile-collection__content">
+          <div class="profile-collection__title-row">
+            <h3>{{ item.title || UNTITLED_CONTENT }}</h3>
+            <span v-if="itemStates[index]?.statusLabel" class="profile-collection__badge">
+              {{ itemStates[index]?.statusLabel }}
+            </span>
+          </div>
+          <p>{{ itemStates[index]?.meta }}</p>
         </div>
       </article>
     </div>
@@ -105,10 +151,18 @@ const emit = defineEmits<{
     transform var(--motion-fast) var(--motion-ease-standard);
 }
 
+.profile-collection__item.is-static {
+  cursor: default;
+}
+
 .profile-collection__item:hover {
   box-shadow:
     var(--shadow-card),
     0 2px 8px rgba(31, 167, 160, 0.12);
+}
+
+.profile-collection__item.is-static:hover {
+  box-shadow: var(--shadow-card);
 }
 
 .profile-collection__item:focus-visible {
@@ -143,12 +197,37 @@ const emit = defineEmits<{
   font-weight: 900;
 }
 
+.profile-collection__content {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.profile-collection__title-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: center;
+}
+
 .profile-collection__item h3 {
-  margin-bottom: 2px;
   color: var(--lian-ink);
   font-size: 14px;
   font-weight: 850;
   line-height: 1.4;
+}
+
+.profile-collection__badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 20px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: rgba(31, 167, 160, 0.12);
+  color: var(--lian-primary-deep);
+  font-size: 11px;
+  font-weight: 900;
+  white-space: nowrap;
 }
 
 .profile-collection :deep(.inline-error button) {
