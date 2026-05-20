@@ -76,7 +76,7 @@ Total files: 306
 | ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------- | ----: |
 | `config/brand/admin.ts`        | export const ADMIN_SECTION_LABEL = "管理后台"; export const ADMIN_ENTER_LABEL = "管理"; export const ADMIN_EXIT_LABEL = "退出...                      |    79 |
 | `config/brand/auth.ts`         | export const AUTH_PANEL_TITLE = "登录 / 注册"; export const AUTH_TAB_LOGIN = "登录"; export const AUTH_TAB_REGISTER = "注册";...                      |    58 |
-| `config/brand/detail.ts`       | export const POST_DETAIL_CLOSE = "关闭详情"; export const POST_DETAIL_AUTHOR_AVATAR = "作者头像"; export const POST_DETAIL_SH...                      |   128 |
+| `config/brand/detail.ts`       | export const POST_DETAIL_CLOSE = "关闭详情"; export const POST_DETAIL_AUTHOR_AVATAR = "作者头像"; export const POST_DETAIL_SH...                      |   134 |
 | `config/brand/error.ts`        | export const ERROR_LOAD_GENERIC = "暂时没加载出来，可以稍后再试。"; export const ERROR_SEND_GENERIC = "没有发送成功，可以稍后再试。"; export const... |    23 |
 | `config/brand/feed.ts`         | export const FEED_VIEW_TITLE = "首页"; export const FEED_FILTER_LABEL = "信息分类"; export const FEED_EMPTY_HINT = "可以换个分类，...                 |    17 |
 | `config/brand/index.ts`        | TypeScript module                                                                                                                                     |    21 |
@@ -138,7 +138,7 @@ Total files: 306
 | `features/auth/useEmailCodeCooldown.ts`          | export const AUTH_EMAIL_CODE_DEFAULT_COOLDOWN_SECONDS = 60;                                                                   |   148 |
 | `features/detail/PostActionFeedback.vue`         | Vue SFC                                                                                                                       |    38 |
 | `features/detail/PostDetailContent.vue`          | Vue SFC                                                                                                                       |   192 |
-| `features/detail/PostDetailEventBlock.vue`       | Issue #703 — server-driven status takes precedence when present.                                                              |   463 |
+| `features/detail/PostDetailEventBlock.vue`       | Issue #703 — server-driven status takes precedence when present.                                                              |   556 |
 | `features/detail/PostDetailGallery.vue`          | Vue SFC                                                                                                                       |    78 |
 | `features/detail/PostDetailHelpBlock.vue`        | Vue SFC                                                                                                                       |   221 |
 | `features/detail/PostDetailHelpManageBlock.vue`  | Vue SFC                                                                                                                       |   241 |
@@ -289,7 +289,7 @@ Total files: 306
 
 | File                          | Summary                                                                                                                  | Lines |
 | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------ | ----: |
-| `platform/api-normalizers.ts` | Coerce to a non-negative integer, defaulting to 0. Convenience wrapper for the count/capacity fields backends sometim... |   332 |
+| `platform/api-normalizers.ts` | Coerce to a non-negative integer, defaulting to 0. Convenience wrapper for the count/capacity fields backends sometim... |   385 |
 | `platform/browser-storage.ts` | Centralized localStorage key surface for the Vue canary app. Every key written by Vue source code is declared here s...  |    78 |
 | `platform/clientIdentity.ts`  | export const CLIENT_ID_KEY = "lian.clientId";                                                                            |    60 |
 | `platform/leaflet.ts`         | Platform adapter for Leaflet bundled through Vite. All `any` usage is quarantined inside this file. Vue components m...  |   170 |
@@ -338,7 +338,7 @@ Total files: 306
 | `types/merchant.ts`        | Merchant center (issue #646) types. Backend (`/api/me/merchant-center`) ships a profile readout for merchants who ho...      |    57 |
 | `types/messages.ts`        | Client-generated nonce stamped on the optimistic item so we can match the server echo back to it without depending on...     |    78 |
 | `types/place.ts`           | export type PlaceStatus =                                                                                                    |    60 |
-| `types/post-extensions.ts` | Event / Help / Merchant / Trade / Errand domain types (PRD V0.1 §6). V0.1 ships shapes only — no UI yet. The point i...      |   208 |
+| `types/post-extensions.ts` | Event / Help / Merchant / Trade / Errand domain types (PRD V0.1 §6). V0.1 ships shapes only — no UI yet. The point i...      |   246 |
 | `types/post.ts`            | event?: EventPostExtension; eventJoined?: boolean; Issue #703 — backend-driven flag for the creator/admin "结束活动" surf... |   159 |
 | `types/profile.ts`         | PRD V0.1 §17 — verification records keyed by tag (campus_verified, merchant_verified, ...). Backend `/api/auth/me` re...     |   132 |
 | `types/publish.ts`         | export type PublishMapVersion = "legacy" \| "manual" \| "gaode_v2"; Backend (#383) accepts these contentType values fo...    |   140 |
