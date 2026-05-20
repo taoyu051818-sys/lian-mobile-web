@@ -1,11 +1,10 @@
 import { ref, type ComputedRef } from "vue";
 import { sendPostReply } from "../../api/posts";
-import { ERROR_SEND_REPLY } from "../../config/brand";
+import { resolveWriteActionErrorMessage } from "../../utils/writeActionErrors";
 
 export function usePostReplyComposer(options: {
   postId: ComputedRef<number | null>;
   clearMessages: () => void;
-  showError: (error: unknown, fallback: string) => void;
   showActionMessage: (message: string) => void;
   setActionError: (message: string) => void;
   onReplySuccess: () => void;
@@ -36,7 +35,8 @@ export function usePostReplyComposer(options: {
       options.showActionMessage("回复已发送，正在刷新详情。");
       options.onReplySuccess();
     } catch (error) {
-      options.showError(error, ERROR_SEND_REPLY);
+      options.setActionError(resolveWriteActionErrorMessage("reply", error));
+      replyExpanded.value = true;
     } finally {
       replyBusy.value = false;
     }
