@@ -27,6 +27,7 @@ import {
   EVENT_DISABLED_NOT_OPEN,
   EVENT_DISABLED_FULL,
   EVENT_DISABLED_OUT_OF_SCOPE,
+  EVENT_REWARD_LABEL,
 } from "../../config/brand";
 import {
   derivedEventStatus,
@@ -107,6 +108,15 @@ const disabledReason = computed(() => {
 
     <p class="post-detail-event-block__participants">{{ participantLabel }}</p>
 
+    <div
+      v-if="event.rewardSummary"
+      class="post-detail-event-block__reward"
+      data-testid="post-detail-event-reward"
+    >
+      <span class="post-detail-event-block__reward-label">{{ EVENT_REWARD_LABEL }}</span>
+      <span class="post-detail-event-block__reward-body">{{ event.rewardSummary }}</span>
+    </div>
+
     <button
       type="button"
       class="post-detail-event-block__action"
@@ -178,6 +188,30 @@ const disabledReason = computed(() => {
   margin: 0;
   color: var(--lian-ink);
   font-size: 14px;
+}
+
+.post-detail-event-block__reward {
+  display: grid;
+  gap: 2px;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-3, 8px);
+  background: rgba(31, 167, 160, 0.08);
+}
+
+.post-detail-event-block__reward-label {
+  color: var(--lian-muted);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.post-detail-event-block__reward-body {
+  color: var(--lian-ink);
+  font-size: 13px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
 .post-detail-event-block__action {

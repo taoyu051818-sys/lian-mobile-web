@@ -82,6 +82,7 @@ export const EVENT_DISABLED_OUT_OF_SCOPE = "不在参与范围内";
 export const EVENT_ACTION_UNAVAILABLE = "活动操作暂时不可用，可以稍后再试。";
 export const EVENT_JOIN_SUCCESS = "已报名，期待你来。";
 export const EVENT_CANCEL_SUCCESS = "已取消报名。";
+export const EVENT_REWARD_LABEL = "奖励说明";
 
 /** 求助详情 (PRD V0.1 §6.5 / §11.3) */
 export const HELP_BLOCK_LABEL = "求助信息";

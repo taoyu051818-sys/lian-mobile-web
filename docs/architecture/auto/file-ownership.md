@@ -76,7 +76,7 @@ Total files: 305
 | ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------- | ----: |
 | `config/brand/admin.ts`        | export const ADMIN_SECTION_LABEL = "管理后台"; export const ADMIN_ENTER_LABEL = "管理"; export const ADMIN_EXIT_LABEL = "退出...                      |    79 |
 | `config/brand/auth.ts`         | export const AUTH_PANEL_TITLE = "登录 / 注册"; export const AUTH_TAB_LOGIN = "登录"; export const AUTH_TAB_REGISTER = "注册";...                      |    58 |
-| `config/brand/detail.ts`       | export const POST_DETAIL_CLOSE = "关闭详情"; export const POST_DETAIL_AUTHOR_AVATAR = "作者头像"; export const POST_DETAIL_SH...                      |   117 |
+| `config/brand/detail.ts`       | export const POST_DETAIL_CLOSE = "关闭详情"; export const POST_DETAIL_AUTHOR_AVATAR = "作者头像"; export const POST_DETAIL_SH...                      |   118 |
 | `config/brand/error.ts`        | export const ERROR_LOAD_GENERIC = "暂时没加载出来，可以稍后再试。"; export const ERROR_SEND_GENERIC = "没有发送成功，可以稍后再试。"; export const... |    23 |
 | `config/brand/feed.ts`         | export const FEED_VIEW_TITLE = "首页"; export const FEED_FILTER_LABEL = "信息分类"; export const FEED_EMPTY_HINT = "可以换个分类，...                 |    17 |
 | `config/brand/index.ts`        | TypeScript module                                                                                                                                     |    21 |
@@ -138,7 +138,7 @@ Total files: 305
 | `features/auth/useEmailCodeCooldown.ts`          | export const AUTH_EMAIL_CODE_DEFAULT_COOLDOWN_SECONDS = 60;                                                                   |   148 |
 | `features/detail/PostActionFeedback.vue`         | Vue SFC                                                                                                                       |    38 |
 | `features/detail/PostDetailContent.vue`          | Vue SFC                                                                                                                       |   184 |
-| `features/detail/PostDetailEventBlock.vue`       | Vue SFC                                                                                                                       |   219 |
+| `features/detail/PostDetailEventBlock.vue`       | Vue SFC                                                                                                                       |   253 |
 | `features/detail/PostDetailGallery.vue`          | Vue SFC                                                                                                                       |    78 |
 | `features/detail/PostDetailHelpBlock.vue`        | Vue SFC                                                                                                                       |   221 |
 | `features/detail/PostDetailHelpManageBlock.vue`  | Vue SFC                                                                                                                       |   241 |

@@ -9,6 +9,7 @@ export default defineConfig({
       "tests/composables/**/*.test.ts",
       "tests/config/**/*.test.ts",
       "tests/detail/**/*.test.ts",
+      "tests/event/**/*.test.ts",
       "tests/feed/feedReadHistoryIdNormalization.contract.test.ts",
       "tests/html/**/*.test.ts",
       "tests/locales/**/*.test.ts",
