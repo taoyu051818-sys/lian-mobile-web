@@ -8,6 +8,16 @@ export type PlaceStatus =
   | "ai-organized"
   | "official";
 
+export type CoordinateSystem = "gcj02" | "wgs84" | "image_legacy" | "none" | "unknown";
+
+export type LocationIdentityKind =
+  | "canonical_place"
+  | "map_selection"
+  | "manual_text"
+  | "skipped";
+
+export type LocationPrecisionKind = "exact" | "display_only" | "none";
+
 export interface PlaceRef {
   id: string;
   name: string;
