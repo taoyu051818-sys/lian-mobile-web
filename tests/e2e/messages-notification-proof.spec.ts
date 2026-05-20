@@ -64,7 +64,9 @@ test.describe("messages notification routing proof @anonymous @messages", () => 
     const notificationsTab = page.getByRole("tab").nth(1);
     await notificationsTab.click();
 
-    const replyItem = page.locator('[data-testid="notification-item"][data-notification-kind="reply"]');
+    const replyItem = page.locator(
+      '[data-testid="notification-item"][data-notification-kind="reply"]',
+    );
     await expect(replyItem).toContainText("查看回复详情");
     await replyItem.click();
     await expect(page.locator("#post-detail-title")).toContainText(String(feedItem?.title || ""));

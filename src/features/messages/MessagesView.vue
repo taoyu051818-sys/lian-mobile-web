@@ -1,17 +1,18 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from "vue";
+
 import { useActiveView } from "../../app/useActiveView";
 import { useDetailNavigation } from "../../app/detail-navigation";
 import { useVisualViewport } from "../../composables/useVisualViewport";
-import type { MessageTabKey, NotificationItem } from "../../types/messages";
-import type { PageChromeSpec } from "../../shell/page-model";
-import { ChannelComposer, ChannelThread, NotificationList } from "./";
 import {
   MESSAGE_TAB_CHANNEL,
   MESSAGE_TAB_NOTIFICATION,
   MESSAGE_SECTION_LABEL,
   MESSAGE_TAB_LABEL,
 } from "../../config/brand";
+import type { MessageTabKey, NotificationItem } from "../../types/messages";
+import type { PageChromeSpec } from "../../shell/page-model";
+import { ChannelComposer, ChannelThread, NotificationList } from "./";
 import { useChannelMessages } from "./useChannelMessages";
 import { useNotifications } from "./useNotifications";
 import { useMessageComposer } from "./useMessageComposer";
@@ -102,8 +103,8 @@ async function switchTab(tab: MessageTabKey) {
   activeTab.value = tab;
   if (tab === "channel") {
     if (!channelItems.value.length) await loadChannel(true);
-  } else {
-    if (!notificationItems.value.length) await loadNotifications();
+  } else if (!notificationItems.value.length) {
+    await loadNotifications();
   }
 }
 

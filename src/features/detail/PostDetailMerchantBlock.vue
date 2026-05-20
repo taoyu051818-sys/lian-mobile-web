@@ -89,7 +89,12 @@ const unavailableReasonLabel = computed(() => {
 
 function handleErrandClick() {
   if (!errandEntryClickable.value) return;
-  errandRoute.enterForMerchant(props.merchantPostId as number);
+  // Tag the entry origin so the close/back handlers in ErrandOrderView return
+  // the user to the feed tab where the post detail was open. Without this the
+  // route singleton's default origin ("feed") would still work for now, but
+  // making it explicit means a future detail-overlay home other than feed
+  // (e.g. opening from the map tab) will route correctly without a follow-up.
+  errandRoute.enterForMerchant(props.merchantPostId as number, "feed");
   setActiveView("errand-order");
 }
 </script>
