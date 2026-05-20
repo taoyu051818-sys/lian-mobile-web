@@ -56,7 +56,8 @@ function itemMeta(item: ProfileListItem) {
 
 const itemStates = computed(() =>
   props.items.map((item) => ({
-    key: item.id || String(item.tid || `${item.title || UNTITLED_CONTENT}-${item.timestampISO || ""}`),
+    key:
+      item.id || String(item.tid || `${item.title || UNTITLED_CONTENT}-${item.timestampISO || ""}`),
     dataTid: item.tid != null ? String(item.tid) : "",
     statusLabel: itemStatusLabel(item),
     meta: itemMeta(item),

@@ -28,7 +28,7 @@ Total files: 303
 | `api/messages.ts`     | export function extractChannelMessagePlainText(html?: string): string                                                    |   379 |
 | `api/places.ts`       | TypeScript module                                                                                                        |    10 |
 | `api/posts.ts`        | export interface PostLikeResponse                                                                                        |   231 |
-| `api/profile.ts`      | TypeScript module                                                                                                        |   101 |
+| `api/profile.ts`      | export function normalizeProfileListItem(item: unknown): ProfileListItem                                                 |   163 |
 | `api/publish.ts`      | Creates a display-only fallback draft from free-text place name. When `placeName` is non-empty the source is "manual"... |   254 |
 | `api/runner.ts`       | Available pool — orders not yet claimed by any runner.                                                                   |    54 |
 | `api/verification.ts` | TypeScript module                                                                                                        |    20 |
@@ -85,7 +85,7 @@ Total files: 303
 | `config/brand/merchant.ts`     | export const MERCHANT_BLOCK_LABEL = "商家信息"; export const MERCHANT_CATEGORY_FOOD = "餐饮"; export const MERCHANT_CATEGOR...                        |   129 |
 | `config/brand/messages.ts`     | export const MESSAGE_EMPTY_CONTENT = "这条消息暂时没有内容。"; export const MESSAGE_TAB_LABEL = "消息分类"; export const MESSAGE_S...                 |    33 |
 | `config/brand/notification.ts` | export const NOTIFICATION_SECTION_LABEL = "通知"; export const NOTIFICATION_READ = "已读"; export const NOTIFICATION_UNRE...                          |    10 |
-| `config/brand/profile.ts`      | export const PROFILE*CAMPUS_USER = "校园用户"; export const PROFILE_INVITE_USER = "邀请码用户"; export const PROFILE_IDENTITY*...                     |   106 |
+| `config/brand/profile.ts`      | export const PROFILE*CAMPUS_USER = "校园用户"; export const PROFILE_INVITE_USER = "邀请码用户"; export const PROFILE_IDENTITY*...                     |   110 |
 | `config/brand/publish.ts`      | export const PUBLISH_CLEAR = "清空"; export const PUBLISH_SUBMIT = "发布"; export const PUBLISH_LOCATION_LABEL = "地点"; e...                         |    96 |
 | `config/brand/report.ts`       | export const REPORT_CAT_PRIVACY = "隐私问题"; export const REPORT_CAT_FALSE_INFO = "虚假信息"; export const REPORT_CAT_ABUSE ...                      |    19 |
 | `config/brand/runner.ts`       | export const RUNNER_SECTION_LABEL = "跑腿员中心"; export const RUNNER_ENTER_LABEL = "跑腿员中心"; export const RUNNER_BACK_TO_P...                    |    50 |
@@ -214,14 +214,14 @@ Total files: 303
 | `features/messages/useNotifications.ts`          | export function useNotifications()                                                                                            |    34 |
 | `features/profile/ProfileAliasSelector.vue`      | Vue SFC                                                                                                                       |    84 |
 | `features/profile/ProfileAvatarEditor.vue`       | Vue SFC                                                                                                                       |   179 |
-| `features/profile/ProfileCollectionList.vue`     | Vue SFC                                                                                                                       |   164 |
+| `features/profile/ProfileCollectionList.vue`     | Vue SFC                                                                                                                       |   244 |
 | `features/profile/ProfileEditorPanel.vue`        | Vue SFC                                                                                                                       |   197 |
 | `features/profile/ProfileHeader.vue`             | Vue SFC                                                                                                                       |   128 |
 | `features/profile/ProfileInviteCodePanel.vue`    | Vue SFC                                                                                                                       |    55 |
 | `features/profile/ProfileRewardsBlock.vue`       | Vue SFC                                                                                                                       |   173 |
 | `features/profile/ProfileSettingsBlock.vue`      | Vue SFC                                                                                                                       |   299 |
 | `features/profile/ProfileStatsBlock.vue`         | Vue SFC                                                                                                                       |   171 |
-| `features/profile/ProfileTabs.vue`               | Vue SFC                                                                                                                       |    64 |
+| `features/profile/ProfileTabs.vue`               | Vue SFC                                                                                                                       |    71 |
 | `features/profile/ProfileVerificationBadges.vue` | Header surfaces only currently-active grants. Expired/revoked records                                                         |    97 |
 | `features/profile/ProfileView.vue`               | Vue SFC                                                                                                                       |   318 |
 | `features/profile/index.ts`                      | TypeScript module                                                                                                             |     2 |
@@ -236,7 +236,7 @@ Total files: 303
 | `features/profile/useProfileAliasSwitch.ts`      | export function useProfileAliasSwitch()                                                                                       |    29 |
 | `features/profile/useProfileChrome.ts`           | export function useProfileChrome(options:                                                                                     |    63 |
 | `features/profile/useProfileSession.ts`          | export function useProfileSession()                                                                                           |    31 |
-| `features/profile/useProfileTabs.ts`             | export function useProfileTabs(options:                                                                                       |   109 |
+| `features/profile/useProfileTabs.ts`             | export function useProfileTabs(options:                                                                                       |   121 |
 | `features/publish/PublishActionBar.vue`          | Vue SFC                                                                                                                       |    41 |
 | `features/publish/PublishComposer.vue`           | Vue SFC                                                                                                                       |   293 |
 | `features/publish/PublishEventControls.vue`      | Vue SFC                                                                                                                       |   230 |
@@ -337,7 +337,7 @@ Total files: 303
 | `types/place.ts`           | export type PlaceStatus =                                                                                                 |    54 |
 | `types/post-extensions.ts` | Event / Help / Merchant / Trade / Errand domain types (PRD V0.1 §6). V0.1 ships shapes only — no UI yet. The point i...   |   194 |
 | `types/post.ts`            | event?: EventPostExtension; eventJoined?: boolean; help?: HelpPostExtension; helpVoted?: boolean; helpManageable?: bo...  |   153 |
-| `types/profile.ts`         | PRD V0.1 §17 — verification records keyed by tag (campus_verified, merchant_verified, ...). Backend `/api/auth/me` re...  |   119 |
+| `types/profile.ts`         | PRD V0.1 §17 — verification records keyed by tag (campus_verified, merchant_verified, ...). Backend `/api/auth/me` re...  |   132 |
 | `types/publish.ts`         | export type PublishMapVersion = "legacy" \| "manual" \| "gaode_v2"; Backend (#383) accepts these contentType values fo... |   116 |
 | `types/runner.ts`          | Runner-center domain types — frontend-scoped under #648. Why a separate file rather than `src/types/errand.ts`? The ...   |    65 |
 | `types/verification.ts`    | export type VerificationTag =                                                                                             |    36 |
