@@ -15,6 +15,7 @@ export const ADMIN_TOKEN_CLEARED = "令牌已清除。";
 
 /** Tab */
 export const ADMIN_TAB_REPORTS = "举报队列";
+export const ADMIN_TAB_VERIFICATIONS = "认证审核";
 export const ADMIN_TAB_AUDIT = "审计日志";
 export const ADMIN_TAB_LABEL = "管理后台标签";
 
@@ -28,6 +29,23 @@ export const ADMIN_QUEUE_FILTER_PENDING = "待处理";
 export const ADMIN_QUEUE_FILTER_REVIEWING = "审核中";
 export const ADMIN_QUEUE_FILTER_RESOLVED = "已处理";
 export const ADMIN_QUEUE_FILTER_DISMISSED = "已驳回";
+
+/** 认证审核 */
+export const ADMIN_VERIFICATION_QUEUE_EMPTY = "暂无认证申请。";
+export const ADMIN_VERIFICATION_QUEUE_LOADING = "加载认证审核队列…";
+export const ADMIN_VERIFICATION_QUEUE_LOAD_ERROR = "认证审核队列加载失败，可以稍后再试。";
+export const ADMIN_VERIFICATION_FILTER_ALL = "全部";
+export const ADMIN_VERIFICATION_FILTER_PENDING = "待审核";
+export const ADMIN_VERIFICATION_FILTER_APPROVED = "已通过";
+export const ADMIN_VERIFICATION_FILTER_REJECTED = "已拒绝";
+export const ADMIN_VERIFICATION_NOTE_LABEL = "审核备注";
+export const ADMIN_VERIFICATION_NOTE_PLACEHOLDER = "可填写通过或拒绝理由（选填）。";
+export const ADMIN_VERIFICATION_APPROVE = "通过";
+export const ADMIN_VERIFICATION_REJECT = "拒绝";
+export const ADMIN_VERIFICATION_REDACTED_HINT =
+  "实名默认保持脱敏；只有显式调用后端 reveal 接口时才展示原文。";
+export const ADMIN_VERIFICATION_REVEAL = "查看实名原文";
+export const ADMIN_VERIFICATION_REVEAL_LOADING = "正在加载实名信息…";
 
 /** 状态徽章 */
 export const ADMIN_STATUS_PENDING = "待处理";
