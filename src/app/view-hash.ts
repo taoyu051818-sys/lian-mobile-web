@@ -1,6 +1,12 @@
 /**
- * View-hash singleton — `#/feed`, `#/map`, `#/publish`, `#/messages`,
- * `#/profile` (and the secret `#/admin`, `#/verification`).
+ * View-hash singleton.
+ *
+ *   visible tabs:  #/feed, #/map, #/publish, #/messages, #/profile
+ *   secret views:  #/admin, #/verification, #/merchant, #/errand-order, #/runner
+ *
+ * Secret views are absent from the bottom tab bar (`appViews`) but a direct
+ * hash or refresh must still mount the matching component, so this singleton
+ * accepts every `AppViewKey` the parser recognises.
  *
  * The URL hash has exactly one value at a time, so `useActiveView` and the
  * bottom tab bar must observe the same ref. Listener is attached eagerly at
