@@ -8,6 +8,7 @@ import {
   ADMIN_TAB_AUDIT,
   ADMIN_TAB_LABEL,
   ADMIN_TAB_REPORTS,
+  ADMIN_TAB_VERIFICATIONS,
 } from "../../config/brand";
 import type { PageChromeSpec } from "../../shell/page-model";
 import type {
@@ -15,15 +16,19 @@ import type {
   AdminReportStatus,
   AdminReportTransitionStatus,
   AdminUserStatus,
+  AdminVerificationDecisionStatus,
+  AdminVerificationRecord,
+  AdminVerificationStatus,
 } from "../../types/admin";
 import AdminAuditLogList from "./AdminAuditLogList.vue";
 import AdminQueueList from "./AdminQueueList.vue";
 import AdminTokenGate from "./AdminTokenGate.vue";
 import AdminUserActionPanel from "./AdminUserActionPanel.vue";
+import AdminVerificationQueueList from "./AdminVerificationQueueList.vue";
 import { useAdminConsole } from "./useAdminConsole";
 import { useAdminToken } from "./useAdminToken";
 
-type AdminTabKey = "reports" | "audit";
+type AdminTabKey = "reports" | "verifications" | "audit";
 
 const emit = defineEmits<{
   chrome: [spec: PageChromeSpec];
@@ -34,6 +39,7 @@ const { token, setToken, clearToken } = useAdminToken();
 const tokenError = ref("");
 const activeTab = ref<AdminTabKey>("reports");
 const statusFilter = ref<AdminReportStatus | "">("pending");
+const verificationStatusFilter = ref<AdminVerificationStatus | "">("pending");
 
 const console = useAdminConsole({
   token,
@@ -45,6 +51,7 @@ const console = useAdminConsole({
 
 const tabs: Array<{ key: AdminTabKey; label: string }> = [
   { key: "reports", label: ADMIN_TAB_REPORTS },
+  { key: "verifications", label: ADMIN_TAB_VERIFICATIONS },
   { key: "audit", label: ADMIN_TAB_AUDIT },
 ];
 
@@ -65,7 +72,7 @@ const pageChrome = computed<PageChromeSpec>(() => {
       identity: { avatarText: "管", name: ADMIN_SECTION_LABEL },
       tabs: {
         kind: "tabs",
-        items: tabs.map((t) => ({ id: t.key, label: t.label })),
+        items: tabs.map((tab) => ({ id: tab.key, label: tab.label })),
         activeKey: activeTab.value,
         ariaLabel: ADMIN_TAB_LABEL,
       },
@@ -77,8 +84,9 @@ const pageChrome = computed<PageChromeSpec>(() => {
 });
 
 function handleChromeButtonClick(buttonId: string) {
-  if (buttonId === "admin:close") emit("close");
-  else if (buttonId === "admin:exit") {
+  if (buttonId === "admin:close") {
+    emit("close");
+  } else if (buttonId === "admin:exit") {
     clearToken();
     emit("close");
   }
@@ -86,8 +94,13 @@ function handleChromeButtonClick(buttonId: string) {
 
 function selectTab(key: AdminTabKey) {
   activeTab.value = key;
-  if (key === "audit") void console.loadAuditLog();
-  else void console.loadReports(statusFilter.value);
+  if (key === "audit") {
+    void console.loadAuditLog();
+  } else if (key === "verifications") {
+    void console.loadVerificationRequests(verificationStatusFilter.value);
+  } else {
+    void console.loadReports(statusFilter.value);
+  }
 }
 
 function handleTokenSubmit(value: string) {
@@ -99,6 +112,11 @@ function handleTokenSubmit(value: string) {
 function handleFilterChange(value: AdminReportStatus | "") {
   statusFilter.value = value;
   void console.loadReports(value);
+}
+
+function handleVerificationFilterChange(value: AdminVerificationStatus | "") {
+  verificationStatusFilter.value = value;
+  void console.loadVerificationRequests(value);
 }
 
 function handleTransition(
@@ -120,11 +138,27 @@ function handleUserAction(target: string, payload: { status: AdminUserStatus; re
   void console.applyUserStatus(target, payload);
 }
 
+function handleVerificationReview(
+  request: AdminVerificationRecord,
+  payload: {
+    status: AdminVerificationDecisionStatus;
+    reviewerNote?: string | null;
+  },
+) {
+  void console.reviewVerificationRequest(request, payload, verificationStatusFilter.value);
+}
+
+function handleVerificationReveal(verificationId: string) {
+  void console.loadRealnameReveal(verificationId);
+}
+
 watch(pageChrome, (spec) => emit("chrome", spec), { deep: true, immediate: false });
 
 onMounted(() => {
   emit("chrome", pageChrome.value);
-  if (token.value) void console.loadReports(statusFilter.value);
+  if (token.value) {
+    void console.loadReports(statusFilter.value);
+  }
 });
 </script>
 
@@ -156,11 +190,24 @@ onMounted(() => {
         <AdminUserActionPanel @apply="handleUserAction" />
       </template>
 
+      <template v-else-if="activeTab === 'verifications'">
+        <AdminVerificationQueueList
+          :requests="console.verificationRequests.value"
+          :loading="console.verificationLoading.value"
+          :error-message="console.verificationError.value"
+          :status-filter="verificationStatusFilter"
+          :revealed-realnames="console.revealedRealnames.value"
+          :reveal-loading-ids="console.revealLoadingIds.value"
+          @filter-change="handleVerificationFilterChange"
+          @reload="() => console.loadVerificationRequests(verificationStatusFilter)"
+          @review="handleVerificationReview"
+          @reveal="handleVerificationReveal"
+        />
+      </template>
+
       <template v-else>
         <div class="admin-view__audit-toolbar">
-          <LianButton size="sm" variant="ghost" @click="console.loadAuditLog">{{
-            "刷新日志"
-          }}</LianButton>
+          <LianButton size="sm" variant="ghost" @click="console.loadAuditLog">刷新日志</LianButton>
         </div>
         <AdminAuditLogList
           :events="console.auditEvents.value"
