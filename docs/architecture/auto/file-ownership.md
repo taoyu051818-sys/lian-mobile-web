@@ -21,7 +21,7 @@ Total files: 305
 | `api/errands.ts`      | Errand order API client (issue #647). Surface: - GET /api/errand-orders/eligibility?merchantPostId=:id — pre-sub...      |   272 |
 | `api/events.ts`       | Event / Help / Errand API client stubs (PRD V0.1 §11.2, §11.3, §11.4). Every function below is intentionally thin — ...  |   131 |
 | `api/feed.ts`         | export const DEFAULT_TABS: FeedTab[] = [                                                                                 |   192 |
-| `api/http.ts`         | export class LianApiError extends Error                                                                                  |   132 |
+| `api/http.ts`         | export class LianApiError extends Error                                                                                  |   252 |
 | `api/interaction.ts`  | Like/vote unified interaction API (PRD V0.1 §7.1.2, §11.3). Backend already exposes `/api/posts/:tid/like` for likes...  |    65 |
 | `api/map.ts`          | TypeScript module                                                                                                        |    14 |
 | `api/merchant.ts`     | Merchant center API (issue #646). `GET /api/me/merchant-center` returns the merchant readout for the signed-in user....  |    89 |
@@ -95,7 +95,7 @@ Total files: 305
 | `config/brand/trade.ts`        | export const TRADE_BLOCK_LABEL = "二手交易"; export const TRADE_PRICE_LABEL = "价格"; export const TRADE_CATEGORY_LABEL = "...                        |    30 |
 | `config/brand/validation.ts`   | export const VALIDATION_PASSWORD_MIN = "密码至少需要 {n} 位。"; export const VALIDATION_LOGIN_REQUIRED = "请填写邮箱或昵称。"; export ...             |    14 |
 | `config/brand/verification.ts` | export const VERIFICATION_SECTION_LABEL = "认证中心"; export const VERIFICATION_ENTER_LABEL = "认证中心"; export const VERIFI...                      |    47 |
-| `config/runtime-config.ts`     | Runtime config accessor for LIAN frontend. PUBLIC config – injected by the serve/rehearsal script into <head> BEFOR...                                |   151 |
+| `config/runtime-config.ts`     | Runtime config accessor for LIAN frontend. PUBLIC config – injected by the serve/rehearsal script into <head> BEFOR...                                |   222 |
 
 ## src/domain/ (8 files)
 
