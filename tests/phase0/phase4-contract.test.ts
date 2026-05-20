@@ -49,6 +49,64 @@ describe("Phase 4: derivedEventStatus", () => {
   });
 });
 
+describe("Phase 4 / issue #704: derivedEventStatus honors backend status", () => {
+  it("server 'completed' wins even when endsAt is absent", () => {
+    const e = makeEvent({ status: "completed" });
+    expect(derivedEventStatus(e)).toBe("completed");
+  });
+
+  it("server 'completed' wins even when endsAt is in the future", () => {
+    const e = makeEvent({ status: "completed", endsAt: "2030-01-01T00:00:00Z" });
+    expect(derivedEventStatus(e, WALL_2026_06_01_11Z)).toBe("completed");
+  });
+
+  it("server 'cancelled' wins regardless of time and capacity", () => {
+    const e = makeEvent({
+      status: "cancelled",
+      endsAt: "2030-01-01T00:00:00Z",
+      capacity: 10,
+      joinedCount: 0,
+    });
+    expect(derivedEventStatus(e, WALL_2026_06_01_11Z)).toBe("cancelled");
+  });
+
+  it("server 'closed' wins over time inference", () => {
+    const e = makeEvent({ status: "closed", endsAt: "2030-01-01T00:00:00Z" });
+    expect(derivedEventStatus(e, WALL_2026_06_01_11Z)).toBe("closed");
+  });
+
+  it("server status unset, endsAt past → 'completed' (legacy fallback preserved)", () => {
+    const e = makeEvent({ endsAt: "2026-06-01T10:00:00Z" });
+    expect(derivedEventStatus(e, WALL_2026_06_01_11Z)).toBe("completed");
+  });
+
+  it("server status unset, endsAt future, capacity full → 'full'", () => {
+    const e = makeEvent({ capacity: 5, joinedCount: 5, endsAt: "2030-01-01T00:00:00Z" });
+    expect(derivedEventStatus(e, WALL_2026_06_01_11Z)).toBe("full");
+  });
+
+  it("server status unset, endsAt future, capacity ok → 'open'", () => {
+    const e = makeEvent({ capacity: 10, joinedCount: 3, endsAt: "2030-01-01T00:00:00Z" });
+    expect(derivedEventStatus(e, WALL_2026_06_01_11Z)).toBe("open");
+  });
+
+  it("server 'open' does not mask a freshly-elapsed endsAt — time still wins for non-terminal server values", () => {
+    // A stale server snapshot saying "open" must not override a clearly-elapsed window.
+    const e = makeEvent({ status: "open", endsAt: "2026-06-01T10:00:00Z" });
+    expect(derivedEventStatus(e, WALL_2026_06_01_11Z)).toBe("completed");
+  });
+
+  it("server 'full' does not mask a freshly-elapsed endsAt", () => {
+    const e = makeEvent({
+      status: "full",
+      endsAt: "2026-06-01T10:00:00Z",
+      capacity: 5,
+      joinedCount: 2,
+    });
+    expect(derivedEventStatus(e, WALL_2026_06_01_11Z)).toBe("completed");
+  });
+});
+
 describe("Phase 4: planEventAction (domain/eventActionPolicy)", () => {
   it("authenticated viewer with capacity left and matching scope can join", () => {
     const plan = planEventAction({
@@ -164,6 +222,37 @@ describe("Phase 4: normalizeEventExtension (platform/api-normalizers)", () => {
     expect(ext?.startsAt).toBe("2026-06-01T10:00:00Z");
     expect(ext?.endsAt).toBe("2026-06-01T12:00:00Z");
     expect(ext?.joinedCount).toBe(7);
+  });
+
+  it("issue #704 — round-trips backend-authoritative status when present", () => {
+    const ext = normalizeEventExtension({
+      eventId: "x",
+      joinedCount: 0,
+      status: "completed",
+    });
+    expect(ext?.status).toBe("completed");
+  });
+
+  it("issue #704 — accepts every known EventStatus value", () => {
+    for (const s of ["open", "full", "closed", "completed", "cancelled"] as const) {
+      const ext = normalizeEventExtension({ eventId: "x", joinedCount: 0, status: s });
+      expect(ext?.status).toBe(s);
+    }
+  });
+
+  it("issue #704 — drops unknown / malformed status without inventing a value", () => {
+    const ext = normalizeEventExtension({
+      eventId: "x",
+      joinedCount: 0,
+      status: "garbage",
+    });
+    expect(ext?.status).toBeUndefined();
+
+    const noStatus = normalizeEventExtension({ eventId: "x", joinedCount: 0 });
+    expect(noStatus?.status).toBeUndefined();
+
+    const numeric = normalizeEventExtension({ eventId: "x", joinedCount: 0, status: 42 });
+    expect(numeric?.status).toBeUndefined();
   });
 });
 
