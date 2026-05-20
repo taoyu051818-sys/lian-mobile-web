@@ -14,7 +14,7 @@ Total files: 305
 
 | File                  | Summary                                                                                                                  | Lines |
 | --------------------- | ------------------------------------------------------------------------------------------------------------------------ | ----: |
-| `api/admin.ts`        | TypeScript module                                                                                                        |   111 |
+| `api/admin.ts`        | export type AdminVerificationStatus = "pending" \| "approved" \| "rejected";                                             |   235 |
 | `api/aiPublish.ts`    | AI publish API client (PRD V0.1 §3 / §7.4 / Phase 3). Three endpoints, all already in the backend live surface: PO...    |   165 |
 | `api/audience.ts`     | Audience options API client. Backend route (PRD V0.1 §11.1): GET /api/audience/options The route may be missing in o...  |    81 |
 | `api/auth.ts`         | export type AuthMode = "login" \| "register";                                                                            |    66 |
@@ -119,10 +119,10 @@ Total files: 305
 | `features/admin/AdminQueueList.vue`              | Vue SFC                                                                                                                       |   135 |
 | `features/admin/AdminTokenGate.vue`              | Vue SFC                                                                                                                       |   105 |
 | `features/admin/AdminUserActionPanel.vue`        | Vue SFC                                                                                                                       |   115 |
-| `features/admin/AdminView.vue`                   | Vue SFC                                                                                                                       |   202 |
+| `features/admin/AdminView.vue`                   | Vue SFC                                                                                                                       |   632 |
 | `features/admin/admin-format.ts`                 | export function adminStatusLabel(status: AdminReportStatus \| string): string                                                 |    39 |
 | `features/admin/index.ts`                        | TypeScript module                                                                                                             |     9 |
-| `features/admin/useAdminConsole.ts`              | export function useAdminConsole({ token, onTokenInvalid }: UseAdminConsoleOptions)                                            |   161 |
+| `features/admin/useAdminConsole.ts`              | export function useAdminConsole({ token, onTokenInvalid }: UseAdminConsoleOptions)                                            |   250 |
 | `features/admin/useAdminToken.ts`                | export function useAdminToken()                                                                                               |    39 |
 | `features/auth/AuthEmailCodeField.vue`           | Vue SFC                                                                                                                       |    81 |
 | `features/auth/AuthInterestPicker.vue`           | Vue SFC                                                                                                                       |   147 |
