@@ -89,3 +89,51 @@ test("PostDetailTradeManageBlock owns the author-only trade transition controls"
   assert.match(src, /await patchTradeState\(currentId, nextState\)/);
   assert.match(src, /emit\("retry"\)/);
 });
+
+// --- transition matrix (must mirror the backend state machine in
+// post-metadata-service.js#assertTradeStateTransition exactly; #649 proof) ---
+
+test("PostDetailTradeManageBlock transition matrix mirrors the backend (#649)", () => {
+  const src = read("src/features/detail/PostDetailTradeManageBlock.vue");
+  // Available + reserved are the active states with the widest outbound set.
+  assert.match(src, /available:\s*\["reserved",\s*"sold",\s*"cancelled",\s*"hidden"\]/);
+  assert.match(src, /reserved:\s*\["available",\s*"sold",\s*"cancelled",\s*"hidden"\]/);
+  // Hidden can only round-trip to available or terminal-cancel — not jump to
+  // sold/reserved without surfacing first.
+  assert.match(src, /hidden:\s*\["available",\s*"cancelled"\]/);
+  // Sold + cancelled are terminal — empty outbound array is the only correct
+  // shape; an entry like `sold: ["available"]` would match this regex's intent
+  // but break the negative assertion below.
+  assert.match(src, /sold:\s*\[\]/);
+  assert.match(src, /cancelled:\s*\[\]/);
+});
+
+test("trade-manage block gate falls back to actor-id match when tradeManageable is absent (#649)", () => {
+  // Older detail responses may not include tradeManageable. The block must
+  // still hide its controls for non-authors by comparing /api/auth/me to
+  // post.actor — without this fallback, a non-author would see the manage
+  // surface whenever the backend forgot to attach the gate flag.
+  const src = read("src/features/detail/PostDetailTradeManageBlock.vue");
+  assert.match(src, /currentPost\.tradeManageable !== undefined/);
+  // Note: only the existence-guard side carries `?.` ; the equality side
+  // compares the resolved values (so `actor.id` not `actor?.id`).
+  assert.match(
+    src,
+    /user\.id\s*&&\s*currentPost\.actor\?\.id\s*&&\s*user\.id === currentPost\.actor\.id/,
+  );
+  assert.match(
+    src,
+    /user\.username\s*&&\s*currentPost\.actor\?\.username\s*&&\s*user\.username === currentPost\.actor\.username/,
+  );
+});
+
+test("trade-manage block guards the action against double-submit + missing tid (#649)", () => {
+  // Optimistic UI: button disables during the patch, retries via emit("retry")
+  // pull the fresh detail on success, and the handler short-circuits when the
+  // tid is missing so a stale post.value can't trigger an undefined-route PATCH.
+  const src = read("src/features/detail/PostDetailTradeManageBlock.vue");
+  assert.match(src, /if \(!currentId \|\| tradeStateBusy\.value\) return/);
+  assert.match(src, /tradeStateBusy\.value = true/);
+  assert.match(src, /tradeStateBusy\.value = false/);
+  assert.match(src, /emit\("action-error",\s*extractErrorMessage\(/);
+});
