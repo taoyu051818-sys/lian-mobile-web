@@ -4,8 +4,14 @@
  * The app routes on `window.location.hash` (no vue-router); two shapes are
  * supported:
  *   - `#/post/{tid}` — opens the post detail panel (always inside the feed tab)
- *   - `#/{view}` — selects one of the five top-level tabs
- *     (`feed | map | publish | messages | profile`)
+ *   - `#/{view}` — selects one of the top-level tabs or a "secret" view:
+ *       five visible tabs: `feed | map | publish | messages | profile`
+ *       hidden views:      `admin | verification | merchant | errand-order | runner`
+ *
+ *     Secret views are reachable by direct hash but intentionally absent from
+ *     the bottom tab bar (`appViews` in view-types.ts). Refreshing one of
+ *     their URLs must still mount the right component, so the parser has to
+ *     accept the full set of `AppViewKey` values.
  *
  * This module is the single source of truth for those hash shapes — kept pure
  * (no DOM access) so it can be tested directly and reused by the composable
@@ -15,7 +21,8 @@
 import type { AppViewKey } from "./view-types";
 
 const POST_HASH_PATTERN = /^#?\/post\/(\d+)(?:[/?#].*)?$/;
-const VIEW_HASH_PATTERN = /^#?\/(feed|map|publish|messages|profile)\/?(?:[?#].*)?$/;
+const VIEW_HASH_PATTERN =
+  /^#?\/(feed|map|publish|messages|profile|admin|verification|merchant|errand-order|runner)\/?(?:[?#].*)?$/;
 
 export type DeepLink = { view: "post-detail"; tid: number } | { view: AppViewKey };
 
