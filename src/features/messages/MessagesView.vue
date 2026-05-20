@@ -5,14 +5,21 @@ import { useActiveView } from "../../app/useActiveView";
 import { useDetailNavigation } from "../../app/detail-navigation";
 import { useVisualViewport } from "../../composables/useVisualViewport";
 import {
-  MESSAGE_TAB_CHANNEL,
-  MESSAGE_TAB_NOTIFICATION,
   MESSAGE_SECTION_LABEL,
+  MESSAGE_TAB_CHANNEL,
   MESSAGE_TAB_LABEL,
+  MESSAGE_TAB_ORDERS,
+  MESSAGE_TAB_REPLIES,
+  MESSAGE_TAB_SYSTEM,
 } from "../../config/brand";
 import type { MessageTabKey, NotificationItem } from "../../types/messages";
 import type { PageChromeSpec } from "../../shell/page-model";
 import { ChannelComposer, ChannelThread, NotificationList } from "./";
+import {
+  isNotificationInboxTab,
+  itemsForInboxTab,
+  NOTIFICATION_INBOX_SPECS,
+} from "./messageInbox";
 import { useChannelMessages } from "./useChannelMessages";
 import { useNotifications } from "./useNotifications";
 import { useMessageComposer } from "./useMessageComposer";
@@ -71,8 +78,19 @@ useVisualViewport();
 
 const tabs: Array<{ key: MessageTabKey; label: string }> = [
   { key: "channel", label: MESSAGE_TAB_CHANNEL },
-  { key: "notifications", label: MESSAGE_TAB_NOTIFICATION },
+  { key: "replies", label: MESSAGE_TAB_REPLIES },
+  { key: "system", label: MESSAGE_TAB_SYSTEM },
+  { key: "orders", label: MESSAGE_TAB_ORDERS },
 ];
+
+const activeNotificationSpec = computed(() =>
+  isNotificationInboxTab(activeTab.value) ? NOTIFICATION_INBOX_SPECS[activeTab.value] : null,
+);
+const visibleNotificationItems = computed(() =>
+  activeNotificationSpec.value
+    ? itemsForInboxTab(notificationItems.value, activeNotificationSpec.value.tab)
+    : [],
+);
 
 const pageChrome = computed<PageChromeSpec>(() => ({
   top: {
@@ -130,9 +148,15 @@ onMounted(async () => {
 
     <NotificationList
       v-else
-      :items="notificationItems"
+      :items="visibleNotificationItems"
       :loading="notificationLoading"
       :error="notificationError"
+      :title="activeNotificationSpec?.title"
+      :hint="activeNotificationSpec?.hint"
+      :empty-title="activeNotificationSpec?.emptyTitle"
+      :empty-body="activeNotificationSpec?.emptyBody"
+      :channels="activeNotificationSpec?.channels || []"
+      :gap-links="activeNotificationSpec?.gapLinks || []"
       @retry="loadNotifications"
       @open-item="openNotification"
     />
