@@ -32,6 +32,11 @@ export type EventJoinPolicy = "open" | "approval_required" | "org_only" | "schoo
  * Read-side event extension as returned by `GET /api/posts/:tid` after PR-V4b.
  * Wire shape mirrors backend `metadata.event` exactly: additive, no enum, no
  * audience scope (audience lives on the post itself).
+ *
+ * `status` is optional — backends that have not adopted server-driven lifecycle
+ * yet simply omit it, and `derivedEventStatus` falls back to time/capacity
+ * inference. When the field is present (e.g. after `POST /events/:id/complete`
+ * or a moderator-driven cancel), the frontend honors it as authoritative.
  */
 export interface EventPostExtension {
   eventId: string;
@@ -42,6 +47,12 @@ export interface EventPostExtension {
   capacity?: number;
   rewardSummary?: string;
   joinedCount: number;
+  /**
+   * Backend-authoritative lifecycle state. Optional on the wire — when missing,
+   * status is inferred from `endsAt` / capacity. When present, `cancelled` and
+   * `completed` win over the time-based fallback.
+   */
+  status?: EventStatus;
 }
 
 /**

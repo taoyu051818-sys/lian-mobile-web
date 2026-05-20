@@ -2,6 +2,7 @@ import type { DisplayActor, SourceSignal } from "../types/feed";
 import type { PlaceRef, PlaceStatus } from "../types/place";
 import type {
   EventPostExtension,
+  EventStatus,
   HelpPostExtension,
   HelpStatus,
   MerchantCategory,
@@ -156,12 +157,23 @@ export function normalizePlaceRef(value: unknown): PlaceRef | undefined {
   };
 }
 
+const EVENT_STATUSES: ReadonlySet<EventStatus> = new Set([
+  "open",
+  "full",
+  "closed",
+  "completed",
+  "cancelled",
+]);
+
 /**
  * Coerce a raw payload into an EventPostExtension. Returns undefined only when
  * eventId is absent — every other field is optional and degrades gracefully.
  * Wire shape mirrors backend `metadata.event` after PR-V4b: additive,
- * time/capacity/joinedCount only. The frontend derives event status from
- * those fields (see `derivedEventStatus` in domain/eventActionPolicy).
+ * time/capacity/joinedCount only. When the backend ships an authoritative
+ * `status` (e.g. after `POST /events/:id/complete` or a moderator cancel),
+ * round-trip it; `derivedEventStatus` then honors `cancelled` / `completed`
+ * over the time-based fallback. Unknown / malformed status drops to undefined
+ * — we do not invent a value.
  */
 export function normalizeEventExtension(value: unknown): EventPostExtension | undefined {
   const record = asRecord(value);
@@ -173,6 +185,7 @@ export function normalizeEventExtension(value: unknown): EventPostExtension | un
   const rewardSummary = optionalString(record.rewardSummary);
   const capacity = asOptionalPositiveInt(record.capacity);
   const joinedCount = asNonNegInt(record.joinedCount ?? record.participantCount);
+  const status = asEnum(record.status, EVENT_STATUSES);
 
   return {
     eventId,
@@ -182,6 +195,7 @@ export function normalizeEventExtension(value: unknown): EventPostExtension | un
     ...(capacity !== undefined ? { capacity } : {}),
     ...(rewardSummary ? { rewardSummary } : {}),
     joinedCount,
+    ...(status ? { status } : {}),
   };
 }
 

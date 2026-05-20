@@ -102,7 +102,7 @@ Total files: 306
 | File                           | Summary                                                                                                                 | Lines |
 | ------------------------------ | ----------------------------------------------------------------------------------------------------------------------- | ----: |
 | `domain/actor.ts`              | export function actorDisplayName(actor?: DisplayActor \| null, fallback = ""): string                                   |    14 |
-| `domain/eventActionPolicy.ts`  | Event action policy (PRD V0.1 §6.3 / §11.2). Pure function — given the event extension, the viewer's audience eligib... |   118 |
+| `domain/eventActionPolicy.ts`  | Event action policy (PRD V0.1 §6.3 / §11.2). Pure function — given the event extension, the viewer's audience eligib... |   135 |
 | `domain/eventPublishPolicy.ts` | Event publish form validation (PRD V0.1 §6.3 / §11.2). Pure function — given the event-only fields, returns either a... |    84 |
 | `domain/helpManagePolicy.ts`   | Help manage action policy (PRD V0.1 §6.5 / §11.3). Pure function — given the help extension, decide which manage act... |    64 |
 | `domain/helpVotePolicy.ts`     | Help vote action policy (PRD V0.1 §6.5 / §11.3). Pure function — given the help extension and viewer state, decide w... |    60 |
@@ -289,7 +289,7 @@ Total files: 306
 
 | File                          | Summary                                                                                                                  | Lines |
 | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------ | ----: |
-| `platform/api-normalizers.ts` | Coerce to a non-negative integer, defaulting to 0. Convenience wrapper for the count/capacity fields backends sometim... |   291 |
+| `platform/api-normalizers.ts` | Coerce to a non-negative integer, defaulting to 0. Convenience wrapper for the count/capacity fields backends sometim... |   305 |
 | `platform/browser-storage.ts` | Centralized localStorage key surface for the Vue canary app. Every key written by Vue source code is declared here s...  |    78 |
 | `platform/clientIdentity.ts`  | export const CLIENT_ID_KEY = "lian.clientId";                                                                            |    60 |
 | `platform/leaflet.ts`         | Platform adapter for Leaflet bundled through Vite. All `any` usage is quarantined inside this file. Vue components m...  |   170 |
@@ -338,7 +338,7 @@ Total files: 306
 | `types/merchant.ts`        | Merchant center (issue #646) types. Backend (`/api/me/merchant-center`) ships a profile readout for merchants who ho...   |    57 |
 | `types/messages.ts`        | Client-generated nonce stamped on the optimistic item so we can match the server echo back to it without depending on...  |    78 |
 | `types/place.ts`           | export type PlaceStatus =                                                                                                 |    60 |
-| `types/post-extensions.ts` | Event / Help / Merchant / Trade / Errand domain types (PRD V0.1 §6). V0.1 ships shapes only — no UI yet. The point i...   |   194 |
+| `types/post-extensions.ts` | Event / Help / Merchant / Trade / Errand domain types (PRD V0.1 §6). V0.1 ships shapes only — no UI yet. The point i...   |   205 |
 | `types/post.ts`            | event?: EventPostExtension; eventJoined?: boolean; help?: HelpPostExtension; helpVoted?: boolean; helpManageable?: bo...  |   153 |
 | `types/profile.ts`         | PRD V0.1 §17 — verification records keyed by tag (campus_verified, merchant_verified, ...). Backend `/api/auth/me` re...  |   132 |
 | `types/publish.ts`         | export type PublishMapVersion = "legacy" \| "manual" \| "gaode_v2"; Backend (#383) accepts these contentType values fo... |   140 |

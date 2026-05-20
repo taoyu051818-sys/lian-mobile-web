@@ -5,13 +5,18 @@
  * and whether the viewer has already joined, decide whether the join button
  * should be enabled, and if not, why.
  *
- * The backend does NOT ship an event status enum on the wire. The frontend
- * derives lifecycle state from `startsAt` / `endsAt` / `capacity` / `joinedCount`:
- *   - `cancelled` / `closed` / `completed` are reserved for future server-driven
- *     terminal states; today the derived status is one of:
- *       - `completed`  — `endsAt` exists and is in the past
- *       - `full`       — `capacity` set and `joinedCount >= capacity`
- *       - `open`       — otherwise (including before `startsAt`)
+ * Lifecycle precedence (issue #704):
+ *   1. If the backend ships an authoritative `event.status`, it wins:
+ *      - `cancelled` → `cancelled` (regardless of time / capacity)
+ *      - `completed` → `completed` (regardless of `endsAt`)
+ *      - `closed`    → `closed`
+ *      - `full` / `open` → fall through to the time/capacity inference below
+ *        so a stale server value cannot override a freshly-elapsed `endsAt`
+ *        or a just-filled capacity slot.
+ *   2. Otherwise (legacy / status-less payloads) infer from time + capacity:
+ *      - `completed`  — `endsAt` exists and is in the past
+ *      - `full`       — `capacity` set and `joinedCount >= capacity`
+ *      - `open`       — otherwise (including before `startsAt`)
  *
  * Stays in `src/domain/` so it can be unit-tested without Vue refs.
  */
@@ -52,13 +57,25 @@ function parseIsoMs(value: string | undefined): number | null {
 }
 
 /**
- * Derive a single status token from the time window + capacity + joinedCount.
- * Pure; no Vue, no clock unless `now` is supplied.
+ * Derive a single status token from the backend-authoritative `status` (when
+ * present) plus the time window + capacity + joinedCount fallback. Pure; no
+ * Vue, no clock unless `now` is supplied.
+ *
+ * Backend wins for terminal states (`cancelled`, `completed`, `closed`) so a
+ * server-driven completion (`POST /events/:id/complete`) or moderator cancel
+ * is reflected immediately without waiting for `endsAt` to elapse. Non-terminal
+ * server values (`open`, `full`) deliberately fall through to the time/capacity
+ * inference — they would otherwise mask a freshly-elapsed `endsAt` or a
+ * just-filled capacity slot the server hasn't repolled yet.
  */
 export function derivedEventStatus(
   event: EventPostExtension,
   now: () => number = Date.now,
 ): EventStatus {
+  if (event.status === "cancelled") return "cancelled";
+  if (event.status === "completed") return "completed";
+  if (event.status === "closed") return "closed";
+
   const endMs = parseIsoMs(event.endsAt);
   if (endMs !== null && endMs <= now()) return "completed";
   if (
