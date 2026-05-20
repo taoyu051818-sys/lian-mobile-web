@@ -273,4 +273,51 @@ describe("buildPublishPayload", () => {
     expect(payload.title).toBe("标题");
     expect(payload.body).toBe("内容");
   });
+
+  // #645 — nat100 普通帖 text-only 发布失败的根因是后端
+  // /api/ai/post-publish 在 normalizeAiPostPayload 里硬连线了
+  // requireImage: true。前端 payload 结构本身已经是合法的（无图时
+  // imageUrl 为 "", imageUrls 为 []），这条用例锁定该契约，避免后端
+  // 解除门槛后前端被回归改坏。
+  it("supports text-only ordinary publish with empty imageUrls", () => {
+    const payload = buildPublishPayload({
+      imageUrls: [],
+      title: "纯文字标题",
+      body: "纯文字正文，无图发布。",
+      tag: "",
+      visibility: "public",
+      placeName: "",
+    });
+    expect(payload.imageUrl).toBe("");
+    expect(payload.imageUrls).toEqual([]);
+    expect(payload.title).toBe("纯文字标题");
+    expect(payload.body).toBe("纯文字正文，无图发布。");
+    expect(payload.aiMode).toBe("manual-vue");
+    expect(payload.metadata.visibility).toBe("public");
+    expect(payload.metadata.distribution).toEqual(["home", "search", "detail"]);
+    expect(payload.metadata.presentationIntent).toBeUndefined();
+    expect(payload).not.toHaveProperty("contentType");
+    expect(payload).not.toHaveProperty("merchant");
+    expect(payload).not.toHaveProperty("trade");
+    expect(payload.locationDraft.skipped).toBe(true);
+    expect(payload.locationDraft.source).toBe("skipped");
+    expect(payload.needsHumanReview).toBe(false);
+    expect(payload.riskFlags).toEqual([]);
+  });
+
+  it("preserves text-only shape when a manual location is attached", () => {
+    const payload = buildPublishPayload({
+      imageUrls: [],
+      title: "纯文字+地点",
+      body: "无图但带地点。",
+      tag: "",
+      visibility: "public",
+      placeName: "图书馆三楼",
+    });
+    expect(payload.imageUrl).toBe("");
+    expect(payload.imageUrls).toEqual([]);
+    expect(payload.locationDraft.source).toBe("manual");
+    expect(payload.metadata.locationArea).toBe("图书馆三楼");
+    expect(payload.metadata.distribution).toContain("map");
+  });
 });
