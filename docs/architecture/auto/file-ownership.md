@@ -84,7 +84,7 @@ Total files: 306
 | `config/brand/map.ts`          | export const MAP_ARIA_LABEL = "校园地图"; export const MAP_FILTER_LOCATIONS = "地点"; export const MAP_FILTER_POSTS = "内容"...                       |    39 |
 | `config/brand/merchant.ts`     | export const MERCHANT_BLOCK_LABEL = "商家信息"; export const MERCHANT_CATEGORY_FOOD = "餐饮"; export const MERCHANT_CATEGOR...                        |   129 |
 | `config/brand/messages.ts`     | export const MESSAGE_EMPTY_CONTENT = "这条消息暂时没有内容。"; export const MESSAGE_TAB_LABEL = "消息分类"; export const MESSAGE_S...                 |    33 |
-| `config/brand/notification.ts` | export const NOTIFICATION_SECTION_LABEL = "通知"; export const NOTIFICATION_READ = "已读"; export const NOTIFICATION_UNRE...                          |    33 |
+| `config/brand/notification.ts` | export const NOTIFICATION_SECTION_LABEL = "通知"; export const NOTIFICATION_READ = "已读"; export const NOTIFICATION_UNRE...                          |    32 |
 | `config/brand/profile.ts`      | export const PROFILE*CAMPUS_USER = "校园用户"; export const PROFILE_INVITE_USER = "邀请码用户"; export const PROFILE_IDENTITY*...                     |   110 |
 | `config/brand/publish.ts`      | export const PUBLISH_CLEAR = "清空"; export const PUBLISH_SUBMIT = "发布"; export const PUBLISH_LOCATION_LABEL = "地点"; e...                         |    96 |
 | `config/brand/report.ts`       | export const REPORT_CAT_PRIVACY = "隐私问题"; export const REPORT_CAT_FALSE_INFO = "虚假信息"; export const REPORT_CAT_ABUSE ...                      |    19 |
