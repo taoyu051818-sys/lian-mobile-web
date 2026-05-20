@@ -1,9 +1,11 @@
 import { apiSend, apiUpload } from "./http";
-import type { PlaceRef } from "../types/place";
+import type { CoordinateSystem, PlaceRef } from "../types/place";
 import type {
   MerchantContentType,
   MerchantPublishInput,
+  NormalizePublishLocationDraftResult,
   PublishLocationDraft,
+  PublishLocationIssue,
   PublishPayload,
   PublishResponse,
   PublishVisibility,
@@ -23,12 +25,56 @@ export const PUBLISH_IMAGE_HELP_TEXT = `支持常见图片格式，单张不超�
 export const PUBLISH_IMAGE_PRIVACY_NOTICE =
   "上传前请确认图片里没有住址、证件、课表或其他会直接暴露身份的信息。当前页面只做基础格式和大小校验；图片元数据清理能力以后端已确认的上传 contract 为准。";
 
+const LOCATION_ISSUE_MESSAGES: Record<PublishLocationIssue["code"], string> = {
+  "manual-place-identity-removed":
+    "display-only manual fallback text cannot be treated as canonical place identity.",
+  "unknown-coordinate-system":
+    "map selection is missing a known coordinate system and should not be treated as map-safe proof.",
+  "invalid-lat-lng":
+    "map selection coordinates are invalid and were downgraded to display-only text.",
+};
+
+function createLocationIssue(code: PublishLocationIssue["code"]): PublishLocationIssue {
+  return { code, message: LOCATION_ISSUE_MESSAGES[code] };
+}
+
 function formatPublishImageSize(bytes: number) {
   return `${Math.round(bytes / (1024 * 1024))} MB`;
 }
 
 function isPublishImageFile(file: Pick<File, "type">) {
   return typeof file.type === "string" && file.type.startsWith("image/");
+}
+
+function normalizeCoordinateSystem(
+  value: CoordinateSystem | undefined,
+  fallback: CoordinateSystem,
+): CoordinateSystem {
+  switch (value) {
+    case "gcj02":
+    case "wgs84":
+    case "image_legacy":
+    case "none":
+    case "unknown":
+      return value;
+    default:
+      return fallback;
+  }
+}
+
+function isFiniteCoordinate(value: unknown): value is number {
+  return typeof value === "number" && Number.isFinite(value);
+}
+
+function hasValidLatLng(lat: unknown, lng: unknown): boolean {
+  return (
+    isFiniteCoordinate(lat) &&
+    isFiniteCoordinate(lng) &&
+    lat >= -90 &&
+    lat <= 90 &&
+    lng >= -180 &&
+    lng <= 180
+  );
 }
 
 export function normalizePublishTag(value = "") {
@@ -114,9 +160,13 @@ export function createManualLocationDraft(placeName: string): PublishLocationDra
     legacyPoint: { x: null, y: null },
     imagePoint: { x: null, y: null },
     mapVersion: "manual",
+    coordinateSystem: "none",
+    identityKind: value ? "manual_text" : "skipped",
+    precisionKind: value ? "display_only" : "none",
     confidence: value ? 0.65 : 0,
     skipped: !value,
     note: "",
+    issues: [],
   };
 }
 
@@ -147,9 +197,74 @@ export function createMapV2LocationDraft(input: {
     legacyPoint: { x: null, y: null },
     imagePoint: { x: null, y: null },
     mapVersion: "gaode_v2",
+    coordinateSystem: "gcj02",
+    identityKind: placeId ? "canonical_place" : "map_selection",
+    precisionKind: "exact",
     confidence: 0.86,
     skipped: false,
     note: input.note || "Vue MapV2 location selection",
+    issues: [],
+  };
+}
+
+export function normalizePublishLocationDraft(
+  locationDraft: PublishLocationDraft | null | undefined,
+  placeName = "",
+): NormalizePublishLocationDraftResult {
+  if (!locationDraft) {
+    const draft = createManualLocationDraft(placeName);
+    return { draft, issues: draft.issues };
+  }
+
+  if (locationDraft.source === "map_v2") {
+    const coordinateSystem = normalizeCoordinateSystem(locationDraft.coordinateSystem, "unknown");
+    const issues: PublishLocationIssue[] = [];
+    if (coordinateSystem === "unknown") {
+      issues.push(createLocationIssue("unknown-coordinate-system"));
+    }
+    if (!hasValidLatLng(locationDraft.lat, locationDraft.lng)) {
+      issues.push(createLocationIssue("invalid-lat-lng"));
+      const downgraded = createManualLocationDraft(
+        locationDraft.displayName || locationDraft.locationArea || placeName,
+      );
+      return {
+        draft: {
+          ...downgraded,
+          note: locationDraft.note,
+          issues,
+        },
+        issues,
+      };
+    }
+
+    const placeId = locationDraft.place?.id || locationDraft.placeId || "";
+    return {
+      draft: {
+        ...locationDraft,
+        placeId: placeId || undefined,
+        coordinateSystem,
+        identityKind: placeId ? "canonical_place" : "map_selection",
+        precisionKind: "exact",
+        issues,
+      },
+      issues,
+    };
+  }
+
+  const issues: PublishLocationIssue[] = [];
+  if (locationDraft.placeId || locationDraft.place?.id) {
+    issues.push(createLocationIssue("manual-place-identity-removed"));
+  }
+  const cleaned = createManualLocationDraft(
+    locationDraft.displayName || locationDraft.locationArea || placeName,
+  );
+  return {
+    draft: {
+      ...cleaned,
+      note: locationDraft.note,
+      issues,
+    },
+    issues,
   };
 }
 
@@ -187,7 +302,8 @@ export function buildPublishPayload(input: {
    */
   trade?: { input: TradePublishInput; contentType: TradeContentType };
 }): PublishPayload {
-  const locationDraft = input.locationDraft || createManualLocationDraft(input.placeName);
+  const normalizedLocation = normalizePublishLocationDraft(input.locationDraft, input.placeName);
+  const locationDraft = normalizedLocation.draft;
   const locationArea = locationDraft.skipped ? "" : locationDraft.locationArea;
   const tag = normalizePublishTag(input.tag);
   const identityTag = normalizeIdentityTag(input.identityTag || "");
@@ -217,7 +333,7 @@ export function buildPublishPayload(input: {
     identityTag,
     metadata,
     locationDraft,
-    riskFlags: [],
+    riskFlags: normalizedLocation.issues.map((issue) => ({ message: issue.message })),
     confidence: locationDraft.confidence,
     needsHumanReview: false,
     aiMode: locationDraft.source === "map_v2" ? "manual-vue-map-v2" : "manual-vue",
