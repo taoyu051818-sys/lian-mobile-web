@@ -265,7 +265,7 @@ Total files: 306
 | `features/runner/RunnerOrderCard.vue`            | Vue SFC                                                                                                                       |   239 |
 | `features/runner/index.ts`                       | export type { RunnerCenterTab } from "./useRunnerCenter";                                                                     |     6 |
 | `features/runner/useRunnerCenter.ts`             | Runner-center state holder. Owns the two lists, the in-flight pending action map (so individual rows can show their o...      |   172 |
-| `features/verification/VerificationView.vue`     | Vue SFC                                                                                                                       |   418 |
+| `features/verification/VerificationView.vue`     | Vue SFC                                                                                                                       |   419 |
 | `features/verification/index.ts`                 | TypeScript module                                                                                                             |     4 |
 | `features/verification/useCampusEmailVerify.ts`  | export interface UseCampusEmailVerifyOptions                                                                                  |   134 |
 | `features/verification/verification-format.ts`   | export interface VerificationDescriptor                                                                                       |    45 |
