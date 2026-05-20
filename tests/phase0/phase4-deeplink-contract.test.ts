@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { buildPostDetailHash, buildViewHash, parseDeepLink } from "../../src/app/deepLink";
+import { appViews } from "../../src/app/view-types";
 
 function readRepoFile(rel: string) {
   return readFileSync(new URL(rel, import.meta.url), "utf8").replace(/\r\n/g, "\n");
@@ -38,6 +39,21 @@ describe("Phase 4 (deeplink): parseDeepLink", () => {
     expect(parseDeepLink("#/feed/")).toEqual({ view: "feed" });
   });
 
+  it("parses #/{view} for the secret views so direct hash refresh mounts the right component", () => {
+    // Secret views are hidden from the bottom tab bar (`appViews`) but reachable
+    // by direct hash. If the parser drops them, refreshing #/admin or #/merchant
+    // falls back to feed — that was the regression in the nat100 report.
+    expect(parseDeepLink("#/admin")).toEqual({ view: "admin" });
+    expect(parseDeepLink("#/verification")).toEqual({ view: "verification" });
+    expect(parseDeepLink("#/merchant")).toEqual({ view: "merchant" });
+    expect(parseDeepLink("#/errand-order")).toEqual({ view: "errand-order" });
+    expect(parseDeepLink("#/runner")).toEqual({ view: "runner" });
+    // Trailing-slash and query-tail handling must work for secret views too.
+    expect(parseDeepLink("#/merchant/")).toEqual({ view: "merchant" });
+    expect(parseDeepLink("#/merchant?ref=push")).toEqual({ view: "merchant" });
+    expect(parseDeepLink("/admin")).toEqual({ view: "admin" });
+  });
+
   it("post-detail hashes win precedence over view-shaped paths", () => {
     expect(parseDeepLink("#/post/7")).toEqual({ view: "post-detail", tid: 7 });
   });
@@ -54,6 +70,33 @@ describe("Phase 4 (deeplink): builders", () => {
     expect(buildViewHash("publish")).toBe("#/publish");
     expect(buildViewHash("messages")).toBe("#/messages");
     expect(buildViewHash("profile")).toBe("#/profile");
+  });
+
+  it("buildViewHash produces #/{view} for every secret view", () => {
+    // The builder is the inverse of parseDeepLink: round-tripping a secret-view
+    // hash through buildViewHash → parseDeepLink must yield the same key.
+    expect(buildViewHash("admin")).toBe("#/admin");
+    expect(buildViewHash("verification")).toBe("#/verification");
+    expect(buildViewHash("merchant")).toBe("#/merchant");
+    expect(buildViewHash("errand-order")).toBe("#/errand-order");
+    expect(buildViewHash("runner")).toBe("#/runner");
+    expect(parseDeepLink(buildViewHash("merchant"))).toEqual({ view: "merchant" });
+  });
+});
+
+describe("Phase 4 (deeplink): bottom tab bar invariant", () => {
+  it("appViews exposes exactly the five visible tabs (secret views must NOT leak in)", () => {
+    // The bottom tab bar consumes `appViews` directly. Adding admin/verification
+    // /merchant/errand-order/runner here would surface them as visible tabs,
+    // which is the opposite of what "secret view" means. The hash router still
+    // resolves them via AppViewKey + parseDeepLink — no tab list change needed.
+    expect(appViews.map((view) => view.key)).toEqual([
+      "feed",
+      "map",
+      "publish",
+      "messages",
+      "profile",
+    ]);
   });
 });
 

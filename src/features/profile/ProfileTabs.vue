@@ -34,11 +34,18 @@ const emit = defineEmits<{
   display: flex;
   gap: 0;
   align-items: stretch;
+  overflow-x: auto;
   border-bottom: 1px solid rgba(31, 41, 51, 0.08);
+  scrollbar-width: none;
+}
+
+.profile-tabs::-webkit-scrollbar {
+  display: none;
 }
 
 .profile-tabs__tab {
-  flex: 1;
+  flex: 0 0 auto;
+  min-width: 72px;
   min-height: 44px;
   padding: var(--space-2) var(--space-3);
   border: 0;

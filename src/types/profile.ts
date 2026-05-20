@@ -1,7 +1,16 @@
 import type { FeedItemId } from "./feed";
 import type { VerificationState, VerificationTag } from "./verification";
 
-export type ProfileTabKey = "history" | "saved" | "liked";
+export type ProfileTabKey =
+  | "history"
+  | "saved"
+  | "liked"
+  | "posts"
+  | "replies"
+  | "drafts"
+  | "map-contributions";
+
+export type ProfileActivityStatus = "published" | "draft" | "pending" | "hidden";
 
 export interface ProfileAlias {
   id: string;
@@ -43,11 +52,15 @@ export interface ProfileUser {
 }
 
 export interface ProfileListItem {
-  tid: FeedItemId;
+  tid?: FeedItemId;
+  id?: string;
   title?: string;
   cover?: string;
   timestampISO?: string;
   lastViewedAt?: string;
+  timeLabel?: string;
+  locationArea?: string;
+  status?: ProfileActivityStatus;
 }
 
 export interface ProfileListResponse {

@@ -10,6 +10,10 @@ import {
   PROFILE_TAB_HISTORY,
   PROFILE_TAB_SAVED,
   PROFILE_TAB_LIKED,
+  PROFILE_TAB_POSTS,
+  PROFILE_TAB_REPLIES,
+  PROFILE_TAB_DRAFTS,
+  PROFILE_TAB_MAP_CONTRIBUTIONS,
   PROFILE_EMPTY_CONTENT,
   PROFILE_LIST_ERROR_PREFIX,
 } from "../../config/brand";
@@ -33,6 +37,14 @@ export function useProfileTabs(options: {
     { key: "history", label: PROFILE_TAB_HISTORY, empty: EMPTY_HISTORY },
     { key: "saved", label: PROFILE_TAB_SAVED, empty: EMPTY_SAVED },
     { key: "liked", label: PROFILE_TAB_LIKED, empty: EMPTY_LIKED },
+    { key: "posts", label: PROFILE_TAB_POSTS, empty: PROFILE_EMPTY_CONTENT },
+    { key: "replies", label: PROFILE_TAB_REPLIES, empty: PROFILE_EMPTY_CONTENT },
+    { key: "drafts", label: PROFILE_TAB_DRAFTS, empty: PROFILE_EMPTY_CONTENT },
+    {
+      key: "map-contributions",
+      label: PROFILE_TAB_MAP_CONTRIBUTIONS,
+      empty: PROFILE_EMPTY_CONTENT,
+    },
   ];
 
   const listEmptyText = computed(
