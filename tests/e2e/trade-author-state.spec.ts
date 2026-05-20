@@ -1,4 +1,4 @@
-import { expect, request, test, type APIRequestContext, type Browser } from "@playwright/test";
+import { expect, request, test, type APIRequestContext } from "@playwright/test";
 
 import { isRoleConfigured, loginAs } from "./fixtures/accounts";
 
@@ -132,10 +132,9 @@ test.describe("@trade @campus issue #649 — trade author state proof", () => {
     );
 
     const { api } = await loginAs("campus", BASE_URL);
-    let tid = "";
     try {
       const published = await publishTradePost(api);
-      tid = published.tid;
+      const tid = published.tid;
 
       const initialDetail = await readTradeState(api, tid);
       expect(initialDetail.trade?.state).toBe("available");
@@ -197,7 +196,7 @@ test.describe("@trade @campus issue #649 — trade author state proof", () => {
     );
 
     const author = await loginAs("campus", BASE_URL);
-    let tid = "";
+    let tid: string | undefined;
     try {
       const published = await publishTradePost(author.api);
       tid = published.tid;
