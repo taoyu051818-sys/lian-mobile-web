@@ -1,5 +1,7 @@
 import { expect, request, test, type APIRequestContext, type Browser } from "@playwright/test";
 
+import { isRoleConfigured, loginAs } from "./fixtures/accounts";
+
 const BASE_URL = process.env.APP_BASE_URL ?? "https://lian.nat100.top";
 
 interface FeedItem {
@@ -11,10 +13,6 @@ interface FeedItem {
 
 interface FeedResponse {
   items?: FeedItem[];
-}
-
-interface LoginResponse {
-  user?: unknown;
 }
 
 interface PublishResponse {
@@ -32,12 +30,6 @@ interface LikedResponse {
 
 interface SavedResponse {
   items?: Array<{ tid?: number | string; title?: string }>;
-}
-
-function envOrThrow(name: "LIAN_E2E_USERNAME" | "LIAN_E2E_PASSWORD") {
-  const value = process.env[name];
-  if (!value) throw new Error(`${name} is required for the nat100 journey test.`);
-  return value;
 }
 
 function buildPublishPayload(imageUrl: string, title: string) {
@@ -74,18 +66,6 @@ function buildPublishPayload(imageUrl: string, title: string) {
     needsHumanReview: false,
     aiMode: "manual-vue",
   };
-}
-
-async function login(api: APIRequestContext) {
-  const response = await api.post("/api/auth/login", {
-    data: {
-      login: envOrThrow("LIAN_E2E_USERNAME"),
-      password: envOrThrow("LIAN_E2E_PASSWORD"),
-    },
-  });
-  expect(response.ok(), await response.text()).toBe(true);
-  const body = (await response.json()) as LoginResponse;
-  expect(body.user).toBeTruthy();
 }
 
 async function firstPublicFeedItem(api: APIRequestContext) {
@@ -154,9 +134,16 @@ test("anonymous browse -> direct detail -> login gate surfaces public content", 
 test("login -> like/save existing post -> profile liked/saved -> anonymous share", async ({
   browser,
 }) => {
-  const api = await request.newContext({ baseURL: BASE_URL });
-  const item = await firstPublicFeedItem(api);
-  await login(api);
+  test.skip(
+    !isRoleConfigured("registered"),
+    "registered role not configured — set LIAN_E2E_REGISTERED_USERNAME / LIAN_E2E_REGISTERED_PASSWORD",
+  );
+
+  const anonApi = await request.newContext({ baseURL: BASE_URL });
+  const item = await firstPublicFeedItem(anonApi);
+  await anonApi.dispose();
+
+  const { api } = await loginAs("registered", BASE_URL);
 
   const { context, page } = await openAuthenticatedPage(browser, api);
   await page.goto(`/#/post/${item.tid}`);
@@ -210,9 +197,11 @@ test("login -> like/save existing post -> profile liked/saved -> anonymous share
 test.fixme("login -> publish image -> like -> profile liked -> anonymous share", async ({
   browser,
 }) => {
-  const api = await request.newContext({ baseURL: BASE_URL });
-  const imageUrl = await firstReusableImage(api);
-  await login(api);
+  const anonApi = await request.newContext({ baseURL: BASE_URL });
+  const imageUrl = await firstReusableImage(anonApi);
+  await anonApi.dispose();
+
+  const { api } = await loginAs("registered", BASE_URL);
 
   const { context, page } = await openAuthenticatedPage(browser, api);
   await page.goto("/#/publish");
