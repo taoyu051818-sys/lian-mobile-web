@@ -18,6 +18,7 @@ export default defineConfig({
       "tests/shell/**/*.test.ts",
       "tests/publish/**/*.test.ts",
       "tests/profile/**/*.test.ts",
+      "tests/merchant/**/*.test.ts",
       "src/utils/__tests__/**/*.test.ts",
       "tests/motion/**/*.test.ts",
       "tests/phase0/**/*.test.ts",
