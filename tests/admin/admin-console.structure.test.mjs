@@ -47,7 +47,6 @@ test("api/admin attaches Bearer header on every request", () => {
   const src = read("src/api/admin.ts");
   assert.match(src, /authorization/i);
   assert.match(src, /Bearer\s*\$\{token\}/);
-  // No call site uses apiGet / apiSend without going through withAuthHeader.
   const callSites = src.match(/apiGet<|apiSend</g) || [];
   const wrappedSites = src.match(/withAuthHeader\(token/g) || [];
   assert.ok(
@@ -56,17 +55,30 @@ test("api/admin attaches Bearer header on every request", () => {
   );
 });
 
-test("api/admin exposes the five admin operations", () => {
+test("api/admin exposes report, user action, audit, and aggregate verification helpers", () => {
   const src = read("src/api/admin.ts");
   for (const fn of [
     "fetchAdminReports",
     "patchAdminReport",
     "postAdminPostAction",
     "patchAdminUserStatus",
+    "fetchAdminVerifications",
+    "patchAdminVerification",
+    "fetchAdminRealnameVerificationReveal",
     "fetchAdminAuditLog",
   ]) {
     assert.match(src, new RegExp(`export async function ${fn}\\b`));
   }
+});
+
+test("api/admin uses the aggregate queue path, truthful transition routes, and explicit reveal", () => {
+  const src = read("src/api/admin.ts");
+  assert.match(src, /\/api\/admin\/verifications\?\$\{query\}/);
+  assert.match(src, /verificationType/);
+  assert.match(src, /reveal=true/);
+  assert.match(src, /\/api\/admin\/verifications\/\$\{request\.verificationType\}/);
+  assert.doesNotMatch(src, /reviewing/);
+  assert.doesNotMatch(src, /payload\?: Record<string, unknown>/);
 });
 
 // --- token gate: sessionStorage round-trip + auto-clear on 401 ---
@@ -83,6 +95,13 @@ test("useAdminConsole clears the token on 401/403", () => {
   assert.match(src, /status === 401|status === 403/);
 });
 
+test("useAdminConsole stores revealed realname payloads separately from default queue data", () => {
+  const src = read("src/features/admin/useAdminConsole.ts");
+  assert.match(src, /revealedRealnames/);
+  assert.match(src, /loadRealnameReveal/);
+  assert.match(src, /fetchAdminRealnameVerificationReveal/);
+});
+
 // --- ProfileView entry: behind VITE_ADMIN_VISIBLE flag, never unconditional ---
 
 test("ProfileView gates the admin entry button on VITE_ADMIN_VISIBLE", () => {
@@ -94,8 +113,6 @@ test("ProfileView gates the admin entry button on VITE_ADMIN_VISIBLE", () => {
 
 test("ProfileView does not render an unconditional admin link", () => {
   const src = read("src/features/profile/ProfileView.vue");
-  // The admin entry must be inside an v-if; a bare anchor or button without
-  // the flag would mean the link leaks to every visitor.
   const linkRe = /class="profile-view__admin-link"/;
   assert.ok(linkRe.test(src), "admin link must exist");
   const wrappedRe = /v-if="adminEntryVisible"[\s\S]*?profile-view__admin-link/;
@@ -114,6 +131,32 @@ test("AdminView exit button clears the token via clearToken", () => {
   const src = read("src/features/admin/AdminView.vue");
   assert.match(src, /admin:exit/);
   assert.match(src, /clearToken\(\)/);
+});
+
+test("AdminView mounts verification queue as a first-class admin tab", () => {
+  const src = read("src/features/admin/AdminView.vue");
+  assert.match(src, /AdminVerificationQueueList/);
+  assert.match(src, /ADMIN_TAB_VERIFICATIONS/);
+  assert.match(src, /activeTab === 'verifications'/);
+  assert.match(src, /loadVerificationRequests/);
+  assert.match(src, /reviewVerificationRequest/);
+  assert.match(src, /loadRealnameReveal/);
+});
+
+test("AdminVerificationQueueList renders publicSummary and never raw payload by default", () => {
+  const src = read("src/features/admin/AdminVerificationQueueList.vue");
+  assert.match(src, /publicSummary/);
+  assert.match(src, /ADMIN_VERIFICATION_REDACTED_HINT/);
+  assert.match(src, /ADMIN_VERIFICATION_REVEAL/);
+  assert.doesNotMatch(src, /request\.payload/);
+  assert.doesNotMatch(src, /JSON\.stringify\(request\.payload/);
+});
+
+test("AdminVerificationQueueList only offers approve and reject actions", () => {
+  const src = read("src/features/admin/AdminVerificationQueueList.vue");
+  assert.match(src, /submitReview\(request, 'approved'\)/);
+  assert.match(src, /submitReview\(request, 'rejected'\)/);
+  assert.doesNotMatch(src, /reviewing/);
 });
 
 // --- brand registration ---
