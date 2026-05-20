@@ -28,5 +28,4 @@ export const NOTIFICATION_CHANNEL_ERRAND_TITLE = "跑腿订单状态";
 export const NOTIFICATION_CHANNEL_ERRAND_DESC =
   "订单从接单到送达的状态变更目前只在订单时间线里显示，离开页面就看不到。";
 export const NOTIFICATION_CHANNEL_EVENT_TITLE = "活动完成";
-export const NOTIFICATION_CHANNEL_EVENT_DESC =
-  "活动完成、奖励发放、活动过期目前没有通知通道。";
+export const NOTIFICATION_CHANNEL_EVENT_DESC = "活动完成、奖励发放、活动过期目前没有通知通道。";
