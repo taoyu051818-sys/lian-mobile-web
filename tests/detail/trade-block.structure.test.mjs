@@ -117,8 +117,14 @@ test("trade-manage block gate falls back to actor-id match when tradeManageable 
   assert.match(src, /currentPost\.tradeManageable !== undefined/);
   // Note: only the existence-guard side carries `?.` ; the equality side
   // compares the resolved values (so `actor.id` not `actor?.id`).
-  assert.match(src, /user\.id\s*&&\s*currentPost\.actor\?\.id\s*&&\s*user\.id === currentPost\.actor\.id/);
-  assert.match(src, /user\.username\s*&&\s*currentPost\.actor\?\.username\s*&&\s*user\.username === currentPost\.actor\.username/);
+  assert.match(
+    src,
+    /user\.id\s*&&\s*currentPost\.actor\?\.id\s*&&\s*user\.id === currentPost\.actor\.id/,
+  );
+  assert.match(
+    src,
+    /user\.username\s*&&\s*currentPost\.actor\?\.username\s*&&\s*user\.username === currentPost\.actor\.username/,
+  );
 });
 
 test("trade-manage block guards the action against double-submit + missing tid (#649)", () => {
