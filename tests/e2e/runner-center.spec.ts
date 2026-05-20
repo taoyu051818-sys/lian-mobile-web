@@ -19,19 +19,19 @@ interface RunnerTransitionResponse {
 }
 
 async function fetchAvailable(api: APIRequestContext) {
-  const response = await api.get("/api/runner/orders/available");
+  const response = await api.get("/api/errands/orders/mine?role=runner&state=paid_locked");
   expect(response.ok(), await response.text()).toBe(true);
   return ((await response.json()) as RunnerListResponse).items ?? [];
 }
 
 async function fetchActive(api: APIRequestContext) {
-  const response = await api.get("/api/runner/orders/active");
+  const response = await api.get("/api/errands/orders/mine?role=runner");
   expect(response.ok(), await response.text()).toBe(true);
   return ((await response.json()) as RunnerListResponse).items ?? [];
 }
 
 async function transition(api: APIRequestContext, orderId: string, action: string) {
-  const response = await api.post(`/api/runner/orders/${encodeURIComponent(orderId)}/${action}`);
+  const response = await api.post(`/api/errands/orders/${encodeURIComponent(orderId)}/${action}`);
   expect(response.ok(), await response.text()).toBe(true);
   const body = (await response.json()) as RunnerTransitionResponse;
   expect(body.order, `transition ${action} returned no order`).toBeTruthy();
@@ -56,7 +56,7 @@ test.describe("@runner runner center @runner-center", () => {
     }
   });
 
-  test("@runner non-runner registered user is gated out of /api/runner/orders/*", async () => {
+  test("@runner non-runner registered user is gated out of runner errand order reads", async () => {
     if (!isRoleConfigured("registered")) {
       test.skip(true, "registered role not configured — set LIAN_E2E_REGISTERED_USERNAME/PASSWORD");
       return;
@@ -68,7 +68,7 @@ test.describe("@runner runner center @runner-center", () => {
       const flatTags = new Set<string>([...(user.tags ?? []), ...(user.verificationTags ?? [])]);
       expect(flatTags.has("runner"), "registered fixture must not carry runner tag").toBe(false);
 
-      const response = await api.get("/api/runner/orders/available");
+      const response = await api.get("/api/errands/orders/mine?role=runner&state=paid_locked");
       // Backend may answer 401/403 (auth) or 404 (route hidden). Anything
       // outside the [400,500) range means the gate is broken.
       expect(
@@ -80,10 +80,10 @@ test.describe("@runner runner center @runner-center", () => {
     }
   });
 
-  test("@runner anonymous visitor is rejected from /api/runner/orders/available", async () => {
+  test("@runner anonymous visitor is rejected from runner errand order reads", async () => {
     const api = await request.newContext({ baseURL: BASE_URL });
     try {
-      const response = await api.get("/api/runner/orders/available");
+      const response = await api.get("/api/errands/orders/mine?role=runner&state=paid_locked");
       expect(
         response.status() >= 400 && response.status() < 500,
         `expected 4xx for anonymous, got ${response.status()}`,
@@ -93,7 +93,7 @@ test.describe("@runner runner center @runner-center", () => {
     }
   });
 
-  test("@runner runner_verified user advances accept -> at_shop -> pickup -> deliver", async () => {
+  test("@runner runner_verified user advances accept -> pickup -> deliver", async () => {
     if (!isRoleConfigured("runner")) {
       test.skip(true, "runner role not configured — set LIAN_E2E_RUNNER_USERNAME/PASSWORD");
       return;
@@ -110,13 +110,10 @@ test.describe("@runner runner center @runner-center", () => {
     const { api } = await loginAs("runner");
     try {
       const accepted = await transition(api, seedOrderId, "accept");
-      expect(accepted.status).toBe("accepted");
-
-      const atShop = await transition(api, seedOrderId, "at_shop");
-      expect(atShop.status).toBe("at_shop");
+      expect(accepted.status).toBe("assigned");
 
       const pickedUp = await transition(api, seedOrderId, "pickup");
-      expect(pickedUp.status).toBe("picked_up");
+      expect(pickedUp.status).toBe("delivering");
 
       const delivered = await transition(api, seedOrderId, "deliver");
       expect(delivered.status).toBe("delivered");

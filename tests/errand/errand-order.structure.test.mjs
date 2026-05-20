@@ -44,8 +44,9 @@ test("AppViewHost lazy-loads ErrandOrderView", () => {
 
 test("useActiveView accepts secret view 'errand-order'", () => {
   const src = read("src/app/useActiveView.ts");
-  assert.match(src, /SECRET_VIEWS/);
-  assert.match(src, /"errand-order"/);
+  assert.match(src, /getViewFromHashRef/);
+  assert.match(src, /pushViewHash\(key\)/);
+  assert.match(src, /secret views \(admin\/verification\/merchant\/errand-order\/runner\)/);
 });
 
 // --- types ---
@@ -81,7 +82,7 @@ test("ErrandOrderGateReason union covers the documented codes", () => {
 
 test("api/errands.ts exposes the order endpoints + normalizers", () => {
   const src = read("src/api/errands.ts");
-  assert.match(src, /\/api\/errand-orders/);
+  assert.match(src, /\/api\/errands\/orders/);
   assert.match(src, /export async function fetchErrandOrderEligibility/);
   assert.match(src, /export async function createErrandOrder/);
   assert.match(src, /export async function fetchErrandOrder/);
@@ -144,7 +145,7 @@ test("isTerminalErrandStatus only blesses the truly-terminal codes", () => {
 test("api/errands.ts ships the my-orders fetch", () => {
   const src = read("src/api/errands.ts");
   assert.match(src, /export async function fetchMyErrandOrders/);
-  assert.match(src, /\/api\/errand-orders\?mine=1/);
+  assert.match(src, /\/api\/errands\/orders\/mine/);
 });
 
 test("useMyErrandOrders is a thin wrapper over fetchMyErrandOrders", () => {

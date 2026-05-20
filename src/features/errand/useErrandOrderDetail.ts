@@ -1,7 +1,7 @@
 /**
  * Read-side composable for the errand order timeline view (issue #647).
  *
- * Wraps `GET /api/errand-orders/:id`. The state machine itself is owned by
+ * Wraps `GET /api/errands/orders/:id`. The state machine itself is owned by
  * #648, so this composable does not drive transitions — but the user-facing
  * timeline still needs to *see* transitions land, so we layer two things on
  * top of the basic fetch:

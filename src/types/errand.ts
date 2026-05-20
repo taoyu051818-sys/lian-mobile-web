@@ -11,7 +11,7 @@
  * - Draft / request types for the user-side order form.
  * - Gate reason union (PRD §12 — not_logged_in / not_verified /
  *   insufficient_balance / merchant_paused / no_runner_coverage / unknown).
- * - Timeline event shape returned by `GET /api/errand-orders/:id`.
+ * - Timeline event shape returned by `GET /api/errands/orders/:id`.
  *
  * The order state machine itself stays out of scope (#648); the timeline
  * event shape is intentionally read-only here.
@@ -73,7 +73,7 @@ export interface ErrandOrderDraft {
 }
 
 /**
- * Wire-shape sent to `POST /api/errand-orders`. Locations are flattened to
+ * Wire-shape sent to `POST /api/errands/orders`. Locations are flattened to
  * the same shape `PostLocation` exposes so the backend keeps a single
  * normalizer. `notes` is trimmed; empty notes degrade to omitted on the
  * wire (handled by the API helper, not the form).
@@ -104,7 +104,7 @@ export interface ErrandOrderTimelineEvent {
 }
 
 /**
- * Full order detail returned by `GET /api/errand-orders/:id`. Composes the
+ * Full order detail returned by `GET /api/errands/orders/:id`. Composes the
  * existing `ErrandOrder` (lifecycle fields) with a timeline + the human
  * preview we want to show on the order detail page.
  */
@@ -118,7 +118,7 @@ export interface ErrandOrderDetail {
 }
 
 /**
- * Successful response from `POST /api/errand-orders`. Backend either echoes
+ * Successful response from `POST /api/errands/orders`. Backend either echoes
  * the created order back (and the UI can pivot straight into the timeline
  * view) or — if the gate evaluator fired late — returns `ok=false` with a
  * reason. Treating the failure as a gate keeps the failure handling
@@ -134,7 +134,7 @@ export interface ErrandOrderCreateResponse {
 /**
  * Single row in "我的跑腿订单" (the requester's order list). Only the fields
  * the row needs to render are surfaced — full detail lives behind
- * `GET /api/errand-orders/:id` once the user taps in. Status drives the
+ * `GET /api/errands/orders/:id` once the user taps in. Status drives the
  * sort + visual state on the list; createdAt is the secondary sort key.
  */
 export interface ErrandOrderSummary {
@@ -148,7 +148,7 @@ export interface ErrandOrderSummary {
 }
 
 /**
- * Response shape for `GET /api/errand-orders?mine=1`. Backend may also ship
+ * Response shape for `GET /api/errands/orders/mine`. Backend may also ship
  * a server-side cursor in the future; for now the list is whole-history with
  * the active orders sorted ahead of finished ones (server side).
  */

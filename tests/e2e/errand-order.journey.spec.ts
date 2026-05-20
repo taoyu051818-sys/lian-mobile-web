@@ -15,7 +15,7 @@ import { fileURLToPath } from "node:url";
  * Journey covered:
  *   1. Merchant detail "帮我取" CTA → setActiveView("errand-order")
  *   2. Form view → eligibility + auth + wallet → gate or form
- *   3. Form submit → POST /errand-orders → enterForOrder(orderId)
+ *   3. Form submit → POST /errands/orders → enterForOrder(orderId)
  *   4. Same secret view → timeline branch on the new orderId
  *   5. Gate branches: not_logged_in / not_verified / insufficient_balance /
  *      merchant_paused / no_runner_coverage / unknown
