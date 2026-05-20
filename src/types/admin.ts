@@ -59,3 +59,44 @@ export interface AdminUserStatusResult {
   statusReason: string;
   statusChangedAt: string;
 }
+
+export type AdminVerificationType = "org-join" | "realname" | "merchant" | "runner";
+
+export type AdminVerificationStatus = "pending" | "approved" | "rejected";
+
+export type AdminVerificationDecisionStatus = "approved" | "rejected";
+
+export type AdminVerificationPublicSummary = Record<string, unknown>;
+
+export interface AdminVerificationRecord {
+  verificationId: string;
+  verificationType: AdminVerificationType;
+  userId: string;
+  status: AdminVerificationStatus;
+  publicSummary: AdminVerificationPublicSummary;
+  reviewerId: string | null;
+  reviewedAt: string | null;
+  reviewerNote: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AdminVerificationListResponse {
+  items: AdminVerificationRecord[];
+  total: number;
+}
+
+export interface AdminRealnameVerificationReveal {
+  verificationId: string;
+  userId: string;
+  status: AdminVerificationStatus;
+  idType: string;
+  realName: string;
+  idNumber: string;
+  contact: string;
+  reviewerId: string | null;
+  reviewedAt: string | null;
+  reviewerNote: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
