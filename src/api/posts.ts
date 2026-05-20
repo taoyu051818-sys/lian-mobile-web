@@ -77,6 +77,11 @@ export function normalizePostDetail(value: unknown, fallbackId: FeedItemId): Pos
   const bookmarkedValue = "bookmarked" in record ? record.bookmarked : record.saved;
   const event = normalizeEventExtension(record.event);
   const eventJoined = "eventJoined" in record ? asBoolean(record.eventJoined) : undefined;
+  // Issue #703 — backend may ship eventManageable so the detail page does not
+  // double-resolve author/admin client-side. Absent value = let the frontend
+  // probe via /api/auth/me + /api/admin/me.
+  const eventManageable =
+    "eventManageable" in record ? asBoolean(record.eventManageable) : undefined;
   const help = normalizeHelpExtension(record.help);
   const helpVoted = "helpVoted" in record ? asBoolean(record.helpVoted) : undefined;
   const helpManageable = "helpManageable" in record ? asBoolean(record.helpManageable) : undefined;
@@ -128,6 +133,7 @@ export function normalizePostDetail(value: unknown, fallbackId: FeedItemId): Pos
     bookmarked: asBoolean(bookmarkedValue),
     ...(event ? { event } : {}),
     ...(eventJoined !== undefined ? { eventJoined } : {}),
+    ...(eventManageable !== undefined ? { eventManageable } : {}),
     ...(help ? { help } : {}),
     ...(helpVoted !== undefined ? { helpVoted } : {}),
     ...(helpManageable !== undefined ? { helpManageable } : {}),

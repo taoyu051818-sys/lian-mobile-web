@@ -19,7 +19,7 @@ Total files: 306
 | `api/audience.ts`     | Audience options API client. Backend route (PRD V0.1 §11.1): GET /api/audience/options The route may be missing in o...  |    81 |
 | `api/auth.ts`         | export type AuthMode = "login" \| "register";                                                                            |    66 |
 | `api/errands.ts`      | Errand order API client (issue #647). Surface: - GET /api/errands/orders/eligibility?merchantPostId=:id — pre-su...      |   272 |
-| `api/events.ts`       | Event / Help / Errand API client stubs (PRD V0.1 §11.2, §11.3, §11.4). Every function below is intentionally thin — ...  |   131 |
+| `api/events.ts`       | Event / Help / Errand API client stubs (PRD V0.1 §11.2, §11.3, §11.4). Every function below is intentionally thin — ...  |   156 |
 | `api/feed.ts`         | export const DEFAULT_TABS: FeedTab[] = [                                                                                 |   192 |
 | `api/http.ts`         | export class LianApiError extends Error                                                                                  |   252 |
 | `api/interaction.ts`  | Like/vote unified interaction API (PRD V0.1 §7.1.2, §11.3). Backend already exposes `/api/posts/:tid/like` for likes...  |    65 |
@@ -27,7 +27,7 @@ Total files: 306
 | `api/merchant.ts`     | Merchant center API (issue #646). `GET /api/me/merchant-center` returns the merchant readout for the signed-in user....  |    89 |
 | `api/messages.ts`     | export function extractChannelMessagePlainText(html?: string): string                                                    |   379 |
 | `api/places.ts`       | TypeScript module                                                                                                        |    10 |
-| `api/posts.ts`        | export interface PostLikeResponse                                                                                        |   231 |
+| `api/posts.ts`        | export interface PostLikeResponse                                                                                        |   237 |
 | `api/profile.ts`      | export function normalizeProfileListItem(item: unknown): ProfileListItem                                                 |   163 |
 | `api/publish.ts`      | Creates a display-only fallback draft from free-text place name. When `placeName` is non-empty the source is "manual"... |   370 |
 | `api/runner.ts`       | Available pool — orders not yet claimed by any runner.                                                                   |   106 |
@@ -60,12 +60,12 @@ Total files: 306
 | `composables/useAutoLoadSentinel.ts`     | export function useAutoLoadSentinel(                                                                                     |    76 |
 | `composables/useBodyScrollLock.ts`       | export function useBodyScrollLock(active: Ref<boolean>)                                                                  |    30 |
 | `composables/useEscapeListener.ts`       | export function useEscapeListener(active: Ref<boolean>, onEscape: () => void)                                            |    18 |
-| `composables/useEventActions.ts`         | Event detail composable (PRD V0.1 §6.3 / §11.2). Wires the pure `planEventAction` policy to live event state, and ex...  |    80 |
+| `composables/useEventActions.ts`         | Event detail composable (PRD V0.1 §6.3 / §11.2). Wires the pure `planEventAction` policy to live event state, and ex...  |   131 |
 | `composables/useEventPublishDraft.ts`    | Event-publish draft state (PRD V0.1 §6.3 / §11.2). Adds a postType selector plus the event-only fields (startsAt, en...  |    46 |
 | `composables/useFocusRestore.ts`         | export function useFocusRestore()                                                                                        |    15 |
 | `composables/useHelpManage.ts`           | Help manage composable (PRD V0.1 §6.5 / §11.3). Wires `planHelpManage` to live state and exposes one entry point per...  |    85 |
 | `composables/useHelpVote.ts`             | Help vote composable (PRD V0.1 §6.5 / §11.3). Wires `planHelpVote` to live state and exposes a single `act()` that c...  |    71 |
-| `composables/usePostDetailExtensions.ts` | Post detail extension wiring (PRD V0.1 §6.3 / §6.5 / §11.2 / §11.3). Bundles the event / help-vote / help-manage sta...  |   147 |
+| `composables/usePostDetailExtensions.ts` | Post detail extension wiring (PRD V0.1 §6.3 / §6.5 / §11.2 / §11.3). Bundles the event / help-vote / help-manage sta...  |   207 |
 | `composables/usePublishAiDraft.ts`       | uploadedImageUrls: Ref<string[]>; title: Ref<string>; body: Ref<string>; locationLabel: Ref<string>; Called once per ... |   101 |
 | `composables/useReducedMotion.ts`        | Reactive reduced-motion preference composable. SSR-safe: returns `false` when `window` / `matchMedia` are unavailabl...  |    40 |
 | `composables/useVisualViewport.ts`       | Reactive visual-viewport keyboard-inset composable. Tracks `window.visualViewport` resize/scroll events and exposes ...  |    51 |
@@ -76,7 +76,7 @@ Total files: 306
 | ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------- | ----: |
 | `config/brand/admin.ts`        | export const ADMIN_SECTION_LABEL = "管理后台"; export const ADMIN_ENTER_LABEL = "管理"; export const ADMIN_EXIT_LABEL = "退出...                      |    79 |
 | `config/brand/auth.ts`         | export const AUTH_PANEL_TITLE = "登录 / 注册"; export const AUTH_TAB_LOGIN = "登录"; export const AUTH_TAB_REGISTER = "注册";...                      |    58 |
-| `config/brand/detail.ts`       | export const POST_DETAIL_CLOSE = "关闭详情"; export const POST_DETAIL_AUTHOR_AVATAR = "作者头像"; export const POST_DETAIL_SH...                      |   118 |
+| `config/brand/detail.ts`       | export const POST_DETAIL_CLOSE = "关闭详情"; export const POST_DETAIL_AUTHOR_AVATAR = "作者头像"; export const POST_DETAIL_SH...                      |   128 |
 | `config/brand/error.ts`        | export const ERROR_LOAD_GENERIC = "暂时没加载出来，可以稍后再试。"; export const ERROR_SEND_GENERIC = "没有发送成功，可以稍后再试。"; export const... |    23 |
 | `config/brand/feed.ts`         | export const FEED_VIEW_TITLE = "首页"; export const FEED_FILTER_LABEL = "信息分类"; export const FEED_EMPTY_HINT = "可以换个分类，...                 |    17 |
 | `config/brand/index.ts`        | TypeScript module                                                                                                                                     |    21 |
@@ -137,8 +137,8 @@ Total files: 306
 | `features/auth/useAuthSubmit.ts`                 | export type AuthFormFields = AuthValidationFields;                                                                            |   129 |
 | `features/auth/useEmailCodeCooldown.ts`          | export const AUTH_EMAIL_CODE_DEFAULT_COOLDOWN_SECONDS = 60;                                                                   |   148 |
 | `features/detail/PostActionFeedback.vue`         | Vue SFC                                                                                                                       |    38 |
-| `features/detail/PostDetailContent.vue`          | Vue SFC                                                                                                                       |   184 |
-| `features/detail/PostDetailEventBlock.vue`       | Vue SFC                                                                                                                       |   253 |
+| `features/detail/PostDetailContent.vue`          | Vue SFC                                                                                                                       |   192 |
+| `features/detail/PostDetailEventBlock.vue`       | Issue #703 — server-driven status takes precedence when present.                                                              |   463 |
 | `features/detail/PostDetailGallery.vue`          | Vue SFC                                                                                                                       |    78 |
 | `features/detail/PostDetailHelpBlock.vue`        | Vue SFC                                                                                                                       |   221 |
 | `features/detail/PostDetailHelpManageBlock.vue`  | Vue SFC                                                                                                                       |   241 |
@@ -147,7 +147,7 @@ Total files: 306
 | `features/detail/PostDetailLightbox.vue`         | Vue SFC                                                                                                                       |    43 |
 | `features/detail/PostDetailMainBody.vue`         | Vue SFC                                                                                                                       |    44 |
 | `features/detail/PostDetailMerchantBlock.vue`    | Import directly from the route module instead of `../errand` so the detail                                                    |   310 |
-| `features/detail/PostDetailPanel.vue`            | Shell chrome slots (`top: detail-topbar`, `bottom: reply-dock`) are now                                                       |   376 |
+| `features/detail/PostDetailPanel.vue`            | Shell chrome slots (`top: detail-topbar`, `bottom: reply-dock`) are now                                                       |   384 |
 | `features/detail/PostDetailTopbar.vue`           | Vue SFC                                                                                                                       |   132 |
 | `features/detail/PostDetailTradeBlock.vue`       | Vue SFC                                                                                                                       |   226 |
 | `features/detail/PostDetailTradeManageBlock.vue` | Vue SFC                                                                                                                       |   207 |
@@ -289,7 +289,7 @@ Total files: 306
 
 | File                          | Summary                                                                                                                  | Lines |
 | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------ | ----: |
-| `platform/api-normalizers.ts` | Coerce to a non-negative integer, defaulting to 0. Convenience wrapper for the count/capacity fields backends sometim... |   305 |
+| `platform/api-normalizers.ts` | Coerce to a non-negative integer, defaulting to 0. Convenience wrapper for the count/capacity fields backends sometim... |   332 |
 | `platform/browser-storage.ts` | Centralized localStorage key surface for the Vue canary app. Every key written by Vue source code is declared here s...  |    78 |
 | `platform/clientIdentity.ts`  | export const CLIENT_ID_KEY = "lian.clientId";                                                                            |    60 |
 | `platform/leaflet.ts`         | Platform adapter for Leaflet bundled through Vite. All `any` usage is quarantined inside this file. Vue components m...  |   170 |
@@ -327,23 +327,23 @@ Total files: 306
 
 ## src/types/ (15 files)
 
-| File                       | Summary                                                                                                                   | Lines |
-| -------------------------- | ------------------------------------------------------------------------------------------------------------------------- | ----: |
-| `types/admin.ts`           | export type AdminReportStatus =                                                                                           |    62 |
-| `types/audience.ts`        | Audience model — frontend mirror of the backend AUDIENCE_SYSTEM contract. Three permission axes are kept separate (P...   |   107 |
-| `types/errand.ts`          | Errand order (PRD V0.1 §6.4 / §12) — types owned by issue #647. The bare lifecycle / order shapes already live in `p...   |   158 |
-| `types/feed.ts`            | Card-template vocabulary the Feed UI knows how to render. `activity` is the presentation label for `event` PostType (...  |    64 |
-| `types/map-policy.ts`      | Map viewport policy (PRD V0.1 §7.2.3). Bounds are deliberately permissive for V0.1 (large enough to cover any reason...   |    82 |
-| `types/map.ts`             | export interface MapBounds                                                                                                |   141 |
-| `types/merchant.ts`        | Merchant center (issue #646) types. Backend (`/api/me/merchant-center`) ships a profile readout for merchants who ho...   |    57 |
-| `types/messages.ts`        | Client-generated nonce stamped on the optimistic item so we can match the server echo back to it without depending on...  |    78 |
-| `types/place.ts`           | export type PlaceStatus =                                                                                                 |    60 |
-| `types/post-extensions.ts` | Event / Help / Merchant / Trade / Errand domain types (PRD V0.1 §6). V0.1 ships shapes only — no UI yet. The point i...   |   205 |
-| `types/post.ts`            | event?: EventPostExtension; eventJoined?: boolean; help?: HelpPostExtension; helpVoted?: boolean; helpManageable?: bo...  |   153 |
-| `types/profile.ts`         | PRD V0.1 §17 — verification records keyed by tag (campus_verified, merchant_verified, ...). Backend `/api/auth/me` re...  |   132 |
-| `types/publish.ts`         | export type PublishMapVersion = "legacy" \| "manual" \| "gaode_v2"; Backend (#383) accepts these contentType values fo... |   140 |
-| `types/runner.ts`          | Runner-center domain types — frontend-scoped under #648. Why a separate file rather than `src/types/errand.ts`? The ...   |    65 |
-| `types/verification.ts`    | export type VerificationTag =                                                                                             |    36 |
+| File                       | Summary                                                                                                                      | Lines |
+| -------------------------- | ---------------------------------------------------------------------------------------------------------------------------- | ----: |
+| `types/admin.ts`           | export type AdminReportStatus =                                                                                              |    62 |
+| `types/audience.ts`        | Audience model — frontend mirror of the backend AUDIENCE_SYSTEM contract. Three permission axes are kept separate (P...      |   107 |
+| `types/errand.ts`          | Errand order (PRD V0.1 §6.4 / §12) — types owned by issue #647. The bare lifecycle / order shapes already live in `p...      |   158 |
+| `types/feed.ts`            | Card-template vocabulary the Feed UI knows how to render. `activity` is the presentation label for `event` PostType (...     |    64 |
+| `types/map-policy.ts`      | Map viewport policy (PRD V0.1 §7.2.3). Bounds are deliberately permissive for V0.1 (large enough to cover any reason...      |    82 |
+| `types/map.ts`             | export interface MapBounds                                                                                                   |   141 |
+| `types/merchant.ts`        | Merchant center (issue #646) types. Backend (`/api/me/merchant-center`) ships a profile readout for merchants who ho...      |    57 |
+| `types/messages.ts`        | Client-generated nonce stamped on the optimistic item so we can match the server echo back to it without depending on...     |    78 |
+| `types/place.ts`           | export type PlaceStatus =                                                                                                    |    60 |
+| `types/post-extensions.ts` | Event / Help / Merchant / Trade / Errand domain types (PRD V0.1 §6). V0.1 ships shapes only — no UI yet. The point i...      |   208 |
+| `types/post.ts`            | event?: EventPostExtension; eventJoined?: boolean; Issue #703 — backend-driven flag for the creator/admin "结束活动" surf... |   159 |
+| `types/profile.ts`         | PRD V0.1 §17 — verification records keyed by tag (campus_verified, merchant_verified, ...). Backend `/api/auth/me` re...     |   132 |
+| `types/publish.ts`         | export type PublishMapVersion = "legacy" \| "manual" \| "gaode_v2"; Backend (#383) accepts these contentType values fo...    |   140 |
+| `types/runner.ts`          | Runner-center domain types — frontend-scoped under #648. Why a separate file rather than `src/types/errand.ts`? The ...      |    65 |
+| `types/verification.ts`    | export type VerificationTag =                                                                                                |    36 |
 
 ## src/ui/ (25 files)
 

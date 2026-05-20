@@ -39,6 +39,12 @@ export interface PostDetail {
   event?: EventPostExtension;
   /** Whether the current viewer has already joined this event. */
   eventJoined?: boolean;
+  /**
+   * Issue #703 — backend-driven flag for the creator/admin "结束活动" surface.
+   * When the server ships this, the frontend trusts it; when absent, the
+   * frontend resolves it client-side via `/api/auth/me` + `/api/admin/me`.
+   */
+  eventManageable?: boolean;
   /** PRD V0.1 §6.5 — present iff metadata.help exists. */
   help?: HelpPostExtension;
   /** Whether the current viewer has already voted on this help post. */

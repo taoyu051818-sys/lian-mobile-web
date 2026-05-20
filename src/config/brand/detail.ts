@@ -84,6 +84,16 @@ export const EVENT_JOIN_SUCCESS = "已报名，期待你来。";
 export const EVENT_CANCEL_SUCCESS = "已取消报名。";
 export const EVENT_REWARD_LABEL = "奖励说明";
 
+/** 活动结束（创建者/管理员动作 — issue #703 / PRD V0.1 §6.3） */
+export const EVENT_COMPLETE_BUTTON_LABEL = "结束活动";
+export const EVENT_COMPLETE_CONFIRM_TITLE = "结束这场活动？";
+export const EVENT_COMPLETE_CONFIRM_BODY = "结束后名单将被冻结，状态会更新为已结束，且无法撤销。";
+export const EVENT_COMPLETE_CONFIRM = "确认结束";
+export const EVENT_COMPLETE_CANCEL = "再想想";
+export const EVENT_COMPLETE_PENDING = "结束中…";
+export const EVENT_COMPLETE_SUCCESS = "活动已结束。";
+export const EVENT_COMPLETE_UNAVAILABLE = "结束活动暂时不可用，可以稍后再试。";
+
 /** 求助详情 (PRD V0.1 §6.5 / §11.3) */
 export const HELP_BLOCK_LABEL = "求助信息";
 export const HELP_STATUS_OPEN = "求助中";
