@@ -118,15 +118,24 @@ test.describe("admin verification aggregate proof @admin", () => {
     expect(approveResponse.ok(), await approveResponse.text()).toBe(true);
 
     if (expectedTag) {
-      await login(user, env("LIAN_E2E_VERIFICATION_USERNAME"), env("LIAN_E2E_VERIFICATION_PASSWORD"));
+      await login(
+        user,
+        env("LIAN_E2E_VERIFICATION_USERNAME"),
+        env("LIAN_E2E_VERIFICATION_PASSWORD"),
+      );
       await expect
         .poll(async () => {
           const meResponse = await user.get("/api/auth/me");
           expect(meResponse.ok(), await meResponse.text()).toBe(true);
           const body = (await meResponse.json()) as AuthMeResponse;
           const userBody = body.user || {};
-          const flatTags = new Set([...(userBody.tags || []), ...(userBody.verificationTags || [])]);
-          return flatTags.has(expectedTag) || userBody.verificationState?.[expectedTag]?.active === true;
+          const flatTags = new Set([
+            ...(userBody.tags || []),
+            ...(userBody.verificationTags || []),
+          ]);
+          return (
+            flatTags.has(expectedTag) || userBody.verificationState?.[expectedTag]?.active === true
+          );
         })
         .toBe(true);
     }

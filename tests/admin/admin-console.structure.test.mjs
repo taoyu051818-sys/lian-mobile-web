@@ -37,8 +37,9 @@ test("AppViewHost lazy-loads AdminView component", () => {
 
 test("useActiveView accepts secret views (admin) outside appViews array", () => {
   const src = read("src/app/useActiveView.ts");
-  assert.match(src, /SECRET_VIEWS/);
-  assert.match(src, /"admin"/);
+  assert.match(src, /getViewFromHashRef/);
+  assert.match(src, /pushViewHash\(key\)/);
+  assert.match(src, /secret views \(admin\/verification\/merchant\/errand-order\/runner\)/);
 });
 
 // --- API contract: every admin call must inject Authorization: Bearer <token> ---

@@ -201,7 +201,10 @@ function verificationSummaryRows(request: AdminVerificationRequest): SummaryRow[
   const summary = summaryRecord(request);
   if (request.verificationType === "org-join") {
     return [
-      { label: "组织", value: formatSummaryValue(summary.orgName) || formatSummaryValue(summary.orgId) },
+      {
+        label: "组织",
+        value: formatSummaryValue(summary.orgName) || formatSummaryValue(summary.orgId),
+      },
       { label: "组织 ID", value: formatSummaryValue(summary.orgId) },
       { label: "备注", value: formatSummaryValue(summary.note) },
     ].filter((row) => row.value);
@@ -319,7 +322,10 @@ onMounted(() => {
             加载认证审核队列…
           </div>
 
-          <p v-else-if="!console.verificationRequests.value.length" class="admin-view__verification-state">
+          <p
+            v-else-if="!console.verificationRequests.value.length"
+            class="admin-view__verification-state"
+          >
             暂无认证申请。
           </p>
 
@@ -358,8 +364,14 @@ onMounted(() => {
                 </div>
               </dl>
 
-              <dl v-if="verificationSummaryRows(request).length" class="admin-view__verification-summary">
-                <div v-for="row in verificationSummaryRows(request)" :key="`${request.verificationId}:${row.label}`">
+              <dl
+                v-if="verificationSummaryRows(request).length"
+                class="admin-view__verification-summary"
+              >
+                <div
+                  v-for="row in verificationSummaryRows(request)"
+                  :key="`${request.verificationId}:${row.label}`"
+                >
                   <dt>{{ row.label }}</dt>
                   <dd>{{ row.value }}</dd>
                 </div>
@@ -372,10 +384,7 @@ onMounted(() => {
                 默认列表只展示脱敏摘要；实名认证敏感字段仅在显式查看时通过后端审计路径读取。
               </p>
 
-              <div
-                v-if="canRevealRealname(request)"
-                class="admin-view__verification-reveal"
-              >
+              <div v-if="canRevealRealname(request)" class="admin-view__verification-reveal">
                 <LianButton
                   size="sm"
                   variant="ghost"

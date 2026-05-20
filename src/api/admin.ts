@@ -58,7 +58,9 @@ function withAuthHeader(token: string, init: RequestInit = {}): RequestInit {
   return { ...init, headers };
 }
 
-function verificationTransitionPath(request: Pick<AdminVerificationRequest, "verificationId" | "verificationType">) {
+function verificationTransitionPath(
+  request: Pick<AdminVerificationRequest, "verificationId" | "verificationType">,
+) {
   const verificationId = encodeURIComponent(request.verificationId);
   if (request.verificationType === "org-join") {
     return `/api/admin/verifications/org-join/${verificationId}`;
