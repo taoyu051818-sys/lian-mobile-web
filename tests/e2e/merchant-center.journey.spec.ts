@@ -14,8 +14,7 @@ import { fileURLToPath } from "node:url";
  * in any of these files breaks CI before it ships.
  *
  * Journey covered:
- *   1. Profile entry → setActiveView("merchant") (TODO via #646 entry PR; we
- *      only enforce the secret-view registration here)
+ *   1. Profile entry → setActiveView("merchant"), gated on merchant_verified
  *   2. Verified user → /api/me/merchant-center → profile + errand readout
  *   3. Unverified user → gate → verification center
  *   4. Merchant detail page → errand entry available / unavailable+reason
@@ -27,16 +26,29 @@ function read(rel) {
   return fs.readFileSync(path.join(repoRoot, rel), "utf8");
 }
 
-// Step 1: secret view is reachable from useActiveView and lazily mounted.
+// Step 1: secret view is reachable from useActiveView, lazily mounted, and
+// the ProfileView surfaces the entry behind a `merchant_verified` gate.
 
 test("journey: merchant secret view is reachable from useActiveView", () => {
-  const useActive = read("src/app/useActiveView.ts");
-  assert.match(useActive, /SECRET_VIEWS:\s*AppViewKey\[\][^=]*=\s*\[[^\]]*"merchant"/);
+  // After PR #676, useActiveView no longer keeps a SECRET_VIEWS allowlist —
+  // viewFromHash is the single source of truth and accepts the full
+  // AppViewKey union. Pin the type-level guarantee instead.
+  const viewTypes = read("src/app/view-types.ts");
+  assert.match(viewTypes, /export type AppViewKey/);
+  assert.match(viewTypes, /"merchant"/);
 });
 
 test("journey: AppViewHost lazy-loads MerchantCenterView", () => {
   const host = read("src/app/AppViewHost.vue");
   assert.match(host, /merchant:\s*asyncView\(\(\)\s*=>\s*import\("\.\.\/features\/merchant"\)/);
+});
+
+test("journey: ProfileView surfaces the merchant-center entry behind merchant_verified", () => {
+  const view = read("src/features/profile/ProfileView.vue");
+  assert.match(view, /useIsMerchantVerified/);
+  assert.match(view, /data-testid="profile-merchant-entry"/);
+  assert.match(view, /v-if="isMerchantVerified"/);
+  assert.match(view, /setActiveView\('merchant'\)/);
 });
 
 // Step 2: verified user → snapshot shape supplies profile + errand block.

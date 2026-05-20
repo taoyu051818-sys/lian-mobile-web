@@ -6,6 +6,7 @@ import {
   LOADING_PROFILE,
   ERROR_LOAD_GENERIC,
   ERROR_LOGOUT,
+  MERCHANT_CENTER_ENTER_LABEL,
   PROFILE_SECTION_LABEL,
   PROFILE_LOAD_ERROR_PREFIX,
   PROFILE_RELOAD,
@@ -18,6 +19,7 @@ import type { PageChromeSpec } from "../../shell/page-model";
 import type { ProfileUser } from "../../types/profile";
 import { InlineError } from "../../ui";
 import { AuthPanel } from "../auth";
+import { useIsMerchantVerified } from "../merchant";
 import { useIsRunnerVerified } from "../runner";
 import ProfileEditorPanel from "./ProfileEditorPanel.vue";
 import ProfileHeader from "./ProfileHeader.vue";
@@ -42,6 +44,7 @@ const adminEntryVisible = computed(() => import.meta.env.VITE_ADMIN_VISIBLE === 
 const { user, loading, errorMessage, isMissingSessionError, refreshCurrentSession } =
   useProfileSession();
 
+const isMerchantVerified = useIsMerchantVerified(user);
 const isRunnerVerified = useIsRunnerVerified(user);
 
 const editorOpen = ref(false);
@@ -202,6 +205,20 @@ onMounted(() => {
       </footer>
 
       <footer
+        v-if="isMerchantVerified"
+        class="profile-view__merchant-entry"
+        data-testid="profile-merchant-entry"
+      >
+        <button
+          type="button"
+          class="profile-view__merchant-link"
+          @click="setActiveView('merchant')"
+        >
+          {{ MERCHANT_CENTER_ENTER_LABEL }}
+        </button>
+      </footer>
+
+      <footer
         v-if="isRunnerVerified"
         class="profile-view__runner-entry"
         data-testid="profile-runner-entry"
@@ -265,9 +282,27 @@ onMounted(() => {
   border-top: 1px dashed var(--lian-line);
 }
 
+.profile-view__merchant-entry,
 .profile-view__runner-entry {
   display: flex;
   justify-content: center;
+}
+
+.profile-view__merchant-link {
+  padding: var(--space-2) var(--space-4);
+  border: 1px solid rgba(255, 159, 67, 0.34);
+  border-radius: var(--radius-chip);
+  background: rgba(255, 159, 67, 0.14);
+  color: #8a4a00;
+  font-size: 13px;
+  font-weight: 850;
+  cursor: pointer;
+  transition: background var(--motion-fast) var(--motion-ease-standard);
+}
+
+.profile-view__merchant-link:hover,
+.profile-view__merchant-link:focus-visible {
+  background: rgba(255, 159, 67, 0.22);
 }
 
 .profile-view__runner-link {
