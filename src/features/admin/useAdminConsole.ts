@@ -2,9 +2,7 @@ import { ref } from "vue";
 import { LianApiError } from "../../api/http";
 import {
   fetchAdminAuditLog,
-  fetchAdminVerificationRequests,
   fetchAdminReports,
-  patchAdminVerificationRequest,
   patchAdminReport,
   patchAdminUserStatus,
   postAdminPostAction,
@@ -24,11 +22,6 @@ import type {
   AdminReportTransitionStatus,
   AdminUserStatus,
 } from "../../types/admin";
-import type {
-  AdminVerificationDecisionStatus,
-  AdminVerificationRequest,
-  AdminVerificationStatus,
-} from "../../api/admin";
 
 interface UseAdminConsoleOptions {
   token: { value: string };
@@ -44,11 +37,6 @@ export function useAdminConsole({ token, onTokenInvalid }: UseAdminConsoleOption
   const auditEvents = ref<AdminAuditEvent[]>([]);
   const auditLoading = ref(false);
   const auditError = ref("");
-
-  const verificationRequests = ref<AdminVerificationRequest[]>([]);
-  const verificationLoading = ref(false);
-  const verificationError = ref("");
-  const verificationTotal = ref(0);
 
   const actionMessage = ref("");
   const actionError = ref("");
@@ -95,22 +83,6 @@ export function useAdminConsole({ token, onTokenInvalid }: UseAdminConsoleOption
       auditError.value = extractErrorMessage(error, ADMIN_AUDIT_LOAD_ERROR);
     } finally {
       auditLoading.value = false;
-    }
-  }
-
-  async function loadVerificationRequests(status: AdminVerificationStatus | "" = "pending") {
-    if (!token.value) return;
-    verificationLoading.value = true;
-    verificationError.value = "";
-    try {
-      const data = await fetchAdminVerificationRequests(token.value, { status, limit: 100 });
-      verificationRequests.value = data.items;
-      verificationTotal.value = data.total;
-    } catch (error) {
-      if (handleAuthError(error)) return;
-      verificationError.value = extractErrorMessage(error, "认证审核队列加载失败，可以稍后再试。");
-    } finally {
-      verificationLoading.value = false;
     }
   }
 
@@ -168,25 +140,6 @@ export function useAdminConsole({ token, onTokenInvalid }: UseAdminConsoleOption
     }
   }
 
-  async function reviewVerificationRequest(
-    requestId: string,
-    payload: { status: AdminVerificationDecisionStatus; note?: string | null },
-  ) {
-    if (!token.value) return false;
-    clearMessages();
-    try {
-      const updated = await patchAdminVerificationRequest(token.value, requestId, payload);
-      const idx = verificationRequests.value.findIndex((item) => item.requestId === requestId);
-      if (idx >= 0) verificationRequests.value[idx] = updated;
-      actionMessage.value = "操作已生效。";
-      return true;
-    } catch (error) {
-      if (handleAuthError(error)) return false;
-      actionError.value = extractErrorMessage(error, ADMIN_ACTION_FAIL);
-      return false;
-    }
-  }
-
   return {
     reports,
     reportsLoading,
@@ -195,19 +148,13 @@ export function useAdminConsole({ token, onTokenInvalid }: UseAdminConsoleOption
     auditEvents,
     auditLoading,
     auditError,
-    verificationRequests,
-    verificationLoading,
-    verificationError,
-    verificationTotal,
     actionMessage,
     actionError,
     clearMessages,
     loadReports,
     loadAuditLog,
-    loadVerificationRequests,
     transitionReport,
     applyPostAction,
     applyUserStatus,
-    reviewVerificationRequest,
   };
 }
