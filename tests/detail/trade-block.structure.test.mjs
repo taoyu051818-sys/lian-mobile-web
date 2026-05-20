@@ -69,8 +69,17 @@ test("PostDetailTradeBlock renders hidden alongside the shipped trade badges", (
 
 // --- panel manage surface ---
 
-test("PostDetailPanel adds author-only trade transition controls and refresh wiring", () => {
+test("PostDetailPanel mounts the trade-manage block as a sibling carve-out", () => {
   const src = read("src/features/detail/PostDetailPanel.vue");
+  assert.match(src, /import PostDetailTradeManageBlock from "\.\/PostDetailTradeManageBlock\.vue"/);
+  assert.match(src, /<PostDetailTradeManageBlock/);
+  assert.match(src, /@retry="emit\('retry'\)"/);
+  assert.match(src, /@action-message="showActionMessage"/);
+  assert.match(src, /@action-error="setActionError"/);
+});
+
+test("PostDetailTradeManageBlock owns the author-only trade transition controls", () => {
+  const src = read("src/features/detail/PostDetailTradeManageBlock.vue");
   assert.match(src, /import \{ patchTradeState \} from "\.\.\/\.\.\/api\/posts"/);
   assert.match(src, /import \{ fetchAuthMe \} from "\.\.\/\.\.\/api\/profile"/);
   assert.match(src, /const TRADE_TRANSITIONS: Record<TradeState, TradeState\[]>/);
