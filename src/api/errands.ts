@@ -2,9 +2,9 @@
  * Errand order API client (issue #647).
  *
  * Surface:
- *   - GET  /api/errand-orders/eligibility?merchantPostId=:id  — pre-submit gate
- *   - POST /api/errand-orders                                 — create
- *   - GET  /api/errand-orders/:orderId                        — read + timeline
+ *   - GET  /api/errands/orders/eligibility?merchantPostId=:id  — pre-submit gate
+ *   - POST /api/errands/orders                                 — create
+ *   - GET  /api/errands/orders/:orderId                        — read + timeline
  *
  * The wire shapes follow the same conservative-normalization style as
  * `src/api/posts.ts` and `src/api/merchant.ts`: the backend may add fields
@@ -207,7 +207,7 @@ export async function fetchErrandOrderEligibility(
   merchantPostId: number,
 ): Promise<ErrandOrderGate> {
   const data = await apiGet<unknown>(
-    `/api/errand-orders/eligibility?merchantPostId=${encodeURIComponent(String(merchantPostId))}`,
+    `/api/errands/orders/eligibility?merchantPostId=${encodeURIComponent(String(merchantPostId))}`,
   );
   return normalizeErrandOrderGate(data);
 }
@@ -223,7 +223,7 @@ export async function createErrandOrder(
   };
   const trimmedNotes = (request.notes || "").trim();
   if (trimmedNotes) body.notes = trimmedNotes;
-  const data = await apiSend<unknown>("/api/errand-orders", {
+  const data = await apiSend<unknown>("/api/errands/orders", {
     method: "POST",
     body: JSON.stringify(body),
   });
@@ -231,7 +231,7 @@ export async function createErrandOrder(
 }
 
 export async function fetchErrandOrder(orderId: string): Promise<ErrandOrderDetail | null> {
-  const data = await apiGet<unknown>(`/api/errand-orders/${encodeURIComponent(orderId)}`);
+  const data = await apiGet<unknown>(`/api/errands/orders/${encodeURIComponent(orderId)}`);
   return normalizeErrandOrderDetail(data);
 }
 
@@ -261,7 +261,7 @@ function normalizeErrandOrderSummary(value: unknown): ErrandOrderSummary | null 
  * dropped (same conservative-normalization stance as `fetchErrandOrder`).
  */
 export async function fetchMyErrandOrders(): Promise<ErrandOrderListResponse> {
-  const data = await apiGet<unknown>(`/api/errand-orders?mine=1`);
+  const data = await apiGet<unknown>(`/api/errands/orders/mine`);
   const record = asRecord(data);
   const rawItems = Array.isArray(data) ? data : Array.isArray(record.items) ? record.items : [];
   const items = rawItems

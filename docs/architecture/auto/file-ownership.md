@@ -18,7 +18,7 @@ Total files: 305
 | `api/aiPublish.ts`    | AI publish API client (PRD V0.1 §3 / §7.4 / Phase 3). Three endpoints, all already in the backend live surface: PO...    |   165 |
 | `api/audience.ts`     | Audience options API client. Backend route (PRD V0.1 §11.1): GET /api/audience/options The route may be missing in o...  |    81 |
 | `api/auth.ts`         | export type AuthMode = "login" \| "register";                                                                            |    66 |
-| `api/errands.ts`      | Errand order API client (issue #647). Surface: - GET /api/errand-orders/eligibility?merchantPostId=:id — pre-sub...      |   272 |
+| `api/errands.ts`      | Errand order API client (issue #647). Surface: - GET /api/errands/orders/eligibility?merchantPostId=:id — pre-su...      |   272 |
 | `api/events.ts`       | Event / Help / Errand API client stubs (PRD V0.1 §11.2, §11.3, §11.4). Every function below is intentionally thin — ...  |   131 |
 | `api/feed.ts`         | export const DEFAULT_TABS: FeedTab[] = [                                                                                 |   192 |
 | `api/http.ts`         | export class LianApiError extends Error                                                                                  |   252 |
@@ -30,7 +30,7 @@ Total files: 305
 | `api/posts.ts`        | export interface PostLikeResponse                                                                                        |   231 |
 | `api/profile.ts`      | export function normalizeProfileListItem(item: unknown): ProfileListItem                                                 |   163 |
 | `api/publish.ts`      | Creates a display-only fallback draft from free-text place name. When `placeName` is non-empty the source is "manual"... |   370 |
-| `api/runner.ts`       | Available pool — orders not yet claimed by any runner.                                                                   |    54 |
+| `api/runner.ts`       | Available pool — orders not yet claimed by any runner.                                                                   |   106 |
 | `api/verification.ts` | TypeScript module                                                                                                        |    20 |
 
 ## src/app/ (14 files)
@@ -170,7 +170,7 @@ Total files: 305
 | `features/errand/ProfileErrandOrdersBlock.vue`   | Destructure refs so the template can read them via auto-unwrap. Matching                                                      |   265 |
 | `features/errand/errand-format.ts`               | Errand order — reason / status copy + tiny formatters. Centralised so the gate, form, and timeline all dispatch off ...       |   109 |
 | `features/errand/index.ts`                       | TypeScript module                                                                                                             |    19 |
-| `features/errand/useErrandOrderDetail.ts`        | Read-side composable for the errand order timeline view (issue #647). Wraps `GET /api/errand-orders/:id`. The state ...       |   133 |
+| `features/errand/useErrandOrderDetail.ts`        | Read-side composable for the errand order timeline view (issue #647). Wraps `GET /api/errands/orders/:id`. The state...       |   133 |
 | `features/errand/useErrandOrderDraft.ts`         | Errand order draft + submit composable (issue #647). Owns the form draft, the pre-submit gate (eligibility ping + cl...       |   293 |
 | `features/errand/useErrandOrderRoute.ts`         | Singleton routing context for the errand-order secret view. The order flow is a multi-screen detour from the merchan...       |    59 |
 | `features/errand/useMyErrandOrders.ts`           | "我的跑腿订单" composable (issue #647 follow-up). Backs the profile-side list of the requester's own errand orders so user... |    42 |

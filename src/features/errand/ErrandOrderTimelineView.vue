@@ -2,7 +2,7 @@
 /**
  * Order detail / timeline view (issue #647).
  *
- * Renders after a successful create. Pulls `GET /api/errand-orders/:id`
+ * Renders after a successful create. Pulls `GET /api/errands/orders/:id`
  * once on mount; the order state machine itself (#648) drives any later
  * transitions via the runner side, so the user-facing read view simply
  * shows whatever the backend currently has.

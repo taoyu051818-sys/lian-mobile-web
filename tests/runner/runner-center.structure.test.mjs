@@ -36,19 +36,24 @@ test("AppViewHost lazy-loads RunnerCenterView component", () => {
 
 test("useActiveView accepts secret view 'runner'", () => {
   const src = read("src/app/useActiveView.ts");
-  assert.match(src, /SECRET_VIEWS/);
-  assert.match(src, /"runner"/);
+  assert.match(src, /getViewFromHashRef/);
+  assert.match(src, /pushViewHash\(key\)/);
+  assert.match(src, /secret views \(admin\/verification\/merchant\/errand-order\/runner\)/);
 });
 
-// --- API contract: runner endpoints under /api/runner/orders/* --------------
+// --- API contract: runner endpoints use backend errand order routes ----------
 
 test("api/runner exposes available, active, and four state-transition endpoints", () => {
   const src = read("src/api/runner.ts");
-  assert.match(src, /\/api\/runner\/orders\/available/);
-  assert.match(src, /\/api\/runner\/orders\/active/);
+  assert.match(src, /\/api\/errands\/orders\/mine\?role=runner&state=paid_locked/);
+  assert.match(src, /\/api\/errands\/orders\/mine\?role=runner/);
   // The transition endpoint is one shared helper that templates the action;
-  // assert each action name is present and the path includes the runner namespace.
-  assert.match(src, /\/api\/runner\/orders\/\$\{encodeURIComponent\(orderId\)\}\/\$\{action\}/);
+  // assert each action name is present and the path includes the backend errand namespace.
+  assert.match(
+    src,
+    /\/api\/errands\/orders\/\$\{encodeURIComponent\(orderId\)\}\/\$\{backendAction\}/,
+  );
+  assert.match(src, /action === "at_shop" \? "pickup" : action/);
   for (const fn of [
     "fetchAvailableRunnerOrders",
     "fetchActiveRunnerOrders",
