@@ -84,6 +84,12 @@ export const EVENT_JOIN_SUCCESS = "已报名，期待你来。";
 export const EVENT_CANCEL_SUCCESS = "已取消报名。";
 export const EVENT_REWARD_LABEL = "奖励说明";
 
+/** 活动奖励结算后的只读展示（issue #705 / PRD V0.1 §6.3） */
+export const EVENT_REWARD_SETTLED_LABEL = "奖励已结算";
+export const EVENT_REWARD_SETTLED_PER_JOINER = "每人 {amount} 积分";
+export const EVENT_REWARD_SETTLED_TOTAL = "共发放 {total} 积分给 {count} 位参与者";
+export const EVENT_REWARD_SETTLED_AT = "结算于 {at}";
+
 /** 活动结束（创建者/管理员动作 — issue #703 / PRD V0.1 §6.3） */
 export const EVENT_COMPLETE_BUTTON_LABEL = "结束活动";
 export const EVENT_COMPLETE_CONFIRM_TITLE = "结束这场活动？";
