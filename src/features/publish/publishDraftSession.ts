@@ -2,6 +2,28 @@ import type { MapLocation } from "../../types/map";
 import type { PublishVisibility } from "../../types/publish";
 
 export const PUBLISH_DRAFT_SESSION_KEY = "lian.publishDraft.sameSession";
+export const PUBLISH_DRAFT_SCOPE_ANONYMOUS = "anonymous";
+
+export type PublishDraftScope = string;
+
+export interface PublishDraftScopeUser {
+  id?: string | null;
+  username?: string | null;
+}
+
+export function resolvePublishDraftScope(
+  user: PublishDraftScopeUser | null | undefined,
+): PublishDraftScope {
+  const id = typeof user?.id === "string" ? user.id.trim() : "";
+  if (id) return `u:${id}`;
+  const username = typeof user?.username === "string" ? user.username.trim() : "";
+  if (username) return `un:${username}`;
+  return PUBLISH_DRAFT_SCOPE_ANONYMOUS;
+}
+
+function buildPublishDraftStorageKey(scope: PublishDraftScope): string {
+  return `${PUBLISH_DRAFT_SESSION_KEY}::${scope || PUBLISH_DRAFT_SCOPE_ANONYMOUS}`;
+}
 
 const DEFAULT_VISIBILITY: PublishVisibility = "public";
 const VALID_VISIBILITIES: PublishVisibility[] = ["public", "campus", "school", "private"];
@@ -117,9 +139,13 @@ export function buildPublishDraftSnapshot(input: PublishDraftInput): PublishDraf
   };
 }
 
-export function readPublishDraft(storage: Storage = sessionStorage): PublishDraftSnapshot | null {
+export function readPublishDraft(
+  scopeOrStorage: PublishDraftScope | Storage = PUBLISH_DRAFT_SCOPE_ANONYMOUS,
+  storage: Storage = sessionStorage,
+): PublishDraftSnapshot | null {
+  const { scope, store } = normalizeReadArgs(scopeOrStorage, storage);
   try {
-    const raw = storage.getItem(PUBLISH_DRAFT_SESSION_KEY);
+    const raw = store.getItem(buildPublishDraftStorageKey(scope));
     if (!raw) return null;
 
     const parsed = JSON.parse(raw) as unknown;
@@ -147,29 +173,69 @@ export function readPublishDraft(storage: Storage = sessionStorage): PublishDraf
 
 export function savePublishDraft(
   input: PublishDraftInput,
+  scopeOrStorage: PublishDraftScope | Storage = PUBLISH_DRAFT_SCOPE_ANONYMOUS,
   storage: Storage = sessionStorage,
 ): PublishDraftSnapshot | null {
+  const { scope, store } = normalizeReadArgs(scopeOrStorage, storage);
   const snapshot = buildPublishDraftSnapshot(input);
+  const key = buildPublishDraftStorageKey(scope);
 
   try {
     if (!snapshot) {
-      storage.removeItem(PUBLISH_DRAFT_SESSION_KEY);
+      store.removeItem(key);
       return null;
     }
 
-    storage.setItem(PUBLISH_DRAFT_SESSION_KEY, JSON.stringify(snapshot));
+    store.setItem(key, JSON.stringify(snapshot));
     return snapshot;
   } catch {
     return snapshot;
   }
 }
 
-export function clearPublishDraft(storage: Storage = sessionStorage): void {
+export function clearPublishDraft(
+  scopeOrStorage: PublishDraftScope | Storage = PUBLISH_DRAFT_SCOPE_ANONYMOUS,
+  storage: Storage = sessionStorage,
+): void {
+  const { scope, store } = normalizeReadArgs(scopeOrStorage, storage);
   try {
-    storage.removeItem(PUBLISH_DRAFT_SESSION_KEY);
+    store.removeItem(buildPublishDraftStorageKey(scope));
   } catch {
     // Storage cleanup should not block the publish flow.
   }
+}
+
+/**
+ * Drop every scoped publish-draft entry. Called on logout / account switch so
+ * a different account can't restore the previous user's draft.
+ */
+export function clearAllPublishDrafts(storage: Storage = sessionStorage): void {
+  try {
+    const prefix = `${PUBLISH_DRAFT_SESSION_KEY}::`;
+    const keysToRemove: string[] = [];
+    for (let index = 0; index < storage.length; index += 1) {
+      const candidate = storage.key(index);
+      if (typeof candidate !== "string") continue;
+      if (candidate === PUBLISH_DRAFT_SESSION_KEY || candidate.startsWith(prefix)) {
+        keysToRemove.push(candidate);
+      }
+    }
+    for (const key of keysToRemove) {
+      storage.removeItem(key);
+    }
+  } catch {
+    // Storage cleanup should not block the publish flow.
+  }
+}
+
+function normalizeReadArgs(
+  scopeOrStorage: PublishDraftScope | Storage,
+  fallbackStorage: Storage,
+): { scope: PublishDraftScope; store: Storage } {
+  if (typeof scopeOrStorage === "string") {
+    return { scope: scopeOrStorage || PUBLISH_DRAFT_SCOPE_ANONYMOUS, store: fallbackStorage };
+  }
+  return { scope: PUBLISH_DRAFT_SCOPE_ANONYMOUS, store: scopeOrStorage };
 }
 
 export function restorePublishDraftLocation(

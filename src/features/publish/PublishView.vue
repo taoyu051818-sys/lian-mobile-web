@@ -77,7 +77,7 @@ watch(merchantAffordanceLocked, (locked) => {
   }
 });
 
-const { draftNotice, hasUnsavedDraft } = usePublishDraftSession({
+const { draftNotice, hasUnsavedDraft, currentScope } = usePublishDraftSession({
   title: draft.title,
   body: draft.body,
   tagInput: draft.tagInput,
@@ -90,12 +90,14 @@ const { draftNotice, hasUnsavedDraft } = usePublishDraftSession({
   publishing: draft.publishing,
   loadIdentity: draft.loadIdentity,
   loadMapLocations: locationOptions.loadMapLocations,
+  userId: draft.userId,
+  identityLoaded: draft.identityLoaded,
 });
 
 function clearPublishState() {
   draft.resetForm(locationOptions.clearLocationState);
   eventDraft.reset();
-  clearPublishDraft();
+  clearPublishDraft(currentScope.value);
   draftNotice.value = "";
   resetConfirmationVisible.value = false;
 }

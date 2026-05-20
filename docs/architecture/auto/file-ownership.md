@@ -225,7 +225,7 @@ Total files: 305
 | `features/profile/ProfileStatsBlock.vue`         | Vue SFC                                                                                                                       |   171 |
 | `features/profile/ProfileTabs.vue`               | Vue SFC                                                                                                                       |    71 |
 | `features/profile/ProfileVerificationBadges.vue` | Header surfaces only currently-active grants. Expired/revoked records                                                         |    97 |
-| `features/profile/ProfileView.vue`               | Vue SFC                                                                                                                       |   353 |
+| `features/profile/ProfileView.vue`               | issue #692: drafts authored by the previous account must not survive                                                          |   357 |
 | `features/profile/index.ts`                      | TypeScript module                                                                                                             |     2 |
 | `features/profile/profile-header.css`            | Stylesheet                                                                                                                    |   187 |
 | `features/profile/settings-state/fetcher.ts`     | Side-effect helper that bridges the settings reducer's `fetch` and `patch` effects to the network. The reducer is pur...      |    39 |
@@ -248,14 +248,14 @@ Total files: 305
 | `features/publish/PublishMetaControls.vue`       | PRD V0.1 §3.1 — backend-driven gating. Optional: when omitted (older                                                          |   245 |
 | `features/publish/PublishResetConfirm.vue`       | Vue SFC                                                                                                                       |    59 |
 | `features/publish/PublishTradeControls.vue`      | Vue SFC                                                                                                                       |   212 |
-| `features/publish/PublishView.vue`               | PRD §7.4.2 step 4: after the first successful upload, surface the                                                             |   610 |
-| `features/publish/index.ts`                      | TypeScript module                                                                                                             |     2 |
-| `features/publish/publishDraftSession.ts`        | export const PUBLISH_DRAFT_SESSION_KEY = "lian.publishDraft.sameSession";                                                     |   189 |
+| `features/publish/PublishView.vue`               | PRD §7.4.2 step 4: after the first successful upload, surface the                                                             |   612 |
+| `features/publish/index.ts`                      | TypeScript module                                                                                                             |     3 |
+| `features/publish/publishDraftSession.ts`        | Drop every scoped publish-draft entry. Called on logout / account switch so a different account can't restore the pre...      |   255 |
 | `features/publish/useMerchantPublishDraft.ts`    | Publish-side merchant draft + verification gate. Owns: - merchant form fields (name / category / hours / contact / ...        |   100 |
 | `features/publish/usePublishAi.ts`               | AI suggestion glue for the publish view (PRD V0.1 Phase 3 / §7.4.2). Runs the underlying AI composable and pipes acc...       |    56 |
-| `features/publish/usePublishDraft.ts`            | Composes the three slices of publish-form state — form fields & uploads (this file), identity (`usePublishIdentity`),...      |   278 |
-| `features/publish/usePublishDraftSession.ts`     | export interface UsePublishDraftSessionOptions                                                                                |   126 |
-| `features/publish/usePublishIdentity.ts`         | Identity-side of the publish view: the avatar/name/meta strip that the shell renders, the alias the post is attribute...      |    70 |
+| `features/publish/usePublishDraft.ts`            | Composes the three slices of publish-form state — form fields & uploads (this file), identity (`usePublishIdentity`),...      |   280 |
+| `features/publish/usePublishDraftSession.ts`     | Stable identifier for the signed-in account, or null when the identity has not been resolved yet (e.g. while /api/aut...      |   202 |
+| `features/publish/usePublishIdentity.ts`         | Identity-side of the publish view: the avatar/name/meta strip that the shell renders, the alias the post is attribute...      |    82 |
 | `features/publish/usePublishLocationOptions.ts`  | export function usePublishLocationOptions(placeName: Ref<string>)                                                             |   139 |
 | `features/publish/usePublishSubmit.ts`           | export function usePublishSubmit(options:                                                                                     |   203 |
 | `features/publish/useTradePublishDraft.ts`       | Publish-side trade draft + verification gate. Owns: - trade form fields (price / state / category) - the `campus_v...         |    87 |

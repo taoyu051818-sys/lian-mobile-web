@@ -238,6 +238,8 @@ export function usePublishDraft() {
     aliasId: identity.aliasId,
     identityName: identity.identityName,
     identityMeta: identity.identityMeta,
+    userId: identity.userId,
+    identityLoaded: identity.identityLoaded,
     uploading,
     publishing,
     errorMessage,
