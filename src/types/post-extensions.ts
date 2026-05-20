@@ -50,9 +50,12 @@ export interface EventPostExtension {
   /**
    * Backend-authoritative lifecycle state. Optional on the wire — when missing,
    * status is inferred from `endsAt` / capacity. When present, `cancelled` and
-   * `completed` win over the time-based fallback.
+   * `completed` win over the time-based fallback. `POST /complete` (issue #703)
+   * sets this to "completed".
    */
   status?: EventStatus;
+  /** ISO timestamp when the event was marked completed (issue #703). */
+  completedAt?: string;
 }
 
 /**

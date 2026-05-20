@@ -185,7 +185,11 @@ export function normalizeEventExtension(value: unknown): EventPostExtension | un
   const rewardSummary = optionalString(record.rewardSummary);
   const capacity = asOptionalPositiveInt(record.capacity);
   const joinedCount = asNonNegInt(record.joinedCount ?? record.participantCount);
+  // Issue #703 — formal lifecycle from server. When set, overrides the time +
+  // capacity derivation in `derivedEventStatus`. Today only "completed" is
+  // observed on the wire; future cancel will land here as well.
   const status = asEnum(record.status, EVENT_STATUSES);
+  const completedAt = optionalString(record.completedAt);
 
   return {
     eventId,
@@ -196,6 +200,7 @@ export function normalizeEventExtension(value: unknown): EventPostExtension | un
     ...(rewardSummary ? { rewardSummary } : {}),
     joinedCount,
     ...(status ? { status } : {}),
+    ...(completedAt ? { completedAt } : {}),
   };
 }
 
@@ -214,6 +219,28 @@ export function normalizeEventJoinResult(value: unknown): {
     eventId: optionalString(record.eventId) || "",
     joinedCount: asNonNegInt(record.joinedCount),
     joined: asBoolean(record.joined),
+  };
+}
+
+/**
+ * Coerce the `/complete` response shape (issue #703). Backend
+ * `event-routes.js#handleEventComplete` returns
+ * `{ ok, eventId, status: "completed", joinedCount, completedAt }`.
+ * The frontend merges only the fields it owns (joinedCount, completedAt)
+ * back into the existing event ref, never replacing the whole block.
+ */
+export function normalizeEventCompleteResult(value: unknown): {
+  eventId: string;
+  status: "completed";
+  joinedCount: number;
+  completedAt: string;
+} {
+  const record = asRecord(value);
+  return {
+    eventId: optionalString(record.eventId) || "",
+    status: "completed",
+    joinedCount: asNonNegInt(record.joinedCount),
+    completedAt: optionalString(record.completedAt) || "",
   };
 }
 
