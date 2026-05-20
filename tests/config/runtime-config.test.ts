@@ -6,6 +6,7 @@ import {
   getApiBase,
   getImageProxyBase,
   buildApiUrl,
+  getReleaseDiagnostics,
 } from "../../src/config/runtime-config.ts";
 
 describe("runtime config", () => {
@@ -67,7 +68,7 @@ describe("runtime config", () => {
 
   const g = globalThis as unknown as { window?: Record<string, unknown> };
 
-  function setWindow(config: Record<string, string | undefined>) {
+  function setWindow(config: Record<string, string | boolean | undefined>) {
     g.window = { ...config };
   }
 
@@ -133,6 +134,48 @@ describe("runtime config", () => {
       "https://cdn.example.com/image.jpg",
     );
     expect(buildApiUrl("api/me")).toBe("api/me");
+    clearWindow();
+  });
+
+  it("getReleaseDiagnostics returns a safe release/runtime identity snapshot", () => {
+    setWindow({
+      LIAN_RELEASE_ID: "release-2026-05-20",
+      LIAN_BUILD_SHA: "940828eaa023710917ef3a3706d24862952d3dd0",
+      LIAN_BUILD_TIME: "2026-05-20T08:00:00Z",
+      LIAN_RUNTIME_LANE: "prod-cn",
+      LIAN_API_BASE_URL: "https://api.example.com",
+      LIAN_IMAGE_PROXY_BASE_URL: "https://img.example.com",
+    });
+
+    const snapshot = getReleaseDiagnostics();
+    expect(snapshot).toMatchObject({
+      releaseId: "release-2026-05-20",
+      buildSha: "940828eaa023710917ef3a3706d24862952d3dd0",
+      buildTime: "2026-05-20T08:00:00Z",
+      runtimeLane: "prod-cn",
+      apiBaseUrl: "https://api.example.com",
+      imageProxyBaseUrl: "https://img.example.com",
+      runtimeConfigStatus: "ok",
+      dev: false,
+    });
+    expect(snapshot.mode.length).toBeGreaterThan(0);
+    clearWindow();
+  });
+
+  it("getReleaseDiagnostics degrades safely when runtime config is invalid", () => {
+    setWindow({
+      LIAN_RELEASE_ID: "release-invalid",
+      LIAN_BUILD_SHA: "deadbeefdeadbeef",
+      LIAN_BUILD_TIME: "2026-05-20T08:05:00Z",
+      LIAN_RUNTIME_LANE: "staging",
+      LIAN_API_BASE_URL: "https://api.example.com",
+    });
+
+    const snapshot = getReleaseDiagnostics();
+    expect(snapshot.releaseId).toBe("release-invalid");
+    expect(snapshot.runtimeConfigStatus).toBe("invalid");
+    expect(snapshot.apiBaseUrl).toBe("");
+    expect(snapshot.imageProxyBaseUrl).toBe("");
     clearWindow();
   });
 

@@ -1,7 +1,7 @@
 import { buildApiUrl } from "../config/runtime-config";
 import { ERROR_RATE_LIMIT } from "../config/brand";
 import { ensureClientId } from "../platform/clientIdentity";
-import { asRecord } from "../platform/api-normalizers";
+import { asNumber, asRecord, asString } from "../platform/api-normalizers";
 
 export class LianApiError extends Error {
   status: number;
@@ -16,6 +16,29 @@ export class LianApiError extends Error {
     this.retryAfterSeconds = retryAfterSeconds;
   }
 }
+
+export type DiagnosticsEventName = "api.http.error";
+
+export interface DiagnosticsEventMap {
+  "api.http.error": {
+    method: string;
+    route: string;
+    status: number;
+    code: string;
+    retryAfterSeconds: number | null;
+  };
+}
+
+export interface SafeDiagnosticsEvent<Name extends DiagnosticsEventName = DiagnosticsEventName> {
+  name: Name;
+  recordedAt: string;
+  payload: DiagnosticsEventMap[Name];
+}
+
+const RECENT_DIAGNOSTICS_EVENT_LIMIT = 20;
+const recentDiagnosticsEvents: SafeDiagnosticsEvent[] = [];
+const dynamicRouteSegmentPattern =
+  /^(?:\d+|[0-9a-f]{8,}|[0-9a-f]{8}-[0-9a-f-]{27,}|(?=.*\d)[A-Za-z0-9_-]{12,})$/i;
 
 function normalizeJsonOptions(options: RequestInit = {}) {
   if (!options.body) return options;
@@ -76,6 +99,99 @@ function buildApiError(
   return new LianApiError(error.message, status, error.code, retryAfterSeconds);
 }
 
+function normalizeDiagnosticsMethod(method: unknown): string {
+  const value = typeof method === "string" ? method.trim().toUpperCase() : "";
+  return value || "GET";
+}
+
+function normalizeDiagnosticsCode(code: unknown): string {
+  return typeof code === "string" ? code.trim().slice(0, 64) : "";
+}
+
+function normalizeDiagnosticsRouteSegment(segment: string): string {
+  if (!segment) return "";
+  if (segment.includes(".")) return ":redacted";
+  return dynamicRouteSegmentPattern.test(segment) ? ":id" : segment;
+}
+
+export function normalizeDiagnosticsRoute(path: string): string {
+  const raw = typeof path === "string" ? path.trim() : "";
+  if (!raw) return "/";
+
+  let pathname: string;
+  try {
+    pathname = new URL(raw, "https://diagnostics.lian.invalid").pathname;
+  } catch {
+    pathname = raw;
+  }
+
+  pathname = pathname.split("?")[0]?.split("#")[0] || "/";
+  if (!pathname.startsWith("/")) pathname = `/${pathname}`;
+
+  const normalized = pathname
+    .split("/")
+    .map((segment, index) => (index === 0 ? segment : normalizeDiagnosticsRouteSegment(segment)))
+    .join("/")
+    .replace(/\/{2,}/g, "/");
+
+  return normalized || "/";
+}
+
+function sanitizeApiHttpErrorPayload(payload: unknown): DiagnosticsEventMap["api.http.error"] {
+  const record = asRecord(payload);
+  const status = Math.max(0, Math.trunc(asNumber(record.status, 0)));
+  const retryAfterRaw = asNumber(record.retryAfterSeconds, Number.NaN);
+
+  return {
+    method: normalizeDiagnosticsMethod(record.method),
+    route: normalizeDiagnosticsRoute(asString(record.route, "/")),
+    status,
+    code: normalizeDiagnosticsCode(record.code),
+    retryAfterSeconds:
+      Number.isFinite(retryAfterRaw) && retryAfterRaw > 0 ? Math.ceil(retryAfterRaw) : null,
+  };
+}
+
+function pushDiagnosticsEvent<Name extends DiagnosticsEventName>(
+  event: SafeDiagnosticsEvent<Name>,
+): SafeDiagnosticsEvent<Name> {
+  recentDiagnosticsEvents.push(event);
+  if (recentDiagnosticsEvents.length > RECENT_DIAGNOSTICS_EVENT_LIMIT) {
+    recentDiagnosticsEvents.splice(
+      0,
+      recentDiagnosticsEvents.length - RECENT_DIAGNOSTICS_EVENT_LIMIT,
+    );
+  }
+  return event;
+}
+
+export function recordDiagnosticsEvent<Name extends DiagnosticsEventName>(
+  name: Name,
+  payload: unknown,
+): SafeDiagnosticsEvent<Name> {
+  switch (name) {
+    case "api.http.error":
+      return pushDiagnosticsEvent({
+        name,
+        recordedAt: new Date().toISOString(),
+        payload: sanitizeApiHttpErrorPayload(payload),
+      }) as SafeDiagnosticsEvent<Name>;
+  }
+
+  throw new Error(`unsupported diagnostics event: ${String(name)}`);
+}
+
+export function getRecentDiagnosticsEvents(): SafeDiagnosticsEvent[] {
+  return recentDiagnosticsEvents.map((event) => ({
+    ...event,
+    payload: { ...event.payload },
+  }));
+}
+
+export function clearRecentDiagnosticsEvents() {
+  recentDiagnosticsEvents.length = 0;
+}
+
 async function readJsonResponse<T>(response: Response): Promise<T> {
   return response.json().catch(() => ({}) as T);
 }
@@ -95,12 +211,16 @@ async function apiRequest<T>(
   });
   const data = await readJsonResponse<T>(response);
   if (!response.ok) {
-    throw buildApiError(
-      data,
-      response.status,
-      fallbackMessage,
-      parseRetryAfterSeconds(response.headers.get("retry-after")),
-    );
+    const retryAfterSeconds = parseRetryAfterSeconds(response.headers.get("retry-after"));
+    const error = buildApiError(data, response.status, fallbackMessage, retryAfterSeconds);
+    recordDiagnosticsEvent("api.http.error", {
+      method: options.method,
+      route: path,
+      status: response.status,
+      code: error.code,
+      retryAfterSeconds,
+    });
+    throw error;
   }
   return data;
 }
