@@ -2,8 +2,10 @@
 import { computed, onMounted, ref, watch } from "vue";
 import {
   RUNNER_BACK_TO_PROFILE,
-  RUNNER_LIST_EMPTY_ACTIVE,
-  RUNNER_LIST_EMPTY_AVAILABLE,
+  RUNNER_EMPTY_ACTIVE_BODY,
+  RUNNER_EMPTY_ACTIVE_TITLE,
+  RUNNER_EMPTY_AVAILABLE_BODY,
+  RUNNER_EMPTY_AVAILABLE_TITLE,
   RUNNER_LIST_LOADING,
   RUNNER_LIST_RELOAD,
   RUNNER_SECTION_LABEL,
@@ -171,13 +173,14 @@ onMounted(async () => {
             {{ RUNNER_LIST_RELOAD }}
           </LianButton>
         </div>
-        <p
+        <section
           v-else-if="!availableOrders.length"
-          class="runner-view__empty"
+          class="runner-view__empty-card"
           data-testid="runner-empty-available"
         >
-          {{ RUNNER_LIST_EMPTY_AVAILABLE }}
-        </p>
+          <strong>{{ RUNNER_EMPTY_AVAILABLE_TITLE }}</strong>
+          <p>{{ RUNNER_EMPTY_AVAILABLE_BODY }}</p>
+        </section>
         <ul v-else class="runner-view__list" data-testid="runner-list-available">
           <li v-for="order in availableOrders" :key="order.id" class="runner-view__list-item">
             <RunnerOrderCard
@@ -202,13 +205,14 @@ onMounted(async () => {
             {{ RUNNER_LIST_RELOAD }}
           </LianButton>
         </div>
-        <p
+        <section
           v-else-if="!activeOrders.length"
-          class="runner-view__empty"
+          class="runner-view__empty-card"
           data-testid="runner-empty-active"
         >
-          {{ RUNNER_LIST_EMPTY_ACTIVE }}
-        </p>
+          <strong>{{ RUNNER_EMPTY_ACTIVE_TITLE }}</strong>
+          <p>{{ RUNNER_EMPTY_ACTIVE_BODY }}</p>
+        </section>
         <ul v-else class="runner-view__list" data-testid="runner-list-active">
           <li v-for="order in activeOrders" :key="order.id" class="runner-view__list-item">
             <RunnerOrderCard
@@ -235,13 +239,36 @@ onMounted(async () => {
   padding: calc(var(--floating-bar-height) + var(--space-3)) var(--space-3) var(--space-6);
 }
 
-.runner-view__state,
-.runner-view__empty {
+.runner-view__state {
   margin: 0;
   padding: var(--space-4) var(--space-3);
   text-align: center;
   color: var(--lian-muted);
   font-size: 14px;
+}
+
+.runner-view__empty-card {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: var(--space-4) var(--space-3);
+  border: 1px solid var(--lian-line);
+  border-radius: var(--radius-card);
+  background: rgba(255, 255, 255, 0.82);
+  text-align: center;
+}
+
+.runner-view__empty-card strong {
+  color: var(--lian-ink);
+  font-size: 15px;
+  font-weight: 900;
+}
+
+.runner-view__empty-card p {
+  margin: 0;
+  color: var(--lian-muted);
+  font-size: 13px;
+  line-height: 1.6;
 }
 
 .runner-view__feedback {
