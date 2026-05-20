@@ -52,9 +52,40 @@ export interface AdminVerificationDetail {
   submittedFields?: Record<string, unknown> | null;
 }
 
+export interface AdminMeUser {
+  id?: string;
+  username?: string;
+  roleIds?: string[];
+}
+
+export interface AdminMeResponse {
+  ok: boolean;
+  viaToken: boolean;
+  user: AdminMeUser | null;
+}
+
+const ADMIN_SESSION_ROLES = new Set(["admin", "moderator"]);
+
+export function isAdminMeRoleEligible(response: AdminMeResponse | null | undefined): boolean {
+  if (!response?.ok) return false;
+  if (response.viaToken) return true;
+  const roleIds = response.user?.roleIds || [];
+  return roleIds.some((role) =>
+    ADMIN_SESSION_ROLES.has(
+      String(role || "")
+        .trim()
+        .toLowerCase(),
+    ),
+  );
+}
+
+export async function fetchAdminMe(): Promise<AdminMeResponse> {
+  return apiGet<AdminMeResponse>("/api/admin/me");
+}
+
 function withAuthHeader(token: string, init: RequestInit = {}): RequestInit {
   const headers = new Headers(init.headers || {});
-  headers.set("authorization", `Bearer ${token}`);
+  if (token) headers.set("authorization", `Bearer ${token}`);
   return { ...init, headers };
 }
 

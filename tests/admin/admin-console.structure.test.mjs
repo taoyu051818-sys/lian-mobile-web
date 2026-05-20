@@ -90,6 +90,21 @@ test("useAdminToken persists in sessionStorage under a namespaced key", () => {
   assert.match(src, /"lian\.adminToken"/);
 });
 
+test("useAdminToken exposes a sessionAdmin flag separate from the ops token", () => {
+  const src = read("src/features/admin/useAdminToken.ts");
+  assert.match(src, /sessionAdmin/);
+  assert.match(src, /setSessionAdmin/);
+  assert.match(src, /clearSessionAdmin/);
+  // sessionAdmin must NOT be persisted to storage — it lives only in memory
+  // so a refresh re-runs the /api/admin/me probe. Enforce by checking the
+  // setSessionAdmin body does not call writeStorage.
+  const setterMatch = src.match(
+    /function\s+setSessionAdmin\s*\([^)]*\)\s*\{(?<body>[\s\S]*?)\n\s*\}/,
+  );
+  assert.ok(setterMatch?.groups?.body, "setSessionAdmin body must be locatable");
+  assert.doesNotMatch(setterMatch.groups.body, /writeStorage|sessionStorage/);
+});
+
 test("useAdminConsole clears the token on 401/403", () => {
   const src = read("src/features/admin/useAdminConsole.ts");
   assert.match(src, /onTokenInvalid/);
@@ -124,16 +139,39 @@ test("ProfileView does not render an unconditional admin link", () => {
 
 // --- AdminView: gate before queue/audit, exit clears token ---
 
-test("AdminView shows the token gate while token is empty", () => {
+test("AdminView shows the token gate while no admin session is established", () => {
   const src = read("src/features/admin/AdminView.vue");
   assert.match(src, /<AdminTokenGate/);
-  assert.match(src, /v-if="!token"/);
+  assert.match(src, /v-else-if="!consoleEnabled"/);
 });
 
-test("AdminView exit button clears the token via clearToken", () => {
+test("AdminView probes /api/admin/me on entry and skips the token form on success", () => {
+  const src = read("src/features/admin/AdminView.vue");
+  assert.match(src, /fetchAdminMe/);
+  assert.match(src, /isAdminMeRoleEligible/);
+  assert.match(src, /sessionAdmin/);
+  // Console must mount when EITHER the ops token OR a session admin probe says ok.
+  assert.match(src, /consoleEnabled/);
+  assert.match(src, /Boolean\(token\.value\)\s*\|\|\s*sessionAdmin\.value/);
+  // Probe runs on mount when there is no stored ops token.
+  assert.match(src, /probeAdminSession/);
+});
+
+test("api/admin exposes a session probe and a role-eligibility helper", () => {
+  const src = read("src/api/admin.ts");
+  assert.match(src, /export async function fetchAdminMe\b/);
+  assert.match(src, /export function isAdminMeRoleEligible\b/);
+  // Helper must accept the token-bearer fast-path AND admin/moderator roles.
+  assert.match(src, /viaToken/);
+  assert.match(src, /admin/);
+  assert.match(src, /moderator/);
+});
+
+test("AdminView exit button clears both the token and the session-admin flag", () => {
   const src = read("src/features/admin/AdminView.vue");
   assert.match(src, /admin:exit/);
   assert.match(src, /clearToken\(\)/);
+  assert.match(src, /clearSessionAdmin\(\)/);
 });
 
 test("AdminView mounts verification queue as a first-class admin tab", () => {
