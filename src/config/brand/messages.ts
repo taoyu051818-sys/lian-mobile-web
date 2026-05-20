@@ -8,6 +8,9 @@ export const MESSAGE_TAB_LABEL = "消息分类";
 export const MESSAGE_SECTION_LABEL = "消息";
 export const MESSAGE_TAB_CHANNEL = "频道";
 export const MESSAGE_TAB_NOTIFICATION = "通知";
+export const MESSAGE_TAB_REPLIES = "回复";
+export const MESSAGE_TAB_SYSTEM = "系统";
+export const MESSAGE_TAB_ORDERS = "订单";
 export const MESSAGE_IDENTITY_SIGNAL_PREFIX = "身份信号：";
 export const MESSAGE_NO_IDENTITY_SIGNAL = "未选择身份信号";
 
