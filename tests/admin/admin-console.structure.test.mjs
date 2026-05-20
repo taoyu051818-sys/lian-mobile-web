@@ -47,7 +47,6 @@ test("api/admin attaches Bearer header on every request", () => {
   const src = read("src/api/admin.ts");
   assert.match(src, /authorization/i);
   assert.match(src, /Bearer\s*\$\{token\}/);
-  // No call site uses apiGet / apiSend without going through withAuthHeader.
   const callSites = src.match(/apiGet<|apiSend</g) || [];
   const wrappedSites = src.match(/withAuthHeader\(token/g) || [];
   assert.ok(
@@ -56,17 +55,30 @@ test("api/admin attaches Bearer header on every request", () => {
   );
 });
 
-test("api/admin exposes the five admin operations", () => {
+test("api/admin exposes report, user action, audit, and verification operations", () => {
   const src = read("src/api/admin.ts");
   for (const fn of [
     "fetchAdminReports",
     "patchAdminReport",
     "postAdminPostAction",
     "patchAdminUserStatus",
+    "fetchAdminVerificationRequests",
+    "patchAdminVerificationRequest",
+    "fetchAdminVerificationDetail",
     "fetchAdminAuditLog",
   ]) {
     assert.match(src, new RegExp(`export async function ${fn}\\b`));
   }
+});
+
+test("api/admin wires aggregate verification queue, backend-owned transitions, and realname reveal", () => {
+  const src = read("src/api/admin.ts");
+  assert.match(src, /\/api\/admin\/verifications\?/);
+  assert.match(src, /request\.verificationType === "org-join"/);
+  assert.match(src, /request\.verificationType === "realname"/);
+  assert.match(src, /\/api\/admin\/verifications\/org-join\/\$\{verificationId\}/);
+  assert.match(src, /\/api\/admin\/verifications\/realname\/\$\{verificationId\}/);
+  assert.match(src, /reviewerNote/);
 });
 
 // --- token gate: sessionStorage round-trip + auto-clear on 401 ---
@@ -83,6 +95,15 @@ test("useAdminConsole clears the token on 401/403", () => {
   assert.match(src, /status === 401|status === 403/);
 });
 
+test("useAdminConsole tracks aggregate verification queue, review action, and revealed detail state", () => {
+  const src = read("src/features/admin/useAdminConsole.ts");
+  assert.match(src, /verificationRequests/);
+  assert.match(src, /loadVerificationRequests/);
+  assert.match(src, /reviewVerificationRequest/);
+  assert.match(src, /revealVerificationRequest/);
+  assert.match(src, /revealedVerificationDetails/);
+});
+
 // --- ProfileView entry: behind VITE_ADMIN_VISIBLE flag, never unconditional ---
 
 test("ProfileView gates the admin entry button on VITE_ADMIN_VISIBLE", () => {
@@ -94,8 +115,6 @@ test("ProfileView gates the admin entry button on VITE_ADMIN_VISIBLE", () => {
 
 test("ProfileView does not render an unconditional admin link", () => {
   const src = read("src/features/profile/ProfileView.vue");
-  // The admin entry must be inside an v-if; a bare anchor or button without
-  // the flag would mean the link leaks to every visitor.
   const linkRe = /class="profile-view__admin-link"/;
   assert.ok(linkRe.test(src), "admin link must exist");
   const wrappedRe = /v-if="adminEntryVisible"[\s\S]*?profile-view__admin-link/;
@@ -114,6 +133,22 @@ test("AdminView exit button clears the token via clearToken", () => {
   const src = read("src/features/admin/AdminView.vue");
   assert.match(src, /admin:exit/);
   assert.match(src, /clearToken\(\)/);
+});
+
+test("AdminView mounts verification queue as a first-class admin tab", () => {
+  const src = read("src/features/admin/AdminView.vue");
+  assert.match(src, /"verifications"/);
+  assert.match(src, /loadVerificationRequests/);
+  assert.match(src, /认证审核/);
+  assert.match(src, /实名认证敏感字段仅在显式查看时通过后端审计路径读取/);
+});
+
+test("AdminView keeps verification decisions bounded to pending requests", () => {
+  const src = read("src/features/admin/AdminView.vue");
+  assert.match(src, /canReviewRequest/);
+  assert.match(src, /handleVerificationReview\(request, 'approved'\)/);
+  assert.match(src, /handleVerificationReview\(request, 'rejected'\)/);
+  assert.match(src, /handleVerificationReveal/);
 });
 
 // --- brand registration ---
