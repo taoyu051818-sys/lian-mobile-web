@@ -153,14 +153,14 @@ Total files: 306
 | `features/detail/PostDetailTradeManageBlock.vue` | Vue SFC                                                                                                                       |   207 |
 | `features/detail/PostPlaceSheetBlock.vue`        | Vue SFC                                                                                                                       |   192 |
 | `features/detail/PostReplies.vue`                | Vue SFC                                                                                                                       |   102 |
-| `features/detail/PostReplyDock.vue`              | Vue SFC                                                                                                                       |   161 |
+| `features/detail/PostReplyDock.vue`              | Vue SFC                                                                                                                       |   179 |
 | `features/detail/PostReportBlock.vue`            | Vue SFC                                                                                                                       |   150 |
 | `features/detail/index.ts`                       | TypeScript module                                                                                                             |     2 |
 | `features/detail/reportFlow.ts`                  | export interface ReportCategoryOption                                                                                         |    98 |
 | `features/detail/useDetailGallery.ts`            | export function useDetailGallery(options:                                                                                     |    48 |
 | `features/detail/usePlaceSheetLoader.ts`         | export function usePlaceSheetLoader(post: ComputedRef<PostDetail \| null>)                                                    |    56 |
 | `features/detail/usePostDetailPresentation.ts`   | export function usePostDetailPresentation(                                                                                    |   142 |
-| `features/detail/usePostReactions.ts`            | export function usePostReactions(options:                                                                                     |    79 |
+| `features/detail/usePostReactions.ts`            | export function usePostReactions(options:                                                                                     |   159 |
 | `features/detail/usePostReplyComposer.ts`        | export function usePostReplyComposer(options:                                                                                 |    59 |
 | `features/detail/usePostReport.ts`               | export function usePostReport(options:                                                                                        |    90 |
 | `features/detail/usePostShare.ts`                | export function usePostShare(options:                                                                                         |    50 |
