@@ -78,7 +78,7 @@ const {
   handleLike: rawHandleLike,
   handleSave: rawHandleSave,
   resetReactions,
-} = usePostReactions({ clearMessages, showError: showActionError });
+} = usePostReactions({ clearMessages, showError: showActionError, showMessage: showActionMessage });
 
 const {
   placeSheet,
