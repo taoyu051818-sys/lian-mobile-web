@@ -10,10 +10,16 @@ import {
   NOTIFICATION_DEFAULT_TITLE,
   NOTIFICATION_REPLY_LABEL,
   NOTIFICATION_ACTOR_LABEL,
+  NOTIFICATION_CHANNELS_LABEL,
+  NOTIFICATION_CHANNELS_HINT,
+  NOTIFICATION_CHANNEL_STATUS_CONNECTED,
+  NOTIFICATION_CHANNEL_STATUS_PENDING,
+  NOTIFICATION_CHANNEL_ISSUE_LINK_LABEL,
 } from "../../config/brand";
 import { actorDisplayName } from "../../domain/actor";
 import type { NotificationItem } from "../../types/messages";
 import { formatRelativeTime } from "../../utils/time";
+import { NOTIFICATION_CHANNELS } from "./notificationChannels";
 
 defineProps<{
   items: NotificationItem[];
@@ -68,6 +74,50 @@ function openNotification(item: NotificationItem) {
 
 <template>
   <section class="messages-view__pane" :aria-label="NOTIFICATION_SECTION_LABEL">
+    <section
+      class="messages-view__channels"
+      :aria-label="NOTIFICATION_CHANNELS_LABEL"
+      data-testid="notification-channel-readout"
+    >
+      <header class="messages-view__channels-header">
+        <strong>{{ NOTIFICATION_CHANNELS_LABEL }}</strong>
+        <p>{{ NOTIFICATION_CHANNELS_HINT }}</p>
+      </header>
+      <ul class="messages-view__channels-list">
+        <li
+          v-for="channel in NOTIFICATION_CHANNELS"
+          :key="channel.id"
+          class="messages-view__channel"
+          :class="{ 'is-pending': channel.status === 'pending' }"
+          data-testid="notification-channel-row"
+          :data-channel-id="channel.id"
+          :data-channel-status="channel.status"
+        >
+          <div class="messages-view__channel-heading">
+            <span class="messages-view__channel-title">{{ channel.title }}</span>
+            <TrustBadge :tone="channel.status === 'connected' ? 'confirmed' : 'pending'">
+              {{
+                channel.status === "connected"
+                  ? NOTIFICATION_CHANNEL_STATUS_CONNECTED
+                  : NOTIFICATION_CHANNEL_STATUS_PENDING
+              }}
+            </TrustBadge>
+          </div>
+          <p class="messages-view__channel-desc">{{ channel.description }}</p>
+          <a
+            v-if="channel.issueUrl"
+            class="messages-view__channel-link"
+            :href="channel.issueUrl"
+            target="_blank"
+            rel="noopener noreferrer"
+            data-testid="notification-channel-issue-link"
+          >
+            {{ NOTIFICATION_CHANNEL_ISSUE_LINK_LABEL }}
+          </a>
+        </li>
+      </ul>
+    </section>
+
     <InlineError v-if="error">
       {{ error }}
       <button type="button" @click="emit('retry')">{{ CHANNEL_RELOAD }}</button>
@@ -121,6 +171,90 @@ function openNotification(item: NotificationItem) {
 .messages-view__list {
   display: grid;
   gap: var(--space-4);
+}
+
+.messages-view__channels {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border: 1px dashed rgba(31, 41, 51, 0.16);
+  border-radius: var(--radius-card);
+  background: rgba(255, 255, 255, 0.62);
+}
+
+.messages-view__channels-header {
+  display: grid;
+  gap: 4px;
+}
+
+.messages-view__channels-header strong {
+  color: var(--lian-ink);
+  font-size: 13px;
+  font-weight: 850;
+  letter-spacing: 0.02em;
+}
+
+.messages-view__channels-header p {
+  margin: 0;
+  color: var(--lian-muted);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.messages-view__channels-list {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.messages-view__channel {
+  display: grid;
+  gap: 4px;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid rgba(31, 41, 51, 0.08);
+  border-radius: var(--radius-card);
+  background: rgba(255, 255, 255, 0.74);
+}
+
+.messages-view__channel.is-pending {
+  border-style: dashed;
+  background: rgba(255, 255, 255, 0.44);
+}
+
+.messages-view__channel-heading {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: center;
+  justify-content: space-between;
+}
+
+.messages-view__channel-title {
+  color: var(--lian-ink);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.messages-view__channel-desc {
+  margin: 0;
+  color: var(--lian-muted);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.messages-view__channel-link {
+  justify-self: start;
+  color: var(--lian-primary, #1fa7a0);
+  font-size: 12px;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.messages-view__channel-link:hover,
+.messages-view__channel-link:focus-visible {
+  text-decoration: underline;
 }
 
 .messages-view__notification header {
