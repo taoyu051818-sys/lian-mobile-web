@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue";
 import { fetchAuthMe, logoutAuth } from "../../api/profile";
+import { clearAllPublishDrafts } from "../publish";
 import {
   ADMIN_ENTER_LABEL,
   LOADING_PROFILE,
@@ -99,6 +100,9 @@ function enterGuestState() {
   editorOpen.value = false;
   errorMessage.value = "";
   listError.value = "";
+  // issue #692: drafts authored by the previous account must not survive
+  // logout / account switch — they were leaking into the next sign-in.
+  clearAllPublishDrafts();
 }
 
 async function loadProfile() {

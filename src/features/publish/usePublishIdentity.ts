@@ -22,6 +22,12 @@ export function usePublishIdentity() {
   const identityMeta = ref(PUBLISH_IDENTITY_META);
   const identityTag = ref("");
   const identityTagOptions = ref<string[]>([]);
+  // Stable user identifier used to scope the publish draft to the signed-in
+  // account (issue #692). `null` while we have not yet resolved an identity,
+  // so callers can wait before restoring a draft and avoid leaking another
+  // account's draft into the form during the auth/me round trip.
+  const userId = ref<string | null>(null);
+  const identityLoaded = ref(false);
 
   const normalizedIdentityTag = computed(() => normalizeIdentityTag(identityTag.value));
   const avatarText = computed(() => identityName.value.slice(0, 2) || USER_AVATAR_FALLBACK);
@@ -43,6 +49,7 @@ export function usePublishIdentity() {
       aliasId.value = user?.activeAliasId || undefined;
       identityTagOptions.value = user?.identityTags || [];
       identityTag.value = "";
+      userId.value = typeof user?.id === "string" && user.id ? user.id : null;
       const activeAlias = aliasId.value
         ? user?.aliases?.find((alias) => alias.id === aliasId.value)
         : null;
@@ -52,6 +59,9 @@ export function usePublishIdentity() {
       identityMeta.value = PUBLISH_IDENTITY_UNCONFIRMED;
       identityTagOptions.value = [];
       identityTag.value = "";
+      userId.value = null;
+    } finally {
+      identityLoaded.value = true;
     }
   }
 
@@ -61,6 +71,8 @@ export function usePublishIdentity() {
     identityMeta,
     identityTag,
     identityTagOptions,
+    userId,
+    identityLoaded,
     normalizedIdentityTag,
     avatarText,
     pageChrome,
