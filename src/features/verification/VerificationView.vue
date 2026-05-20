@@ -113,7 +113,7 @@ onBeforeUnmount(() => {
     </header>
 
     <section
-      v-if="!hasAnyVerificationRecord"
+      v-if="!loading && !hasAnyVerificationRecord"
       class="verification-view__empty-card"
       data-testid="verification-empty-state"
     >
