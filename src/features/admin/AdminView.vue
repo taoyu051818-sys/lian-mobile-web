@@ -369,7 +369,7 @@ onMounted(() => {
                 v-if="request.verificationType === 'realname'"
                 class="admin-view__verification-note admin-view__verification-note--muted"
               >
-                默认列表只展示脱敏摘要；敏感字段仅在显式查看时通过后端审计路径读取。
+                默认列表只展示脱敏摘要；实名认证敏感字段仅在显式查看时通过后端审计路径读取。
               </p>
 
               <div
