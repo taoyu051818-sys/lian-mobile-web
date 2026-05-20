@@ -16,6 +16,8 @@ export const RUNNER_TAB_LABEL = "跑腿员视图切换";
 
 /** 列表状态 */
 export const RUNNER_LIST_LOADING = "加载中…";
+export const RUNNER_LIST_EMPTY_AVAILABLE = "当前没有可接订单。";
+export const RUNNER_LIST_EMPTY_ACTIVE = "暂无进行中的订单。";
 export const RUNNER_EMPTY_AVAILABLE_TITLE = "暂时还没有新订单";
 export const RUNNER_EMPTY_AVAILABLE_BODY =
   "保持跑腿员在线，新的校园订单进入可接池后会先显示在这里。";
