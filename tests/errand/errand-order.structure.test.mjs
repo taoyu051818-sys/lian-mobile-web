@@ -6,8 +6,8 @@ import { fileURLToPath } from "node:url";
 
 /**
  * Errand-order structure tests (issue #647). Walks the static graph that
- * backs the user-side order journey: detail-page CTA → secret view → form
- * → gate / submit → timeline view. We do not boot Vue here — these are
+ * backs the user-side order journey: detail-page CTA -> secret view -> form
+ * -> gate / submit -> timeline view. We do not boot Vue here — these are
  * grep-style assertions that catch the most common drift (rename, deleted
  * testid, broken import) before any vitest run.
  */
@@ -59,8 +59,6 @@ test("errand types module owns the request/draft/gate/timeline shapes", () => {
   assert.match(src, /export interface ErrandOrderTimelineEvent/);
   assert.match(src, /export interface ErrandOrderDetail/);
   assert.match(src, /export interface ErrandOrderCreateResponse/);
-  // Re-exports the lifecycle shapes from post-extensions so #648 can import
-  // everything from one place.
   assert.match(src, /export type \{[\s\S]*ErrandOrder[\s\S]*\}\s*from\s*"\.\/post-extensions"/);
 });
 
@@ -93,9 +91,6 @@ test("api/errands.ts exposes the order endpoints + normalizers", () => {
 
 test("api/errands.ts collapses unknown reason codes to the 'unknown' sentinel", () => {
   const src = read("src/api/errands.ts");
-  // Cheap structural check: the module must reference "unknown" twice — once
-  // in the code-set, once in the fallback dispatch — so an accidental rename
-  // of the sentinel breaks here.
   const matches = src.match(/"unknown"/g) || [];
   assert.ok(matches.length >= 2, `expected >=2 references to "unknown"; saw ${matches.length}`);
 });
@@ -109,9 +104,6 @@ test("useErrandOrderDraft owns gate + submit + reset", () => {
   assert.match(src, /fetchAuthMe/);
   assert.match(src, /fetchProfileWallet/);
   assert.match(src, /createErrandOrder/);
-  // Local gate evaluator must run BEFORE the server gate — otherwise an
-  // anonymous user would always see the server's auth-rejected error
-  // instead of our localized copy.
   assert.match(src, /deriveLocalGate/);
 });
 
@@ -119,8 +111,6 @@ test("useErrandOrderDetail owns the read-side fetch", () => {
   const src = read("src/features/errand/useErrandOrderDetail.ts");
   assert.match(src, /export function useErrandOrderDetail/);
   assert.match(src, /fetchErrandOrder/);
-  // Polling lifecycle is exposed so the timeline view can drive it from
-  // mount/unmount — start/stop must be there or the view leaks a timer.
   assert.match(src, /function start/);
   assert.match(src, /function stop/);
   assert.match(src, /isTerminalErrandStatus/);
@@ -129,9 +119,6 @@ test("useErrandOrderDetail owns the read-side fetch", () => {
 test("isTerminalErrandStatus only blesses the truly-terminal codes", () => {
   const src = read("src/features/errand/errand-format.ts");
   assert.match(src, /isTerminalErrandStatus/);
-  // Cheap structural guard: the terminal set must include delivered /
-  // cancelled / refunded but must NOT include disputed (a dispute can still
-  // resolve to delivered or refunded).
   const setMatch = src.match(
     /TERMINAL_ERRAND_STATUSES\s*=\s*new Set<ErrandStatus>\(\[(?<body>[\s\S]*?)\]\)/,
   );
@@ -167,8 +154,6 @@ test("ProfileErrandOrdersBlock dispatches taps into the route singleton", () => 
 test("ProfileView mounts the my-orders block via the errand barrel", () => {
   const src = read("src/features/profile/ProfileView.vue");
   assert.match(src, /ProfileErrandOrdersBlock/);
-  // Must come from the errand barrel, not a deep import — the barrel
-  // export is the public surface.
   assert.match(src, /from\s+"\.\.\/errand"/);
 });
 
@@ -176,11 +161,8 @@ test("useErrandOrderRoute is a singleton route store", () => {
   const src = read("src/features/errand/useErrandOrderRoute.ts");
   assert.match(src, /enterForMerchant/);
   assert.match(src, /enterForOrder/);
-  // Setting one mode must clear the other (otherwise both branches render).
   assert.match(src, /merchantPostId\.value\s*=\s*null/);
   assert.match(src, /orderId\.value\s*=\s*""/);
-  // Origin tracking lets close/back handlers return the user to the surface
-  // they came from instead of dumping everyone on feed.
   assert.match(src, /origin/);
   assert.match(src, /AppViewKey/);
 });
@@ -197,16 +179,9 @@ test("ErrandOrderView surfaces the gate, form, and submit affordances", () => {
   assert.match(src, /data-testid="errand-order-submit"/);
   assert.match(src, /ErrandOrderGate/);
   assert.match(src, /ErrandOrderTimelineView/);
-  // Submit must dispatch through the route singleton — otherwise the
-  // post-submit view does not pivot into timeline mode.
   assert.match(src, /enterForOrder/);
-  // Close/back hands the user back to the origin surface (issue #647 review
-  // A1) instead of always routing to feed.
   assert.match(src, /route\.origin\.value/);
-  // goLogin must NOT route to feed — auth lives on the profile tab.
   assert.doesNotMatch(src, /function goLogin\(\)\s*\{[^}]*setActiveView\("feed"\)/);
-  // Module-scope route singleton must reset on unmount so a tab-bar switch
-  // doesn't leak merchantPostId/orderId across remounts (review A3).
   assert.match(src, /onBeforeUnmount/);
 });
 
@@ -226,9 +201,6 @@ test("ErrandOrderTimelineView lists timeline events + pickup/dropoff", () => {
   assert.match(src, /data-testid="errand-order-timeline-entry"/);
   assert.match(src, /data-testid="errand-order-timeline-pickup"/);
   assert.match(src, /data-testid="errand-order-timeline-dropoff"/);
-  // Error branch must offer a manual retry — without it polling+initial
-  // fetch failures leave the user stuck on an alert with nothing to do
-  // (review A4).
   assert.match(src, /data-testid="errand-order-timeline-retry"/);
 });
 
@@ -240,6 +212,31 @@ test("PostDetailMerchantBlock dispatches the errand CTA into the route singleton
   assert.match(src, /useErrandOrderRoute/);
   assert.match(src, /enterForMerchant/);
   assert.match(src, /setActiveView\("errand-order"\)/);
+});
+
+test("PostDetailMerchantBlock only enables the CTA when eligibility is true and merchantPostId is usable", () => {
+  const src = read("src/features/detail/PostDetailMerchantBlock.vue");
+  assert.match(src, /errandEntryAvailable === true/);
+  assert.match(src, /merchantPostId\s*\?\?\s*0\)\s*>\s*0/);
+  assert.match(src, /:disabled="!errandEntryClickable"/);
+  assert.match(src, /:aria-disabled="!errandEntryClickable"/);
+});
+
+test("PostDetailMerchantBlock renders a disabled CTA plus reason text when eligibility rejects", () => {
+  const src = read("src/features/detail/PostDetailMerchantBlock.vue");
+  assert.match(src, /data-testid="post-detail-merchant-errand-unavailable"/);
+  assert.match(src, /data-testid="post-detail-merchant-errand-reason"/);
+  assert.match(src, /MERCHANT_ERRAND_UNAVAILABLE_FALLBACK/);
+  assert.match(src, /errandReasonText\(\s*\{[\s\S]*reason:\s*props\.errandUnavailableReason/);
+  assert.match(src, /reasonText:\s*props\.errandUnavailableReasonText/);
+  assert.match(src, /disabled\s*\n\s*aria-disabled="true"/);
+});
+
+test("PostDetailMerchantBlock keeps non-errand merchants silent when availability is undefined", () => {
+  const src = read("src/features/detail/PostDetailMerchantBlock.vue");
+  assert.match(src, /errandEntryAvailable === false/);
+  assert.match(src, /v-if="errandEntryAvailable"/);
+  assert.match(src, /v-else-if="errandUnavailable"/);
 });
 
 // --- brand strings registered ---
