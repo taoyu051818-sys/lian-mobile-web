@@ -29,7 +29,7 @@ Total files: 305
 | `api/places.ts`       | TypeScript module                                                                                                        |    10 |
 | `api/posts.ts`        | export interface PostLikeResponse                                                                                        |   231 |
 | `api/profile.ts`      | export function normalizeProfileListItem(item: unknown): ProfileListItem                                                 |   163 |
-| `api/publish.ts`      | Creates a display-only fallback draft from free-text place name. When `placeName` is non-empty the source is "manual"... |   254 |
+| `api/publish.ts`      | Creates a display-only fallback draft from free-text place name. When `placeName` is non-empty the source is "manual"... |   370 |
 | `api/runner.ts`       | Available pool — orders not yet claimed by any runner.                                                                   |    54 |
 | `api/verification.ts` | TypeScript module                                                                                                        |    20 |
 
@@ -336,11 +336,11 @@ Total files: 305
 | `types/map.ts`             | export interface MapBounds                                                                                                |   141 |
 | `types/merchant.ts`        | Merchant center (issue #646) types. Backend (`/api/me/merchant-center`) ships a profile readout for merchants who ho...   |    57 |
 | `types/messages.ts`        | Client-generated nonce stamped on the optimistic item so we can match the server echo back to it without depending on...  |    78 |
-| `types/place.ts`           | export type PlaceStatus =                                                                                                 |    54 |
+| `types/place.ts`           | export type PlaceStatus =                                                                                                 |    60 |
 | `types/post-extensions.ts` | Event / Help / Merchant / Trade / Errand domain types (PRD V0.1 §6). V0.1 ships shapes only — no UI yet. The point i...   |   194 |
 | `types/post.ts`            | event?: EventPostExtension; eventJoined?: boolean; help?: HelpPostExtension; helpVoted?: boolean; helpManageable?: bo...  |   153 |
 | `types/profile.ts`         | PRD V0.1 §17 — verification records keyed by tag (campus_verified, merchant_verified, ...). Backend `/api/auth/me` re...  |   132 |
-| `types/publish.ts`         | export type PublishMapVersion = "legacy" \| "manual" \| "gaode_v2"; Backend (#383) accepts these contentType values fo... |   116 |
+| `types/publish.ts`         | export type PublishMapVersion = "legacy" \| "manual" \| "gaode_v2"; Backend (#383) accepts these contentType values fo... |   140 |
 | `types/runner.ts`          | Runner-center domain types — frontend-scoped under #648. Why a separate file rather than `src/types/errand.ts`? The ...   |    65 |
 | `types/verification.ts`    | export type VerificationTag =                                                                                             |    36 |
 

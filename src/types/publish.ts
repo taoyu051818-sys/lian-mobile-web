@@ -1,4 +1,9 @@
-import type { PlaceRef } from "./place";
+import type {
+  CoordinateSystem,
+  LocationIdentityKind,
+  LocationPrecisionKind,
+  PlaceRef,
+} from "./place";
 import type { Audience } from "./audience";
 import type { MerchantCategory, TradeState } from "./post-extensions";
 
@@ -43,6 +48,16 @@ export interface TradePublishInput {
   category: string;
 }
 
+export type PublishLocationIssueCode =
+  | "manual-place-identity-removed"
+  | "unknown-coordinate-system"
+  | "invalid-lat-lng";
+
+export interface PublishLocationIssue {
+  code: PublishLocationIssueCode;
+  message: string;
+}
+
 export interface PublishLocationDraft {
   source: PublishLocationSource;
   locationId: string;
@@ -55,9 +70,18 @@ export interface PublishLocationDraft {
   legacyPoint: { x: number | null; y: number | null };
   imagePoint: { x: number | null; y: number | null };
   mapVersion: PublishMapVersion;
+  coordinateSystem: CoordinateSystem;
+  identityKind: LocationIdentityKind;
+  precisionKind: LocationPrecisionKind;
   confidence: number;
   skipped: boolean;
   note: string;
+  issues: PublishLocationIssue[];
+}
+
+export interface NormalizePublishLocationDraftResult {
+  draft: PublishLocationDraft;
+  issues: PublishLocationIssue[];
 }
 
 export interface PublishPayload {
