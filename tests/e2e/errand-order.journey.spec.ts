@@ -1,106 +1,275 @@
-import test from "node:test";
-import assert from "node:assert/strict";
-import fs from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { expect, request, test, type APIRequestContext, type Browser } from "@playwright/test";
 
-/**
- * "e2e" placeholder for the user-side errand order journey (issue #647).
- *
- * The repo doesn't boot Playwright/Cypress yet, so existing tests/e2e/*.spec
- * files all walk the production source as a static graph. We follow the
- * same convention here: every node along the journey must wire up to the
- * next, and a regression in any link breaks CI before it ships.
- *
- * Journey covered:
- *   1. Merchant detail "帮我取" CTA → setActiveView("errand-order")
- *   2. Form view → eligibility + auth + wallet → gate or form
- *   3. Form submit → POST /errands/orders → enterForOrder(orderId)
- *   4. Same secret view → timeline branch on the new orderId
- *   5. Gate branches: not_logged_in / not_verified / insufficient_balance /
- *      merchant_paused / no_runner_coverage / unknown
- */
+import { isRoleConfigured, loginAs, type RoleId } from "./fixtures/accounts";
 
-const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
+const BASE_URL = process.env.APP_BASE_URL ?? "https://lian.nat100.top";
 
-function read(rel) {
-  return fs.readFileSync(path.join(repoRoot, rel), "utf8");
+type ViewerRole = RoleId | "anonymous";
+
+interface FeedItem {
+  cover?: string;
+  cardTemplate?: string;
 }
 
-// Step 1: detail CTA dispatches into the route singleton.
+interface FeedResponse {
+  items?: FeedItem[];
+}
 
-test("journey: merchant detail CTA opens the errand-order secret view", () => {
-  const block = read("src/features/detail/PostDetailMerchantBlock.vue");
-  assert.match(block, /data-testid="post-detail-merchant-errand-cta"/);
-  assert.match(block, /useErrandOrderRoute/);
-  assert.match(block, /enterForMerchant/);
-  assert.match(block, /setActiveView\("errand-order"\)/);
-});
+interface PublishResponse {
+  tid?: number | string;
+}
 
-test("journey: errand-order is reachable as a secret view", () => {
-  const useActive = read("src/app/useActiveView.ts");
-  assert.match(useActive, /SECRET_VIEWS:\s*AppViewKey\[\][^=]*=\s*\[[^\]]*"errand-order"/);
-  const host = read("src/app/AppViewHost.vue");
-  assert.match(host, /"errand-order":\s*asyncView/);
-});
+interface PostDetailProbe {
+  tid?: number | string;
+  title?: string;
+  merchant?: {
+    errandSupported?: boolean;
+    name?: string;
+  } | null;
+  errandEntryAvailable?: boolean;
+  errandUnavailableReason?: string;
+  errandUnavailableReasonText?: string;
+}
 
-// Step 2: gate evaluator combines server eligibility + auth + wallet.
+interface ProbeSummary {
+  role: ViewerRole;
+  available: boolean | undefined;
+  reason: string;
+  reasonText: string;
+}
 
-test("journey: gate composable pulls auth/me + wallet + eligibility together", () => {
-  const draft = read("src/features/errand/useErrandOrderDraft.ts");
-  assert.match(draft, /Promise\.all/);
-  assert.match(draft, /fetchAuthMe/);
-  assert.match(draft, /fetchProfileWallet/);
-  assert.match(draft, /fetchErrandOrderEligibility/);
-});
+function buildMerchantPublishPayload(imageUrl: string, title: string) {
+  return {
+    imageUrl,
+    imageUrls: [imageUrl],
+    title,
+    body: "Playwright merchant errand journey proof post.",
+    tag: "",
+    identityTag: "",
+    metadata: {
+      locationArea: "E2E Merchant Pickup",
+      visibility: "public",
+      distribution: ["home", "search", "detail"],
+      primaryTag: "",
+      identityTag: "",
+      presentationIntent: "merchant",
+    },
+    contentType: "merchant_food",
+    merchant: {
+      name: "E2E Merchant Pickup",
+      category: "food",
+      hours: "09:00-21:00",
+      contact: "e2e-merchant",
+      errandSupported: true,
+    },
+    locationDraft: {
+      source: "manual",
+      locationId: "",
+      locationArea: "E2E Merchant Pickup",
+      displayName: "E2E Merchant Pickup",
+      lat: null,
+      lng: null,
+      legacyPoint: { x: null, y: null },
+      imagePoint: { x: null, y: null },
+      mapVersion: "manual",
+      coordinateSystem: "none",
+      identityKind: "manual_text",
+      precisionKind: "display_only",
+      confidence: 0.65,
+      skipped: false,
+      note: "",
+      issues: [],
+    },
+    riskFlags: [],
+    confidence: 0.65,
+    needsHumanReview: false,
+    aiMode: "manual-vue",
+  };
+}
 
-test("journey: each gate reason has a localized fallback string", () => {
-  const format = read("src/features/errand/errand-format.ts");
-  for (const reason of [
-    "not_logged_in",
-    "not_verified",
-    "insufficient_balance",
-    "merchant_paused",
-    "no_runner_coverage",
-    "unknown",
-  ]) {
-    assert.match(format, new RegExp(`case "${reason}"`));
+async function firstReusableImage(api: APIRequestContext) {
+  const response = await api.get("/api/feed?tab=%E6%AD%A4%E5%88%BB&page=1&limit=12");
+  expect(response.ok(), await response.text()).toBe(true);
+  const body = (await response.json()) as FeedResponse;
+  const imageItem = body.items?.find(
+    (item) => item.cover && (item.cardTemplate === "image" || !item.cardTemplate),
+  );
+  expect(imageItem?.cover, "nat100 feed must expose at least one reusable cover URL").toBeTruthy();
+  return imageItem!.cover!;
+}
+
+async function publishMerchantPost(api: APIRequestContext) {
+  const imageUrl = await firstReusableImage(api);
+  const title = `E2E merchant errand ${new Date().toISOString()}`;
+  const response = await api.post("/api/ai/post-publish", {
+    data: buildMerchantPublishPayload(imageUrl, title),
+  });
+  expect(response.ok(), await response.text()).toBe(true);
+  const body = (await response.json()) as PublishResponse;
+  expect(body.tid).toBeTruthy();
+  return { tid: String(body.tid), title };
+}
+
+async function fetchPostDetail(api: APIRequestContext, tid: string) {
+  const response = await api.get(`/api/posts/${tid}`);
+  expect(response.ok(), await response.text()).toBe(true);
+  return (await response.json()) as PostDetailProbe;
+}
+
+async function waitForMerchantDetail(api: APIRequestContext, tid: string) {
+  let last: PostDetailProbe | null = null;
+  for (let attempt = 0; attempt < 12; attempt += 1) {
+    const detail = await fetchPostDetail(api, tid);
+    last = detail;
+    if (detail.merchant?.errandSupported) return detail;
+    await new Promise((resolve) => setTimeout(resolve, 1000));
   }
-});
+  throw new Error(`merchant detail never surfaced errandSupported=true for tid=${tid}: ${JSON.stringify(last)}`);
+}
 
-// Step 3: submit posts and pivots into timeline mode.
+async function probeRole(role: ViewerRole, tid: string): Promise<ProbeSummary> {
+  if (role === "anonymous") {
+    const api = await request.newContext({ baseURL: BASE_URL });
+    try {
+      const detail = await fetchPostDetail(api, tid);
+      return {
+        role,
+        available: detail.errandEntryAvailable,
+        reason: detail.errandUnavailableReason || "",
+        reasonText: detail.errandUnavailableReasonText || "",
+      };
+    } finally {
+      await api.dispose();
+    }
+  }
 
-test("journey: form submit creates an order and enters timeline mode", () => {
-  const view = read("src/features/errand/ErrandOrderView.vue");
-  assert.match(view, /handleSubmit/);
-  assert.match(view, /enterForOrder/);
+  const { api } = await loginAs(role, BASE_URL);
+  try {
+    const detail = await fetchPostDetail(api, tid);
+    return {
+      role,
+      available: detail.errandEntryAvailable,
+      reason: detail.errandUnavailableReason || "",
+      reasonText: detail.errandUnavailableReasonText || "",
+    };
+  } finally {
+    await api.dispose();
+  }
+}
 
-  const draft = read("src/features/errand/useErrandOrderDraft.ts");
-  assert.match(draft, /createErrandOrder/);
-  // Failure case must fold into the gate so the same blocked-state UI shows.
-  assert.match(draft, /gate\.value\s*=\s*\{/);
-});
+async function openAuthenticatedPage(browser: Browser, api: APIRequestContext) {
+  const context = await browser.newContext({ storageState: await api.storageState() });
+  const page = await context.newPage();
+  return { context, page };
+}
 
-// Step 4: timeline view renders the order detail.
+test.describe("@errand-order merchant detail journey (#693)", () => {
+  test("published merchant detail yields a CTA for one eligible viewer and a visible reason for one rejected viewer", async ({ browser }) => {
+    test.skip(
+      !isRoleConfigured("merchant"),
+      "merchant role not configured — set LIAN_E2E_MERCHANT_USERNAME / LIAN_E2E_MERCHANT_PASSWORD",
+    );
 
-test("journey: timeline view loads the order detail on mount", () => {
-  const view = read("src/features/errand/ErrandOrderTimelineView.vue");
-  assert.match(view, /onMounted/);
-  assert.match(view, /useErrandOrderDetail/);
-  assert.match(view, /data-testid="errand-order-timeline-list"/);
-});
+    const { api: merchantApi } = await loginAs("merchant", BASE_URL);
+    const { tid, title } = await publishMerchantPost(merchantApi);
+    await waitForMerchantDetail(merchantApi, tid);
+    await merchantApi.dispose();
 
-test("journey: same view key flips between form and timeline branches", () => {
-  const view = read("src/features/errand/ErrandOrderView.vue");
-  // The route singleton supplies the orderId; the view branches on it.
-  assert.match(view, /isTimelineMode/);
-  assert.match(view, /route\.orderId\.value/);
-});
+    const availableCandidates: RoleId[] = ["campus", "runner", "merchant", "registered"];
+    const availableProbes: ProbeSummary[] = [];
+    let availableRole: RoleId | null = null;
 
-// Step 5: API contract — we collapse unknown gate codes; we don't trust the wire.
+    for (const role of availableCandidates) {
+      if (!isRoleConfigured(role)) continue;
+      const probe = await probeRole(role, tid);
+      availableProbes.push(probe);
+      if (probe.available === true) {
+        availableRole = role;
+        break;
+      }
+    }
 
-test("journey: api normalizer hardens the gate against unknown codes", () => {
-  const api = read("src/api/errands.ts");
-  assert.match(api, /export function normalizeErrandOrderGate/);
-  assert.match(api, /GATE_REASON_CODES\.has/);
+    expect(
+      availableRole,
+      `no configured role could reach errandEntryAvailable=true for tid=${tid}; probes=${JSON.stringify(availableProbes)}`,
+    ).toBeTruthy();
+
+    const unavailableCandidates: ViewerRole[] = ["registered", "anonymous", "campus", "runner", "merchant"];
+    const unavailableProbes: ProbeSummary[] = [];
+    let unavailableRole: ViewerRole | null = null;
+    let unavailableReasonText = "";
+
+    for (const role of unavailableCandidates) {
+      if (role !== "anonymous" && !isRoleConfigured(role)) continue;
+      const probe = await probeRole(role, tid);
+      unavailableProbes.push(probe);
+      if (probe.available === false && (probe.reasonText || probe.reason)) {
+        unavailableRole = role;
+        unavailableReasonText = probe.reasonText;
+        break;
+      }
+    }
+
+    expect(
+      unavailableRole,
+      `no configured role produced a rejected detail-side errand reason for tid=${tid}; probes=${JSON.stringify(unavailableProbes)}`,
+    ).toBeTruthy();
+
+    const { api: availableApi } = await loginAs(availableRole as RoleId, BASE_URL);
+    const { context: availableContext, page: availablePage } = await openAuthenticatedPage(
+      browser,
+      availableApi,
+    );
+    await availablePage.goto(`/#/post/${tid}`);
+    await expect(availablePage.locator("#post-detail-title")).toContainText(title);
+    await expect(availablePage.getByTestId("post-detail-merchant-block")).toBeVisible();
+    await expect(availablePage.getByTestId("post-detail-merchant-errand-entry")).toBeVisible();
+    await expect(availablePage.getByTestId("post-detail-merchant-errand-cta")).toBeEnabled();
+    await availablePage.getByTestId("post-detail-merchant-errand-cta").click();
+    await expect.poll(() => availablePage.evaluate(() => location.hash)).toMatch(/#\/errand-order/);
+    await expect(availablePage.getByTestId("errand-order-view")).toBeVisible();
+    await expect(availablePage.getByTestId("errand-order-form")).toBeVisible();
+    await expect(availablePage.getByTestId("errand-order-pickup-input")).not.toHaveValue("");
+    await availablePage.getByTestId("errand-order-back").click();
+    await expect.poll(() => availablePage.evaluate(() => location.hash)).toMatch(/^#\/feed\/?$|^$/);
+    await availableContext.close();
+    await availableApi.dispose();
+
+    if (unavailableRole === "anonymous") {
+      const context = await browser.newContext();
+      const page = await context.newPage();
+      await page.goto(`/#/post/${tid}`);
+      await expect(page.locator("#post-detail-title")).toContainText(title);
+      await expect(page.getByTestId("post-detail-merchant-block")).toBeVisible();
+      await expect(page.getByTestId("post-detail-merchant-errand-entry")).toHaveCount(0);
+      await expect(page.getByTestId("post-detail-merchant-errand-unavailable")).toBeVisible();
+      const reason = page.getByTestId("post-detail-merchant-errand-reason");
+      await expect(reason).toBeVisible();
+      await expect(reason).not.toHaveText("");
+      if (unavailableReasonText) {
+        await expect(reason).toContainText(unavailableReasonText);
+      }
+      await context.close();
+      return;
+    }
+
+    const { api: unavailableApi } = await loginAs(unavailableRole as RoleId, BASE_URL);
+    const { context: unavailableContext, page: unavailablePage } = await openAuthenticatedPage(
+      browser,
+      unavailableApi,
+    );
+    await unavailablePage.goto(`/#/post/${tid}`);
+    await expect(unavailablePage.locator("#post-detail-title")).toContainText(title);
+    await expect(unavailablePage.getByTestId("post-detail-merchant-block")).toBeVisible();
+    await expect(unavailablePage.getByTestId("post-detail-merchant-errand-entry")).toHaveCount(0);
+    await expect(unavailablePage.getByTestId("post-detail-merchant-errand-unavailable")).toBeVisible();
+    const reason = unavailablePage.getByTestId("post-detail-merchant-errand-reason");
+    await expect(reason).toBeVisible();
+    await expect(reason).not.toHaveText("");
+    if (unavailableReasonText) {
+      await expect(reason).toContainText(unavailableReasonText);
+    }
+    await unavailableContext.close();
+    await unavailableApi.dispose();
+  });
 });
