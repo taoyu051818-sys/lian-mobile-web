@@ -1,8 +1,9 @@
 import { describe, it, expect } from "vitest";
 import {
+  buildPublishPayload,
   createManualLocationDraft,
   createMapV2LocationDraft,
-  buildPublishPayload,
+  normalizePublishLocationDraft,
 } from "../../src/api/publish";
 
 describe("createManualLocationDraft", () => {
@@ -10,6 +11,9 @@ describe("createManualLocationDraft", () => {
     const draft = createManualLocationDraft("图书馆三楼");
     expect(draft.source).toBe("manual");
     expect(draft.mapVersion).toBe("manual");
+    expect(draft.coordinateSystem).toBe("none");
+    expect(draft.identityKind).toBe("manual_text");
+    expect(draft.precisionKind).toBe("display_only");
     expect(draft.skipped).toBe(false);
     expect(draft.displayName).toBe("图书馆三楼");
     expect(draft.locationArea).toBe("图书馆三楼");
@@ -18,12 +22,16 @@ describe("createManualLocationDraft", () => {
     expect(draft.legacyPoint).toEqual({ x: null, y: null });
     expect(draft.imagePoint).toEqual({ x: null, y: null });
     expect(draft.confidence).toBe(0.65);
+    expect(draft.issues).toEqual([]);
   });
 
   it("produces skipped source when name is empty", () => {
     const draft = createManualLocationDraft("");
     expect(draft.source).toBe("skipped");
     expect(draft.mapVersion).toBe("manual");
+    expect(draft.coordinateSystem).toBe("none");
+    expect(draft.identityKind).toBe("skipped");
+    expect(draft.precisionKind).toBe("none");
     expect(draft.skipped).toBe(true);
     expect(draft.displayName).toBe("");
     expect(draft.locationArea).toBe("");
@@ -34,6 +42,7 @@ describe("createManualLocationDraft", () => {
     const draft = createManualLocationDraft("   ");
     expect(draft.source).toBe("skipped");
     expect(draft.skipped).toBe(true);
+    expect(draft.identityKind).toBe("skipped");
     expect(draft.confidence).toBe(0);
   });
 
@@ -67,11 +76,15 @@ describe("createMapV2LocationDraft", () => {
     });
     expect(draft.source).toBe("map_v2");
     expect(draft.mapVersion).toBe("gaode_v2");
+    expect(draft.coordinateSystem).toBe("gcj02");
+    expect(draft.identityKind).toBe("map_selection");
+    expect(draft.precisionKind).toBe("exact");
     expect(draft.skipped).toBe(false);
     expect(draft.confidence).toBe(0.86);
     expect(draft.locationId).toBe("loc-001");
     expect(draft.displayName).toBe("图书馆");
     expect(draft.locationArea).toBe("图书馆");
+    expect(draft.issues).toEqual([]);
   });
 
   it("rounds coordinates to 7 decimal places", () => {
@@ -96,6 +109,7 @@ describe("createMapV2LocationDraft", () => {
     });
     expect(draft.place).toBe(place);
     expect(draft.placeId).toBe("p1");
+    expect(draft.identityKind).toBe("canonical_place");
   });
 
   it("creates synthetic place from placeId when no place ref given", () => {
@@ -108,6 +122,7 @@ describe("createMapV2LocationDraft", () => {
     });
     expect(draft.placeId).toBe("p2");
     expect(draft.place).toEqual({ id: "p2", name: "教学楼A", type: undefined });
+    expect(draft.identityKind).toBe("canonical_place");
   });
 
   it("uses place.id over placeId when both provided", () => {
@@ -156,6 +171,87 @@ describe("createMapV2LocationDraft", () => {
   });
 });
 
+describe("normalizePublishLocationDraft", () => {
+  it("keeps manual fallback text separate from canonical place identity", () => {
+    const manual = createManualLocationDraft("图书馆门口");
+    const normalized = normalizePublishLocationDraft(
+      {
+        ...manual,
+        placeId: "place-1",
+        place: { id: "place-1", name: "图书馆" },
+      },
+      "",
+    );
+    expect(normalized.draft.source).toBe("manual");
+    expect(normalized.draft.identityKind).toBe("manual_text");
+    expect(normalized.draft.coordinateSystem).toBe("none");
+    expect(normalized.draft.placeId).toBeUndefined();
+    expect(normalized.draft.place).toBeUndefined();
+    expect(normalized.issues.map((issue) => issue.code)).toEqual([
+      "manual-place-identity-removed",
+    ]);
+  });
+
+  it("preserves stable place identity when a map selection carries place truth", () => {
+    const draft = createMapV2LocationDraft({
+      locationId: "loc-place",
+      name: "图书馆",
+      lat: 30.0,
+      lng: 120.0,
+      placeId: "place-2",
+    });
+    const normalized = normalizePublishLocationDraft(draft, "");
+    expect(normalized.draft.identityKind).toBe("canonical_place");
+    expect(normalized.draft.coordinateSystem).toBe("gcj02");
+    expect(normalized.issues).toEqual([]);
+  });
+
+  it("diagnoses unknown coordinate-system data without inventing a fallback", () => {
+    const draft = createMapV2LocationDraft({
+      locationId: "loc-unknown",
+      name: "操场",
+      lat: 30.0,
+      lng: 120.0,
+      placeId: "place-3",
+    });
+    const normalized = normalizePublishLocationDraft(
+      {
+        ...draft,
+        coordinateSystem: "unknown",
+      },
+      "",
+    );
+    expect(normalized.draft.identityKind).toBe("canonical_place");
+    expect(normalized.draft.coordinateSystem).toBe("unknown");
+    expect(normalized.issues.map((issue) => issue.code)).toEqual([
+      "unknown-coordinate-system",
+    ]);
+  });
+
+  it("downgrades invalid lat/lng map data to display-only manual text", () => {
+    const draft = createMapV2LocationDraft({
+      locationId: "loc-invalid",
+      name: "体育馆",
+      lat: 30.0,
+      lng: 120.0,
+      placeId: "place-4",
+    });
+    const normalized = normalizePublishLocationDraft(
+      {
+        ...draft,
+        lat: 120,
+      },
+      "备用地点",
+    );
+    expect(normalized.draft.source).toBe("manual");
+    expect(normalized.draft.identityKind).toBe("manual_text");
+    expect(normalized.draft.coordinateSystem).toBe("none");
+    expect(normalized.draft.placeId).toBeUndefined();
+    expect(normalized.draft.place).toBeUndefined();
+    expect(normalized.issues.map((issue) => issue.code)).toEqual(["invalid-lat-lng"]);
+  });
+});
+
 describe("buildPublishPayload", () => {
   const baseInput = {
     imageUrls: ["https://cdn.test/a.jpg"],
@@ -172,6 +268,8 @@ describe("buildPublishPayload", () => {
     });
     expect(payload.locationDraft.source).toBe("manual");
     expect(payload.locationDraft.mapVersion).toBe("manual");
+    expect(payload.locationDraft.coordinateSystem).toBe("none");
+    expect(payload.locationDraft.identityKind).toBe("manual_text");
     expect(payload.locationDraft.skipped).toBe(false);
     expect(payload.aiMode).toBe("manual-vue");
     expect(payload.metadata.locationArea).toBe("图书馆三楼");
@@ -184,6 +282,7 @@ describe("buildPublishPayload", () => {
       placeName: "",
     });
     expect(payload.locationDraft.source).toBe("skipped");
+    expect(payload.locationDraft.identityKind).toBe("skipped");
     expect(payload.locationDraft.skipped).toBe(true);
     expect(payload.metadata.locationArea).toBe("");
     expect(payload.metadata.distribution).not.toContain("map");
@@ -204,6 +303,7 @@ describe("buildPublishPayload", () => {
     });
     expect(payload.locationDraft.source).toBe("map_v2");
     expect(payload.locationDraft.mapVersion).toBe("gaode_v2");
+    expect(payload.locationDraft.coordinateSystem).toBe("gcj02");
     expect(payload.aiMode).toBe("manual-vue-map-v2");
     expect(payload.metadata.locationArea).toBe("食堂");
     expect(payload.metadata.distribution).toContain("map");
@@ -274,6 +374,34 @@ describe("buildPublishPayload", () => {
     expect(payload.body).toBe("内容");
   });
 
+  it("mirrors location guard diagnostics into riskFlags", () => {
+    const draft = createMapV2LocationDraft({
+      locationId: "loc-risk",
+      name: "操场",
+      lat: 30.0,
+      lng: 120.0,
+      placeId: "place-5",
+    });
+    const payload = buildPublishPayload({
+      ...baseInput,
+      placeName: "",
+      locationDraft: {
+        ...draft,
+        coordinateSystem: "unknown",
+      },
+    });
+    expect(payload.locationDraft.identityKind).toBe("canonical_place");
+    expect(payload.locationDraft.issues.map((issue) => issue.code)).toEqual([
+      "unknown-coordinate-system",
+    ]);
+    expect(payload.riskFlags).toEqual([
+      {
+        message:
+          "map selection is missing a known coordinate system and should not be treated as map-safe proof.",
+      },
+    ]);
+  });
+
   // #645 — nat100 普通帖 text-only 发布失败的根因是后端
   // /api/ai/post-publish 在 normalizeAiPostPayload 里硬连线了
   // requireImage: true。前端 payload 结构本身已经是合法的（无图时
@@ -317,6 +445,7 @@ describe("buildPublishPayload", () => {
     expect(payload.imageUrl).toBe("");
     expect(payload.imageUrls).toEqual([]);
     expect(payload.locationDraft.source).toBe("manual");
+    expect(payload.locationDraft.identityKind).toBe("manual_text");
     expect(payload.metadata.locationArea).toBe("图书馆三楼");
     expect(payload.metadata.distribution).toContain("map");
   });
