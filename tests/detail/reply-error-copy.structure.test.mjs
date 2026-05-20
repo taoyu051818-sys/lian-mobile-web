@@ -18,9 +18,12 @@ test("usePostReplyComposer routes reply failures through the safe mapper and pre
   assert.doesNotMatch(src, /showError\(error, ERROR_SEND_REPLY\)/);
 });
 
-test("PostDetailPanel no longer passes the generic raw-error callback into the reply composer", () => {
+test("PostDetailPanel keeps the reply composer on setActionError without passing showError into that block", () => {
   const src = read("src/features/detail/PostDetailPanel.vue");
+  const composerBlock = src.match(/usePostReplyComposer\(\{[\s\S]*?\}\);/);
 
-  assert.doesNotMatch(src, /showError:\s*showActionError/);
-  assert.match(src, /usePostReplyComposer\(\{[\s\S]*setActionError,[\s\S]*onReplySuccess:/);
+  assert.ok(composerBlock, "expected usePostReplyComposer block");
+  assert.match(composerBlock[0], /setActionError/);
+  assert.match(composerBlock[0], /showActionMessage/);
+  assert.doesNotMatch(composerBlock[0], /showError:/);
 });
