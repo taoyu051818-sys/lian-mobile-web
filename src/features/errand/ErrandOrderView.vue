@@ -16,6 +16,7 @@ import {
   ERRAND_ORDER_BACK,
   ERRAND_ORDER_BALANCE_LABEL,
   ERRAND_ORDER_DROPOFF_HINT,
+  ERRAND_ORDER_DROPOFF_PICKER_DEFERRED,
   ERRAND_ORDER_DROPOFF_PLACEHOLDER,
   ERRAND_ORDER_DROPOFF_TITLE,
   ERRAND_ORDER_FEE_LABEL,
@@ -47,6 +48,7 @@ const route = useErrandOrderRoute();
 const { setActiveView } = useActiveView();
 
 const initialMerchantPostId = route.merchantPostId.value || 0;
+const initialPickupHint = route.pickupHint.value || "";
 // Destructure refs so the template can read them via auto-unwrap instead of
 // `draftCtx.foo.value` everywhere — Vue's auto-unwrap only applies to refs
 // returned at the top level of <script setup>, not nested keys on an object.
@@ -66,7 +68,7 @@ const {
   setDropoff,
   submit: submitDraft,
   reset: resetDraft,
-} = useErrandOrderDraft(initialMerchantPostId);
+} = useErrandOrderDraft(initialMerchantPostId, initialPickupHint);
 
 const isTimelineMode = computed(() => Boolean(route.orderId.value));
 
@@ -103,7 +105,7 @@ watch(
   () => route.merchantPostId.value,
   (next) => {
     if (next && !isTimelineMode.value) {
-      resetDraft(next);
+      resetDraft(next, route.pickupHint.value || "");
       void refreshDraft(next);
     }
   },
@@ -235,6 +237,12 @@ function handleTimelineBack() {
           required
         />
         <small>{{ ERRAND_ORDER_DROPOFF_HINT }}</small>
+        <small
+          class="errand-order-view__deferred"
+          data-testid="errand-order-dropoff-picker-deferred"
+        >
+          {{ ERRAND_ORDER_DROPOFF_PICKER_DEFERRED }}
+        </small>
       </label>
 
       <label class="errand-order-view__field">

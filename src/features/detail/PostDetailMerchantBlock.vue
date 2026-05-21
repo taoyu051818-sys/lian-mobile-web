@@ -94,7 +94,12 @@ function handleErrandClick() {
   // route singleton's default origin ("feed") would still work for now, but
   // making it explicit means a future detail-overlay home other than feed
   // (e.g. opening from the map tab) will route correctly without a follow-up.
-  errandRoute.enterForMerchant(props.merchantPostId as number, "feed");
+  //
+  // PR2 (#609) — also seed the pickup hint with `merchant.name` so the order
+  // form opens with "到 <商家> 取" already filled. The merchant DTO doesn't
+  // ship a structured address, but the name is the runner-facing label that
+  // actually matters; users append门店细节 in the same field if needed.
+  errandRoute.enterForMerchant(props.merchantPostId as number, "feed", props.merchant.name || "");
   setActiveView("errand-order");
 }
 </script>

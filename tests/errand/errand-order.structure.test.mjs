@@ -271,6 +271,60 @@ test("useErrandOrderRoute is a singleton route store", () => {
   assert.match(src, /AppViewKey/);
 });
 
+// --- issue #609 PR2: pickup-hint seeding ---
+
+test("issue #609 PR2: useErrandOrderRoute carries an optional pickupHint seed", () => {
+  // The merchant CTA hands `merchant.name` to the route singleton so the order
+  // form opens with "到 <商家>" already filled. Without a dedicated pickupHint
+  // ref the form would have to peek into the merchant DTO from inside the
+  // errand feature, which would couple errand state to merchant types — the
+  // route singleton is the seam.
+  const src = read("src/features/errand/useErrandOrderRoute.ts");
+  assert.match(src, /pickupHint:\s*Ref<string>/);
+  // enterForOrder must clear the hint — once the user is in timeline mode the
+  // pre-fill is a stale leak across remounts.
+  assert.match(src, /pickupHint\.value\s*=\s*""/);
+});
+
+test("issue #609 PR2: useErrandOrderDraft seeds pickup label from the route hint", () => {
+  // Pickup label must default to the merchant name passed via
+  // enterForMerchant — `validate()` already checks "non-empty label", so the
+  // seed lets users hit submit without retyping the merchant.
+  const src = read("src/features/errand/useErrandOrderDraft.ts");
+  assert.match(src, /useErrandOrderDraft\(initialMerchantPostId:\s*number,\s*initialPickupHint/);
+  assert.match(src, /buildDraft\(merchantPostId:\s*number,\s*pickupHint/);
+  // The seed must be applied to pickupLocation.label, not stashed in notes.
+  assert.match(src, /pickupLocation:\s*trimmedHint/);
+});
+
+test("issue #609 PR2: ErrandOrderView wires the route hint into the draft", () => {
+  const src = read("src/features/errand/ErrandOrderView.vue");
+  assert.match(src, /route\.pickupHint\.value/);
+  assert.match(src, /useErrandOrderDraft\(initialMerchantPostId,\s*initialPickupHint\)/);
+  // The merchant-id watch must also re-seed the hint when the user opens a
+  // different merchant — otherwise the second open carries the first
+  // merchant's name.
+  assert.match(src, /resetDraft\(next,\s*route\.pickupHint\.value/);
+});
+
+test("issue #609 PR2: ErrandOrderView surfaces the V0.2 dropoff picker hint", () => {
+  // The brief explicitly allows V0.1 to ship without a click-to-place picker
+  // (the existing MapLeafletView is read-only). The form must label that
+  // gap in user-visible copy so the freeform dropoff field reads as a
+  // deliberate V0.1 placeholder, not a missing feature.
+  const src = read("src/features/errand/ErrandOrderView.vue");
+  assert.match(src, /ERRAND_ORDER_DROPOFF_PICKER_DEFERRED/);
+  assert.match(src, /data-testid="errand-order-dropoff-picker-deferred"/);
+});
+
+test("issue #609 PR2: ERRAND_ORDER_DROPOFF_PICKER_DEFERRED brand string is registered", () => {
+  const src = read("src/config/brand/merchant.ts");
+  assert.match(src, /export const ERRAND_ORDER_DROPOFF_PICKER_DEFERRED\b/);
+  // Copy must mention V0.2 so the deferral is calibrated for users — a
+  // generic "暂未开放" would read as a permanent gap.
+  assert.match(src, /V0\.2/);
+});
+
 // --- view branches ---
 
 test("ErrandOrderView surfaces the gate, form, and submit affordances", () => {

@@ -81,9 +81,17 @@ test("PostDetailMerchantBlock click dispatches into useErrandOrderRoute with ori
   // to the feed tab where the post detail was open — without this, the
   // ErrandOrderView's go-back falls through to the singleton default and a
   // user who came from a non-feed surface gets dumped on feed.
+  //
+  // Issue #609 PR2 layered: the click also seeds `merchant.name` as the
+  // pickup hint so the order form opens with "到 <商家>" already filled —
+  // the merchant DTO doesn't ship a structured address, so name is the
+  // runner-facing label that actually matters.
   const src = read("src/features/detail/PostDetailMerchantBlock.vue");
   assert.match(src, /useErrandOrderRoute/);
-  assert.match(src, /errandRoute\.enterForMerchant\(props\.merchantPostId as number,\s*"feed"\)/);
+  assert.match(
+    src,
+    /errandRoute\.enterForMerchant\([\s\S]*?props\.merchantPostId as number,[\s\S]*?"feed",[\s\S]*?props\.merchant\.name/,
+  );
   assert.match(src, /setActiveView\("errand-order"\)/);
 });
 

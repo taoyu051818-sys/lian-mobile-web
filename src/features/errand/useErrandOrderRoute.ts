@@ -23,7 +23,18 @@ interface ErrandOrderRouteState {
    * tab does not get dropped onto feed when they cancel.
    */
   origin: Ref<AppViewKey>;
-  enterForMerchant: (merchantPostId: number, origin?: AppViewKey) => void;
+  /**
+   * Optional pickup-label seed handed in by the merchant detail CTA so the
+   * order form opens with the merchant identity already filled (PR2, issue
+   * #609). The merchant DTO does not ship a structured address — `name` is the
+   * pickup hint runners actually need ("到 海大食堂西餐窗口 取 …"). Stored as a
+   * string only; coords / placeId stay null until the V0.2 map picker lands.
+   *
+   * Empty string means "no hint" — the form leaves pickup blank and the user
+   * fills it themselves.
+   */
+  pickupHint: Ref<string>;
+  enterForMerchant: (merchantPostId: number, origin?: AppViewKey, pickupHint?: string) => void;
   enterForOrder: (orderId: string, origin?: AppViewKey) => void;
   reset: () => void;
 }
@@ -33,26 +44,33 @@ const DEFAULT_ORIGIN: AppViewKey = "feed";
 const merchantPostId = ref<number | null>(null);
 const orderId = ref<string>("");
 const origin = ref<AppViewKey>(DEFAULT_ORIGIN);
+const pickupHint = ref<string>("");
 
 export function useErrandOrderRoute(): ErrandOrderRouteState {
   return {
     merchantPostId,
     orderId,
     origin,
-    enterForMerchant(id: number, from?: AppViewKey) {
+    pickupHint,
+    enterForMerchant(id: number, from?: AppViewKey, hint?: string) {
       merchantPostId.value = id;
       orderId.value = "";
+      // Trim defensively so a stray-whitespace hint never sneaks past the
+      // draft's "label is non-empty" gate without actually carrying content.
+      pickupHint.value = (hint || "").trim();
       if (from) origin.value = from;
     },
     enterForOrder(id: string, from?: AppViewKey) {
       orderId.value = id;
       merchantPostId.value = null;
+      pickupHint.value = "";
       if (from) origin.value = from;
     },
     reset() {
       merchantPostId.value = null;
       orderId.value = "";
       origin.value = DEFAULT_ORIGIN;
+      pickupHint.value = "";
     },
   };
 }
