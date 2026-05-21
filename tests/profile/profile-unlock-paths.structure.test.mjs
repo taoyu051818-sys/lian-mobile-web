@@ -39,7 +39,7 @@ test("ProfileView renders unlock cards and only mounts errand orders after campu
 
 test("ProfileView routes every unlock CTA back into the verification center", () => {
   assert.match(profileViewSource, /@click="setActiveView\(card\.targetView\)"/);
-  assert.match(profileViewSource, /targetView: "verification"/);
+  assert.match(unlockSource, /targetView: "verification"/);
 });
 
 test("profile unlock brand strings exist and keep the humane unlock copy", () => {
