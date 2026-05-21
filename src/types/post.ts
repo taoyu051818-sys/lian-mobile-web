@@ -19,6 +19,7 @@ export interface PostReply {
 
 export interface PostDetail {
   tid: FeedItemId;
+  type?: PostType;
   title: string;
   cover: string;
   primaryTag: string;
