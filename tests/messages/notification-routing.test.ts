@@ -59,18 +59,20 @@ describe("notification routing normalization", () => {
 
 describe("event notification rendering (B2 #438 fan-out)", () => {
   // Wire shape mirrors lian-platform-server#445 (merge fc65accf):
-  //   id "evt-<eventId>-<uid>-<arm>", type, tid:<hostPostTid>, data{eventId,
+  //   id "evt-<eventId>-<uid>-<arm>", type, tid:<hostPostTid>, title shaped as
+  //   `<eventTitle> <活动已结束|活动奖励已发放|活动已过期>`, data{eventId,
   //   hostPostTid, transition, targetType:"event", ...}, actor.displayName,
   //   timestampISO, read=false.
 
-  it("renders event-completed with branded title, body and deep-link to host post", () => {
+  it("renders event-completed with a structured event title and ignores the suffixed wire title", () => {
     const item = normalizeNotificationItem({
       id: "evt-evt-1-uid-7-completed",
       type: "event-completed",
       tid: 156,
-      title: "周末桌游夜",
+      title: "周末桌游夜 活动已结束",
       data: {
         eventId: "evt-1",
+        eventTitle: "周末桌游夜",
         hostPostTid: 156,
         transition: "completed",
         targetType: "event",
@@ -95,8 +97,10 @@ describe("event notification rendering (B2 #438 fan-out)", () => {
       id: "evt-evt-1-uid-7-settlement-s-1",
       type: "event-reward-settled",
       tid: 156,
+      title: "周末桌游夜 活动奖励已发放",
       data: {
         eventId: "evt-1",
+        eventTitle: "周末桌游夜",
         hostPostTid: 156,
         transition: "reward_settled",
         targetType: "event",
@@ -113,7 +117,7 @@ describe("event notification rendering (B2 #438 fan-out)", () => {
 
     expect(item.kind).toBe("event-reward-settled");
     expect(item.title).toBe("活动奖励已发放");
-    // perJoiner = 50, currency = 积分, totalPaid = 150
+    expect(item.excerpt).toContain("周末桌游夜");
     expect(item.excerpt).toContain("50");
     expect(item.excerpt).toContain("150");
     expect(item.excerpt).toContain("积分");
@@ -146,8 +150,10 @@ describe("event notification rendering (B2 #438 fan-out)", () => {
       id: "evt-evt-2-uid-7-expired",
       type: "event-expired",
       tid: 200,
+      title: "周末桌游夜 活动已过期",
       data: {
         eventId: "evt-2",
+        eventTitle: "周末桌游夜",
         hostPostTid: 200,
         transition: "expired",
         targetType: "event",
@@ -159,9 +165,28 @@ describe("event notification rendering (B2 #438 fan-out)", () => {
 
     expect(item.kind).toBe("event-expired");
     expect(item.title).toBe("活动已过期");
+    expect(item.excerpt).toContain("周末桌游夜");
     expect(item.excerpt).toContain("自动过期");
     expect(item.target).toEqual({ kind: "detail", tid: 200 });
     expect(item.actionLabel).toBe("查看详情");
+  });
+
+  it("falls back to a generic body when only the suffixed wire title exists", () => {
+    const item = normalizeNotificationItem({
+      type: "event-completed",
+      tid: 156,
+      title: "周末桌游夜 活动已结束",
+      data: {
+        eventId: "evt-1",
+        hostPostTid: 156,
+        transition: "completed",
+        targetType: "event",
+      },
+    });
+
+    expect(item.kind).toBe("event-completed");
+    expect(item.excerpt).toBe("「活动」的活动已结束。");
+    expect(item.target).toEqual({ kind: "detail", tid: 156 });
   });
 
   it("falls back to a generic body and no link when tid is missing", () => {

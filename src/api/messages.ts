@@ -262,8 +262,8 @@ function fillTemplate(template: string, vars: Record<string, string | number>): 
 /**
  * Build the localized title + excerpt for the three event lifecycle types
  * shipped by B2 (#445). Falls back to a generic non-crashing string when
- * `data.title` is absent — the wire shape from B2 does not include a title
- * field server-side, so this branch always runs in production today.
+ * a structured event-title field is absent — the backend `title` already
+ * includes the lifecycle suffix and cannot be treated as a bare event name.
  */
 function buildEventNotificationCopy(
   kind: NotificationKind,
@@ -274,10 +274,11 @@ function buildEventNotificationCopy(
 } {
   const data = asRecord(raw.data);
   const meta = asRecord(raw.meta);
-  // Server may eventually ship `title` / `eventTitle` in `data`; until then we
-  // fall back to the generic placeholder so the body never reads `「」`.
+  // Prefer only fields that are explicitly event-title shaped. The backend wire
+  // `title` is `<eventTitle> <活动已结束|活动奖励已发放|活动已过期>`, so using it as
+  // the bare title would duplicate the lifecycle phrase in our localized body.
   const eventTitle =
-    firstString(data?.eventTitle, data?.title, meta?.eventTitle, meta?.title, raw.title) ||
+    firstString(data?.eventTitle, data?.eventName, meta?.eventTitle, meta?.eventName) ||
     NOTIF_EVENT_TITLE_FALLBACK;
 
   if (kind === "event-completed") {
