@@ -38,8 +38,14 @@ test("journey: merchant detail CTA opens the errand-order secret view", () => {
 });
 
 test("journey: errand-order is reachable as a secret view", () => {
-  const useActive = read("src/app/useActiveView.ts");
-  assert.match(useActive, /SECRET_VIEWS:\s*AppViewKey\[\][^=]*=\s*\[[^\]]*"errand-order"/);
+  // The secret-view list moved from `useActiveView.ts` (which used to host
+  // SECRET_VIEWS) onto the `AppViewKey` union itself + the
+  // `shellLayoutModes` map in `view-types.ts`. AppViewHost still keys the
+  // lazy-load table off the same name, so a regression in either side
+  // breaks the journey.
+  const viewTypes = read("src/app/view-types.ts");
+  assert.match(viewTypes, /"errand-order"/);
+  assert.match(viewTypes, /"errand-order":\s*"content"/);
   const host = read("src/app/AppViewHost.vue");
   assert.match(host, /"errand-order":\s*asyncView/);
 });

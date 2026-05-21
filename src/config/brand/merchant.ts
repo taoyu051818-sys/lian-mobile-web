@@ -32,6 +32,8 @@ export const ERRAND_ORDER_PICKUP_PLACEHOLDER = "如：海大食堂三楼吧台";
 export const ERRAND_ORDER_DROPOFF_TITLE = "送达地点";
 export const ERRAND_ORDER_DROPOFF_PLACEHOLDER = "如：明德楼一楼大厅";
 export const ERRAND_ORDER_DROPOFF_HINT = "可填写宿舍门牌或楼层入口，方便跑腿同学找到你。";
+export const ERRAND_ORDER_DROPOFF_PICKER_DEFERRED =
+  "地图选点 V0.2 即将开放，目前先用文字描述送达地点。";
 export const ERRAND_ORDER_NOTES_TITLE = "备注（可选）";
 export const ERRAND_ORDER_NOTES_PLACEHOLDER = "如：少冰半糖、不要香菜，记得拿小票。";
 export const ERRAND_ORDER_MODE_TITLE = "下单方式";

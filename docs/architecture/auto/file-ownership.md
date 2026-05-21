@@ -82,7 +82,7 @@ Total files: 310
 | `config/brand/index.ts`        | TypeScript module                                                                                                                                     |    21 |
 | `config/brand/loading.ts`      | export const LOADING_PROFILE = "正在加载个人资料…"; export const LOADING_FEED = "正在加载校园内容…"; export const LOADING_MAP = "正在加载...          |    26 |
 | `config/brand/map.ts`          | export const MAP_ARIA_LABEL = "校园地图"; export const MAP_FILTER_LOCATIONS = "地点"; export const MAP_FILTER_POSTS = "内容"...                       |    39 |
-| `config/brand/merchant.ts`     | export const MERCHANT_BLOCK_LABEL = "商家信息"; export const MERCHANT_CATEGORY_FOOD = "餐饮"; export const MERCHANT_CATEGOR...                        |   161 |
+| `config/brand/merchant.ts`     | export const MERCHANT_BLOCK_LABEL = "商家信息"; export const MERCHANT_CATEGORY_FOOD = "餐饮"; export const MERCHANT_CATEGOR...                        |   163 |
 | `config/brand/messages.ts`     | export const MESSAGE_EMPTY_CONTENT = "这条消息暂时没有内容。"; export const MESSAGE_TAB_LABEL = "消息分类"; export const MESSAGE_S...                 |    36 |
 | `config/brand/notification.ts` | export const NOTIFICATION_SECTION_LABEL = "通知"; export const NOTIFICATION_READ = "已读"; export const NOTIFICATION_UNRE...                          |    62 |
 | `config/brand/profile.ts`      | export const PROFILE*CAMPUS_USER = "校园用户"; export const PROFILE_INVITE_USER = "邀请码用户"; export const PROFILE_IDENTITY*...                     |   120 |
@@ -146,7 +146,7 @@ Total files: 310
 | `features/detail/PostDetailInfoStrip.vue`          | Vue SFC                                                                                                                       |   113 |
 | `features/detail/PostDetailLightbox.vue`           | Vue SFC                                                                                                                       |    43 |
 | `features/detail/PostDetailMainBody.vue`           | Vue SFC                                                                                                                       |    44 |
-| `features/detail/PostDetailMerchantBlock.vue`      | Import directly from the route module instead of `../errand` so the detail                                                    |   310 |
+| `features/detail/PostDetailMerchantBlock.vue`      | Import directly from the route module instead of `../errand` so the detail                                                    |   315 |
 | `features/detail/PostDetailPanel.vue`              | Vue SFC                                                                                                                       |   376 |
 | `features/detail/PostDetailTopbar.vue`             | Vue SFC                                                                                                                       |   132 |
 | `features/detail/PostDetailTradeBlock.vue`         | Vue SFC                                                                                                                       |   226 |
@@ -167,13 +167,13 @@ Total files: 310
 | `features/detail/usePostShare.ts`                  | export function usePostShare(options:                                                                                         |    50 |
 | `features/errand/ErrandOrderGate.vue`              | Vue SFC                                                                                                                       |   119 |
 | `features/errand/ErrandOrderTimelineView.vue`      | Destructure refs so the template can read them via auto-unwrap. Vue's                                                         |   519 |
-| `features/errand/ErrandOrderView.vue`              | Destructure refs so the template can read them via auto-unwrap instead of                                                     |   473 |
+| `features/errand/ErrandOrderView.vue`              | Destructure refs so the template can read them via auto-unwrap instead of                                                     |   481 |
 | `features/errand/ProfileErrandOrdersBlock.vue`     | Destructure refs so the template can read them via auto-unwrap. Matching                                                      |   305 |
 | `features/errand/errand-format.ts`                 | Errand order — reason / status copy + tiny formatters. Centralised so the gate, form, and timeline all dispatch off ...       |   109 |
 | `features/errand/index.ts`                         | TypeScript module                                                                                                             |    19 |
 | `features/errand/useErrandOrderDetail.ts`          | Read-side composable for the errand order timeline view (issue #647). Wraps `GET /api/errands/orders/:id`. The state...       |   185 |
-| `features/errand/useErrandOrderDraft.ts`           | Errand order draft + submit composable (issue #647). Owns the form draft, the pre-submit gate (eligibility ping + cl...       |   293 |
-| `features/errand/useErrandOrderRoute.ts`           | Singleton routing context for the errand-order secret view. The order flow is a multi-screen detour from the merchan...       |    59 |
+| `features/errand/useErrandOrderDraft.ts`           | Errand order draft + submit composable (issue #647). Owns the form draft, the pre-submit gate (eligibility ping + cl...       |   300 |
+| `features/errand/useErrandOrderRoute.ts`           | Singleton routing context for the errand-order secret view. The order flow is a multi-screen detour from the merchan...       |    77 |
 | `features/errand/useMyErrandOrders.ts`             | "我的跑腿订单" composable (issue #647 follow-up). Backs the profile-side list of the requester's own errand orders so user... |    42 |
 | `features/feed/FeedAutoLoadSentinel.vue`           | Vue SFC                                                                                                                       |    43 |
 | `features/feed/FeedItemCard.vue`                   | Vue SFC                                                                                                                       |   315 |

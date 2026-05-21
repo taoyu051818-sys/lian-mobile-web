@@ -35,10 +35,17 @@ function emptyGate(): ErrandOrderGate {
   return { ok: false, reason: "", reasonText: "", availablePoints: 0, estimatedFeePoints: 0 };
 }
 
-function buildDraft(merchantPostId: number): ErrandOrderDraft {
+function buildDraft(merchantPostId: number, pickupHint = ""): ErrandOrderDraft {
+  // The merchant DTO doesn't ship a structured address — `merchant.name` is
+  // the runner-facing pickup hint (PR2, issue #609). Seeding it keeps the
+  // `validate()` non-empty check happy out-of-the-box and lets the user
+  // append门店细节 ("到 海大食堂西餐窗口 三楼吧台") in the same field.
+  const trimmedHint = (pickupHint || "").trim();
   return {
     merchantPostId,
-    pickupLocation: emptyLocation(),
+    pickupLocation: trimmedHint
+      ? { placeId: "", label: trimmedHint, lat: null, lng: null }
+      : emptyLocation(),
     dropoffLocation: emptyLocation(),
     notes: "",
     mode: "dedicated",
@@ -59,8 +66,8 @@ function deriveLocalGate(
   return { reason: "", ok: true };
 }
 
-export function useErrandOrderDraft(initialMerchantPostId: number) {
-  const draft = ref<ErrandOrderDraft>(buildDraft(initialMerchantPostId));
+export function useErrandOrderDraft(initialMerchantPostId: number, initialPickupHint = "") {
+  const draft = ref<ErrandOrderDraft>(buildDraft(initialMerchantPostId, initialPickupHint));
   const gate = ref<ErrandOrderGate>(emptyGate());
   const gateLoading = ref(false);
   const gateLoaded = ref(false);
@@ -260,8 +267,8 @@ export function useErrandOrderDraft(initialMerchantPostId: number) {
     }
   }
 
-  function reset(merchantPostId: number) {
-    draft.value = buildDraft(merchantPostId);
+  function reset(merchantPostId: number, pickupHint = "") {
+    draft.value = buildDraft(merchantPostId, pickupHint);
     gate.value = emptyGate();
     gateLoaded.value = false;
     gateError.value = "";
