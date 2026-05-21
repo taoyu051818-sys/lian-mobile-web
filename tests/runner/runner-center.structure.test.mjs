@@ -45,7 +45,8 @@ test("useActiveView accepts secret view 'runner'", () => {
 
 test("api/runner exposes available, active, and four state-transition endpoints", () => {
   const src = read("src/api/runner.ts");
-  assert.match(src, /\/api\/errands\/orders\/mine\?role=runner&state=paid_locked/);
+  assert.match(src, /\/api\/errands\/orders\/available/);
+  assert.match(src, /nextOffset\?: number \| null/);
   assert.match(src, /\/api\/errands\/orders\/mine\?role=runner/);
   // The transition endpoint is one shared helper that templates the action;
   // assert each action name is present and the path includes the backend errand namespace.
@@ -113,10 +114,11 @@ test("ProfileView does NOT render an unconditional runner link", () => {
 
 // --- RunnerCenterView shape: gate-then-content, four state buttons ---------
 
-test("RunnerCenterView falls back to RunnerGate when not runner-verified", () => {
+test("RunnerCenterView falls back to RunnerGate when verification is missing or the queue rejects the session", () => {
   const src = read("src/features/runner/RunnerCenterView.vue");
   assert.match(src, /<RunnerGate/);
-  assert.match(src, /v-else-if="!isRunnerVerified"/);
+  assert.match(src, /shouldShowRunnerGate/);
+  assert.match(src, /availableNeedsRunnerGate/);
 });
 
 test("RunnerCenterView renders the available-orders and active-orders tabs", () => {
