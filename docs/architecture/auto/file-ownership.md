@@ -119,7 +119,7 @@ Total files: 310
 | `features/admin/AdminQueueList.vue`                | Vue SFC                                                                                                                       |   152 |
 | `features/admin/AdminTokenGate.vue`                | Vue SFC                                                                                                                       |   105 |
 | `features/admin/AdminUserActionPanel.vue`          | Vue SFC                                                                                                                       |   115 |
-| `features/admin/AdminView.vue`                     | Vue SFC                                                                                                                       |   695 |
+| `features/admin/AdminView.vue`                     | Vue SFC                                                                                                                       |   742 |
 | `features/admin/admin-format.ts`                   | export function adminStatusLabel(status: AdminReportStatus \| string): string                                                 |    39 |
 | `features/admin/index.ts`                          | TypeScript module                                                                                                             |     9 |
 | `features/admin/useAdminConsole.ts`                | export function useAdminConsole({ token, onTokenInvalid }: UseAdminConsoleOptions)                                            |   250 |
