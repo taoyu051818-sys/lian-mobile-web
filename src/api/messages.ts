@@ -1,5 +1,14 @@
 import { apiGet, apiSend } from "./http";
-import { DEFAULT_USER_LABEL } from "../config/brand";
+import {
+  DEFAULT_USER_LABEL,
+  NOTIF_EVENT_COMPLETED_BODY,
+  NOTIF_EVENT_COMPLETED_TITLE,
+  NOTIF_EVENT_EXPIRED_BODY,
+  NOTIF_EVENT_EXPIRED_TITLE,
+  NOTIF_EVENT_REWARD_SETTLED_BODY,
+  NOTIF_EVENT_REWARD_SETTLED_TITLE,
+  NOTIF_EVENT_TITLE_FALLBACK,
+} from "../config/brand";
 import { ensureClientId } from "../platform/clientIdentity";
 import type {
   ChannelMessage,
@@ -142,6 +151,20 @@ const VERIFICATION_NOTIFICATION_TYPES = [
 ];
 const ORDER_NOTIFICATION_TYPES = ["order", "errand", "trade", "delivery"];
 
+/**
+ * Server-side `type` slugs that B2 (#438 / lian-platform-server#445) writes for
+ * the three event-lifecycle fan-outs. The renderer dispatches on `kind`, so we
+ * recognize the type here and produce a typed kind. Kept exact (no fuzzy match
+ * via `notificationHaystack`) because the wire shape is locked and a partial
+ * match against e.g. "completed" must NOT route an unrelated future notification
+ * here.
+ */
+const EVENT_TYPE_TO_KIND: Record<string, NotificationKind> = {
+  "event-completed": "event-completed",
+  "event-reward-settled": "event-reward-settled",
+  "event-expired": "event-expired",
+};
+
 function asRecord(value: unknown): UnknownRecord | null {
   if (!value || typeof value !== "object" || Array.isArray(value)) return null;
   return value as UnknownRecord;
@@ -213,11 +236,81 @@ function includesAny(haystack: string, needles: string[]): boolean {
 }
 
 function resolveNotificationKind(raw: RawNotificationItem): NotificationKind {
+  // Exact match on the raw `type` slug first — B2 (#445) writes a known set
+  // for the three event lifecycle fan-outs and we never want them to fall
+  // into the fuzzy "reply"/"order" buckets when their excerpt happens to
+  // contain those words.
+  const rawType = stringValue(raw.type).toLowerCase();
+  const eventKind = EVENT_TYPE_TO_KIND[rawType];
+  if (eventKind) return eventKind;
+
   const haystack = notificationHaystack(raw);
   if (includesAny(haystack, REPLY_NOTIFICATION_TYPES)) return "reply";
   if (includesAny(haystack, VERIFICATION_NOTIFICATION_TYPES)) return "verification";
   if (includesAny(haystack, ORDER_NOTIFICATION_TYPES)) return "order";
   return "generic";
+}
+
+/** Pattern-fill `「{title}」每人发放 {perJoiner} {currency}` style templates. */
+function fillTemplate(template: string, vars: Record<string, string | number>): string {
+  return template.replace(/\{(\w+)\}/g, (_, key) => {
+    const value = vars[key];
+    return value === undefined || value === null ? "" : String(value);
+  });
+}
+
+/**
+ * Build the localized title + excerpt for the three event lifecycle types
+ * shipped by B2 (#445). Falls back to a generic non-crashing string when
+ * `data.title` is absent — the wire shape from B2 does not include a title
+ * field server-side, so this branch always runs in production today.
+ */
+function buildEventNotificationCopy(
+  kind: NotificationKind,
+  raw: RawNotificationItem,
+): {
+  title: string;
+  excerpt: string;
+} {
+  const data = asRecord(raw.data);
+  const meta = asRecord(raw.meta);
+  // Server may eventually ship `title` / `eventTitle` in `data`; until then we
+  // fall back to the generic placeholder so the body never reads `「」`.
+  const eventTitle =
+    firstString(data?.eventTitle, data?.title, meta?.eventTitle, meta?.title, raw.title) ||
+    NOTIF_EVENT_TITLE_FALLBACK;
+
+  if (kind === "event-completed") {
+    return {
+      title: NOTIF_EVENT_COMPLETED_TITLE,
+      excerpt: fillTemplate(NOTIF_EVENT_COMPLETED_BODY, { title: eventTitle }),
+    };
+  }
+  if (kind === "event-expired") {
+    return {
+      title: NOTIF_EVENT_EXPIRED_TITLE,
+      excerpt: fillTemplate(NOTIF_EVENT_EXPIRED_BODY, { title: eventTitle }),
+    };
+  }
+  // event-reward-settled — perJoiner / totalPaid / currency live on data.
+  // B2 ships `points` (legacy) and the F3 brief calls for `perJoiner`; accept
+  // either so we don't break if the server name shifts.
+  const perJoiner = firstNumber(data?.perJoiner, data?.points) ?? 0;
+  const totalPaid = firstNumber(data?.totalPaid) ?? 0;
+  const currency = firstString(data?.currency) || "积分";
+  return {
+    title: NOTIF_EVENT_REWARD_SETTLED_TITLE,
+    excerpt: fillTemplate(NOTIF_EVENT_REWARD_SETTLED_BODY, {
+      title: eventTitle,
+      perJoiner,
+      currency,
+      totalPaid,
+    }),
+  };
+}
+
+function isEventKind(kind: NotificationKind): boolean {
+  return kind === "event-completed" || kind === "event-reward-settled" || kind === "event-expired";
 }
 
 function resolveNotificationTid(raw: RawNotificationItem): number | null {
@@ -281,9 +374,21 @@ export function normalizeNotificationItem(raw: RawNotificationItem): Notificatio
   const kind = resolveNotificationKind(raw);
   const target = resolveNotificationTarget(raw, kind);
   const tid = resolveNotificationTid(raw);
-  const title = firstString(raw.title, data?.title, meta?.title, targetRecord?.title);
-  const excerpt = firstString(raw.excerpt, raw.body, raw.text, data?.excerpt, meta?.excerpt);
+  const rawTitle = firstString(raw.title, data?.title, meta?.title, targetRecord?.title);
+  const rawExcerpt = firstString(raw.excerpt, raw.body, raw.text, data?.excerpt, meta?.excerpt);
   const type = firstString(raw.type, data?.type, meta?.type, targetRecord?.type);
+
+  // For the three event-lifecycle types we always own the brand strings — the
+  // backend (#445) does not write a Chinese title/body, only the structured
+  // payload. The wire `excerpt` ("获得 XX LIAN 积分") is intentionally ignored
+  // in favor of the localized template so the UI is consistent across locales.
+  let title = rawTitle;
+  let excerpt = rawExcerpt;
+  if (isEventKind(kind)) {
+    const copy = buildEventNotificationCopy(kind, raw);
+    title = copy.title;
+    excerpt = copy.excerpt;
+  }
 
   return {
     id: raw.id || raw.targetId || tid || title,
