@@ -196,3 +196,23 @@ test("admin brand module is re-exported from brand/index", () => {
   const src = read("src/config/brand/index.ts");
   assert.match(src, /from "\.\/admin"/);
 });
+
+// --- empty-state next-step copy (issue #725) ---
+
+test("admin queue/audit empty-state brands include both headline and hint", () => {
+  const src = read("src/config/brand/admin.ts");
+  assert.match(src, /ADMIN_QUEUE_EMPTY\s*=\s*"[^"]+"/);
+  assert.match(src, /ADMIN_QUEUE_EMPTY_HINT\s*=\s*"[^"]+"/);
+  assert.match(src, /ADMIN_AUDIT_EMPTY\s*=\s*"[^"]+"/);
+  assert.match(src, /ADMIN_AUDIT_EMPTY_HINT\s*=\s*"[^"]+"/);
+});
+
+test("AdminQueueList renders the queue empty-state hint with a stable testid (#725)", () => {
+  const src = read("src/features/admin/AdminQueueList.vue");
+  assert.match(src, /data-testid="admin-queue-empty"[\s\S]*?ADMIN_QUEUE_EMPTY_HINT/);
+});
+
+test("AdminAuditLogList renders the audit empty-state hint with a stable testid (#725)", () => {
+  const src = read("src/features/admin/AdminAuditLogList.vue");
+  assert.match(src, /data-testid="admin-audit-empty"[\s\S]*?ADMIN_AUDIT_EMPTY_HINT/);
+});

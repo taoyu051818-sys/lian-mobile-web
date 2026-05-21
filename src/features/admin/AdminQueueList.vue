@@ -2,6 +2,7 @@
 import { LianButton, InlineError } from "../../ui";
 import {
   ADMIN_QUEUE_EMPTY,
+  ADMIN_QUEUE_EMPTY_HINT,
   ADMIN_QUEUE_FILTER_ALL,
   ADMIN_QUEUE_FILTER_DISMISSED,
   ADMIN_QUEUE_FILTER_PENDING,
@@ -73,8 +74,9 @@ const filters: Array<{ value: AdminReportStatus | ""; label: string }> = [
       {{ ADMIN_QUEUE_LOADING }}
     </div>
 
-    <p v-else-if="!reports.length" class="admin-queue-list__state">
-      {{ ADMIN_QUEUE_EMPTY }}
+    <p v-else-if="!reports.length" class="admin-queue-list__state" data-testid="admin-queue-empty">
+      <span class="admin-queue-list__empty-headline">{{ ADMIN_QUEUE_EMPTY }}</span>
+      <span class="admin-queue-list__empty-hint">{{ ADMIN_QUEUE_EMPTY_HINT }}</span>
     </p>
 
     <div v-else class="admin-queue-list__items">
@@ -125,6 +127,21 @@ const filters: Array<{ value: AdminReportStatus | ""; label: string }> = [
   padding: var(--space-4);
   color: var(--lian-muted);
   text-align: center;
+}
+
+.admin-queue-list__empty-headline {
+  display: block;
+  color: var(--lian-ink);
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.admin-queue-list__empty-hint {
+  display: block;
+  margin-top: var(--space-1);
+  color: var(--lian-muted);
+  font-size: 13px;
+  line-height: 1.5;
 }
 
 .admin-queue-list__items {

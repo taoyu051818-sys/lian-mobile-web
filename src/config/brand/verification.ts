@@ -21,6 +21,8 @@ export const VERIFICATION_GRANTED_AT_LABEL = "认证时间";
 export const VERIFICATION_EXPIRES_AT_LABEL = "有效期至";
 export const VERIFICATION_SOURCE_LABEL = "认证来源";
 export const VERIFICATION_NO_GRANT_HINT = "尚未完成认证。";
+/** issue #725 — 解释完成路径，避免单独的「尚未完成认证」沦为死状态。 */
+export const VERIFICATION_NO_GRANT_NEXT = "可在下方入口完成；其他类别会随版本逐步开放。";
 
 /** 校园邮箱写入流程 */
 export const VERIFICATION_CAMPUS_TITLE = "校园邮箱认证";

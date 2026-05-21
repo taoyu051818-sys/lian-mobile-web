@@ -3,7 +3,9 @@ import { computed, onMounted, ref, watch } from "vue";
 import {
   RUNNER_BACK_TO_PROFILE,
   RUNNER_LIST_EMPTY_ACTIVE,
+  RUNNER_LIST_EMPTY_ACTIVE_HINT,
   RUNNER_LIST_EMPTY_AVAILABLE,
+  RUNNER_LIST_EMPTY_AVAILABLE_HINT,
   RUNNER_LIST_LOADING,
   RUNNER_LIST_RELOAD,
   RUNNER_SECTION_LABEL,
@@ -176,7 +178,8 @@ onMounted(async () => {
           class="runner-view__empty"
           data-testid="runner-empty-available"
         >
-          {{ RUNNER_LIST_EMPTY_AVAILABLE }}
+          <span class="runner-view__empty-headline">{{ RUNNER_LIST_EMPTY_AVAILABLE }}</span>
+          <span class="runner-view__empty-hint">{{ RUNNER_LIST_EMPTY_AVAILABLE_HINT }}</span>
         </p>
         <ul v-else class="runner-view__list" data-testid="runner-list-available">
           <li v-for="order in availableOrders" :key="order.id" class="runner-view__list-item">
@@ -207,7 +210,8 @@ onMounted(async () => {
           class="runner-view__empty"
           data-testid="runner-empty-active"
         >
-          {{ RUNNER_LIST_EMPTY_ACTIVE }}
+          <span class="runner-view__empty-headline">{{ RUNNER_LIST_EMPTY_ACTIVE }}</span>
+          <span class="runner-view__empty-hint">{{ RUNNER_LIST_EMPTY_ACTIVE_HINT }}</span>
         </p>
         <ul v-else class="runner-view__list" data-testid="runner-list-active">
           <li v-for="order in activeOrders" :key="order.id" class="runner-view__list-item">
@@ -242,6 +246,23 @@ onMounted(async () => {
   text-align: center;
   color: var(--lian-muted);
   font-size: 14px;
+}
+
+.runner-view__empty {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.runner-view__empty-headline {
+  color: var(--lian-ink);
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.runner-view__empty-hint {
+  color: var(--lian-muted);
+  font-size: 13px;
+  line-height: 1.5;
 }
 
 .runner-view__feedback {

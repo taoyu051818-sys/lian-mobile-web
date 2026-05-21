@@ -87,7 +87,10 @@ test("runner state machine declares all four progress actions", () => {
 
 test("ProfileView gates the runner entry on runner verification", () => {
   const src = read("src/features/profile/ProfileView.vue");
-  assert.match(src, /useIsRunnerVerified/);
+  // ProfileView decides runner-verified via hasActiveVerificationTag(user, "runner")
+  // (issue #710 unified the gate helper). The structural assertion is that the
+  // gate uses that helper and feeds the result into v-if="isRunnerVerified".
+  assert.match(src, /hasActiveVerificationTag\(user\.value,\s*"runner"\)/);
   assert.match(src, /isRunnerVerified/);
   assert.match(src, /v-if="isRunnerVerified"/);
 });
@@ -160,4 +163,21 @@ test("RunnerCenterView routes the gate's go-verify event to verification view", 
 test("runner brand module is re-exported from brand/index", () => {
   const src = read("src/config/brand/index.ts");
   assert.match(src, /from "\.\/runner"/);
+});
+
+// --- empty-state next-step copy (issue #725) -------------------------------
+
+test("runner empty-state brand strings include both headline and next-step hint", () => {
+  const src = read("src/config/brand/runner.ts");
+  assert.match(src, /RUNNER_LIST_EMPTY_AVAILABLE\s*=\s*"[^"]+"/);
+  assert.match(src, /RUNNER_LIST_EMPTY_AVAILABLE_HINT\s*=\s*"[^"]+"/);
+  assert.match(src, /RUNNER_LIST_EMPTY_ACTIVE\s*=\s*"[^"]+"/);
+  assert.match(src, /RUNNER_LIST_EMPTY_ACTIVE_HINT\s*=\s*"[^"]+"/);
+});
+
+test("RunnerCenterView renders the empty-state next-step hint alongside the bare label (#725)", () => {
+  const src = read("src/features/runner/RunnerCenterView.vue");
+  // Both empty branches must surface the hint copy, not just the headline.
+  assert.match(src, /data-testid="runner-empty-available"[\s\S]*?RUNNER_LIST_EMPTY_AVAILABLE_HINT/);
+  assert.match(src, /data-testid="runner-empty-active"[\s\S]*?RUNNER_LIST_EMPTY_ACTIVE_HINT/);
 });

@@ -18,6 +18,7 @@ import {
   VERIFICATION_EXPIRES_AT_LABEL,
   VERIFICATION_GRANTED_AT_LABEL,
   VERIFICATION_NO_GRANT_HINT,
+  VERIFICATION_NO_GRANT_NEXT,
   VERIFICATION_OTHER_PLACEHOLDER,
   VERIFICATION_SECTION_LABEL,
   VERIFICATION_SOURCE_LABEL,
@@ -139,7 +140,12 @@ onBeforeUnmount(() => {
             <dd>{{ verificationState[descriptor.tag]?.source }}</dd>
           </template>
         </dl>
-        <p v-else class="verification-view__placeholder">{{ VERIFICATION_NO_GRANT_HINT }}</p>
+        <p v-else class="verification-view__placeholder" data-testid="verification-empty-grant">
+          <span class="verification-view__placeholder-headline">{{
+            VERIFICATION_NO_GRANT_HINT
+          }}</span>
+          <span class="verification-view__placeholder-hint">{{ VERIFICATION_NO_GRANT_NEXT }}</span>
+        </p>
       </li>
     </ul>
 
@@ -287,6 +293,21 @@ onBeforeUnmount(() => {
   margin: 0;
   color: var(--lian-muted);
   font-size: 12px;
+}
+
+.verification-view__placeholder-headline {
+  display: block;
+  color: var(--lian-ink);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.verification-view__placeholder-hint {
+  display: block;
+  margin-top: 2px;
+  color: var(--lian-muted);
+  font-size: 12px;
+  line-height: 1.5;
 }
 
 .verification-view__campus {
