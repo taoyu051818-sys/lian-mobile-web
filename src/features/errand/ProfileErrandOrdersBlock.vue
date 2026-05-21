@@ -1,16 +1,22 @@
 <script setup lang="ts">
 /**
- * Profile-side surface for "我的跑腿订单" (issue #647 follow-up).
+ * Profile-side surface for "我的跑腿订单" (issue #647 follow-up; promoted into
+ * the ProfileTabs "订单" tab by issue #609 PR1).
  *
  * Lets the requester re-enter the timeline view for any of their existing
- * orders after they've closed the secret view. Tap → route singleton flips
- * to the orderId branch + setActiveView pivots back into the secret view,
- * same path the post-submit handoff uses.
+ * orders. Tap → route singleton flips to the orderId branch + setActiveView
+ * pivots into the secret view, same path the post-submit handoff uses.
+ *
+ * Empty state follows the two-line PR #746 convention — short headline
+ * (`ORDERS_LIST_EMPTY_HEADLINE`) plus a next-step hint (`ORDERS_LIST_EMPTY_HINT`)
+ * that points the user back at the merchant detail entry, since this PR1
+ * does not ship the create form.
  */
 import { onMounted } from "vue";
 import {
+  ORDERS_LIST_EMPTY_HEADLINE,
+  ORDERS_LIST_EMPTY_HINT,
   PROFILE_ERRAND_ORDERS_DROPOFF_PREFIX,
-  PROFILE_ERRAND_ORDERS_EMPTY,
   PROFILE_ERRAND_ORDERS_LOADING,
   PROFILE_ERRAND_ORDERS_OPEN,
   PROFILE_ERRAND_ORDERS_PICKUP_PREFIX,
@@ -77,13 +83,24 @@ function openOrder(orderId: string) {
       {{ errorMessage }}
     </p>
 
-    <p
+    <!--
+      Two-line empty state per PR #746: short headline first, next-step hint
+      second. Both come from `src/config/brand` (no inline literals) so the
+      brand.test STRING_CONSTANTS guard and any localization rework picks
+      these up automatically.
+    -->
+    <div
       v-else-if="!items.length"
-      class="profile-errand-orders__hint"
+      class="profile-errand-orders__empty"
       data-testid="profile-errand-orders-empty"
     >
-      {{ PROFILE_ERRAND_ORDERS_EMPTY }}
-    </p>
+      <p class="profile-errand-orders__empty-headline">
+        {{ ORDERS_LIST_EMPTY_HEADLINE }}
+      </p>
+      <p class="profile-errand-orders__empty-hint">
+        {{ ORDERS_LIST_EMPTY_HINT }}
+      </p>
+    </div>
 
     <ul v-else class="profile-errand-orders__list" data-testid="profile-errand-orders-list">
       <li
@@ -170,6 +187,29 @@ function openOrder(orderId: string) {
 
 .profile-errand-orders__hint.is-error {
   color: rgb(185, 28, 28);
+}
+
+.profile-errand-orders__empty {
+  display: grid;
+  gap: 4px;
+  padding: var(--space-3);
+  border-radius: var(--radius-card);
+  background: rgba(120, 120, 120, 0.06);
+  text-align: center;
+}
+
+.profile-errand-orders__empty-headline {
+  margin: 0;
+  color: var(--lian-ink);
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.profile-errand-orders__empty-hint {
+  margin: 0;
+  color: var(--lian-muted);
+  font-size: 12px;
+  line-height: 1.5;
 }
 
 .profile-errand-orders__list {

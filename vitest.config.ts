@@ -25,6 +25,7 @@ export default defineConfig({
       "tests/phase0/**/*.test.ts",
       "tests/detail-navigation/**/*.test.ts",
       "tests/runner/**/*.test.ts",
+      "tests/errand/**/*.test.ts",
     ],
   },
 });

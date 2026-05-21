@@ -8,7 +8,8 @@ export type ProfileTabKey =
   | "posts"
   | "replies"
   | "drafts"
-  | "map-contributions";
+  | "map-contributions"
+  | "orders";
 
 export type ProfileActivityStatus = "published" | "draft" | "pending" | "hidden";
 

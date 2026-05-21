@@ -235,6 +235,28 @@ export async function fetchErrandOrder(orderId: string): Promise<ErrandOrderDeta
   return normalizeErrandOrderDetail(data);
 }
 
+/**
+ * Cancel a non-terminal errand order. Hits the existing
+ * `POST /api/errands/orders/:orderId/cancel` route on platform-server (one of
+ * the five real V0.1 endpoints — the 501 routes are `assign` and
+ * `runner-location`, both of which the user-side UI must not call).
+ *
+ * Returns the freshly-normalized detail when the backend echoes the order
+ * back; falls back to a re-fetch when it doesn't, so the caller always gets
+ * the latest timeline post-cancel.
+ */
+export async function cancelErrandOrder(orderId: string): Promise<ErrandOrderDetail | null> {
+  const data = await apiSend<unknown>(`/api/errands/orders/${encodeURIComponent(orderId)}/cancel`, {
+    method: "POST",
+  });
+  const detail = normalizeErrandOrderDetail(data);
+  if (detail) return detail;
+  // Backend may return a `{ ok: true }` shape without echoing the order;
+  // fall back to a re-fetch so the timeline view re-renders with the
+  // cancelled state.
+  return fetchErrandOrder(orderId);
+}
+
 function normalizeErrandOrderSummary(value: unknown): ErrandOrderSummary | null {
   const record = asRecord(value);
   const orderId = asString(record.orderId);

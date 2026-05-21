@@ -12,10 +12,10 @@
  *    its own. Caller is responsible for invoking `start(orderId)` /
  *    `stop()` from the view's lifecycle hooks so we never leak a timer.
  */
-import { ref } from "vue";
-import { fetchErrandOrder } from "../../api/errands";
+import { computed, ref } from "vue";
+import { cancelErrandOrder, fetchErrandOrder } from "../../api/errands";
 import { extractErrorMessage } from "../../utils/extractErrorMessage";
-import { ERRAND_ORDER_DETAIL_LOAD_ERROR } from "../../config/brand";
+import { ERRAND_ORDER_DETAIL_LOAD_ERROR, ORDERS_CANCEL_FAILED } from "../../config/brand";
 import type { ErrandOrderDetail } from "../../types/errand";
 import { isTerminalErrandStatus } from "./errand-format";
 
@@ -26,6 +26,21 @@ export function useErrandOrderDetail() {
   const loading = ref(false);
   const loaded = ref(false);
   const errorMessage = ref("");
+  const cancelling = ref(false);
+  const cancelError = ref("");
+
+  /**
+   * Cancel CTA is only meaningful while the order is still in flight.
+   * Anything in `TERMINAL_ERRAND_STATUSES` (delivered / cancelled / refunded)
+   * is final and the button must not render. We intentionally do NOT block
+   * `disputed` here even though it's mid-flow — disputes can resolve back
+   * to delivered or refunded, and the requester can still walk away from
+   * one if no runner has been assigned yet.
+   */
+  const canCancel = computed(() => {
+    const status = detail.value?.order.status;
+    return Boolean(status && !isTerminalErrandStatus(status) && !cancelling.value);
+  });
 
   let pollTimer: ReturnType<typeof setTimeout> | null = null;
   let pollOrderId = "";
@@ -120,13 +135,50 @@ export function useErrandOrderDetail() {
     clearPollTimer();
   }
 
+  /**
+   * Cancel the current order. Only callable while `canCancel` is true; the
+   * timeline view also gates the CTA, so this is belt-and-suspenders. On
+   * success the freshly-fetched detail (with the cancelled status + final
+   * timeline entry) replaces `detail` and we stop polling — there's nothing
+   * left to poll for once the order is terminal.
+   *
+   * Failure surfaces through `cancelError` instead of `errorMessage` so a
+   * failed cancel does not blank out the timeline the user is looking at.
+   */
+  async function cancel(orderId: string) {
+    if (!orderId || cancelling.value) return;
+    cancelling.value = true;
+    cancelError.value = "";
+    try {
+      const next = await cancelErrandOrder(orderId);
+      if (next) {
+        detail.value = next;
+        loaded.value = true;
+        // Cancellation is terminal; ticking again would just re-fetch the same
+        // cancelled record. Stop the poll generation so an in-flight tick
+        // doesn't overwrite the cancelled state.
+        stop();
+      } else {
+        cancelError.value = ORDERS_CANCEL_FAILED;
+      }
+    } catch (error) {
+      cancelError.value = extractErrorMessage(error, ORDERS_CANCEL_FAILED);
+    } finally {
+      cancelling.value = false;
+    }
+  }
+
   return {
     detail,
     loading,
     loaded,
     errorMessage,
+    cancelling,
+    cancelError,
+    canCancel,
     refresh,
     start,
     stop,
+    cancel,
   };
 }

@@ -172,6 +172,92 @@ test("ProfileView mounts the my-orders block via the errand barrel", () => {
   assert.match(src, /from\s+"\.\.\/errand"/);
 });
 
+// --- issue #609 PR1: orders tab promotion + cancel + V0.2 placeholder ---
+
+test("issue #609 PR1: ProfileTabKey union includes 'orders'", () => {
+  const src = read("src/types/profile.ts");
+  assert.match(src, /\|\s*"orders"/);
+});
+
+test("issue #609 PR1: useProfileTabs registers the orders tab + short-circuits its load", () => {
+  const src = read("src/features/profile/useProfileTabs.ts");
+  assert.match(src, /PROFILE_TAB_ORDERS/);
+  assert.match(src, /key:\s*"orders"/);
+  // Orders tab must NOT call /api/profile/orders (does not exist) — short-
+  // circuiting preserves listEmptyText flow without 404-spamming the backend.
+  assert.match(src, /tab\s*===\s*"orders"/);
+});
+
+test("issue #609 PR1: ProfileView routes the orders tab into ProfileErrandOrdersBlock", () => {
+  const src = read("src/features/profile/ProfileView.vue");
+  assert.match(src, /<ProfileErrandOrdersBlock\s+v-if="activeTab === 'orders'"/);
+  // The previous (buggy) gating mounted the block as a runner-gated footer —
+  // requesters are not necessarily runners, so the footer mount must be gone.
+  assert.doesNotMatch(src, /<ProfileErrandOrdersBlock\s+v-if="isRunnerVerified"/);
+});
+
+test("issue #609 PR1: ProfileErrandOrdersBlock renders the two-line empty state", () => {
+  const src = read("src/features/errand/ProfileErrandOrdersBlock.vue");
+  assert.match(src, /ORDERS_LIST_EMPTY_HEADLINE/);
+  assert.match(src, /ORDERS_LIST_EMPTY_HINT/);
+  assert.match(src, /data-testid="profile-errand-orders-empty"/);
+  // Must reference brand keys (not inline literals) so the brand.test guard
+  // catches drift; PR #746 convention.
+  assert.match(src, /profile-errand-orders__empty-headline/);
+  assert.match(src, /profile-errand-orders__empty-hint/);
+});
+
+test("issue #609 PR1: api/errands.ts ships cancelErrandOrder against the live route", () => {
+  const src = read("src/api/errands.ts");
+  assert.match(src, /export async function cancelErrandOrder/);
+  // Must hit the cancel route, NOT assign or runner-location (those are 501).
+  assert.match(src, /\/cancel/);
+  assert.doesNotMatch(src, /\/assign/);
+  assert.doesNotMatch(src, /\/runner-location/);
+});
+
+test("issue #609 PR1: useErrandOrderDetail exposes cancel + canCancel + cancelError", () => {
+  const src = read("src/features/errand/useErrandOrderDetail.ts");
+  assert.match(src, /cancelErrandOrder/);
+  assert.match(src, /async function cancel/);
+  assert.match(src, /canCancel/);
+  assert.match(src, /cancelError/);
+  // canCancel must dispatch off `isTerminalErrandStatus` so terminal orders
+  // never expose the CTA.
+  assert.match(src, /isTerminalErrandStatus/);
+});
+
+test("issue #609 PR1: ErrandOrderTimelineView renders cancel + V0.2 runner-location", () => {
+  const src = read("src/features/errand/ErrandOrderTimelineView.vue");
+  // Cancel CTA only when canCancel — terminal states must not surface it.
+  assert.match(src, /data-testid="errand-order-timeline-cancel"/);
+  assert.match(src, /v-if="canCancel"/);
+  assert.match(src, /ORDERS_CANCEL_CTA/);
+  assert.match(src, /ORDERS_CANCEL_CONFIRM/);
+  // V0.2 placeholder panel — labeled deferred, never fetches the 501 route.
+  assert.match(src, /data-testid="errand-order-timeline-runner-location"/);
+  assert.match(src, /ORDERS_RUNNER_LOCATION_DEFERRED/);
+});
+
+test("issue #609 PR1: ORDERS_* brand strings exist and map to documented keys", () => {
+  const src = read("src/config/brand/merchant.ts");
+  for (const key of [
+    "PROFILE_TAB_ORDERS",
+    "ORDERS_LIST_EMPTY_HEADLINE",
+    "ORDERS_LIST_EMPTY_HINT",
+    "ORDERS_TIMELINE_LABEL",
+    "ORDERS_CANCEL_CTA",
+    "ORDERS_CANCEL_CONFIRM",
+    "ORDERS_CANCEL_PENDING",
+    "ORDERS_CANCEL_FAILED",
+    "ORDERS_RUNNER_LOCATION_TITLE",
+    "ORDERS_RUNNER_LOCATION_DEFERRED",
+    "ORDERS_RUNNER_LOCATION_DEFERRED_HINT",
+  ]) {
+    assert.match(src, new RegExp(`export const ${key}\\b`));
+  }
+});
+
 test("useErrandOrderRoute is a singleton route store", () => {
   const src = read("src/features/errand/useErrandOrderRoute.ts");
   assert.match(src, /enterForMerchant/);

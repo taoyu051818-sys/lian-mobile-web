@@ -190,7 +190,18 @@ onMounted(() => {
 
       <ProfileTabs :tabs="tabs" :active-tab="activeTab" @select="loadProfileList" />
 
+      <!--
+        issue #609 PR1: orders tab renders ProfileErrandOrdersBlock; every
+        other tab uses the shared collection list. Both branches stay inside
+        the v-else-if="user" block so the guest state is unchanged. The
+        block had been a runner-gated footer (which was wrong — the
+        requester is the user themselves, not a runner), so we move it up
+        and drop the verification gate.
+      -->
+      <ProfileErrandOrdersBlock v-if="activeTab === 'orders'" />
+
       <ProfileCollectionList
+        v-else
         :items="profileItems"
         :loading="listLoading"
         :empty-text="listEmptyText"
@@ -225,8 +236,6 @@ onMounted(() => {
           </button>
         </article>
       </section>
-
-      <ProfileErrandOrdersBlock v-if="isRunnerVerified" />
 
       <footer class="profile-view__verification-entry">
         <button

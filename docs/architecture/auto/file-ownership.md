@@ -18,7 +18,7 @@ Total files: 310
 | `api/aiPublish.ts`    | AI publish API client (PRD V0.1 §3 / §7.4 / Phase 3). Three endpoints, all already in the backend live surface: PO...    |   165 |
 | `api/audience.ts`     | Audience options API client. Backend route (PRD V0.1 §11.1): GET /api/audience/options The route may be missing in o...  |    81 |
 | `api/auth.ts`         | export type AuthMode = "login" \| "register";                                                                            |    66 |
-| `api/errands.ts`      | Errand order API client (issue #647). Surface: - GET /api/errands/orders/eligibility?merchantPostId=:id — pre-su...      |   272 |
+| `api/errands.ts`      | Errand order API client (issue #647). Surface: - GET /api/errands/orders/eligibility?merchantPostId=:id — pre-su...      |   294 |
 | `api/events.ts`       | Event / Help / Errand API client stubs (PRD V0.1 §11.2, §11.3, §11.4). Every function below is intentionally thin — ...  |   156 |
 | `api/feed.ts`         | export const DEFAULT_TABS: FeedTab[] = [                                                                                 |   192 |
 | `api/http.ts`         | export class LianApiError extends Error                                                                                  |   252 |
@@ -82,7 +82,7 @@ Total files: 310
 | `config/brand/index.ts`        | TypeScript module                                                                                                                                     |    21 |
 | `config/brand/loading.ts`      | export const LOADING_PROFILE = "正在加载个人资料…"; export const LOADING_FEED = "正在加载校园内容…"; export const LOADING_MAP = "正在加载...          |    26 |
 | `config/brand/map.ts`          | export const MAP_ARIA_LABEL = "校园地图"; export const MAP_FILTER_LOCATIONS = "地点"; export const MAP_FILTER_POSTS = "内容"...                       |    39 |
-| `config/brand/merchant.ts`     | export const MERCHANT_BLOCK_LABEL = "商家信息"; export const MERCHANT_CATEGORY_FOOD = "餐饮"; export const MERCHANT_CATEGOR...                        |   129 |
+| `config/brand/merchant.ts`     | export const MERCHANT_BLOCK_LABEL = "商家信息"; export const MERCHANT_CATEGORY_FOOD = "餐饮"; export const MERCHANT_CATEGOR...                        |   161 |
 | `config/brand/messages.ts`     | export const MESSAGE_EMPTY_CONTENT = "这条消息暂时没有内容。"; export const MESSAGE_TAB_LABEL = "消息分类"; export const MESSAGE_S...                 |    36 |
 | `config/brand/notification.ts` | export const NOTIFICATION_SECTION_LABEL = "通知"; export const NOTIFICATION_READ = "已读"; export const NOTIFICATION_UNRE...                          |    62 |
 | `config/brand/profile.ts`      | export const PROFILE*CAMPUS_USER = "校园用户"; export const PROFILE_INVITE_USER = "邀请码用户"; export const PROFILE_IDENTITY*...                     |   120 |
@@ -166,12 +166,12 @@ Total files: 310
 | `features/detail/usePostReport.ts`                 | export function usePostReport(options:                                                                                        |    90 |
 | `features/detail/usePostShare.ts`                  | export function usePostShare(options:                                                                                         |    50 |
 | `features/errand/ErrandOrderGate.vue`              | Vue SFC                                                                                                                       |   119 |
-| `features/errand/ErrandOrderTimelineView.vue`      | Destructure refs so the template can read them via auto-unwrap. Vue's                                                         |   347 |
+| `features/errand/ErrandOrderTimelineView.vue`      | Destructure refs so the template can read them via auto-unwrap. Vue's                                                         |   519 |
 | `features/errand/ErrandOrderView.vue`              | Destructure refs so the template can read them via auto-unwrap instead of                                                     |   473 |
-| `features/errand/ProfileErrandOrdersBlock.vue`     | Destructure refs so the template can read them via auto-unwrap. Matching                                                      |   265 |
+| `features/errand/ProfileErrandOrdersBlock.vue`     | Destructure refs so the template can read them via auto-unwrap. Matching                                                      |   305 |
 | `features/errand/errand-format.ts`                 | Errand order — reason / status copy + tiny formatters. Centralised so the gate, form, and timeline all dispatch off ...       |   109 |
 | `features/errand/index.ts`                         | TypeScript module                                                                                                             |    19 |
-| `features/errand/useErrandOrderDetail.ts`          | Read-side composable for the errand order timeline view (issue #647). Wraps `GET /api/errands/orders/:id`. The state...       |   133 |
+| `features/errand/useErrandOrderDetail.ts`          | Read-side composable for the errand order timeline view (issue #647). Wraps `GET /api/errands/orders/:id`. The state...       |   185 |
 | `features/errand/useErrandOrderDraft.ts`           | Errand order draft + submit composable (issue #647). Owns the form draft, the pre-submit gate (eligibility ping + cl...       |   293 |
 | `features/errand/useErrandOrderRoute.ts`           | Singleton routing context for the errand-order secret view. The order flow is a multi-screen detour from the merchan...       |    59 |
 | `features/errand/useMyErrandOrders.ts`             | "我的跑腿订单" composable (issue #647 follow-up). Backs the profile-side list of the requester's own errand orders so user... |    42 |
@@ -228,7 +228,7 @@ Total files: 310
 | `features/profile/ProfileStatsBlock.vue`           | Vue SFC                                                                                                                       |   171 |
 | `features/profile/ProfileTabs.vue`                 | Vue SFC                                                                                                                       |    71 |
 | `features/profile/ProfileVerificationBadges.vue`   | Header surfaces only currently-active grants. Expired/revoked records                                                         |    97 |
-| `features/profile/ProfileView.vue`                 | issue #692: drafts authored by the previous account must not survive                                                          |   460 |
+| `features/profile/ProfileView.vue`                 | issue #692: drafts authored by the previous account must not survive                                                          |   469 |
 | `features/profile/index.ts`                        | TypeScript module                                                                                                             |     2 |
 | `features/profile/profile-header.css`              | Stylesheet                                                                                                                    |   187 |
 | `features/profile/profileUnlocks.ts`               | export interface ProfileUnlockCard                                                                                            |    71 |
@@ -242,7 +242,7 @@ Total files: 310
 | `features/profile/useProfileAliasSwitch.ts`        | export function useProfileAliasSwitch()                                                                                       |    29 |
 | `features/profile/useProfileChrome.ts`             | export function useProfileChrome(options:                                                                                     |    63 |
 | `features/profile/useProfileSession.ts`            | export function useProfileSession()                                                                                           |    31 |
-| `features/profile/useProfileTabs.ts`               | export function useProfileTabs(options:                                                                                       |   121 |
+| `features/profile/useProfileTabs.ts`               | export function useProfileTabs(options:                                                                                       |   141 |
 | `features/publish/PublishActionBar.vue`            | Vue SFC                                                                                                                       |    41 |
 | `features/publish/PublishComposer.vue`             | Vue SFC                                                                                                                       |   293 |
 | `features/publish/PublishEventControls.vue`        | Vue SFC                                                                                                                       |   230 |
@@ -343,7 +343,7 @@ Total files: 310
 | `types/place.ts`           | export type PlaceStatus =                                                                                                    |    60 |
 | `types/post-extensions.ts` | Event / Help / Merchant / Trade / Errand domain types (PRD V0.1 §6). V0.1 ships shapes only — no UI yet. The point i...      |   246 |
 | `types/post.ts`            | event?: EventPostExtension; eventJoined?: boolean; Issue #703 — backend-driven flag for the creator/admin "结束活动" surf... |   160 |
-| `types/profile.ts`         | PRD V0.1 §17 — verification records keyed by tag (campus_verified, merchant_verified, ...). Backend `/api/auth/me` re...     |   132 |
+| `types/profile.ts`         | PRD V0.1 §17 — verification records keyed by tag (campus_verified, merchant_verified, ...). Backend `/api/auth/me` re...     |   133 |
 | `types/publish.ts`         | export type PublishMapVersion = "legacy" \| "manual" \| "gaode_v2"; Backend (#383) accepts these contentType values fo...    |   140 |
 | `types/runner.ts`          | Runner-center domain types — frontend-scoped under #648. Why a separate file rather than `src/types/errand.ts`? The ...      |    65 |
 | `types/verification.ts`    | export type VerificationTag =                                                                                                |    36 |
