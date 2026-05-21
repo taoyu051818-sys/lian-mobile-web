@@ -95,21 +95,34 @@ npm run test:e2e
 The legacy `journey.spec.ts` logs in through `/api/auth/login`, exercises the public
 post journey, and verifies the public share URL still renders.
 
-### Multi-account fixture (#644)
+### Multi-account fixture (#644, #707)
 
-The Playwright account fixture in `tests/e2e/fixtures/accounts.ts` defines six roles
-the journey suites can target. Each role reads credentials from environment
-variables. Roles whose env vars are absent are **skipped** (not failed) so a missing
-seed never silently passes as green.
+The Playwright account fixture in `tests/e2e/fixtures/accounts.ts` defines the
+roles the journey suites can target. Each role reads credentials from
+environment variables. Roles whose env vars are absent are **skipped** (not
+failed) so a missing seed never silently passes as green.
 
-| Role         | Env user                       | Env password                   | Expected verification tags                           |
-| ------------ | ------------------------------ | ------------------------------ | ---------------------------------------------------- |
-| `anonymous`  | _(none)_                       | _(none)_                       | _(none, never logs in)_                              |
-| `registered` | `LIAN_E2E_REGISTERED_USERNAME` | `LIAN_E2E_REGISTERED_PASSWORD` | _(none)_                                             |
-| `campus`     | `LIAN_E2E_CAMPUS_USERNAME`     | `LIAN_E2E_CAMPUS_PASSWORD`     | `campus_verified`                                    |
-| `merchant`   | `LIAN_E2E_MERCHANT_USERNAME`   | `LIAN_E2E_MERCHANT_PASSWORD`   | `merchant_verified` (often with `realname_verified`) |
-| `runner`     | `LIAN_E2E_RUNNER_USERNAME`     | `LIAN_E2E_RUNNER_PASSWORD`     | `runner`                                             |
-| `admin`      | `LIAN_E2E_ADMIN_USERNAME`      | `LIAN_E2E_ADMIN_PASSWORD`      | _(role asserted via NodeBB group, no LIAN tag)_      |
+| Role            | Env user                          | Env password                      | Expected verification tags                           |
+| --------------- | --------------------------------- | --------------------------------- | ---------------------------------------------------- |
+| `anonymous`     | _(none)_                          | _(none)_                          | _(none, never logs in)_                              |
+| `registered`    | `LIAN_E2E_REGISTERED_USERNAME`    | `LIAN_E2E_REGISTERED_PASSWORD`    | _(none)_                                             |
+| `campus`        | `LIAN_E2E_CAMPUS_USERNAME`        | `LIAN_E2E_CAMPUS_PASSWORD`        | `campus_verified`                                    |
+| `merchant`      | `LIAN_E2E_MERCHANT_USERNAME`      | `LIAN_E2E_MERCHANT_PASSWORD`      | `merchant_verified` (often with `realname_verified`) |
+| `runner`        | `LIAN_E2E_RUNNER_USERNAME`        | `LIAN_E2E_RUNNER_PASSWORD`        | `runner`                                             |
+| `admin`         | `LIAN_E2E_ADMIN_USERNAME`         | `LIAN_E2E_ADMIN_PASSWORD`         | _(role asserted via NodeBB group, no LIAN tag)_      |
+| `event_creator` | `LIAN_E2E_EVENT_CREATOR_USERNAME` | `LIAN_E2E_EVENT_CREATOR_PASSWORD` | `campus_verified`, `realname_verified`               |
+| `org_member`    | `LIAN_E2E_ORG_MEMBER_USERNAME`    | `LIAN_E2E_ORG_MEMBER_PASSWORD`    | `campus_verified`, `org_member`                      |
+
+The `event_creator` / `org_member` accounts back the rewarded-event journey
+landed by `lian-platform-server` PR #443 (issue #439). The same backend seeds
+a deterministic rewarded event at tid `156` and surfaces it via
+`GET /api/fixtures` (non-prod gated) under `fixtures.eventRuntime`. The
+Playwright helpers in `tests/e2e/fixtures/event-runtime.ts` consume that
+discovery endpoint so spec code never has to hardcode the tid:
+
+| Env var                    | Purpose                                                        |
+| -------------------------- | -------------------------------------------------------------- |
+| `LIAN_E2E_SEEDED_EVENT_ID` | Seeded event tid (`156` today). Specs skip when this is unset. |
 
 Run only the fixture validation suite:
 

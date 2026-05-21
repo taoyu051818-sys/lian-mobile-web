@@ -56,6 +56,44 @@ export interface EventPostExtension {
   status?: EventStatus;
   /** ISO timestamp when the event was marked completed (issue #703). */
   completedAt?: string;
+  /**
+   * Settled reward block (issue #705). Populated by `POST /events/:id/reward`
+   * (B1, lian-platform-server #444) once the author triggers settlement after
+   * `/complete`. Optional on the wire — when missing, the readout block on
+   * the detail view is simply absent. Read-only on the frontend.
+   */
+  rewardSettlement?: EventRewardSettlement;
+}
+
+/**
+ * Frozen reward-settlement record. Mirrors the backend wire shape stored on
+ * `metadata.event.rewardSettlement` after B1 (#444 / merge
+ * 6c37ece93fc1ffcf255f26896563458f72526503). The frontend renders these
+ * fields read-only; settlement actions live on the server.
+ */
+export interface EventRewardSettlement {
+  /** Server-issued settlement id (e.g. `stl_…`). Required. */
+  settlementId: string;
+  /** ISO timestamp when settlement closed. */
+  settledAt?: string;
+  /** uid that triggered `/reward` (the post author). */
+  settledBy?: string;
+  /** Points credited to each paid joiner. */
+  perJoiner: number;
+  /** Paid joiner count after the anti-fraud floor. */
+  joinerCount: number;
+  /** `perJoiner * joinerCount` — the points actually paid out. */
+  totalPaid: number;
+  /** Locked-budget remainder returned to the author. */
+  remainder: number;
+  /** Frozen paid roster (uids). */
+  joinerIds: string[];
+  /**
+   * Per-uid honor awarded by the settlement (joiners + author). Backend ships
+   * this as a record `{ [uid]: number }`; the frontend currently does not
+   * render the breakdown but round-trips it for future surfaces / debugging.
+   */
+  honorAwarded?: Record<string, number>;
 }
 
 /**

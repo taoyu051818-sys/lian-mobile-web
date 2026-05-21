@@ -2,6 +2,7 @@ import type { DisplayActor, SourceSignal } from "../types/feed";
 import type { PlaceRef, PlaceStatus } from "../types/place";
 import type {
   EventPostExtension,
+  EventRewardSettlement,
   EventStatus,
   HelpPostExtension,
   HelpStatus,
@@ -190,6 +191,7 @@ export function normalizeEventExtension(value: unknown): EventPostExtension | un
   // observed on the wire; future cancel will land here as well.
   const status = asEnum(record.status, EVENT_STATUSES);
   const completedAt = optionalString(record.completedAt);
+  const rewardSettlement = normalizeEventRewardSettlement(record.rewardSettlement);
 
   return {
     eventId,
@@ -201,7 +203,56 @@ export function normalizeEventExtension(value: unknown): EventPostExtension | un
     joinedCount,
     ...(status ? { status } : {}),
     ...(completedAt ? { completedAt } : {}),
+    ...(rewardSettlement ? { rewardSettlement } : {}),
   };
+}
+
+/**
+ * Coerce a raw payload into an `EventRewardSettlement`. Mirrors the wire shape
+ * persisted by lian-platform-server B1 (#444 / merge
+ * 6c37ece93fc1ffcf255f26896563458f72526503) on `metadata.event.rewardSettlement`.
+ *
+ * Drops the whole settlement when `settlementId` is missing or malformed —
+ * never invents values. `totalPaid !== perJoiner * joinerCount` is NOT a drop
+ * trigger: render whatever the server says rather than second-guess it.
+ */
+export function normalizeEventRewardSettlement(value: unknown): EventRewardSettlement | undefined {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return undefined;
+  const record = asRecord(value);
+  const settlementId = optionalString(record.settlementId);
+  if (!settlementId) return undefined;
+
+  const settledAt = optionalString(record.settledAt);
+  const settledBy = optionalString(record.settledBy);
+  const perJoiner = asNonNegInt(record.perJoiner);
+  const joinerCount = asNonNegInt(record.joinerCount);
+  const totalPaid = asNonNegInt(record.totalPaid);
+  const remainder = asNonNegInt(record.remainder);
+  const joinerIds = asStringArray(record.joinerIds);
+  const honorAwarded = normalizeHonorAwarded(record.honorAwarded);
+
+  return {
+    settlementId,
+    ...(settledAt ? { settledAt } : {}),
+    ...(settledBy ? { settledBy } : {}),
+    perJoiner,
+    joinerCount,
+    totalPaid,
+    remainder,
+    joinerIds,
+    ...(honorAwarded ? { honorAwarded } : {}),
+  };
+}
+
+function normalizeHonorAwarded(value: unknown): Record<string, number> | undefined {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return undefined;
+  const out: Record<string, number> = {};
+  for (const [key, raw] of Object.entries(value as Record<string, unknown>)) {
+    const uid = asString(key);
+    if (!uid) continue;
+    out[uid] = asNonNegInt(raw);
+  }
+  return Object.keys(out).length ? out : undefined;
 }
 
 /**

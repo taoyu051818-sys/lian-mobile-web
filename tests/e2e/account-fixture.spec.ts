@@ -65,11 +65,13 @@ test("@account-fixture role definitions are internally consistent", () => {
       expect(def.envUser).toBeNull();
       expect(def.envPass).toBeNull();
     } else {
+      // [A-Z_]+ tolerates multi-word role keys (event_creator,
+      // org_member) which the seeder spells with an underscore.
       expect(def.envUser, `role "${role.id}" must declare envUser`).toMatch(
-        /^LIAN_E2E_[A-Z]+_USERNAME$/,
+        /^LIAN_E2E_[A-Z][A-Z_]*_USERNAME$/,
       );
       expect(def.envPass, `role "${role.id}" must declare envPass`).toMatch(
-        /^LIAN_E2E_[A-Z]+_PASSWORD$/,
+        /^LIAN_E2E_[A-Z][A-Z_]*_PASSWORD$/,
       );
     }
   }

@@ -25,7 +25,7 @@ Total files: 307
 | `api/interaction.ts`  | Like/vote unified interaction API (PRD V0.1 §7.1.2, §11.3). Backend already exposes `/api/posts/:tid/like` for likes...  |    65 |
 | `api/map.ts`          | TypeScript module                                                                                                        |    14 |
 | `api/merchant.ts`     | Merchant center API (issue #646). `GET /api/me/merchant-center` returns the merchant readout for the signed-in user....  |    89 |
-| `api/messages.ts`     | export function extractChannelMessagePlainText(html?: string): string                                                    |   379 |
+| `api/messages.ts`     | Server-side `type` slugs that B2 (#438 / lian-platform-server#445) writes for the three event-lifecycle fan-outs. The... |   490 |
 | `api/places.ts`       | TypeScript module                                                                                                        |    10 |
 | `api/posts.ts`        | export interface PostLikeResponse                                                                                        |   237 |
 | `api/profile.ts`      | export function normalizeProfileListItem(item: unknown): ProfileListItem                                                 |   163 |
@@ -38,7 +38,7 @@ Total files: 307
 | File                                | Summary                                                                                                                 | Lines |
 | ----------------------------------- | ----------------------------------------------------------------------------------------------------------------------- | ----: |
 | `app/AppViewHost.vue`               | `feed` is the cold-start view, so it is intentionally eager-imported — first                                            |    55 |
-| `app/DetailSurface.vue`             | App-level detail overlay. The detail-navigation FSM is the single source                                                |    51 |
+| `app/DetailSurface.vue`             | App-level detail overlay. The detail-navigation FSM is the single source                                                |   123 |
 | `app/ViewAsyncError.vue`            | Vue SFC                                                                                                                 |    50 |
 | `app/ViewLoadingFallback.vue`       | Vue SFC                                                                                                                 |    39 |
 | `app/deepLink.ts`                   | Pure parsing/building helpers for the SPA's hash-based deep links. The app routes on `window.location.hash` (no vue-... |    60 |
@@ -76,15 +76,15 @@ Total files: 307
 | ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------- | ----: |
 | `config/brand/admin.ts`        | export const ADMIN_SECTION_LABEL = "管理后台"; export const ADMIN_ENTER_LABEL = "管理"; export const ADMIN_EXIT_LABEL = "退出...                      |    79 |
 | `config/brand/auth.ts`         | export const AUTH_PANEL_TITLE = "登录 / 注册"; export const AUTH_TAB_LOGIN = "登录"; export const AUTH_TAB_REGISTER = "注册";...                      |    58 |
-| `config/brand/detail.ts`       | export const POST_DETAIL_CLOSE = "关闭详情"; export const POST_DETAIL_AUTHOR_AVATAR = "作者头像"; export const POST_DETAIL_SH...                      |   128 |
+| `config/brand/detail.ts`       | export const POST_DETAIL_CLOSE = "关闭详情"; export const POST_DETAIL_AUTHOR_AVATAR = "作者头像"; export const POST_DETAIL_SH...                      |   134 |
 | `config/brand/error.ts`        | export const ERROR_LOAD_GENERIC = "暂时没加载出来，可以稍后再试。"; export const ERROR_SEND_GENERIC = "没有发送成功，可以稍后再试。"; export const... |    23 |
 | `config/brand/feed.ts`         | export const FEED_VIEW_TITLE = "首页"; export const FEED_FILTER_LABEL = "信息分类"; export const FEED_EMPTY_HINT = "可以换个分类，...                 |    17 |
 | `config/brand/index.ts`        | TypeScript module                                                                                                                                     |    21 |
 | `config/brand/loading.ts`      | export const LOADING_PROFILE = "正在加载个人资料…"; export const LOADING_FEED = "正在加载校园内容…"; export const LOADING_MAP = "正在加载...          |    26 |
 | `config/brand/map.ts`          | export const MAP_ARIA_LABEL = "校园地图"; export const MAP_FILTER_LOCATIONS = "地点"; export const MAP_FILTER_POSTS = "内容"...                       |    39 |
 | `config/brand/merchant.ts`     | export const MERCHANT_BLOCK_LABEL = "商家信息"; export const MERCHANT_CATEGORY_FOOD = "餐饮"; export const MERCHANT_CATEGOR...                        |   129 |
-| `config/brand/messages.ts`     | export const MESSAGE_EMPTY_CONTENT = "这条消息暂时没有内容。"; export const MESSAGE_TAB_LABEL = "消息分类"; export const MESSAGE_S...                 |    33 |
-| `config/brand/notification.ts` | export const NOTIFICATION_SECTION_LABEL = "通知"; export const NOTIFICATION_READ = "已读"; export const NOTIFICATION_UNRE...                          |    32 |
+| `config/brand/messages.ts`     | export const MESSAGE_EMPTY_CONTENT = "这条消息暂时没有内容。"; export const MESSAGE_TAB_LABEL = "消息分类"; export const MESSAGE_S...                 |    36 |
+| `config/brand/notification.ts` | export const NOTIFICATION_SECTION_LABEL = "通知"; export const NOTIFICATION_READ = "已读"; export const NOTIFICATION_UNRE...                          |    62 |
 | `config/brand/profile.ts`      | export const PROFILE*CAMPUS_USER = "校园用户"; export const PROFILE_INVITE_USER = "邀请码用户"; export const PROFILE_IDENTITY*...                     |   110 |
 | `config/brand/publish.ts`      | export const PUBLISH_CLEAR = "清空"; export const PUBLISH_SUBMIT = "发布"; export const PUBLISH_LOCATION_LABEL = "地点"; e...                         |    96 |
 | `config/brand/report.ts`       | export const REPORT_CAT_PRIVACY = "隐私问题"; export const REPORT_CAT_FALSE_INFO = "虚假信息"; export const REPORT_CAT_ABUSE ...                      |    19 |
@@ -110,7 +110,7 @@ Total files: 307
 | `domain/publishAiPolicy.ts`    | Pure rules for applying AI publish suggestions to a draft (PRD V0.1 Phase 3). Lives in the domain layer because it e... |    78 |
 | `domain/validation/forms.ts`   | export const AUTH_PASSWORD_MIN_LENGTH = 8;                                                                              |    99 |
 
-## src/features/ (155 files)
+## src/features/ (156 files)
 
 | File                                             | Summary                                                                                                                       | Lines |
 | ------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------- | ----: |
@@ -138,7 +138,7 @@ Total files: 307
 | `features/auth/useEmailCodeCooldown.ts`          | export const AUTH_EMAIL_CODE_DEFAULT_COOLDOWN_SECONDS = 60;                                                                   |   148 |
 | `features/detail/PostActionFeedback.vue`         | Vue SFC                                                                                                                       |    38 |
 | `features/detail/PostDetailContent.vue`          | Vue SFC                                                                                                                       |   192 |
-| `features/detail/PostDetailEventBlock.vue`       | Issue #703 — server-driven status takes precedence when present.                                                              |   463 |
+| `features/detail/PostDetailEventBlock.vue`       | Issue #703 — server-driven status takes precedence when present.                                                              |   556 |
 | `features/detail/PostDetailGallery.vue`          | Vue SFC                                                                                                                       |    78 |
 | `features/detail/PostDetailHelpBlock.vue`        | Vue SFC                                                                                                                       |   221 |
 | `features/detail/PostDetailHelpManageBlock.vue`  | Vue SFC                                                                                                                       |   241 |
@@ -208,9 +208,10 @@ Total files: 307
 | `features/messages/ChannelComposer.vue`          | Vue SFC                                                                                                                       |   147 |
 | `features/messages/ChannelThread.vue`            | Vue SFC                                                                                                                       |   268 |
 | `features/messages/MessagesTabs.vue`             | Vue SFC                                                                                                                       |    58 |
-| `features/messages/MessagesView.vue`             | Vue SFC                                                                                                                       |   184 |
-| `features/messages/NotificationList.vue`         | Vue SFC                                                                                                                       |   337 |
+| `features/messages/MessagesView.vue`             | Vue SFC                                                                                                                       |   204 |
+| `features/messages/NotificationList.vue`         | Vue SFC                                                                                                                       |   411 |
 | `features/messages/index.ts`                     | TypeScript module                                                                                                             |     6 |
+| `features/messages/messageInbox.ts`              | export interface NotificationGapLink                                                                                          |    93 |
 | `features/messages/notificationChannels.ts`      | Backend issue tracking the channel. `null` when the channel is already shipping (no follow-up needed).                        |    70 |
 | `features/messages/useChannelMessages.ts`        | export function useChannelMessages()                                                                                          |   227 |
 | `features/messages/useMessageComposer.ts`        | export function useMessageComposer(options:                                                                                   |   102 |
@@ -289,7 +290,7 @@ Total files: 307
 
 | File                          | Summary                                                                                                                  | Lines |
 | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------ | ----: |
-| `platform/api-normalizers.ts` | Coerce to a non-negative integer, defaulting to 0. Convenience wrapper for the count/capacity fields backends sometim... |   332 |
+| `platform/api-normalizers.ts` | Coerce to a non-negative integer, defaulting to 0. Convenience wrapper for the count/capacity fields backends sometim... |   383 |
 | `platform/browser-storage.ts` | Centralized localStorage key surface for the Vue canary app. Every key written by Vue source code is declared here s...  |    78 |
 | `platform/clientIdentity.ts`  | export const CLIENT_ID_KEY = "lian.clientId";                                                                            |    60 |
 | `platform/leaflet.ts`         | Platform adapter for Leaflet bundled through Vite. All `any` usage is quarantined inside this file. Vue components m...  |   170 |
@@ -336,9 +337,9 @@ Total files: 307
 | `types/map-policy.ts`      | Map viewport policy (PRD V0.1 §7.2.3). Bounds are deliberately permissive for V0.1 (large enough to cover any reason...      |    82 |
 | `types/map.ts`             | export interface MapBounds                                                                                                   |   141 |
 | `types/merchant.ts`        | Merchant center (issue #646) types. Backend (`/api/me/merchant-center`) ships a profile readout for merchants who ho...      |    57 |
-| `types/messages.ts`        | Client-generated nonce stamped on the optimistic item so we can match the server echo back to it without depending on...     |    78 |
+| `types/messages.ts`        | Client-generated nonce stamped on the optimistic item so we can match the server echo back to it without depending on...     |    85 |
 | `types/place.ts`           | export type PlaceStatus =                                                                                                    |    60 |
-| `types/post-extensions.ts` | Event / Help / Merchant / Trade / Errand domain types (PRD V0.1 §6). V0.1 ships shapes only — no UI yet. The point i...      |   208 |
+| `types/post-extensions.ts` | Event / Help / Merchant / Trade / Errand domain types (PRD V0.1 §6). V0.1 ships shapes only — no UI yet. The point i...      |   246 |
 | `types/post.ts`            | event?: EventPostExtension; eventJoined?: boolean; Issue #703 — backend-driven flag for the creator/admin "结束活动" surf... |   159 |
 | `types/profile.ts`         | PRD V0.1 §17 — verification records keyed by tag (campus_verified, merchant_verified, ...). Backend `/api/auth/me` re...     |   132 |
 | `types/publish.ts`         | export type PublishMapVersion = "legacy" \| "manual" \| "gaode_v2"; Backend (#383) accepts these contentType values fo...    |   140 |

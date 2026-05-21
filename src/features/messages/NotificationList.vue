@@ -15,17 +15,39 @@ import {
   NOTIFICATION_CHANNEL_STATUS_CONNECTED,
   NOTIFICATION_CHANNEL_STATUS_PENDING,
   NOTIFICATION_CHANNEL_ISSUE_LINK_LABEL,
+  NOTIFICATION_EMPTY_NEXT_STEP,
 } from "../../config/brand";
 import { actorDisplayName } from "../../domain/actor";
 import type { NotificationItem } from "../../types/messages";
 import { formatRelativeTime } from "../../utils/time";
-import { NOTIFICATION_CHANNELS } from "./notificationChannels";
+import { NOTIFICATION_CHANNELS, type NotificationChannelInfo } from "./notificationChannels";
 
-defineProps<{
-  items: NotificationItem[];
-  loading: boolean;
-  error: string;
-}>();
+interface NotificationGapLink {
+  label: string;
+  issueUrl: string;
+}
+
+const props = withDefaults(
+  defineProps<{
+    items: NotificationItem[];
+    loading: boolean;
+    error: string;
+    title?: string;
+    hint?: string;
+    emptyTitle?: string;
+    emptyBody?: string;
+    channels?: readonly NotificationChannelInfo[];
+    gapLinks?: readonly NotificationGapLink[];
+  }>(),
+  {
+    title: NOTIFICATION_CHANNELS_LABEL,
+    hint: NOTIFICATION_CHANNELS_HINT,
+    emptyTitle: EMPTY_NOTIFICATION,
+    emptyBody: "",
+    channels: () => NOTIFICATION_CHANNELS,
+    gapLinks: () => [],
+  },
+);
 
 const emit = defineEmits<{
   retry: [];
@@ -54,6 +76,10 @@ function notificationKindLabel(item: NotificationItem) {
       return "认证结果";
     case "order":
       return "订单提醒";
+    case "event-completed":
+    case "event-reward-settled":
+    case "event-expired":
+      return "活动通知";
     default:
       return "系统通知";
   }
@@ -75,17 +101,18 @@ function openNotification(item: NotificationItem) {
 <template>
   <section class="messages-view__pane" :aria-label="NOTIFICATION_SECTION_LABEL">
     <section
+      v-if="props.channels.length"
       class="messages-view__channels"
-      :aria-label="NOTIFICATION_CHANNELS_LABEL"
+      :aria-label="props.title"
       data-testid="notification-channel-readout"
     >
       <header class="messages-view__channels-header">
-        <strong>{{ NOTIFICATION_CHANNELS_LABEL }}</strong>
-        <p>{{ NOTIFICATION_CHANNELS_HINT }}</p>
+        <strong>{{ props.title }}</strong>
+        <p>{{ props.hint }}</p>
       </header>
       <ul class="messages-view__channels-list">
         <li
-          v-for="channel in NOTIFICATION_CHANNELS"
+          v-for="channel in props.channels"
           :key="channel.id"
           class="messages-view__channel"
           :class="{ 'is-pending': channel.status === 'pending' }"
@@ -118,18 +145,38 @@ function openNotification(item: NotificationItem) {
       </ul>
     </section>
 
-    <InlineError v-if="error">
-      {{ error }}
+    <InlineError v-if="props.error">
+      {{ props.error }}
       <button type="button" @click="emit('retry')">{{ CHANNEL_RELOAD }}</button>
     </InlineError>
 
-    <div v-if="loading && !items.length" class="messages-view__state" role="status">
+    <div v-if="props.loading && !props.items.length" class="messages-view__state" role="status">
       {{ LOADING_NOTIFICATION }}
     </div>
-    <div v-else-if="!items.length" class="messages-view__state">{{ EMPTY_NOTIFICATION }}</div>
+    <div
+      v-else-if="!props.items.length"
+      class="messages-view__state"
+      data-testid="notification-empty-state"
+    >
+      <strong>{{ props.emptyTitle || EMPTY_NOTIFICATION }}</strong>
+      <p v-if="props.emptyBody">{{ props.emptyBody }}</p>
+      <div v-if="props.gapLinks.length" class="messages-view__state-links">
+        <span>{{ NOTIFICATION_EMPTY_NEXT_STEP }}</span>
+        <a
+          v-for="link in props.gapLinks"
+          :key="link.issueUrl"
+          :href="link.issueUrl"
+          target="_blank"
+          rel="noopener noreferrer"
+          data-testid="notification-gap-link"
+        >
+          {{ link.label }}
+        </a>
+      </div>
+    </div>
     <div v-else class="messages-view__list" aria-live="polite">
       <article
-        v-for="item in items"
+        v-for="item in props.items"
         :key="String(item.id || item.tid || item.title)"
         class="messages-view__notification"
         :class="{
@@ -301,10 +348,37 @@ function openNotification(item: NotificationItem) {
 
 .messages-view__state {
   display: grid;
+  gap: var(--space-2);
   min-height: 112px;
   place-items: center;
   color: var(--lian-muted);
   text-align: center;
+}
+
+.messages-view__state strong {
+  color: var(--lian-ink);
+  font-size: 15px;
+}
+
+.messages-view__state p {
+  max-width: 36ch;
+  margin: 0;
+  line-height: 1.6;
+}
+
+.messages-view__state-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+}
+
+.messages-view__state-links a {
+  color: var(--lian-primary, #1fa7a0);
+  font-weight: 800;
+  text-decoration: none;
 }
 
 .messages-view__notification.is-unread {
