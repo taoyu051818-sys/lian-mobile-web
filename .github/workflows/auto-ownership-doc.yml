@@ -38,6 +38,9 @@ jobs:
       - name: Refresh ownership doc
         run: npm run ownership-doc
 
+      - name: Verify generator determinism
+        run: npm run check:ownership-doc
+
       - name: Commit refreshed ownership doc
         run: |
           if git diff --quiet -- docs/architecture/auto/file-ownership.md; then

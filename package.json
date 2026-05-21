@@ -12,7 +12,7 @@
     "dev": "vite --host 0.0.0.0",
     "build": "vue-tsc --noEmit && vite build",
     "preview": "vite preview --host 0.0.0.0",
-    "check": "node scripts/validate-project-structure.js && node scripts/check-encoding-contamination.js && npm run check:runtime-exposure && npm run check:unsafe-dom && npm run check:asset-owners && npm run check:stale-docs && npm run check:large-vue && npm run check:ownership-doc && npm run format:check && npm run lint",
+    "check": "node scripts/validate-project-structure.js && node scripts/check-encoding-contamination.js && npm run check:runtime-exposure && npm run check:unsafe-dom && npm run check:asset-owners && npm run check:stale-docs && npm run check:large-vue && npm run format:check && npm run lint",
     "check:encoding": "node scripts/check-encoding-contamination.js",
     "check:runtime-exposure": "node scripts/guard-public-runtime-exposure.js",
     "check:unsafe-dom": "node scripts/guard-unsafe-dom-sinks.js",
