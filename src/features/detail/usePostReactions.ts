@@ -5,7 +5,8 @@ import type { PostDetail } from "../../types/post";
 
 type ReactionAction = "like" | "save";
 
-const AUTH_CODE_PATTERN = /(?:unauthorized|forbidden|auth(?:_| )?(?:required|invalid|expired)|invalid[_-]?session|session[_-]?expired)/i;
+const AUTH_CODE_PATTERN =
+  /(?:unauthorized|forbidden|auth(?:_| )?(?:required|invalid|expired)|invalid[_-]?session|session[_-]?expired)/i;
 const RATE_LIMIT_CODE_PATTERN = /(?:rate[_-]?limit|too[_-]?many[_-]?requests)/i;
 const NETWORK_MESSAGE_PATTERN =
   /(?:failed to fetch|fetch failed|network ?error|network request failed|load failed|timeout)/i;
@@ -67,7 +68,10 @@ function resolveReactionErrorMessage(action: ReactionAction, error: unknown): st
     return copy.rateLimit;
   }
 
-  if ((status === 0 && NETWORK_MESSAGE_PATTERN.test(message)) || SERVICE_MESSAGE_PATTERN.test(message)) {
+  if (
+    (status === 0 && NETWORK_MESSAGE_PATTERN.test(message)) ||
+    SERVICE_MESSAGE_PATTERN.test(message)
+  ) {
     return copy.network;
   }
 

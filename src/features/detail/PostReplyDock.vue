@@ -39,7 +39,9 @@ const emit = defineEmits<{
       @click="emit('like')"
     >
       <span class="post-reply-dock__action-icon">{{ liked ? "♥" : "♡" }}</span>
-      <span class="post-reply-dock__action-label">{{ likeBusy ? "处理中…" : liked ? "已喜欢" : "喜欢" }}</span>
+      <span class="post-reply-dock__action-label">{{
+        likeBusy ? "处理中…" : liked ? "已喜欢" : "喜欢"
+      }}</span>
       <span class="post-reply-dock__action-count">{{ likeCount }}</span>
     </button>
     <button
@@ -52,7 +54,9 @@ const emit = defineEmits<{
       @click="emit('save')"
     >
       <span class="post-reply-dock__action-icon">{{ saved ? "★" : "☆" }}</span>
-      <span class="post-reply-dock__action-label">{{ saveBusy ? "处理中…" : saved ? "已收藏" : "收藏" }}</span>
+      <span class="post-reply-dock__action-label">{{
+        saveBusy ? "处理中…" : saved ? "已收藏" : "收藏"
+      }}</span>
     </button>
     <div class="post-reply-dock__reply-box" @click="emit('update:replyExpanded', true)">
       <span v-if="!replyExpanded" class="post-reply-dock__reply-placeholder">{{

@@ -18,8 +18,14 @@ test("usePostReactions uses safe rollback copy and success messages for lightwei
   assert.match(src, /已标记喜欢。/);
   assert.match(src, /已加入收藏。/);
   assert.match(src, /options\.showMessage\(/);
-  assert.match(src, /options\.showError\(new Error\(resolveReactionErrorMessage\("like", error\)\), ""\)/);
-  assert.match(src, /options\.showError\(new Error\(resolveReactionErrorMessage\("save", error\)\), ""\)/);
+  assert.match(
+    src,
+    /options\.showError\(new Error\(resolveReactionErrorMessage\("like", error\)\), ""\)/,
+  );
+  assert.match(
+    src,
+    /options\.showError\(new Error\(resolveReactionErrorMessage\("save", error\)\), ""\)/,
+  );
   assert.doesNotMatch(src, /ERROR_LIKE_ACTION/);
   assert.doesNotMatch(src, /ERROR_SAVE_ACTION/);
 });
