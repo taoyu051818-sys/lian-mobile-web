@@ -35,9 +35,14 @@ const emit = defineEmits<{
       :class="{ 'is-active': liked }"
       type="button"
       :disabled="likeBusy"
+      :aria-busy="likeBusy ? 'true' : 'false'"
       @click="emit('like')"
     >
-      {{ liked ? "♥" : "♡" }} {{ likeCount }}
+      <span class="post-reply-dock__action-icon">{{ liked ? "♥" : "♡" }}</span>
+      <span class="post-reply-dock__action-label">{{
+        likeBusy ? "处理中…" : liked ? "已喜欢" : "喜欢"
+      }}</span>
+      <span class="post-reply-dock__action-count">{{ likeCount }}</span>
     </button>
     <button
       v-if="!replyExpanded"
@@ -45,9 +50,13 @@ const emit = defineEmits<{
       :class="{ 'is-active': saved }"
       type="button"
       :disabled="saveBusy"
+      :aria-busy="saveBusy ? 'true' : 'false'"
       @click="emit('save')"
     >
-      {{ saved ? "★" : "☆" }}
+      <span class="post-reply-dock__action-icon">{{ saved ? "★" : "☆" }}</span>
+      <span class="post-reply-dock__action-label">{{
+        saveBusy ? "处理中…" : saved ? "已收藏" : "收藏"
+      }}</span>
     </button>
     <div class="post-reply-dock__reply-box" @click="emit('update:replyExpanded', true)">
       <span v-if="!replyExpanded" class="post-reply-dock__reply-placeholder">{{
@@ -111,9 +120,22 @@ const emit = defineEmits<{
   font-weight: 900;
 }
 
+.post-reply-dock__action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-width: 82px;
+}
+
 .post-reply-dock__action.is-active {
   background: rgba(255, 236, 236, 0.82);
   color: #c2410c;
+}
+
+.post-reply-dock__action-count {
+  min-width: 1.5em;
+  text-align: right;
 }
 
 .post-reply-dock__reply-box {
