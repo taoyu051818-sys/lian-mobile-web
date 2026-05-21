@@ -4,6 +4,8 @@ import {
   ADMIN_AUDIT_ACTION_LABEL,
   ADMIN_AUDIT_ACTOR_LABEL,
   ADMIN_AUDIT_EMPTY,
+  ADMIN_AUDIT_EMPTY_BODY,
+  ADMIN_AUDIT_EMPTY_TITLE,
   ADMIN_AUDIT_TARGET_LABEL,
   ADMIN_AUDIT_TIME_LABEL,
 } from "../../config/brand";
@@ -21,9 +23,14 @@ defineProps<{
   <section class="admin-audit-list">
     <InlineError v-if="errorMessage">{{ errorMessage }}</InlineError>
 
-    <p v-if="!events.length && !loading" class="admin-audit-list__state">
-      {{ ADMIN_AUDIT_EMPTY }}
-    </p>
+    <div
+      v-if="!events.length && !loading"
+      class="admin-audit-list__empty"
+      data-testid="admin-audit-empty"
+    >
+      <p class="admin-audit-list__empty-title">{{ ADMIN_AUDIT_EMPTY_TITLE || ADMIN_AUDIT_EMPTY }}</p>
+      <p class="admin-audit-list__empty-body">{{ ADMIN_AUDIT_EMPTY_BODY }}</p>
+    </div>
 
     <ul v-else class="admin-audit-list__items">
       <li v-for="event in events" :key="event.eventId" class="admin-audit-list__item">
@@ -58,11 +65,30 @@ defineProps<{
   gap: var(--space-3);
 }
 
-.admin-audit-list__state {
-  margin: 0;
+.admin-audit-list__empty {
+  display: grid;
+  gap: var(--space-2);
   padding: var(--space-4);
-  color: var(--lian-muted);
+  border: 1px dashed var(--lian-line);
+  border-radius: var(--radius-card);
+  background: rgba(255, 255, 255, 0.56);
   text-align: center;
+}
+
+.admin-audit-list__empty-title {
+  margin: 0;
+  color: var(--lian-ink);
+  font-size: 15px;
+  font-weight: 900;
+}
+
+.admin-audit-list__empty-body {
+  margin: 0;
+  max-width: 38ch;
+  justify-self: center;
+  color: var(--lian-muted);
+  font-size: 13px;
+  line-height: 1.5;
 }
 
 .admin-audit-list__items {
