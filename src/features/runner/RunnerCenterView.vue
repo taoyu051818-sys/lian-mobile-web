@@ -45,6 +45,7 @@ const {
   activeLoading,
   availableError,
   activeError,
+  availableNeedsRunnerGate,
   actionMessage,
   actionError,
   pendingActionFor,
@@ -64,8 +65,12 @@ const tabs: Array<{ key: RunnerCenterTab; label: string }> = [
   { key: "active", label: RUNNER_TAB_ACTIVE },
 ];
 
+const shouldShowRunnerGate = computed(
+  () => !isRunnerVerified.value || availableNeedsRunnerGate.value,
+);
+
 const pageChrome = computed<PageChromeSpec>(() => {
-  if (!isRunnerVerified.value) {
+  if (shouldShowRunnerGate.value) {
     return {
       top: {
         visible: true,
@@ -147,7 +152,7 @@ onMounted(async () => {
   <section class="runner-view" :aria-label="RUNNER_SECTION_LABEL">
     <p v-if="sessionLoading" class="runner-view__state" role="status">{{ RUNNER_LIST_LOADING }}</p>
 
-    <RunnerGate v-else-if="!isRunnerVerified" data-testid="runner-gate" @go-verify="goVerify" />
+    <RunnerGate v-else-if="shouldShowRunnerGate" data-testid="runner-gate" @go-verify="goVerify" />
 
     <template v-else>
       <p
