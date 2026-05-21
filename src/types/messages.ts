@@ -1,6 +1,6 @@
 import type { DisplayActor, SourceSignal } from "./feed";
 
-export type MessageTabKey = "channel" | "notifications";
+export type MessageTabKey = "channel" | "replies" | "system" | "orders";
 
 export type MessageDeliveryState = "sending" | "sent" | "delivered" | "read" | "failed";
 
