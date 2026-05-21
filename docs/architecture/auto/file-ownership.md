@@ -147,20 +147,20 @@ Total files: 308
 | `features/detail/PostDetailLightbox.vue`         | Vue SFC                                                                                                                       |    43 |
 | `features/detail/PostDetailMainBody.vue`         | Vue SFC                                                                                                                       |    44 |
 | `features/detail/PostDetailMerchantBlock.vue`    | Import directly from the route module instead of `../errand` so the detail                                                    |   310 |
-| `features/detail/PostDetailPanel.vue`            | Shell chrome slots (`top: detail-topbar`, `bottom: reply-dock`) are now                                                       |   384 |
+| `features/detail/PostDetailPanel.vue`            | Vue SFC                                                                                                                       |   375 |
 | `features/detail/PostDetailTopbar.vue`           | Vue SFC                                                                                                                       |   132 |
 | `features/detail/PostDetailTradeBlock.vue`       | Vue SFC                                                                                                                       |   226 |
 | `features/detail/PostDetailTradeManageBlock.vue` | Vue SFC                                                                                                                       |   207 |
 | `features/detail/PostPlaceSheetBlock.vue`        | Vue SFC                                                                                                                       |   192 |
 | `features/detail/PostReplies.vue`                | Vue SFC                                                                                                                       |   102 |
-| `features/detail/PostReplyDock.vue`              | Vue SFC                                                                                                                       |   161 |
+| `features/detail/PostReplyDock.vue`              | Vue SFC                                                                                                                       |   183 |
 | `features/detail/PostReportBlock.vue`            | Vue SFC                                                                                                                       |   150 |
 | `features/detail/index.ts`                       | TypeScript module                                                                                                             |     2 |
 | `features/detail/reportFlow.ts`                  | export interface ReportCategoryOption                                                                                         |    98 |
 | `features/detail/useDetailGallery.ts`            | export function useDetailGallery(options:                                                                                     |    48 |
 | `features/detail/usePlaceSheetLoader.ts`         | export function usePlaceSheetLoader(post: ComputedRef<PostDetail \| null>)                                                    |    56 |
 | `features/detail/usePostDetailPresentation.ts`   | export function usePostDetailPresentation(                                                                                    |   142 |
-| `features/detail/usePostReactions.ts`            | export function usePostReactions(options:                                                                                     |    79 |
+| `features/detail/usePostReactions.ts`            | export function usePostReactions(options:                                                                                     |   163 |
 | `features/detail/usePostReplyComposer.ts`        | export function usePostReplyComposer(options:                                                                                 |    59 |
 | `features/detail/usePostReport.ts`               | export function usePostReport(options:                                                                                        |    90 |
 | `features/detail/usePostShare.ts`                | export function usePostShare(options:                                                                                         |    50 |
@@ -260,7 +260,7 @@ Total files: 308
 | `features/publish/usePublishDraftSession.ts`     | Stable identifier for the signed-in account, or null when the identity has not been resolved yet (e.g. while /api/aut...      |   202 |
 | `features/publish/usePublishIdentity.ts`         | Identity-side of the publish view: the avatar/name/meta strip that the shell renders, the alias the post is attribute...      |    82 |
 | `features/publish/usePublishLocationOptions.ts`  | export function usePublishLocationOptions(placeName: Ref<string>)                                                             |   139 |
-| `features/publish/usePublishSubmit.ts`           | export function usePublishSubmit(options:                                                                                     |   203 |
+| `features/publish/usePublishSubmit.ts`           | export function usePublishSubmit(options:                                                                                     |   200 |
 | `features/publish/useTradePublishDraft.ts`       | Publish-side trade draft + verification gate. Owns: - trade form fields (price / state / category) - the `campus_v...         |    87 |
 | `features/runner/RunnerCenterView.vue`           | Destructure so the template can read these refs without `.value` — Vue's                                                      |   287 |
 | `features/runner/RunnerGate.vue`                 | Vue SFC                                                                                                                       |    47 |
@@ -377,7 +377,7 @@ Total files: 308
 | `ui/layout/PageSurface.vue`  | Vue SFC                                                                                                                 |    25 |
 | `ui/primitives.css`          | Stylesheet                                                                                                              |   541 |
 
-## src/utils/ (4 files)
+## src/utils/ (5 files)
 
 | File                                | Summary                                                                       | Lines |
 | ----------------------------------- | ----------------------------------------------------------------------------- | ----: |
@@ -385,6 +385,7 @@ Total files: 308
 | `utils/extractErrorMessage.ts`      | export function extractErrorMessage(error: unknown, fallback: string): string |     4 |
 | `utils/html.ts`                     | export function sanitizeHtml(value: string)                                   |   136 |
 | `utils/time.ts`                     | export function formatRelativeTime(value?: string, now = Date.now()): string  |    36 |
+| `utils/writeActionErrors.ts`        | export type WriteActionKind = "publish" \| "reply";                           |   118 |
 
 ## src/vite-env.d.ts/ (1 files)
 
