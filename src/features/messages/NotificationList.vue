@@ -20,10 +20,7 @@ import {
 import { actorDisplayName } from "../../domain/actor";
 import type { NotificationItem } from "../../types/messages";
 import { formatRelativeTime } from "../../utils/time";
-import {
-  NOTIFICATION_CHANNELS,
-  type NotificationChannelInfo,
-} from "./notificationChannels";
+import { NOTIFICATION_CHANNELS, type NotificationChannelInfo } from "./notificationChannels";
 
 interface NotificationGapLink {
   label: string;

@@ -13,10 +13,7 @@ import {
   NOTIFICATION_SYSTEM_INBOX_LABEL,
 } from "../../config/brand";
 import type { MessageTabKey, NotificationItem } from "../../types/messages";
-import {
-  NOTIFICATION_CHANNELS,
-  type NotificationChannelInfo,
-} from "./notificationChannels";
+import { NOTIFICATION_CHANNELS, type NotificationChannelInfo } from "./notificationChannels";
 
 export interface NotificationGapLink {
   label: string;
@@ -37,57 +34,52 @@ function selectChannels(ids: NotificationChannelInfo["id"][]) {
   return NOTIFICATION_CHANNELS.filter((channel) => ids.includes(channel.id));
 }
 
-export const NOTIFICATION_INBOX_SPECS: Record<
-  NotificationInboxSpec["tab"],
-  NotificationInboxSpec
-> = {
-  replies: {
-    tab: "replies",
-    title: NOTIFICATION_REPLY_INBOX_LABEL,
-    hint: NOTIFICATION_REPLY_INBOX_HINT,
-    emptyTitle: NOTIFICATION_REPLY_EMPTY_TITLE,
-    emptyBody: NOTIFICATION_REPLY_EMPTY_BODY,
-    channels: selectChannels(["reply"]),
-    gapLinks: [],
-  },
-  system: {
-    tab: "system",
-    title: NOTIFICATION_SYSTEM_INBOX_LABEL,
-    hint: NOTIFICATION_SYSTEM_INBOX_HINT,
-    emptyTitle: NOTIFICATION_SYSTEM_EMPTY_TITLE,
-    emptyBody: NOTIFICATION_SYSTEM_EMPTY_BODY,
-    channels: selectChannels(["verification", "event-completion", "admin-review"]),
-    gapLinks: [
-      {
-        label: "认证结果通知 #700",
-        issueUrl: "https://github.com/taoyu051818-sys/lian-mobile-web/issues/700",
-      },
-      {
-        label: "活动状态通知 #706",
-        issueUrl: "https://github.com/taoyu051818-sys/lian-mobile-web/issues/706",
-      },
-    ],
-  },
-  orders: {
-    tab: "orders",
-    title: NOTIFICATION_ORDER_INBOX_LABEL,
-    hint: NOTIFICATION_ORDER_INBOX_HINT,
-    emptyTitle: NOTIFICATION_ORDER_EMPTY_TITLE,
-    emptyBody: NOTIFICATION_ORDER_EMPTY_BODY,
-    channels: selectChannels(["errand-status"]),
-    gapLinks: [
-      {
-        label: "跑腿订单通知 #701",
-        issueUrl: "https://github.com/taoyu051818-sys/lian-mobile-web/issues/701",
-      },
-    ],
-  },
-};
+export const NOTIFICATION_INBOX_SPECS: Record<NotificationInboxSpec["tab"], NotificationInboxSpec> =
+  {
+    replies: {
+      tab: "replies",
+      title: NOTIFICATION_REPLY_INBOX_LABEL,
+      hint: NOTIFICATION_REPLY_INBOX_HINT,
+      emptyTitle: NOTIFICATION_REPLY_EMPTY_TITLE,
+      emptyBody: NOTIFICATION_REPLY_EMPTY_BODY,
+      channels: selectChannels(["reply"]),
+      gapLinks: [],
+    },
+    system: {
+      tab: "system",
+      title: NOTIFICATION_SYSTEM_INBOX_LABEL,
+      hint: NOTIFICATION_SYSTEM_INBOX_HINT,
+      emptyTitle: NOTIFICATION_SYSTEM_EMPTY_TITLE,
+      emptyBody: NOTIFICATION_SYSTEM_EMPTY_BODY,
+      channels: selectChannels(["verification", "event-completion", "admin-review"]),
+      gapLinks: [
+        {
+          label: "认证结果通知 #700",
+          issueUrl: "https://github.com/taoyu051818-sys/lian-mobile-web/issues/700",
+        },
+        {
+          label: "活动状态通知 #706",
+          issueUrl: "https://github.com/taoyu051818-sys/lian-mobile-web/issues/706",
+        },
+      ],
+    },
+    orders: {
+      tab: "orders",
+      title: NOTIFICATION_ORDER_INBOX_LABEL,
+      hint: NOTIFICATION_ORDER_INBOX_HINT,
+      emptyTitle: NOTIFICATION_ORDER_EMPTY_TITLE,
+      emptyBody: NOTIFICATION_ORDER_EMPTY_BODY,
+      channels: selectChannels(["errand-status"]),
+      gapLinks: [
+        {
+          label: "跑腿订单通知 #701",
+          issueUrl: "https://github.com/taoyu051818-sys/lian-mobile-web/issues/701",
+        },
+      ],
+    },
+  };
 
-export function itemsForInboxTab(
-  items: NotificationItem[],
-  tab: NotificationInboxSpec["tab"],
-) {
+export function itemsForInboxTab(items: NotificationItem[], tab: NotificationInboxSpec["tab"]) {
   return items.filter((item) => {
     if (item.kind === "reply") return tab === "replies";
     if (item.kind === "order") return tab === "orders";
@@ -95,8 +87,6 @@ export function itemsForInboxTab(
   });
 }
 
-export function isNotificationInboxTab(
-  tab: MessageTabKey,
-): tab is NotificationInboxSpec["tab"] {
+export function isNotificationInboxTab(tab: MessageTabKey): tab is NotificationInboxSpec["tab"] {
   return tab === "replies" || tab === "system" || tab === "orders";
 }

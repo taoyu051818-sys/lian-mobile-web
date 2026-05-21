@@ -15,11 +15,7 @@ import {
 import type { MessageTabKey, NotificationItem } from "../../types/messages";
 import type { PageChromeSpec } from "../../shell/page-model";
 import { ChannelComposer, ChannelThread, NotificationList } from "./";
-import {
-  isNotificationInboxTab,
-  itemsForInboxTab,
-  NOTIFICATION_INBOX_SPECS,
-} from "./messageInbox";
+import { isNotificationInboxTab, itemsForInboxTab, NOTIFICATION_INBOX_SPECS } from "./messageInbox";
 import { useChannelMessages } from "./useChannelMessages";
 import { useNotifications } from "./useNotifications";
 import { useMessageComposer } from "./useMessageComposer";
