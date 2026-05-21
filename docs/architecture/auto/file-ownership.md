@@ -151,7 +151,7 @@ Total files: 308
 | `features/detail/PostDetailTopbar.vue`             | Vue SFC                                                                                                                       |   132 |
 | `features/detail/PostDetailTradeBlock.vue`         | Vue SFC                                                                                                                       |   226 |
 | `features/detail/PostDetailTradeManageBlock.vue`   | Vue SFC                                                                                                                       |   207 |
-| `features/detail/PostDetailTypedFallbackBlock.vue` | Vue SFC                                                                                                                       |   127 |
+| `features/detail/PostDetailTypedFallbackBlock.vue` | Vue SFC                                                                                                                       |   131 |
 | `features/detail/PostPlaceSheetBlock.vue`          | Vue SFC                                                                                                                       |   192 |
 | `features/detail/PostReplies.vue`                  | Vue SFC                                                                                                                       |   102 |
 | `features/detail/PostReplyDock.vue`                | Vue SFC                                                                                                                       |   161 |
