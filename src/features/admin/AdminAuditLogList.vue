@@ -4,6 +4,7 @@ import {
   ADMIN_AUDIT_ACTION_LABEL,
   ADMIN_AUDIT_ACTOR_LABEL,
   ADMIN_AUDIT_EMPTY,
+  ADMIN_AUDIT_EMPTY_HINT,
   ADMIN_AUDIT_TARGET_LABEL,
   ADMIN_AUDIT_TIME_LABEL,
 } from "../../config/brand";
@@ -21,8 +22,13 @@ defineProps<{
   <section class="admin-audit-list">
     <InlineError v-if="errorMessage">{{ errorMessage }}</InlineError>
 
-    <p v-if="!events.length && !loading" class="admin-audit-list__state">
-      {{ ADMIN_AUDIT_EMPTY }}
+    <p
+      v-if="!events.length && !loading"
+      class="admin-audit-list__state"
+      data-testid="admin-audit-empty"
+    >
+      <span class="admin-audit-list__empty-headline">{{ ADMIN_AUDIT_EMPTY }}</span>
+      <span class="admin-audit-list__empty-hint">{{ ADMIN_AUDIT_EMPTY_HINT }}</span>
     </p>
 
     <ul v-else class="admin-audit-list__items">
@@ -63,6 +69,21 @@ defineProps<{
   padding: var(--space-4);
   color: var(--lian-muted);
   text-align: center;
+}
+
+.admin-audit-list__empty-headline {
+  display: block;
+  color: var(--lian-ink);
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.admin-audit-list__empty-hint {
+  display: block;
+  margin-top: var(--space-1);
+  color: var(--lian-muted);
+  font-size: 13px;
+  line-height: 1.5;
 }
 
 .admin-audit-list__items {

@@ -17,7 +17,12 @@ export const RUNNER_TAB_LABEL = "跑腿员视图切换";
 /** 列表状态 */
 export const RUNNER_LIST_LOADING = "加载中…";
 export const RUNNER_LIST_EMPTY_AVAILABLE = "当前没有可接订单。";
+/** issue #725 — 空状态需要解释下一步，而不是只说「暂无」。 */
+export const RUNNER_LIST_EMPTY_AVAILABLE_HINT =
+  "等用户下单后会自动出现，无需手动刷新。期间可以保持页面常驻，新单会即时入列。";
 export const RUNNER_LIST_EMPTY_ACTIVE = "暂无进行中的订单。";
+export const RUNNER_LIST_EMPTY_ACTIVE_HINT =
+  "在「可接订单」里接下任务后，会回到这里继续推进配送进度。";
 export const RUNNER_LIST_LOAD_ERROR = "订单加载失败，可以稍后再试。";
 export const RUNNER_LIST_RELOAD = "重试";
 

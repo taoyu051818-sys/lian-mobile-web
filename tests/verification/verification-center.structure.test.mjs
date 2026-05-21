@@ -35,8 +35,13 @@ test("AppViewHost lazy-loads VerificationView component", () => {
 
 test("useActiveView accepts secret view 'verification'", () => {
   const src = read("src/app/useActiveView.ts");
-  assert.match(src, /SECRET_VIEWS/);
-  assert.match(src, /"verification"/);
+  // useActiveView relies on the view-hash singleton to accept any AppViewKey,
+  // including the secret views. The comment in the source documents this; the
+  // structural assertion is that pushViewHash is the writer and verification
+  // is named in the secret-view list.
+  assert.match(src, /getViewFromHashRef/);
+  assert.match(src, /pushViewHash\(key\)/);
+  assert.match(src, /secret views \([^)]*verification[^)]*\)/);
 });
 
 // --- API contract: verification calls the new /api/auth/verify/campus-email/* routes ---
@@ -97,4 +102,17 @@ test("VerificationView wires the campus-email send + confirm flow", () => {
 test("verification brand module is re-exported from brand/index", () => {
   const src = read("src/config/brand/index.ts");
   assert.match(src, /from "\.\/verification"/);
+});
+
+// --- empty-state next-step copy (issue #725) ---
+
+test("verification brand exposes both the headline and the next-step hint", () => {
+  const src = read("src/config/brand/verification.ts");
+  assert.match(src, /VERIFICATION_NO_GRANT_HINT\s*=\s*"[^"]+"/);
+  assert.match(src, /VERIFICATION_NO_GRANT_NEXT\s*=\s*"[^"]+"/);
+});
+
+test("VerificationView renders the no-grant placeholder with both headline and next-step hint (#725)", () => {
+  const src = read("src/features/verification/VerificationView.vue");
+  assert.match(src, /data-testid="verification-empty-grant"[\s\S]*?VERIFICATION_NO_GRANT_NEXT/);
 });

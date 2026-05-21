@@ -74,7 +74,7 @@ Total files: 310
 
 | File                           | Summary                                                                                                                                               | Lines |
 | ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------- | ----: |
-| `config/brand/admin.ts`        | export const ADMIN_SECTION_LABEL = "管理后台"; export const ADMIN_ENTER_LABEL = "管理"; export const ADMIN_EXIT_LABEL = "退出...                      |    79 |
+| `config/brand/admin.ts`        | export const ADMIN_SECTION_LABEL = "管理后台"; export const ADMIN_ENTER_LABEL = "管理"; export const ADMIN_EXIT_LABEL = "退出...                      |    85 |
 | `config/brand/auth.ts`         | export const AUTH_PANEL_TITLE = "登录 / 注册"; export const AUTH_TAB_LOGIN = "登录"; export const AUTH_TAB_REGISTER = "注册";...                      |    58 |
 | `config/brand/detail.ts`       | export const POST_DETAIL_CLOSE = "关闭详情"; export const POST_DETAIL_AUTHOR_AVATAR = "作者头像"; export const POST_DETAIL_SH...                      |   134 |
 | `config/brand/error.ts`        | export const ERROR_LOAD_GENERIC = "暂时没加载出来，可以稍后再试。"; export const ERROR_SEND_GENERIC = "没有发送成功，可以稍后再试。"; export const... |    23 |
@@ -88,13 +88,13 @@ Total files: 310
 | `config/brand/profile.ts`      | export const PROFILE*CAMPUS_USER = "校园用户"; export const PROFILE_INVITE_USER = "邀请码用户"; export const PROFILE_IDENTITY*...                     |   120 |
 | `config/brand/publish.ts`      | export const PUBLISH_CLEAR = "清空"; export const PUBLISH_SUBMIT = "发布"; export const PUBLISH_LOCATION_LABEL = "地点"; e...                         |    96 |
 | `config/brand/report.ts`       | export const REPORT_CAT_PRIVACY = "隐私问题"; export const REPORT_CAT_FALSE_INFO = "虚假信息"; export const REPORT_CAT_ABUSE ...                      |    19 |
-| `config/brand/runner.ts`       | export const RUNNER_SECTION_LABEL = "跑腿员中心"; export const RUNNER_ENTER_LABEL = "跑腿员中心"; export const RUNNER_BACK_TO_P...                    |    50 |
+| `config/brand/runner.ts`       | export const RUNNER_SECTION_LABEL = "跑腿员中心"; export const RUNNER_ENTER_LABEL = "跑腿员中心"; export const RUNNER_BACK_TO_P...                    |    55 |
 | `config/brand/share.ts`        | export const SHARE_ERROR_NO_URL = "无法生成分享链接。"; export const SHARE_ERROR_SHARE_FAILED = "分享没有完成，可以稍后再试。"; export const...       |     9 |
 | `config/brand/shared.ts`       | export const APP_NAME = "黎安屿你"; export const DEFAULT_USER_LABEL = "同学"; export const GUEST_DISPLAY_NAME = "未登录同学"; ...                     |    27 |
 | `config/brand/shell.ts`        | export const SHELL_TOP_REGION = "顶部操作区"; export const SHELL_BOTTOM_REGION = "底部操作区"; export const SHELL_TAB_SWITCH = ...                    |     8 |
 | `config/brand/trade.ts`        | export const TRADE_BLOCK_LABEL = "二手交易"; export const TRADE_PRICE_LABEL = "价格"; export const TRADE_CATEGORY_LABEL = "...                        |    30 |
 | `config/brand/validation.ts`   | export const VALIDATION_PASSWORD_MIN = "密码至少需要 {n} 位。"; export const VALIDATION_LOGIN_REQUIRED = "请填写邮箱或昵称。"; export ...             |    14 |
-| `config/brand/verification.ts` | export const VERIFICATION_SECTION_LABEL = "认证中心"; export const VERIFICATION_ENTER_LABEL = "认证中心"; export const VERIFI...                      |    47 |
+| `config/brand/verification.ts` | export const VERIFICATION_SECTION_LABEL = "认证中心"; export const VERIFICATION_ENTER_LABEL = "认证中心"; export const VERIFI...                      |    49 |
 | `config/runtime-config.ts`     | Runtime config accessor for LIAN frontend. PUBLIC config – injected by the serve/rehearsal script into <head> BEFOR...                                |   217 |
 
 ## src/domain/ (8 files)
@@ -114,9 +114,9 @@ Total files: 310
 
 | File                                               | Summary                                                                                                                       | Lines |
 | -------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- | ----: |
-| `features/admin/AdminAuditLogList.vue`             | Vue SFC                                                                                                                       |   136 |
+| `features/admin/AdminAuditLogList.vue`             | Vue SFC                                                                                                                       |   157 |
 | `features/admin/AdminQueueItem.vue`                | Vue SFC                                                                                                                       |   273 |
-| `features/admin/AdminQueueList.vue`                | Vue SFC                                                                                                                       |   135 |
+| `features/admin/AdminQueueList.vue`                | Vue SFC                                                                                                                       |   152 |
 | `features/admin/AdminTokenGate.vue`                | Vue SFC                                                                                                                       |   105 |
 | `features/admin/AdminUserActionPanel.vue`          | Vue SFC                                                                                                                       |   115 |
 | `features/admin/AdminView.vue`                     | Vue SFC                                                                                                                       |   695 |
@@ -263,12 +263,12 @@ Total files: 310
 | `features/publish/usePublishLocationOptions.ts`    | export function usePublishLocationOptions(placeName: Ref<string>)                                                             |   139 |
 | `features/publish/usePublishSubmit.ts`             | export function usePublishSubmit(options:                                                                                     |   200 |
 | `features/publish/useTradePublishDraft.ts`         | Publish-side trade draft + verification gate. Owns: - trade form fields (price / state / category) - the `campus_v...         |    87 |
-| `features/runner/RunnerCenterView.vue`             | Destructure so the template can read these refs without `.value` — Vue's                                                      |   287 |
+| `features/runner/RunnerCenterView.vue`             | Destructure so the template can read these refs without `.value` — Vue's                                                      |   308 |
 | `features/runner/RunnerGate.vue`                   | Vue SFC                                                                                                                       |    47 |
 | `features/runner/RunnerOrderCard.vue`              | Vue SFC                                                                                                                       |   239 |
 | `features/runner/index.ts`                         | export type { RunnerCenterTab } from "./useRunnerCenter";                                                                     |     6 |
 | `features/runner/useRunnerCenter.ts`               | Runner-center state holder. Owns the two lists, the in-flight pending action map (so individual rows can show their o...      |   172 |
-| `features/verification/VerificationView.vue`       | Vue SFC                                                                                                                       |   382 |
+| `features/verification/VerificationView.vue`       | Vue SFC                                                                                                                       |   403 |
 | `features/verification/index.ts`                   | TypeScript module                                                                                                             |     4 |
 | `features/verification/useCampusEmailVerify.ts`    | export interface UseCampusEmailVerifyOptions                                                                                  |   134 |
 | `features/verification/verification-format.ts`     | export interface VerificationDescriptor                                                                                       |    45 |
