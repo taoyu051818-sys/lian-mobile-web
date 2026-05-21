@@ -25,7 +25,7 @@ Total files: 306
 | `api/interaction.ts`  | Like/vote unified interaction API (PRD V0.1 §7.1.2, §11.3). Backend already exposes `/api/posts/:tid/like` for likes...  |    65 |
 | `api/map.ts`          | TypeScript module                                                                                                        |    14 |
 | `api/merchant.ts`     | Merchant center API (issue #646). `GET /api/me/merchant-center` returns the merchant readout for the signed-in user....  |    89 |
-| `api/messages.ts`     | Server-side `type` slugs that B2 (#438 / lian-platform-server#445) writes for the three event-lifecycle fan-outs. The... |   490 |
+| `api/messages.ts`     | Server-side `type` slugs that B2 (#438 / lian-platform-server#445) writes for the three event-lifecycle fan-outs. The... |   484 |
 | `api/places.ts`       | TypeScript module                                                                                                        |    10 |
 | `api/posts.ts`        | export interface PostLikeResponse                                                                                        |   237 |
 | `api/profile.ts`      | export function normalizeProfileListItem(item: unknown): ProfileListItem                                                 |   163 |
@@ -84,7 +84,7 @@ Total files: 306
 | `config/brand/map.ts`          | export const MAP_ARIA_LABEL = "校园地图"; export const MAP_FILTER_LOCATIONS = "地点"; export const MAP_FILTER_POSTS = "内容"...                       |    39 |
 | `config/brand/merchant.ts`     | export const MERCHANT_BLOCK_LABEL = "商家信息"; export const MERCHANT_CATEGORY_FOOD = "餐饮"; export const MERCHANT_CATEGOR...                        |   129 |
 | `config/brand/messages.ts`     | export const MESSAGE_EMPTY_CONTENT = "这条消息暂时没有内容。"; export const MESSAGE_TAB_LABEL = "消息分类"; export const MESSAGE_S...                 |    33 |
-| `config/brand/notification.ts` | export const NOTIFICATION_SECTION_LABEL = "通知"; export const NOTIFICATION_READ = "已读"; export const NOTIFICATION_UNRE...                          |    42 |
+| `config/brand/notification.ts` | export const NOTIFICATION_SECTION_LABEL = "通知"; export const NOTIFICATION_READ = "已读"; export const NOTIFICATION_UNRE...                          |    43 |
 | `config/brand/profile.ts`      | export const PROFILE*CAMPUS_USER = "校园用户"; export const PROFILE_INVITE_USER = "邀请码用户"; export const PROFILE_IDENTITY*...                     |   110 |
 | `config/brand/publish.ts`      | export const PUBLISH_CLEAR = "清空"; export const PUBLISH_SUBMIT = "发布"; export const PUBLISH_LOCATION_LABEL = "地点"; e...                         |    96 |
 | `config/brand/report.ts`       | export const REPORT_CAT_PRIVACY = "隐私问题"; export const REPORT_CAT_FALSE_INFO = "虚假信息"; export const REPORT_CAT_ABUSE ...                      |    19 |
