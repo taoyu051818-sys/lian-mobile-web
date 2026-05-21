@@ -38,7 +38,7 @@ Total files: 306
 | File                                | Summary                                                                                                                 | Lines |
 | ----------------------------------- | ----------------------------------------------------------------------------------------------------------------------- | ----: |
 | `app/AppViewHost.vue`               | `feed` is the cold-start view, so it is intentionally eager-imported — first                                            |    55 |
-| `app/DetailSurface.vue`             | App-level detail overlay. The detail-navigation FSM is the single source                                                |   124 |
+| `app/DetailSurface.vue`             | App-level detail overlay. The detail-navigation FSM is the single source                                                |   123 |
 | `app/ViewAsyncError.vue`            | Vue SFC                                                                                                                 |    50 |
 | `app/ViewLoadingFallback.vue`       | Vue SFC                                                                                                                 |    39 |
 | `app/deepLink.ts`                   | Pure parsing/building helpers for the SPA's hash-based deep links. The app routes on `window.location.hash` (no vue-... |    60 |
