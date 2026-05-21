@@ -30,7 +30,7 @@ Total files: 310
 | `api/posts.ts`        | export interface PostLikeResponse                                                                                        |   267 |
 | `api/profile.ts`      | export function normalizeProfileListItem(item: unknown): ProfileListItem                                                 |   163 |
 | `api/publish.ts`      | Creates a display-only fallback draft from free-text place name. When `placeName` is non-empty the source is "manual"... |   370 |
-| `api/runner.ts`       | Available pool — orders not yet claimed by any runner.                                                                   |   106 |
+| `api/runner.ts`       | Available pool — orders not yet claimed by any runner.                                                                   |   105 |
 | `api/verification.ts` | TypeScript module                                                                                                        |    20 |
 
 ## src/app/ (14 files)
@@ -263,11 +263,11 @@ Total files: 310
 | `features/publish/usePublishLocationOptions.ts`    | export function usePublishLocationOptions(placeName: Ref<string>)                                                             |   139 |
 | `features/publish/usePublishSubmit.ts`             | export function usePublishSubmit(options:                                                                                     |   200 |
 | `features/publish/useTradePublishDraft.ts`         | Publish-side trade draft + verification gate. Owns: - trade form fields (price / state / category) - the `campus_v...         |    87 |
-| `features/runner/RunnerCenterView.vue`             | Destructure so the template can read these refs without `.value` — Vue's                                                      |   308 |
+| `features/runner/RunnerCenterView.vue`             | Destructure so the template can read these refs without `.value` — Vue's                                                      |   313 |
 | `features/runner/RunnerGate.vue`                   | Vue SFC                                                                                                                       |    47 |
 | `features/runner/RunnerOrderCard.vue`              | Vue SFC                                                                                                                       |   239 |
 | `features/runner/index.ts`                         | export type { RunnerCenterTab } from "./useRunnerCenter";                                                                     |     6 |
-| `features/runner/useRunnerCenter.ts`               | Runner-center state holder. Owns the two lists, the in-flight pending action map (so individual rows can show their o...      |   172 |
+| `features/runner/useRunnerCenter.ts`               | Runner-center state holder. Owns the two lists, the in-flight pending action map (so individual rows can show their o...      |   185 |
 | `features/verification/VerificationView.vue`       | Vue SFC                                                                                                                       |   403 |
 | `features/verification/index.ts`                   | TypeScript module                                                                                                             |     4 |
 | `features/verification/useCampusEmailVerify.ts`    | export interface UseCampusEmailVerifyOptions                                                                                  |   134 |
