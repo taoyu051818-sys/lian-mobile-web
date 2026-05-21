@@ -16,7 +16,7 @@ import {
   normalizeTradeExtension,
 } from "../platform/api-normalizers";
 import type { FeedItemId } from "../types/feed";
-import type { PostDetail, PostReply } from "../types/post";
+import { normalizePostType, type PostDetail, type PostReply, type PostType } from "../types/post";
 import type { TradePostExtension, TradeState } from "../types/post-extensions";
 
 export interface PostLikeResponse {
@@ -68,6 +68,33 @@ function normalizeTradeExtensionFromDetail(value: unknown): TradePostExtension |
   return state === trade.state ? trade : { ...trade, state };
 }
 
+function normalizeDetailPostType(value: unknown, hasCover: boolean): PostType {
+  const record = asRecord(value);
+  const rawType = asString(record.type).toLowerCase();
+  const contentType = asString(record.contentType).toLowerCase();
+  const metadata = asRecord(record.metadata);
+  const presentationIntent = asString(metadata.presentationIntent).toLowerCase();
+
+  if (contentType.startsWith("merchant_") || presentationIntent === "merchant") {
+    return "merchant";
+  }
+  if (rawType === "trade" || contentType === "trade" || presentationIntent === "trade") {
+    return "trade";
+  }
+  if (
+    rawType === "event" ||
+    rawType === "activity" ||
+    contentType === "event" ||
+    contentType === "activity"
+  ) {
+    return "event";
+  }
+  if (rawType === "help" || contentType === "help") {
+    return "help";
+  }
+  return normalizePostType(record.type, hasCover);
+}
+
 export function normalizePostDetail(value: unknown, fallbackId: FeedItemId): PostDetail {
   const record = asRecord(value);
   const tid = normalizeFeedItemId(record.tid, fallbackId);
@@ -75,6 +102,8 @@ export function normalizePostDetail(value: unknown, fallbackId: FeedItemId): Pos
     ? record.replies.filter((reply) => reply && typeof reply === "object")
     : [];
   const bookmarkedValue = "bookmarked" in record ? record.bookmarked : record.saved;
+  const cover = asString(record.cover);
+  const type = normalizeDetailPostType(record, Boolean(cover));
   const event = normalizeEventExtension(record.event);
   const eventJoined = "eventJoined" in record ? asBoolean(record.eventJoined) : undefined;
   // Issue #703 — backend may ship eventManageable so the detail page does not
@@ -115,8 +144,9 @@ export function normalizePostDetail(value: unknown, fallbackId: FeedItemId): Pos
 
   return {
     tid,
+    type,
     title: asString(record.title),
-    cover: asString(record.cover),
+    cover,
     primaryTag: asString(record.primaryTag),
     actor: normalizeDisplayActor(record.actor),
     source: normalizeSourceSignal(record.source),

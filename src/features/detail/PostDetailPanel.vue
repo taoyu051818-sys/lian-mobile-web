@@ -266,6 +266,7 @@ watch(
             :report-follow-up-visible="reportFollowUpVisible"
             :action-error="actionError"
             :action-message="actionMessage"
+            :post-type="post?.type"
             :event="liveEvent"
             :event-plan="eventPlan"
             :event-busy="eventBusy"

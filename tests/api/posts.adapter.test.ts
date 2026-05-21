@@ -55,6 +55,7 @@ describe("posts adapter normalization", () => {
 
     expect(detail).toEqual({
       tid: 42,
+      type: "image",
       title: "99",
       cover: "https://cdn.example.com/cover.jpg",
       primaryTag: "校园",

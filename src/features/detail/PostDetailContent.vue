@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { PlaceRef, PlaceSheet } from "../../types/place";
+import type { PostType } from "../../types/post";
 import type { EventActionPlan } from "../../domain/eventActionPolicy";
 import type { HelpVotePlan } from "../../domain/helpVotePolicy";
 import type { HelpManagePlan } from "../../domain/helpManagePolicy";
@@ -18,6 +19,7 @@ import PostDetailHelpBlock from "./PostDetailHelpBlock.vue";
 import PostDetailHelpManageBlock from "./PostDetailHelpManageBlock.vue";
 import PostDetailMerchantBlock from "./PostDetailMerchantBlock.vue";
 import PostDetailTradeBlock from "./PostDetailTradeBlock.vue";
+import PostDetailTypedFallbackBlock from "./PostDetailTypedFallbackBlock.vue";
 import PostPlaceSheetBlock from "./PostPlaceSheetBlock.vue";
 import PostReportBlock from "./PostReportBlock.vue";
 import PostActionFeedback from "./PostActionFeedback.vue";
@@ -45,6 +47,7 @@ defineProps<{
   reportFollowUpVisible?: boolean;
   actionError?: string;
   actionMessage?: string;
+  postType?: PostType;
   event?: EventPostExtension;
   eventPlan?: EventActionPlan;
   eventBusy?: boolean;
@@ -113,6 +116,7 @@ const emit = defineEmits<{
       @act="emit('eventAct')"
       @complete="emit('eventComplete')"
     />
+    <PostDetailTypedFallbackBlock v-else-if="postType === 'event'" :post-type="postType" />
 
     <PostDetailHelpBlock
       v-if="help && helpPlan"
@@ -123,6 +127,7 @@ const emit = defineEmits<{
       @act="emit('helpAct')"
       @open-linked-event="emit('helpOpenLinkedEvent', $event)"
     />
+    <PostDetailTypedFallbackBlock v-else-if="postType === 'help'" :post-type="postType" />
 
     <PostDetailHelpManageBlock
       v-if="help && helpManagePlan"
@@ -143,8 +148,10 @@ const emit = defineEmits<{
       :errand-unavailable-reason="errandUnavailableReason"
       :errand-unavailable-reason-text="errandUnavailableReasonText"
     />
+    <PostDetailTypedFallbackBlock v-else-if="postType === 'merchant'" :post-type="postType" />
 
     <PostDetailTradeBlock v-if="trade" :trade="trade" />
+    <PostDetailTypedFallbackBlock v-else-if="postType === 'trade'" :post-type="postType" />
 
     <PostDetailInfoStrip
       :primary-tag="primaryTag"
