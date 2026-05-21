@@ -85,7 +85,7 @@ Total files: 307
 | `config/brand/merchant.ts`     | export const MERCHANT_BLOCK_LABEL = "商家信息"; export const MERCHANT_CATEGORY_FOOD = "餐饮"; export const MERCHANT_CATEGOR...                        |   129 |
 | `config/brand/messages.ts`     | export const MESSAGE_EMPTY_CONTENT = "这条消息暂时没有内容。"; export const MESSAGE_TAB_LABEL = "消息分类"; export const MESSAGE_S...                 |    33 |
 | `config/brand/notification.ts` | export const NOTIFICATION_SECTION_LABEL = "通知"; export const NOTIFICATION_READ = "已读"; export const NOTIFICATION_UNRE...                          |    32 |
-| `config/brand/profile.ts`      | export const PROFILE*CAMPUS_USER = "校园用户"; export const PROFILE_INVITE_USER = "邀请码用户"; export const PROFILE_IDENTITY*...                     |   121 |
+| `config/brand/profile.ts`      | export const PROFILE*CAMPUS_USER = "校园用户"; export const PROFILE_INVITE_USER = "邀请码用户"; export const PROFILE_IDENTITY*...                     |   120 |
 | `config/brand/publish.ts`      | export const PUBLISH_CLEAR = "清空"; export const PUBLISH_SUBMIT = "发布"; export const PUBLISH_LOCATION_LABEL = "地点"; e...                         |    96 |
 | `config/brand/report.ts`       | export const REPORT_CAT_PRIVACY = "隐私问题"; export const REPORT_CAT_FALSE_INFO = "虚假信息"; export const REPORT_CAT_ABUSE ...                      |    19 |
 | `config/brand/runner.ts`       | export const RUNNER_SECTION_LABEL = "跑腿员中心"; export const RUNNER_ENTER_LABEL = "跑腿员中心"; export const RUNNER_BACK_TO_P...                    |    50 |
@@ -226,10 +226,10 @@ Total files: 307
 | `features/profile/ProfileStatsBlock.vue`         | Vue SFC                                                                                                                       |   171 |
 | `features/profile/ProfileTabs.vue`               | Vue SFC                                                                                                                       |    71 |
 | `features/profile/ProfileVerificationBadges.vue` | Header surfaces only currently-active grants. Expired/revoked records                                                         |    97 |
-| `features/profile/ProfileView.vue`               | issue #692: drafts authored by the previous account must not survive                                                          |   459 |
+| `features/profile/ProfileView.vue`               | issue #692: drafts authored by the previous account must not survive                                                          |   461 |
 | `features/profile/index.ts`                      | TypeScript module                                                                                                             |     2 |
 | `features/profile/profile-header.css`            | Stylesheet                                                                                                                    |   187 |
-| `features/profile/profileUnlocks.ts`             | export interface ProfileUnlockCard                                                                                            |    73 |
+| `features/profile/profileUnlocks.ts`             | export interface ProfileUnlockCard                                                                                            |    71 |
 | `features/profile/settings-state/fetcher.ts`     | Side-effect helper that bridges the settings reducer's `fetch` and `patch` effects to the network. The reducer is pur...      |    39 |
 | `features/profile/settings-state/index.ts`       | export type { ProfileSettingsView } from "./store";                                                                           |     6 |
 | `features/profile/settings-state/state.ts`       | Pure state machine for the profile-settings flow. The settings block — load, three optimistic toggles, error/rollbac...       |   191 |

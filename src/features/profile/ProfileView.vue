@@ -46,7 +46,9 @@ const { user, loading, errorMessage, isMissingSessionError, refreshCurrentSessio
   useProfileSession();
 
 const isCampusVerified = computed(() => hasActiveVerificationTag(user.value, "campus_verified"));
-const isMerchantVerified = computed(() => hasActiveVerificationTag(user.value, "merchant_verified"));
+const isMerchantVerified = computed(() =>
+  hasActiveVerificationTag(user.value, "merchant_verified"),
+);
 const isRunnerVerified = computed(() => hasActiveVerificationTag(user.value, "runner"));
 const unlockCards = computed(() => buildProfileUnlockCards(user.value));
 

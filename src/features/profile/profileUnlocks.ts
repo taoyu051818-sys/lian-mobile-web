@@ -30,9 +30,7 @@ export function hasActiveVerificationTag(
   return tags.has(tag);
 }
 
-export function buildProfileUnlockCards(
-  user: ProfileUser | null | undefined,
-): ProfileUnlockCard[] {
+export function buildProfileUnlockCards(user: ProfileUser | null | undefined): ProfileUnlockCard[] {
   const cards: ProfileUnlockCard[] = [];
 
   if (!hasActiveVerificationTag(user, "campus_verified")) {
