@@ -1,5 +1,6 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import { ref } from "vue";
+import { LianApiError } from "../../src/api/http";
 import { useIsRunnerVerified, useRunnerCenter } from "../../src/features/runner/useRunnerCenter";
 import type { RunnerOrder } from "../../src/types/runner";
 
@@ -78,6 +79,18 @@ describe("useRunnerCenter state machine", () => {
     expect(ctrl.availableOrders.value).toHaveLength(2);
     expect(ctrl.availableLoading.value).toBe(false);
     expect(ctrl.availableError.value).toBe("");
+    expect(ctrl.availableNeedsRunnerGate.value).toBe(false);
+  });
+
+  it("routes queue auth failures back to the runner gate", async () => {
+    vi.mocked(runnerApi.fetchAvailableRunnerOrders).mockRejectedValue(
+      new LianApiError("forbidden", 403),
+    );
+    const ctrl = useRunnerCenter();
+    await ctrl.loadAvailable();
+    expect(ctrl.availableNeedsRunnerGate.value).toBe(true);
+    expect(ctrl.availableError.value).toBe("");
+    expect(ctrl.availableOrders.value).toEqual([]);
   });
 
   it("surfaces an error message when load fails", async () => {
@@ -85,6 +98,7 @@ describe("useRunnerCenter state machine", () => {
     const ctrl = useRunnerCenter();
     await ctrl.loadAvailable();
     expect(ctrl.availableError.value).toBe("boom");
+    expect(ctrl.availableNeedsRunnerGate.value).toBe(false);
     expect(ctrl.availableOrders.value).toEqual([]);
   });
 
