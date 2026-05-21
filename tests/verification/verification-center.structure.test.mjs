@@ -92,6 +92,15 @@ test("VerificationView wires the campus-email send + confirm flow", () => {
   assert.match(src, /refreshUser/);
 });
 
+test("VerificationView shows the new empty-state guidance before any grant exists", () => {
+  const src = read("src/features/verification/VerificationView.vue");
+  const brand = read("src/config/brand/verification.ts");
+  assert.match(src, /data-testid="verification-empty-state"/);
+  assert.match(src, /!loading && !hasAnyVerificationRecord/);
+  assert.match(brand, /VERIFICATION_EMPTY_TITLE/);
+  assert.match(brand, /VERIFICATION_EMPTY_BODY/);
+});
+
 // --- brand registration ---
 
 test("verification brand module is re-exported from brand/index", () => {
