@@ -1,6 +1,5 @@
 import { computed, type Ref } from "vue";
 import {
-  ERROR_PUBLISH_GENERIC,
   PUBLISH_LOCATION_UNBOUND,
   PUBLISH_SUCCESS,
   PUBLISH_SUCCESS_BOUND,
@@ -15,7 +14,10 @@ import {
   PUBLISH_TRADE_GATE_BLOCK,
   PUBLISH_TRADE_PRICE_REQUIRED,
 } from "../../config/brand";
-import { extractErrorMessage } from "../../utils/extractErrorMessage";
+import {
+  isWriteActionGenericFallback,
+  resolveWriteActionErrorMessage,
+} from "../../utils/writeActionErrors";
 import { buildPublishPayload, publishPost } from "../../api/publish";
 import { createEvent } from "../../api/events";
 import { parseCapacityInput, validateEventPublishForm } from "../../domain/eventPublishPolicy";
@@ -52,23 +54,15 @@ export function usePublishSubmit(options: {
   locationPreviewLabel: Ref<string>;
   validate: () => string;
   resetForm: () => void;
-  // Event-publish extras (PRD V0.1 §6.3 / §11.2). Optional so callers that
-  // never publish events stay backwards-compatible.
   postType?: Ref<PublishPostType>;
   eventStartAt?: Ref<string>;
   eventEndAt?: Ref<string>;
   eventCapacity?: Ref<string>;
   eventJoinPolicy?: Ref<EventJoinPolicy>;
   audienceVisibility?: Ref<PublishVisibility>;
-  // PRD §10 — when `publishKind=merchant`, the post enters the merchant
-  // publish path and the gate/payload are required. The composable resolves
-  // the payload lazily via `merchantPayload()` so the caller can keep its
-  // own draft state (form fields, validation) without leaking refs here.
   publishKind?: Ref<PublishKind>;
   merchantPayload?: () => { input: MerchantPublishInput; contentType: MerchantContentType };
   merchantVerified?: Ref<boolean>;
-  // PRD §11 — same shape for trade. campus_verified gate, single
-  // contentType="trade", price-required validation.
   tradePayload?: () => { input: TradePublishInput; contentType: TradeContentType };
   tradeVerified?: Ref<boolean>;
 }) {
@@ -140,7 +134,10 @@ export function usePublishSubmit(options: {
       options.successMessage.value = PUBLISH_EVENT_SUCCESS;
       options.resetForm();
     } catch (error) {
-      options.errorMessage.value = extractErrorMessage(error, PUBLISH_EVENT_UNAVAILABLE);
+      const message = resolveWriteActionErrorMessage("publish", error);
+      options.errorMessage.value = isWriteActionGenericFallback("publish", message)
+        ? PUBLISH_EVENT_UNAVAILABLE
+        : message;
     }
   }
 
@@ -192,7 +189,7 @@ export function usePublishSubmit(options: {
           : PUBLISH_SUCCESS;
       options.resetForm();
     } catch (error) {
-      options.errorMessage.value = extractErrorMessage(error, ERROR_PUBLISH_GENERIC);
+      options.errorMessage.value = resolveWriteActionErrorMessage("publish", error);
     } finally {
       options.publishing.value = false;
     }

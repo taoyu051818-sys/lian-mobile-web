@@ -40,11 +40,6 @@ const emit = defineEmits<{
 
 useVisualViewport();
 
-// Shell chrome slots (`top: detail-topbar`, `bottom: reply-dock`) are now
-// driven by the detail-navigation FSM at the app level, not by this component.
-// The teleport targets are guaranteed to be mounted whenever the FSM is in any
-// non-closed state — which is exactly when this panel is rendered.
-
 const actionError = ref("");
 const actionMessage = ref("");
 const post = computed(() => props.post);
@@ -78,7 +73,7 @@ const {
   handleLike: rawHandleLike,
   handleSave: rawHandleSave,
   resetReactions,
-} = usePostReactions({ clearMessages, showError: showActionError });
+} = usePostReactions({ clearMessages, showError: showActionError, showMessage: showActionMessage });
 
 const {
   placeSheet,
@@ -134,7 +129,6 @@ const { replyBusy, replyExpanded, replyContent, collapseReplyIfOpen, submitReply
   usePostReplyComposer({
     postId,
     clearMessages,
-    showError: showActionError,
     showActionMessage,
     setActionError,
     onReplySuccess: () => emit("retry"),
@@ -192,9 +186,6 @@ const {
 });
 
 function handleHelpOpenLinkedEvent(tid: number) {
-  // V0.1 surface — emit retry so the panel reloads to the linked-event tid
-  // by way of the parent. Until the parent owns navigation, nothing else to
-  // wire. Touch the param so TS does not complain.
   void tid;
   emit("retry");
 }
