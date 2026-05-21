@@ -227,7 +227,7 @@ onMounted(() => {
         </article>
       </section>
 
-      <ProfileErrandOrdersBlock v-if="isCampusVerified" />
+      <ProfileErrandOrdersBlock v-if="isRunnerVerified" />
 
       <footer class="profile-view__verification-entry">
         <button

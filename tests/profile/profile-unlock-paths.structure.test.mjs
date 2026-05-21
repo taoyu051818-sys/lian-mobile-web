@@ -29,12 +29,13 @@ test("profile unlock helper maps campus, merchant, and runner tags to verificati
   }
 });
 
-test("ProfileView renders unlock cards and only mounts errand orders after campus verification", () => {
+test("ProfileView renders unlock cards and only mounts errand orders after runner verification", () => {
   assert.match(profileViewSource, /buildProfileUnlockCards/);
   assert.match(profileViewSource, /const isCampusVerified = computed/);
+  assert.match(profileViewSource, /const isRunnerVerified = computed/);
   assert.match(profileViewSource, /v-if="unlockCards\.length"/);
   assert.match(profileViewSource, /data-testid="profile-unlock-card-cta"/);
-  assert.match(profileViewSource, /<ProfileErrandOrdersBlock v-if="isCampusVerified" \/>/);
+  assert.match(profileViewSource, /<ProfileErrandOrdersBlock v-if="isRunnerVerified" \/>/);
 });
 
 test("ProfileView routes every unlock CTA back into the verification center", () => {
