@@ -84,7 +84,7 @@ Total files: 307
 | `config/brand/map.ts`          | export const MAP_ARIA_LABEL = "校园地图"; export const MAP_FILTER_LOCATIONS = "地点"; export const MAP_FILTER_POSTS = "内容"...                       |    39 |
 | `config/brand/merchant.ts`     | export const MERCHANT_BLOCK_LABEL = "商家信息"; export const MERCHANT_CATEGORY_FOOD = "餐饮"; export const MERCHANT_CATEGOR...                        |   129 |
 | `config/brand/messages.ts`     | export const MESSAGE_EMPTY_CONTENT = "这条消息暂时没有内容。"; export const MESSAGE_TAB_LABEL = "消息分类"; export const MESSAGE_S...                 |    36 |
-| `config/brand/notification.ts` | export const NOTIFICATION_SECTION_LABEL = "通知"; export const NOTIFICATION_READ = "已读"; export const NOTIFICATION_UNRE...                          |    66 |
+| `config/brand/notification.ts` | export const NOTIFICATION_SECTION_LABEL = "通知"; export const NOTIFICATION_READ = "已读"; export const NOTIFICATION_UNRE...                          |    62 |
 | `config/brand/profile.ts`      | export const PROFILE*CAMPUS_USER = "校园用户"; export const PROFILE_INVITE_USER = "邀请码用户"; export const PROFILE_IDENTITY*...                     |   110 |
 | `config/brand/publish.ts`      | export const PUBLISH_CLEAR = "清空"; export const PUBLISH_SUBMIT = "发布"; export const PUBLISH_LOCATION_LABEL = "地点"; e...                         |    96 |
 | `config/brand/report.ts`       | export const REPORT_CAT_PRIVACY = "隐私问题"; export const REPORT_CAT_FALSE_INFO = "虚假信息"; export const REPORT_CAT_ABUSE ...                      |    19 |
@@ -208,10 +208,10 @@ Total files: 307
 | `features/messages/ChannelComposer.vue`          | Vue SFC                                                                                                                       |   147 |
 | `features/messages/ChannelThread.vue`            | Vue SFC                                                                                                                       |   268 |
 | `features/messages/MessagesTabs.vue`             | Vue SFC                                                                                                                       |    58 |
-| `features/messages/MessagesView.vue`             | Vue SFC                                                                                                                       |   208 |
-| `features/messages/NotificationList.vue`         | Vue SFC                                                                                                                       |   414 |
+| `features/messages/MessagesView.vue`             | Vue SFC                                                                                                                       |   204 |
+| `features/messages/NotificationList.vue`         | Vue SFC                                                                                                                       |   411 |
 | `features/messages/index.ts`                     | TypeScript module                                                                                                             |     6 |
-| `features/messages/messageInbox.ts`              | export interface NotificationGapLink                                                                                          |   103 |
+| `features/messages/messageInbox.ts`              | export interface NotificationGapLink                                                                                          |    93 |
 | `features/messages/notificationChannels.ts`      | Backend issue tracking the channel. `null` when the channel is already shipping (no follow-up needed).                        |    70 |
 | `features/messages/useChannelMessages.ts`        | export function useChannelMessages()                                                                                          |   227 |
 | `features/messages/useMessageComposer.ts`        | export function useMessageComposer(options:                                                                                   |   102 |
