@@ -7,6 +7,7 @@ import {
   EMPTY_SAVED,
   EMPTY_LIKED,
   ERROR_LOAD_GENERIC,
+  ORDERS_LIST_EMPTY_HEADLINE,
   PROFILE_TAB_HISTORY,
   PROFILE_TAB_SAVED,
   PROFILE_TAB_LIKED,
@@ -14,6 +15,7 @@ import {
   PROFILE_TAB_REPLIES,
   PROFILE_TAB_DRAFTS,
   PROFILE_TAB_MAP_CONTRIBUTIONS,
+  PROFILE_TAB_ORDERS,
   PROFILE_EMPTY_CONTENT,
   PROFILE_LIST_ERROR_PREFIX,
 } from "../../config/brand";
@@ -45,6 +47,12 @@ export function useProfileTabs(options: {
       label: PROFILE_TAB_MAP_CONTRIBUTIONS,
       empty: PROFILE_EMPTY_CONTENT,
     },
+    // Errand orders tab — issue #609 PR1. The list itself does NOT come
+    // through `fetchProfileTab`; ProfileView renders ProfileErrandOrdersBlock
+    // (which has its own /api/errands/orders/mine fetch) when this tab is
+    // active. We keep the tab in the same array so the underline / active
+    // dispatch is identical across all tabs.
+    { key: "orders", label: PROFILE_TAB_ORDERS, empty: ORDERS_LIST_EMPTY_HEADLINE },
   ];
 
   const listEmptyText = computed(
@@ -79,6 +87,18 @@ export function useProfileTabs(options: {
 
   async function loadProfileList(tab: ProfileTabKey) {
     activeTab.value = tab;
+    // Errand orders tab is rendered by ProfileErrandOrdersBlock, which has
+    // its own fetch (fetchMyErrandOrders / `useMyErrandOrders`). Short-
+    // circuiting here keeps `fetchProfileTab` from being called for "orders"
+    // (it would 404 — there is no /api/profile/orders) and resets the shared
+    // collection-list state so the previously-active tab's items don't bleed
+    // through behind the orders block.
+    if (tab === "orders") {
+      profileItems.value = [];
+      listError.value = "";
+      listLoading.value = false;
+      return;
+    }
     listLoading.value = true;
     listError.value = "";
     try {

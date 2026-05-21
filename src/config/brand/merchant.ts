@@ -85,6 +85,38 @@ export const PROFILE_ERRAND_ORDERS_OPEN = "查看进度";
 export const PROFILE_ERRAND_ORDERS_PICKUP_PREFIX = "取";
 export const PROFILE_ERRAND_ORDERS_DROPOFF_PREFIX = "送";
 
+/**
+ * 订单 tab (profile 入口 / issue #609 PR1).
+ *
+ * 把"我的跑腿订单"从 profile 底部 block 升到 ProfileTabs 一个真正的"订单" tab。
+ * 与 PROFILE_ERRAND_ORDERS_* 系列复用，本节只新增 tab 标签 + 两行空状态。
+ *
+ * 空状态遵循 PR #746 两行 pattern：第一行短标题（HEADLINE），第二行下一步说明（HINT）。
+ */
+export const PROFILE_TAB_ORDERS = "订单";
+export const ORDERS_LIST_EMPTY_HEADLINE = "还没有下过帮我取订单。";
+export const ORDERS_LIST_EMPTY_HINT =
+  "在商家详情页找到「帮我取」入口即可下单，订单进度会自动出现在这里。";
+
+/**
+ * 订单详情 timeline / 取消 / V0.2 占位 (issue #609 PR1).
+ *
+ * - timeline 标签：全部从 ERRAND_ORDER_STATUS_* 已有 key 派生，本节不再重复定义。
+ * - 取消 CTA：仅在非终态状态展示；终态包含 delivered / cancelled / refunded（与
+ *   `isTerminalErrandStatus` 保持一致）。
+ * - runner-location V0.2：BE 路由是 501 NOT_IMPLEMENTED_V0_1，UI 显示静态占位面板，
+ *   不发请求；与 PRD §12 deferred 列表对齐。
+ */
+export const ORDERS_TIMELINE_LABEL = "进度";
+export const ORDERS_CANCEL_CTA = "取消订单";
+export const ORDERS_CANCEL_CONFIRM = "确认取消订单？取消后将无法恢复。";
+export const ORDERS_CANCEL_PENDING = "正在取消…";
+export const ORDERS_CANCEL_FAILED = "取消失败，可以稍后再试。";
+export const ORDERS_RUNNER_LOCATION_TITLE = "实时位置";
+export const ORDERS_RUNNER_LOCATION_DEFERRED = "实时位置 V0.2 即将开放";
+export const ORDERS_RUNNER_LOCATION_DEFERRED_HINT =
+  "等跑腿同学接单后，会在这里显示位置和送达进度。当前版本暂未开放实时位置。";
+
 /** 商家中心 (issue #646) */
 export const MERCHANT_CENTER_SECTION_LABEL = "商家中心";
 export const MERCHANT_CENTER_ENTER_LABEL = "商家中心";

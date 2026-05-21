@@ -1,13 +1,25 @@
 <script setup lang="ts">
 /**
- * Order detail / timeline view (issue #647).
+ * Order detail / timeline view (issue #647 read side; cancel CTA + V0.2
+ * runner-location placeholder added by issue #609 PR1).
  *
- * Renders after a successful create. Pulls `GET /api/errands/orders/:id`
- * once on mount; the order state machine itself (#648) drives any later
- * transitions via the runner side, so the user-facing read view simply
- * shows whatever the backend currently has.
+ * Surfaces every transition the V0.1 backend can write — created, paid_locked,
+ * assigned, picked_up, delivering, delivered, plus the cancelled / refunded
+ * terminals — using `useErrandOrderDetail`. The state machine itself runs
+ * runner-side (#648); this view only renders what the backend currently has
+ * and exposes:
+ *
+ * - cancel CTA — only while the order is non-terminal. Calls
+ *   `POST /api/errands/orders/:id/cancel` (one of the five real V0.1 routes).
+ *   `assign` and `runner-location` are 501 NOT_IMPLEMENTED_V0_1 by design,
+ *   so the UI must NOT call them — the runner-location panel below is a
+ *   pure read-only placeholder, no fetch.
+ * - V0.2 runner-location placeholder — once the order has a runner assigned,
+ *   we surface a labeled "实时位置 V0.2 即将开放" panel instead of the
+ *   actual map. This keeps the user informed without lying about a feature
+ *   that isn't shipped.
  */
-import { computed, onMounted, onBeforeUnmount, watch } from "vue";
+import { computed, onMounted, onBeforeUnmount, ref, watch } from "vue";
 import {
   ERRAND_ORDER_DETAIL_AUTO_REFRESH_HINT,
   ERRAND_ORDER_DETAIL_BACK,
@@ -24,6 +36,12 @@ import {
   ERRAND_ORDER_PICKUP_TITLE,
   ERRAND_ORDER_POINTS_SUFFIX,
   ERRAND_ORDER_RETRY,
+  ORDERS_CANCEL_CONFIRM,
+  ORDERS_CANCEL_CTA,
+  ORDERS_CANCEL_PENDING,
+  ORDERS_RUNNER_LOCATION_DEFERRED,
+  ORDERS_RUNNER_LOCATION_DEFERRED_HINT,
+  ORDERS_RUNNER_LOCATION_TITLE,
 } from "../../config/brand";
 import { useErrandOrderDetail } from "./useErrandOrderDetail";
 import {
@@ -50,9 +68,13 @@ const {
   loading,
   loaded,
   errorMessage,
+  cancelling,
+  cancelError,
+  canCancel,
   refresh: refreshDetail,
   start: startDetail,
   stop: stopDetail,
+  cancel: cancelDetail,
 } = useErrandOrderDetail();
 
 onMounted(() => {
@@ -74,10 +96,43 @@ onBeforeUnmount(() => {
 const order = computed(() => detailRef.value?.order || null);
 const timeline = computed(() => detailRef.value?.timeline || []);
 const isLivePolling = computed(() => !!order.value && !isTerminalErrandStatus(order.value.status));
+// V0.2 runner-location placeholder shows up once a runner is on the order.
+// We deliberately do NOT call the runner-location endpoint (501 in V0.1) —
+// the panel is purely read-only, derived from `runnerUserId` already on
+// the order detail payload.
+const hasRunnerAssigned = computed(() => !!order.value?.runnerUserId);
 
 function handleRefresh() {
   if (props.orderId) void refreshDetail(props.orderId);
 }
+
+async function handleCancel() {
+  if (!props.orderId || !canCancel.value) return;
+  // Two-tap inline confirm — first tap arms the CTA into a "再次点击确认"
+  // state (so a single accidental tap can't terminate the order), second tap
+  // fires the API. We deliberately avoid `window.confirm` because the
+  // unsafe-DOM-sink guard bans alert/prompt/confirm. This pattern keeps the
+  // gate visible inline + accessible without a custom modal component, which
+  // is a follow-up.
+  if (!confirmingCancel.value) {
+    confirmingCancel.value = true;
+    return;
+  }
+  confirmingCancel.value = false;
+  await cancelDetail(props.orderId);
+}
+
+const confirmingCancel = ref(false);
+
+// Reset the inline confirm whenever the order changes — a different order
+// must not inherit the previous one's "armed" state, otherwise a tap meant
+// for the new order would fire immediately.
+watch(
+  () => props.orderId,
+  () => {
+    confirmingCancel.value = false;
+  },
+);
 </script>
 
 <template>
@@ -191,6 +246,71 @@ function handleRefresh() {
           </li>
         </ol>
       </section>
+
+      <!--
+        V0.2 runner-location placeholder (issue #609 PR1). The runner-location
+        backend route is 501 NOT_IMPLEMENTED_V0_1 by design — we render a
+        labeled deferred panel instead of an empty box, and we never call
+        the endpoint. Surfaces only after the order has a runner assigned
+        so V0.1 orders without a runner don't carry empty visual real estate.
+      -->
+      <section
+        v-if="hasRunnerAssigned"
+        class="errand-order-timeline-view__runner-location is-deferred"
+        :aria-label="ORDERS_RUNNER_LOCATION_TITLE"
+        data-testid="errand-order-timeline-runner-location"
+      >
+        <h3>{{ ORDERS_RUNNER_LOCATION_TITLE }}</h3>
+        <p class="errand-order-timeline-view__runner-location-banner">
+          {{ ORDERS_RUNNER_LOCATION_DEFERRED }}
+        </p>
+        <p class="errand-order-timeline-view__runner-location-hint">
+          {{ ORDERS_RUNNER_LOCATION_DEFERRED_HINT }}
+        </p>
+      </section>
+
+      <!--
+        Cancel CTA — only while the order is non-terminal. The composable's
+        `canCancel` already excludes terminal states + an in-flight cancel.
+        We do NOT touch the assign endpoint (501); cancel is one of the five
+        live V0.1 routes.
+
+        Two-tap inline confirm pattern: first tap arms (`confirmingCancel`),
+        button label flips to `ORDERS_CANCEL_CONFIRM`, second tap fires the
+        API. Window.confirm/alert/prompt are blocked by the unsafe-DOM-sink
+        guard, and a custom modal is out-of-scope for PR1.
+      -->
+      <div
+        v-if="canCancel"
+        class="errand-order-timeline-view__actions"
+        data-testid="errand-order-timeline-actions"
+      >
+        <button
+          type="button"
+          class="errand-order-timeline-view__cancel"
+          :class="{ 'is-confirming': confirmingCancel }"
+          :disabled="cancelling"
+          data-testid="errand-order-timeline-cancel"
+          @click="() => void handleCancel()"
+        >
+          {{
+            cancelling
+              ? ORDERS_CANCEL_PENDING
+              : confirmingCancel
+                ? ORDERS_CANCEL_CONFIRM
+                : ORDERS_CANCEL_CTA
+          }}
+        </button>
+      </div>
+
+      <p
+        v-if="cancelError"
+        class="errand-order-timeline-view__status is-error"
+        role="alert"
+        data-testid="errand-order-timeline-cancel-error"
+      >
+        {{ cancelError }}
+      </p>
     </template>
   </section>
 </template>
@@ -342,5 +462,57 @@ function handleRefresh() {
   color: var(--lian-ink);
   font-size: 13px;
   line-height: 1.5;
+}
+
+.errand-order-timeline-view__runner-location {
+  display: grid;
+  gap: var(--space-1);
+  padding: var(--space-3);
+  border: 1px dashed rgba(124, 92, 255, 0.32);
+  border-radius: var(--radius-card);
+  background: rgba(124, 92, 255, 0.06);
+}
+
+.errand-order-timeline-view__runner-location h3 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 900;
+  color: var(--lian-ink);
+}
+
+.errand-order-timeline-view__runner-location-banner {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 800;
+  color: #5a3fbf;
+}
+
+.errand-order-timeline-view__runner-location-hint {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--lian-muted);
+}
+
+.errand-order-timeline-view__actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.errand-order-timeline-view__cancel {
+  appearance: none;
+  border: 0;
+  border-radius: var(--radius-chip, 999px);
+  background: rgba(239, 68, 68, 0.12);
+  color: rgb(185, 28, 28);
+  font-weight: 800;
+  height: 36px;
+  padding: 0 var(--space-3);
+  cursor: pointer;
+}
+
+.errand-order-timeline-view__cancel:disabled {
+  opacity: 0.5;
+  cursor: progress;
 }
 </style>
