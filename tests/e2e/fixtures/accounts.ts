@@ -9,7 +9,15 @@ import {
 
 import type { VerificationTag } from "../../../src/types/verification";
 
-export type RoleId = "anonymous" | "registered" | "campus" | "merchant" | "runner" | "admin";
+export type RoleId =
+  | "anonymous"
+  | "registered"
+  | "campus"
+  | "merchant"
+  | "runner"
+  | "admin"
+  | "event_creator"
+  | "org_member";
 
 export interface RoleDefinition {
   id: RoleId;
@@ -71,6 +79,22 @@ const ROLE_TABLE: Record<RoleId, RoleDefinition> = {
     envUser: "LIAN_E2E_ADMIN_USERNAME",
     envPass: "LIAN_E2E_ADMIN_PASSWORD",
     expectedTags: [],
+  },
+  event_creator: {
+    id: "event_creator",
+    description:
+      "event_creator — owns rewarded events; campus_verified + realname_verified to clear /reward V0.2 anti-fraud floor (issue #439).",
+    envUser: "LIAN_E2E_EVENT_CREATOR_USERNAME",
+    envPass: "LIAN_E2E_EVENT_CREATOR_PASSWORD",
+    expectedTags: ["campus_verified", "realname_verified"],
+  },
+  org_member: {
+    id: "org_member",
+    description:
+      "org_member — baseline org-affiliated joiner; appears in event.joinedUserIds without owning the event (issue #439).",
+    envUser: "LIAN_E2E_ORG_MEMBER_USERNAME",
+    envPass: "LIAN_E2E_ORG_MEMBER_PASSWORD",
+    expectedTags: ["campus_verified", "org_member"],
   },
 };
 

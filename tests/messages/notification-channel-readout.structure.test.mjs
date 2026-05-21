@@ -29,18 +29,12 @@ test("NotificationList imports the channel inventory and brand strings", () => {
 
 test("NotificationList renders the readout above the items list and outside the loading/empty branches", () => {
   const readoutIdx = listSource.indexOf('data-testid="notification-channel-readout"');
-  const loadingIdx = listSource.indexOf("{{ LOADING_NOTIFICATION }}");
-  const emptyIdx = listSource.indexOf("{{ EMPTY_NOTIFICATION }}");
+  const loadingIdx = listSource.indexOf('v-if="props.loading && !props.items.length"');
+  const emptyIdx = listSource.indexOf('data-testid="notification-empty-state"');
   const listIdx = listSource.indexOf('class="messages-view__list"');
   assert.ok(readoutIdx > 0, "readout testid should be present");
-  assert.ok(
-    readoutIdx < loadingIdx,
-    "readout must come before loading branch so empty/loading do not hide it",
-  );
-  assert.ok(
-    readoutIdx < emptyIdx,
-    "readout must come before empty branch so empty state does not hide it",
-  );
+  assert.ok(readoutIdx < loadingIdx, "readout must come before loading branch");
+  assert.ok(readoutIdx < emptyIdx, "readout must come before empty branch");
   assert.ok(readoutIdx < listIdx, "readout must come before items list");
 });
 
@@ -87,11 +81,11 @@ test("notificationChannels marks reply as connected and the four backlog channel
   }
 });
 
-test("notificationChannels links the three filed backend issues so the readout stays honest", () => {
+test("notificationChannels links the tracked backend issues so the readout stays honest", () => {
   for (const issue of [
     "github.com/taoyu051818-sys/lian-mobile-web/issues/700",
     "github.com/taoyu051818-sys/lian-mobile-web/issues/701",
-    "github.com/taoyu051818-sys/lian-mobile-web/issues/702",
+    "github.com/taoyu051818-sys/lian-mobile-web/issues/706",
   ]) {
     assert.ok(channelsSource.includes(issue), `expected channel inventory to link ${issue}`);
   }

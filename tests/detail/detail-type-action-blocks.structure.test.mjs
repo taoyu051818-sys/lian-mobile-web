@@ -42,7 +42,10 @@ test("typed fallback block exposes stable per-type testids and disabled action s
 test("PostDetailContent mounts typed fallback blocks whenever a typed extension is missing", () => {
   const src = read("src/features/detail/PostDetailContent.vue");
   assert.match(src, /import type \{ PostType \} from "\.\.\/\.\.\/types\/post"/);
-  assert.match(src, /import PostDetailTypedFallbackBlock from "\.\/PostDetailTypedFallbackBlock\.vue"/);
+  assert.match(
+    src,
+    /import PostDetailTypedFallbackBlock from "\.\/PostDetailTypedFallbackBlock\.vue"/,
+  );
   assert.match(src, /postType\?:\s*PostType/);
   assert.match(src, /v-else-if="postType === 'event'"/);
   assert.match(src, /v-else-if="postType === 'help'"/);
