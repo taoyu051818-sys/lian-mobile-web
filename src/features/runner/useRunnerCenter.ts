@@ -1,4 +1,5 @@
 import { computed, ref, type Ref } from "vue";
+import { LianApiError } from "../../api/http";
 import {
   acceptRunnerOrder,
   fetchActiveRunnerOrders,
@@ -17,6 +18,10 @@ import type { RunnerOrder, RunnerTransitionAction } from "../../types/runner";
 
 export type RunnerCenterTab = "available" | "active";
 
+function isRunnerGateError(error: unknown) {
+  return error instanceof LianApiError && (error.status === 401 || error.status === 403);
+}
+
 /**
  * Runner-center state holder. Owns the two lists, the in-flight pending
  * action map (so individual rows can show their own spinner without
@@ -34,6 +39,7 @@ export function useRunnerCenter() {
   const activeLoading = ref(false);
   const availableError = ref("");
   const activeError = ref("");
+  const availableNeedsRunnerGate = ref(false);
   const pendingActionByOrder = ref<Record<string, RunnerTransitionAction>>({});
   const actionMessage = ref("");
   const actionError = ref("");
@@ -46,11 +52,17 @@ export function useRunnerCenter() {
   async function loadAvailable() {
     availableLoading.value = true;
     availableError.value = "";
+    availableNeedsRunnerGate.value = false;
     try {
       const data = await fetchAvailableRunnerOrders();
       availableOrders.value = data.items;
     } catch (error) {
-      availableError.value = extractErrorMessage(error, RUNNER_LIST_LOAD_ERROR);
+      if (isRunnerGateError(error)) {
+        availableOrders.value = [];
+        availableNeedsRunnerGate.value = true;
+      } else {
+        availableError.value = extractErrorMessage(error, RUNNER_LIST_LOAD_ERROR);
+      }
     } finally {
       availableLoading.value = false;
     }
@@ -133,6 +145,7 @@ export function useRunnerCenter() {
     activeLoading,
     availableError,
     activeError,
+    availableNeedsRunnerGate,
     actionMessage,
     actionError,
     pendingActionByOrder,
