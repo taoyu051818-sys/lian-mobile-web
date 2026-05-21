@@ -20,6 +20,9 @@ export const ADMIN_TAB_LABEL = "管理后台标签";
 
 /** 队列 */
 export const ADMIN_QUEUE_EMPTY = "暂无举报。";
+export const ADMIN_QUEUE_EMPTY_TITLE = "举报队列暂时是空的";
+export const ADMIN_QUEUE_EMPTY_BODY =
+  "还没有新的举报进入这台审核台。后续同学提交的举报会先落到这里，也可以手动刷新再看一次。";
 export const ADMIN_QUEUE_LOADING = "加载举报队列…";
 export const ADMIN_QUEUE_RELOAD = "重新加载";
 export const ADMIN_QUEUE_LOAD_ERROR = "队列加载失败，可以稍后再试。";
@@ -71,6 +74,9 @@ export const ADMIN_ACTION_FAIL = "操作没有成功，可以稍后再试。";
 
 /** 审计日志 */
 export const ADMIN_AUDIT_EMPTY = "暂无审计日志。";
+export const ADMIN_AUDIT_EMPTY_TITLE = "还没有审核动作记录";
+export const ADMIN_AUDIT_EMPTY_BODY =
+  "当管理员处理举报、帖子或用户状态后，这里会按时间留下记录。现在空白通常表示这一轮还没有动作写入。";
 export const ADMIN_AUDIT_LOAD_ERROR = "审计日志加载失败，可以稍后再试。";
 export const ADMIN_AUDIT_ACTION_LABEL = "操作";
 export const ADMIN_AUDIT_ACTOR_LABEL = "操作人";
