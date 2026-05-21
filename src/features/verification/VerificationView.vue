@@ -15,6 +15,8 @@ import {
   VERIFICATION_CAMPUS_SUBMIT,
   VERIFICATION_CAMPUS_SUBMITTING,
   VERIFICATION_CAMPUS_TITLE,
+  VERIFICATION_EMPTY_BODY,
+  VERIFICATION_EMPTY_TITLE,
   VERIFICATION_EXPIRES_AT_LABEL,
   VERIFICATION_GRANTED_AT_LABEL,
   VERIFICATION_NO_GRANT_HINT,
@@ -49,6 +51,9 @@ const verificationState = computed<VerificationState>(() => {
   const raw = (user.value as { verificationState?: VerificationState } | null)?.verificationState;
   return raw && typeof raw === "object" ? raw : {};
 });
+const hasAnyVerificationRecord = computed(() =>
+  VERIFICATION_DESCRIPTORS.some((descriptor) => Boolean(verificationState.value[descriptor.tag])),
+);
 
 const pageChrome = computed<PageChromeSpec>(() => ({
   top: {
@@ -106,6 +111,15 @@ onBeforeUnmount(() => {
     <header class="verification-view__intro">
       <h2>{{ VERIFICATION_SECTION_LABEL }}</h2>
     </header>
+
+    <section
+      v-if="!loading && !hasAnyVerificationRecord"
+      class="verification-view__empty-card"
+      data-testid="verification-empty-state"
+    >
+      <strong>{{ VERIFICATION_EMPTY_TITLE }}</strong>
+      <p>{{ VERIFICATION_EMPTY_BODY }}</p>
+    </section>
 
     <ul class="verification-view__list">
       <li
@@ -218,6 +232,28 @@ onBeforeUnmount(() => {
   font-weight: 900;
 }
 
+.verification-view__empty-card {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  border: 1px solid var(--lian-line);
+  border-radius: var(--radius-card);
+  background: rgba(255, 255, 255, 0.82);
+}
+
+.verification-view__empty-card strong {
+  color: var(--lian-ink);
+  font-size: 15px;
+  font-weight: 900;
+}
+
+.verification-view__empty-card p {
+  margin: 0;
+  color: var(--lian-muted);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
 .verification-view__list {
   display: grid;
   gap: var(--space-2);
@@ -287,6 +323,7 @@ onBeforeUnmount(() => {
   margin: 0;
   color: var(--lian-muted);
   font-size: 12px;
+  line-height: 1.5;
 }
 
 .verification-view__campus {
