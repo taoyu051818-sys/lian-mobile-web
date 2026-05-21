@@ -11,6 +11,7 @@ import {
   PROFILE_SECTION_LABEL,
   PROFILE_LOAD_ERROR_PREFIX,
   PROFILE_RELOAD,
+  PROFILE_UNLOCKS_SECTION_LABEL,
   RUNNER_ENTER_LABEL,
   VERIFICATION_ENTER_LABEL,
 } from "../../config/brand";
@@ -20,8 +21,6 @@ import type { PageChromeSpec } from "../../shell/page-model";
 import type { ProfileUser } from "../../types/profile";
 import { InlineError } from "../../ui";
 import { AuthPanel } from "../auth";
-import { useIsMerchantVerified } from "../merchant";
-import { useIsRunnerVerified } from "../runner";
 import ProfileEditorPanel from "./ProfileEditorPanel.vue";
 import ProfileHeader from "./ProfileHeader.vue";
 import ProfileSettingsBlock from "./ProfileSettingsBlock.vue";
@@ -34,6 +33,7 @@ import { useProfileTabs } from "./useProfileTabs";
 import { useProfileChrome } from "./useProfileChrome";
 import { useProfileAliasPicker } from "./useProfileAliasPicker";
 import { useActiveView } from "../../app/useActiveView";
+import { buildProfileUnlockCards, hasActiveVerificationTag } from "./profileUnlocks";
 
 const emit = defineEmits<{
   chrome: [spec: PageChromeSpec];
@@ -45,8 +45,11 @@ const adminEntryVisible = computed(() => import.meta.env.VITE_ADMIN_VISIBLE === 
 const { user, loading, errorMessage, isMissingSessionError, refreshCurrentSession } =
   useProfileSession();
 
-const isMerchantVerified = useIsMerchantVerified(user);
-const isRunnerVerified = useIsRunnerVerified(user);
+const isMerchantVerified = computed(() =>
+  hasActiveVerificationTag(user.value, "merchant_verified"),
+);
+const isRunnerVerified = computed(() => hasActiveVerificationTag(user.value, "runner"));
+const unlockCards = computed(() => buildProfileUnlockCards(user.value));
 
 const editorOpen = ref(false);
 
@@ -196,7 +199,34 @@ onMounted(() => {
         @open-item="openItem"
       />
 
-      <ProfileErrandOrdersBlock />
+      <section
+        v-if="unlockCards.length"
+        class="profile-view__unlock-section"
+        :aria-label="PROFILE_UNLOCKS_SECTION_LABEL"
+      >
+        <article
+          v-for="card in unlockCards"
+          :key="card.key"
+          class="profile-view__unlock-card"
+          :data-kind="card.key"
+          :data-testid="card.testId"
+        >
+          <div class="profile-view__unlock-copy">
+            <strong>{{ card.title }}</strong>
+            <p>{{ card.hint }}</p>
+          </div>
+          <button
+            type="button"
+            class="profile-view__unlock-cta"
+            data-testid="profile-unlock-card-cta"
+            @click="setActiveView(card.targetView)"
+          >
+            {{ card.ctaLabel }}
+          </button>
+        </article>
+      </section>
+
+      <ProfileErrandOrdersBlock v-if="isRunnerVerified" />
 
       <footer class="profile-view__verification-entry">
         <button
@@ -278,6 +308,68 @@ onMounted(() => {
   padding-top: var(--space-6);
 }
 
+.profile-view__unlock-section {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.profile-view__unlock-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border: 1px solid var(--lian-line);
+  border-radius: var(--radius-card);
+  background: rgba(255, 255, 255, 0.82);
+}
+
+.profile-view__unlock-card[data-kind="campus"] {
+  border-color: rgba(31, 167, 160, 0.24);
+  background: rgba(31, 167, 160, 0.09);
+}
+
+.profile-view__unlock-card[data-kind="merchant"] {
+  border-color: rgba(255, 159, 67, 0.3);
+  background: rgba(255, 159, 67, 0.1);
+}
+
+.profile-view__unlock-card[data-kind="runner"] {
+  border-color: rgba(124, 92, 255, 0.28);
+  background: rgba(124, 92, 255, 0.09);
+}
+
+.profile-view__unlock-copy {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.profile-view__unlock-copy strong {
+  color: var(--lian-ink);
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.profile-view__unlock-copy p {
+  margin: 0;
+  color: var(--lian-muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.profile-view__unlock-cta {
+  flex: none;
+  min-height: 34px;
+  padding: 0 var(--space-3);
+  border: 0;
+  border-radius: var(--radius-chip);
+  background: var(--lian-primary, #1fa7a0);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 850;
+  cursor: pointer;
+}
+
 .profile-view__admin-entry {
   display: flex;
   justify-content: center;
@@ -352,5 +444,16 @@ onMounted(() => {
   background: rgba(255, 255, 255, 0.72);
   color: currentColor;
   font-weight: 900;
+}
+
+@media (max-width: 640px) {
+  .profile-view__unlock-card {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .profile-view__unlock-cta {
+    width: 100%;
+  }
 }
 </style>

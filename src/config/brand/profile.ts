@@ -37,6 +37,16 @@ export const PROFILE_LOAD_ERROR_PREFIX = "个人资料";
 export const PROFILE_LIST_ERROR_PREFIX = "列表";
 export const PROFILE_TABS_LABEL = "个人内容分类";
 export const PROFILE_RELOAD = "重新加载";
+export const PROFILE_UNLOCKS_SECTION_LABEL = "身份解锁";
+export const PROFILE_UNLOCK_GO_VERIFY = "去认证中心";
+export const PROFILE_UNLOCK_CAMPUS_TITLE = "完成校园认证";
+export const PROFILE_UNLOCK_CAMPUS_HINT =
+  "完成校园认证后，可查看我的跑腿订单，并解锁二手与更多校园内容。";
+export const PROFILE_UNLOCK_MERCHANT_TITLE = "开通商家能力";
+export const PROFILE_UNLOCK_MERCHANT_HINT =
+  "完成商家认证后可进入商家中心，管理店铺资料与帮我取入口。";
+export const PROFILE_UNLOCK_RUNNER_TITLE = "开通跑腿员";
+export const PROFILE_UNLOCK_RUNNER_HINT = "开通跑腿员后可查看接单与配送记录，并开始接单。";
 
 /** 马甲选择器 */
 export const PROFILE_ALIAS_TITLE = "发布身份";
