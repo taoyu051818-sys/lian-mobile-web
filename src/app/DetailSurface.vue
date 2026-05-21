@@ -90,8 +90,7 @@ onBeforeUnmount(() => {
   position: absolute;
   inset: 0;
   background:
-    linear-gradient(180deg, rgba(6, 10, 20, 0.18), rgba(6, 10, 20, 0.34)),
-    rgba(10, 18, 28, 0.18);
+    linear-gradient(180deg, rgba(6, 10, 20, 0.18), rgba(6, 10, 20, 0.34)), rgba(10, 18, 28, 0.18);
   backdrop-filter: blur(12px) saturate(1.12);
 }
 

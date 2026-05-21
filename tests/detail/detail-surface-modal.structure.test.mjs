@@ -28,7 +28,10 @@ test("DetailSurface adds a scrim, a dedicated sheet wrapper, and self-close on h
 test("DetailSurface freezes the underlying host while the overlay is open", () => {
   const src = read("src/app/DetailSurface.vue");
   assert.match(src, /setHostFrozen/);
-  assert.match(src, /document\.documentElement\.classList\.toggle\("detail-surface-open", frozen\)/);
+  assert.match(
+    src,
+    /document\.documentElement\.classList\.toggle\("detail-surface-open", frozen\)/,
+  );
   assert.match(src, /document\.body\.classList\.toggle\("detail-surface-open", frozen\)/);
   assert.match(src, /:global\(html\.detail-surface-open\)/);
   assert.match(src, /:global\(body\.detail-surface-open\)/);
@@ -39,7 +42,10 @@ test("DetailSurface freezes the underlying host while the overlay is open", () =
 test("useActiveView keeps detail independent from the host tab so close returns to the original view", () => {
   const src = read("src/app/useActiveView.ts");
   assert.match(src, /Post detail is now an App-level overlay/);
-  assert.match(src, /opening or closing a detail must not move the user off whichever tab they're on/);
+  assert.match(
+    src,
+    /opening or closing a detail must not move the user off whichever tab they're on/,
+  );
 });
 
 test("stable shell teleport targets stay mounted for detail top and bottom chrome", () => {
