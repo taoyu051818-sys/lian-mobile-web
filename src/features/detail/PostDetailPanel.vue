@@ -168,6 +168,10 @@ const {
   eventBusy,
   eventActionError,
   handleEventAct,
+  eventManageable,
+  eventCompleteBusy,
+  eventCompleteActionError,
+  handleEventComplete,
   liveHelp,
   helpPlan,
   helpBusy,
@@ -275,6 +279,9 @@ watch(
             :event-plan="eventPlan"
             :event-busy="eventBusy"
             :event-action-error="eventActionError"
+            :event-manageable="eventManageable"
+            :event-complete-busy="eventCompleteBusy"
+            :event-complete-action-error="eventCompleteActionError"
             :help="liveHelp"
             :help-plan="helpPlan"
             :help-busy="helpBusy"
@@ -296,6 +303,7 @@ watch(
             @submit-report="handleReport"
             @hide-reported-post="handleHideReportedPost"
             @event-act="handleEventAct"
+            @event-complete="handleEventComplete"
             @help-act="handleHelpAct"
             @help-open-linked-event="handleHelpOpenLinkedEvent"
             @help-manage-link-event="handleHelpManageLinkEvent"

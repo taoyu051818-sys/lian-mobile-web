@@ -11,7 +11,10 @@
  */
 
 import { apiGet, apiSend } from "./http";
-import { normalizeEventJoinResult } from "../platform/api-normalizers";
+import {
+  normalizeEventCompleteResult,
+  normalizeEventJoinResult,
+} from "../platform/api-normalizers";
 import type {
   ErrandMode,
   ErrandOrder,
@@ -70,6 +73,28 @@ export async function cancelJoinEvent(eventId: string): Promise<EventJoinResult>
     method: "POST",
   });
   return normalizeEventJoinResult(data);
+}
+
+export interface EventCompleteResult {
+  eventId: string;
+  status: "completed";
+  joinedCount: number;
+  completedAt: string;
+}
+
+/**
+ * Issue #703 — `POST /api/events/:eventId/complete` (creator/admin action).
+ *
+ * Backend (`event-routes.js#handleEventComplete`) returns
+ * `{ ok, eventId, status: "completed", joinedCount, completedAt }`.
+ * Idempotent: a second call on an already-completed event returns 200 with
+ * the original `completedAt`. Frontend treats every non-2xx as soft-fail.
+ */
+export async function completeEvent(eventId: string): Promise<EventCompleteResult> {
+  const data = await apiSend<unknown>(`/api/events/${encodeURIComponent(eventId)}/complete`, {
+    method: "POST",
+  });
+  return normalizeEventCompleteResult(data);
 }
 
 // ---------------------------------------------------------------------------

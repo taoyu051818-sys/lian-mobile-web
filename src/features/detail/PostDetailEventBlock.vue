@@ -7,9 +7,14 @@
  * only enables when `planEventAction()` says it should — disabled state shows
  * the localized reason (full / out-of-scope / not open / already-ended).
  *
+ * Issue #703 — when the viewer is the author or an admin (decided upstream by
+ * `usePostDetailExtensions`), a creator-side "结束活动" button appears next to
+ * the participant action. Clicking it opens an Apple-style confirm sheet; the
+ * actual POST happens only on explicit confirm.
+ *
  * All copy comes from brand/i18n; the view only does layout + accessibility.
  */
-import { computed } from "vue";
+import { computed, ref } from "vue";
 import {
   EVENT_BLOCK_LABEL,
   EVENT_STATUS_OPEN,
@@ -28,6 +33,16 @@ import {
   EVENT_DISABLED_FULL,
   EVENT_DISABLED_OUT_OF_SCOPE,
   EVENT_REWARD_LABEL,
+  EVENT_REWARD_SETTLED_LABEL,
+  EVENT_REWARD_SETTLED_PER_JOINER,
+  EVENT_REWARD_SETTLED_TOTAL,
+  EVENT_REWARD_SETTLED_AT,
+  EVENT_COMPLETE_BUTTON_LABEL,
+  EVENT_COMPLETE_CONFIRM_TITLE,
+  EVENT_COMPLETE_CONFIRM_BODY,
+  EVENT_COMPLETE_CONFIRM,
+  EVENT_COMPLETE_CANCEL,
+  EVENT_COMPLETE_PENDING,
 } from "../../config/brand";
 import {
   derivedEventStatus,
@@ -35,16 +50,28 @@ import {
   type EventStatus,
 } from "../../domain/eventActionPolicy";
 import type { EventPostExtension } from "../../types/post-extensions";
+import { formatRelativeTime } from "../../utils/time";
 
-const props = defineProps<{
-  event: EventPostExtension;
-  plan: EventActionPlan;
-  busy: boolean;
-  actionError?: string;
-}>();
+const props = withDefaults(
+  defineProps<{
+    event: EventPostExtension;
+    plan: EventActionPlan;
+    busy: boolean;
+    actionError?: string;
+    /** Issue #703 — viewer is author OR admin. Decided upstream. */
+    manageable?: boolean;
+    completeBusy?: boolean;
+    completeActionError?: string;
+  }>(),
+  {
+    manageable: false,
+    completeBusy: false,
+  },
+);
 
 const emit = defineEmits<{
   act: [];
+  complete: [];
 }>();
 
 const STATUS_LABEL: Record<EventStatus, string> = {
@@ -55,7 +82,14 @@ const STATUS_LABEL: Record<EventStatus, string> = {
   cancelled: EVENT_STATUS_CANCELLED,
 };
 
-const status = computed<EventStatus>(() => derivedEventStatus(props.event));
+// Issue #703 — server-driven status takes precedence when present.
+// `derivedEventStatus` is owned by F2 / #704; we read it but do not change it.
+const status = computed<EventStatus>(() => {
+  if (props.event.status === "completed" || props.event.status === "cancelled") {
+    return props.event.status;
+  }
+  return derivedEventStatus(props.event);
+});
 const statusLabel = computed(() => STATUS_LABEL[status.value]);
 
 const participantLabel = computed(() => {
@@ -93,6 +127,72 @@ const disabledReason = computed(() => {
       return "";
   }
 });
+
+// Issue #703 — completion button is hidden (not just disabled) when:
+//   - viewer is not author/admin (manageable === false)
+//   - status already completed/cancelled
+// Hiding (v-if) — never disabled — is the explicit issue requirement so that
+// non-author non-admin users do not even know the button exists.
+const showCompleteButton = computed(() => {
+  if (!props.manageable) return false;
+  if (status.value === "completed" || status.value === "cancelled") return false;
+  return true;
+});
+
+const completeLabel = computed(() =>
+  props.completeBusy ? EVENT_COMPLETE_PENDING : EVENT_COMPLETE_BUTTON_LABEL,
+);
+
+const confirmOpen = ref(false);
+
+function openConfirm() {
+  if (!showCompleteButton.value || props.completeBusy) return;
+  confirmOpen.value = true;
+}
+
+function dismissConfirm() {
+  confirmOpen.value = false;
+}
+
+function confirmComplete() {
+  if (props.completeBusy) return;
+  confirmOpen.value = false;
+  emit("complete");
+}
+
+// Issue #705 — read-only post-settlement readout. Drives a `v-if` on the
+// settled-reward block so events without a settlement render exactly as today.
+const settlement = computed(() => props.event.rewardSettlement);
+
+function fillTemplate(template: string, params: Record<string, string | number>) {
+  return template.replace(/\{(\w+)\}/g, (_, key) =>
+    Object.prototype.hasOwnProperty.call(params, key) ? String(params[key]) : `{${key}}`,
+  );
+}
+
+const settledPerJoinerLabel = computed(() => {
+  const s = settlement.value;
+  if (!s) return "";
+  return fillTemplate(EVENT_REWARD_SETTLED_PER_JOINER, { amount: s.perJoiner });
+});
+
+const settledTotalLabel = computed(() => {
+  const s = settlement.value;
+  if (!s) return "";
+  return fillTemplate(EVENT_REWARD_SETTLED_TOTAL, {
+    total: s.totalPaid,
+    count: s.joinerCount,
+  });
+});
+
+const settledAtLabel = computed(() => {
+  const s = settlement.value;
+  if (!s || !s.settledAt) return "";
+  // Reuse the relative-time helper (same one feed cards use). Falls back to
+  // the raw ISO when parsing fails so the user is never shown an empty hint.
+  const humanized = formatRelativeTime(s.settledAt) || s.settledAt;
+  return fillTemplate(EVENT_REWARD_SETTLED_AT, { at: humanized });
+});
 </script>
 
 <template>
@@ -117,17 +217,52 @@ const disabledReason = computed(() => {
       <span class="post-detail-event-block__reward-body">{{ event.rewardSummary }}</span>
     </div>
 
-    <button
-      type="button"
-      class="post-detail-event-block__action"
-      :disabled="!plan.enabled || busy"
-      :aria-disabled="!plan.enabled || busy"
-      :data-mode="plan.mode"
-      data-testid="post-detail-event-action"
-      @click="emit('act')"
+    <div
+      v-if="settlement"
+      class="post-detail-event-block__settlement"
+      data-testid="post-detail-event-reward-settlement"
     >
-      {{ buttonLabel }}
-    </button>
+      <span class="post-detail-event-block__settlement-label">
+        {{ EVENT_REWARD_SETTLED_LABEL }}
+      </span>
+      <dl class="post-detail-event-block__settlement-body">
+        <div data-settlement-field="per-joiner">
+          <dd>{{ settledPerJoinerLabel }}</dd>
+        </div>
+        <div data-settlement-field="total">
+          <dd>{{ settledTotalLabel }}</dd>
+        </div>
+        <div v-if="settledAtLabel" data-settlement-field="settled-at">
+          <dd>{{ settledAtLabel }}</dd>
+        </div>
+      </dl>
+    </div>
+
+    <div class="post-detail-event-block__actions">
+      <button
+        type="button"
+        class="post-detail-event-block__action"
+        :disabled="!plan.enabled || busy"
+        :aria-disabled="!plan.enabled || busy"
+        :data-mode="plan.mode"
+        data-testid="post-detail-event-action"
+        @click="emit('act')"
+      >
+        {{ buttonLabel }}
+      </button>
+
+      <button
+        v-if="showCompleteButton"
+        type="button"
+        class="post-detail-event-block__action post-detail-event-block__action--complete"
+        :disabled="completeBusy"
+        :aria-disabled="completeBusy"
+        data-testid="post-detail-event-complete-action"
+        @click="openConfirm"
+      >
+        {{ completeLabel }}
+      </button>
+    </div>
 
     <p v-if="disabledReason && !plan.enabled" class="post-detail-event-block__hint">
       {{ disabledReason }}
@@ -136,6 +271,52 @@ const disabledReason = computed(() => {
     <p v-if="actionError" class="post-detail-event-block__error" role="alert">
       {{ actionError }}
     </p>
+
+    <p
+      v-if="completeActionError"
+      class="post-detail-event-block__error"
+      role="alert"
+      data-testid="post-detail-event-complete-error"
+    >
+      {{ completeActionError }}
+    </p>
+
+    <Teleport to="body">
+      <div
+        v-if="confirmOpen"
+        class="post-detail-event-block__confirm"
+        role="dialog"
+        aria-modal="true"
+        :aria-label="EVENT_COMPLETE_CONFIRM_TITLE"
+        data-testid="post-detail-event-complete-confirm"
+      >
+        <div class="post-detail-event-block__confirm-backdrop" @click="dismissConfirm" />
+        <section class="post-detail-event-block__confirm-panel">
+          <h2 class="post-detail-event-block__confirm-title">{{ EVENT_COMPLETE_CONFIRM_TITLE }}</h2>
+          <p class="post-detail-event-block__confirm-body">{{ EVENT_COMPLETE_CONFIRM_BODY }}</p>
+          <div class="post-detail-event-block__confirm-actions">
+            <button
+              type="button"
+              class="post-detail-event-block__confirm-button post-detail-event-block__confirm-button--cancel"
+              :disabled="completeBusy"
+              data-testid="post-detail-event-complete-cancel"
+              @click="dismissConfirm"
+            >
+              {{ EVENT_COMPLETE_CANCEL }}
+            </button>
+            <button
+              type="button"
+              class="post-detail-event-block__confirm-button post-detail-event-block__confirm-button--primary"
+              :disabled="completeBusy"
+              data-testid="post-detail-event-complete-submit"
+              @click="confirmComplete"
+            >
+              {{ completeBusy ? EVENT_COMPLETE_PENDING : EVENT_COMPLETE_CONFIRM }}
+            </button>
+          </div>
+        </section>
+      </div>
+    </Teleport>
   </section>
 </template>
 
@@ -214,6 +395,46 @@ const disabledReason = computed(() => {
   word-break: break-word;
 }
 
+.post-detail-event-block__settlement {
+  display: grid;
+  gap: 4px;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-3, 8px);
+  background: rgba(31, 167, 160, 0.12);
+}
+
+.post-detail-event-block__settlement-label {
+  color: var(--lian-primary-deep, #0f6b66);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.post-detail-event-block__settlement-body {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+}
+
+.post-detail-event-block__settlement-body > div {
+  margin: 0;
+}
+
+.post-detail-event-block__settlement-body dd {
+  margin: 0;
+  color: var(--lian-ink);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.post-detail-event-block__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: center;
+}
+
 .post-detail-event-block__action {
   appearance: none;
   border: 0;
@@ -238,6 +459,17 @@ const disabledReason = computed(() => {
   border: 1px solid var(--lian-line, rgba(0, 0, 0, 0.12));
 }
 
+.post-detail-event-block__action--complete {
+  background: rgba(120, 120, 120, 0.16);
+  color: #444;
+  border: 1px solid rgba(120, 120, 120, 0.28);
+}
+
+.post-detail-event-block__action--complete:disabled {
+  background: rgba(120, 120, 120, 0.16);
+  color: rgba(60, 60, 60, 0.6);
+}
+
 .post-detail-event-block__hint {
   margin: 0;
   color: var(--lian-muted);
@@ -248,5 +480,76 @@ const disabledReason = computed(() => {
   margin: 0;
   color: var(--lian-danger, #a14040);
   font-size: 13px;
+}
+
+.post-detail-event-block__confirm {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.post-detail-event-block__confirm-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.32);
+}
+
+.post-detail-event-block__confirm-panel {
+  position: relative;
+  width: min(420px, 100%);
+  margin: 0 var(--space-3) calc(var(--space-4) + env(safe-area-inset-bottom, 0px));
+  padding: var(--space-4);
+  border-radius: var(--radius-card, 14px);
+  background: var(--lian-surface-1, rgba(255, 255, 255, 0.96));
+  display: grid;
+  gap: var(--space-3);
+}
+
+.post-detail-event-block__confirm-title {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--lian-ink);
+}
+
+.post-detail-event-block__confirm-body {
+  margin: 0;
+  color: var(--lian-muted);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.post-detail-event-block__confirm-actions {
+  display: flex;
+  gap: var(--space-2);
+  justify-content: flex-end;
+}
+
+.post-detail-event-block__confirm-button {
+  appearance: none;
+  border: 0;
+  border-radius: var(--radius-chip, 999px);
+  height: 40px;
+  padding: 0 var(--space-4);
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.post-detail-event-block__confirm-button--cancel {
+  background: rgba(120, 120, 120, 0.12);
+  color: var(--lian-ink);
+}
+
+.post-detail-event-block__confirm-button--primary {
+  background: var(--lian-danger, #a14040);
+  color: white;
+}
+
+.post-detail-event-block__confirm-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 </style>

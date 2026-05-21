@@ -2,6 +2,8 @@ import type { DisplayActor, SourceSignal } from "../types/feed";
 import type { PlaceRef, PlaceStatus } from "../types/place";
 import type {
   EventPostExtension,
+  EventRewardSettlement,
+  EventStatus,
   HelpPostExtension,
   HelpStatus,
   MerchantCategory,
@@ -156,12 +158,23 @@ export function normalizePlaceRef(value: unknown): PlaceRef | undefined {
   };
 }
 
+const EVENT_STATUSES: ReadonlySet<EventStatus> = new Set([
+  "open",
+  "full",
+  "closed",
+  "completed",
+  "cancelled",
+]);
+
 /**
  * Coerce a raw payload into an EventPostExtension. Returns undefined only when
  * eventId is absent — every other field is optional and degrades gracefully.
  * Wire shape mirrors backend `metadata.event` after PR-V4b: additive,
- * time/capacity/joinedCount only. The frontend derives event status from
- * those fields (see `derivedEventStatus` in domain/eventActionPolicy).
+ * time/capacity/joinedCount only. When the backend ships an authoritative
+ * `status` (e.g. after `POST /events/:id/complete` or a moderator cancel),
+ * round-trip it; `derivedEventStatus` then honors `cancelled` / `completed`
+ * over the time-based fallback. Unknown / malformed status drops to undefined
+ * — we do not invent a value.
  */
 export function normalizeEventExtension(value: unknown): EventPostExtension | undefined {
   const record = asRecord(value);
@@ -173,6 +186,12 @@ export function normalizeEventExtension(value: unknown): EventPostExtension | un
   const rewardSummary = optionalString(record.rewardSummary);
   const capacity = asOptionalPositiveInt(record.capacity);
   const joinedCount = asNonNegInt(record.joinedCount ?? record.participantCount);
+  // Issue #703 — formal lifecycle from server. When set, overrides the time +
+  // capacity derivation in `derivedEventStatus`. Today only "completed" is
+  // observed on the wire; future cancel will land here as well.
+  const status = asEnum(record.status, EVENT_STATUSES);
+  const completedAt = optionalString(record.completedAt);
+  const rewardSettlement = normalizeEventRewardSettlement(record.rewardSettlement);
 
   return {
     eventId,
@@ -182,7 +201,58 @@ export function normalizeEventExtension(value: unknown): EventPostExtension | un
     ...(capacity !== undefined ? { capacity } : {}),
     ...(rewardSummary ? { rewardSummary } : {}),
     joinedCount,
+    ...(status ? { status } : {}),
+    ...(completedAt ? { completedAt } : {}),
+    ...(rewardSettlement ? { rewardSettlement } : {}),
   };
+}
+
+/**
+ * Coerce a raw payload into an `EventRewardSettlement`. Mirrors the wire shape
+ * persisted by lian-platform-server B1 (#444 / merge
+ * 6c37ece93fc1ffcf255f26896563458f72526503) on `metadata.event.rewardSettlement`.
+ *
+ * Drops the whole settlement when `settlementId` is missing or malformed —
+ * never invents values. `totalPaid !== perJoiner * joinerCount` is NOT a drop
+ * trigger: render whatever the server says rather than second-guess it.
+ */
+export function normalizeEventRewardSettlement(value: unknown): EventRewardSettlement | undefined {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return undefined;
+  const record = asRecord(value);
+  const settlementId = optionalString(record.settlementId);
+  if (!settlementId) return undefined;
+
+  const settledAt = optionalString(record.settledAt);
+  const settledBy = optionalString(record.settledBy);
+  const perJoiner = asNonNegInt(record.perJoiner);
+  const joinerCount = asNonNegInt(record.joinerCount);
+  const totalPaid = asNonNegInt(record.totalPaid);
+  const remainder = asNonNegInt(record.remainder);
+  const joinerIds = asStringArray(record.joinerIds);
+  const honorAwarded = normalizeHonorAwarded(record.honorAwarded);
+
+  return {
+    settlementId,
+    ...(settledAt ? { settledAt } : {}),
+    ...(settledBy ? { settledBy } : {}),
+    perJoiner,
+    joinerCount,
+    totalPaid,
+    remainder,
+    joinerIds,
+    ...(honorAwarded ? { honorAwarded } : {}),
+  };
+}
+
+function normalizeHonorAwarded(value: unknown): Record<string, number> | undefined {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return undefined;
+  const out: Record<string, number> = {};
+  for (const [key, raw] of Object.entries(value as Record<string, unknown>)) {
+    const uid = asString(key);
+    if (!uid) continue;
+    out[uid] = asNonNegInt(raw);
+  }
+  return Object.keys(out).length ? out : undefined;
 }
 
 /**
@@ -200,6 +270,28 @@ export function normalizeEventJoinResult(value: unknown): {
     eventId: optionalString(record.eventId) || "",
     joinedCount: asNonNegInt(record.joinedCount),
     joined: asBoolean(record.joined),
+  };
+}
+
+/**
+ * Coerce the `/complete` response shape (issue #703). Backend
+ * `event-routes.js#handleEventComplete` returns
+ * `{ ok, eventId, status: "completed", joinedCount, completedAt }`.
+ * The frontend merges only the fields it owns (joinedCount, completedAt)
+ * back into the existing event ref, never replacing the whole block.
+ */
+export function normalizeEventCompleteResult(value: unknown): {
+  eventId: string;
+  status: "completed";
+  joinedCount: number;
+  completedAt: string;
+} {
+  const record = asRecord(value);
+  return {
+    eventId: optionalString(record.eventId) || "",
+    status: "completed",
+    joinedCount: asNonNegInt(record.joinedCount),
+    completedAt: optionalString(record.completedAt) || "",
   };
 }
 

@@ -49,6 +49,9 @@ defineProps<{
   eventPlan?: EventActionPlan;
   eventBusy?: boolean;
   eventActionError?: string;
+  eventManageable?: boolean;
+  eventCompleteBusy?: boolean;
+  eventCompleteActionError?: string;
   help?: HelpPostExtension;
   helpPlan?: HelpVotePlan;
   helpBusy?: boolean;
@@ -73,6 +76,7 @@ const emit = defineEmits<{
   submitReport: [];
   hideReportedPost: [];
   eventAct: [];
+  eventComplete: [];
   helpAct: [];
   helpOpenLinkedEvent: [tid: number];
   helpManageLinkEvent: [eventTid: number];
@@ -103,7 +107,11 @@ const emit = defineEmits<{
       :plan="eventPlan"
       :busy="!!eventBusy"
       :action-error="eventActionError"
+      :manageable="!!eventManageable"
+      :complete-busy="!!eventCompleteBusy"
+      :complete-action-error="eventCompleteActionError"
       @act="emit('eventAct')"
+      @complete="emit('eventComplete')"
     />
 
     <PostDetailHelpBlock

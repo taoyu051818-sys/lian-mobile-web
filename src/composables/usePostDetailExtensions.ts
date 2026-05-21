@@ -8,17 +8,24 @@
  *
  * The panel keeps `handleHelpOpenLinkedEvent` because it has to emit `retry`
  * on the panel, which is panel-shaped state.
+ *
+ * Issue #703 — also derives `eventManageable` (event author OR admin) so the
+ * detail view can render the "结束活动" action. The probe runs once per event
+ * post; non-event posts skip it entirely.
  */
 
 import { computed, ref, watch, type Ref } from "vue";
+import { fetchAdminMe, isAdminMeRoleEligible } from "../api/admin";
+import { fetchAuthMe } from "../api/profile";
 import {
-  EVENT_JOIN_SUCCESS,
   EVENT_CANCEL_SUCCESS,
-  HELP_VOTE_SUCCESS,
-  HELP_UNVOTE_SUCCESS,
+  EVENT_COMPLETE_SUCCESS,
+  EVENT_JOIN_SUCCESS,
+  HELP_MANAGE_CLOSE_SUCCESS,
   HELP_MANAGE_LINK_SUCCESS,
   HELP_MANAGE_RESOLVE_SUCCESS,
-  HELP_MANAGE_CLOSE_SUCCESS,
+  HELP_UNVOTE_SUCCESS,
+  HELP_VOTE_SUCCESS,
 } from "../config/brand";
 import type { PostDetail } from "../types/post";
 import type { EventPostExtension, HelpPostExtension } from "../types/post-extensions";
@@ -43,6 +50,28 @@ export function usePostDetailExtensions(options: UsePostDetailExtensionsOptions)
     () => eventLocalEvent.value || post.value?.event,
   );
 
+  // Issue #703 — author + admin probe for the "结束活动" surface. Mirrors the
+  // pattern in PostDetailTradeManageBlock: trust a server-shipped flag when
+  // present, otherwise resolve client-side via /api/auth/me + /api/admin/me.
+  // We intentionally only probe when the post has an event extension so
+  // non-event detail loads do not fan out admin-me calls.
+  const currentUserId = ref<string>("");
+  const currentUsername = ref<string>("");
+  const isAdminViewer = ref(false);
+  const eventManageable = computed<boolean>(() => {
+    const currentPost = post.value;
+    if (!currentPost?.event) return false;
+    if (currentPost.eventManageable !== undefined) return currentPost.eventManageable;
+    if (isAdminViewer.value) return true;
+    const actor = currentPost.actor;
+    if (!actor) return false;
+    if (currentUserId.value && actor.id && currentUserId.value === actor.id) return true;
+    if (currentUsername.value && actor.username && currentUsername.value === actor.username) {
+      return true;
+    }
+    return false;
+  });
+
   // V0.1 surface — backend authoritative for action permission. The publish
   // composable already gates create-event by audience.isAllowed; on the read
   // side we trust the eligibility the backend implies by returning the post
@@ -64,6 +93,11 @@ export function usePostDetailExtensions(options: UsePostDetailExtensionsOptions)
     const mode = eventActions.plan.value.mode;
     if (mode === "join") void eventActions.act(EVENT_JOIN_SUCCESS);
     else if (mode === "cancel") void eventActions.act(EVENT_CANCEL_SUCCESS);
+  }
+
+  function handleEventComplete() {
+    if (!eventManageable.value) return;
+    void eventActions.complete(EVENT_COMPLETE_SUCCESS);
   }
 
   const helpLocal = ref<HelpPostExtension | undefined>(undefined);
@@ -113,11 +147,33 @@ export function usePostDetailExtensions(options: UsePostDetailExtensionsOptions)
     void helpManage.markClosed(HELP_MANAGE_CLOSE_SUCCESS);
   }
 
+  async function probeEventManageable(currentPost: PostDetail | null) {
+    currentUserId.value = "";
+    currentUsername.value = "";
+    isAdminViewer.value = false;
+    if (!currentPost?.event) return;
+    if (currentPost.eventManageable !== undefined) return; // server already decided
+    try {
+      const [me, adminMe] = await Promise.all([
+        fetchAuthMe().catch(() => null),
+        fetchAdminMe().catch(() => null),
+      ]);
+      if (me) {
+        currentUserId.value = me.id || "";
+        currentUsername.value = me.username || "";
+      }
+      isAdminViewer.value = isAdminMeRoleEligible(adminMe);
+    } catch {
+      // Soft-fail — manageable stays false, and the UI hides the button.
+    }
+  }
+
   function reset(next: PostDetail | null) {
     eventLocalEvent.value = undefined;
     eventJoined.value = Boolean(next?.eventJoined);
     helpLocal.value = undefined;
     helpVoted.value = Boolean(next?.helpVoted);
+    void probeEventManageable(next);
   }
 
   watch(post, reset, { immediate: true });
@@ -128,6 +184,10 @@ export function usePostDetailExtensions(options: UsePostDetailExtensionsOptions)
     eventBusy: eventActions.busy,
     eventActionError: eventActions.actionError,
     handleEventAct,
+    eventManageable,
+    eventCompleteBusy: eventActions.completeBusy,
+    eventCompleteActionError: eventActions.completeActionError,
+    handleEventComplete,
 
     liveHelp,
     helpPlan: helpVote.plan,
