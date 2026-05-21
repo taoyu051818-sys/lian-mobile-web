@@ -4,6 +4,7 @@ import {
   PUBLISH_SUCCESS,
   PUBLISH_SUCCESS_BOUND,
   PUBLISH_EVENT_SUCCESS,
+  PUBLISH_EVENT_UNAVAILABLE,
   PUBLISH_EVENT_INVALID_TIME,
   PUBLISH_EVENT_CAPACITY_NOT_INT,
   PUBLISH_EVENT_CAPACITY_NEGATIVE,
@@ -13,7 +14,10 @@ import {
   PUBLISH_TRADE_GATE_BLOCK,
   PUBLISH_TRADE_PRICE_REQUIRED,
 } from "../../config/brand";
-import { resolveWriteActionErrorMessage } from "../../utils/writeActionErrors";
+import {
+  isWriteActionGenericFallback,
+  resolveWriteActionErrorMessage,
+} from "../../utils/writeActionErrors";
 import { buildPublishPayload, publishPost } from "../../api/publish";
 import { createEvent } from "../../api/events";
 import { parseCapacityInput, validateEventPublishForm } from "../../domain/eventPublishPolicy";
@@ -130,7 +134,10 @@ export function usePublishSubmit(options: {
       options.successMessage.value = PUBLISH_EVENT_SUCCESS;
       options.resetForm();
     } catch (error) {
-      options.errorMessage.value = resolveWriteActionErrorMessage("publish", error);
+      const message = resolveWriteActionErrorMessage("publish", error);
+      options.errorMessage.value = isWriteActionGenericFallback("publish", message)
+        ? PUBLISH_EVENT_UNAVAILABLE
+        : message;
     }
   }
 

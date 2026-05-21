@@ -11,20 +11,23 @@ interface WriteActionCopy {
   fallback: string;
 }
 
+export const WRITE_ACTION_FALLBACK_PUBLISH = "发布暂时没成功，内容已保留，请稍后重试。";
+export const WRITE_ACTION_FALLBACK_REPLY = "回复发送失败，内容已保留，请稍后再试。";
+
 const WRITE_ACTION_COPY: Record<WriteActionKind, WriteActionCopy> = {
   publish: {
     auth: "登录状态已失效，内容已保留，请重新登录后再发布。",
     validation: "发布内容还没填完整，内容已保留，请检查后重试。",
     network: "网络有点不稳，内容已保留，请检查连接后重试。",
     rateLimit: "操作太频繁了，内容已保留，请稍后再试。",
-    fallback: "发布暂时没成功，内容已保留，请稍后重试。",
+    fallback: WRITE_ACTION_FALLBACK_PUBLISH,
   },
   reply: {
     auth: "登录状态已失效，内容已保留，请重新登录后再回复。",
     validation: "回复发送失败，内容已保留，请检查后重试。",
     network: "网络有点不稳，内容已保留，请检查连接后重试。",
     rateLimit: "操作太频繁了，内容已保留，请稍后再试。",
-    fallback: "回复发送失败，内容已保留，请稍后再试。",
+    fallback: WRITE_ACTION_FALLBACK_REPLY,
   },
 };
 
@@ -107,4 +110,8 @@ export function resolveWriteActionErrorMessage(action: WriteActionKind, error: u
   if (isServerError(error)) return copy.fallback;
 
   return copy.fallback;
+}
+
+export function isWriteActionGenericFallback(action: WriteActionKind, message: string): boolean {
+  return message === WRITE_ACTION_COPY[action].fallback;
 }
