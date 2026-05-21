@@ -18,6 +18,12 @@ export const RUNNER_TAB_LABEL = "跑腿员视图切换";
 export const RUNNER_LIST_LOADING = "加载中…";
 export const RUNNER_LIST_EMPTY_AVAILABLE = "当前没有可接订单。";
 export const RUNNER_LIST_EMPTY_ACTIVE = "暂无进行中的订单。";
+export const RUNNER_EMPTY_AVAILABLE_TITLE = "暂时还没有新订单";
+export const RUNNER_EMPTY_AVAILABLE_BODY =
+  "保持跑腿员在线，新的校园订单进入可接池后会先显示在这里。";
+export const RUNNER_EMPTY_ACTIVE_TITLE = "你还没有进行中的配送";
+export const RUNNER_EMPTY_ACTIVE_BODY =
+  "先从可接订单里接一单，后续到店、取货和送达进度会继续在这里更新。";
 export const RUNNER_LIST_LOAD_ERROR = "订单加载失败，可以稍后再试。";
 export const RUNNER_LIST_RELOAD = "重试";
 
