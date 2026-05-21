@@ -31,7 +31,6 @@ test("profile unlock helper maps campus, merchant, and runner tags to verificati
 
 test("ProfileView renders unlock cards and only mounts errand orders after runner verification", () => {
   assert.match(profileViewSource, /buildProfileUnlockCards/);
-  assert.match(profileViewSource, /const isCampusVerified = computed/);
   assert.match(profileViewSource, /const isRunnerVerified = computed/);
   assert.match(profileViewSource, /v-if="unlockCards\.length"/);
   assert.match(profileViewSource, /data-testid="profile-unlock-card-cta"/);

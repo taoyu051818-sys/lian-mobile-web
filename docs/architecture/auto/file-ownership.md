@@ -227,7 +227,7 @@ Total files: 309
 | `features/profile/ProfileStatsBlock.vue`         | Vue SFC                                                                                                                       |   171 |
 | `features/profile/ProfileTabs.vue`               | Vue SFC                                                                                                                       |    71 |
 | `features/profile/ProfileVerificationBadges.vue` | Header surfaces only currently-active grants. Expired/revoked records                                                         |    97 |
-| `features/profile/ProfileView.vue`               | issue #692: drafts authored by the previous account must not survive                                                          |   461 |
+| `features/profile/ProfileView.vue`               | issue #692: drafts authored by the previous account must not survive                                                          |   460 |
 | `features/profile/index.ts`                      | TypeScript module                                                                                                             |     2 |
 | `features/profile/profile-header.css`            | Stylesheet                                                                                                                    |   187 |
 | `features/profile/profileUnlocks.ts`             | export interface ProfileUnlockCard                                                                                            |    71 |

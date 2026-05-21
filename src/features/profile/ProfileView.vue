@@ -45,7 +45,6 @@ const adminEntryVisible = computed(() => import.meta.env.VITE_ADMIN_VISIBLE === 
 const { user, loading, errorMessage, isMissingSessionError, refreshCurrentSession } =
   useProfileSession();
 
-const isCampusVerified = computed(() => hasActiveVerificationTag(user.value, "campus_verified"));
 const isMerchantVerified = computed(() =>
   hasActiveVerificationTag(user.value, "merchant_verified"),
 );
