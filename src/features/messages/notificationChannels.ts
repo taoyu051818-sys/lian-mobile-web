@@ -57,7 +57,7 @@ export const NOTIFICATION_CHANNELS: readonly NotificationChannelInfo[] = [
     title: NOTIFICATION_CHANNEL_EVENT_TITLE,
     description: NOTIFICATION_CHANNEL_EVENT_DESC,
     status: "pending",
-    issueUrl: "https://github.com/taoyu051818-sys/lian-mobile-web/issues/702",
+    issueUrl: "https://github.com/taoyu051818-sys/lian-mobile-web/issues/706",
   },
   {
     id: "admin-review",

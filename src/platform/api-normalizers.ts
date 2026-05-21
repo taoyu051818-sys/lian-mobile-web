@@ -216,9 +216,7 @@ export function normalizeEventExtension(value: unknown): EventPostExtension | un
  * never invents values. `totalPaid !== perJoiner * joinerCount` is NOT a drop
  * trigger: render whatever the server says rather than second-guess it.
  */
-export function normalizeEventRewardSettlement(
-  value: unknown,
-): EventRewardSettlement | undefined {
+export function normalizeEventRewardSettlement(value: unknown): EventRewardSettlement | undefined {
   if (!value || typeof value !== "object" || Array.isArray(value)) return undefined;
   const record = asRecord(value);
   const settlementId = optionalString(record.settlementId);
