@@ -95,9 +95,6 @@ test("useAdminToken exposes a sessionAdmin flag separate from the ops token", ()
   assert.match(src, /sessionAdmin/);
   assert.match(src, /setSessionAdmin/);
   assert.match(src, /clearSessionAdmin/);
-  // sessionAdmin must NOT be persisted to storage — it lives only in memory
-  // so a refresh re-runs the /api/admin/me probe. Enforce by checking the
-  // setSessionAdmin body does not call writeStorage.
   const setterMatch = src.match(
     /function\s+setSessionAdmin\s*\([^)]*\)\s*\{(?<body>[\s\S]*?)\n\s*\}/,
   );
@@ -150,10 +147,8 @@ test("AdminView probes /api/admin/me on entry and skips the token form on succes
   assert.match(src, /fetchAdminMe/);
   assert.match(src, /isAdminMeRoleEligible/);
   assert.match(src, /sessionAdmin/);
-  // Console must mount when EITHER the ops token OR a session admin probe says ok.
   assert.match(src, /consoleEnabled/);
   assert.match(src, /Boolean\(token\.value\)\s*\|\|\s*sessionAdmin\.value/);
-  // Probe runs on mount when there is no stored ops token.
   assert.match(src, /probeAdminSession/);
 });
 
@@ -161,7 +156,6 @@ test("api/admin exposes a session probe and a role-eligibility helper", () => {
   const src = read("src/api/admin.ts");
   assert.match(src, /export async function fetchAdminMe\b/);
   assert.match(src, /export function isAdminMeRoleEligible\b/);
-  // Helper must accept the token-bearer fast-path AND admin/moderator roles.
   assert.match(src, /viaToken/);
   assert.match(src, /admin/);
   assert.match(src, /moderator/);
@@ -188,6 +182,17 @@ test("AdminView keeps verification decisions bounded to pending requests", () =>
   assert.match(src, /handleVerificationReview\(request, 'approved'\)/);
   assert.match(src, /handleVerificationReview\(request, 'rejected'\)/);
   assert.match(src, /handleVerificationReveal/);
+});
+
+test("AdminView renders verification-review empty guidance for each status bucket", () => {
+  const src = read("src/features/admin/AdminView.vue");
+  assert.match(src, /const verificationEmptyState = computed/);
+  assert.match(src, /case "pending"/);
+  assert.match(src, /case "approved"/);
+  assert.match(src, /case "rejected"/);
+  assert.match(src, /data-testid="admin-verification-empty"/);
+  assert.match(src, /verificationEmptyState\.title/);
+  assert.match(src, /verificationEmptyState\.body/);
 });
 
 // --- brand registration ---
