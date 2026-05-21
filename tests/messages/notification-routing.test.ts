@@ -56,3 +56,235 @@ describe("notification routing normalization", () => {
     expect(response.items?.[0]?.target).toEqual({ kind: "detail", tid: 7 });
   });
 });
+
+describe("event notification rendering (B2 #438 fan-out)", () => {
+  // Wire shape mirrors lian-platform-server#445 (merge fc65accf):
+  //   id "evt-<eventId>-<uid>-<arm>", type, tid:<hostPostTid>, data{eventId,
+  //   hostPostTid, transition, targetType:"event", ...}, actor.displayName,
+  //   timestampISO, read=false.
+
+  it("renders event-completed with branded title, body and deep-link to host post", () => {
+    const item = normalizeNotificationItem({
+      id: "evt-evt-1-uid-7-completed",
+      type: "event-completed",
+      tid: 156,
+      title: "周末桌游夜",
+      data: {
+        eventId: "evt-1",
+        hostPostTid: 156,
+        transition: "completed",
+        targetType: "event",
+      },
+      actor: { displayName: "活动小助手" },
+      timestampISO: "2026-05-21T08:00:00Z",
+      read: false,
+    });
+
+    expect(item.kind).toBe("event-completed");
+    expect(item.title).toBe("活动已结束");
+    expect(item.excerpt).toBe("「周末桌游夜」的活动已结束。");
+    expect(item.target).toEqual({ kind: "detail", tid: 156 });
+    expect(item.actionLabel).toBe("查看详情");
+    expect(item.read).toBe(false);
+    // Server-supplied actor must pass through verbatim — brand-locked at server
+    expect(item.actor?.displayName).toBe("活动小助手");
+  });
+
+  it("renders event-reward-settled with perJoiner / totalPaid / currency in the body", () => {
+    const item = normalizeNotificationItem({
+      id: "evt-evt-1-uid-7-settlement-s-1",
+      type: "event-reward-settled",
+      tid: 156,
+      data: {
+        eventId: "evt-1",
+        hostPostTid: 156,
+        transition: "reward_settled",
+        targetType: "event",
+        settlementId: "s-1",
+        perJoiner: 50,
+        joinerCount: 3,
+        totalPaid: 150,
+        currency: "积分",
+      },
+      actor: { displayName: "活动小助手" },
+      timestampISO: "2026-05-21T08:05:00Z",
+      read: false,
+    });
+
+    expect(item.kind).toBe("event-reward-settled");
+    expect(item.title).toBe("活动奖励已发放");
+    // perJoiner = 50, currency = 积分, totalPaid = 150
+    expect(item.excerpt).toContain("50");
+    expect(item.excerpt).toContain("150");
+    expect(item.excerpt).toContain("积分");
+    expect(item.target).toEqual({ kind: "detail", tid: 156 });
+  });
+
+  it("falls back to legacy `points` payload when perJoiner is absent", () => {
+    // The B2 server today writes `data.points` for the settlement extra; the
+    // F3 brief calls for `perJoiner`. Accept either so we don't regress when
+    // the server name shifts to match the brief.
+    const item = normalizeNotificationItem({
+      type: "event-reward-settled",
+      tid: 156,
+      data: {
+        eventId: "evt-1",
+        hostPostTid: 156,
+        transition: "reward_settled",
+        targetType: "event",
+        settlementId: "s-1",
+        points: 25,
+      },
+    });
+
+    expect(item.kind).toBe("event-reward-settled");
+    expect(item.excerpt).toContain("25");
+  });
+
+  it("renders event-expired with branded title and deep-link", () => {
+    const item = normalizeNotificationItem({
+      id: "evt-evt-2-uid-7-expired",
+      type: "event-expired",
+      tid: 200,
+      data: {
+        eventId: "evt-2",
+        hostPostTid: 200,
+        transition: "expired",
+        targetType: "event",
+      },
+      actor: { displayName: "活动小助手" },
+      timestampISO: "2026-05-21T09:00:00Z",
+      read: false,
+    });
+
+    expect(item.kind).toBe("event-expired");
+    expect(item.title).toBe("活动已过期");
+    expect(item.excerpt).toContain("自动过期");
+    expect(item.target).toEqual({ kind: "detail", tid: 200 });
+    expect(item.actionLabel).toBe("查看详情");
+  });
+
+  it("falls back to a generic body and no link when tid is missing", () => {
+    // Acceptance: missing/malformed tid → no crash, no link, generic body.
+    const item = normalizeNotificationItem({
+      type: "event-completed",
+      data: {
+        eventId: "evt-1",
+        transition: "completed",
+        targetType: "event",
+      },
+    });
+
+    expect(item.kind).toBe("event-completed");
+    expect(item.title).toBe("活动已结束");
+    // No real event title — body uses placeholder, never `「」`.
+    expect(item.excerpt).toBe("「活动」的活动已结束。");
+    expect(item.target.kind).toBe("none");
+    expect(item.fallbackText).toBeTruthy();
+  });
+
+  it("survives malformed `data` without crashing", () => {
+    const item = normalizeNotificationItem({
+      type: "event-reward-settled",
+      tid: 156,
+      // Hostile shape: data is a string, not an object.
+      data: "oops" as unknown as Record<string, unknown>,
+    });
+
+    expect(item.kind).toBe("event-reward-settled");
+    expect(item.title).toBe("活动奖励已发放");
+    // perJoiner / totalPaid default to 0 when data is not a record.
+    expect(item.excerpt).toContain("0");
+    expect(item.target).toEqual({ kind: "detail", tid: 156 });
+  });
+
+  it("does not route an unknown type containing 'event' into an event kind", () => {
+    // Defensive — `event-completed` matches exactly. A different slug
+    // ("event-cancelled" hypothetical) must remain generic, not silently
+    // typecast to one of the three known kinds.
+    const item = normalizeNotificationItem({
+      type: "event-cancelled",
+      tid: 42,
+      title: "未来类型",
+    });
+
+    expect(item.kind).not.toBe("event-completed");
+    expect(item.kind).not.toBe("event-reward-settled");
+    expect(item.kind).not.toBe("event-expired");
+  });
+
+  it("preserves the deep-link route precedent: detail target with numeric tid", () => {
+    // Structural: event notifications must use the SAME { kind: "detail",
+    // tid } shape that legacy reply notifications use, so MessagesView's
+    // `detail.open(target.tid, "card")` handler routes them to /#/post/<tid>
+    // without modification.
+    const reply = normalizeNotificationItem({ type: "reply", tid: 88, title: "x" });
+    const completed = normalizeNotificationItem({
+      type: "event-completed",
+      tid: 156,
+      data: { eventId: "e", hostPostTid: 156, transition: "completed", targetType: "event" },
+    });
+
+    expect(reply.target.kind).toBe("detail");
+    expect(completed.target.kind).toBe("detail");
+    if (reply.target.kind === "detail" && completed.target.kind === "detail") {
+      expect(typeof reply.target.tid).toBe("number");
+      expect(typeof completed.target.tid).toBe("number");
+    }
+  });
+
+  it("renders mixed inbox without regression — legacy + 3 new types", () => {
+    const response = normalizeNotificationResponse({
+      items: [
+        { id: "r-1", type: "reply", tid: 10, title: "回复" },
+        {
+          id: "e-1",
+          type: "event-completed",
+          tid: 11,
+          data: {
+            eventId: "evt-a",
+            hostPostTid: 11,
+            transition: "completed",
+            targetType: "event",
+          },
+        },
+        {
+          id: "e-2",
+          type: "event-reward-settled",
+          tid: 11,
+          data: {
+            eventId: "evt-a",
+            hostPostTid: 11,
+            transition: "reward_settled",
+            targetType: "event",
+            settlementId: "s-1",
+            perJoiner: 5,
+            totalPaid: 5,
+            currency: "积分",
+          },
+        },
+        {
+          id: "e-3",
+          type: "event-expired",
+          tid: 12,
+          data: {
+            eventId: "evt-b",
+            hostPostTid: 12,
+            transition: "expired",
+            targetType: "event",
+          },
+        },
+        { id: "v-1", type: "verification-approved", title: "认证通过" },
+      ],
+    });
+
+    const kinds = (response.items || []).map((it) => it.kind);
+    expect(kinds).toEqual([
+      "reply",
+      "event-completed",
+      "event-reward-settled",
+      "event-expired",
+      "verification",
+    ]);
+  });
+});

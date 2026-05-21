@@ -14,6 +14,7 @@ export default defineConfig({
       "tests/html/**/*.test.ts",
       "tests/locales/**/*.test.ts",
       "tests/map/**/*.test.ts",
+      "tests/messages/**/*.test.ts",
       "tests/time/**/*.test.ts",
       "tests/shell/**/*.test.ts",
       "tests/publish/**/*.test.ts",

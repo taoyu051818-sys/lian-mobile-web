@@ -54,6 +54,10 @@ function notificationKindLabel(item: NotificationItem) {
       return "认证结果";
     case "order":
       return "订单提醒";
+    case "event-completed":
+    case "event-reward-settled":
+    case "event-expired":
+      return "活动通知";
     default:
       return "系统通知";
   }

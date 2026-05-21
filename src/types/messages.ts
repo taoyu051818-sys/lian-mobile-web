@@ -38,7 +38,14 @@ export interface ChannelResponse {
 
 export type NotificationActor = DisplayActor;
 
-export type NotificationKind = "reply" | "verification" | "order" | "generic";
+export type NotificationKind =
+  | "reply"
+  | "verification"
+  | "order"
+  | "event-completed"
+  | "event-reward-settled"
+  | "event-expired"
+  | "generic";
 
 export type NotificationTarget =
   | { kind: "detail"; tid: number }
