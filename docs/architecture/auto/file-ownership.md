@@ -289,7 +289,7 @@ Total files: 306
 
 | File                          | Summary                                                                                                                  | Lines |
 | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------ | ----: |
-| `platform/api-normalizers.ts` | Coerce to a non-negative integer, defaulting to 0. Convenience wrapper for the count/capacity fields backends sometim... |   385 |
+| `platform/api-normalizers.ts` | Coerce to a non-negative integer, defaulting to 0. Convenience wrapper for the count/capacity fields backends sometim... |   383 |
 | `platform/browser-storage.ts` | Centralized localStorage key surface for the Vue canary app. Every key written by Vue source code is declared here s...  |    78 |
 | `platform/clientIdentity.ts`  | export const CLIENT_ID_KEY = "lian.clientId";                                                                            |    60 |
 | `platform/leaflet.ts`         | Platform adapter for Leaflet bundled through Vite. All `any` usage is quarantined inside this file. Vue components m...  |   170 |
