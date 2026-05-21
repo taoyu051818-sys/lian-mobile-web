@@ -261,9 +261,10 @@ function fillTemplate(template: string, vars: Record<string, string | number>): 
 
 /**
  * Build the localized title + excerpt for the three event lifecycle types
- * shipped by B2 (#445). Falls back to a generic non-crashing string when
- * `data.title` is absent — the wire shape from B2 does not include a title
- * field server-side, so this branch always runs in production today.
+ * shipped by B2 (#445). The backend `raw.title` already includes the lifecycle
+ * suffix (`<eventTitle> <活动已结束|活动奖励已发放|活动已过期>`), so we only use
+ * truly structured event-name fields here. Otherwise we fall back to generic
+ * wording instead of duplicating the backend phrase inside the body.
  */
 function buildEventNotificationCopy(
   kind: NotificationKind,
@@ -274,11 +275,16 @@ function buildEventNotificationCopy(
 } {
   const data = asRecord(raw.data);
   const meta = asRecord(raw.meta);
-  // Server may eventually ship `title` / `eventTitle` in `data`; until then we
-  // fall back to the generic placeholder so the body never reads `「」`.
+  const target = asRecord(raw.target);
   const eventTitle =
-    firstString(data?.eventTitle, data?.title, meta?.eventTitle, meta?.title, raw.title) ||
-    NOTIF_EVENT_TITLE_FALLBACK;
+    firstString(
+      data?.eventTitle,
+      data?.eventName,
+      meta?.eventTitle,
+      meta?.eventName,
+      target?.eventTitle,
+      target?.eventName,
+    ) || NOTIF_EVENT_TITLE_FALLBACK;
 
   if (kind === "event-completed") {
     return {
@@ -379,9 +385,9 @@ export function normalizeNotificationItem(raw: RawNotificationItem): Notificatio
   const type = firstString(raw.type, data?.type, meta?.type, targetRecord?.type);
 
   // For the three event-lifecycle types we always own the brand strings — the
-  // backend (#445) does not write a Chinese title/body, only the structured
-  // payload. The wire `excerpt` ("获得 XX LIAN 积分") is intentionally ignored
-  // in favor of the localized template so the UI is consistent across locales.
+  // backend (#445) already shapes `title` / `excerpt`, but `raw.title` is not a
+  // safe bare event name for localized body composition, so event copy comes
+  // only from structured event-name fields plus the frontend templates here.
   let title = rawTitle;
   let excerpt = rawExcerpt;
   if (isEventKind(kind)) {
