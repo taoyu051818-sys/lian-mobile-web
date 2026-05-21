@@ -63,14 +63,15 @@ describe("event notification rendering (B2 #438 fan-out)", () => {
   //   hostPostTid, transition, targetType:"event", ...}, actor.displayName,
   //   timestampISO, read=false.
 
-  it("renders event-completed with branded title, body and deep-link to host post", () => {
+  it("uses a structured event title when one exists", () => {
     const item = normalizeNotificationItem({
       id: "evt-evt-1-uid-7-completed",
       type: "event-completed",
       tid: 156,
-      title: "周末桌游夜",
+      title: "周末桌游夜 活动已结束",
       data: {
         eventId: "evt-1",
+        eventTitle: "周末桌游夜",
         hostPostTid: 156,
         transition: "completed",
         targetType: "event",
@@ -86,8 +87,26 @@ describe("event notification rendering (B2 #438 fan-out)", () => {
     expect(item.target).toEqual({ kind: "detail", tid: 156 });
     expect(item.actionLabel).toBe("查看详情");
     expect(item.read).toBe(false);
-    // Server-supplied actor must pass through verbatim — brand-locked at server
     expect(item.actor?.displayName).toBe("活动小助手");
+  });
+
+  it("does not treat backend raw.title as a bare event name", () => {
+    const item = normalizeNotificationItem({
+      id: "evt-evt-1-uid-7-completed",
+      type: "event-completed",
+      tid: 156,
+      title: "周末桌游夜 活动已结束",
+      data: {
+        eventId: "evt-1",
+        hostPostTid: 156,
+        transition: "completed",
+        targetType: "event",
+      },
+    });
+
+    expect(item.title).toBe("活动已结束");
+    expect(item.excerpt).toBe("「活动」的活动已结束。");
+    expect(item.excerpt).not.toContain("周末桌游夜 活动已结束");
   });
 
   it("renders event-reward-settled with perJoiner / totalPaid / currency in the body", () => {
@@ -97,6 +116,7 @@ describe("event notification rendering (B2 #438 fan-out)", () => {
       tid: 156,
       data: {
         eventId: "evt-1",
+        eventTitle: "周末桌游夜",
         hostPostTid: 156,
         transition: "reward_settled",
         targetType: "event",
@@ -113,7 +133,7 @@ describe("event notification rendering (B2 #438 fan-out)", () => {
 
     expect(item.kind).toBe("event-reward-settled");
     expect(item.title).toBe("活动奖励已发放");
-    // perJoiner = 50, currency = 积分, totalPaid = 150
+    expect(item.excerpt).toContain("周末桌游夜");
     expect(item.excerpt).toContain("50");
     expect(item.excerpt).toContain("150");
     expect(item.excerpt).toContain("积分");
@@ -121,9 +141,6 @@ describe("event notification rendering (B2 #438 fan-out)", () => {
   });
 
   it("falls back to legacy `points` payload when perJoiner is absent", () => {
-    // The B2 server today writes `data.points` for the settlement extra; the
-    // F3 brief calls for `perJoiner`. Accept either so we don't regress when
-    // the server name shifts to match the brief.
     const item = normalizeNotificationItem({
       type: "event-reward-settled",
       tid: 156,
@@ -148,6 +165,7 @@ describe("event notification rendering (B2 #438 fan-out)", () => {
       tid: 200,
       data: {
         eventId: "evt-2",
+        eventTitle: "过期活动",
         hostPostTid: 200,
         transition: "expired",
         targetType: "event",
@@ -159,13 +177,13 @@ describe("event notification rendering (B2 #438 fan-out)", () => {
 
     expect(item.kind).toBe("event-expired");
     expect(item.title).toBe("活动已过期");
+    expect(item.excerpt).toContain("过期活动");
     expect(item.excerpt).toContain("自动过期");
     expect(item.target).toEqual({ kind: "detail", tid: 200 });
     expect(item.actionLabel).toBe("查看详情");
   });
 
   it("falls back to a generic body and no link when tid is missing", () => {
-    // Acceptance: missing/malformed tid → no crash, no link, generic body.
     const item = normalizeNotificationItem({
       type: "event-completed",
       data: {
@@ -177,7 +195,6 @@ describe("event notification rendering (B2 #438 fan-out)", () => {
 
     expect(item.kind).toBe("event-completed");
     expect(item.title).toBe("活动已结束");
-    // No real event title — body uses placeholder, never `「」`.
     expect(item.excerpt).toBe("「活动」的活动已结束。");
     expect(item.target.kind).toBe("none");
     expect(item.fallbackText).toBeTruthy();
@@ -187,21 +204,16 @@ describe("event notification rendering (B2 #438 fan-out)", () => {
     const item = normalizeNotificationItem({
       type: "event-reward-settled",
       tid: 156,
-      // Hostile shape: data is a string, not an object.
       data: "oops" as unknown as Record<string, unknown>,
     });
 
     expect(item.kind).toBe("event-reward-settled");
     expect(item.title).toBe("活动奖励已发放");
-    // perJoiner / totalPaid default to 0 when data is not a record.
     expect(item.excerpt).toContain("0");
     expect(item.target).toEqual({ kind: "detail", tid: 156 });
   });
 
   it("does not route an unknown type containing 'event' into an event kind", () => {
-    // Defensive — `event-completed` matches exactly. A different slug
-    // ("event-cancelled" hypothetical) must remain generic, not silently
-    // typecast to one of the three known kinds.
     const item = normalizeNotificationItem({
       type: "event-cancelled",
       tid: 42,
@@ -214,10 +226,6 @@ describe("event notification rendering (B2 #438 fan-out)", () => {
   });
 
   it("preserves the deep-link route precedent: detail target with numeric tid", () => {
-    // Structural: event notifications must use the SAME { kind: "detail",
-    // tid } shape that legacy reply notifications use, so MessagesView's
-    // `detail.open(target.tid, "card")` handler routes them to /#/post/<tid>
-    // without modification.
     const reply = normalizeNotificationItem({ type: "reply", tid: 88, title: "x" });
     const completed = normalizeNotificationItem({
       type: "event-completed",
