@@ -14,7 +14,7 @@ Total files: 323
 
 | File                  | Summary                                                                                                                  | Lines |
 | --------------------- | ------------------------------------------------------------------------------------------------------------------------ | ----: |
-| `api/admin.ts`        | export type AdminVerificationStatus = "pending" \| "approved" \| "rejected";                                             |   268 |
+| `api/admin.ts`        | export type AdminVerificationStatus = "pending" \| "approved" \| "rejected";                                             |   304 |
 | `api/aiPublish.ts`    | AI publish API client (PRD V0.1 §3 / §7.4 / Phase 3). Three endpoints, all already in the backend live surface: PO...    |   165 |
 | `api/audience.ts`     | Audience options API client. Backend route (PRD V0.1 §11.1): GET /api/audience/options The route may be missing in o...  |    81 |
 | `api/auth.ts`         | export type AuthMode = "login" \| "register";                                                                            |    66 |
