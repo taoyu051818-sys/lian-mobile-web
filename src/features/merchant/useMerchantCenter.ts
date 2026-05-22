@@ -1,47 +1,69 @@
 /**
  * Merchant center state composable (issue #646).
  *
- * Owns the GET /api/me/merchant-center round-trip and exposes the snapshot to
- * the gate + center view. The composable does NOT own the merchant_verified
- * gate decision — that always comes off the snapshot directly so the view can
- * branch without an extra /api/auth/me call.
+ * Owns two read-only round-trips:
+ *   - `GET /api/auth/me` → drives the merchant_verified gate decision via
+ *     `useIsMerchantVerified`. Source of truth lives here so the view does
+ *     not have to reach into the profile feature for a user ref (the layer
+ *     guard rejects cross-feature imports of private internals).
+ *   - `GET /api/me/posts` (via `fetchMyMerchantPosts`) → returns the user's
+ *     authored posts filtered to the merchant subset. No new backend route
+ *     is introduced.
  *
- * Errand-order routes (PRD §12) are out of scope here; this composable only
- * surfaces the read-only `errand` block from the merchant-center DTO.
+ * Errand-order routes (PRD §12) are out of scope here; the per-post errand
+ * eligibility readout lives on the post detail surface, not the merchant
+ * center list.
  */
-import { computed, ref } from "vue";
-import { fetchMerchantCenter } from "../../api/merchant";
+import { ref } from "vue";
+import { fetchMyMerchantPosts } from "../../api/merchant";
+import { fetchAuthMe } from "../../api/profile";
 import { extractErrorMessage } from "../../utils/extractErrorMessage";
 import { MERCHANT_CENTER_LOAD_ERROR } from "../../config/brand";
-import type { MerchantCenterSnapshot } from "../../types/merchant";
-
-function emptySnapshot(): MerchantCenterSnapshot {
-  return {
-    merchantVerified: false,
-    profile: null,
-    errand: { available: false, reason: "", reasonText: "" },
-  };
-}
+import type { MerchantCenterPostItem } from "../../types/merchant";
+import type { ProfileUser } from "../../types/profile";
+import { useIsMerchantVerified } from "./useIsMerchantVerified";
 
 export function useMerchantCenter() {
-  const snapshot = ref<MerchantCenterSnapshot>(emptySnapshot());
+  const user = ref<ProfileUser | null>(null);
+  const posts = ref<MerchantCenterPostItem[]>([]);
   const loading = ref(false);
   const errorMessage = ref("");
   const loaded = ref(false);
+  const isMerchantVerified = useIsMerchantVerified(user);
 
-  const merchantVerified = computed(() => snapshot.value.merchantVerified);
-  const profile = computed(() => snapshot.value.profile);
-  const errand = computed(() => snapshot.value.errand);
+  /**
+   * Refresh `/api/auth/me`. Updates the merchant_verified gate. Returns
+   * `true` when the call succeeded so the caller can branch on the gate
+   * decision before kicking off the post list refresh.
+   */
+  async function refreshSession(): Promise<boolean> {
+    try {
+      user.value = await fetchAuthMe();
+      return true;
+    } catch {
+      // Session probe failure is silent — the gate falls back to "not
+      // merchant_verified" which routes to the verification center, the
+      // same UX a logged-out user would get.
+      user.value = null;
+      return false;
+    }
+  }
 
+  /**
+   * Refresh the merchant post list. Caller is responsible for ensuring the
+   * gate is open before invoking this; otherwise we return early so a guest
+   * does not pay the cost of a /api/me/posts probe that will 401.
+   */
   async function refresh() {
+    if (!isMerchantVerified.value) return;
     loading.value = true;
     errorMessage.value = "";
     try {
-      snapshot.value = await fetchMerchantCenter();
+      posts.value = await fetchMyMerchantPosts();
       loaded.value = true;
     } catch (error) {
       // Keep `loaded=false` so the view stays on the loading/error state and
-      // the gate is not flashed when the only failure is transport.
+      // does not flash an empty list when the only failure is transport.
       errorMessage.value = extractErrorMessage(error, MERCHANT_CENTER_LOAD_ERROR);
     } finally {
       loading.value = false;
@@ -49,13 +71,13 @@ export function useMerchantCenter() {
   }
 
   return {
-    snapshot,
+    user,
+    posts,
     loading,
     loaded,
     errorMessage,
-    merchantVerified,
-    profile,
-    errand,
+    isMerchantVerified,
+    refreshSession,
     refresh,
   };
 }
