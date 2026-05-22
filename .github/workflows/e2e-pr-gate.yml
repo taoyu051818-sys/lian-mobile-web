@@ -1,0 +1,96 @@
+name: E2E PR Gate
+
+# Fast, zero-side-effect Playwright subset that runs on every PR.
+#
+# Scope contract: only specs that hit nat100 read-only (no publish, no PATCH,
+# no admin approval, no order-state transitions, no money). Side-effecting
+# specs continue to run via e2e-journey.yml (workflow_dispatch + nightly cron).
+#
+# Spec inclusion rule:
+#   - tests/e2e/account-fixture.spec.ts        (login + GET /api/auth/me only)
+#   - tests/e2e/post-detail-cold-start.spec.ts (anonymous browse on shared feed item)
+#   - tests/e2e/messages-notification-proof.spec.ts (mocks the messages API itself)
+#   - tests/e2e/runner-center.spec.ts          (read-only queue lookups, gate proofs)
+#   - tests/e2e/journey.spec.ts (only the anonymous browse subtest — guarded by
+#     a grep for "anonymous browse" so we don't accidentally pull in the
+#     login-and-mutate subtest that lives in the same file)
+#
+# Anything that would publish, PATCH state, approve verification, or move
+# money belongs in e2e-journey.yml, not here.
+
+on:
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+  statuses: write
+
+jobs:
+  e2e-pr-gate:
+    name: E2E PR gate (read-only journeys)
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      APP_BASE_URL: https://lian.nat100.top
+
+      # Read-only roles (login + GET /api/auth/me + GET /api/me/*).
+      LIAN_E2E_REGISTERED_USERNAME: ${{ secrets.LIAN_E2E_REGISTERED_USERNAME }}
+      LIAN_E2E_REGISTERED_PASSWORD: ${{ secrets.LIAN_E2E_REGISTERED_PASSWORD }}
+      LIAN_E2E_CAMPUS_USERNAME: ${{ secrets.LIAN_E2E_CAMPUS_USERNAME }}
+      LIAN_E2E_CAMPUS_PASSWORD: ${{ secrets.LIAN_E2E_CAMPUS_PASSWORD }}
+      LIAN_E2E_MERCHANT_USERNAME: ${{ secrets.LIAN_E2E_MERCHANT_USERNAME }}
+      LIAN_E2E_MERCHANT_PASSWORD: ${{ secrets.LIAN_E2E_MERCHANT_PASSWORD }}
+      LIAN_E2E_RUNNER_USERNAME: ${{ secrets.LIAN_E2E_RUNNER_USERNAME }}
+      LIAN_E2E_RUNNER_PASSWORD: ${{ secrets.LIAN_E2E_RUNNER_PASSWORD }}
+      LIAN_E2E_ADMIN_USERNAME: ${{ secrets.LIAN_E2E_ADMIN_USERNAME }}
+      LIAN_E2E_ADMIN_PASSWORD: ${{ secrets.LIAN_E2E_ADMIN_PASSWORD }}
+      LIAN_E2E_EVENT_CREATOR_USERNAME: ${{ secrets.LIAN_E2E_EVENT_CREATOR_USERNAME }}
+      LIAN_E2E_EVENT_CREATOR_PASSWORD: ${{ secrets.LIAN_E2E_EVENT_CREATOR_PASSWORD }}
+      LIAN_E2E_ORG_MEMBER_USERNAME: ${{ secrets.LIAN_E2E_ORG_MEMBER_USERNAME }}
+      LIAN_E2E_ORG_MEMBER_PASSWORD: ${{ secrets.LIAN_E2E_ORG_MEMBER_PASSWORD }}
+
+      # Required for the event-fixture consumer + post-detail event extension.
+      LIAN_E2E_SEEDED_EVENT_ID: ${{ secrets.LIAN_E2E_SEEDED_EVENT_ID }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browser
+        run: npx playwright install --with-deps chromium
+
+      - name: Run read-only PR-gate subset
+        # Explicit list. Adding a new spec here is a deliberate decision —
+        # it must be read-only against nat100 (no POST/PATCH/DELETE that
+        # mutates persistent state).
+        # Within journey.spec.ts we only include the first subtest by name;
+        # the second/third subtests login-and-mutate and belong in nightly.
+        run: |
+          npx playwright test \
+            tests/e2e/account-fixture.spec.ts \
+            tests/e2e/post-detail-cold-start.spec.ts \
+            tests/e2e/messages-notification-proof.spec.ts \
+            tests/e2e/runner-center.spec.ts \
+            -g "anonymous browse|@account-fixture|@detail|@messages|@runner" \
+            --reporter=list
+
+      - name: Upload Playwright artifacts on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-pr-gate-artifacts
+          path: |
+            playwright-report/
+            test-results/
+          if-no-files-found: ignore
