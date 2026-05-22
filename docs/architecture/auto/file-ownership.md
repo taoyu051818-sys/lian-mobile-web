@@ -25,7 +25,7 @@ Total files: 313
 | `api/interaction.ts`  | Like/vote unified interaction API (PRD V0.1 §7.1.2, §11.3). Backend already exposes `/api/posts/:tid/like` for likes...  |    65 |
 | `api/map.ts`          | TypeScript module                                                                                                        |    14 |
 | `api/merchant.ts`     | Merchant center API (issue #646). Source endpoints (no new route — see `types/merchant.ts` for rationale): - `GET ...    |   122 |
-| `api/messages.ts`     | Server-side `type` slugs that B2 (#438 / lian-platform-server#445) writes for the three event-lifecycle fan-outs. The... |   693 |
+| `api/messages.ts`     | Server-side `type` slugs that B2 (#438 / lian-platform-server#445) writes for the three event-lifecycle fan-outs. The... |   778 |
 | `api/places.ts`       | TypeScript module                                                                                                        |    10 |
 | `api/posts.ts`        | export interface PostLikeResponse                                                                                        |   267 |
 | `api/profile.ts`      | export function normalizeProfileListItem(item: unknown): ProfileListItem                                                 |   163 |
@@ -213,9 +213,9 @@ Total files: 313
 | `features/messages/ChannelThread.vue`              | Vue SFC                                                                                                                       |   268 |
 | `features/messages/MessagesTabs.vue`               | Vue SFC                                                                                                                       |    58 |
 | `features/messages/MessagesView.vue`               | Vue SFC                                                                                                                       |   204 |
-| `features/messages/NotificationList.vue`           | Vue SFC                                                                                                                       |   416 |
+| `features/messages/NotificationList.vue`           | Vue SFC                                                                                                                       |   419 |
 | `features/messages/index.ts`                       | TypeScript module                                                                                                             |     6 |
-| `features/messages/messageInbox.ts`                | export interface NotificationGapLink                                                                                          |    88 |
+| `features/messages/messageInbox.ts`                | export interface NotificationGapLink                                                                                          |    94 |
 | `features/messages/notificationChannels.ts`        | Backend issue tracking the channel. `null` when the channel is already shipping (no follow-up needed).                        |    70 |
 | `features/messages/useChannelMessages.ts`          | export function useChannelMessages()                                                                                          |   227 |
 | `features/messages/useMessageComposer.ts`          | export function useMessageComposer(options:                                                                                   |   102 |
