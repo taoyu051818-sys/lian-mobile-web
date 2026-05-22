@@ -38,14 +38,14 @@ Total files: 310
 | File                                | Summary                                                                                                                 | Lines |
 | ----------------------------------- | ----------------------------------------------------------------------------------------------------------------------- | ----: |
 | `app/AppViewHost.vue`               | `feed` is the cold-start view, so it is intentionally eager-imported — first                                            |    55 |
-| `app/DetailSurface.vue`             | App-level detail overlay. The detail-navigation FSM is the single source                                                |   123 |
+| `app/DetailSurface.vue`             | App-level detail overlay. The detail-navigation FSM is the single source                                                |   147 |
 | `app/ViewAsyncError.vue`            | Vue SFC                                                                                                                 |    50 |
 | `app/ViewLoadingFallback.vue`       | Vue SFC                                                                                                                 |    39 |
 | `app/deepLink.ts`                   | Pure parsing/building helpers for the SPA's hash-based deep links. The app routes on `window.location.hash` (no vue-... |    60 |
 | `app/detail-navigation/fetcher.ts`  | Side-effect helper that bridges the reducer's `fetch` effect to the network. The reducer is pure; it never holds a P... |    27 |
 | `app/detail-navigation/index.ts`    | export type { DetailNavigation } from "./store";                                                                        |     8 |
 | `app/detail-navigation/state.ts`    | Pure state machine for the post-detail navigation flow. The whole detail panel — open/close, fetch lifecycle, URL ha... |   178 |
-| `app/detail-navigation/store.ts`    | Module-scoped reactive wrapper around the pure detail-navigation reducer. Why a module singleton: the URL hash, the ... |   157 |
+| `app/detail-navigation/store.ts`    | Module-scoped reactive wrapper around the pure detail-navigation reducer. Why a module singleton: the URL hash, the ... |   162 |
 | `app/detail-navigation/url-sync.ts` | Bridges window.location.hash → reducer for the post-detail tid. The detail-navigation reducer is the single source o... |    58 |
 | `app/post-detail-hash.ts`           | Post-detail hash writer — `#/post/{tid}`. Pure history I/O. No module-scoped tid ref, no listener: the detail-naviga... |    69 |
 | `app/useActiveView.ts`              | export function useActiveView()                                                                                         |    39 |
