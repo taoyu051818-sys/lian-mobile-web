@@ -1,0 +1,22 @@
+# Allowlist: views that already bypass the composable layer and import
+# directly from src/api/*. Listed here for issue #758's view-boundary guard.
+#
+# Semantics:
+#   - One repo-relative path per line. Blank lines and `#` comments ignored.
+#   - Files listed here continue to print a `[warn]` line per direct-api
+#     import but do NOT fail the guard.
+#   - Any new view-layer direct-api import (not on this list) fails CI.
+#
+# Cleanup is tracked under the architecture-mess umbrella (issue #500); each
+# entry should be migrated to a `use*` composable in a follow-up PR.
+src/features/admin/AdminView.vue
+src/features/auth/AuthInterestPicker.vue
+src/features/auth/AuthRegisterFields.vue
+src/features/detail/PostDetailTradeManageBlock.vue
+src/features/feed/FeedItemCardFooter.vue
+src/features/profile/ProfileAvatarEditor.vue
+src/features/profile/ProfileRewardsBlock.vue
+src/features/profile/ProfileStatsBlock.vue
+src/features/profile/ProfileView.vue
+src/features/runner/RunnerCenterView.vue
+src/features/verification/VerificationView.vue
