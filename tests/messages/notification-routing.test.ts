@@ -377,3 +377,153 @@ describe("event notification rendering (B2 #438 fan-out)", () => {
     ]);
   });
 });
+
+describe("admin moderation notification rendering (ps#493 fan-out)", () => {
+  // Wire shape mirrors lian-platform-server#493:
+  //   id "mod-report-<reportId>-<status>-<reporterUid>-<decidedAt>" or
+  //      "mod-post-<tid>-<verb>-<authorUid>-<decidedAt>"
+  //   type, tid (post tid), title, excerpt, actor:{id:"system", name:"LIAN"},
+  //   read, timestampISO, data{...}, idempotencyKey.
+  // Backend hardcodes actor=LIAN; admin reviewer identity and free-text notes
+  // never reach the wire — we never try to surface them.
+
+  it("routes report-accepted to the reported post detail", () => {
+    const item = normalizeNotificationItem({
+      id: "mod-report-r-1-accepted-uid-7-2026-05-22T08:00:00Z",
+      type: "report-accepted",
+      tid: 320,
+      title: "举报已受理",
+      excerpt: "我们已受理你的举报，正在处理中。",
+      actor: { id: "system", name: "LIAN" },
+      read: false,
+      timestampISO: "2026-05-22T08:00:00Z",
+    });
+
+    expect(item.kind).toBe("moderation");
+    expect(item.target).toEqual({ kind: "detail", tid: 320 });
+    expect(item.actionLabel).toBe("查看被举报内容");
+  });
+
+  it("falls back to a stable 'no detail' card when a report-* envelope has no tid", () => {
+    const item = normalizeNotificationItem({
+      id: "mod-report-r-2-resolved-uid-7-2026-05-22T08:01:00Z",
+      type: "report-resolved",
+      title: "举报已处理完毕",
+      excerpt: "你举报的内容已处理完毕。",
+      actor: { id: "system", name: "LIAN" },
+      read: false,
+      timestampISO: "2026-05-22T08:01:00Z",
+    });
+
+    expect(item.kind).toBe("moderation");
+    expect(item.target).toEqual({
+      kind: "none",
+      reason: "举报详情已记录在管理后台。",
+    });
+    expect(item.fallbackText).toBe("举报详情已记录在管理后台。");
+  });
+
+  it("routes post-hidden to the affected post detail with the post-family action label", () => {
+    const item = normalizeNotificationItem({
+      id: "mod-post-410-hidden-uid-9-2026-05-22T08:02:00Z",
+      type: "post-hidden",
+      tid: 410,
+      title: "您的帖子已被隐藏",
+      excerpt: "管理员将该帖子转为隐藏状态。",
+      actor: { id: "system", name: "LIAN" },
+      read: false,
+      timestampISO: "2026-05-22T08:02:00Z",
+    });
+
+    expect(item.kind).toBe("moderation");
+    expect(item.target).toEqual({ kind: "detail", tid: 410 });
+    expect(item.actionLabel).toBe("查看相关帖子");
+  });
+
+  it("routes post-locked / post-unlocked / post-restored as moderation with detail target", () => {
+    for (const type of ["post-locked", "post-unlocked", "post-restored"]) {
+      const item = normalizeNotificationItem({
+        id: `mod-post-410-${type.replace("post-", "")}-uid-9-2026-05-22T08:03:00Z`,
+        type,
+        tid: 410,
+        title: "x",
+        excerpt: "x",
+        actor: { id: "system", name: "LIAN" },
+      });
+
+      expect(item.kind).toBe("moderation");
+      expect(item.target).toEqual({ kind: "detail", tid: 410 });
+      expect(item.actionLabel).toBe("查看相关帖子");
+    }
+  });
+
+  it("routes report-ignored to the reported post detail with the report-family action label", () => {
+    const item = normalizeNotificationItem({
+      id: "mod-report-r-3-ignored-uid-7-2026-05-22T08:04:00Z",
+      type: "report-ignored",
+      tid: 320,
+      title: "举报未予立案",
+      excerpt: "经审核，本次举报暂不立案。",
+      actor: { id: "system", name: "LIAN" },
+    });
+
+    expect(item.kind).toBe("moderation");
+    expect(item.target).toEqual({ kind: "detail", tid: 320 });
+    expect(item.actionLabel).toBe("查看被举报内容");
+  });
+
+  it("does not poach the moderation bucket from generic types containing 'post' or 'report'", () => {
+    // The exact-match table guards against a future user-facing slug like
+    // "post-comment" or "report-summary" being routed onto the moderation kind.
+    // The fuzzy haystack would otherwise see "post" / "report" and bypass us.
+    const stranger = normalizeNotificationItem({
+      type: "post-comment",
+      tid: 10,
+      title: "x",
+    });
+    expect(stranger.kind).not.toBe("moderation");
+  });
+
+  it("renders mixed inbox without regression — moderation co-exists with reply / event / verification", () => {
+    const response = normalizeNotificationResponse({
+      items: [
+        { id: "r-1", type: "reply", tid: 10, title: "回复" },
+        {
+          id: "mod-report-r-1-accepted-uid-7-t1",
+          type: "report-accepted",
+          tid: 11,
+          title: "举报已受理",
+          actor: { id: "system", name: "LIAN" },
+        },
+        {
+          id: "mod-post-12-hidden-uid-9-t1",
+          type: "post-hidden",
+          tid: 12,
+          title: "您的帖子已被隐藏",
+          actor: { id: "system", name: "LIAN" },
+        },
+        {
+          id: "e-1",
+          type: "event-completed",
+          tid: 13,
+          data: {
+            eventId: "evt-a",
+            hostPostTid: 13,
+            transition: "completed",
+            targetType: "event",
+          },
+        },
+        { id: "v-1", type: "verification-approved", title: "认证通过" },
+      ],
+    });
+
+    const kinds = (response.items || []).map((it) => it.kind);
+    expect(kinds).toEqual([
+      "reply",
+      "moderation",
+      "moderation",
+      "event-completed",
+      "verification",
+    ]);
+  });
+});

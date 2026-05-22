@@ -14,6 +14,7 @@ import {
   NOTIFICATION_KIND_VERIFICATION,
   NOTIFICATION_KIND_ORDER,
   NOTIFICATION_KIND_EVENT,
+  NOTIFICATION_KIND_MODERATION,
   NOTIFICATION_KIND_SYSTEM,
   NOTIFICATION_CHANNELS_LABEL,
   NOTIFICATION_CHANNELS_HINT,
@@ -85,6 +86,8 @@ function notificationKindLabel(item: NotificationItem) {
     case "event-reward-settled":
     case "event-expired":
       return NOTIFICATION_KIND_EVENT;
+    case "moderation":
+      return NOTIFICATION_KIND_MODERATION;
     default:
       return NOTIFICATION_KIND_SYSTEM;
   }

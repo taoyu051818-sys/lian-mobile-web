@@ -236,7 +236,9 @@ type ErrandOrderStatus =
  * All seven roll up to a single NotificationKind ("moderation") because they
  * land in the same system tab, share the same actor (LIAN), and only differ
  * in fallback copy + tap-target. Kept exact (no fuzzy match) so a future type
- * containing the substring "post" or "report" never poaches this bucket.
+ * containing the substring "report" or "post" never poaches this bucket; the
+ * haystack would otherwise match on `report-resolved` from the word "report"
+ * alone and fight the moderation contract.
  *
  * Backend (ps#493) hardcodes actor={id:"system", name:"LIAN"}; admin reviewer
  * identity and free-text notes never reach the wire. The frontend never tries
@@ -510,6 +512,54 @@ function buildErrandNotificationCopy(
   };
 }
 
+const MODERATION_COPY: Record<string, { title: string; body: string }> = {
+  "report-accepted": {
+    title: NOTIF_MOD_REPORT_ACCEPTED_TITLE,
+    body: NOTIF_MOD_REPORT_ACCEPTED_BODY,
+  },
+  "report-ignored": {
+    title: NOTIF_MOD_REPORT_IGNORED_TITLE,
+    body: NOTIF_MOD_REPORT_IGNORED_BODY,
+  },
+  "report-resolved": {
+    title: NOTIF_MOD_REPORT_RESOLVED_TITLE,
+    body: NOTIF_MOD_REPORT_RESOLVED_BODY,
+  },
+  "post-hidden": {
+    title: NOTIF_MOD_POST_HIDDEN_TITLE,
+    body: NOTIF_MOD_POST_HIDDEN_BODY,
+  },
+  "post-locked": {
+    title: NOTIF_MOD_POST_LOCKED_TITLE,
+    body: NOTIF_MOD_POST_LOCKED_BODY,
+  },
+  "post-unlocked": {
+    title: NOTIF_MOD_POST_UNLOCKED_TITLE,
+    body: NOTIF_MOD_POST_UNLOCKED_BODY,
+  },
+  "post-restored": {
+    title: NOTIF_MOD_POST_RESTORED_TITLE,
+    body: NOTIF_MOD_POST_RESTORED_BODY,
+  },
+};
+
+/**
+ * Build the localized title + excerpt for the seven admin-moderation types
+ * shipped by ps#493. The backend supplies title + excerpt in the envelope
+ * verbatim; this is the front-end fallback used when those fields are missing
+ * or empty. The fallback text is intentionally generic — admin reviewer notes
+ * never reach the wire (privacy contract from ps#493), so the body never
+ * tries to surface them.
+ */
+function buildModerationNotificationCopy(
+  raw: RawNotificationItem,
+): { title: string; excerpt: string } | null {
+  const rawType = stringValue(raw.type).toLowerCase();
+  const copy = MODERATION_COPY[rawType];
+  if (!copy) return null;
+  return { title: copy.title, excerpt: copy.body };
+}
+
 function resolveNotificationTid(raw: RawNotificationItem): number | null {
   const data = asRecord(raw.data);
   const meta = asRecord(raw.meta);
@@ -548,15 +598,39 @@ function resolveNotificationTarget(
   if (kind === "order") {
     return { kind: "none", reason: "订单类通知会在后续版本接入目标页。" };
   }
+  if (kind === "moderation") {
+    // ps#493 — `report-*` (recipient = reporter) tap-targets the reported
+    // post when the envelope carries a tid; if the report's tid was scrubbed
+    // (admin-only context) we render a disabled card pointing at the admin
+    // surface instead. `post-*` (recipient = author) always carries the tid
+    // because the envelope is built around the post the action was applied to.
+    const family = moderationFamily(stringValue(raw.type).toLowerCase());
+    if (family === "report") {
+      return tid
+        ? { kind: "detail", tid }
+        : { kind: "none", reason: "举报详情已记录在管理后台。" };
+    }
+    if (family === "post") {
+      return tid ? { kind: "detail", tid } : { kind: "none", reason: "该帖子暂时无法打开。" };
+    }
+    // Unknown moderation slug — fall through to the generic path below.
+  }
   return tid ? { kind: "detail", tid } : { kind: "none", reason: "该系统通知暂时只支持查看摘要。" };
 }
 
 function resolveNotificationActionLabel(
   kind: NotificationKind,
   target: NotificationTarget,
+  raw?: RawNotificationItem,
 ): string {
   if (target.kind === "detail") {
-    return kind === "reply" ? "查看回复详情" : "查看详情";
+    if (kind === "reply") return "查看回复详情";
+    if (kind === "moderation" && raw) {
+      const family = moderationFamily(stringValue(raw.type).toLowerCase());
+      if (family === "report") return "查看被举报内容";
+      if (family === "post") return "查看相关帖子";
+    }
+    return "查看详情";
   }
   if (target.kind === "verification") {
     return "前往认证中心";
@@ -597,6 +671,17 @@ export function normalizeNotificationItem(raw: RawNotificationItem): Notificatio
       if (!title) title = copy.title;
       if (!excerpt) excerpt = copy.excerpt;
     }
+  } else if (kind === "moderation") {
+    // ps#493 — backend supplies title + excerpt verbatim in the envelope, so
+    // we keep those when present and only synthesise from the locked
+    // moderation-type table when the wire fields are missing/empty. This
+    // keeps the server as the source of truth for the body, but guarantees
+    // the UI never renders a blank moderation row when the envelope is sparse.
+    const copy = buildModerationNotificationCopy(raw);
+    if (copy) {
+      if (!title) title = copy.title;
+      if (!excerpt) excerpt = copy.excerpt;
+    }
   }
 
   return {
@@ -611,7 +696,7 @@ export function normalizeNotificationItem(raw: RawNotificationItem): Notificatio
     timestampISO:
       firstString(raw.timestampISO, data?.timestampISO, meta?.timestampISO) || undefined,
     kind,
-    actionLabel: resolveNotificationActionLabel(kind, target),
+    actionLabel: resolveNotificationActionLabel(kind, target, raw),
     fallbackText: target.kind === "none" ? target.reason : undefined,
     target,
   };
