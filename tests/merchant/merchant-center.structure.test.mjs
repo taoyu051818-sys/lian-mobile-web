@@ -44,14 +44,19 @@ test("useActiveView accepts secret view 'merchant'", () => {
   assert.match(viewTypes, /export type AppViewKey/);
 });
 
-// --- types: merchant-center DTO + errand reason union ---
+// --- types: merchant-center list item + errand reason union ---
 
-test("MerchantCenterSnapshot carries verified flag, profile, errand block", () => {
+test("MerchantCenterPostItem carries tid + title + hours + errandSupported", () => {
+  // Issue #646 (refactor): merchant center now lists user-authored merchant
+  // posts derived from /api/me/posts client-side, not a /api/me/merchant-center
+  // round-trip. The list-item shape mirrors what the post detail view needs to
+  // re-render the same merchant block.
   const src = read("src/types/merchant.ts");
-  assert.match(src, /export interface MerchantCenterSnapshot/);
-  assert.match(src, /merchantVerified:\s*boolean/);
-  assert.match(src, /profile:\s*MerchantProfileSummary\s*\|\s*null/);
-  assert.match(src, /errand:\s*MerchantErrandEligibility/);
+  assert.match(src, /export interface MerchantCenterPostItem/);
+  assert.match(src, /tid:\s*number/);
+  assert.match(src, /title:\s*string/);
+  assert.match(src, /hours:\s*string/);
+  assert.match(src, /errandSupported:\s*boolean/);
 });
 
 test("MerchantErrandUnavailableReason union covers the documented codes", () => {
@@ -67,21 +72,27 @@ test("MerchantErrandUnavailableReason union covers the documented codes", () => 
   }
 });
 
-test("MerchantProfileSummary mirrors backend metadata.merchant fields", () => {
-  const src = read("src/types/merchant.ts");
-  assert.match(src, /export interface MerchantProfileSummary/);
-  for (const field of ["name", "category", "hours", "contact", "errandSupported", "verifiedAt"]) {
-    assert.match(src, new RegExp(`\\b${field}\\b`));
-  }
+// --- API: client-side derivation from /api/me/posts ---
+
+test("api/merchant pulls merchant items from /api/me/posts", () => {
+  const src = read("src/api/merchant.ts");
+  // No backend route is introduced — we reuse the existing endpoint that
+  // profile's "我发布" tab already consumes.
+  assert.match(src, /\/api\/me\/posts/);
+  assert.match(src, /export async function fetchMyMerchantPosts/);
+  assert.match(src, /apiGet</);
+  // /api/me/merchant-center is NOT a route this layer is allowed to touch.
+  assert.doesNotMatch(src, /\/api\/me\/merchant-center/);
 });
 
-// --- API: GET /api/me/merchant-center + normalizers ---
-
-test("api/merchant calls GET /api/me/merchant-center via apiGet", () => {
+test("api/merchant detects merchant items via the three documented signals", () => {
   const src = read("src/api/merchant.ts");
-  assert.match(src, /\/api\/me\/merchant-center/);
-  assert.match(src, /export async function fetchMerchantCenter/);
-  assert.match(src, /apiGet</);
+  // presentationIntent === "merchant", contentType merchant_*, or inline
+  // metadata.merchant block — keeping all three lets the detector survive
+  // wire-shape changes.
+  assert.match(src, /presentationIntent === "merchant"/);
+  assert.match(src, /contentType\.startsWith\("merchant_"\)/);
+  assert.match(src, /hasMerchantBlock/);
 });
 
 test("api/merchant exposes errand-eligibility normalizer with bounded reason set", () => {
@@ -93,16 +104,15 @@ test("api/merchant exposes errand-eligibility normalizer with bounded reason set
   assert.match(src, /"unknown"/);
 });
 
-// --- composable: useMerchantCenter owns the round-trip + gate state ---
+// --- composable: useMerchantCenter owns the round-trip + post list state ---
 
-test("useMerchantCenter exposes merchantVerified + errand + refresh", () => {
+test("useMerchantCenter exposes posts + refresh + loaded state", () => {
   const src = read("src/features/merchant/useMerchantCenter.ts");
   assert.match(src, /export function useMerchantCenter/);
-  assert.match(src, /fetchMerchantCenter/);
-  assert.match(src, /merchantVerified/);
-  assert.match(src, /errand/);
+  assert.match(src, /fetchMyMerchantPosts/);
+  assert.match(src, /posts/);
   assert.match(src, /refresh/);
-  // Loaded flag prevents flashing the gate while the snapshot is in flight.
+  // Loaded flag prevents flashing the empty list while the request is in flight.
   assert.match(src, /loaded/);
 });
 
@@ -117,25 +127,28 @@ test("MerchantCenterGate exposes the gate testid + verify CTA", () => {
 
 // --- view: gate vs verified branches + chrome wiring ---
 
-test("MerchantCenterView shows gate when merchantVerified=false", () => {
+test("MerchantCenterView shows the gate when the user is not merchant_verified", () => {
   const src = read("src/features/merchant/MerchantCenterView.vue");
+  // Identity comes from /api/auth/me via useIsMerchantVerified — never the
+  // empty-list shortcut.
+  assert.match(src, /useIsMerchantVerified/);
   assert.match(src, /MerchantCenterGate/);
-  assert.match(src, /v-else-if="!center\.merchantVerified\.value"/);
-  assert.match(src, /setActiveView\("verification"\)/);
+  assert.match(src, /v-if="!isMerchantVerified"/);
 });
 
-test("MerchantCenterView surfaces profile readout + errand status when verified", () => {
+test("MerchantCenterView surfaces the post list with hours + errand status", () => {
   const src = read("src/features/merchant/MerchantCenterView.vue");
-  assert.match(src, /data-testid="merchant-center-profile"/);
-  assert.match(src, /data-testid="merchant-center-profile-name"/);
-  assert.match(src, /data-testid="merchant-center-errand"/);
-  assert.match(src, /data-testid="merchant-center-errand-status"/);
-  assert.match(src, /data-testid="merchant-center-errand-reason"/);
+  assert.match(src, /data-testid="merchant-center-list"/);
+  assert.match(src, /MERCHANT_CENTER_HOURS_LABEL/);
+  assert.match(src, /MERCHANT_CENTER_ERRAND_AVAILABLE/);
+  assert.match(src, /MERCHANT_CENTER_ERRAND_UNAVAILABLE/);
+  assert.match(src, /merchant-center-empty/);
 });
 
-test("MerchantCenterView refreshes the snapshot on mount", () => {
+test("MerchantCenterView refreshes the post list on mount when verified", () => {
   const src = read("src/features/merchant/MerchantCenterView.vue");
-  assert.match(src, /onMounted\([\s\S]*center\.refresh/);
+  assert.match(src, /onMounted/);
+  assert.match(src, /center\.refresh/);
 });
 
 // --- post detail: errand entry surfaces the unavailable reason ---
@@ -182,8 +195,13 @@ test("merchant center brand strings are registered", () => {
     "MERCHANT_CENTER_ENTER_LABEL",
     "MERCHANT_CENTER_GATE_TITLE",
     "MERCHANT_CENTER_GATE_CTA",
-    "MERCHANT_CENTER_PROFILE_TITLE",
-    "MERCHANT_CENTER_ERRAND_TITLE",
+    "MERCHANT_CENTER_POSTS_TITLE",
+    "MERCHANT_CENTER_HOURS_LABEL",
+    "MERCHANT_CENTER_ERRAND_AVAILABLE",
+    "MERCHANT_CENTER_ERRAND_UNAVAILABLE",
+    "MERCHANT_CENTER_OPEN_DETAIL",
+    "MERCHANT_CENTER_EMPTY_HEADLINE",
+    "MERCHANT_CENTER_EMPTY_HINT",
     "MERCHANT_ERRAND_UNAVAILABLE_LABEL",
     "MERCHANT_ERRAND_REASON_NOT_VERIFIED",
     "MERCHANT_ERRAND_REASON_NO_RUNNER_COVERAGE",
@@ -211,8 +229,13 @@ test("useIsMerchantVerified composable is exported from features/merchant", () =
 
 test("ProfileView mounts the merchant-center entry when the user holds merchant_verified", () => {
   const src = read("src/features/profile/ProfileView.vue");
-  assert.match(src, /import \{ useIsMerchantVerified \} from "\.\.\/merchant"/);
-  assert.match(src, /const isMerchantVerified = useIsMerchantVerified\(user\)/);
+  // ProfileView keeps its own `hasActiveVerificationTag` gate (shared with the
+  // unlock cards / runner entry) instead of importing the merchant composable
+  // — both paths read the same `verificationState.merchant_verified.active`
+  // truth, so the entry is gated correctly either way. What matters here is
+  // that the entry is present, hidden behind merchant_verified, and routes
+  // into the merchant secret view.
+  assert.match(src, /hasActiveVerificationTag\(user\.value, "merchant_verified"\)/);
   assert.match(src, /data-testid="profile-merchant-entry"/);
   assert.match(src, /v-if="isMerchantVerified"/);
   assert.match(src, /setActiveView\('merchant'\)/);

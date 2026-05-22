@@ -125,18 +125,17 @@ export const MERCHANT_CENTER_ENTER_LABEL = "商家中心";
 export const MERCHANT_CENTER_BACK_TO_PROFILE = "返回我的";
 export const MERCHANT_CENTER_GATE_TITLE = "需要商家认证";
 export const MERCHANT_CENTER_GATE_HINT =
-  "完成「认证中心 → 商家认证」后，即可进入商家中心管理你的店铺与帮我取入口。";
+  "完成「认证中心 → 商家认证」后，即可进入商家中心查看你的商家内容与跑腿状态。";
 export const MERCHANT_CENTER_GATE_CTA = "去认证中心";
 export const MERCHANT_CENTER_GATE_BLOCK = "尚未通过商家认证。";
-export const MERCHANT_CENTER_PROFILE_TITLE = "商家档案";
-export const MERCHANT_CENTER_PROFILE_NAME_LABEL = "商家名称";
-export const MERCHANT_CENTER_PROFILE_CATEGORY_LABEL = "经营类目";
-export const MERCHANT_CENTER_PROFILE_HOURS_LABEL = "营业时间";
-export const MERCHANT_CENTER_PROFILE_CONTACT_LABEL = "联系方式";
-export const MERCHANT_CENTER_PROFILE_VERIFIED_AT = "认证生效于";
-export const MERCHANT_CENTER_ERRAND_TITLE = "帮我取入口";
-export const MERCHANT_CENTER_ERRAND_AVAILABLE = "已开放";
-export const MERCHANT_CENTER_ERRAND_UNAVAILABLE = "暂未开放";
+export const MERCHANT_CENTER_POSTS_TITLE = "我的商家内容";
+export const MERCHANT_CENTER_HOURS_LABEL = "营业时间";
+export const MERCHANT_CENTER_ERRAND_AVAILABLE = "支持帮我取";
+export const MERCHANT_CENTER_ERRAND_UNAVAILABLE = "暂不支持帮我取";
+export const MERCHANT_CENTER_OPEN_DETAIL = "查看详情";
+export const MERCHANT_CENTER_EMPTY_HEADLINE = "您暂未发布商家内容";
+export const MERCHANT_CENTER_EMPTY_HINT =
+  "在发布页选择「商家帖」即可发布商品或菜单，发布后会出现在这里。";
 export const MERCHANT_CENTER_LOAD_ERROR = "商家中心加载失败，可以稍后再试。";
 export const MERCHANT_CENTER_RELOAD = "重新加载";
 export const MERCHANT_CENTER_LOADING = "加载商家中心…";

@@ -1,24 +1,27 @@
 /**
  * Merchant center (issue #646) types.
  *
- * Backend (`/api/me/merchant-center`) ships a profile readout for merchants who
- * hold an active `merchant_verified` grant: a snapshot of their merchant
- * identity (name + category) and the errand eligibility currently applied to
- * any merchant post they would publish. Errand state-machine (#647/#648) is
- * out of scope here — this module only carries the "can the entry render"
- * signal plus a reason string when it's unavailable.
+ * The merchant center is a read-only surface for `merchant_verified` users.
+ * Source data comes from two endpoints that already exist:
+ *   - GET /api/auth/me → identity check (`merchant_verified` grant)
+ *   - GET /api/me/posts → user's authored posts; filter to merchant items
+ *     client-side using `metadata.presentationIntent` / `metadata.merchant`.
  *
- * Wire shape mirrors the backend payload exactly so the normalizer stays
- * field-by-field. Optional fields degrade to empty strings rather than
- * undefined to match the rest of the API surface.
+ * No new backend route is introduced. An earlier iteration (PR #659) shipped
+ * a `/api/me/merchant-center` endpoint, but the route was never deployed and
+ * left the feature in a load-error state in production. Reusing the existing
+ * `/api/me/posts` endpoint keeps the merchant center honest about what the
+ * platform can answer today and aligns with NodeBB-native first.
+ *
+ * The errand-order state machine (PRD §12 / issue #647) stays out of scope
+ * here — this module only carries the read-only post list plus the
+ * eligibility signal that the post detail page surfaces.
  */
 
-import type { MerchantCategory } from "./post-extensions";
-
 /**
- * Reason codes the backend may attach when `errandEntryAvailable` is false.
- * Kept as a string union for forward compatibility — unknown codes degrade to
- * `unknown` and the UI falls back to the generic copy.
+ * Reason codes the backend may attach when an errand entry is unavailable.
+ * Kept as a string union for forward compatibility — unknown codes degrade
+ * to `unknown` and the UI falls back to the generic copy.
  */
 export type MerchantErrandUnavailableReason =
   | "not_verified"
@@ -36,21 +39,18 @@ export interface MerchantErrandEligibility {
   reasonText: string;
 }
 
-export interface MerchantProfileSummary {
-  name: string;
-  category: MerchantCategory;
+/**
+ * Merchant-center list item — derived from `/api/me/posts` by filtering on
+ * `metadata.presentationIntent === "merchant"`, the `merchant_*` content type
+ * family, or the presence of a `metadata.merchant` block. Carries only the
+ * fields the merchant-center view renders directly; the post detail page is
+ * the canonical surface for the rest of the merchant block.
+ */
+export interface MerchantCenterPostItem {
+  tid: number;
+  title: string;
+  /** Merchant's posted business hours; empty string when the publisher left it blank. */
   hours: string;
-  contact: string;
-  /** ISO timestamp of the active `merchant_verified` grant. */
-  verifiedAt: string;
-  /** Default errandSupported flag the merchant has configured for new posts. */
+  /** Whether the publisher opted into the errand entry on this post. */
   errandSupported: boolean;
-}
-
-export interface MerchantCenterSnapshot {
-  /** True iff `/api/auth/me` reports an active `merchant_verified` grant. */
-  merchantVerified: boolean;
-  /** Profile readout — present iff `merchantVerified=true`. */
-  profile: MerchantProfileSummary | null;
-  errand: MerchantErrandEligibility;
 }

@@ -1,29 +1,26 @@
 /**
  * Merchant center API (issue #646).
  *
- * `GET /api/me/merchant-center` returns the merchant readout for the signed-in
- * user. Backend gates the response on `merchant_verified` — when the grant is
- * absent, the route still answers 200 with `merchantVerified=false` so the
- * client can render the upsell gate without a second round-trip. We mirror
- * that contract so the view never has to distinguish "missing grant" from
- * "transport error".
+ * Source endpoints (no new route — see `types/merchant.ts` for rationale):
+ *   - `GET /api/me/posts` — current user's authored posts. We filter to the
+ *     merchant subset by inspecting `presentationIntent`, `contentType`, and
+ *     the optional inline `merchant` block. Anything that looks merchant-
+ *     flavored is rolled up into a `MerchantCenterPostItem`.
+ *   - `GET /api/auth/me` — owns the merchant_verified gate; the
+ *     `useIsMerchantVerified` composable wraps that.
  *
  * Errand-order routes (PRD §12) are intentionally NOT exposed here — the
  * merchant center is read-only state plumbing; the order state machine lives
- * in #647/#648.
+ * in #647/#648. We keep `normalizeMerchantErrandEligibility` here because the
+ * post-detail normalizer (`api/posts.ts`) imports it for the unavailable-
+ * reason readout on the post detail block.
  */
 import { apiGet } from "./http";
-import {
-  asBoolean,
-  asRecord,
-  asString,
-  normalizeMerchantExtension,
-} from "../platform/api-normalizers";
+import { asBoolean, asNumber, asRecord, asString } from "../platform/api-normalizers";
 import type {
-  MerchantCenterSnapshot,
+  MerchantCenterPostItem,
   MerchantErrandEligibility,
   MerchantErrandUnavailableReason,
-  MerchantProfileSummary,
 } from "../types/merchant";
 
 const ERRAND_REASON_CODES: ReadonlySet<MerchantErrandUnavailableReason> = new Set([
@@ -55,34 +52,70 @@ export function normalizeMerchantErrandEligibility(value: unknown): MerchantErra
   };
 }
 
-export function normalizeMerchantProfileSummary(value: unknown): MerchantProfileSummary | null {
-  // Reuse the post-extension normalizer — wire shape is identical (name +
-  // category + hours + contact + errandSupported + verifiedAt). Returning null
-  // when the extension is unrecoverable keeps the gate path honest: a missing
-  // `name` means the backend has no profile to surface yet.
-  const merchant = normalizeMerchantExtension(value);
-  if (!merchant) return null;
-  return {
-    name: merchant.name,
-    category: merchant.category,
-    hours: merchant.hours,
-    contact: merchant.contact,
-    errandSupported: merchant.errandSupported,
-    verifiedAt: merchant.verifiedAt,
-  };
-}
-
-export function normalizeMerchantCenterSnapshot(value: unknown): MerchantCenterSnapshot {
+/**
+ * Detect a merchant post from a list item. We accept three signals so the
+ * detector keeps working as the wire shape evolves:
+ *   - `metadata.presentationIntent === "merchant"` (post-PR-V607)
+ *   - `contentType` starts with `merchant_` (food/service/retail family)
+ *   - inline `metadata.merchant` block — even partial (any object presence)
+ *
+ * Returns the inline merchant record + presentation flags so the caller can
+ * pull `hours` / `errandSupported` without re-walking the payload.
+ */
+function readMerchantSignal(value: unknown): {
+  isMerchant: boolean;
+  hours: string;
+  errandSupported: boolean;
+} {
   const record = asRecord(value);
-  const merchantVerified = asBoolean(record.merchantVerified);
+  const metadata = asRecord(record.metadata);
+  const presentationIntent = asString(metadata.presentationIntent).toLowerCase();
+  const contentType = asString(record.contentType ?? metadata.contentType).toLowerCase();
+  // Top-level `merchant` block (post detail wire) AND `metadata.merchant`
+  // (raw post wire) both occur in the wild — accept either.
+  const merchantBlockRaw = record.merchant !== undefined ? record.merchant : metadata.merchant;
+  const merchantBlock = asRecord(merchantBlockRaw);
+  const hasMerchantBlock = Object.keys(merchantBlock).length > 0;
+
+  const isMerchant =
+    presentationIntent === "merchant" || contentType.startsWith("merchant_") || hasMerchantBlock;
+
   return {
-    merchantVerified,
-    profile: merchantVerified ? normalizeMerchantProfileSummary(record.profile) : null,
-    errand: normalizeMerchantErrandEligibility(record.errand),
+    isMerchant,
+    hours: asString(merchantBlock.hours),
+    errandSupported: asBoolean(merchantBlock.errandSupported),
   };
 }
 
-export async function fetchMerchantCenter(): Promise<MerchantCenterSnapshot> {
-  const data = await apiGet<unknown>("/api/me/merchant-center");
-  return normalizeMerchantCenterSnapshot(data);
+export function normalizeMerchantCenterPostItem(value: unknown): MerchantCenterPostItem | null {
+  const record = asRecord(value);
+  const tid = Math.trunc(asNumber(record.tid, 0));
+  if (!Number.isFinite(tid) || tid <= 0) return null;
+  const signal = readMerchantSignal(record);
+  if (!signal.isMerchant) return null;
+  return {
+    tid,
+    title: asString(record.title),
+    hours: signal.hours,
+    errandSupported: signal.errandSupported,
+  };
+}
+
+/**
+ * Fetch the current user's authored posts and reduce to the merchant subset.
+ * Uses `/api/me/posts` (the same endpoint the profile "发布" tab consumes) so
+ * the merchant center never invents a backend surface. Items without any
+ * merchant signal are dropped client-side; an empty result is the legitimate
+ * "no merchant content yet" state.
+ */
+export async function fetchMyMerchantPosts(): Promise<MerchantCenterPostItem[]> {
+  const data = await apiGet<unknown>("/api/me/posts");
+  const record = asRecord(data);
+  const rawItems = Array.isArray(record.items) ? record.items : [];
+  const items: MerchantCenterPostItem[] = [];
+  for (const raw of rawItems) {
+    const item = normalizeMerchantCenterPostItem(raw);
+    if (item) items.push(item);
+  }
+  return items;
 }

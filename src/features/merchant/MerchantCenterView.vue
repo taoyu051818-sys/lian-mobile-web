@@ -3,46 +3,43 @@
  * Merchant center (issue #646).
  *
  * Routing:
- *   - secret view "merchant" — only reachable via setActiveView("merchant")
- *     after a `merchant_verified` user enters from ProfileView (or a future
- *     entry button). Hash deep-link is intentionally absent: refreshing the
- *     page returns the user to the feed.
+ *   - Reachable as the secret view "merchant" via setActiveView("merchant")
+ *     from ProfileView (the entry button is gated on merchant_verified) and
+ *     via direct hash deep-link `#/merchant`. The hash path is included so
+ *     the gate-vs-list branch can be exercised from a URL.
  *
- * Gate vs center:
- *   - When /api/me/merchant-center reports `merchantVerified=false`, this
- *     view shows the gate (CTA to verification center). The gate is the
- *     same component used everywhere else so the UX stays consistent.
- *   - When verified, the view renders the merchant profile readout plus the
- *     errand-eligibility chip (read-only — order state machine is #647/#648).
+ * Identity gate:
+ *   - Identity comes from `useMerchantCenter`, which owns the /api/auth/me
+ *     round-trip and exposes the merchant_verified gate via
+ *     `useIsMerchantVerified`. When the user is not verified, the view
+ *     renders the gate component which routes to the verification center.
+ *     The view never silently renders an empty list for non-merchant users.
  *
- * Loading state:
- *   - We branch on `loaded` rather than `loading`: the gate path requires a
- *     successful round-trip first so the user is never flashed the gate while
- *     the snapshot is still in flight.
+ * Data:
+ *   - Reuses `GET /api/me/posts` and filters client-side to merchant items
+ *     (presentationIntent === "merchant" / contentType merchant_* / inline
+ *     merchant block). No new backend route is introduced.
  */
 import { computed, onMounted, watch } from "vue";
 import { LianButton } from "../../ui";
 import { useActiveView } from "../../app/useActiveView";
+import { useDetailNavigation } from "../../app/detail-navigation";
 import {
   MERCHANT_CENTER_BACK_TO_PROFILE,
+  MERCHANT_CENTER_EMPTY_HEADLINE,
+  MERCHANT_CENTER_EMPTY_HINT,
   MERCHANT_CENTER_ERRAND_AVAILABLE,
-  MERCHANT_CENTER_ERRAND_TITLE,
   MERCHANT_CENTER_ERRAND_UNAVAILABLE,
+  MERCHANT_CENTER_HOURS_LABEL,
   MERCHANT_CENTER_LOADING,
-  MERCHANT_CENTER_PROFILE_CATEGORY_LABEL,
-  MERCHANT_CENTER_PROFILE_CONTACT_LABEL,
-  MERCHANT_CENTER_PROFILE_HOURS_LABEL,
-  MERCHANT_CENTER_PROFILE_NAME_LABEL,
-  MERCHANT_CENTER_PROFILE_TITLE,
-  MERCHANT_CENTER_PROFILE_VERIFIED_AT,
+  MERCHANT_CENTER_OPEN_DETAIL,
+  MERCHANT_CENTER_POSTS_TITLE,
   MERCHANT_CENTER_RELOAD,
   MERCHANT_CENTER_SECTION_LABEL,
-  MERCHANT_CONTACT_UNSET,
   MERCHANT_HOURS_UNSET,
 } from "../../config/brand";
 import type { PageChromeSpec } from "../../shell/page-model";
 import MerchantCenterGate from "./MerchantCenterGate.vue";
-import { categoryLabel, errandReasonText, formatVerifiedAt } from "./merchant-format";
 import { useMerchantCenter } from "./useMerchantCenter";
 
 const emit = defineEmits<{
@@ -52,6 +49,7 @@ const emit = defineEmits<{
 
 const center = useMerchantCenter();
 const { setActiveView } = useActiveView();
+const detail = useDetailNavigation();
 
 const pageChrome = computed<PageChromeSpec>(() => ({
   top: {
@@ -68,107 +66,112 @@ function goVerify() {
   setActiveView("verification");
 }
 
-const hoursLabel = computed(() => center.profile.value?.hours || MERCHANT_HOURS_UNSET);
-const contactLabel = computed(() => center.profile.value?.contact || MERCHANT_CONTACT_UNSET);
-const verifiedAt = computed(() => formatVerifiedAt(center.profile.value?.verifiedAt));
-const errandReason = computed(() => errandReasonText(center.errand.value));
+function openPost(tid: number) {
+  detail.open(tid, "card");
+}
+
+function hoursLabel(hours: string) {
+  return hours || MERCHANT_HOURS_UNSET;
+}
 
 watch(pageChrome, (spec) => emit("chrome", spec), { deep: true, immediate: false });
 
-onMounted(() => {
+onMounted(async () => {
   emit("chrome", pageChrome.value);
-  void center.refresh();
+  // Refresh /api/auth/me so the gate decision matches the freshest verification
+  // state, then load the merchant post list when the gate is open. The
+  // composable short-circuits the post fetch when the gate is closed.
+  await center.refreshSession();
+  if (center.isMerchantVerified.value) {
+    void center.refresh();
+  }
+});
+
+watch(center.isMerchantVerified, (verified) => {
+  if (verified && !center.loaded.value && !center.loading.value) {
+    void center.refresh();
+  }
 });
 </script>
 
 <template>
   <section class="merchant-center" :aria-label="MERCHANT_CENTER_SECTION_LABEL">
-    <div
-      v-if="center.loading.value && !center.loaded.value"
-      class="merchant-center__state"
-      role="status"
-      data-testid="merchant-center-loading"
-    >
-      {{ MERCHANT_CENTER_LOADING }}
-    </div>
-
-    <p
-      v-else-if="center.errorMessage.value && !center.loaded.value"
-      class="merchant-center__feedback is-error"
-      role="alert"
-      data-testid="merchant-center-error"
-    >
-      {{ center.errorMessage.value }}
-      <LianButton size="sm" variant="ghost" @click="() => void center.refresh()">{{
-        MERCHANT_CENTER_RELOAD
-      }}</LianButton>
-    </p>
-
     <MerchantCenterGate
-      v-else-if="!center.merchantVerified.value"
+      v-if="!center.isMerchantVerified.value"
       block
       data-testid="merchant-center-gate-host"
       @go-verify="goVerify"
     />
 
     <template v-else>
-      <section class="merchant-center__profile" :aria-label="MERCHANT_CENTER_PROFILE_TITLE">
-        <header class="merchant-center__heading">
-          <h2>{{ MERCHANT_CENTER_PROFILE_TITLE }}</h2>
-          <p v-if="verifiedAt" class="merchant-center__verified-at">
-            {{ MERCHANT_CENTER_PROFILE_VERIFIED_AT }} {{ verifiedAt }}
-          </p>
-        </header>
+      <header class="merchant-center__header">
+        <h2>{{ MERCHANT_CENTER_POSTS_TITLE }}</h2>
+      </header>
 
-        <dl class="merchant-center__profile-rows" data-testid="merchant-center-profile">
-          <div class="merchant-center__row">
-            <dt>{{ MERCHANT_CENTER_PROFILE_NAME_LABEL }}</dt>
-            <dd data-testid="merchant-center-profile-name">{{ center.profile.value?.name }}</dd>
-          </div>
-          <div class="merchant-center__row">
-            <dt>{{ MERCHANT_CENTER_PROFILE_CATEGORY_LABEL }}</dt>
-            <dd>{{ categoryLabel(center.profile.value!.category) }}</dd>
-          </div>
-          <div class="merchant-center__row">
-            <dt>{{ MERCHANT_CENTER_PROFILE_HOURS_LABEL }}</dt>
-            <dd>{{ hoursLabel }}</dd>
-          </div>
-          <div class="merchant-center__row">
-            <dt>{{ MERCHANT_CENTER_PROFILE_CONTACT_LABEL }}</dt>
-            <dd>{{ contactLabel }}</dd>
-          </div>
-        </dl>
-      </section>
-
-      <section
-        class="merchant-center__errand"
-        :aria-label="MERCHANT_CENTER_ERRAND_TITLE"
-        data-testid="merchant-center-errand"
+      <div
+        v-if="center.loading.value && !center.loaded.value"
+        class="merchant-center__state"
+        role="status"
+        data-testid="merchant-center-loading"
       >
-        <header class="merchant-center__heading">
-          <h3>{{ MERCHANT_CENTER_ERRAND_TITLE }}</h3>
-          <span
-            class="merchant-center__errand-status"
-            :class="{ 'is-available': center.errand.value.available }"
-            :data-available="center.errand.value.available ? 'true' : 'false'"
-            data-testid="merchant-center-errand-status"
-          >
-            {{
-              center.errand.value.available
-                ? MERCHANT_CENTER_ERRAND_AVAILABLE
-                : MERCHANT_CENTER_ERRAND_UNAVAILABLE
-            }}
-          </span>
-        </header>
+        {{ MERCHANT_CENTER_LOADING }}
+      </div>
 
-        <p
-          v-if="!center.errand.value.available"
-          class="merchant-center__errand-reason"
-          data-testid="merchant-center-errand-reason"
+      <p
+        v-else-if="center.errorMessage.value && !center.loaded.value"
+        class="merchant-center__feedback is-error"
+        role="alert"
+        data-testid="merchant-center-error"
+      >
+        {{ center.errorMessage.value }}
+        <LianButton size="sm" variant="ghost" @click="() => void center.refresh()">{{
+          MERCHANT_CENTER_RELOAD
+        }}</LianButton>
+      </p>
+
+      <p
+        v-else-if="!center.posts.value.length"
+        class="merchant-center__state"
+        data-testid="merchant-center-empty"
+      >
+        <strong>{{ MERCHANT_CENTER_EMPTY_HEADLINE }}</strong>
+        <span class="merchant-center__hint">{{ MERCHANT_CENTER_EMPTY_HINT }}</span>
+      </p>
+
+      <ul v-else class="merchant-center__list" data-testid="merchant-center-list">
+        <li
+          v-for="post in center.posts.value"
+          :key="post.tid"
+          class="merchant-center__row"
+          :data-testid="`merchant-center-row-${post.tid}`"
         >
-          {{ errandReason }}
-        </p>
-      </section>
+          <div class="merchant-center__row-copy">
+            <strong class="merchant-center__row-title">{{ post.title }}</strong>
+            <span class="merchant-center__row-meta">
+              {{ MERCHANT_CENTER_HOURS_LABEL }} {{ hoursLabel(post.hours) }}
+            </span>
+            <span
+              class="merchant-center__row-errand"
+              :data-available="post.errandSupported ? 'true' : 'false'"
+              :data-testid="`merchant-center-errand-${post.tid}`"
+            >
+              {{
+                post.errandSupported
+                  ? MERCHANT_CENTER_ERRAND_AVAILABLE
+                  : MERCHANT_CENTER_ERRAND_UNAVAILABLE
+              }}
+            </span>
+          </div>
+          <button
+            type="button"
+            class="merchant-center__row-cta"
+            :data-testid="`merchant-center-open-${post.tid}`"
+            @click="openPost(post.tid)"
+          >
+            {{ MERCHANT_CENTER_OPEN_DETAIL }}
+          </button>
+        </li>
+      </ul>
     </template>
   </section>
 </template>
@@ -180,12 +183,30 @@ onMounted(() => {
   padding: calc(var(--floating-bar-height) + var(--space-3)) var(--space-3) var(--space-6);
 }
 
+.merchant-center__header h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 900;
+}
+
 .merchant-center__state {
   display: grid;
+  gap: var(--space-1);
   min-height: 96px;
-  place-items: center;
-  color: var(--lian-muted);
+  place-content: center;
   text-align: center;
+  color: var(--lian-muted);
+}
+
+.merchant-center__state strong {
+  color: var(--lian-ink);
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.merchant-center__hint {
+  font-size: 12px;
+  line-height: 1.5;
 }
 
 .merchant-center__feedback {
@@ -206,69 +227,47 @@ onMounted(() => {
   color: rgb(185, 28, 28);
 }
 
-.merchant-center__profile,
-.merchant-center__errand {
+.merchant-center__list {
   display: grid;
   gap: var(--space-3);
-  padding: var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.merchant-center__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3);
   border: 1px solid var(--lian-line);
   border-radius: var(--radius-card);
   background: var(--lian-card-strong);
   box-shadow: var(--shadow-card);
 }
 
-.merchant-center__heading {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-2);
-}
-
-.merchant-center__heading h2 {
-  margin: 0;
-  font-size: 18px;
-  font-weight: 900;
-}
-
-.merchant-center__heading h3 {
-  margin: 0;
-  font-size: 16px;
-  font-weight: 900;
-}
-
-.merchant-center__verified-at {
-  margin: 0;
-  color: var(--lian-muted);
-  font-size: 12px;
-}
-
-.merchant-center__profile-rows {
+.merchant-center__row-copy {
   display: grid;
-  gap: var(--space-1);
-  margin: 0;
+  gap: 4px;
+  flex: 1 1 200px;
 }
 
-.merchant-center__row {
-  display: grid;
-  grid-template-columns: 6em 1fr;
-  gap: var(--space-2);
+.merchant-center__row-title {
+  color: var(--lian-ink);
+  font-size: 15px;
+  font-weight: 900;
+  line-height: 1.3;
 }
 
-.merchant-center__row dt {
+.merchant-center__row-meta {
   color: var(--lian-muted);
   font-size: 13px;
-  font-weight: 700;
 }
 
-.merchant-center__row dd {
-  margin: 0;
-  color: var(--lian-ink);
-  font-size: 14px;
-  font-weight: 700;
-}
-
-.merchant-center__errand-status {
+.merchant-center__row-errand {
+  align-self: start;
   padding: 2px var(--space-2);
   border-radius: var(--radius-chip);
   background: rgba(120, 120, 120, 0.18);
@@ -277,15 +276,21 @@ onMounted(() => {
   font-weight: 800;
 }
 
-.merchant-center__errand-status.is-available {
+.merchant-center__row-errand[data-available="true"] {
   background: rgba(31, 167, 160, 0.16);
   color: #1a6f6c;
 }
 
-.merchant-center__errand-reason {
-  margin: 0;
-  color: var(--lian-muted);
+.merchant-center__row-cta {
+  flex: none;
+  min-height: 36px;
+  padding: 0 var(--space-3);
+  border: 0;
+  border-radius: var(--radius-chip);
+  background: var(--lian-primary, #1fa7a0);
+  color: #fff;
   font-size: 13px;
-  line-height: 1.5;
+  font-weight: 850;
+  cursor: pointer;
 }
 </style>
