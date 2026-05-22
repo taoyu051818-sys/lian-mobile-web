@@ -31,12 +31,35 @@ describe("notification routing normalization", () => {
     expect(item.actionLabel).toBe("前往认证中心");
   });
 
-  it("keeps order-like notifications in a stable fallback state when no target exists", () => {
+  it("routes errand-order-status notifications with orderId to the errand-order view", () => {
     const item = normalizeNotificationItem({
       id: "order-1",
       type: "errand-order-status",
       title: "跑腿订单状态更新",
       excerpt: "骑手已经接单。",
+      data: {
+        orderId: "order-1",
+        targetType: "errand-order",
+      },
+    });
+
+    expect(item.kind).toBe("order");
+    expect(item.target).toEqual({
+      kind: "errand-order",
+      orderId: "order-1",
+    });
+    expect(item.actionLabel).toBe("查看订单详情");
+  });
+
+  it("keeps malformed order notifications in a stable fallback state", () => {
+    const item = normalizeNotificationItem({
+      id: "order-2",
+      type: "errand-order-status",
+      title: "跑腿订单状态更新",
+      excerpt: "骑手已经接单。",
+      data: {
+        targetType: "errand-order",
+      },
     });
 
     expect(item.kind).toBe("order");
@@ -71,14 +94,14 @@ describe("errand-order notification routing (ps#477 / ps#495 fan-out)", () => {
   } as const;
 
   it.each([
-    ["errand-order-accepted", "跑腿订单已被接单", "「奶茶代购」已被跑腿员接单，请保持联系。"],
-    ["errand-order-picked-up", "跑腿订单已取件", "「奶茶代购」已取件，正在前往送达。"],
-    ["errand-order-delivering", "跑腿订单配送中", "「奶茶代购」正在配送途中。"],
-    ["errand-order-delivered", "跑腿订单已送达", "「奶茶代购」已送达，请尽快确认完成。"],
-    ["errand-order-completed", "跑腿订单已完成结算", "「奶茶代购」订单已完成，报酬已入账。"],
-    ["errand-order-cancelled", "跑腿订单已取消", "「奶茶代购」订单已取消。"],
-    ["errand-order-refunded", "跑腿订单已退款", "「奶茶代购」订单退款已到账。"],
-  ])("routes %s onto kind='order' with locked fallback copy", (type, fallbackTitle, fallbackBody) => {
+    ["errand-order-accepted", "跑腿订单已被接单", "「奶茶代购」已被跑腿员接单，请保持联系。", "order-1"],
+    ["errand-order-picked-up", "跑腿订单已取件", "「奶茶代购」已取件，正在前往送达。", "order-1"],
+    ["errand-order-delivering", "跑腿订单配送中", "「奶茶代购」正在配送途中。", "order-1"],
+    ["errand-order-delivered", "跑腿订单已送达", "「奶茶代购」已送达，请尽快确认完成。", "order-1"],
+    ["errand-order-completed", "跑腿订单已完成结算", "「奶茶代购」订单已完成，报酬已入账。", "order-1"],
+    ["errand-order-cancelled", "跑腿订单已取消", "「奶茶代购」订单已取消。", "order-1"],
+    ["errand-order-refunded", "跑腿订单已退款", "「奶茶代购」订单退款已到账。", "order-1"],
+  ])("routes %s onto kind='order' with locked fallback copy", (type, fallbackTitle, fallbackBody, orderId) => {
     // Backend strips title/excerpt to exercise our fallback copy path.
     const item = normalizeNotificationItem({
       id: `errand-order-1-${type}-uid-7-2026-05-22T08:00:00Z`,
@@ -86,7 +109,7 @@ describe("errand-order notification routing (ps#477 / ps#495 fan-out)", () => {
       data: {
         status: type.replace("errand-order-", "").replace(/-/g, "_"),
         previousStatus: "",
-        orderId: "order-1",
+        orderId,
         merchantPostId: "42",
         triggeredBy: "uid-9",
         targetType: "errand-order",
@@ -100,10 +123,10 @@ describe("errand-order notification routing (ps#477 / ps#495 fan-out)", () => {
     expect(item.title).toBe(fallbackTitle);
     expect(item.excerpt).toBe(fallbackBody);
     expect(item.target).toEqual({
-      kind: "none",
-      reason: "订单类通知会在后续版本接入目标页。",
+      kind: "errand-order",
+      orderId,
     });
-    expect(item.actionLabel).toBe("订单类通知会在后续版本接入目标页。");
+    expect(item.actionLabel).toBe("查看订单详情");
   });
 
   it("pins ps#495 errand-order-completed payload (recipient = runner) end-to-end", () => {
@@ -134,7 +157,27 @@ describe("errand-order notification routing (ps#477 / ps#495 fan-out)", () => {
     expect(item.title).toBe("跑腿订单已完成结算");
     expect(item.excerpt).toBe("「奶茶代购」订单已完成，报酬已入账。");
     expect(item.type).toBe("errand-order-completed");
-    expect(item.target.kind).toBe("none");
+    expect(item.target).toEqual({ kind: "errand-order", orderId: "order-77" });
+  });
+
+  it("keeps errand-order notifications on fallback when orderId is missing", () => {
+    const item = normalizeNotificationItem({
+      id: "errand-order-missing-id",
+      type: "errand-order-delivered",
+      data: {
+        status: "delivered",
+        targetType: "errand-order",
+        orderTitle: "奶茶代购",
+      },
+      ...baseEnvelope,
+    });
+
+    expect(item.kind).toBe("order");
+    expect(item.target).toEqual({
+      kind: "none",
+      reason: "订单类通知会在后续版本接入目标页。",
+    });
+    expect(item.actionLabel).toBe("订单类通知会在后续版本接入目标页。");
   });
 });
 

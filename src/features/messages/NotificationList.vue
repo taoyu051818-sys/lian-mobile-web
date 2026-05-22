@@ -98,7 +98,11 @@ function notificationHint(item: NotificationItem) {
 }
 
 function isClickable(item: NotificationItem) {
-  return item.target?.kind === "detail" || item.target?.kind === "verification";
+  return (
+    item.target?.kind === "detail" ||
+    item.target?.kind === "verification" ||
+    item.target?.kind === "errand-order"
+  );
 }
 
 function openNotification(item: NotificationItem) {

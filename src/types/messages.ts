@@ -51,6 +51,7 @@ export type NotificationKind =
 export type NotificationTarget =
   | { kind: "detail"; tid: number }
   | { kind: "verification" }
+  | { kind: "errand-order"; orderId: string }
   | { kind: "none"; reason: string };
 
 export interface NotificationItem {

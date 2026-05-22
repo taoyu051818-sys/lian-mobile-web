@@ -104,12 +104,8 @@ describe("errand-notifications-normalizer / case 1 — round-trip happy path", (
     expect(item.timestampISO).toBe("2026-05-22T08:00:00Z");
     // raw.type propagates verbatim — analytics/breadcrumbs depend on the slug.
     expect(item.type).toBe("errand-order-accepted");
-    // No errand deep-link yet (separate PR). Fallback target with reason.
-    expect(item.target).toEqual({
-      kind: "none",
-      reason: "订单类通知会在后续版本接入目标页。",
-    });
-    expect(item.actionLabel).toBe("订单类通知会在后续版本接入目标页。");
+    expect(item.target).toEqual({ kind: "errand-order", orderId: "order-1" });
+    expect(item.actionLabel).toBe("查看订单详情");
   });
 
   it("errand-order-completed (ps#495) round-trip — recipient = runner, body mentions settlement", () => {
@@ -121,7 +117,7 @@ describe("errand-notifications-normalizer / case 1 — round-trip happy path", (
     expect(item.type).toBe("errand-order-completed");
     expect(item.title).toBe("跑腿订单已完成结算");
     expect(item.excerpt).toBe("「奶茶代购」订单已完成，报酬已入账。");
-    expect(item.target.kind).toBe("none");
+    expect(item.target).toEqual({ kind: "errand-order", orderId: "order-77" });
   });
 });
 
@@ -130,61 +126,68 @@ describe("errand-notifications-normalizer / case 2 — fallback copy when envelo
   // copy from the status enum when the envelope ships them empty. Pin the
   // seven status → fallback pairs so a brand-string drift goes red.
 
-  const fallbackCases: Array<[string, string, string, string]> = [
+  const fallbackCases: Array<[string, string, string, string, string]> = [
     [
       "errand-order-accepted",
       "accepted",
       NOTIF_ERRAND_ORDER_ACCEPTED_TITLE,
       NOTIF_ERRAND_ORDER_ACCEPTED_BODY.replace("{title}", "奶茶代购"),
+      "order-stripped",
     ],
     [
       "errand-order-picked-up",
       "picked_up",
       NOTIF_ERRAND_ORDER_PICKED_UP_TITLE,
       NOTIF_ERRAND_ORDER_PICKED_UP_BODY.replace("{title}", "奶茶代购"),
+      "order-stripped",
     ],
     [
       "errand-order-delivering",
       "delivering",
       NOTIF_ERRAND_ORDER_DELIVERING_TITLE,
       NOTIF_ERRAND_ORDER_DELIVERING_BODY.replace("{title}", "奶茶代购"),
+      "order-stripped",
     ],
     [
       "errand-order-delivered",
       "delivered",
       NOTIF_ERRAND_ORDER_DELIVERED_TITLE,
       NOTIF_ERRAND_ORDER_DELIVERED_BODY.replace("{title}", "奶茶代购"),
+      "order-stripped",
     ],
     [
       "errand-order-completed",
       "completed",
       NOTIF_ERRAND_ORDER_COMPLETED_TITLE,
       NOTIF_ERRAND_ORDER_COMPLETED_BODY.replace("{title}", "奶茶代购"),
+      "order-stripped",
     ],
     [
       "errand-order-cancelled",
       "cancelled",
       NOTIF_ERRAND_ORDER_CANCELLED_TITLE,
       NOTIF_ERRAND_ORDER_CANCELLED_BODY.replace("{title}", "奶茶代购"),
+      "order-stripped",
     ],
     [
       "errand-order-refunded",
       "refunded",
       NOTIF_ERRAND_ORDER_REFUNDED_TITLE,
       NOTIF_ERRAND_ORDER_REFUNDED_BODY.replace("{title}", "奶茶代购"),
+      "order-stripped",
     ],
   ];
 
   it.each(fallbackCases)(
     "%s — server omits title+excerpt → frontend synthesises locked copy",
-    (type, status, expectedTitle, expectedBody) => {
+    (type, status, expectedTitle, expectedBody, orderId) => {
       const item = normalizeNotificationItem({
         id: `${type}-stripped`,
         type,
         data: {
           status,
           previousStatus: "",
-          orderId: "order-stripped",
+          orderId,
           merchantPostId: "1",
           triggeredBy: "uid-x",
           targetType: "errand-order",
@@ -198,6 +201,7 @@ describe("errand-notifications-normalizer / case 2 — fallback copy when envelo
       expect(item.kind).toBe("order");
       expect(item.title).toBe(expectedTitle);
       expect(item.excerpt).toBe(expectedBody);
+      expect(item.target).toEqual({ kind: "errand-order", orderId });
     },
   );
 
@@ -218,6 +222,7 @@ describe("errand-notifications-normalizer / case 2 — fallback copy when envelo
     expect(item.excerpt).not.toContain("「」");
     expect(item.excerpt).not.toContain("undefined");
     expect(item.excerpt).not.toContain("null");
+    expect(item.target).toEqual({ kind: "errand-order", orderId: "order-x" });
   });
 
   it("backend-supplied title+excerpt wins over fallback synthesis", () => {
@@ -238,6 +243,7 @@ describe("errand-notifications-normalizer / case 2 — fallback copy when envelo
     expect(item.kind).toBe("order");
     expect(item.title).toBe("服务端定制标题");
     expect(item.excerpt).toBe("服务端定制正文。");
+    expect(item.target).toEqual({ kind: "errand-order", orderId: "order-9" });
   });
 });
 
@@ -260,24 +266,30 @@ describe("errand-notifications-normalizer / case 3 — kind-locking (no fuzzy po
       const item = normalizeNotificationItem({
         id: `${type}-1`,
         type,
-        data: { status: type.replace("errand-order-", "").replace(/-/g, "_") },
+        data: {
+          status: type.replace("errand-order-", "").replace(/-/g, "_"),
+          orderId: "order-1",
+          targetType: "errand-order",
+        },
       });
       expect(item.kind).toBe("order");
+      expect(item.target).toEqual({ kind: "errand-order", orderId: "order-1" });
     }
   });
 
-  it("fuzzy matcher still catches legacy 'errand-order-status' (back-compat)", () => {
-    // Pre-ps#477 servers shipped the literal "errand-order-status" slug
-    // without the per-status suffix. We keep the fuzzy fallback so old
-    // payloads in the wild keep landing in the orders tab; only the locked
-    // copy/deep-link work is gated on the exact slug.
+  it("legacy 'errand-order-status' routes to the errand-order target when orderId is present", () => {
     const item = normalizeNotificationItem({
       id: "legacy-1",
       type: "errand-order-status",
       title: "跑腿订单状态更新",
       excerpt: "骑手已接单。",
+      data: {
+        orderId: "legacy-order-1",
+        targetType: "errand-order",
+      },
     });
     expect(item.kind).toBe("order");
+    expect(item.target).toEqual({ kind: "errand-order", orderId: "legacy-order-1" });
   });
 
   it("unrelated slug containing 'order' does NOT inherit errand fallback copy", () => {
@@ -295,6 +307,10 @@ describe("errand-notifications-normalizer / case 3 — kind-locking (no fuzzy po
     expect(item.title).toBe("审核记录");
     expect(item.excerpt).toBe("原文摘要。");
     expect(item.title).not.toBe(NOTIF_ERRAND_ORDER_ACCEPTED_TITLE);
+    expect(item.target).toEqual({
+      kind: "none",
+      reason: "订单类通知会在后续版本接入目标页。",
+    });
   });
 });
 
@@ -333,6 +349,7 @@ describe("errand-notifications-normalizer / case 4 — idempotency-key shape opa
     );
     expect(item.id).toBe("errand-order-MISMATCH-completed-runner-99-2026-05-22T08:30:00Z");
     expect(item.excerpt).toContain("奶茶代购");
+    expect(item.target).toEqual({ kind: "errand-order", orderId: "order-77" });
   });
 });
 
@@ -348,6 +365,7 @@ describe("errand-notifications-normalizer / case 5 — payload-driven body", () 
       },
     });
     expect(item.excerpt).toBe("「校园文具配送」订单已完成，报酬已入账。");
+    expect(item.target).toEqual({ kind: "errand-order", orderId: "order-7" });
   });
 
   it("falls back to data.title when data.orderTitle is absent", () => {
@@ -361,6 +379,7 @@ describe("errand-notifications-normalizer / case 5 — payload-driven body", () 
       },
     });
     expect(item.excerpt).toContain("二楼咖啡代取");
+    expect(item.target).toEqual({ kind: "errand-order", orderId: "order-7" });
   });
 
   it("status-enum-only fallback when raw.type is missing but data.status is well-formed", () => {
@@ -439,8 +458,29 @@ describe("errand-notifications-normalizer / case 6 — mixed inbox preserves sou
     expect(items.length).toBe(7);
     for (const item of items) {
       expect(item.kind).toBe("order");
+      expect(item.target).toEqual({ kind: "errand-order", orderId: "order-x" });
     }
     const titles = new Set(items.map((it) => it.title));
     expect(titles.size).toBe(7);
+  });
+
+  it("stays on the fallback path when an errand-order payload lacks orderId", () => {
+    const item = normalizeNotificationItem({
+      type: "errand-order-delivered",
+      data: {
+        status: "delivered",
+        targetType: "errand-order",
+        orderTitle: "奶茶代购",
+      },
+      actor: ERRAND_ACTOR,
+      timestampISO: "2026-05-22T08:00:00Z",
+      read: false,
+    });
+
+    expect(item.target).toEqual({
+      kind: "none",
+      reason: "订单类通知会在后续版本接入目标页。",
+    });
+    expect(item.actionLabel).toBe("订单类通知会在后续版本接入目标页。");
   });
 });

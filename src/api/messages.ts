@@ -145,6 +145,7 @@ interface RawNotificationItem {
   targetTid?: string | number;
   postId?: string | number;
   targetId?: string | number;
+  orderId?: string | number;
   type?: string;
   title?: string;
   excerpt?: string;
@@ -203,10 +204,9 @@ const EVENT_TYPE_TO_KIND: Record<string, NotificationKind> = {
  * haystack. Wire types are kebab-case (`errand-order-picked-up`); internal
  * status enums are snake_case (`picked_up`).
  *
- * Once we wire actual order-detail navigation behind these (separate PR), the
- * exact map is what gates the deep-link — the fuzzy `["order", "errand", ...]`
- * fallback would otherwise route admin/settlement notifications onto the
- * wrong screen.
+ * Once we wire actual order-detail navigation behind these, the exact map is
+ * what gates the deep-link — the fuzzy `["order", "errand", ...]` fallback
+ * would otherwise route admin/settlement notifications onto the wrong screen.
  */
 const ERRAND_ORDER_TYPE_TO_STATUS: Record<string, ErrandOrderStatus> = {
   "errand-order-accepted": "accepted",
@@ -584,6 +584,26 @@ function resolveNotificationTid(raw: RawNotificationItem): number | null {
   );
 }
 
+function resolveNotificationOrderId(raw: RawNotificationItem): string {
+  const data = asRecord(raw.data);
+  const meta = asRecord(raw.meta);
+  const target = asRecord(raw.target);
+  return firstString(raw.orderId, data?.orderId, meta?.orderId, target?.orderId);
+}
+
+function isErrandOrderNotification(raw: RawNotificationItem): boolean {
+  const rawType = stringValue(raw.type).toLowerCase();
+  if (rawType === "errand-order-status") return true;
+  if (rawType.startsWith("errand-order-")) return true;
+  const data = asRecord(raw.data);
+  const meta = asRecord(raw.meta);
+  const target = asRecord(raw.target);
+  return (
+    firstString(data?.targetType, meta?.targetType, target?.targetType).toLowerCase() ===
+    "errand-order"
+  );
+}
+
 function resolveNotificationTarget(
   raw: RawNotificationItem,
   kind: NotificationKind,
@@ -596,6 +616,10 @@ function resolveNotificationTarget(
     return { kind: "verification" };
   }
   if (kind === "order") {
+    const orderId = resolveNotificationOrderId(raw);
+    if (orderId && isErrandOrderNotification(raw)) {
+      return { kind: "errand-order", orderId };
+    }
     return { kind: "none", reason: "订单类通知会在后续版本接入目标页。" };
   }
   if (kind === "moderation") {
@@ -634,6 +658,9 @@ function resolveNotificationActionLabel(
   }
   if (target.kind === "verification") {
     return "前往认证中心";
+  }
+  if (target.kind === "errand-order") {
+    return "查看订单详情";
   }
   return target.reason;
 }
