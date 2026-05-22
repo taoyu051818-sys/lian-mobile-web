@@ -86,15 +86,15 @@ export const NOTIFICATION_REPLY_EMPTY_BODY =
 
 export const NOTIFICATION_SYSTEM_INBOX_LABEL = "系统收件箱";
 export const NOTIFICATION_SYSTEM_INBOX_HINT = "认证结果、活动状态和审核反馈会逐步汇总到这里。";
-export const NOTIFICATION_SYSTEM_EMPTY_TITLE = "系统结果会在这里收口";
+export const NOTIFICATION_SYSTEM_EMPTY_TITLE = "暂时没有新的系统反馈";
 export const NOTIFICATION_SYSTEM_EMPTY_BODY =
-  "当前还没有新的系统反馈。未接入的类别会继续沿用摘要回退，直到对应通道补线完成。";
+  "认证、活动和审核结果都会在这里集中提醒，新的反馈到来时会自动出现。";
 
 export const NOTIFICATION_ORDER_INBOX_LABEL = "订单收件箱";
 export const NOTIFICATION_ORDER_INBOX_HINT = "跑腿、配送和争议相关的状态变更会在这里集中提醒。";
-export const NOTIFICATION_ORDER_EMPTY_TITLE = "订单提醒还没有接入完成";
+export const NOTIFICATION_ORDER_EMPTY_TITLE = "暂时没有新的订单提醒";
 export const NOTIFICATION_ORDER_EMPTY_BODY =
-  "订单状态目前仍以详情时间线为主。消息通道接好后，这里会成为统一的订单收件箱。";
+  "跑腿、配送和争议相关的状态变更会在这里集中提醒，新的状态到来时会自动出现。";
 
 export const NOTIFICATION_CHANNEL_REPLY_TITLE = "回复通知";
 export const NOTIFICATION_CHANNEL_REPLY_DESC =
@@ -104,9 +104,9 @@ export const NOTIFICATION_CHANNEL_ADMIN_REVIEW_DESC =
   "管理员处理举报或对帖子下架时暂未推送独立的系统通知。";
 export const NOTIFICATION_CHANNEL_VERIFICATION_TITLE = "认证结果";
 export const NOTIFICATION_CHANNEL_VERIFICATION_DESC =
-  "校园 / 商家 / 跑腿 / 实名认证通过或拒绝的结果通知。前端解析与跳转已就绪，等待后端开始推送。";
+  "校园 / 商家 / 跑腿 / 实名认证通过或拒绝的结果都会推送到这里。";
 export const NOTIFICATION_CHANNEL_ERRAND_TITLE = "跑腿订单状态";
 export const NOTIFICATION_CHANNEL_ERRAND_DESC =
-  "订单从接单到送达的状态变更目前只在订单时间线里显示，离开页面就看不到。";
+  "订单从接单到送达的所有状态变更都会同步到这里，点开可直接进入订单详情。";
 export const NOTIFICATION_CHANNEL_EVENT_TITLE = "活动完成";
-export const NOTIFICATION_CHANNEL_EVENT_DESC = "活动完成、奖励发放、活动过期目前没有通知通道。";
+export const NOTIFICATION_CHANNEL_EVENT_DESC = "活动结束、奖励发放、活动过期都会推送到这里。";

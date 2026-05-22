@@ -75,9 +75,11 @@ test("NotificationList treats errand-order targets as clickable", () => {
   assert.match(listSource, /item\.target\?\.kind === "errand-order"/);
 });
 
-test("messageInbox keeps event notification gaps pointed at issue #706", () => {
-  assert.match(inboxSource, /活动状态通知 #706/);
-  assert.match(inboxSource, /issues\/706/);
+test("messageInbox no longer carries stale gapLinks now that the verification + event channels are connected", () => {
+  assert.doesNotMatch(inboxSource, /认证结果通知 #700/);
+  assert.doesNotMatch(inboxSource, /活动状态通知 #706/);
+  assert.doesNotMatch(inboxSource, /issues\/700/);
+  assert.doesNotMatch(inboxSource, /issues\/706/);
   assert.doesNotMatch(inboxSource, /issues\/702/);
 });
 

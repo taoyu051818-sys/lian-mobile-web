@@ -42,8 +42,8 @@ export const NOTIFICATION_CHANNELS: readonly NotificationChannelInfo[] = [
     id: "verification",
     title: NOTIFICATION_CHANNEL_VERIFICATION_TITLE,
     description: NOTIFICATION_CHANNEL_VERIFICATION_DESC,
-    status: "pending",
-    issueUrl: "https://github.com/taoyu051818-sys/lian-mobile-web/issues/700",
+    status: "connected",
+    issueUrl: null,
   },
   {
     id: "errand-status",
@@ -56,8 +56,8 @@ export const NOTIFICATION_CHANNELS: readonly NotificationChannelInfo[] = [
     id: "event-completion",
     title: NOTIFICATION_CHANNEL_EVENT_TITLE,
     description: NOTIFICATION_CHANNEL_EVENT_DESC,
-    status: "pending",
-    issueUrl: "https://github.com/taoyu051818-sys/lian-mobile-web/issues/706",
+    status: "connected",
+    issueUrl: null,
   },
   {
     id: "admin-review",

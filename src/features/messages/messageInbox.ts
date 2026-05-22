@@ -52,16 +52,7 @@ export const NOTIFICATION_INBOX_SPECS: Record<NotificationInboxSpec["tab"], Noti
       emptyTitle: NOTIFICATION_SYSTEM_EMPTY_TITLE,
       emptyBody: NOTIFICATION_SYSTEM_EMPTY_BODY,
       channels: selectChannels(["verification", "event-completion", "admin-review"]),
-      gapLinks: [
-        {
-          label: "认证结果通知 #700",
-          issueUrl: "https://github.com/taoyu051818-sys/lian-mobile-web/issues/700",
-        },
-        {
-          label: "活动状态通知 #706",
-          issueUrl: "https://github.com/taoyu051818-sys/lian-mobile-web/issues/706",
-        },
-      ],
+      gapLinks: [],
     },
     orders: {
       tab: "orders",
