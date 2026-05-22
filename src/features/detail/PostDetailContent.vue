@@ -80,7 +80,9 @@ const props = defineProps<{
 // `v-if="event && eventPlan"` / `v-else-if="postType === 'event'"` etc.; the
 // registry consolidates that selection so adding a new capability does not
 // widen these conditionals. Adapters in `api/posts.ts` still own raw
-// normalization — we read already-normalized fields here.
+// normalization — we read already-normalized fields here. Structured place
+// content intentionally stays on the separate `PostPlaceSheetBlock` path for
+// now (issue #794), so it is not part of the registry-backed capability set.
 const capabilityResolutions = computed(() =>
   resolvePostCapabilities({
     type: props.postType,
@@ -88,7 +90,6 @@ const capabilityResolutions = computed(() =>
     help: props.help,
     merchant: props.merchant,
     trade: props.trade,
-    place: props.structuredPlace ?? undefined,
   }),
 );
 
