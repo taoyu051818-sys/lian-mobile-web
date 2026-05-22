@@ -263,7 +263,7 @@ Total files: 321
 | `features/publish/PublishMetaControls.vue`         | PRD V0.1 §3.1 — backend-driven gating. Optional: when omitted (older                                                          |   245 |
 | `features/publish/PublishResetConfirm.vue`         | Vue SFC                                                                                                                       |    59 |
 | `features/publish/PublishTradeControls.vue`        | Vue SFC                                                                                                                       |   212 |
-| `features/publish/PublishView.vue`                 | PRD §7.4.2 step 4: after the first successful upload, surface the                                                             |   612 |
+| `features/publish/PublishView.vue`                 | Unified expand model: post-type (post / event) is a sub-classification of                                                     |   623 |
 | `features/publish/index.ts`                        | TypeScript module                                                                                                             |     3 |
 | `features/publish/publishDraftSession.ts`          | Drop every scoped publish-draft entry. Called on logout / account switch so a different account can't restore the pre...      |   255 |
 | `features/publish/useMerchantPublishDraft.ts`      | Publish-side merchant draft + verification gate. Owns: - merchant form fields (name / category / hours / contact / ...        |   100 |

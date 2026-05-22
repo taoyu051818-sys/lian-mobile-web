@@ -134,15 +134,15 @@ const CATEGORY_OPTIONS: Array<{ value: MerchantCategory; label: string }> = [
       />
     </label>
 
-    <label class="publish-merchant__errand">
-      <input
-        type="checkbox"
-        :checked="errandSupported"
-        data-testid="publish-merchant-errand-toggle"
-        @change="emit('update:errandSupported', ($event.target as HTMLInputElement).checked)"
-      />
-      <span>
-        <strong>{{ PUBLISH_MERCHANT_ERRAND_LABEL }}</strong>
+    <label class="publish-merchant__field publish-merchant__field--inline">
+      <span>{{ PUBLISH_MERCHANT_ERRAND_LABEL }}</span>
+      <span class="publish-merchant__inline-row">
+        <input
+          type="checkbox"
+          :checked="errandSupported"
+          data-testid="publish-merchant-errand-toggle"
+          @change="emit('update:errandSupported', ($event.target as HTMLInputElement).checked)"
+        />
         <small>{{ PUBLISH_MERCHANT_ERRAND_HINT }}</small>
       </span>
     </label>
@@ -197,25 +197,25 @@ const CATEGORY_OPTIONS: Array<{ value: MerchantCategory; label: string }> = [
   text-transform: uppercase;
 }
 
-.publish-merchant__errand {
+.publish-merchant__inline-row {
   display: grid;
   grid-template-columns: 22px 1fr;
   gap: var(--space-2);
-  align-items: start;
-  padding: var(--space-3);
-  border: 1px dashed rgba(31, 167, 160, 0.3);
-  border-radius: var(--radius-card);
-  background: rgba(31, 167, 160, 0.06);
+  align-items: center;
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 700;
 }
 
-.publish-merchant__errand input {
+.publish-merchant__inline-row input {
   width: 22px;
+  min-height: 22px;
   height: 22px;
+  margin: 0;
 }
 
-.publish-merchant__errand small {
+.publish-merchant__inline-row small {
   display: block;
-  margin-top: 2px;
   color: var(--lian-muted);
   font-size: 12px;
   font-weight: 700;
