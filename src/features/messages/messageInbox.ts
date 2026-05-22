@@ -78,6 +78,12 @@ export function itemsForInboxTab(items: NotificationItem[], tab: NotificationInb
   return items.filter((item) => {
     if (item.kind === "reply") return tab === "replies";
     if (item.kind === "order") return tab === "orders";
+    // ps#493 — admin moderation notifications (report-* / post-*) land in
+    // the system tab. The default-system fallback below would already catch
+    // them, but pinning the branch keeps the routing audit-trail explicit
+    // so a future refactor that splits the system tab can't silently
+    // misroute moderation items.
+    if (item.kind === "moderation") return tab === "system";
     return tab === "system";
   });
 }

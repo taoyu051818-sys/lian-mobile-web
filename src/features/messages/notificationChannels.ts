@@ -63,7 +63,7 @@ export const NOTIFICATION_CHANNELS: readonly NotificationChannelInfo[] = [
     id: "admin-review",
     title: NOTIFICATION_CHANNEL_ADMIN_REVIEW_TITLE,
     description: NOTIFICATION_CHANNEL_ADMIN_REVIEW_DESC,
-    status: "pending",
+    status: "connected",
     issueUrl: null,
   },
 ] as const;
