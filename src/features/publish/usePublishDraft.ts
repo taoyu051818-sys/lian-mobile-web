@@ -26,7 +26,12 @@ import { usePublishAi } from "./usePublishAi";
 import { useMerchantPublishDraft } from "./useMerchantPublishDraft";
 import { useTradePublishDraft } from "./useTradePublishDraft";
 
-export type PublishKind = "regular" | "merchant" | "trade";
+// PR-3 (#813 follow-up): "event" promoted to a peer of regular / merchant /
+// trade so the publishKind switch is the single "what kind of post am I
+// making" decision. usePublishSubmit still branches on eventDraft.postType
+// === "event" — that ref is kept in sync with publishKind via a watch in
+// PublishView so the submit/createEvent contract is unchanged.
+export type PublishKind = "regular" | "event" | "merchant" | "trade";
 
 /**
  * Composes the three slices of publish-form state — form fields & uploads

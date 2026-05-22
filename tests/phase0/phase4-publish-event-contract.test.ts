@@ -124,7 +124,6 @@ describe("Phase 4 (publish): wiring greps", () => {
   });
 
   it("PublishEventControls reads every label from brand constants", () => {
-    expect(controls).toMatch(/PUBLISH_POST_TYPE_LABEL/);
     expect(controls).toMatch(/PUBLISH_EVENT_PANEL_LABEL/);
     expect(controls).toMatch(/PUBLISH_EVENT_START_AT/);
     expect(controls).toMatch(/PUBLISH_EVENT_END_AT/);
@@ -132,10 +131,17 @@ describe("Phase 4 (publish): wiring greps", () => {
     expect(controls).toMatch(/PUBLISH_EVENT_JOIN_POLICY/);
     expect(controls).not.toMatch(/活动设置/);
     expect(controls).not.toMatch(/'报名方式'/);
+    // PR-3 (#813 follow-up): the inner post-type chooser was removed; the
+    // "is this an event?" decision lives in the parent publishKind switch.
+    expect(controls).not.toMatch(/PUBLISH_POST_TYPE_LABEL/);
   });
 
   it("PublishView wires the event draft refs into the submit composable", () => {
     expect(view).toMatch(/useEventPublishDraft/);
+    // PR-3 (#813 follow-up): postType is no longer wired through the child
+    // component template. PublishView keeps eventDraft.postType in lock-step
+    // with publishKind via a watch and forwards it to usePublishSubmit so
+    // the createEvent branch keeps firing.
     expect(view).toMatch(/eventDraft\.postType/);
     expect(view).toMatch(/eventDraft\.startsAt/);
     expect(view).toMatch(/eventDraft\.endsAt/);
