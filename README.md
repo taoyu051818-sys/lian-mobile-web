@@ -74,10 +74,19 @@ Current meanings:
 The Playwright journey tests target `https://lian.nat100.top` by default and do not
 require a local backend.
 
+For the current env/seed matrix, read `docs/e2e/PLAYWRIGHT_SEED_CONTRACT.md`
+first. That file is the canonical source of truth for:
+
+- role-specific `LIAN_E2E_*` account credentials
+- `LIAN_E2E_SEEDED_EVENT_ID`
+- `LIAN_E2E_ADMIN_TOKEN` and the related verification env inputs
+- `LIAN_E2E_RUNNER_ORDER_ID`
+- the post-#765 `/api/fixtures` event-runtime contract
+
+Minimal local baseline:
+
 ```bash
 export APP_BASE_URL=https://lian.nat100.top
-export LIAN_E2E_USERNAME=<seeded account username>
-export LIAN_E2E_PASSWORD=<seeded account password>
 npx playwright install chromium
 npm run test:e2e
 ```
@@ -86,8 +95,6 @@ On PowerShell:
 
 ```powershell
 $env:APP_BASE_URL = "https://lian.nat100.top"
-$env:LIAN_E2E_USERNAME = "<seeded account username>"
-$env:LIAN_E2E_PASSWORD = "<seeded account password>"
 npx playwright install chromium
 npm run test:e2e
 ```
