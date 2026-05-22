@@ -61,8 +61,7 @@ const ALLOWLIST_FILE = path.join(ROOT_DIR, "scripts", "check-view-imports-compos
 // Forbidden import-path shapes. Capture group 1 is the api-prefix portion;
 // the rest of the import path follows. Anchored on `from "..."` / `from '...'`
 // so we ignore string literals that just happen to look like paths.
-const FORBIDDEN_IMPORT_RE =
-  /from\s+["']((?:\.\.\/)+api\/|@\/api\/|src\/api\/|~\/api\/)[^"']*["']/g;
+const FORBIDDEN_IMPORT_RE = /from\s+["']((?:\.\.\/)+api\/|@\/api\/|src\/api\/|~\/api\/)[^"']*["']/g;
 
 // Match a single <script ...>...</script> block (script setup or plain).
 // Vue SFCs may have at most two script blocks (one regular, one setup);
@@ -127,9 +126,7 @@ function scanFile(absolutePath) {
       const absoluteOffset = openTagEnd + importMatch.index;
       const line = lineNumberAt(content, absoluteOffset);
       // The literal between the quotes — used only for human-readable output.
-      const importPath = importMatch[0]
-        .replace(/^from\s+["']/, "")
-        .replace(/["']$/, "");
+      const importPath = importMatch[0].replace(/^from\s+["']/, "").replace(/["']$/, "");
       findings.push({ line, importPath });
     }
   }
@@ -181,9 +178,7 @@ function main() {
 
   if (warnings.length > 0) {
     console.log("check-view-imports-composable: no new violations.");
-    console.log(
-      `Allowlisted legacy entries (issue #500 follow-up): ${warnings.length}`,
-    );
+    console.log(`Allowlisted legacy entries (issue #500 follow-up): ${warnings.length}`);
     for (const w of warnings) {
       console.log(`  [warn] ${w.file}:${w.line}: ${w.importPath}`);
     }
