@@ -218,7 +218,8 @@ test.fixme("login -> publish image -> like -> profile liked -> anonymous share",
   expect(likeBody.likeCount ?? 0).toBeGreaterThanOrEqual(1);
 
   await page.goto("/#/profile");
-  const likedTab = page.getByRole("tab", { name: "喜欢" });
+  await page.locator(".profile-tabs").scrollIntoViewIfNeeded();
+  const likedTab = page.getByRole("tab", { name: "赞过" });
   await expect(likedTab).toBeVisible();
   await likedTab.click();
   const firstLikedItem = page.locator(".profile-collection__item").first();
