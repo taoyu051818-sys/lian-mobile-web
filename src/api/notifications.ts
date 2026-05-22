@@ -271,11 +271,7 @@ function buildEventNotificationCopy(
 }
 
 function isEventKind(kind: NotificationKind): boolean {
-  return (
-    kind === "event-completed" ||
-    kind === "event-reward-settled" ||
-    kind === "event-expired"
-  );
+  return kind === "event-completed" || kind === "event-reward-settled" || kind === "event-expired";
 }
 
 const ERRAND_ORDER_COPY: Record<ErrandOrderStatus, { title: string; body: string }> = {
@@ -449,14 +445,10 @@ function resolveNotificationTarget(
   if (kind === "moderation") {
     const family = moderationFamily(stringValue(raw.type).toLowerCase());
     if (family === "report") {
-      return tid
-        ? { kind: "detail", tid }
-        : { kind: "none", reason: "举报详情已记录在管理后台。" };
+      return tid ? { kind: "detail", tid } : { kind: "none", reason: "举报详情已记录在管理后台。" };
     }
     if (family === "post") {
-      return tid
-        ? { kind: "detail", tid }
-        : { kind: "none", reason: "该帖子暂时无法打开。" };
+      return tid ? { kind: "detail", tid } : { kind: "none", reason: "该帖子暂时无法打开。" };
     }
   }
   return tid ? { kind: "detail", tid } : { kind: "none", reason: "该系统通知暂时只支持查看摘要。" };
