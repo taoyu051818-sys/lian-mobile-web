@@ -26,6 +26,7 @@ export default defineConfig({
       "tests/detail-navigation/**/*.test.ts",
       "tests/runner/**/*.test.ts",
       "tests/errand/**/*.test.ts",
+      "tests/scripts/**/*.test.ts",
     ],
   },
 });
