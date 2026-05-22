@@ -9,7 +9,7 @@ const channelSource = fs.readFileSync(
   path.join(repoRoot, "src/features/messages/useChannelMessages.ts"),
   "utf8",
 );
-const apiSource = fs.readFileSync(path.join(repoRoot, "src/api/messages.ts"), "utf8");
+const apiSource = fs.readFileSync(path.join(repoRoot, "src/api/channel.ts"), "utf8");
 const typesSource = fs.readFileSync(path.join(repoRoot, "src/types/messages.ts"), "utf8");
 
 test("useChannelMessages uses ?? for nextOffset fallback so 0 is preserved", () => {
@@ -20,7 +20,7 @@ test("useChannelMessages uses ?? for nextOffset fallback so 0 is preserved", () 
 test("useChannelMessages imports markChannelMessagesRead from the API module", () => {
   assert.match(
     channelSource,
-    /import \{[^}]*markChannelMessagesRead[^}]*\} from "\.\.\/\.\.\/api\/messages"/,
+    /import \{[^}]*markChannelMessagesRead[^}]*\} from "\.\.\/\.\.\/api\/channel"/,
   );
 });
 
@@ -35,6 +35,16 @@ test("markChannelMessagesRead is only called on reset loads, not pagination", ()
 test("API module exports buildChannelReadPayload and markChannelMessagesRead", () => {
   assert.match(apiSource, /export function buildChannelReadPayload/);
   assert.match(apiSource, /export async function markChannelMessagesRead/);
+});
+
+test("messages.ts is removed; channel + notifications modules exist", () => {
+  assert.equal(
+    fs.existsSync(path.join(repoRoot, "src/api/messages.ts")),
+    false,
+    "src/api/messages.ts should be deleted after the split",
+  );
+  assert.equal(fs.existsSync(path.join(repoRoot, "src/api/channel.ts")), true);
+  assert.equal(fs.existsSync(path.join(repoRoot, "src/api/notifications.ts")), true);
 });
 
 test("API module posts to /api/channel/read", () => {

@@ -5,7 +5,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
-const apiSource = fs.readFileSync(path.join(repoRoot, "src/api/messages.ts"), "utf8");
+const apiSource = fs.readFileSync(path.join(repoRoot, "src/api/channel.ts"), "utf8");
 const typesSource = fs.readFileSync(path.join(repoRoot, "src/types/messages.ts"), "utf8");
 const viewSource = fs.readFileSync(
   path.join(repoRoot, "src/features/messages/MessagesView.vue"),
@@ -22,7 +22,7 @@ test("types/messages.ts defines ChannelReadPayload with messageIds and readerId"
 
 // --- buildChannelReadPayload ---
 
-test("api/messages.ts exports buildChannelReadPayload", () => {
+test("api/channel.ts exports buildChannelReadPayload", () => {
   assert.match(
     apiSource,
     /export function buildChannelReadPayload\(messageIds: Array<string \| number>\)/,
@@ -35,7 +35,7 @@ test("buildChannelReadPayload returns { messageIds, readerId } shape", () => {
 
 // --- markChannelMessagesRead ---
 
-test("api/messages.ts exports markChannelMessagesRead", () => {
+test("api/channel.ts exports markChannelMessagesRead", () => {
   assert.match(
     apiSource,
     /export async function markChannelMessagesRead\(messageIds: Array<string \| number>\)/,
@@ -64,7 +64,7 @@ test("MessagesView imports markChannelMessagesRead", () => {
   assert.match(viewSource, /markChannelMessagesRead/);
   assert.match(
     viewSource,
-    /import \{[^}]*markChannelMessagesRead[^}]*\} from "\.\.\/api\/messages"/,
+    /import \{[^}]*markChannelMessagesRead[^}]*\} from "\.\.\/api\/channel"/,
   );
 });
 

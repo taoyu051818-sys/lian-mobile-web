@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import { normalizeNotificationItem, normalizeNotificationResponse } from "../../src/api/messages";
+import {
+  normalizeNotificationItem,
+  normalizeNotificationResponse,
+} from "../../src/api/notifications";
 import {
   NOTIF_EVENT_COMPLETED_BODY,
   NOTIF_EVENT_COMPLETED_TITLE,
@@ -160,7 +163,7 @@ describe("event-notifications-normalizer / case 1 — round-trip happy path", ()
 
 describe("event-notifications-normalizer / case 2 — missing required fields (drop vs fallback)", () => {
   // F3 chose "always emit, never drop" — verified against
-  // `normalizeNotificationItem` in src/api/messages.ts (no early return path).
+  // `normalizeNotificationItem` in src/api/notifications.ts (no early return path).
   // Each missing-field test pins the specific fallback so a regression where
   // F3 starts dropping (or starts inventing a value) goes red.
 
@@ -346,7 +349,7 @@ describe("event-notifications-normalizer / case 4 — settlement-only fields", (
 
 describe("event-notifications-normalizer / case 5 — idempotency-key shape", () => {
   // F3 does NOT parse the id string. NotificationItem.id is preserved
-  // verbatim from raw.id (see normalizeNotificationItem in src/api/messages.ts).
+  // verbatim from raw.id (see normalizeNotificationItem in src/api/notifications.ts).
   // The wire format `evt-<eventId>-<uid>-<arm>[-<settlementId>]` is therefore
   // an opaque idempotency key as far as the frontend renderer is concerned —
   // we pin that opacity here so a parser added later has to update this test.
