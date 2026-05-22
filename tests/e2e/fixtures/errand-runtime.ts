@@ -159,3 +159,19 @@ export async function fetchErrandJourneyFixture(
     }
   }
 }
+
+/**
+ * Resolve the runner-center transition seed in the safest order:
+ * explicit env override first, then the deterministic errandJourney fixture.
+ */
+export async function resolveRunnerOrderId(
+  options: { baseURL?: string; api?: import("@playwright/test").APIRequestContext } = {},
+): Promise<string> {
+  const configured = process.env.LIAN_E2E_RUNNER_ORDER_ID?.trim();
+  if (configured) return configured;
+
+  const fixture = await fetchErrandJourneyFixture(options);
+  if (!fixture?.ready || !fixture.orderId) return "";
+  if (fixture.order?.state !== "paid_locked") return "";
+  return fixture.orderId;
+}
