@@ -29,12 +29,7 @@ import { isRoleConfigured, loginAs } from "./fixtures/accounts";
 
 const BASE_URL = process.env.APP_BASE_URL ?? "https://lian.nat100.top";
 
-const HELP_INTENT_CONTENT_TYPES = new Set([
-  "campus_tip",
-  "guide",
-  "opportunity",
-  "signup",
-]);
+const HELP_INTENT_CONTENT_TYPES = new Set(["campus_tip", "guide", "opportunity", "signup"]);
 
 interface FeedItem {
   tid?: number;
@@ -113,9 +108,7 @@ test.describe("@help help runtime proof @help-runtime", () => {
       expect(detail.help, "post-detail must carry the help extension").toBeTruthy();
       // status must be one of the four known values; anything else means the
       // backend writer drifted from the documented state machine.
-      expect(["open", "linked_event", "resolved", "closed"]).toContain(
-        String(detail.help!.status),
-      );
+      expect(["open", "linked_event", "resolved", "closed"]).toContain(String(detail.help!.status));
       expect(typeof detail.help!.voteCount).toBe("number");
       expect(detail.help!.voteCount).toBeGreaterThanOrEqual(0);
     } finally {
