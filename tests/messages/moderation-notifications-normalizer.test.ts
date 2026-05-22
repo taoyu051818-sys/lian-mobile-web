@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import { normalizeNotificationItem, normalizeNotificationResponse } from "../../src/api/notifications";
+import {
+  normalizeNotificationItem,
+  normalizeNotificationResponse,
+} from "../../src/api/notifications";
 import {
   NOTIF_MOD_POST_HIDDEN_BODY,
   NOTIF_MOD_POST_HIDDEN_TITLE,

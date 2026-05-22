@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import { normalizeNotificationItem, normalizeNotificationResponse } from "../../src/api/notifications";
+import {
+  normalizeNotificationItem,
+  normalizeNotificationResponse,
+} from "../../src/api/notifications";
 import {
   NOTIF_ERRAND_ORDER_ACCEPTED_BODY,
   NOTIF_ERRAND_ORDER_ACCEPTED_TITLE,

@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import { normalizeNotificationItem, normalizeNotificationResponse } from "../../src/api/notifications";
+import {
+  normalizeNotificationItem,
+  normalizeNotificationResponse,
+} from "../../src/api/notifications";
 import {
   NOTIF_EVENT_COMPLETED_BODY,
   NOTIF_EVENT_COMPLETED_TITLE,
