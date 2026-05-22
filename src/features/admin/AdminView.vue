@@ -92,6 +92,31 @@ const tabs: Array<{ key: AdminTabKey; label: string }> = [
   { key: "audit", label: ADMIN_TAB_AUDIT },
 ];
 
+const verificationEmptyState = computed(() => {
+  switch (verificationStatusFilter.value) {
+    case "pending":
+      return {
+        title: "现在没有待审核申请",
+        body: "新的商户、跑腿员、实名或组织成员申请进入队列后，会先显示在这里。",
+      };
+    case "approved":
+      return {
+        title: "还没有已通过记录",
+        body: "审核通过后的申请会归档到这里，方便回看最近放行的身份结果。",
+      };
+    case "rejected":
+      return {
+        title: "还没有已拒绝记录",
+        body: "需要补材料或暂不符合条件的申请被拒绝后，会在这里留下处理结果。",
+      };
+    default:
+      return {
+        title: "当前还没有认证申请",
+        body: "当用户开始提交实名、商户、跑腿员或组织成员申请后，这里会形成审核队列。",
+      };
+  }
+});
+
 const pageChrome = computed<PageChromeSpec>(() => {
   if (!consoleEnabled.value) {
     return {
@@ -368,12 +393,14 @@ onMounted(() => {
             加载认证审核队列…
           </div>
 
-          <p
+          <section
             v-else-if="!console.verificationRequests.value.length"
-            class="admin-view__verification-state"
+            class="admin-view__verification-state admin-view__verification-state-card"
+            data-testid="admin-verification-empty"
           >
-            暂无认证申请。
-          </p>
+            <strong>{{ verificationEmptyState.title }}</strong>
+            <p>{{ verificationEmptyState.body }}</p>
+          </section>
 
           <div v-else class="admin-view__verification-items">
             <article
@@ -585,6 +612,26 @@ onMounted(() => {
   padding: var(--space-4);
   color: var(--lian-muted);
   text-align: center;
+}
+
+.admin-view__verification-state-card {
+  display: grid;
+  gap: var(--space-2);
+  border: 1px solid var(--lian-line);
+  border-radius: var(--radius-card);
+  background: rgba(255, 255, 255, 0.82);
+}
+
+.admin-view__verification-state-card strong {
+  color: var(--lian-ink);
+  font-size: 15px;
+  font-weight: 900;
+}
+
+.admin-view__verification-state-card p {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.6;
 }
 
 .admin-view__verification-items {
