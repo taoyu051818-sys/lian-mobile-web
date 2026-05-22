@@ -1,6 +1,7 @@
 import { expect, request, test, type APIRequestContext } from "@playwright/test";
 
 import { isRoleConfigured, loginAs } from "./fixtures/accounts";
+import { resolveRunnerOrderSeed } from "./fixtures/errand-runtime";
 
 const BASE_URL = process.env.APP_BASE_URL ?? "https://lian.nat100.top";
 
@@ -98,17 +99,29 @@ test.describe("@runner runner center @runner-center", () => {
       test.skip(true, "runner role not configured — set LIAN_E2E_RUNNER_USERNAME/PASSWORD");
       return;
     }
-    const seedOrderId = process.env.LIAN_E2E_RUNNER_ORDER_ID?.trim() ?? "";
-    if (!seedOrderId) {
+
+    // Prefer the explicit override when present, but fall back to the
+    // deterministic repo-backed errandJourney fixture. That keeps the runner
+    // proof runnable on the seeded non-prod backend without guessing a live
+    // order id by hand.
+    const seed = await resolveRunnerOrderSeed({ baseURL: BASE_URL });
+    if (!seed) {
       test.skip(
         true,
-        "set LIAN_E2E_RUNNER_ORDER_ID to a seeded order in `available` state to run this transition proof",
+        "set LIAN_E2E_RUNNER_ORDER_ID or expose /api/fixtures.errandJourney ready=true to run this transition proof",
       );
       return;
     }
+    const seedOrderId = seed.orderId;
 
     const { api } = await loginAs("runner");
     try {
+      const availableBeforeAccept = await fetchAvailable(api);
+      expect(
+        availableBeforeAccept.some((order) => order.id === seedOrderId),
+        `runner seed order ${seedOrderId} (source=${seed.source}) must be visible in the available pool before accept`,
+      ).toBe(true);
+
       const accepted = await transition(api, seedOrderId, "accept");
       expect(accepted.status).toBe("assigned");
 
