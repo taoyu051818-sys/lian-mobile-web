@@ -84,7 +84,7 @@ Total files: 323
 | `config/brand/index.ts`        | TypeScript module                                                                                                                                     |    22 |
 | `config/brand/loading.ts`      | export const LOADING_PROFILE = "正在加载个人资料…"; export const LOADING_FEED = "正在加载校园内容…"; export const LOADING_MAP = "正在加载...          |    26 |
 | `config/brand/map.ts`          | export const MAP_ARIA_LABEL = "校园地图"; export const MAP_FILTER_LOCATIONS = "地点"; export const MAP_FILTER_POSTS = "内容"...                       |    39 |
-| `config/brand/merchant.ts`     | export const MERCHANT_BLOCK_LABEL = "商家信息"; export const MERCHANT_CATEGORY_FOOD = "餐饮"; export const MERCHANT_CATEGOR...                        |   162 |
+| `config/brand/merchant.ts`     | export const MERCHANT_BLOCK_LABEL = "商家信息"; export const MERCHANT_CATEGORY_FOOD = "餐饮"; export const MERCHANT_CATEGOR...                        |   166 |
 | `config/brand/messages.ts`     | export const MESSAGE_EMPTY_CONTENT = "这条消息暂时没有内容。"; export const MESSAGE_TAB_LABEL = "消息分类"; export const MESSAGE_S...                 |    36 |
 | `config/brand/notification.ts` | export const NOTIFICATION_SECTION_LABEL = "通知"; export const NOTIFICATION_READ = "已读"; export const NOTIFICATION_UNRE...                          |   113 |
 | `config/brand/profile.ts`      | export const PROFILE*CAMPUS_USER = "校园用户"; export const PROFILE_INVITE_USER = "邀请码用户"; export const PROFILE_IDENTITY*...                     |   120 |
@@ -256,7 +256,7 @@ Total files: 323
 | `features/profile/useServerChanPreferences.ts`     | Server酱 preferences composable (ps#504 I2). Module-scope singleton — there is exactly one preferences object per ses...      |   160 |
 | `features/publish/PublishActionBar.vue`            | Vue SFC                                                                                                                       |    41 |
 | `features/publish/PublishComposer.vue`             | Vue SFC                                                                                                                       |   293 |
-| `features/publish/PublishEventControls.vue`        | Vue SFC                                                                                                                       |   230 |
+| `features/publish/PublishEventControls.vue`        | Vue SFC                                                                                                                       |   178 |
 | `features/publish/PublishGateNotice.vue`           | Vue SFC                                                                                                                       |    90 |
 | `features/publish/PublishImagePreview.vue`         | Vue SFC                                                                                                                       |   105 |
 | `features/publish/PublishLocationControls.vue`     | Vue SFC                                                                                                                       |   268 |
@@ -265,12 +265,12 @@ Total files: 323
 | `features/publish/PublishMetaControls.vue`         | PRD V0.1 §3.1 — backend-driven gating. Optional: when omitted (older                                                          |   245 |
 | `features/publish/PublishResetConfirm.vue`         | Vue SFC                                                                                                                       |    59 |
 | `features/publish/PublishTradeControls.vue`        | Vue SFC                                                                                                                       |   172 |
-| `features/publish/PublishView.vue`                 | Unified expand model: post-type (post / event) is a sub-classification of                                                     |   539 |
+| `features/publish/PublishView.vue`                 | PR-3 (#813 follow-up): publishKind is now the single "what am I posting"                                                      |   554 |
 | `features/publish/index.ts`                        | TypeScript module                                                                                                             |     3 |
 | `features/publish/publishDraftSession.ts`          | Drop every scoped publish-draft entry. Called on logout / account switch so a different account can't restore the pre...      |   255 |
 | `features/publish/useMerchantPublishDraft.ts`      | Publish-side merchant draft + verification gate. Owns: - merchant form fields (name / category / hours / contact / ...        |   100 |
 | `features/publish/usePublishAi.ts`                 | AI suggestion glue for the publish view (PRD V0.1 Phase 3 / §7.4.2). Runs the underlying AI composable and pipes acc...       |    56 |
-| `features/publish/usePublishDraft.ts`              | Composes the three slices of publish-form state — form fields & uploads (this file), identity (`usePublishIdentity`),...      |   280 |
+| `features/publish/usePublishDraft.ts`              | Composes the three slices of publish-form state — form fields & uploads (this file), identity (`usePublishIdentity`),...      |   285 |
 | `features/publish/usePublishDraftSession.ts`       | Stable identifier for the signed-in account, or null when the identity has not been resolved yet (e.g. while /api/aut...      |   202 |
 | `features/publish/usePublishIdentity.ts`           | Identity-side of the publish view: the avatar/name/meta strip that the shell renders, the alias the post is attribute...      |    82 |
 | `features/publish/usePublishLocationOptions.ts`    | export function usePublishLocationOptions(placeName: Ref<string>)                                                             |   139 |

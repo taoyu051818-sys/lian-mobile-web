@@ -143,6 +143,10 @@ export const MERCHANT_CENTER_LOADING = "加载商家中心…";
 /** 商家发布 (PRD V0.1 §10) */
 export const PUBLISH_TYPE_REGULAR = "普通帖";
 export const PUBLISH_TYPE_MERCHANT = "商家帖";
+// PR-3 (#813 follow-up): "活动" promoted to a peer of regular/merchant/trade
+// in the single publishKind switch — was previously hidden inside
+// PublishEventControls as a stacked second-decision card.
+export const PUBLISH_TYPE_EVENT = "活动帖";
 export const PUBLISH_TYPE_LABEL = "帖子类型";
 export const PUBLISH_MERCHANT_GATE_TITLE = "需要商家认证";
 export const PUBLISH_MERCHANT_GATE_HINT = "完成「认证中心 → 商家认证」后，可以发布商家帖。";

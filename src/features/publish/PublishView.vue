@@ -10,6 +10,7 @@ import {
   PUBLISH_AI_RISK_LABEL,
   PUBLISH_TYPE_LABEL,
   PUBLISH_TYPE_REGULAR,
+  PUBLISH_TYPE_EVENT,
   PUBLISH_TYPE_MERCHANT,
   PUBLISH_TYPE_TRADE,
   PUBLISH_MERCHANT_GATE_TITLE,
@@ -55,7 +56,7 @@ function goToVerification() {
   setActiveView("verification");
 }
 
-function selectPublishKind(kind: "regular" | "merchant" | "trade") {
+function selectPublishKind(kind: "regular" | "event" | "merchant" | "trade") {
   if (kind === "merchant" && merchantAffordanceLocked.value) return;
   draft.publishKind.value = kind;
 }
@@ -79,15 +80,17 @@ watch(merchantAffordanceLocked, (locked) => {
   }
 });
 
-// Unified expand model: post-type (post / event) is a sub-classification of
-// the "regular" kind. When the user picks merchant or trade, force postType
-// back to "post" so the hidden chooser cannot leave a stale "event" value
-// that would silently route the submit through createEvent.
-watch(draft.publishKind, (kind) => {
-  if (kind !== "regular" && eventDraft.postType.value !== "post") {
-    eventDraft.postType.value = "post";
-  }
-});
+// PR-3 (#813 follow-up): publishKind is now the single "what am I posting"
+// decision. Keep eventDraft.postType in lock-step so the existing
+// usePublishSubmit branch (postType === "event" -> createEvent) stays wired
+// without the separate post-type chooser inside PublishEventControls.
+watch(
+  draft.publishKind,
+  (kind) => {
+    eventDraft.postType.value = kind === "event" ? "event" : "post";
+  },
+  { immediate: true },
+);
 
 const { draftNotice, hasUnsavedDraft, currentScope } = usePublishDraftSession({
   title: draft.title,
@@ -260,6 +263,20 @@ onMounted(() => {
           </label>
           <label
             class="publish-view__type-option"
+            :class="{ 'is-active': draft.publishKind.value === 'event' }"
+          >
+            <input
+              type="radio"
+              name="publish-kind"
+              value="event"
+              data-testid="publish-type-event"
+              :checked="draft.publishKind.value === 'event'"
+              @change="selectPublishKind('event')"
+            />
+            <span>{{ PUBLISH_TYPE_EVENT }}</span>
+          </label>
+          <label
+            class="publish-view__type-option"
             :class="{
               'is-active': draft.publishKind.value === 'merchant',
               'is-disabled': merchantAffordanceLocked,
@@ -304,13 +321,11 @@ onMounted(() => {
         </PublishGateNotice>
 
         <PublishEventControls
-          v-if="draft.publishKind.value === 'regular'"
-          :post-type="eventDraft.postType.value"
+          v-if="draft.publishKind.value === 'event'"
           :starts-at="eventDraft.startsAt.value"
           :ends-at="eventDraft.endsAt.value"
           :capacity="eventDraft.capacity.value"
           :join-policy="eventDraft.joinPolicy.value"
-          @update:post-type="eventDraft.postType.value = $event"
           @update:starts-at="eventDraft.startsAt.value = $event"
           @update:ends-at="eventDraft.endsAt.value = $event"
           @update:capacity="eventDraft.capacity.value = $event"
