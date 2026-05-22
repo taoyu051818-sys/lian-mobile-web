@@ -114,7 +114,7 @@ const pageChrome = computed<PageChromeSpec>(() => ({
     },
   },
   bottom: {
-    visible: activeTab.value === "channel",
+    visible: true,
   },
 }));
 
