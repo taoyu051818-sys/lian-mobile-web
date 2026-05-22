@@ -58,6 +58,21 @@ onBeforeUnmount(() => {
         />
       </div>
     </div>
+    <!--
+      Reply-dock teleport target. The dock used to sit in the shell's
+      bottom slot, which displaced the BottomTabBar — that broke the
+      cold-start contract (#636) where the underlying tab bar must stay
+      mounted while the App-level detail overlay is open. Hosting the
+      dock here keeps it pinned to the viewport bottom, layered above
+      the chrome (z = --z-detail-sheet, 90 > --z-chrome, 70) so it sits
+      over the now-resident tab bar while the panel is open.
+    -->
+    <div
+      v-if="detail.detailOpen.value"
+      id="lian-detail-surface-dock-slot"
+      class="detail-surface__dock-host lian-floating-chrome lian-floating-chrome--bottom"
+      data-floating-chrome="bottom"
+    />
   </Teleport>
 </template>
 
@@ -84,6 +99,15 @@ onBeforeUnmount(() => {
   align-items: stretch;
   overflow: hidden;
   padding: env(safe-area-inset-top) 0 env(safe-area-inset-bottom);
+}
+
+/* Reply-dock host. Pinned to the bottom of the viewport (.lian-floating-chrome
+   --bottom positioning is supplied by chrome-surface.css), but layered above
+   the BottomTabBar (z = --z-chrome, 70) so an open detail's reply dock sits
+   in front of the underlying tab bar. The tab bar itself stays mounted to
+   honor the App-level overlay contract from #636. */
+.detail-surface__dock-host {
+  z-index: var(--z-detail-sheet);
 }
 
 .detail-surface__scrim {

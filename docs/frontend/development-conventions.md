@@ -62,7 +62,7 @@ A page **may**:
 Rules:
 
 - The render condition for the slot DOM is region only (`region === "top"` / `region === "bottom"`). It must not depend on `shellVisible`, on the floating-chrome phase, on `detailOpen`, or on any transition state.
-- `applyPageChrome` must not write `slot`. The detail-navigation FSM is the single owner of slot transitions through `setSlot` (`src/shell/useShellChrome.ts`).
+- `applyPageChrome` must not write `slot`. The detail-navigation FSM owns the top slot (toggling `detail-topbar` while the App-level overlay is open) through `setSlot` (`src/shell/useShellChrome.ts`). The FSM does NOT touch the bottom slot — the BottomTabBar must stay mounted under the App-level `DetailSurface` (cold-start contract, #636), and the reply dock teleports into a surface-owned host (`#lian-detail-surface-dock-slot`) rather than the shell bottom slot.
 - `ensureBottomSlot("tabs")` is the only place that installs the bottom-tabs default, and only when the slot is empty.
 
 These rules are guarded by `tests/shell/detail-surface.contract.test.mjs` and `tests/shell/shell-chrome.test.ts`. Don't relax them without first deleting the issue #636 reference in the test names — that is the deliberate trip wire.
