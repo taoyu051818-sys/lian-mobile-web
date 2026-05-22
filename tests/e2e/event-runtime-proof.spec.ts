@@ -19,6 +19,7 @@
 import { expect, request, test } from "@playwright/test";
 
 import { isRoleConfigured, loginAs } from "./fixtures/accounts";
+import { fetchEventRuntimeFixture } from "./fixtures/event-runtime";
 
 const BASE_URL = process.env.APP_BASE_URL ?? "https://lian.nat100.top";
 
@@ -46,7 +47,30 @@ interface PostDetail {
   eventJoined?: boolean;
 }
 
+/**
+ * Find an event-shaped post via two fallbacks (#763):
+ *   1. `/api/fixtures` — deterministic seeded event tid (event_creator + org_member).
+ *   2. `/api/feed?limit=50` — any drift-tolerant event-shaped post in the public feed.
+ *
+ * The fixture path makes the spec runnable on backends where the seeded event
+ * has not bubbled into the public feed query yet (the original failure mode in
+ * the 2026-05-22 e2e baseline). The feed path remains as a tolerance for
+ * environments where /api/fixtures is gated off (production mode 404).
+ */
 async function findEventPost(): Promise<FeedItem | null> {
+  const fixture = await fetchEventRuntimeFixture({ baseURL: BASE_URL });
+  if (fixture && fixture.ready && fixture.event) {
+    return {
+      tid: fixture.tid,
+      title: fixture.title,
+      event: {
+        eventId: fixture.event.eventId,
+        joinedCount: fixture.event.joinedCount,
+        startsAt: fixture.event.startsAt,
+        endsAt: fixture.event.endsAt,
+      },
+    };
+  }
   const api = await request.newContext({ baseURL: BASE_URL });
   try {
     const response = await api.get("/api/feed?limit=50");
