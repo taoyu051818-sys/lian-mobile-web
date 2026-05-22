@@ -286,3 +286,5 @@ export function __resetServerChanBindingForTesting(): void {
   openExternal = defaultOpenExternalUrl;
   readHash = defaultReadLocationHash;
 }
+
+export type UseServerChanBinding = ReturnType<typeof useServerChanBinding>;

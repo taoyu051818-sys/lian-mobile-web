@@ -155,3 +155,5 @@ export function __resetServerChanPreferencesForTesting(): void {
   saveError.value = "";
   api = defaultApi;
 }
+
+export type UseServerChanPreferences = ReturnType<typeof useServerChanPreferences>;
