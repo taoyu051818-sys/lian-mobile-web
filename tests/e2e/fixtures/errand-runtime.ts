@@ -61,6 +61,12 @@ export interface ErrandJourneyFixture {
   reset: boolean;
 }
 
+export interface RunnerOrderSeedResolution {
+  orderId: string;
+  source: "env" | "fixture";
+  stability: "explicit-override" | "stable-fixture";
+}
+
 interface FixturesEnvelope {
   ok?: boolean;
   fixtures?: {
@@ -158,4 +164,42 @@ export async function fetchErrandJourneyFixture(
       await api.dispose();
     }
   }
+}
+
+/**
+ * Resolve the order id the runner-center transition proof should consume.
+ *
+ * Resolution order:
+ *   1. `LIAN_E2E_RUNNER_ORDER_ID` when explicitly provided.
+ *   2. The repo-backed `fixtures.errandJourney.orderId` discovery surface.
+ *
+ * The fixture path is stable rather than per-run-random: the backend keeps the
+ * same deterministic order id (`err_e2e_merchant_runner_001`) and rewrites it
+ * back to the available `paid_locked` state on each successful `/api/fixtures`
+ * call. The env var remains as an escape hatch for production-mode backends
+ * that 404 `/api/fixtures` or for callers that need a different seeded order.
+ */
+export async function resolveRunnerOrderSeed(
+  options: { baseURL?: string; api?: import("@playwright/test").APIRequestContext } = {},
+): Promise<RunnerOrderSeedResolution | null> {
+  const override = (process.env.LIAN_E2E_RUNNER_ORDER_ID ?? "").trim();
+  if (override) {
+    return {
+      orderId: override,
+      source: "env",
+      stability: "explicit-override",
+    };
+  }
+
+  const fixture = await fetchErrandJourneyFixture(options);
+  if (!fixture?.ready || !fixture.order) return null;
+  const state = String(fixture.order.state || fixture.order.status || "");
+  if (state !== "paid_locked") return null;
+  if (fixture.order.runnerUserId) return null;
+
+  return {
+    orderId: fixture.orderId,
+    source: "fixture",
+    stability: "stable-fixture",
+  };
 }
