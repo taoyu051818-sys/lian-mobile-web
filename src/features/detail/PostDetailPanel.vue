@@ -298,6 +298,8 @@ watch(
             :errand-unavailable-reason="post?.errandUnavailableReason"
             :errand-unavailable-reason-text="post?.errandUnavailableReasonText"
             :trade="post?.trade"
+            :can-manage-event="eventManageable"
+            :can-manage-help="post?.helpManageable"
             @gallery-pointer-down="handleGalleryPointerDown"
             @gallery-pointer-move="handleGalleryPointerMove"
             @open-gallery-image="openGalleryImage"

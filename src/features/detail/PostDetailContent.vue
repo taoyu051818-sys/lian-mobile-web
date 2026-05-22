@@ -17,6 +17,7 @@ import {
   type PostCapabilityId,
   type PostCapabilitySelection,
 } from "./postCapabilityRegistry";
+import { isPostActionAvailable, type PostActionContext } from "./postActionRegistry";
 import PostDetailGallery from "./PostDetailGallery.vue";
 import PostDetailMainBody from "./PostDetailMainBody.vue";
 import PostDetailInfoStrip from "./PostDetailInfoStrip.vue";
@@ -74,6 +75,15 @@ const props = defineProps<{
   errandUnavailableReason?: MerchantErrandUnavailableReason | "";
   errandUnavailableReasonText?: string;
   trade?: TradePostExtension;
+  /**
+   * Viewer-side role flags consumed by the post-action registry. The panel
+   * already derives these (`usePostDetailExtensions` for event,
+   * `helpManageable` from PostDetail) so we just forward them here instead of
+   * re-deriving anything view-side. Trade-side manage gating lives on the
+   * sibling `PostDetailTradeManageBlock` so it is not re-exposed here.
+   */
+  canManageEvent?: boolean;
+  canManageHelp?: boolean;
 }>();
 
 // Issue #785 — single capability lookup. The view used to ladder
@@ -96,14 +106,40 @@ function selectionFor(id: PostCapabilityId): PostCapabilitySelection {
   return capabilityResolutions.value.find((entry) => entry.id === id)?.selection ?? "skip";
 }
 
-const showEventBlock = computed(
-  () => selectionFor("event") === "render" && Boolean(props.eventPlan),
+// Issue #793 — single action lookup. The view used to gate per-button visibility
+// on a mix of inline `v-if` truthy guards (event/help plan, helpManagePlan,
+// merchant errand entry, report follow-up); the registry consolidates that
+// gating so adding a future action does not widen these conditionals.
+const actionContext = computed<PostActionContext>(() => ({
+  type: props.postType,
+  viewer: {
+    canManageEvent: Boolean(props.canManageEvent),
+    canManageHelp: Boolean(props.canManageHelp),
+    canManageTrade: false,
+  },
+  event: props.event,
+  help: props.help,
+  merchant: props.merchant,
+  trade: props.trade,
+  errandEntryAvailable: props.errandEntryAvailable,
+  reportFollowUpVisible: props.reportFollowUpVisible,
+}));
+
+const showEventAct = computed(
+  () => isPostActionAvailable("event-act", actionContext.value) && Boolean(props.eventPlan),
 );
+const showEventBlock = computed(() => selectionFor("event") === "render" && showEventAct.value);
 const showEventFallback = computed(() => selectionFor("event") === "fallback");
-const showHelpBlock = computed(() => selectionFor("help") === "render" && Boolean(props.helpPlan));
+const showHelpAct = computed(
+  () => isPostActionAvailable("help-act", actionContext.value) && Boolean(props.helpPlan),
+);
+const showHelpBlock = computed(() => selectionFor("help") === "render" && showHelpAct.value);
 const showHelpFallback = computed(() => selectionFor("help") === "fallback");
 const showHelpManageBlock = computed(
-  () => selectionFor("help") === "render" && Boolean(props.helpManagePlan),
+  () =>
+    selectionFor("help") === "render" &&
+    Boolean(props.helpManagePlan) &&
+    Boolean(props.canManageHelp),
 );
 const showMerchantBlock = computed(() => selectionFor("merchant") === "render");
 const showMerchantFallback = computed(() => selectionFor("merchant") === "fallback");
