@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import { normalizeNotificationItem, normalizeNotificationResponse } from "../../src/api/messages";
+import {
+  normalizeNotificationItem,
+  normalizeNotificationResponse,
+} from "../../src/api/notifications";
 
 describe("notification routing normalization", () => {
   it("routes reply notifications to post detail", () => {
@@ -94,40 +97,53 @@ describe("errand-order notification routing (ps#477 / ps#495 fan-out)", () => {
   } as const;
 
   it.each([
-    ["errand-order-accepted", "跑腿订单已被接单", "「奶茶代购」已被跑腿员接单，请保持联系。", "order-1"],
+    [
+      "errand-order-accepted",
+      "跑腿订单已被接单",
+      "「奶茶代购」已被跑腿员接单，请保持联系。",
+      "order-1",
+    ],
     ["errand-order-picked-up", "跑腿订单已取件", "「奶茶代购」已取件，正在前往送达。", "order-1"],
     ["errand-order-delivering", "跑腿订单配送中", "「奶茶代购」正在配送途中。", "order-1"],
     ["errand-order-delivered", "跑腿订单已送达", "「奶茶代购」已送达，请尽快确认完成。", "order-1"],
-    ["errand-order-completed", "跑腿订单已完成结算", "「奶茶代购」订单已完成，报酬已入账。", "order-1"],
+    [
+      "errand-order-completed",
+      "跑腿订单已完成结算",
+      "「奶茶代购」订单已完成，报酬已入账。",
+      "order-1",
+    ],
     ["errand-order-cancelled", "跑腿订单已取消", "「奶茶代购」订单已取消。", "order-1"],
     ["errand-order-refunded", "跑腿订单已退款", "「奶茶代购」订单退款已到账。", "order-1"],
-  ])("routes %s onto kind='order' with locked fallback copy", (type, fallbackTitle, fallbackBody, orderId) => {
-    // Backend strips title/excerpt to exercise our fallback copy path.
-    const item = normalizeNotificationItem({
-      id: `errand-order-1-${type}-uid-7-2026-05-22T08:00:00Z`,
-      type,
-      data: {
-        status: type.replace("errand-order-", "").replace(/-/g, "_"),
-        previousStatus: "",
-        orderId,
-        merchantPostId: "42",
-        triggeredBy: "uid-9",
-        targetType: "errand-order",
-        orderTitle: "奶茶代购",
-      },
-      idempotencyKey: `errand-order-1-${type.replace("errand-order-", "").replace(/-/g, "_")}-uid-7-2026-05-22T08:00:00Z`,
-      ...baseEnvelope,
-    });
+  ])(
+    "routes %s onto kind='order' with locked fallback copy",
+    (type, fallbackTitle, fallbackBody, orderId) => {
+      // Backend strips title/excerpt to exercise our fallback copy path.
+      const item = normalizeNotificationItem({
+        id: `errand-order-1-${type}-uid-7-2026-05-22T08:00:00Z`,
+        type,
+        data: {
+          status: type.replace("errand-order-", "").replace(/-/g, "_"),
+          previousStatus: "",
+          orderId,
+          merchantPostId: "42",
+          triggeredBy: "uid-9",
+          targetType: "errand-order",
+          orderTitle: "奶茶代购",
+        },
+        idempotencyKey: `errand-order-1-${type.replace("errand-order-", "").replace(/-/g, "_")}-uid-7-2026-05-22T08:00:00Z`,
+        ...baseEnvelope,
+      });
 
-    expect(item.kind).toBe("order");
-    expect(item.title).toBe(fallbackTitle);
-    expect(item.excerpt).toBe(fallbackBody);
-    expect(item.target).toEqual({
-      kind: "errand-order",
-      orderId,
-    });
-    expect(item.actionLabel).toBe("查看订单详情");
-  });
+      expect(item.kind).toBe("order");
+      expect(item.title).toBe(fallbackTitle);
+      expect(item.excerpt).toBe(fallbackBody);
+      expect(item.target).toEqual({
+        kind: "errand-order",
+        orderId,
+      });
+      expect(item.actionLabel).toBe("查看订单详情");
+    },
+  );
 
   it("pins ps#495 errand-order-completed payload (recipient = runner) end-to-end", () => {
     // Specific pin for ps#495 — the recipient is the runner whose wallet was
@@ -561,12 +577,6 @@ describe("admin moderation notification rendering (ps#493 fan-out)", () => {
     });
 
     const kinds = (response.items || []).map((it) => it.kind);
-    expect(kinds).toEqual([
-      "reply",
-      "moderation",
-      "moderation",
-      "event-completed",
-      "verification",
-    ]);
+    expect(kinds).toEqual(["reply", "moderation", "moderation", "event-completed", "verification"]);
   });
 });

@@ -5,7 +5,7 @@ import {
   markChannelMessagesRead,
   mergeChannelMessagesChronologically,
   sendChannelMessage,
-} from "../../api/messages";
+} from "../../api/channel";
 import { extractErrorMessage } from "../../utils/extractErrorMessage";
 import { ERROR_LOAD_CHANNEL, MESSAGE_EMPTY_CONTENT } from "../../config/brand";
 import type { ChannelMessage } from "../../types/messages";

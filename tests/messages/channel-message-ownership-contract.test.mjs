@@ -8,7 +8,7 @@ const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), ".."
 const typesMessages = fs.readFileSync(path.join(repoRoot, "src/types/messages.ts"), "utf8");
 const typesFeed = fs.readFileSync(path.join(repoRoot, "src/types/feed.ts"), "utf8");
 const typesProfile = fs.readFileSync(path.join(repoRoot, "src/types/profile.ts"), "utf8");
-const apiMessages = fs.readFileSync(path.join(repoRoot, "src/api/messages.ts"), "utf8");
+const apiMessages = fs.readFileSync(path.join(repoRoot, "src/api/channel.ts"), "utf8");
 const channelSource = fs.readFileSync(
   path.join(repoRoot, "src/features/messages/useChannelMessages.ts"),
   "utf8",
@@ -67,7 +67,7 @@ test("ChannelMessage.actor is typed as ChannelMessageActor", () => {
 
 // --- Normalization function ---
 
-test("api/messages.ts exports normalizeChannelMessage", () => {
+test("api/channel.ts exports normalizeChannelMessage", () => {
   assert.match(apiMessages, /export function normalizeChannelMessage/);
 });
 

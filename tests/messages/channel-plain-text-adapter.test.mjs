@@ -5,7 +5,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
-const apiSource = fs.readFileSync(path.join(repoRoot, "src/api/messages.ts"), "utf8");
+const apiSource = fs.readFileSync(path.join(repoRoot, "src/api/channel.ts"), "utf8");
 const typesSource = fs.readFileSync(path.join(repoRoot, "src/types/messages.ts"), "utf8");
 const channelSource = fs.readFileSync(
   path.join(repoRoot, "src/features/messages/useChannelMessages.ts"),
@@ -16,7 +16,7 @@ test("types/messages.ts defines ChannelMessage plainText", () => {
   assert.match(typesSource, /plainText\?: string/);
 });
 
-test("api/messages.ts exports helper-driven channel plain-text normalization", () => {
+test("api/channel.ts exports helper-driven channel plain-text normalization", () => {
   assert.match(apiSource, /export function extractChannelMessagePlainText/);
   assert.match(apiSource, /export function resolveChannelMessagePlainText/);
   assert.match(apiSource, /const plainText = resolveChannelMessagePlainText\(raw\)/);
