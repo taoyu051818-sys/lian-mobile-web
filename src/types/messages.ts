@@ -45,6 +45,7 @@ export type NotificationKind =
   | "event-completed"
   | "event-reward-settled"
   | "event-expired"
+  | "moderation"
   | "generic";
 
 export type NotificationTarget =
