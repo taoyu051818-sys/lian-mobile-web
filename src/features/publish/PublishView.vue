@@ -77,6 +77,16 @@ watch(merchantAffordanceLocked, (locked) => {
   }
 });
 
+// Unified expand model: post-type (post / event) is a sub-classification of
+// the "regular" kind. When the user picks merchant or trade, force postType
+// back to "post" so the hidden chooser cannot leave a stale "event" value
+// that would silently route the submit through createEvent.
+watch(draft.publishKind, (kind) => {
+  if (kind !== "regular" && eventDraft.postType.value !== "post") {
+    eventDraft.postType.value = "post";
+  }
+});
+
 const { draftNotice, hasUnsavedDraft, currentScope } = usePublishDraftSession({
   title: draft.title,
   body: draft.body,
@@ -301,6 +311,20 @@ onMounted(() => {
           </button>
         </section>
 
+        <PublishEventControls
+          v-if="draft.publishKind.value === 'regular'"
+          :post-type="eventDraft.postType.value"
+          :starts-at="eventDraft.startsAt.value"
+          :ends-at="eventDraft.endsAt.value"
+          :capacity="eventDraft.capacity.value"
+          :join-policy="eventDraft.joinPolicy.value"
+          @update:post-type="eventDraft.postType.value = $event"
+          @update:starts-at="eventDraft.startsAt.value = $event"
+          @update:ends-at="eventDraft.endsAt.value = $event"
+          @update:capacity="eventDraft.capacity.value = $event"
+          @update:join-policy="eventDraft.joinPolicy.value = $event"
+        />
+
         <PublishMerchantControls
           v-if="draft.publishKind.value === 'merchant'"
           :merchant-verified="draft.merchant.merchantVerified.value"
@@ -392,19 +416,6 @@ onMounted(() => {
           @update:tag-input="draft.tagInput.value = $event"
           @update:identity-tag="draft.identityTag.value = $event"
           @update:visibility="draft.visibility.value = $event"
-        />
-
-        <PublishEventControls
-          :post-type="eventDraft.postType.value"
-          :starts-at="eventDraft.startsAt.value"
-          :ends-at="eventDraft.endsAt.value"
-          :capacity="eventDraft.capacity.value"
-          :join-policy="eventDraft.joinPolicy.value"
-          @update:post-type="eventDraft.postType.value = $event"
-          @update:starts-at="eventDraft.startsAt.value = $event"
-          @update:ends-at="eventDraft.endsAt.value = $event"
-          @update:capacity="eventDraft.capacity.value = $event"
-          @update:join-policy="eventDraft.joinPolicy.value = $event"
         />
 
         <PublishResetConfirm
