@@ -67,27 +67,21 @@ test("notificationChannels module exports the five channels we audit", () => {
   }
 });
 
-test("notificationChannels marks reply as connected and the four backlog channels as pending", () => {
-  const replyBlock = channelsSource.match(/id:\s*"reply"[\s\S]+?status:\s*"(connected|pending)"/);
-  assert.ok(replyBlock, "reply block should exist");
-  assert.equal(replyBlock?.[1], "connected", "reply must be connected");
-
-  for (const id of ["verification", "errand-status", "event-completion", "admin-review"]) {
+test("notificationChannels marks all five inbox-readout channels as connected now that backends shipped", () => {
+  for (const id of ["reply", "verification", "errand-status", "event-completion", "admin-review"]) {
     const block = channelsSource.match(
       new RegExp(`id:\\s*"${id}"[\\s\\S]+?status:\\s*"(connected|pending)"`),
     );
     assert.ok(block, `${id} block should exist`);
-    assert.equal(block?.[1], "pending", `${id} must be pending until backend ships`);
+    assert.equal(block?.[1], "connected", `${id} should be connected after ps#476/ps#477/ps#445 + mw#700/#701/#740 merged`);
   }
 });
 
-test("notificationChannels links the tracked backend issues so the readout stays honest", () => {
-  for (const issue of [
-    "github.com/taoyu051818-sys/lian-mobile-web/issues/700",
-    "github.com/taoyu051818-sys/lian-mobile-web/issues/701",
-    "github.com/taoyu051818-sys/lian-mobile-web/issues/706",
-  ]) {
-    assert.ok(channelsSource.includes(issue), `expected channel inventory to link ${issue}`);
+test("notificationChannels does not link stale follow-up issues for shipped channels", () => {
+  const issueUrlLines = channelsSource.match(/issueUrl:\s*[^,\n]+,/g) || [];
+  assert.equal(issueUrlLines.length, 5, "expected 5 issueUrl entries (one per channel)");
+  for (const line of issueUrlLines) {
+    assert.match(line, /issueUrl:\s*null,/, `expected null but got: ${line}`);
   }
 });
 

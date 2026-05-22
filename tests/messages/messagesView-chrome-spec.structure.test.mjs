@@ -30,11 +30,15 @@ test("MessagesView uses declarative pageChrome computed instead of floating chro
 
 test("MessagesView declares tab spec with onTabSelect handler", () => {
   assert.match(viewSource, /onTabSelect/);
-  assert.match(viewSource, /ariaLabel:\s*"消息分类"/);
+  assert.match(viewSource, /ariaLabel:\s*MESSAGE_TAB_LABEL/);
 });
 
-test("MessagesView sets bottom visible based on active tab", () => {
-  assert.match(viewSource, /visible:\s*activeTab\.value\s*===\s*"channel"/);
+test("MessagesView keeps the bottom shell chrome visible across all tabs so the bottom nav stays tappable", () => {
+  // Issue #799: previously bottom.visible was gated on activeTab === "channel",
+  // which gave the BottomTabBar host pointer-events:none on system / orders /
+  // replies. Keep this as a constant `true` so taps on 我的 / 首页 land.
+  assert.match(viewSource, /bottom:\s*\{\s*visible:\s*true,?\s*\}/);
+  assert.doesNotMatch(viewSource, /visible:\s*activeTab\.value\s*===\s*"channel"/);
 });
 
 test("MessagesView does not use floating chrome CSS attributes", () => {
