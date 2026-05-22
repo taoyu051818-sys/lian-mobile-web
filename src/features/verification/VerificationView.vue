@@ -2,6 +2,7 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { LianButton } from "../../ui";
 import {
+  VERIFICATION_AVATAR_TEXT,
   VERIFICATION_BACK_TO_PROFILE,
   VERIFICATION_CAMPUS_CODE_LABEL,
   VERIFICATION_CAMPUS_CODE_PLACEHOLDER,
@@ -54,7 +55,7 @@ const verificationState = computed<VerificationState>(() => {
 const pageChrome = computed<PageChromeSpec>(() => ({
   top: {
     visible: true,
-    identity: { avatarText: "认", name: VERIFICATION_SECTION_LABEL },
+    identity: { avatarText: VERIFICATION_AVATAR_TEXT, name: VERIFICATION_SECTION_LABEL },
     buttons: [{ id: "verification:close", label: VERIFICATION_BACK_TO_PROFILE, variant: "ghost" }],
     onButtonClick: (id) => {
       if (id === "verification:close") emit("close");

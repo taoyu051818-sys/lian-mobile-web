@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from "vue";
 import {
+  RUNNER_AVATAR_TEXT,
   RUNNER_BACK_TO_PROFILE,
   RUNNER_LIST_EMPTY_ACTIVE,
   RUNNER_LIST_EMPTY_ACTIVE_HINT,
@@ -74,7 +75,7 @@ const pageChrome = computed<PageChromeSpec>(() => {
     return {
       top: {
         visible: true,
-        identity: { avatarText: "跑", name: RUNNER_SECTION_LABEL },
+        identity: { avatarText: RUNNER_AVATAR_TEXT, name: RUNNER_SECTION_LABEL },
         buttons: [{ id: "runner:close", label: RUNNER_BACK_TO_PROFILE, variant: "ghost" }],
         onButtonClick: handleChromeButtonClick,
       },
@@ -83,7 +84,7 @@ const pageChrome = computed<PageChromeSpec>(() => {
   return {
     top: {
       visible: true,
-      identity: { avatarText: "跑", name: RUNNER_SECTION_LABEL },
+      identity: { avatarText: RUNNER_AVATAR_TEXT, name: RUNNER_SECTION_LABEL },
       tabs: {
         kind: "tabs",
         items: tabs.map((t) => ({ id: t.key, label: t.label })),

@@ -11,6 +11,9 @@ export const FEED_UNLIKE = "取消喜欢";
 export const FEED_COLLAPSE = "收起";
 export const FEED_EXPAND = "展开";
 
+/** 卡片模板视觉记号（FeedItemCard.vue templateMark 字符标） */
+export const FEED_CARD_MARK_MERCHANT = "食";
+
 /** 信息流 UI */
 export const FEED_LOAD_MORE = "加载更多";
 export const FEED_SEEN_ALL = "已经看到这里啦";

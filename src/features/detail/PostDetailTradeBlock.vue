@@ -17,6 +17,7 @@ import {
   TRADE_RISK_HINT,
   TRADE_STATE_AVAILABLE,
   TRADE_STATE_CANCELLED,
+  TRADE_STATE_HIDDEN,
   TRADE_STATE_RESERVED,
   TRADE_STATE_SOLD,
   TRADE_VERIFIED_AT_PREFIX,
@@ -33,7 +34,7 @@ const STATE_LABEL: Record<TradeState, string> = {
   reserved: TRADE_STATE_RESERVED,
   sold: TRADE_STATE_SOLD,
   cancelled: TRADE_STATE_CANCELLED,
-  hidden: "已隐藏",
+  hidden: TRADE_STATE_HIDDEN,
 };
 
 const stateLabel = computed(() => STATE_LABEL[props.trade.state]);
