@@ -30,8 +30,13 @@ test("MessageTabKey includes replies, system, and orders alongside channel", () 
   );
 });
 
-test("MessagesView imports the inbox helper and new notification tab labels", () => {
+test("NotificationTarget includes the errand-order deep-link shape", () => {
+  assert.match(typesSource, /\{ kind: "errand-order"; orderId: string \}/);
+});
+
+test("MessagesView imports the inbox helper, errand-order route, and new notification tab labels", () => {
   assert.match(viewSource, /from "\.\/messageInbox"/);
+  assert.match(viewSource, /useErrandOrderRoute/);
   assert.match(viewSource, /MESSAGE_TAB_REPLIES/);
   assert.match(viewSource, /MESSAGE_TAB_SYSTEM/);
   assert.match(viewSource, /MESSAGE_TAB_ORDERS/);
@@ -53,10 +58,21 @@ test("MessagesView passes title, hint, empty copy, channels, and gap links into 
   assert.match(viewSource, /:gap-links="activeNotificationSpec\?\.gapLinks \|\| \[\]"/);
 });
 
+test("MessagesView routes errand-order notification targets into the existing errand-order view", () => {
+  assert.match(viewSource, /const errandOrderRoute = useErrandOrderRoute\(\)/);
+  assert.match(viewSource, /if \(target\.kind === "errand-order"\)/);
+  assert.match(viewSource, /errandOrderRoute\.enterForOrder\(target\.orderId, "messages"\)/);
+  assert.match(viewSource, /setActiveView\("errand-order"\)/);
+});
+
 test("NotificationList renders a structured empty state with next-step links", () => {
   assert.match(listSource, /data-testid="notification-empty-state"/);
   assert.match(listSource, /data-testid="notification-gap-link"/);
   assert.match(listSource, /NOTIFICATION_EMPTY_NEXT_STEP/);
+});
+
+test("NotificationList treats errand-order targets as clickable", () => {
+  assert.match(listSource, /item\.target\?\.kind === "errand-order"/);
 });
 
 test("messageInbox keeps event notification gaps pointed at issue #706", () => {
