@@ -24,7 +24,7 @@ Total files: 310
 | `api/http.ts`         | export class LianApiError extends Error                                                                                  |   252 |
 | `api/interaction.ts`  | Like/vote unified interaction API (PRD V0.1 §7.1.2, §11.3). Backend already exposes `/api/posts/:tid/like` for likes...  |    65 |
 | `api/map.ts`          | TypeScript module                                                                                                        |    14 |
-| `api/merchant.ts`     | Merchant center API (issue #646). `GET /api/me/merchant-center` returns the merchant readout for the signed-in user....  |    89 |
+| `api/merchant.ts`     | Merchant center API (issue #646). Source endpoints (no new route — see `types/merchant.ts` for rationale): - `GET ...    |   122 |
 | `api/messages.ts`     | Server-side `type` slugs that B2 (#438 / lian-platform-server#445) writes for the three event-lifecycle fan-outs. The... |   490 |
 | `api/places.ts`       | TypeScript module                                                                                                        |    10 |
 | `api/posts.ts`        | export interface PostLikeResponse                                                                                        |   267 |
@@ -82,7 +82,7 @@ Total files: 310
 | `config/brand/index.ts`        | TypeScript module                                                                                                                                     |    21 |
 | `config/brand/loading.ts`      | export const LOADING_PROFILE = "正在加载个人资料…"; export const LOADING_FEED = "正在加载校园内容…"; export const LOADING_MAP = "正在加载...          |    26 |
 | `config/brand/map.ts`          | export const MAP_ARIA_LABEL = "校园地图"; export const MAP_FILTER_LOCATIONS = "地点"; export const MAP_FILTER_POSTS = "内容"...                       |    39 |
-| `config/brand/merchant.ts`     | export const MERCHANT_BLOCK_LABEL = "商家信息"; export const MERCHANT_CATEGORY_FOOD = "餐饮"; export const MERCHANT_CATEGOR...                        |   163 |
+| `config/brand/merchant.ts`     | export const MERCHANT_BLOCK_LABEL = "商家信息"; export const MERCHANT_CATEGORY_FOOD = "餐饮"; export const MERCHANT_CATEGOR...                        |   162 |
 | `config/brand/messages.ts`     | export const MESSAGE_EMPTY_CONTENT = "这条消息暂时没有内容。"; export const MESSAGE_TAB_LABEL = "消息分类"; export const MESSAGE_S...                 |    36 |
 | `config/brand/notification.ts` | export const NOTIFICATION_SECTION_LABEL = "通知"; export const NOTIFICATION_READ = "已读"; export const NOTIFICATION_UNRE...                          |    69 |
 | `config/brand/profile.ts`      | export const PROFILE*CAMPUS_USER = "校园用户"; export const PROFILE_INVITE_USER = "邀请码用户"; export const PROFILE_IDENTITY*...                     |   120 |
@@ -201,11 +201,11 @@ Total files: 310
 | `features/map/useMapRoads.ts`                      | export type RoadVisualStyle =                                                                                                 |   238 |
 | `features/map/useMapSelection.ts`                  | Map-only selection state. Post-detail navigation is owned by the detail-navigation FSM at the app level, so this comp...      |    78 |
 | `features/merchant/MerchantCenterGate.vue`         | Vue SFC                                                                                                                       |    87 |
-| `features/merchant/MerchantCenterView.vue`         | Vue SFC                                                                                                                       |   292 |
+| `features/merchant/MerchantCenterView.vue`         | Refresh /api/auth/me so the gate decision matches the freshest verification                                                   |   297 |
 | `features/merchant/index.ts`                       | TypeScript module                                                                                                             |    11 |
 | `features/merchant/merchant-format.ts`             | Maps merchant errand reason codes to localized copy. Centralized so the detail page (PostDetailMerchantBlock) and the...      |    61 |
 | `features/merchant/useIsMerchantVerified.ts`       | Returns true when the user record carries an active `merchant_verified` verification tag. Treats `verificationState.m...      |    27 |
-| `features/merchant/useMerchantCenter.ts`           | Merchant center state composable (issue #646). Owns the GET /api/me/merchant-center round-trip and exposes the snaps...       |    62 |
+| `features/merchant/useMerchantCenter.ts`           | Merchant center state composable (issue #646). Owns two read-only round-trips: - `GET /api/auth/me` → drives the m...         |    84 |
 | `features/messages/ChannelComposer.vue`            | Vue SFC                                                                                                                       |   147 |
 | `features/messages/ChannelThread.vue`              | Vue SFC                                                                                                                       |   268 |
 | `features/messages/MessagesTabs.vue`               | Vue SFC                                                                                                                       |    58 |
@@ -338,7 +338,7 @@ Total files: 310
 | `types/feed.ts`            | Card-template vocabulary the Feed UI knows how to render. `activity` is the presentation label for `event` PostType (...     |    64 |
 | `types/map-policy.ts`      | Map viewport policy (PRD V0.1 §7.2.3). Bounds are deliberately permissive for V0.1 (large enough to cover any reason...      |    82 |
 | `types/map.ts`             | export interface MapBounds                                                                                                   |   141 |
-| `types/merchant.ts`        | Merchant center (issue #646) types. Backend (`/api/me/merchant-center`) ships a profile readout for merchants who ho...      |    57 |
+| `types/merchant.ts`        | Merchant center (issue #646) types. The merchant center is a read-only surface for `merchant_verified` users. Source...      |    57 |
 | `types/messages.ts`        | Client-generated nonce stamped on the optimistic item so we can match the server echo back to it without depending on...     |    85 |
 | `types/place.ts`           | export type PlaceStatus =                                                                                                    |    60 |
 | `types/post-extensions.ts` | Event / Help / Merchant / Trade / Errand domain types (PRD V0.1 §6). V0.1 ships shapes only — no UI yet. The point i...      |   246 |
