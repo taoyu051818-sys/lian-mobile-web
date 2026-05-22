@@ -12,6 +12,7 @@ import PostDetailLightbox from "./PostDetailLightbox.vue";
 import PostDetailTradeManageBlock from "./PostDetailTradeManageBlock.vue";
 import PostReplies from "./PostReplies.vue";
 import PostReplyDock from "./PostReplyDock.vue";
+import ShareCardSheet from "./ShareCardSheet.vue";
 import { usePostDetailPresentation } from "./usePostDetailPresentation";
 import { usePostReactions } from "./usePostReactions";
 import { usePlaceSheetLoader } from "./usePlaceSheetLoader";
@@ -134,7 +135,17 @@ const { replyBusy, replyExpanded, replyContent, collapseReplyIfOpen, submitReply
     onReplySuccess: () => emit("retry"),
   });
 
-const { handleShare } = usePostShare({
+const {
+  handleShare,
+  handleShareConfirm,
+  handleShareClose,
+  handleShareRetry,
+  sharePreviewOpen,
+  sharePreviewStatus,
+  sharePreviewCard,
+  sharePreviewErrorMessage,
+  sharePreviewCanRetry,
+} = usePostShare({
   postId,
   title,
   post,
@@ -340,6 +351,16 @@ watch(
     </Teleport>
 
     <PostDetailLightbox :src="fullscreenImage" :alt="title" @close="fullscreenImage = ''" />
+    <ShareCardSheet
+      :open="sharePreviewOpen"
+      :status="sharePreviewStatus"
+      :card="sharePreviewCard"
+      :error-message="sharePreviewErrorMessage"
+      :can-retry="sharePreviewCanRetry"
+      @close="handleShareClose"
+      @confirm="handleShareConfirm"
+      @retry="handleShareRetry"
+    />
   </aside>
 </template>
 
