@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { normalizeNotificationItem, normalizeNotificationResponse } from "../../src/api/messages";
+import { normalizeNotificationItem, normalizeNotificationResponse } from "../../src/api/notifications";
 
 describe("notification routing normalization", () => {
   it("routes reply notifications to post detail", () => {
@@ -81,12 +81,6 @@ describe("notification routing normalization", () => {
 });
 
 describe("errand-order notification routing (ps#477 / ps#495 fan-out)", () => {
-  // Lock the seven exact errand-order-* slugs onto kind="order" so a fuzzy
-  // "order"/"errand" hit on an unrelated payload can't poach the bucket. The
-  // status itself is projected via ERRAND_ORDER_TYPE_TO_STATUS for body copy.
-  // Wire types use kebab-case (`errand-order-picked-up`); internal status
-  // enums are snake_case (`picked_up`).
-
   const baseEnvelope = {
     actor: { id: "system", name: "LIAN", displayName: "LIAN" },
     timestampISO: "2026-05-22T08:00:00Z",
@@ -143,9 +137,6 @@ describe("errand-order notification routing (ps#477 / ps#495 fan-out)", () => {
   );
 
   it("pins ps#495 errand-order-completed payload (recipient = runner) end-to-end", () => {
-    // Specific pin for ps#495 — the recipient is the runner whose wallet was
-    // just credited, and `data.triggeredBy` carries the requester uid that
-    // confirmed the order.
     const item = normalizeNotificationItem({
       id: "errand-order-77-completed-runner-99-2026-05-22T08:00:00Z",
       type: "errand-order-completed",
@@ -195,11 +186,6 @@ describe("errand-order notification routing (ps#477 / ps#495 fan-out)", () => {
 });
 
 describe("event notification rendering (B2 #438 fan-out)", () => {
-  // Wire shape mirrors lian-platform-server#445 (merge fc65accf):
-  //   id "evt-<eventId>-<uid>-<arm>", type, tid:<hostPostTid>, data{eventId,
-  //   hostPostTid, transition, targetType:"event", ...}, actor.displayName,
-  //   timestampISO, read=false.
-
   it("uses a structured event title when one exists", () => {
     const item = normalizeNotificationItem({
       id: "evt-evt-1-uid-7-completed",
@@ -435,14 +421,6 @@ describe("event notification rendering (B2 #438 fan-out)", () => {
 });
 
 describe("admin moderation notification rendering (ps#493 fan-out)", () => {
-  // Wire shape mirrors lian-platform-server#493:
-  //   id "mod-report-<reportId>-<status>-<reporterUid>-<decidedAt>" or
-  //      "mod-post-<tid>-<verb>-<authorUid>-<decidedAt>"
-  //   type, tid (post tid), title, excerpt, actor:{id:"system", name:"LIAN"},
-  //   read, timestampISO, data{...}, idempotencyKey.
-  // Backend hardcodes actor=LIAN; admin reviewer identity and free-text notes
-  // never reach the wire — we never try to surface them.
-
   it("routes report-accepted to the reported post detail", () => {
     const item = normalizeNotificationItem({
       id: "mod-report-r-1-accepted-uid-7-2026-05-22T08:00:00Z",
@@ -529,9 +507,6 @@ describe("admin moderation notification rendering (ps#493 fan-out)", () => {
   });
 
   it("does not poach the moderation bucket from generic types containing 'post' or 'report'", () => {
-    // The exact-match table guards against a future user-facing slug like
-    // "post-comment" or "report-summary" being routed onto the moderation kind.
-    // The fuzzy haystack would otherwise see "post" / "report" and bypass us.
     const stranger = normalizeNotificationItem({
       type: "post-comment",
       tid: 10,
