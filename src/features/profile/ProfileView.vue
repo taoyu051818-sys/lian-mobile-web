@@ -23,6 +23,7 @@ import { InlineError } from "../../ui";
 import { AuthPanel } from "../auth";
 import ProfileEditorPanel from "./ProfileEditorPanel.vue";
 import ProfileHeader from "./ProfileHeader.vue";
+import ProfileServerChanBlock from "./ProfileServerChanBlock.vue";
 import ProfileSettingsBlock from "./ProfileSettingsBlock.vue";
 import ProfileStatsBlock from "./ProfileStatsBlock.vue";
 import ProfileTabs from "./ProfileTabs.vue";
@@ -187,6 +188,8 @@ onMounted(() => {
       <ProfileStatsBlock />
 
       <ProfileSettingsBlock />
+
+      <ProfileServerChanBlock :is-authenticated="Boolean(user)" />
 
       <ProfileTabs :tabs="tabs" :active-tab="activeTab" @select="loadProfileList" />
 

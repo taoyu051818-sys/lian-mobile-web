@@ -10,6 +10,10 @@
  * On successful submit we hand the new orderId to the route singleton,
  * which flips the same secret view into its timeline branch — same view
  * key, no second registration needed in `useActiveView`.
+ *
+ * ps#504 I2 — after a successful submit, if the viewer has bound Server酱
+ * we offer the per-order reminder opt-in dialog. The dialog is suppressed
+ * for unbound users and once-per-session if dismissed.
  */
 import { computed, onBeforeUnmount, onMounted, watch } from "vue";
 import {
@@ -35,6 +39,12 @@ import {
   ERRAND_ORDER_SECTION_LABEL,
   ERRAND_ORDER_SUBMIT,
   ERRAND_ORDER_SUBMITTING,
+  SERVERCHAN_DIALOG_ERRAND_BODY,
+  SERVERCHAN_DIALOG_ERRAND_PRIMARY,
+  SERVERCHAN_DIALOG_ERRAND_SECONDARY,
+  SERVERCHAN_DIALOG_ERRAND_TITLE,
+  SERVERCHAN_DIALOG_REMINDER_ENABLED,
+  SERVERCHAN_DIALOG_REMINDER_FAILED,
 } from "../../config/brand";
 import type { ErrandMode } from "../../types/post-extensions";
 import ErrandOrderGate from "./ErrandOrderGate.vue";
@@ -43,9 +53,17 @@ import { useErrandOrderDraft } from "./useErrandOrderDraft";
 import { useErrandOrderRoute } from "./useErrandOrderRoute";
 import { modeLabel } from "./errand-format";
 import { useActiveView } from "../../app/useActiveView";
+import { useToast } from "../../ui";
+import {
+  ServerChanOptInDialog,
+  useServerChanBinding,
+  useServerChanOptIn,
+  useServerChanPreferences,
+} from "../profile";
 
 const route = useErrandOrderRoute();
 const { setActiveView } = useActiveView();
+const toast = useToast();
 
 const initialMerchantPostId = route.merchantPostId.value || 0;
 const initialPickupHint = route.pickupHint.value || "";
@@ -69,6 +87,17 @@ const {
   submit: submitDraft,
   reset: resetDraft,
 } = useErrandOrderDraft(initialMerchantPostId, initialPickupHint);
+
+// ps#504 I2 — Server酱 opt-in for per-order reminders. The composables are
+// singletons; binding is loaded on profile mount so by the time the user
+// reaches the order form the `bound` flag is authoritative. We still call
+// `load()` defensively in case the view was deep-linked.
+const serverChanBinding = useServerChanBinding();
+const serverChanPreferences = useServerChanPreferences();
+const serverChanOptIn = useServerChanOptIn({
+  binding: serverChanBinding,
+  preferences: serverChanPreferences,
+});
 
 const isTimelineMode = computed(() => Boolean(route.orderId.value));
 
@@ -95,6 +124,10 @@ const modes: { value: ErrandMode; hint: string }[] = [
 onMounted(() => {
   if (!isTimelineMode.value && route.merchantPostId.value) {
     void refreshDraft(route.merchantPostId.value);
+  }
+  // Make sure binding state is fresh — profile may not have been visited yet.
+  if (!serverChanBinding.binding.value) {
+    void serverChanBinding.load();
   }
 });
 
@@ -145,8 +178,26 @@ function goWallet() {
 async function handleSubmit() {
   const orderId = await submitDraft();
   if (orderId) {
+    // Offer the per-order Server酱 reminder dialog BEFORE pivoting the route
+    // into the timeline branch. Suppressed for unbound users; once-per-session
+    // if dismissed. The dialog itself is rendered below regardless of view
+    // branch so the user does not lose context when the form unmounts.
+    serverChanOptIn.openErrandOrderDialog(orderId);
     route.enterForOrder(orderId);
   }
+}
+
+async function handleServerChanOptInPrimary() {
+  const ok = await serverChanOptIn.confirmOptIn();
+  if (ok) {
+    toast.success(SERVERCHAN_DIALOG_REMINDER_ENABLED);
+  } else {
+    toast.error(SERVERCHAN_DIALOG_REMINDER_FAILED);
+  }
+}
+
+function handleServerChanOptInDismiss() {
+  serverChanOptIn.dismiss();
 }
 
 function handleTimelineBack() {
@@ -305,6 +356,18 @@ function handleTimelineBack() {
       </button>
     </form>
   </section>
+
+  <ServerChanOptInDialog
+    :open="serverChanOptIn.state.value.open && serverChanOptIn.state.value.kind === 'errand-order'"
+    :title="SERVERCHAN_DIALOG_ERRAND_TITLE"
+    :body="SERVERCHAN_DIALOG_ERRAND_BODY"
+    :primary-label="SERVERCHAN_DIALOG_ERRAND_PRIMARY"
+    :secondary-label="SERVERCHAN_DIALOG_ERRAND_SECONDARY"
+    :busy="serverChanOptIn.state.value.busy"
+    @primary="() => void handleServerChanOptInPrimary()"
+    @secondary="handleServerChanOptInDismiss"
+    @close="handleServerChanOptInDismiss"
+  />
 </template>
 
 <style scoped>

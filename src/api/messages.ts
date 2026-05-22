@@ -429,10 +429,7 @@ function isEventKind(kind: NotificationKind): boolean {
   return kind === "event-completed" || kind === "event-reward-settled" || kind === "event-expired";
 }
 
-const ERRAND_ORDER_COPY: Record<
-  ErrandOrderStatus,
-  { title: string; body: string }
-> = {
+const ERRAND_ORDER_COPY: Record<ErrandOrderStatus, { title: string; body: string }> = {
   accepted: {
     title: NOTIF_ERRAND_ORDER_ACCEPTED_TITLE,
     body: NOTIF_ERRAND_ORDER_ACCEPTED_BODY,
@@ -630,9 +627,7 @@ function resolveNotificationTarget(
     // because the envelope is built around the post the action was applied to.
     const family = moderationFamily(stringValue(raw.type).toLowerCase());
     if (family === "report") {
-      return tid
-        ? { kind: "detail", tid }
-        : { kind: "none", reason: "举报详情已记录在管理后台。" };
+      return tid ? { kind: "detail", tid } : { kind: "none", reason: "举报详情已记录在管理后台。" };
     }
     if (family === "post") {
       return tid ? { kind: "detail", tid } : { kind: "none", reason: "该帖子暂时无法打开。" };
