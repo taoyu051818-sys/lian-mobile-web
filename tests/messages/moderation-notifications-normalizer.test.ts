@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { normalizeNotificationItem, normalizeNotificationResponse } from "../../src/api/messages";
+import { normalizeNotificationItem, normalizeNotificationResponse } from "../../src/api/notifications";
 import {
   NOTIF_MOD_POST_HIDDEN_BODY,
   NOTIF_MOD_POST_HIDDEN_TITLE,
@@ -17,33 +17,6 @@ import {
   NOTIF_MOD_REPORT_RESOLVED_BODY,
   NOTIF_MOD_REPORT_RESOLVED_TITLE,
 } from "../../src/config/brand/notification";
-
-/**
- * F (lian-mobile-web) — follow-up to lian-platform-server#493 — regression-cliff
- * pin for the seven admin-moderation notification types that ps#493 ships onto
- * `/api/messages`:
- *
- *   report-accepted / report-ignored / report-resolved
- *   post-hidden / post-locked / post-unlocked / post-restored
- *
- * Goal: lock the moderation dispatcher (`MODERATION_TYPE_TO_KIND` +
- * `buildModerationNotificationCopy`) against silent regressions. Sibling file
- * `notification-routing.test.ts` covers the happy paths shipped in this PR;
- * this file targets the case classes the brief calls out — round-trip,
- * tid-fallback, idempotency-key shape, every-type coverage, actor invariant.
- *
- * IMPORTANT — what "round-trip" actually means here:
- *   `NotificationItem` has NO `data` field — the wire-shape `data.{...}` and
- *   `idempotencyKey` are NOT carried through to the renderer (only `tid` /
- *   `kind` / `target` / `title` / `excerpt` / `actor` / `timestampISO` are).
- *   So "round-trip" means: every field the renderer needs survives the
- *   projection, with no field invented from thin air. The opaque `id` /
- *   `idempotencyKey` strings are preserved verbatim.
- *
- * Drop vs. fallback:
- *   `normalizeNotificationItem` NEVER drops items. Missing-tid manifests as
- *   `target.kind === "none"`. We pin that policy.
- */
 
 const SYSTEM_ACTOR = { id: "system", name: "LIAN" } as const;
 
@@ -96,11 +69,6 @@ function postEnvelope(
 }
 
 describe("moderation-notifications-normalizer / case 1 — round-trip happy path (all 7 types)", () => {
-  // For each of the seven types we assert the renderer-needed fields all
-  // survive the projection. The wire title/excerpt are carried verbatim when
-  // the backend supplies them; the front-end fallback table only kicks in
-  // when those wire fields are missing/empty (case 2).
-
   it("report-accepted: kind / target / actionLabel / id-verbatim / actor preserved", () => {
     const wire = reportEnvelope("accepted");
     const item = normalizeNotificationItem(wire);
@@ -163,11 +131,6 @@ describe("moderation-notifications-normalizer / case 1 — round-trip happy path
 });
 
 describe("moderation-notifications-normalizer / case 2 — wire title/excerpt empty, fallback copy kicks in", () => {
-  // Backend (ps#493) supplies title + excerpt verbatim, but the brief calls
-  // for a frontend fallback when the envelope is sparse (e.g. empty string
-  // or undefined). We pin every-type coverage so a future refactor that
-  // drops one of the seven copy entries goes red.
-
   const FALLBACKS: Record<string, { title: string; body: string }> = {
     "report-accepted": {
       title: NOTIF_MOD_REPORT_ACCEPTED_TITLE,
@@ -240,14 +203,10 @@ describe("moderation-notifications-normalizer / case 3 — missing tid (drop vs 
       expect(item.target.reason).toBe("举报详情已记录在管理后台。");
     }
     expect(item.fallbackText).toBe("举报详情已记录在管理后台。");
-    // Item must still be renderable — pin the no-drop policy.
     expect(item.id).toBeTruthy();
   });
 
   it("post-* missing tid: target=none with disabled-card reason (rare; envelope normally guarantees tid)", () => {
-    // In production the post-* family is built around the post and always
-    // carries tid — this test pins the safety net. If a future server bug
-    // sends post-locked with no tid, we fail closed instead of crashing.
     const wire = postEnvelope("hidden");
     delete (wire as Record<string, unknown>).tid;
     delete (wire.data as Record<string, unknown>).tid;
@@ -271,12 +230,6 @@ describe("moderation-notifications-normalizer / case 3 — missing tid (drop vs 
 });
 
 describe("moderation-notifications-normalizer / case 4 — idempotency-key shape (opaque)", () => {
-  // Frontend treats the idempotency key (`mod-report-<reportId>-<status>-
-  // <reporterUid>-<decidedAt>` and `mod-post-<tid>-<verb>-<authorUid>-
-  // <decidedAt>`) as an opaque string — the `id` field is preserved verbatim
-  // from raw.id with no parsing. We pin that opacity here so a parser added
-  // later has to update this test.
-
   it("report idempotency-key id is preserved verbatim and item still routes correctly", () => {
     const id = "mod-report-r-99-resolved-uid-42-2026-05-22T08:00:00Z";
     const item = normalizeNotificationItem(reportEnvelope("resolved", { id }));
@@ -293,9 +246,6 @@ describe("moderation-notifications-normalizer / case 4 — idempotency-key shape
   });
 
   it("when id reportId disagrees with data.reportId, frontend trusts the wire id verbatim", () => {
-    // Concrete decision pin: id is opaque to the renderer; data.* is what the
-    // body copy is built from when the wire fields are sparse. Disagreement
-    // is allowed; the normalizer is not the layer that resolves it.
     const item = normalizeNotificationItem(
       reportEnvelope("accepted", {
         id: "mod-report-MISMATCH-accepted-uid-7-2026-05-22T08:00:00Z",
@@ -307,20 +257,12 @@ describe("moderation-notifications-normalizer / case 4 — idempotency-key shape
 });
 
 describe("moderation-notifications-normalizer / case 5 — actor invariant (LIAN system)", () => {
-  // ps#493 hardcodes actor={id:"system", name:"LIAN"}. The frontend NEVER
-  // tries to derive a different actor for moderation, and NEVER surfaces an
-  // admin reviewer's identity — those are wire-side privacy guarantees that
-  // we re-pin here so a future "show reviewer name" feature surfaces in this
-  // test and forces a deliberate decision.
-
   it("preserves the LIAN system actor verbatim", () => {
     const item = normalizeNotificationItem(reportEnvelope("accepted"));
     expect(item.actor).toEqual({ id: "system", name: "LIAN" });
   });
 
   it("does NOT inject an admin reviewer name into the actor (privacy contract from ps#493)", () => {
-    // Even if the wire accidentally includes a `reviewerId` on `data` (it
-    // shouldn't per ps#493), the normalizer must not lift it onto actor.
     const item = normalizeNotificationItem(
       reportEnvelope("accepted", {
         data: {
@@ -328,7 +270,7 @@ describe("moderation-notifications-normalizer / case 5 — actor invariant (LIAN
           status: "accepted",
           reporterUid: "uid-7",
           decidedAt: "2026-05-22T08:00:00Z",
-          reviewerId: "admin-leak", // hostile/buggy server payload
+          reviewerId: "admin-leak",
         },
       }),
     );
@@ -373,7 +315,6 @@ describe("moderation-notifications-normalizer / cross-case — mixed inbox stays
       "verification",
       "reply",
     ]);
-    // 7 moderation rows — pin the count too.
     expect(kinds.filter((k) => k === "moderation")).toHaveLength(7);
   });
 });
