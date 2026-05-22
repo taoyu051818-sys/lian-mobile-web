@@ -5,7 +5,7 @@
  * deterministic `helpRuntime` fixture surfaced at `/api/fixtures` (backend
  * lian-platform-server #472). Where Wave C-A fell back to a feed scan to find
  * any help-shaped post, this lane targets the seeded tid 200 directly so it
- * can prove the help-manage actions: link-event, unlink-event, resolve, close.
+ * can prove the help-manage actions: vote, link-event, unlink-event, resolve.
  *
  * Truthful runtime claims (assert nothing the backend cannot honor):
  *   1. The `helpRuntime` fixture surface exists, returns ready=true with the
@@ -17,21 +17,31 @@
  *   3. The help-manage endpoints (`/api/help/:helpId/{link-event,
  *      unlink-event,resolve}`) require login — anonymous calls return 401/403,
  *      not 5xx.
- *   4. An authenticated viewer can hit `/resolve` and the call either
- *      succeeds (200) or returns a typed denial (400/403/409). 5xx or hangs
- *      are refused — they signal a frontend wired to a dead route.
+ *   4. The vote alias (`POST /api/posts/:tid/vote`) requires login — anonymous
+ *      calls return 401/403, not 5xx.
+ *   5. A logged-in `registered` viewer can toggle the vote on the seeded help
+ *      post: a fresh POST sets liked=true, the next POST flips it back to
+ *      liked=false (NodeBB upvote-backed toggle, no body required).
+ *   6. The seeded author (event_creator) can `/link-event` with a real
+ *      eventId from the eventRuntime fixture and observe the response
+ *      transition to status="linked_event"; a follow-up `/unlink-event`
+ *      transitions the help post back to status="open".
+ *   7. The seeded author can hit `/resolve` and the call either succeeds
+ *      (200) or returns a typed denial (400/403/409). 5xx or hangs are
+ *      refused — they signal a frontend wired to a dead route.
  *
- * Wave C-B deliberately does NOT mutate state beyond what the fixture self-
- * heal can restore: we drive the manage endpoints with the seeded author and
- * trust the backend's next-call patch to bring helpRuntime back to "open" for
- * the following run. We do NOT assert pre/post status flips on the live store
- * here, because the spec must be safely re-runnable on the same nat100 host
- * without a manual reset between runs.
+ * Wave C-B deliberately does NOT assume a clean baseline between runs: each
+ * test calls `/api/fixtures` first to trigger the backend self-heal contract
+ * (#472) which patches the live store back to status="open" /
+ * linkedEventId=null before the test starts driving transitions. The vote
+ * toggle case explicitly clears `liked=false` before measuring toggle
+ * semantics so it is rerun-safe regardless of the previous run's residue.
  */
 
 import { expect, request, test } from "@playwright/test";
 
 import { isRoleConfigured, loginAs } from "./fixtures/accounts";
+import { fetchEventRuntimeFixture } from "./fixtures/event-runtime";
 import { fetchHelpRuntimeFixture } from "./fixtures/help-runtime";
 
 const BASE_URL = process.env.APP_BASE_URL ?? "https://lian.nat100.top";
@@ -112,6 +122,124 @@ test.describe("@help help-manage runtime proof @help-manage", () => {
           `expected 401/403 for anonymous ${label}, got ${response.status()}: ${await response.text()}`,
         ).toBe(true);
       }
+    } finally {
+      await api.dispose();
+    }
+  });
+
+  test("@help-manage anonymous /vote on the help post is denied (401/403)", async () => {
+    const fixture = await fetchHelpRuntimeFixture({ baseURL: BASE_URL });
+    test.skip(fixture === null || !fixture.ready, "helpRuntime fixture not ready");
+
+    // Vote alias for help posts is the shared post-vote route mounted at
+    // POST /api/posts/:tid/vote (api-route-registry.js: post-vote → handleTogglePostLike,
+    // backed by NodeBB upvote). It is `authPolicy: "user"` (route-metadata.js #529)
+    // so an unauthenticated POST must return a typed denial, never 5xx.
+    const api = await request.newContext({ baseURL: BASE_URL });
+    try {
+      const response = await api.post(`/api/posts/${fixture!.tid}/vote`);
+      expect(
+        [401, 403].includes(response.status()),
+        `expected 401/403 for anonymous /vote, got ${response.status()}: ${await response.text()}`,
+      ).toBe(true);
+    } finally {
+      await api.dispose();
+    }
+  });
+
+  test("@help-manage registered viewer can toggle /vote on the help post (POST flips liked)", async () => {
+    test.skip(
+      !isRoleConfigured("registered"),
+      "registered role not configured — set LIAN_E2E_REGISTERED_USERNAME / LIAN_E2E_REGISTERED_PASSWORD",
+    );
+
+    const fixture = await fetchHelpRuntimeFixture({ baseURL: BASE_URL });
+    test.skip(fixture === null || !fixture.ready, "helpRuntime fixture not ready");
+
+    // Truthful runtime claim: NodeBB-backed toggle. We deterministically clear
+    // residue first (`desiredLiked: false`) so the next POST is a guaranteed
+    // up-flip, then a follow-up POST flips it back to false. Asserting on
+    // `liked` rather than `likeCount` because the count depends on whatever
+    // other state lives on the seeded post and is not part of this contract.
+    const { api } = await loginAs("registered");
+    try {
+      const tid = fixture!.tid;
+      const reset = await api.post(`/api/posts/${tid}/vote`, { data: { liked: false } });
+      expect(reset.ok(), `vote reset failed: ${await reset.text()}`).toBe(true);
+      const resetBody = (await reset.json()) as { liked?: boolean };
+      expect(resetBody.liked).toBe(false);
+
+      const up = await api.post(`/api/posts/${tid}/vote`);
+      expect(up.ok(), `vote up failed: ${await up.text()}`).toBe(true);
+      const upBody = (await up.json()) as { liked?: boolean };
+      expect(upBody.liked).toBe(true);
+
+      const down = await api.post(`/api/posts/${tid}/vote`);
+      expect(down.ok(), `vote down failed: ${await down.text()}`).toBe(true);
+      const downBody = (await down.json()) as { liked?: boolean };
+      expect(downBody.liked).toBe(false);
+    } finally {
+      await api.dispose();
+    }
+  });
+
+  test("@help-manage event_creator can /link-event then /unlink-event the help post", async () => {
+    test.skip(
+      !isRoleConfigured("event_creator"),
+      "event_creator role not configured — set LIAN_E2E_EVENT_CREATOR_USERNAME / LIAN_E2E_EVENT_CREATOR_PASSWORD",
+    );
+
+    // Both fixtures must be ready: helpRuntime supplies the help post, and
+    // eventRuntime supplies a real eventId we can link onto it. Backend self-
+    // heal (#472) brings helpRuntime back to status="open"/linkedEventId=null
+    // on the very call we make next.
+    const helpFixture = await fetchHelpRuntimeFixture({ baseURL: BASE_URL });
+    const eventFixture = await fetchEventRuntimeFixture({ baseURL: BASE_URL });
+    test.skip(helpFixture === null || !helpFixture.ready, "helpRuntime fixture not ready");
+    test.skip(
+      eventFixture === null || !eventFixture.ready || !eventFixture.event?.eventId,
+      "eventRuntime fixture not ready — cannot supply a real eventId for /link-event",
+    );
+
+    const helpId = helpFixture!.help!.helpId;
+    const eventId = eventFixture!.event!.eventId;
+    const { api, user } = await loginAs("event_creator");
+    try {
+      expect(String(user.id ?? ""), "logged-in user must match the seeded help author").toBe(
+        helpFixture!.expectedAuthorUserId,
+      );
+
+      // help-routes.js requires { eventId } in the body; eventTid is rejected.
+      const linkResp = await api.post(`/api/help/${encodeURIComponent(helpId)}/link-event`, {
+        data: { eventId },
+      });
+      expect(linkResp.ok(), `link-event failed: ${await linkResp.text()}`).toBe(true);
+      const linkBody = (await linkResp.json()) as {
+        ok?: boolean;
+        helpId?: string;
+        status?: string;
+        linkedEventId?: string | null;
+      };
+      expect(linkBody.ok).toBe(true);
+      expect(linkBody.helpId).toBe(helpId);
+      expect(linkBody.status).toBe("linked_event");
+      expect(linkBody.linkedEventId).toBe(eventId);
+
+      // unlink only valid from linked_event; we just got there, so the same
+      // session must succeed without an intervening /api/fixtures self-heal
+      // (which would re-patch us back to open and make unlink return 409).
+      const unlinkResp = await api.post(`/api/help/${encodeURIComponent(helpId)}/unlink-event`);
+      expect(unlinkResp.ok(), `unlink-event failed: ${await unlinkResp.text()}`).toBe(true);
+      const unlinkBody = (await unlinkResp.json()) as {
+        ok?: boolean;
+        helpId?: string;
+        status?: string;
+        linkedEventId?: string | null;
+      };
+      expect(unlinkBody.ok).toBe(true);
+      expect(unlinkBody.helpId).toBe(helpId);
+      expect(unlinkBody.status).toBe("open");
+      expect(unlinkBody.linkedEventId).toBeNull();
     } finally {
       await api.dispose();
     }
