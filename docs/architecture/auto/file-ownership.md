@@ -25,7 +25,7 @@ Total files: 314
 | `api/interaction.ts`  | Like/vote unified interaction API (PRD V0.1 §7.1.2, §11.3). Backend already exposes `/api/posts/:tid/like` for likes...  |    65 |
 | `api/map.ts`          | TypeScript module                                                                                                        |    14 |
 | `api/merchant.ts`     | Merchant center API (issue #646). Source endpoints (no new route — see `types/merchant.ts` for rationale): - `GET ...    |   122 |
-| `api/messages.ts`     | Server-side `type` slugs that B2 (#438 / lian-platform-server#445) writes for the three event-lifecycle fan-outs. The... |   693 |
+| `api/messages.ts`     | Server-side `type` slugs that B2 (#438 / lian-platform-server#445) writes for the three event-lifecycle fan-outs. The... |   778 |
 | `api/places.ts`       | TypeScript module                                                                                                        |    10 |
 | `api/posts.ts`        | export interface PostLikeResponse                                                                                        |   267 |
 | `api/profile.ts`      | export function normalizeProfileListItem(item: unknown): ProfileListItem                                                 |   163 |
@@ -157,7 +157,7 @@ Total files: 314
 | `features/detail/PostReplies.vue`                  | Vue SFC                                                                                                                       |   102 |
 | `features/detail/PostReplyDock.vue`                | Vue SFC                                                                                                                       |   183 |
 | `features/detail/PostReportBlock.vue`              | Vue SFC                                                                                                                       |   150 |
-| `features/detail/ShareCardSheet.vue`               | Vue SFC                                                                                                                       |   306 |
+| `features/detail/ShareCardSheet.vue`               | Type-only re-export from the composable so the view does not reach into                                                       |   308 |
 | `features/detail/index.ts`                         | TypeScript module                                                                                                             |     2 |
 | `features/detail/postCapabilityRegistry.ts`        | Post capability registry (issue #785). Single canonical lookup for which detail-block capabilities a post should sur...       |   165 |
 | `features/detail/reportFlow.ts`                    | export interface ReportCategoryOption                                                                                         |    98 |
@@ -168,7 +168,7 @@ Total files: 314
 | `features/detail/usePostReplyComposer.ts`          | export function usePostReplyComposer(options:                                                                                 |    59 |
 | `features/detail/usePostReport.ts`                 | export function usePostReport(options:                                                                                        |    90 |
 | `features/detail/usePostShare.ts`                  | Share button click: open the V1 share-card preview sheet. The sheet itself fetches /api/posts/:tid/share-card and sho...      |    95 |
-| `features/detail/useShareCardPreview.ts`           | Share-card preview composable (ps#484 V1 envelope consumer). Owns the load + retry lifecycle for the V1 share-card e...       |   128 |
+| `features/detail/useShareCardPreview.ts`           | Share-card preview composable (ps#484 V1 envelope consumer). Owns the load + retry lifecycle for the V1 share-card e...       |   134 |
 | `features/errand/ErrandOrderGate.vue`              | Vue SFC                                                                                                                       |   119 |
 | `features/errand/ErrandOrderTimelineView.vue`      | Destructure refs so the template can read them via auto-unwrap. Vue's                                                         |   519 |
 | `features/errand/ErrandOrderView.vue`              | Destructure refs so the template can read them via auto-unwrap instead of                                                     |   481 |
@@ -214,9 +214,9 @@ Total files: 314
 | `features/messages/ChannelThread.vue`              | Vue SFC                                                                                                                       |   268 |
 | `features/messages/MessagesTabs.vue`               | Vue SFC                                                                                                                       |    58 |
 | `features/messages/MessagesView.vue`               | Vue SFC                                                                                                                       |   204 |
-| `features/messages/NotificationList.vue`           | Vue SFC                                                                                                                       |   416 |
+| `features/messages/NotificationList.vue`           | Vue SFC                                                                                                                       |   419 |
 | `features/messages/index.ts`                       | TypeScript module                                                                                                             |     6 |
-| `features/messages/messageInbox.ts`                | export interface NotificationGapLink                                                                                          |    88 |
+| `features/messages/messageInbox.ts`                | export interface NotificationGapLink                                                                                          |    94 |
 | `features/messages/notificationChannels.ts`        | Backend issue tracking the channel. `null` when the channel is already shipping (no follow-up needed).                        |    70 |
 | `features/messages/useChannelMessages.ts`          | export function useChannelMessages()                                                                                          |   227 |
 | `features/messages/useMessageComposer.ts`          | export function useMessageComposer(options:                                                                                   |   102 |
