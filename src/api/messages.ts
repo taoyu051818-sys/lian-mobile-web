@@ -1,6 +1,21 @@
 import { apiGet, apiSend } from "./http";
 import {
   DEFAULT_USER_LABEL,
+  NOTIF_ERRAND_ORDER_ACCEPTED_BODY,
+  NOTIF_ERRAND_ORDER_ACCEPTED_TITLE,
+  NOTIF_ERRAND_ORDER_CANCELLED_BODY,
+  NOTIF_ERRAND_ORDER_CANCELLED_TITLE,
+  NOTIF_ERRAND_ORDER_COMPLETED_BODY,
+  NOTIF_ERRAND_ORDER_COMPLETED_TITLE,
+  NOTIF_ERRAND_ORDER_DELIVERED_BODY,
+  NOTIF_ERRAND_ORDER_DELIVERED_TITLE,
+  NOTIF_ERRAND_ORDER_DELIVERING_BODY,
+  NOTIF_ERRAND_ORDER_DELIVERING_TITLE,
+  NOTIF_ERRAND_ORDER_PICKED_UP_BODY,
+  NOTIF_ERRAND_ORDER_PICKED_UP_TITLE,
+  NOTIF_ERRAND_ORDER_REFUNDED_BODY,
+  NOTIF_ERRAND_ORDER_REFUNDED_TITLE,
+  NOTIF_ERRAND_ORDER_TITLE_FALLBACK,
   NOTIF_EVENT_COMPLETED_BODY,
   NOTIF_EVENT_COMPLETED_TITLE,
   NOTIF_EVENT_EXPIRED_BODY,
@@ -8,6 +23,20 @@ import {
   NOTIF_EVENT_REWARD_SETTLED_BODY,
   NOTIF_EVENT_REWARD_SETTLED_TITLE,
   NOTIF_EVENT_TITLE_FALLBACK,
+  NOTIF_MOD_POST_HIDDEN_BODY,
+  NOTIF_MOD_POST_HIDDEN_TITLE,
+  NOTIF_MOD_POST_LOCKED_BODY,
+  NOTIF_MOD_POST_LOCKED_TITLE,
+  NOTIF_MOD_POST_RESTORED_BODY,
+  NOTIF_MOD_POST_RESTORED_TITLE,
+  NOTIF_MOD_POST_UNLOCKED_BODY,
+  NOTIF_MOD_POST_UNLOCKED_TITLE,
+  NOTIF_MOD_REPORT_ACCEPTED_BODY,
+  NOTIF_MOD_REPORT_ACCEPTED_TITLE,
+  NOTIF_MOD_REPORT_IGNORED_BODY,
+  NOTIF_MOD_REPORT_IGNORED_TITLE,
+  NOTIF_MOD_REPORT_RESOLVED_BODY,
+  NOTIF_MOD_REPORT_RESOLVED_TITLE,
 } from "../config/brand";
 import { ensureClientId } from "../platform/clientIdentity";
 import type {
@@ -165,6 +194,72 @@ const EVENT_TYPE_TO_KIND: Record<string, NotificationKind> = {
   "event-expired": "event-expired",
 };
 
+/**
+ * Server-side `type` slugs that ps#477 / ps#495 emit for the seven
+ * errand-order lifecycle fan-outs. We dispatch on `kind === "order"` (no new
+ * NotificationKind), but recognising the wire type EXACTLY lets us project
+ * a stable internal status enum (`accepted` / `picked_up` / …) into the
+ * `target.reason` body and brand-fallback copy without trusting the fuzzy
+ * haystack. Wire types are kebab-case (`errand-order-picked-up`); internal
+ * status enums are snake_case (`picked_up`).
+ *
+ * Once we wire actual order-detail navigation behind these (separate PR), the
+ * exact map is what gates the deep-link — the fuzzy `["order", "errand", ...]`
+ * fallback would otherwise route admin/settlement notifications onto the
+ * wrong screen.
+ */
+const ERRAND_ORDER_TYPE_TO_STATUS: Record<string, ErrandOrderStatus> = {
+  "errand-order-accepted": "accepted",
+  "errand-order-picked-up": "picked_up",
+  "errand-order-delivering": "delivering",
+  "errand-order-delivered": "delivered",
+  "errand-order-completed": "completed",
+  "errand-order-cancelled": "cancelled",
+  "errand-order-refunded": "refunded",
+};
+
+type ErrandOrderStatus =
+  | "accepted"
+  | "picked_up"
+  | "delivering"
+  | "delivered"
+  | "completed"
+  | "cancelled"
+  | "refunded";
+
+/**
+ * Server-side `type` slugs that ps#493 emits for the seven admin-moderation
+ * fan-outs. Two families:
+ *   - `report-*` (recipient = original reporter): accepted / ignored / resolved
+ *   - `post-*` (recipient = post author): hidden / locked / unlocked / restored
+ *
+ * All seven roll up to a single NotificationKind ("moderation") because they
+ * land in the same system tab, share the same actor (LIAN), and only differ
+ * in fallback copy + tap-target. Kept exact (no fuzzy match) so a future type
+ * containing the substring "post" or "report" never poaches this bucket.
+ *
+ * Backend (ps#493) hardcodes actor={id:"system", name:"LIAN"}; admin reviewer
+ * identity and free-text notes never reach the wire. The frontend never tries
+ * to derive them.
+ */
+const MODERATION_TYPE_TO_KIND: Record<string, NotificationKind> = {
+  "report-accepted": "moderation",
+  "report-ignored": "moderation",
+  "report-resolved": "moderation",
+  "post-hidden": "moderation",
+  "post-locked": "moderation",
+  "post-unlocked": "moderation",
+  "post-restored": "moderation",
+};
+
+type ModerationFamily = "report" | "post";
+
+function moderationFamily(rawType: string): ModerationFamily | null {
+  if (rawType.startsWith("report-")) return "report";
+  if (rawType.startsWith("post-")) return "post";
+  return null;
+}
+
 function asRecord(value: unknown): UnknownRecord | null {
   if (!value || typeof value !== "object" || Array.isArray(value)) return null;
   return value as UnknownRecord;
@@ -244,6 +339,19 @@ function resolveNotificationKind(raw: RawNotificationItem): NotificationKind {
   const eventKind = EVENT_TYPE_TO_KIND[rawType];
   if (eventKind) return eventKind;
 
+  // ps#477 / ps#495 — the seven errand-order-* slugs lock onto kind="order"
+  // exactly so admin or settlement notifications that happen to mention the
+  // word "order" can't poach the bucket. The status itself is projected via
+  // ERRAND_ORDER_TYPE_TO_STATUS at copy time.
+  if (rawType in ERRAND_ORDER_TYPE_TO_STATUS) return "order";
+
+  // ps#493 — admin moderation fan-out. Exact match before the fuzzy bucket
+  // so a future user-facing slug containing "report" or "post" can't poach
+  // the moderation bucket; conversely, the haystack heuristic below would
+  // otherwise miss `post-locked` or `report-resolved` entirely.
+  const moderationKind = MODERATION_TYPE_TO_KIND[rawType];
+  if (moderationKind) return moderationKind;
+
   const haystack = notificationHaystack(raw);
   if (includesAny(haystack, REPLY_NOTIFICATION_TYPES)) return "reply";
   if (includesAny(haystack, VERIFICATION_NOTIFICATION_TYPES)) return "verification";
@@ -317,6 +425,89 @@ function buildEventNotificationCopy(
 
 function isEventKind(kind: NotificationKind): boolean {
   return kind === "event-completed" || kind === "event-reward-settled" || kind === "event-expired";
+}
+
+const ERRAND_ORDER_COPY: Record<
+  ErrandOrderStatus,
+  { title: string; body: string }
+> = {
+  accepted: {
+    title: NOTIF_ERRAND_ORDER_ACCEPTED_TITLE,
+    body: NOTIF_ERRAND_ORDER_ACCEPTED_BODY,
+  },
+  picked_up: {
+    title: NOTIF_ERRAND_ORDER_PICKED_UP_TITLE,
+    body: NOTIF_ERRAND_ORDER_PICKED_UP_BODY,
+  },
+  delivering: {
+    title: NOTIF_ERRAND_ORDER_DELIVERING_TITLE,
+    body: NOTIF_ERRAND_ORDER_DELIVERING_BODY,
+  },
+  delivered: {
+    title: NOTIF_ERRAND_ORDER_DELIVERED_TITLE,
+    body: NOTIF_ERRAND_ORDER_DELIVERED_BODY,
+  },
+  completed: {
+    title: NOTIF_ERRAND_ORDER_COMPLETED_TITLE,
+    body: NOTIF_ERRAND_ORDER_COMPLETED_BODY,
+  },
+  cancelled: {
+    title: NOTIF_ERRAND_ORDER_CANCELLED_TITLE,
+    body: NOTIF_ERRAND_ORDER_CANCELLED_BODY,
+  },
+  refunded: {
+    title: NOTIF_ERRAND_ORDER_REFUNDED_TITLE,
+    body: NOTIF_ERRAND_ORDER_REFUNDED_BODY,
+  },
+};
+
+function resolveErrandOrderStatus(raw: RawNotificationItem): ErrandOrderStatus | null {
+  const rawType = stringValue(raw.type).toLowerCase();
+  const fromType = ERRAND_ORDER_TYPE_TO_STATUS[rawType];
+  if (fromType) return fromType;
+  // The wire envelope also carries `data.status` (snake_case enum). When the
+  // type slug is missing or unrecognised but the `data` block is well-formed
+  // we fall back to it so the renderer still gets locked-down copy. We do
+  // NOT use this for kind dispatch — that stays driven by the exact slug in
+  // ERRAND_ORDER_TYPE_TO_STATUS so unrelated payloads can't poach the bucket.
+  const data = asRecord(raw.data);
+  const fromData = stringValue(data?.status).toLowerCase();
+  if (fromData && fromData in ERRAND_ORDER_COPY) {
+    return fromData as ErrandOrderStatus;
+  }
+  return null;
+}
+
+/**
+ * Build the localized title + excerpt for the seven errand-order lifecycle
+ * types shipped by ps#477 / ps#495. Backend already populates `title` /
+ * `excerpt` in the envelope; this is the front-end fallback used when those
+ * fields are missing or empty. The order title is pulled from common
+ * structured fields (`data.orderTitle` / merchantPostId-resolved title is
+ * future work) and falls back to a generic placeholder so the body never
+ * renders `「」` or `undefined`.
+ */
+function buildErrandNotificationCopy(
+  status: ErrandOrderStatus,
+  raw: RawNotificationItem,
+): { title: string; excerpt: string } {
+  const data = asRecord(raw.data);
+  const meta = asRecord(raw.meta);
+  const target = asRecord(raw.target);
+  const orderTitle =
+    firstString(
+      data?.orderTitle,
+      data?.title,
+      meta?.orderTitle,
+      meta?.title,
+      target?.orderTitle,
+      target?.title,
+    ) || NOTIF_ERRAND_ORDER_TITLE_FALLBACK;
+  const copy = ERRAND_ORDER_COPY[status];
+  return {
+    title: copy.title,
+    excerpt: fillTemplate(copy.body, { title: orderTitle }),
+  };
 }
 
 function resolveNotificationTid(raw: RawNotificationItem): number | null {
@@ -394,6 +585,18 @@ export function normalizeNotificationItem(raw: RawNotificationItem): Notificatio
     const copy = buildEventNotificationCopy(kind, raw);
     title = copy.title;
     excerpt = copy.excerpt;
+  } else if (kind === "order") {
+    // ps#477 / ps#495 — backend ships title + excerpt in the envelope, so
+    // we trust those when present and only synthesise from the locked
+    // status enum when the wire fields are missing/empty. This keeps the
+    // server as the source of truth for the body, but guarantees the UI
+    // never renders a blank order row when the envelope is sparse.
+    const status = resolveErrandOrderStatus(raw);
+    if (status) {
+      const copy = buildErrandNotificationCopy(status, raw);
+      if (!title) title = copy.title;
+      if (!excerpt) excerpt = copy.excerpt;
+    }
   }
 
   return {

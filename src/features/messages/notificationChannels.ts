@@ -49,8 +49,8 @@ export const NOTIFICATION_CHANNELS: readonly NotificationChannelInfo[] = [
     id: "errand-status",
     title: NOTIFICATION_CHANNEL_ERRAND_TITLE,
     description: NOTIFICATION_CHANNEL_ERRAND_DESC,
-    status: "pending",
-    issueUrl: "https://github.com/taoyu051818-sys/lian-mobile-web/issues/701",
+    status: "connected",
+    issueUrl: null,
   },
   {
     id: "event-completion",

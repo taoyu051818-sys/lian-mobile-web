@@ -70,12 +70,7 @@ export const NOTIFICATION_INBOX_SPECS: Record<NotificationInboxSpec["tab"], Noti
       emptyTitle: NOTIFICATION_ORDER_EMPTY_TITLE,
       emptyBody: NOTIFICATION_ORDER_EMPTY_BODY,
       channels: selectChannels(["errand-status"]),
-      gapLinks: [
-        {
-          label: "跑腿订单通知 #701",
-          issueUrl: "https://github.com/taoyu051818-sys/lian-mobile-web/issues/701",
-        },
-      ],
+      gapLinks: [],
     },
   };
 

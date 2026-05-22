@@ -57,6 +57,87 @@ describe("notification routing normalization", () => {
   });
 });
 
+describe("errand-order notification routing (ps#477 / ps#495 fan-out)", () => {
+  // Lock the seven exact errand-order-* slugs onto kind="order" so a fuzzy
+  // "order"/"errand" hit on an unrelated payload can't poach the bucket. The
+  // status itself is projected via ERRAND_ORDER_TYPE_TO_STATUS for body copy.
+  // Wire types use kebab-case (`errand-order-picked-up`); internal status
+  // enums are snake_case (`picked_up`).
+
+  const baseEnvelope = {
+    actor: { id: "system", name: "LIAN", displayName: "LIAN" },
+    timestampISO: "2026-05-22T08:00:00Z",
+    read: false,
+  } as const;
+
+  it.each([
+    ["errand-order-accepted", "跑腿订单已被接单", "「奶茶代购」已被跑腿员接单，请保持联系。"],
+    ["errand-order-picked-up", "跑腿订单已取件", "「奶茶代购」已取件，正在前往送达。"],
+    ["errand-order-delivering", "跑腿订单配送中", "「奶茶代购」正在配送途中。"],
+    ["errand-order-delivered", "跑腿订单已送达", "「奶茶代购」已送达，请尽快确认完成。"],
+    ["errand-order-completed", "跑腿订单已完成结算", "「奶茶代购」订单已完成，报酬已入账。"],
+    ["errand-order-cancelled", "跑腿订单已取消", "「奶茶代购」订单已取消。"],
+    ["errand-order-refunded", "跑腿订单已退款", "「奶茶代购」订单退款已到账。"],
+  ])("routes %s onto kind='order' with locked fallback copy", (type, fallbackTitle, fallbackBody) => {
+    // Backend strips title/excerpt to exercise our fallback copy path.
+    const item = normalizeNotificationItem({
+      id: `errand-order-1-${type}-uid-7-2026-05-22T08:00:00Z`,
+      type,
+      data: {
+        status: type.replace("errand-order-", "").replace(/-/g, "_"),
+        previousStatus: "",
+        orderId: "order-1",
+        merchantPostId: "42",
+        triggeredBy: "uid-9",
+        targetType: "errand-order",
+        orderTitle: "奶茶代购",
+      },
+      idempotencyKey: `errand-order-1-${type.replace("errand-order-", "").replace(/-/g, "_")}-uid-7-2026-05-22T08:00:00Z`,
+      ...baseEnvelope,
+    });
+
+    expect(item.kind).toBe("order");
+    expect(item.title).toBe(fallbackTitle);
+    expect(item.excerpt).toBe(fallbackBody);
+    expect(item.target).toEqual({
+      kind: "none",
+      reason: "订单类通知会在后续版本接入目标页。",
+    });
+    expect(item.actionLabel).toBe("订单类通知会在后续版本接入目标页。");
+  });
+
+  it("pins ps#495 errand-order-completed payload (recipient = runner) end-to-end", () => {
+    // Specific pin for ps#495 — the recipient is the runner whose wallet was
+    // just credited, and `data.triggeredBy` carries the requester uid that
+    // confirmed the order.
+    const item = normalizeNotificationItem({
+      id: "errand-order-77-completed-runner-99-2026-05-22T08:00:00Z",
+      type: "errand-order-completed",
+      title: "跑腿订单已完成结算",
+      excerpt: "「奶茶代购」订单已完成，报酬已入账。",
+      data: {
+        status: "completed",
+        previousStatus: "delivered",
+        orderId: "order-77",
+        merchantPostId: "150",
+        triggeredBy: "uid-requester-3",
+        targetType: "errand-order",
+        orderTitle: "奶茶代购",
+      },
+      idempotencyKey: "errand-order-77-completed-runner-99-2026-05-22T08:00:00Z",
+      actor: { id: "system", name: "LIAN", displayName: "LIAN" },
+      timestampISO: "2026-05-22T08:00:00Z",
+      read: false,
+    });
+
+    expect(item.kind).toBe("order");
+    expect(item.title).toBe("跑腿订单已完成结算");
+    expect(item.excerpt).toBe("「奶茶代购」订单已完成，报酬已入账。");
+    expect(item.type).toBe("errand-order-completed");
+    expect(item.target.kind).toBe("none");
+  });
+});
+
 describe("event notification rendering (B2 #438 fan-out)", () => {
   // Wire shape mirrors lian-platform-server#445 (merge fc65accf):
   //   id "evt-<eventId>-<uid>-<arm>", type, tid:<hostPostTid>, data{eventId,
