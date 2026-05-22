@@ -27,6 +27,8 @@ import {
   TRADE_STATE_SOLD,
 } from "../../config/brand";
 import type { TradeState } from "../../types/post-extensions";
+import PublishGateNotice from "./PublishGateNotice.vue";
+import PublishMessage from "./PublishMessage.vue";
 
 defineProps<{
   campusVerified: boolean;
@@ -52,26 +54,18 @@ const STATE_OPTIONS: Array<{ value: TradeState; label: string }> = [
 </script>
 
 <template>
-  <section
+  <PublishGateNotice
     v-if="!campusVerified"
-    class="publish-trade__gate"
-    :aria-label="PUBLISH_TRADE_GATE_TITLE"
     data-testid="publish-trade-gate"
+    :title="PUBLISH_TRADE_GATE_TITLE"
+    :cta-label="PUBLISH_TRADE_GATE_CTA"
+    @cta="emit('goVerify')"
   >
-    <strong>{{ PUBLISH_TRADE_GATE_TITLE }}</strong>
     <p>{{ PUBLISH_TRADE_GATE_HINT }}</p>
-    <p v-if="verificationLoaded" class="publish-trade__gate-block">
+    <p v-if="verificationLoaded" class="publish-gate-notice__block">
       {{ PUBLISH_TRADE_GATE_BLOCK }}
     </p>
-    <button
-      type="button"
-      class="publish-trade__gate-cta"
-      data-testid="publish-trade-gate-cta"
-      @click="emit('goVerify')"
-    >
-      {{ PUBLISH_TRADE_GATE_CTA }}
-    </button>
-  </section>
+  </PublishGateNotice>
 
   <section
     v-else
@@ -83,9 +77,9 @@ const STATE_OPTIONS: Array<{ value: TradeState; label: string }> = [
       <strong>{{ PUBLISH_TRADE_FORM_LABEL }}</strong>
     </div>
 
-    <p class="publish-trade__risk" data-testid="publish-trade-risk">
+    <PublishMessage variant="warning" data-testid="publish-trade-risk">
       {{ TRADE_RISK_HINT }}
-    </p>
+    </PublishMessage>
 
     <label class="publish-trade__field">
       <span>{{ PUBLISH_TRADE_PRICE_LABEL }}</span>
@@ -125,8 +119,7 @@ const STATE_OPTIONS: Array<{ value: TradeState; label: string }> = [
 </template>
 
 <style scoped>
-.publish-trade__form,
-.publish-trade__gate {
+.publish-trade__form {
   display: grid;
   gap: var(--space-3);
   padding: var(--space-4);
@@ -141,15 +134,9 @@ const STATE_OPTIONS: Array<{ value: TradeState; label: string }> = [
   justify-content: space-between;
 }
 
-.publish-trade__risk {
-  margin: 0;
-  padding: var(--space-2) var(--space-3);
-  border-radius: var(--radius-card, 12px);
-  background: rgba(220, 60, 60, 0.08);
-  color: #8a2020;
-  font-weight: 700;
-  font-size: 13px;
-}
+/* Risk-hint container styling lives in PublishMessage.vue (variant=warning).
+ * Gate styling lives in PublishGateNotice.vue.
+ */
 
 .publish-trade__field {
   display: grid;
@@ -180,32 +167,5 @@ const STATE_OPTIONS: Array<{ value: TradeState; label: string }> = [
   font-weight: 900;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-}
-
-.publish-trade__gate strong {
-  font-size: 15px;
-}
-
-.publish-trade__gate p {
-  margin: 0;
-  color: var(--lian-muted);
-  font-size: 13px;
-}
-
-.publish-trade__gate-block {
-  color: #a14040;
-}
-
-.publish-trade__gate-cta {
-  justify-self: start;
-  appearance: none;
-  border: 0;
-  border-radius: var(--radius-chip, 999px);
-  background: var(--lian-primary, #1fa7a0);
-  color: white;
-  font-weight: 800;
-  height: 40px;
-  padding: 0 var(--space-4);
-  cursor: pointer;
 }
 </style>

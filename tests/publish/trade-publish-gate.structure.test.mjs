@@ -49,7 +49,11 @@ test("PublishTradeControls renders gate when not verified, form when verified", 
   const src = read("src/features/publish/PublishTradeControls.vue");
   assert.match(src, /v-if="!campusVerified"/);
   assert.match(src, /data-testid="publish-trade-gate"/);
-  assert.match(src, /data-testid="publish-trade-gate-cta"/);
+  // Gate CTA is owned by the shared PublishGateNotice primitive (PR-2);
+  // the trade component just supplies title / cta-label / @cta.
+  assert.match(src, /<PublishGateNotice[\s\S]*?data-testid="publish-trade-gate"/);
+  assert.match(src, /:cta-label="PUBLISH_TRADE_GATE_CTA"/);
+  assert.match(src, /@cta="emit\('goVerify'\)"/);
   assert.match(src, /data-testid="publish-trade-form"/);
   assert.match(src, /data-testid="publish-trade-price"/);
   assert.match(src, /data-testid="publish-trade-state"/);

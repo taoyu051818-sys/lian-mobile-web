@@ -54,7 +54,11 @@ test("PublishMerchantControls renders gate when not verified, form when verified
   const src = read("src/features/publish/PublishMerchantControls.vue");
   assert.match(src, /v-if="!merchantVerified"/);
   assert.match(src, /data-testid="publish-merchant-gate"/);
-  assert.match(src, /data-testid="publish-merchant-gate-cta"/);
+  // Gate CTA is owned by the shared PublishGateNotice primitive (PR-2);
+  // the merchant component just supplies title / cta-label / @cta.
+  assert.match(src, /<PublishGateNotice[\s\S]*?data-testid="publish-merchant-gate"/);
+  assert.match(src, /:cta-label="PUBLISH_MERCHANT_GATE_CTA"/);
+  assert.match(src, /@cta="emit\('goVerify'\)"/);
   assert.match(src, /data-testid="publish-merchant-form"/);
   assert.match(src, /data-testid="publish-merchant-name"/);
   assert.match(src, /data-testid="publish-merchant-category"/);
@@ -77,7 +81,11 @@ test("PublishView locks the merchant affordance when merchant_verified is inacti
   const src = read("src/features/publish/PublishView.vue");
   assert.match(src, /merchantAffordanceLocked/);
   assert.match(src, /data-testid="publish-merchant-affordance-gate"/);
-  assert.match(src, /data-testid="publish-merchant-affordance-cta"/);
+  // The CTA is owned by the shared PublishGateNotice primitive (PR-2);
+  // PublishView wires the title / cta-label / @cta wire-up, not the button.
+  assert.match(src, /<PublishGateNotice[\s\S]*?data-testid="publish-merchant-affordance-gate"/);
+  assert.match(src, /:cta-label="PUBLISH_MERCHANT_GATE_CTA"/);
+  assert.match(src, /@cta="goToVerification"/);
   assert.match(src, /:disabled="merchantAffordanceLocked"/);
   assert.match(src, /PUBLISH_MERCHANT_GATE_BLOCK/);
 });

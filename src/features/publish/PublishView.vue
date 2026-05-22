@@ -17,7 +17,7 @@ import {
   PUBLISH_MERCHANT_GATE_BLOCK,
   PUBLISH_MERCHANT_GATE_CTA,
 } from "../../config/brand";
-import { GlassPanel, InlineError } from "../../ui";
+import { GlassPanel } from "../../ui";
 import PublishActionBar from "./PublishActionBar.vue";
 import PublishComposer from "./PublishComposer.vue";
 import PublishLocationControls from "./PublishLocationControls.vue";
@@ -25,6 +25,8 @@ import PublishMetaControls from "./PublishMetaControls.vue";
 import PublishEventControls from "./PublishEventControls.vue";
 import PublishMerchantControls from "./PublishMerchantControls.vue";
 import PublishTradeControls from "./PublishTradeControls.vue";
+import PublishMessage from "./PublishMessage.vue";
+import PublishGateNotice from "./PublishGateNotice.vue";
 import { usePublishDraft } from "./usePublishDraft";
 import { usePublishLocationOptions } from "./usePublishLocationOptions";
 import { clearPublishDraft } from "./publishDraftSession";
@@ -198,13 +200,13 @@ onMounted(() => {
 <template>
   <section class="publish-view keyboard-aware-surface" :aria-label="PUBLISH_SECTION_LABEL">
     <GlassPanel class="publish-view__card">
-      <InlineError v-if="draft.errorMessage.value">
+      <PublishMessage v-if="draft.errorMessage.value" variant="error">
         {{ draft.errorMessage.value }}
-      </InlineError>
-      <p v-if="draftNotice" class="publish-view__draft-notice" data-testid="publish-draft-notice">
+      </PublishMessage>
+      <PublishMessage v-if="draftNotice" variant="info" data-testid="publish-draft-notice">
         {{ draftNotice }}
-      </p>
-      <div v-if="draft.successMessage.value" class="publish-view__success-block">
+      </PublishMessage>
+      <PublishMessage v-if="draft.successMessage.value" variant="success">
         <p class="publish-view__success">{{ draft.successMessage.value }}</p>
         <a
           v-if="postDetailUrl"
@@ -214,27 +216,27 @@ onMounted(() => {
         >
           {{ PUBLISH_VIEW_POST }}
         </a>
-      </div>
+      </PublishMessage>
 
-      <p
+      <PublishMessage
         v-if="draft.aiLoading.value"
-        class="publish-view__ai-pending"
+        variant="pending"
         data-testid="publish-ai-pending"
-        role="status"
-        aria-live="polite"
       >
         {{ PUBLISH_AI_PENDING }}
-      </p>
-      <ul
+      </PublishMessage>
+      <PublishMessage
         v-if="draft.aiRiskFlags.value.length"
-        class="publish-view__risk-list"
+        variant="warning"
         data-testid="publish-ai-risk-flags"
         :aria-label="PUBLISH_AI_RISK_LABEL"
       >
-        <li v-for="(flag, idx) in draft.aiRiskFlags.value" :key="idx">
-          {{ flag }}
-        </li>
-      </ul>
+        <ul class="publish-message__list">
+          <li v-for="(flag, idx) in draft.aiRiskFlags.value" :key="idx">
+            {{ flag }}
+          </li>
+        </ul>
+      </PublishMessage>
 
       <form class="publish-view__form keyboard-aware-surface" @submit.prevent="submitPublish">
         <fieldset
@@ -290,26 +292,16 @@ onMounted(() => {
           </label>
         </fieldset>
 
-        <section
+        <PublishGateNotice
           v-if="merchantAffordanceLocked"
-          class="publish-view__affordance-gate"
           data-testid="publish-merchant-affordance-gate"
-          :aria-label="PUBLISH_MERCHANT_GATE_TITLE"
+          :title="PUBLISH_MERCHANT_GATE_TITLE"
+          :cta-label="PUBLISH_MERCHANT_GATE_CTA"
+          @cta="goToVerification"
         >
-          <div class="publish-view__affordance-copy">
-            <strong>{{ PUBLISH_MERCHANT_GATE_TITLE }}</strong>
-            <p>{{ PUBLISH_MERCHANT_GATE_HINT }}</p>
-            <p class="publish-view__affordance-block">{{ PUBLISH_MERCHANT_GATE_BLOCK }}</p>
-          </div>
-          <button
-            type="button"
-            class="publish-view__affordance-cta"
-            data-testid="publish-merchant-affordance-cta"
-            @click="goToVerification"
-          >
-            {{ PUBLISH_MERCHANT_GATE_CTA }}
-          </button>
-        </section>
+          <p>{{ PUBLISH_MERCHANT_GATE_HINT }}</p>
+          <p class="publish-gate-notice__block">{{ PUBLISH_MERCHANT_GATE_BLOCK }}</p>
+        </PublishGateNotice>
 
         <PublishEventControls
           v-if="draft.publishKind.value === 'regular'"
@@ -463,20 +455,11 @@ onMounted(() => {
   gap: var(--space-5);
 }
 
-.publish-view__draft-notice {
-  padding: var(--space-3) var(--space-4);
-  border: 1px solid rgba(31, 167, 160, 0.18);
-  border-radius: var(--radius-card);
-  background: rgba(31, 167, 160, 0.1);
-  color: var(--lian-ink);
-  font-size: 14px;
-  font-weight: 700;
-}
-
-.publish-view__success-block {
-  display: grid;
-  gap: var(--space-2);
-}
+/* Banner / hint container styling lives in PublishMessage.vue
+ * (variants: error / warning / info / success / pending). Only inner
+ * typography that PublishView still owns (success copy + view-post link)
+ * survives here.
+ */
 
 .publish-view__success {
   color: var(--lian-primary);
@@ -493,34 +476,6 @@ onMounted(() => {
   font-weight: 700;
   text-decoration: underline;
   text-underline-offset: 3px;
-}
-
-.publish-view__ai-pending {
-  padding: var(--space-3) var(--space-4);
-  border: 1px dashed rgba(31, 167, 160, 0.3);
-  border-radius: var(--radius-card);
-  background: rgba(31, 167, 160, 0.06);
-  color: var(--lian-muted);
-  font-size: 13px;
-  font-weight: 700;
-}
-
-.publish-view__risk-list {
-  margin: 0;
-  padding: var(--space-3) var(--space-4);
-  border: 1px solid rgba(255, 159, 67, 0.28);
-  border-radius: var(--radius-card);
-  background: rgba(255, 159, 67, 0.08);
-  color: var(--lian-ink);
-  font-size: 13px;
-  font-weight: 700;
-  list-style: none;
-  display: grid;
-  gap: 4px;
-}
-
-.publish-view__risk-list li::before {
-  content: "⚠ ";
 }
 
 .publish-view__type-switch {
@@ -575,48 +530,9 @@ onMounted(() => {
   cursor: not-allowed;
 }
 
-.publish-view__affordance-gate {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-3);
-  padding: var(--space-3) var(--space-4);
-  border: 1px dashed rgba(31, 167, 160, 0.32);
-  border-radius: calc(var(--radius-card) + 2px);
-  background: rgba(31, 167, 160, 0.08);
-}
-
-.publish-view__affordance-copy {
-  display: grid;
-  gap: 4px;
-  flex: 1 1 240px;
-}
-
-.publish-view__affordance-copy strong {
-  font-size: 15px;
-}
-
-.publish-view__affordance-copy p {
-  color: var(--lian-muted);
-  font-size: 13px;
-}
-
-.publish-view__affordance-block {
-  color: #a14040;
-  font-weight: 700;
-}
-
-.publish-view__affordance-cta {
-  justify-self: start;
-  appearance: none;
-  border: 0;
-  border-radius: var(--radius-chip, 999px);
-  background: var(--lian-primary, #1fa7a0);
-  color: white;
-  font-weight: 800;
-  height: 40px;
-  padding: 0 var(--space-4);
-  cursor: pointer;
-}
+/* Affordance-gate styling lives in PublishGateNotice.vue
+ * (variants: title / hint / block / CTA). The merchant-affordance gate
+ * shares that primitive with PublishTradeControls and the merchant /
+ * trade in-form gates.
+ */
 </style>

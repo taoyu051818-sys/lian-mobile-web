@@ -29,6 +29,7 @@ import {
   MERCHANT_CATEGORY_SERVICE,
 } from "../../config/brand";
 import type { MerchantCategory } from "../../types/post-extensions";
+import PublishGateNotice from "./PublishGateNotice.vue";
 
 defineProps<{
   merchantVerified: boolean;
@@ -57,26 +58,18 @@ const CATEGORY_OPTIONS: Array<{ value: MerchantCategory; label: string }> = [
 </script>
 
 <template>
-  <section
+  <PublishGateNotice
     v-if="!merchantVerified"
-    class="publish-merchant__gate"
-    :aria-label="PUBLISH_MERCHANT_GATE_TITLE"
     data-testid="publish-merchant-gate"
+    :title="PUBLISH_MERCHANT_GATE_TITLE"
+    :cta-label="PUBLISH_MERCHANT_GATE_CTA"
+    @cta="emit('goVerify')"
   >
-    <strong>{{ PUBLISH_MERCHANT_GATE_TITLE }}</strong>
     <p>{{ PUBLISH_MERCHANT_GATE_HINT }}</p>
-    <p v-if="verificationLoaded" class="publish-merchant__gate-block">
+    <p v-if="verificationLoaded" class="publish-gate-notice__block">
       {{ PUBLISH_MERCHANT_GATE_BLOCK }}
     </p>
-    <button
-      type="button"
-      class="publish-merchant__gate-cta"
-      data-testid="publish-merchant-gate-cta"
-      @click="emit('goVerify')"
-    >
-      {{ PUBLISH_MERCHANT_GATE_CTA }}
-    </button>
-  </section>
+  </PublishGateNotice>
 
   <section
     v-else
@@ -150,8 +143,7 @@ const CATEGORY_OPTIONS: Array<{ value: MerchantCategory; label: string }> = [
 </template>
 
 <style scoped>
-.publish-merchant__form,
-.publish-merchant__gate {
+.publish-merchant__form {
   display: grid;
   gap: var(--space-3);
   padding: var(--space-4);
@@ -165,6 +157,8 @@ const CATEGORY_OPTIONS: Array<{ value: MerchantCategory; label: string }> = [
   align-items: center;
   justify-content: space-between;
 }
+
+/* Gate styling lives in PublishGateNotice.vue. */
 
 .publish-merchant__field {
   display: grid;
@@ -219,32 +213,5 @@ const CATEGORY_OPTIONS: Array<{ value: MerchantCategory; label: string }> = [
   color: var(--lian-muted);
   font-size: 12px;
   font-weight: 700;
-}
-
-.publish-merchant__gate strong {
-  font-size: 15px;
-}
-
-.publish-merchant__gate p {
-  margin: 0;
-  color: var(--lian-muted);
-  font-size: 13px;
-}
-
-.publish-merchant__gate-block {
-  color: #a14040;
-}
-
-.publish-merchant__gate-cta {
-  justify-self: start;
-  appearance: none;
-  border: 0;
-  border-radius: var(--radius-chip, 999px);
-  background: var(--lian-primary, #1fa7a0);
-  color: white;
-  font-weight: 800;
-  height: 40px;
-  padding: 0 var(--space-4);
-  cursor: pointer;
 }
 </style>
