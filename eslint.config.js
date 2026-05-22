@@ -47,14 +47,14 @@ export default [
 
   // Scripts and test .mjs files: add Node.js globals
   {
-    files: ["scripts/**/*.js", "tests/**/*.mjs"],
+    files: ["scripts/**/*.{js,mjs}", "tests/**/*.mjs"],
     languageOptions: {
       globals: globals.node,
     },
   },
 
   {
-    files: ["src/**/*.{ts,vue}", "tests/**/*.{ts,mjs,js}", "scripts/**/*.js"],
+    files: ["src/**/*.{ts,vue}", "tests/**/*.{ts,mjs,js}", "scripts/**/*.{js,mjs}"],
     rules: {
       "no-console": "error",
       "no-debugger": "error",
@@ -82,7 +82,7 @@ export default [
 
   // Test and script files: allow console (used for test output and CLI reporting)
   {
-    files: ["tests/**/*.{ts,mjs,js}", "scripts/**/*.js"],
+    files: ["tests/**/*.{ts,mjs,js}", "scripts/**/*.{js,mjs}"],
     rules: {
       "no-console": "off",
     },
