@@ -1,6 +1,7 @@
 import { expect, request, test, type APIRequestContext } from "@playwright/test";
 
 import { isRoleConfigured, loginAs } from "./fixtures/accounts";
+import { resolveRunnerOrderId } from "./fixtures/errand-runtime";
 
 const BASE_URL = process.env.APP_BASE_URL ?? "https://lian.nat100.top";
 
@@ -48,8 +49,8 @@ test.describe("@runner runner center @runner-center", () => {
     try {
       const items = await fetchAvailable(api);
       // The list shape must always be an array. An empty pool is acceptable —
-      // not every E2E run will have available orders seeded — but the shape
-      // contract must hold so the UI never tries to iterate `undefined`.
+      // the PR gate does not seed or mutate orders — but the shape contract
+      // must hold so the UI never tries to iterate `undefined`.
       expect(Array.isArray(items)).toBe(true);
     } finally {
       await api.dispose();
@@ -93,16 +94,16 @@ test.describe("@runner runner center @runner-center", () => {
     }
   });
 
-  test("@runner runner_verified user advances accept -> pickup -> deliver", async () => {
+  test("@errand-transition runner_verified user advances accept -> pickup -> deliver", async () => {
     if (!isRoleConfigured("runner")) {
       test.skip(true, "runner role not configured — set LIAN_E2E_RUNNER_USERNAME/PASSWORD");
       return;
     }
-    const seedOrderId = process.env.LIAN_E2E_RUNNER_ORDER_ID?.trim() ?? "";
+    const seedOrderId = await resolveRunnerOrderId({ baseURL: BASE_URL });
     if (!seedOrderId) {
       test.skip(
         true,
-        "set LIAN_E2E_RUNNER_ORDER_ID to a seeded order in `available` state to run this transition proof",
+        "requires LIAN_E2E_RUNNER_ORDER_ID or a ready /api/fixtures errandJourney order in `paid_locked` state",
       );
       return;
     }
