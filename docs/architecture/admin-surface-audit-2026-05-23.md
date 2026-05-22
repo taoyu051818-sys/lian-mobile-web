@@ -37,14 +37,14 @@ No source files were modified.
 
 **Backend endpoints called**
 
-| Action | Method | Path |
-| --- | --- | --- |
-| List queue | `GET` | `/api/admin/verifications?status=&verificationType=&userId=&limit=&offset=` |
-| Approve / reject (org-join) | `PATCH` | `/api/admin/verifications/org-join/:verificationId` |
-| Approve / reject (realname) | `PATCH` | `/api/admin/verifications/realname/:verificationId` |
-| Approve / reject (merchant) | `PATCH` | `/api/admin/verifications/merchant/:verificationId` |
-| Approve / reject (runner) | `PATCH` | `/api/admin/verifications/runner/:verificationId` |
-| Reveal PII (realname only) | `GET` | `/api/admin/verifications/realname/:verificationId?reveal=true` |
+| Action                      | Method  | Path                                                                        |
+| --------------------------- | ------- | --------------------------------------------------------------------------- |
+| List queue                  | `GET`   | `/api/admin/verifications?status=&verificationType=&userId=&limit=&offset=` |
+| Approve / reject (org-join) | `PATCH` | `/api/admin/verifications/org-join/:verificationId`                         |
+| Approve / reject (realname) | `PATCH` | `/api/admin/verifications/realname/:verificationId`                         |
+| Approve / reject (merchant) | `PATCH` | `/api/admin/verifications/merchant/:verificationId`                         |
+| Approve / reject (runner)   | `PATCH` | `/api/admin/verifications/runner/:verificationId`                           |
+| Reveal PII (realname only)  | `GET`   | `/api/admin/verifications/realname/:verificationId?reveal=true`             |
 
 The list endpoint is already aggregate. Transition and reveal are still
 per-channel — the frontend computes the channel-specific path inside
@@ -112,12 +112,12 @@ Only used for `verificationType === "realname"` and only the four PII fields:
 
 **Backend endpoints called**
 
-| Action | Method | Path |
-| --- | --- | --- |
-| List reports | `GET` | `/api/admin/reports?status=&targetType=&limit=&offset=` |
-| Transition report | `PATCH` | `/api/admin/reports/:reportId` |
-| Post moderation (hide / lock / unlock) | `POST` | `/api/admin/posts/:tid/:action` |
-| User status moderation | `PATCH` | `/api/admin/auth/users/:userIdOrEmail/status` |
+| Action                                 | Method  | Path                                                    |
+| -------------------------------------- | ------- | ------------------------------------------------------- |
+| List reports                           | `GET`   | `/api/admin/reports?status=&targetType=&limit=&offset=` |
+| Transition report                      | `PATCH` | `/api/admin/reports/:reportId`                          |
+| Post moderation (hide / lock / unlock) | `POST`  | `/api/admin/posts/:tid/:action`                         |
+| User status moderation                 | `PATCH` | `/api/admin/auth/users/:userIdOrEmail/status`           |
 
 **Stitching**
 
@@ -188,9 +188,9 @@ backend chooses to add one.
 
 **Backend endpoints called**
 
-| Action | Method | Path |
-| --- | --- | --- |
-| List audit events | `GET` | `/api/admin/audit-log?actorId=&action=&limit=&offset=` |
+| Action            | Method | Path                                                   |
+| ----------------- | ------ | ------------------------------------------------------ |
+| List audit events | `GET`  | `/api/admin/audit-log?actorId=&action=&limit=&offset=` |
 
 One call. No stitching.
 
@@ -222,9 +222,9 @@ Same `limit: 100`, no offset.
 
 **Backend endpoints called**
 
-| Action | Method | Path |
-| --- | --- | --- |
-| Admin role / token probe | `GET` | `/api/admin/me` |
+| Action                   | Method | Path            |
+| ------------------------ | ------ | --------------- |
+| Admin role / token probe | `GET`  | `/api/admin/me` |
 
 Response shape consumed (`AdminMeResponse`):
 
