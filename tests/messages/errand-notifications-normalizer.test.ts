@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { normalizeNotificationItem, normalizeNotificationResponse } from "../../src/api/messages";
+import { normalizeNotificationItem, normalizeNotificationResponse } from "../../src/api/notifications";
 import {
   NOTIF_ERRAND_ORDER_ACCEPTED_BODY,
   NOTIF_ERRAND_ORDER_ACCEPTED_TITLE,
@@ -18,29 +18,6 @@ import {
   NOTIF_ERRAND_ORDER_REFUNDED_TITLE,
   NOTIF_ERRAND_ORDER_TITLE_FALLBACK,
 } from "../../src/config/brand/notification";
-
-/**
- * Errand-order normalizer cliff — sibling of `event-notifications-normalizer.test.ts`.
- * Pins the seven `errand-order-*` wire types ps#477 / ps#495 fan out onto
- * `/api/messages` against silent regressions in the F3 dispatcher
- * (`ERRAND_ORDER_TYPE_TO_STATUS` + `buildErrandNotificationCopy`).
- *
- * Wire envelope (per ps#477):
- *   { id, type: "errand-order-<status>",  // kebab-case on the wire
- *     tid, title, excerpt, actor:{id,name},
- *     read, timestampISO, data, idempotencyKey }
- *   data: { status, previousStatus, orderId, merchantPostId,
- *           triggeredBy, targetType }
- *   status enum (snake_case): accepted | picked_up | delivering |
- *                             delivered | completed | cancelled | refunded
- *   idempotencyKey: errand-{orderId}-{status}-{recipientUid}-{triggeredAtISO}
- *
- * Round-trip semantics:
- *   F3's NotificationItem has NO `data` field — wire `data.*` is projected
- *   into kind / target / fallback copy rather than carried verbatim.
- *   Every renderer-needed field must survive the projection; nothing is
- *   invented. F3 NEVER drops items.
- */
 
 const ERRAND_ACTOR = { id: "system", name: "LIAN", displayName: "LIAN" } as const;
 
@@ -102,7 +79,6 @@ describe("errand-notifications-normalizer / case 1 — round-trip happy path", (
     expect(item.actor?.displayName).toBe("LIAN");
     expect(item.read).toBe(false);
     expect(item.timestampISO).toBe("2026-05-22T08:00:00Z");
-    // raw.type propagates verbatim — analytics/breadcrumbs depend on the slug.
     expect(item.type).toBe("errand-order-accepted");
     expect(item.target).toEqual({ kind: "errand-order", orderId: "order-1" });
     expect(item.actionLabel).toBe("查看订单详情");
@@ -122,10 +98,6 @@ describe("errand-notifications-normalizer / case 1 — round-trip happy path", (
 });
 
 describe("errand-notifications-normalizer / case 2 — fallback copy when envelope is sparse", () => {
-  // F3 trusts backend title/excerpt when present, but synthesises locked
-  // copy from the status enum when the envelope ships them empty. Pin the
-  // seven status → fallback pairs so a brand-string drift goes red.
-
   const fallbackCases: Array<[string, string, string, string, string]> = [
     [
       "errand-order-accepted",
@@ -226,8 +198,6 @@ describe("errand-notifications-normalizer / case 2 — fallback copy when envelo
   });
 
   it("backend-supplied title+excerpt wins over fallback synthesis", () => {
-    // Source-of-truth contract — when the backend ships copy, F3 does not
-    // overwrite it. Pin so a future "always synthesise" refactor goes red.
     const item = normalizeNotificationItem({
       type: "errand-order-completed",
       title: "服务端定制标题",
@@ -248,10 +218,6 @@ describe("errand-notifications-normalizer / case 2 — fallback copy when envelo
 });
 
 describe("errand-notifications-normalizer / case 3 — kind-locking (no fuzzy poach)", () => {
-  // The exact slug is what locks `kind="order"` — an unrelated payload that
-  // happens to contain the word "order" in its body must NOT be routed onto
-  // the orders inbox. Pin both directions.
-
   it("seven errand-order-* slugs all route onto kind='order'", () => {
     const slugs = [
       "errand-order-accepted",
@@ -293,10 +259,6 @@ describe("errand-notifications-normalizer / case 3 — kind-locking (no fuzzy po
   });
 
   it("unrelated slug containing 'order' does NOT inherit errand fallback copy", () => {
-    // E.g. an admin-side audit notification using the word "order" elsewhere.
-    // It can land in the orders bucket via fuzzy match (legacy behaviour),
-    // but the errand-specific synthesis path must NOT fire — that path is
-    // gated behind ERRAND_ORDER_TYPE_TO_STATUS.
     const item = normalizeNotificationItem({
       id: "audit-1",
       type: "audit-order-flagged",
@@ -315,16 +277,12 @@ describe("errand-notifications-normalizer / case 3 — kind-locking (no fuzzy po
 });
 
 describe("errand-notifications-normalizer / case 4 — idempotency-key shape opacity", () => {
-  // F3 does not parse the idempotencyKey or the id. Both are preserved
-  // verbatim. Pin so a downstream parser added later updates this test.
-
   it("envelope idempotencyKey field is ignored by NotificationItem (not surfaced)", () => {
     const item = normalizeNotificationItem(
       acceptedWire({
         idempotencyKey: "errand-order-1-accepted-uid-7-2026-05-22T08:00:00Z",
       }),
     );
-    // NotificationItem has no idempotencyKey field — pin shape stability.
     expect("idempotencyKey" in item).toBe(false);
   });
 
@@ -383,10 +341,6 @@ describe("errand-notifications-normalizer / case 5 — payload-driven body", () 
   });
 
   it("status-enum-only fallback when raw.type is missing but data.status is well-formed", () => {
-    // Defensive path — if the backend ever drops the type slug but keeps the
-    // structured status enum, F3 still synthesises locked copy. Kind dispatch
-    // remains gated on the slug (this case lands as kind="generic"), but the
-    // copy projection must not crash.
     const item = normalizeNotificationItem({
       data: {
         status: "completed",
@@ -395,8 +349,6 @@ describe("errand-notifications-normalizer / case 5 — payload-driven body", () 
         targetType: "errand-order",
       },
     });
-    // Without the slug, kind dispatch falls through; the orderTitle fallback
-    // must still not corrupt downstream rendering.
     expect(item).toBeDefined();
     expect(item.excerpt).not.toContain("undefined");
   });
