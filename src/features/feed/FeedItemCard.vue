@@ -6,6 +6,7 @@ import {
   FEED_TIME_JUST_NOW,
   FEED_COLLAPSE,
   FEED_EXPAND,
+  FEED_CARD_MARK_MERCHANT,
 } from "../../config/brand";
 import { actorAvatarText, actorAvatarUrl, actorDisplayName } from "../../domain/actor";
 import type { FeedItem, FeedItemId, FeedPresentationIntent } from "../../types/feed";
@@ -81,7 +82,7 @@ const templateMark = computed(
       text: "✎",
       activity: "◦",
       place: "⌖",
-      merchant: "食",
+      merchant: FEED_CARD_MARK_MERCHANT,
       help: "＋",
     })[cardTemplate.value],
 );

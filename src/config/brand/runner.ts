@@ -2,6 +2,7 @@
 export const RUNNER_SECTION_LABEL = "跑腿员中心";
 export const RUNNER_ENTER_LABEL = "跑腿员中心";
 export const RUNNER_BACK_TO_PROFILE = "返回我的";
+export const RUNNER_AVATAR_TEXT = "跑";
 
 /** 入口 gate */
 export const RUNNER_GATE_TITLE = "需要跑腿员认证";

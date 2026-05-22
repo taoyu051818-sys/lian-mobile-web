@@ -8,6 +8,13 @@ export const NOTIFICATION_DEFAULT_TITLE = "新通知";
 export const NOTIFICATION_REPLY_LABEL = "回复";
 export const NOTIFICATION_ACTOR_LABEL = "通知";
 
+/** 通知类型徽标（NotificationList.vue notificationKindLabel） */
+export const NOTIFICATION_KIND_REPLY = "回复通知";
+export const NOTIFICATION_KIND_VERIFICATION = "认证结果";
+export const NOTIFICATION_KIND_ORDER = "订单提醒";
+export const NOTIFICATION_KIND_EVENT = "活动通知";
+export const NOTIFICATION_KIND_SYSTEM = "系统通知";
+
 /** 活动相关通知（B2 #438 / lian-mobile-web#706） */
 export const NOTIF_EVENT_COMPLETED_TITLE = "活动已结束";
 export const NOTIF_EVENT_COMPLETED_BODY = "「{title}」的活动已结束。";

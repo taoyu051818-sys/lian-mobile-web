@@ -9,6 +9,7 @@ export const TRADE_STATE_AVAILABLE = "在售";
 export const TRADE_STATE_RESERVED = "已预订";
 export const TRADE_STATE_SOLD = "已出售";
 export const TRADE_STATE_CANCELLED = "已取消";
+export const TRADE_STATE_HIDDEN = "已隐藏";
 /** PRD §J7 风险提示，二手交易常见诈骗场景 */
 export const TRADE_RISK_HINT = "请校园内当面交易，警惕异地汇款。";
 export const TRADE_CONTACT_CTA = "评论区联系卖家";

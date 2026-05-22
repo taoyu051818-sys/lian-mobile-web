@@ -10,6 +10,11 @@ import {
   NOTIFICATION_DEFAULT_TITLE,
   NOTIFICATION_REPLY_LABEL,
   NOTIFICATION_ACTOR_LABEL,
+  NOTIFICATION_KIND_REPLY,
+  NOTIFICATION_KIND_VERIFICATION,
+  NOTIFICATION_KIND_ORDER,
+  NOTIFICATION_KIND_EVENT,
+  NOTIFICATION_KIND_SYSTEM,
   NOTIFICATION_CHANNELS_LABEL,
   NOTIFICATION_CHANNELS_HINT,
   NOTIFICATION_CHANNEL_STATUS_CONNECTED,
@@ -71,17 +76,17 @@ function notificationActor(item: NotificationItem) {
 function notificationKindLabel(item: NotificationItem) {
   switch (item.kind) {
     case "reply":
-      return "回复通知";
+      return NOTIFICATION_KIND_REPLY;
     case "verification":
-      return "认证结果";
+      return NOTIFICATION_KIND_VERIFICATION;
     case "order":
-      return "订单提醒";
+      return NOTIFICATION_KIND_ORDER;
     case "event-completed":
     case "event-reward-settled":
     case "event-expired":
-      return "活动通知";
+      return NOTIFICATION_KIND_EVENT;
     default:
-      return "系统通知";
+      return NOTIFICATION_KIND_SYSTEM;
   }
 }
 

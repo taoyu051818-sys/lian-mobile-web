@@ -2,12 +2,58 @@
 import { computed, onMounted, ref, watch } from "vue";
 import { InlineError, LianButton } from "../../ui";
 import {
+  ADMIN_AUDIT_REFRESH,
+  ADMIN_AVATAR_TEXT,
   ADMIN_BACK_TO_PROFILE,
   ADMIN_EXIT_LABEL,
+  ADMIN_PROBE_LOADING,
+  ADMIN_QUEUE_RELOAD,
   ADMIN_SECTION_LABEL,
+  ADMIN_SESSION_FALLBACK,
+  ADMIN_SESSION_PROBE_FAIL,
   ADMIN_TAB_AUDIT,
   ADMIN_TAB_LABEL,
   ADMIN_TAB_REPORTS,
+  ADMIN_VERIFICATION_DECISION_APPROVE,
+  ADMIN_VERIFICATION_DECISION_REJECT,
+  ADMIN_VERIFICATION_EMPTY_ALL_BODY,
+  ADMIN_VERIFICATION_EMPTY_ALL_TITLE,
+  ADMIN_VERIFICATION_EMPTY_APPROVED_BODY,
+  ADMIN_VERIFICATION_EMPTY_APPROVED_TITLE,
+  ADMIN_VERIFICATION_EMPTY_PENDING_BODY,
+  ADMIN_VERIFICATION_EMPTY_PENDING_TITLE,
+  ADMIN_VERIFICATION_EMPTY_REJECTED_BODY,
+  ADMIN_VERIFICATION_EMPTY_REJECTED_TITLE,
+  ADMIN_VERIFICATION_FILTER_GROUP_LABEL,
+  ADMIN_VERIFICATION_LIST_LOADING,
+  ADMIN_VERIFICATION_REALNAME_MASKED_HINT,
+  ADMIN_VERIFICATION_REVEAL_AGAIN,
+  ADMIN_VERIFICATION_REVEAL_FIRST,
+  ADMIN_VERIFICATION_REVEAL_PENDING,
+  ADMIN_VERIFICATION_REVIEWED_AT_LABEL,
+  ADMIN_VERIFICATION_REVIEWER_LABEL,
+  ADMIN_VERIFICATION_REVIEWER_NOTE_LABEL,
+  ADMIN_VERIFICATION_REVIEWER_NOTE_PLACEHOLDER,
+  ADMIN_VERIFICATION_REVIEWER_NOTE_PREFIX,
+  ADMIN_VERIFICATION_STATUS_ALL,
+  ADMIN_VERIFICATION_STATUS_APPROVED,
+  ADMIN_VERIFICATION_STATUS_PENDING,
+  ADMIN_VERIFICATION_STATUS_REJECTED,
+  ADMIN_VERIFICATION_SUBMITTED_AT_LABEL,
+  ADMIN_VERIFICATION_SUMMARY_CONTACT,
+  ADMIN_VERIFICATION_SUMMARY_ID_NUMBER,
+  ADMIN_VERIFICATION_SUMMARY_ID_TYPE,
+  ADMIN_VERIFICATION_SUMMARY_MERCHANT_NAME,
+  ADMIN_VERIFICATION_SUMMARY_NOTE,
+  ADMIN_VERIFICATION_SUMMARY_ORG_ID,
+  ADMIN_VERIFICATION_SUMMARY_ORG_NAME,
+  ADMIN_VERIFICATION_SUMMARY_REAL_NAME,
+  ADMIN_VERIFICATION_TAB_LABEL,
+  ADMIN_VERIFICATION_TYPE_MERCHANT,
+  ADMIN_VERIFICATION_TYPE_ORG_JOIN,
+  ADMIN_VERIFICATION_TYPE_REALNAME,
+  ADMIN_VERIFICATION_TYPE_RUNNER,
+  ADMIN_VERIFICATION_USER_ID_LABEL,
 } from "../../config/brand";
 import type { PageChromeSpec } from "../../shell/page-model";
 import {
@@ -37,18 +83,17 @@ import { useAdminToken } from "./useAdminToken";
 type AdminTabKey = "reports" | "verifications" | "audit";
 type SummaryRow = { label: string; value: string };
 
-const VERIFICATION_TAB_LABEL = "认证审核";
 const VERIFICATION_STATUS_LABELS: Record<AdminVerificationStatus | "", string> = {
-  "": "全部",
-  pending: "待审核",
-  approved: "已通过",
-  rejected: "已拒绝",
+  "": ADMIN_VERIFICATION_STATUS_ALL,
+  pending: ADMIN_VERIFICATION_STATUS_PENDING,
+  approved: ADMIN_VERIFICATION_STATUS_APPROVED,
+  rejected: ADMIN_VERIFICATION_STATUS_REJECTED,
 };
 const VERIFICATION_TYPE_LABELS: Record<AdminVerificationType, string> = {
-  "org-join": "组织成员",
-  realname: "实名认证",
-  merchant: "商户认证",
-  runner: "跑腿员",
+  "org-join": ADMIN_VERIFICATION_TYPE_ORG_JOIN,
+  realname: ADMIN_VERIFICATION_TYPE_REALNAME,
+  merchant: ADMIN_VERIFICATION_TYPE_MERCHANT,
+  runner: ADMIN_VERIFICATION_TYPE_RUNNER,
 };
 const verificationFilters: Array<{ value: AdminVerificationStatus | ""; label: string }> = [
   { value: "", label: VERIFICATION_STATUS_LABELS[""] },
@@ -78,7 +123,7 @@ const console = useAdminConsole({
   onTokenInvalid: () => {
     if (sessionAdmin.value) {
       clearSessionAdmin();
-      tokenError.value = "管理员会话不可用，可改用 ADMIN_TOKEN 进入。";
+      tokenError.value = ADMIN_SESSION_FALLBACK;
       return;
     }
     tokenError.value = "";
@@ -88,7 +133,7 @@ const console = useAdminConsole({
 
 const tabs: Array<{ key: AdminTabKey; label: string }> = [
   { key: "reports", label: ADMIN_TAB_REPORTS },
-  { key: "verifications", label: VERIFICATION_TAB_LABEL },
+  { key: "verifications", label: ADMIN_VERIFICATION_TAB_LABEL },
   { key: "audit", label: ADMIN_TAB_AUDIT },
 ];
 
@@ -96,23 +141,23 @@ const verificationEmptyState = computed(() => {
   switch (verificationStatusFilter.value) {
     case "pending":
       return {
-        title: "现在没有待审核申请",
-        body: "新的商户、跑腿员、实名或组织成员申请进入队列后，会先显示在这里。",
+        title: ADMIN_VERIFICATION_EMPTY_PENDING_TITLE,
+        body: ADMIN_VERIFICATION_EMPTY_PENDING_BODY,
       };
     case "approved":
       return {
-        title: "还没有已通过记录",
-        body: "审核通过后的申请会归档到这里，方便回看最近放行的身份结果。",
+        title: ADMIN_VERIFICATION_EMPTY_APPROVED_TITLE,
+        body: ADMIN_VERIFICATION_EMPTY_APPROVED_BODY,
       };
     case "rejected":
       return {
-        title: "还没有已拒绝记录",
-        body: "需要补材料或暂不符合条件的申请被拒绝后，会在这里留下处理结果。",
+        title: ADMIN_VERIFICATION_EMPTY_REJECTED_TITLE,
+        body: ADMIN_VERIFICATION_EMPTY_REJECTED_BODY,
       };
     default:
       return {
-        title: "当前还没有认证申请",
-        body: "当用户开始提交实名、商户、跑腿员或组织成员申请后，这里会形成审核队列。",
+        title: ADMIN_VERIFICATION_EMPTY_ALL_TITLE,
+        body: ADMIN_VERIFICATION_EMPTY_ALL_BODY,
       };
   }
 });
@@ -122,7 +167,7 @@ const pageChrome = computed<PageChromeSpec>(() => {
     return {
       top: {
         visible: true,
-        identity: { avatarText: "管", name: ADMIN_SECTION_LABEL },
+        identity: { avatarText: ADMIN_AVATAR_TEXT, name: ADMIN_SECTION_LABEL },
         buttons: [{ id: "admin:close", label: ADMIN_BACK_TO_PROFILE, variant: "ghost" }],
         onButtonClick: handleChromeButtonClick,
       },
@@ -131,7 +176,7 @@ const pageChrome = computed<PageChromeSpec>(() => {
   return {
     top: {
       visible: true,
-      identity: { avatarText: "管", name: ADMIN_SECTION_LABEL },
+      identity: { avatarText: ADMIN_AVATAR_TEXT, name: ADMIN_SECTION_LABEL },
       tabs: {
         kind: "tabs",
         items: tabs.map((t) => ({ id: t.key, label: t.label })),
@@ -240,37 +285,42 @@ function verificationSummaryRows(request: AdminVerificationRequest): SummaryRow[
   if (request.verificationType === "org-join") {
     return [
       {
-        label: "组织",
+        label: ADMIN_VERIFICATION_SUMMARY_ORG_NAME,
         value: formatSummaryValue(summary.orgName) || formatSummaryValue(summary.orgId),
       },
-      { label: "组织 ID", value: formatSummaryValue(summary.orgId) },
-      { label: "备注", value: formatSummaryValue(summary.note) },
+      { label: ADMIN_VERIFICATION_SUMMARY_ORG_ID, value: formatSummaryValue(summary.orgId) },
+      { label: ADMIN_VERIFICATION_SUMMARY_NOTE, value: formatSummaryValue(summary.note) },
     ].filter((row) => row.value);
   }
   if (request.verificationType === "realname") {
     return [
-      { label: "证件类型", value: formatSummaryValue(summary.idType) },
-      { label: "姓名", value: formatSummaryValue(summary.realName) },
-      { label: "证件号", value: formatSummaryValue(summary.idNumber) },
-      { label: "联系方式", value: formatSummaryValue(summary.contact) },
+      { label: ADMIN_VERIFICATION_SUMMARY_ID_TYPE, value: formatSummaryValue(summary.idType) },
+      { label: ADMIN_VERIFICATION_SUMMARY_REAL_NAME, value: formatSummaryValue(summary.realName) },
+      { label: ADMIN_VERIFICATION_SUMMARY_ID_NUMBER, value: formatSummaryValue(summary.idNumber) },
+      { label: ADMIN_VERIFICATION_SUMMARY_CONTACT, value: formatSummaryValue(summary.contact) },
     ].filter((row) => row.value);
   }
   if (request.verificationType === "merchant") {
     return [
-      { label: "商户名称", value: formatSummaryValue(summary.merchantName) },
-      { label: "备注", value: formatSummaryValue(summary.note) },
+      {
+        label: ADMIN_VERIFICATION_SUMMARY_MERCHANT_NAME,
+        value: formatSummaryValue(summary.merchantName),
+      },
+      { label: ADMIN_VERIFICATION_SUMMARY_NOTE, value: formatSummaryValue(summary.note) },
     ].filter((row) => row.value);
   }
-  return [{ label: "备注", value: formatSummaryValue(summary.note) }].filter((row) => row.value);
+  return [
+    { label: ADMIN_VERIFICATION_SUMMARY_NOTE, value: formatSummaryValue(summary.note) },
+  ].filter((row) => row.value);
 }
 
 function revealedRealnameRows(detail: AdminVerificationDetail | undefined): SummaryRow[] {
   if (!detail) return [];
   return [
-    { label: "证件类型", value: detail.idType?.trim() || "" },
-    { label: "姓名", value: detail.realName?.trim() || "" },
-    { label: "证件号", value: detail.idNumber?.trim() || "" },
-    { label: "联系方式", value: detail.contact?.trim() || "" },
+    { label: ADMIN_VERIFICATION_SUMMARY_ID_TYPE, value: detail.idType?.trim() || "" },
+    { label: ADMIN_VERIFICATION_SUMMARY_REAL_NAME, value: detail.realName?.trim() || "" },
+    { label: ADMIN_VERIFICATION_SUMMARY_ID_NUMBER, value: detail.idNumber?.trim() || "" },
+    { label: ADMIN_VERIFICATION_SUMMARY_CONTACT, value: detail.contact?.trim() || "" },
   ].filter((row) => row.value);
 }
 
@@ -300,7 +350,7 @@ async function probeAdminSession() {
   } catch (error) {
     clearSessionAdmin();
     if (error instanceof LianApiError && error.status !== 401 && error.status !== 403) {
-      tokenError.value = "管理员会话探测失败，可改用 ADMIN_TOKEN 进入。";
+      tokenError.value = ADMIN_SESSION_PROBE_FAIL;
     }
   } finally {
     probing.value = false;
@@ -322,7 +372,7 @@ onMounted(() => {
 <template>
   <section class="admin-view" :aria-label="ADMIN_SECTION_LABEL">
     <p v-if="probing && !consoleEnabled" class="admin-view__probe-state" role="status">
-      正在确认管理员会话…
+      {{ ADMIN_PROBE_LOADING }}
     </p>
 
     <AdminTokenGate
@@ -357,7 +407,10 @@ onMounted(() => {
 
       <template v-else-if="activeTab === 'verifications'">
         <section class="admin-view__verification-list">
-          <nav class="admin-view__verification-filters" aria-label="认证审核状态筛选">
+          <nav
+            class="admin-view__verification-filters"
+            :aria-label="ADMIN_VERIFICATION_FILTER_GROUP_LABEL"
+          >
             <button
               v-for="opt in verificationFilters"
               :key="opt.value || 'all'"
@@ -374,7 +427,7 @@ onMounted(() => {
               variant="ghost"
               @click="console.loadVerificationRequests(verificationStatusFilter)"
             >
-              重新加载
+              {{ ADMIN_QUEUE_RELOAD }}
             </LianButton>
           </nav>
 
@@ -390,7 +443,7 @@ onMounted(() => {
             class="admin-view__verification-state"
             role="status"
           >
-            加载认证审核队列…
+            {{ ADMIN_VERIFICATION_LIST_LOADING }}
           </div>
 
           <section
@@ -420,19 +473,19 @@ onMounted(() => {
 
               <dl class="admin-view__verification-meta">
                 <div>
-                  <dt>用户 ID</dt>
+                  <dt>{{ ADMIN_VERIFICATION_USER_ID_LABEL }}</dt>
                   <dd>{{ request.userId }}</dd>
                 </div>
                 <div>
-                  <dt>提交时间</dt>
+                  <dt>{{ ADMIN_VERIFICATION_SUBMITTED_AT_LABEL }}</dt>
                   <dd>{{ formatAdminTime(request.createdAt || request.updatedAt) }}</dd>
                 </div>
                 <div v-if="request.reviewerId">
-                  <dt>审核人</dt>
+                  <dt>{{ ADMIN_VERIFICATION_REVIEWER_LABEL }}</dt>
                   <dd>{{ request.reviewerId }}</dd>
                 </div>
                 <div v-if="request.reviewedAt">
-                  <dt>处理时间</dt>
+                  <dt>{{ ADMIN_VERIFICATION_REVIEWED_AT_LABEL }}</dt>
                   <dd>{{ formatAdminTime(request.reviewedAt) }}</dd>
                 </div>
               </dl>
@@ -454,7 +507,7 @@ onMounted(() => {
                 v-if="request.verificationType === 'realname'"
                 class="admin-view__verification-note admin-view__verification-note--muted"
               >
-                默认列表只展示脱敏摘要；实名认证敏感字段仅在显式查看时通过后端审计路径读取。
+                {{ ADMIN_VERIFICATION_REALNAME_MASKED_HINT }}
               </p>
 
               <div v-if="canRevealRealname(request)" class="admin-view__verification-reveal">
@@ -466,10 +519,10 @@ onMounted(() => {
                 >
                   {{
                     console.revealingVerificationId.value === request.verificationId
-                      ? "读取中…"
+                      ? ADMIN_VERIFICATION_REVEAL_PENDING
                       : revealedDetail(request)
-                        ? "重新读取实名明细"
-                        : "查看实名明细"
+                        ? ADMIN_VERIFICATION_REVEAL_AGAIN
+                        : ADMIN_VERIFICATION_REVEAL_FIRST
                   }}
                 </LianButton>
               </div>
@@ -488,17 +541,17 @@ onMounted(() => {
               </dl>
 
               <p v-if="request.reviewerNote" class="admin-view__verification-note">
-                审核备注：{{ request.reviewerNote }}
+                {{ ADMIN_VERIFICATION_REVIEWER_NOTE_PREFIX }}{{ request.reviewerNote }}
               </p>
 
               <template v-if="canReviewRequest(request)">
                 <label class="admin-view__verification-editor">
-                  <span>审核备注</span>
+                  <span>{{ ADMIN_VERIFICATION_REVIEWER_NOTE_LABEL }}</span>
                   <textarea
                     v-model="verificationNotes[request.verificationId]"
                     rows="2"
                     maxlength="240"
-                    placeholder="可填写通过或拒绝理由（选填）。"
+                    :placeholder="ADMIN_VERIFICATION_REVIEWER_NOTE_PLACEHOLDER"
                   ></textarea>
                 </label>
 
@@ -508,14 +561,14 @@ onMounted(() => {
                     variant="primary"
                     @click="handleVerificationReview(request, 'approved')"
                   >
-                    通过
+                    {{ ADMIN_VERIFICATION_DECISION_APPROVE }}
                   </LianButton>
                   <LianButton
                     size="sm"
                     variant="danger"
                     @click="handleVerificationReview(request, 'rejected')"
                   >
-                    拒绝
+                    {{ ADMIN_VERIFICATION_DECISION_REJECT }}
                   </LianButton>
                 </div>
               </template>
@@ -527,7 +580,7 @@ onMounted(() => {
       <template v-else>
         <div class="admin-view__audit-toolbar">
           <LianButton size="sm" variant="ghost" @click="console.loadAuditLog">{{
-            "刷新日志"
+            ADMIN_AUDIT_REFRESH
           }}</LianButton>
         </div>
         <AdminAuditLogList

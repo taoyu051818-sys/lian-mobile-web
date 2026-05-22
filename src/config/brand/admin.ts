@@ -82,3 +82,74 @@ export const ADMIN_AUDIT_ACTION_LABEL = "操作";
 export const ADMIN_AUDIT_ACTOR_LABEL = "操作人";
 export const ADMIN_AUDIT_TARGET_LABEL = "对象";
 export const ADMIN_AUDIT_TIME_LABEL = "时间";
+export const ADMIN_AUDIT_REFRESH = "刷新日志";
+
+/** 头部头像首字（identity chrome） */
+export const ADMIN_AVATAR_TEXT = "管";
+
+/** Token 闸门补充文案 */
+export const ADMIN_PROBE_LOADING = "正在确认管理员会话…";
+export const ADMIN_SESSION_FALLBACK = "管理员会话不可用，可改用 ADMIN_TOKEN 进入。";
+export const ADMIN_SESSION_PROBE_FAIL = "管理员会话探测失败，可改用 ADMIN_TOKEN 进入。";
+
+/** 认证审核 tab */
+export const ADMIN_VERIFICATION_TAB_LABEL = "认证审核";
+export const ADMIN_VERIFICATION_FILTER_GROUP_LABEL = "认证审核状态筛选";
+export const ADMIN_VERIFICATION_LIST_LOADING = "加载认证审核队列…";
+export const ADMIN_VERIFICATION_LOAD_ERROR = "认证审核队列加载失败，可以稍后再试。";
+
+/** 认证审核空态（issue #725 — 解释队列在什么情况下保持空白） */
+export const ADMIN_VERIFICATION_EMPTY_PENDING_TITLE = "现在没有待审核申请";
+export const ADMIN_VERIFICATION_EMPTY_PENDING_BODY =
+  "新的商户、跑腿员、实名或组织成员申请进入队列后，会先显示在这里。";
+export const ADMIN_VERIFICATION_EMPTY_APPROVED_TITLE = "还没有已通过记录";
+export const ADMIN_VERIFICATION_EMPTY_APPROVED_BODY =
+  "审核通过后的申请会归档到这里，方便回看最近放行的身份结果。";
+export const ADMIN_VERIFICATION_EMPTY_REJECTED_TITLE = "还没有已拒绝记录";
+export const ADMIN_VERIFICATION_EMPTY_REJECTED_BODY =
+  "需要补材料或暂不符合条件的申请被拒绝后，会在这里留下处理结果。";
+export const ADMIN_VERIFICATION_EMPTY_ALL_TITLE = "当前还没有认证申请";
+export const ADMIN_VERIFICATION_EMPTY_ALL_BODY =
+  "当用户开始提交实名、商户、跑腿员或组织成员申请后，这里会形成审核队列。";
+
+/** 认证审核状态选项 */
+export const ADMIN_VERIFICATION_STATUS_ALL = "全部";
+export const ADMIN_VERIFICATION_STATUS_PENDING = "待审核";
+export const ADMIN_VERIFICATION_STATUS_APPROVED = "已通过";
+export const ADMIN_VERIFICATION_STATUS_REJECTED = "已拒绝";
+
+/** 认证申请类型 */
+export const ADMIN_VERIFICATION_TYPE_ORG_JOIN = "组织成员";
+export const ADMIN_VERIFICATION_TYPE_REALNAME = "实名认证";
+export const ADMIN_VERIFICATION_TYPE_MERCHANT = "商户认证";
+export const ADMIN_VERIFICATION_TYPE_RUNNER = "跑腿员";
+
+/** 认证审核字段标签 */
+export const ADMIN_VERIFICATION_USER_ID_LABEL = "用户 ID";
+export const ADMIN_VERIFICATION_SUBMITTED_AT_LABEL = "提交时间";
+export const ADMIN_VERIFICATION_REVIEWER_LABEL = "审核人";
+export const ADMIN_VERIFICATION_REVIEWED_AT_LABEL = "处理时间";
+
+/** 摘要行标签（不同申请类型共用） */
+export const ADMIN_VERIFICATION_SUMMARY_ORG_NAME = "组织";
+export const ADMIN_VERIFICATION_SUMMARY_ORG_ID = "组织 ID";
+export const ADMIN_VERIFICATION_SUMMARY_NOTE = "备注";
+export const ADMIN_VERIFICATION_SUMMARY_ID_TYPE = "证件类型";
+export const ADMIN_VERIFICATION_SUMMARY_REAL_NAME = "姓名";
+export const ADMIN_VERIFICATION_SUMMARY_ID_NUMBER = "证件号";
+export const ADMIN_VERIFICATION_SUMMARY_CONTACT = "联系方式";
+export const ADMIN_VERIFICATION_SUMMARY_MERCHANT_NAME = "商户名称";
+
+/** 实名脱敏与查看 */
+export const ADMIN_VERIFICATION_REALNAME_MASKED_HINT =
+  "默认列表只展示脱敏摘要；实名认证敏感字段仅在显式查看时通过后端审计路径读取。";
+export const ADMIN_VERIFICATION_REVEAL_PENDING = "读取中…";
+export const ADMIN_VERIFICATION_REVEAL_AGAIN = "重新读取实名明细";
+export const ADMIN_VERIFICATION_REVEAL_FIRST = "查看实名明细";
+
+/** 审核备注与决策 */
+export const ADMIN_VERIFICATION_REVIEWER_NOTE_PREFIX = "审核备注：";
+export const ADMIN_VERIFICATION_REVIEWER_NOTE_LABEL = "审核备注";
+export const ADMIN_VERIFICATION_REVIEWER_NOTE_PLACEHOLDER = "可填写通过或拒绝理由（选填）。";
+export const ADMIN_VERIFICATION_DECISION_APPROVE = "通过";
+export const ADMIN_VERIFICATION_DECISION_REJECT = "拒绝";

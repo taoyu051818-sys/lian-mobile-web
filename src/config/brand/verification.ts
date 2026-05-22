@@ -2,6 +2,7 @@
 export const VERIFICATION_SECTION_LABEL = "认证中心";
 export const VERIFICATION_ENTER_LABEL = "认证中心";
 export const VERIFICATION_BACK_TO_PROFILE = "返回我的";
+export const VERIFICATION_AVATAR_TEXT = "认";
 
 /** 认证类别名称 */
 export const VERIFICATION_TAG_CAMPUS = "高校认证";
