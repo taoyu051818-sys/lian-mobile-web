@@ -121,6 +121,7 @@ function handleFilterToggle(filterId: string) {
           key="tabs-typed"
           class="shell-chrome__tabs lian-floating-chrome"
           :class="[`lian-floating-chrome--${region}`]"
+          role="tablist"
           :aria-label="regionSpec.tabs?.ariaLabel ?? SHELL_TAB_SWITCH"
           :aria-hidden="!isVisible"
           data-floating-chrome="top"
@@ -129,9 +130,11 @@ function handleFilterToggle(filterId: string) {
             v-for="tab in regionSpec.tabs?.items ?? []"
             :key="tab.id"
             type="button"
+            role="tab"
             class="shell-chrome__tab"
             :class="{ 'is-active': tab.id === regionSpec.tabs?.activeKey }"
-            :aria-pressed="tab.id === regionSpec.tabs?.activeKey"
+            :aria-selected="tab.id === regionSpec.tabs?.activeKey"
+            :data-testid="`shell-chrome-tab-${tab.id}`"
             @click="handleTabSelect(tab.id)"
           >
             {{ tab.label }}
