@@ -306,7 +306,7 @@ Total files: 310
 | `shell/AppShell.vue`           | Vue SFC                                                                                                                  |    63 |
 | `shell/ContentFrame.vue`       | Vue SFC                                                                                                                  |    28 |
 | `shell/DetailSheet.vue`        | Vue SFC                                                                                                                  |    65 |
-| `shell/ShellChrome.vue`        | Both regions stay mounted across detail open/close when they host a slot                                                 |   190 |
+| `shell/ShellChrome.vue`        | Both regions stay mounted across detail open/close when they host a slot                                                 |   193 |
 | `shell/content-frame.css`      | Stylesheet                                                                                                               |    22 |
 | `shell/detail-sheet-types.ts`  | suppressLoading?: boolean; } export interface DetailSheetPlacePayload { placeId: string; } export interface DetailS...   |    32 |
 | `shell/detail-sheet.css`       | Stylesheet                                                                                                               |    81 |
