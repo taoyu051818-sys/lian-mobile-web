@@ -251,9 +251,9 @@ Total files: 321
 | `features/profile/useProfileChrome.ts`             | export function useProfileChrome(options:                                                                                     |    63 |
 | `features/profile/useProfileSession.ts`            | export function useProfileSession()                                                                                           |    31 |
 | `features/profile/useProfileTabs.ts`               | export function useProfileTabs(options:                                                                                       |   141 |
-| `features/profile/useServerChanBinding.ts`         | Server酱 binding composable (ps#504 I2). Module-scope singleton — there is exactly one Server酱 binding per session, a...     |   289 |
+| `features/profile/useServerChanBinding.ts`         | Server酱 binding composable (ps#504 I2). Module-scope singleton — there is exactly one Server酱 binding per session, a...     |   291 |
 | `features/profile/useServerChanOptIn.ts`           | Server酱 reminder opt-in dialog controller (ps#504 I2). Owns the "should we prompt the user to opt into a reminder?" ...      |   144 |
-| `features/profile/useServerChanPreferences.ts`     | Server酱 preferences composable (ps#504 I2). Module-scope singleton — there is exactly one preferences object per ses...      |   158 |
+| `features/profile/useServerChanPreferences.ts`     | Server酱 preferences composable (ps#504 I2). Module-scope singleton — there is exactly one preferences object per ses...      |   160 |
 | `features/publish/PublishActionBar.vue`            | Vue SFC                                                                                                                       |    41 |
 | `features/publish/PublishComposer.vue`             | Vue SFC                                                                                                                       |   293 |
 | `features/publish/PublishEventControls.vue`        | Vue SFC                                                                                                                       |   230 |
