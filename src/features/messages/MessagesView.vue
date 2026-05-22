@@ -19,6 +19,7 @@ import { isNotificationInboxTab, itemsForInboxTab, NOTIFICATION_INBOX_SPECS } fr
 import { useChannelMessages } from "./useChannelMessages";
 import { useNotifications } from "./useNotifications";
 import { useMessageComposer } from "./useMessageComposer";
+import { useErrandOrderRoute } from "../errand/useErrandOrderRoute";
 
 const emit = defineEmits<{
   chrome: [spec: PageChromeSpec];
@@ -57,6 +58,7 @@ const {
 
 const { setActiveView } = useActiveView();
 const detail = useDetailNavigation();
+const errandOrderRoute = useErrandOrderRoute();
 
 function openNotification(item: NotificationItem) {
   const target = item.target;
@@ -67,6 +69,11 @@ function openNotification(item: NotificationItem) {
   }
   if (target.kind === "verification") {
     setActiveView("verification");
+    return;
+  }
+  if (target.kind === "errand-order") {
+    errandOrderRoute.enterForOrder(target.orderId, "messages");
+    setActiveView("errand-order");
   }
 }
 
