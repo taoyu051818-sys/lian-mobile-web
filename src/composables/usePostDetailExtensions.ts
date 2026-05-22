@@ -33,6 +33,9 @@ import type { FeedItemId } from "../types/feed";
 import { useEventActions } from "./useEventActions";
 import { useHelpVote } from "./useHelpVote";
 import { useHelpManage } from "./useHelpManage";
+import { useServerChanBinding } from "../features/profile/useServerChanBinding";
+import { useServerChanPreferences } from "../features/profile/useServerChanPreferences";
+import { useServerChanOptIn } from "../features/profile/useServerChanOptIn";
 
 interface UsePostDetailExtensionsOptions {
   post: Ref<PostDetail | null>;
@@ -77,14 +80,33 @@ export function usePostDetailExtensions(options: UsePostDetailExtensionsOptions)
   // side we trust the eligibility the backend implies by returning the post
   // and let the join endpoint return a typed error if the viewer is
   // ineligible. Keeping this true means UI does not double-gate.
+  //
+  // ps#504 I2 — after a successful join (NOT cancel), if the viewer has bound
+  // Server酱 and has not turned on `eventStartingReminder`, prompt them via
+  // the opt-in dialog. The dialog state is a singleton driven by
+  // `useServerChanOptIn`; the view (PostDetailPanel) renders the actual
+  // ServerChanOptInDialog component bound to the same state.
+  const serverChanBinding = useServerChanBinding();
+  const serverChanPreferences = useServerChanPreferences();
+  const serverChanOptIn = useServerChanOptIn({
+    binding: serverChanBinding,
+    preferences: serverChanPreferences,
+  });
+
   const eventActions = useEventActions({
     event: liveEvent,
     hasJoined: eventJoined,
     isAuthenticated,
     isEligibleForScope: () => true,
     onChange: ({ event, joined }) => {
+      const wasJoined = eventJoined.value;
       eventLocalEvent.value = event;
       eventJoined.value = joined;
+      // Only when transitioning from "not joined" → "joined" do we offer the
+      // reminder. Cancel-join must never trigger the prompt.
+      if (!wasJoined && joined) {
+        serverChanOptIn.openEventStartDialog();
+      }
     },
     onMessage,
   });
@@ -202,5 +224,7 @@ export function usePostDetailExtensions(options: UsePostDetailExtensionsOptions)
     handleHelpManageUnlinkEvent,
     handleHelpManageResolve,
     handleHelpManageClose,
+
+    serverChanOptIn,
   };
 }

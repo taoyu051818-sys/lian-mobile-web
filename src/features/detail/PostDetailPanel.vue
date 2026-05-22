@@ -2,7 +2,17 @@
 import { computed, ref, watch } from "vue";
 import { useVisualViewport } from "../../composables/useVisualViewport";
 import { InlineError } from "../../ui";
-import { LOADING_DETAIL, DETAIL_RELOAD, REPLY_IDENTITY_LABEL } from "../../config/brand";
+import {
+  LOADING_DETAIL,
+  DETAIL_RELOAD,
+  REPLY_IDENTITY_LABEL,
+  SERVERCHAN_DIALOG_EVENT_BODY,
+  SERVERCHAN_DIALOG_EVENT_PRIMARY,
+  SERVERCHAN_DIALOG_EVENT_SECONDARY,
+  SERVERCHAN_DIALOG_EVENT_TITLE,
+  SERVERCHAN_DIALOG_REMINDER_ENABLED,
+  SERVERCHAN_DIALOG_REMINDER_FAILED,
+} from "../../config/brand";
 import { extractErrorMessage } from "../../utils/extractErrorMessage";
 import type { PostDetail } from "../../types/post";
 import PostDetailTopbar from "./PostDetailTopbar.vue";
@@ -13,6 +23,7 @@ import PostDetailTradeManageBlock from "./PostDetailTradeManageBlock.vue";
 import PostReplies from "./PostReplies.vue";
 import PostReplyDock from "./PostReplyDock.vue";
 import ShareCardSheet from "./ShareCardSheet.vue";
+import { ServerChanOptInDialog } from "../profile";
 import { usePostDetailPresentation } from "./usePostDetailPresentation";
 import { usePostReactions } from "./usePostReactions";
 import { usePlaceSheetLoader } from "./usePlaceSheetLoader";
@@ -189,12 +200,26 @@ const {
   handleHelpManageUnlinkEvent,
   handleHelpManageResolve,
   handleHelpManageClose,
+  serverChanOptIn,
 } = usePostDetailExtensions({
   post,
   postId,
   isAuthenticated,
   onMessage: showActionMessage,
 });
+
+async function handleServerChanOptInPrimary() {
+  const ok = await serverChanOptIn.confirmOptIn();
+  if (ok) {
+    showActionMessage(SERVERCHAN_DIALOG_REMINDER_ENABLED);
+  } else {
+    setActionError(SERVERCHAN_DIALOG_REMINDER_FAILED);
+  }
+}
+
+function handleServerChanOptInDismiss() {
+  serverChanOptIn.dismiss();
+}
 
 function handleHelpOpenLinkedEvent(tid: number) {
   void tid;
@@ -360,6 +385,17 @@ watch(
       @close="handleShareClose"
       @confirm="handleShareConfirm"
       @retry="handleShareRetry"
+    />
+    <ServerChanOptInDialog
+      :open="serverChanOptIn.state.value.open && serverChanOptIn.state.value.kind === 'event-start'"
+      :title="SERVERCHAN_DIALOG_EVENT_TITLE"
+      :body="SERVERCHAN_DIALOG_EVENT_BODY"
+      :primary-label="SERVERCHAN_DIALOG_EVENT_PRIMARY"
+      :secondary-label="SERVERCHAN_DIALOG_EVENT_SECONDARY"
+      :busy="serverChanOptIn.state.value.busy"
+      @primary="() => void handleServerChanOptInPrimary()"
+      @secondary="handleServerChanOptInDismiss"
+      @close="handleServerChanOptInDismiss"
     />
   </aside>
 </template>
