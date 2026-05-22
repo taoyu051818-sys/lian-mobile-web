@@ -26,7 +26,7 @@ Total files: 322
 | `api/interaction.ts`   | Like/vote unified interaction API (PRD V0.1 §7.1.2, §11.3). Backend already exposes `/api/posts/:tid/like` for likes...  |    65 |
 | `api/map.ts`           | TypeScript module                                                                                                        |    14 |
 | `api/merchant.ts`      | Merchant center API (issue #646). Source endpoints (no new route — see `types/merchant.ts` for rationale): - `GET ...    |   122 |
-| `api/notifications.ts` | export function normalizeNotificationItem(raw: RawNotificationItem): NotificationItem                                    |   553 |
+| `api/notifications.ts` | export function normalizeNotificationItem(raw: RawNotificationItem): NotificationItem                                    |   545 |
 | `api/places.ts`        | TypeScript module                                                                                                        |    10 |
 | `api/posts.ts`         | export interface PostLikeResponse                                                                                        |   267 |
 | `api/profile.ts`       | export function normalizeProfileListItem(item: unknown): ProfileListItem                                                 |   163 |
