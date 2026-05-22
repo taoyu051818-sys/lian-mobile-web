@@ -18,6 +18,12 @@ type BackendRunnerOrder = Partial<RunnerOrder> & {
   notes?: string;
 };
 
+type BackendRunnerOrderList = {
+  items?: BackendRunnerOrder[];
+  total?: number;
+  nextOffset?: number | null;
+};
+
 function normalizeRunnerStatus(value: unknown): RunnerOrder["status"] {
   if (value === "paid_locked" || value === "created") return "available";
   if (value === "assigned") return "accepted";
@@ -43,10 +49,7 @@ function normalizeRunnerOrder(value: BackendRunnerOrder): RunnerOrder | null {
   };
 }
 
-function normalizeRunnerOrderList(data: {
-  items?: BackendRunnerOrder[];
-  total?: number;
-}): RunnerOrderListResponse {
+function normalizeRunnerOrderList(data: BackendRunnerOrderList): RunnerOrderListResponse {
   const rawItems = Array.isArray(data.items) ? data.items : [];
   const items = rawItems
     .map((entry) => normalizeRunnerOrder(entry))
@@ -58,9 +61,7 @@ function normalizeRunnerOrderList(data: {
  * Available pool — orders not yet claimed by any runner.
  */
 export async function fetchAvailableRunnerOrders(): Promise<RunnerOrderListResponse> {
-  const data = await apiGet<{ items?: BackendRunnerOrder[]; total?: number }>(
-    "/api/errands/orders/mine?role=runner&state=paid_locked",
-  );
+  const data = await apiGet<BackendRunnerOrderList>("/api/errands/orders/available");
   return normalizeRunnerOrderList(data);
 }
 
@@ -68,9 +69,7 @@ export async function fetchAvailableRunnerOrders(): Promise<RunnerOrderListRespo
  * Orders the current runner has accepted but not yet delivered.
  */
 export async function fetchActiveRunnerOrders(): Promise<RunnerOrderListResponse> {
-  const data = await apiGet<{ items?: BackendRunnerOrder[]; total?: number }>(
-    "/api/errands/orders/mine?role=runner",
-  );
+  const data = await apiGet<BackendRunnerOrderList>("/api/errands/orders/mine?role=runner");
   return normalizeRunnerOrderList(data);
 }
 
