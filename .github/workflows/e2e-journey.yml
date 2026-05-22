@@ -17,6 +17,7 @@ on:
           - campus
           - merchant
           - runner
+          - errand-transition
           - admin
           - detail
   schedule:
