@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { computed } from "vue";
 import type { PlaceRef, PlaceSheet } from "../../types/place";
 import type { PostType } from "../../types/post";
 import type { EventActionPlan } from "../../domain/eventActionPolicy";
@@ -11,6 +12,11 @@ import type {
   MerchantPostExtension,
   TradePostExtension,
 } from "../../types/post-extensions";
+import {
+  resolvePostCapabilities,
+  type PostCapabilityId,
+  type PostCapabilitySelection,
+} from "./postCapabilityRegistry";
 import PostDetailGallery from "./PostDetailGallery.vue";
 import PostDetailMainBody from "./PostDetailMainBody.vue";
 import PostDetailInfoStrip from "./PostDetailInfoStrip.vue";
@@ -24,7 +30,7 @@ import PostPlaceSheetBlock from "./PostPlaceSheetBlock.vue";
 import PostReportBlock from "./PostReportBlock.vue";
 import PostActionFeedback from "./PostActionFeedback.vue";
 
-defineProps<{
+const props = defineProps<{
   title?: string;
   bodyHtml?: string;
   images?: string[];
@@ -70,6 +76,40 @@ defineProps<{
   trade?: TradePostExtension;
 }>();
 
+// Issue #785 — single capability lookup. The view used to ladder
+// `v-if="event && eventPlan"` / `v-else-if="postType === 'event'"` etc.; the
+// registry consolidates that selection so adding a new capability does not
+// widen these conditionals. Adapters in `api/posts.ts` still own raw
+// normalization — we read already-normalized fields here.
+const capabilityResolutions = computed(() =>
+  resolvePostCapabilities({
+    type: props.postType,
+    event: props.event,
+    help: props.help,
+    merchant: props.merchant,
+    trade: props.trade,
+    place: props.structuredPlace ?? undefined,
+  }),
+);
+
+function selectionFor(id: PostCapabilityId): PostCapabilitySelection {
+  return capabilityResolutions.value.find((entry) => entry.id === id)?.selection ?? "skip";
+}
+
+const showEventBlock = computed(
+  () => selectionFor("event") === "render" && Boolean(props.eventPlan),
+);
+const showEventFallback = computed(() => selectionFor("event") === "fallback");
+const showHelpBlock = computed(() => selectionFor("help") === "render" && Boolean(props.helpPlan));
+const showHelpFallback = computed(() => selectionFor("help") === "fallback");
+const showHelpManageBlock = computed(
+  () => selectionFor("help") === "render" && Boolean(props.helpManagePlan),
+);
+const showMerchantBlock = computed(() => selectionFor("merchant") === "render");
+const showMerchantFallback = computed(() => selectionFor("merchant") === "fallback");
+const showTradeBlock = computed(() => selectionFor("trade") === "render");
+const showTradeFallback = computed(() => selectionFor("trade") === "fallback");
+
 const emit = defineEmits<{
   galleryPointerDown: [event: PointerEvent];
   galleryPointerMove: [event: PointerEvent];
@@ -105,9 +145,9 @@ const emit = defineEmits<{
     <PostDetailMainBody :title="title" :body-html="bodyHtml" />
 
     <PostDetailEventBlock
-      v-if="event && eventPlan"
-      :event="event"
-      :plan="eventPlan"
+      v-if="showEventBlock"
+      :event="event!"
+      :plan="eventPlan!"
       :busy="!!eventBusy"
       :action-error="eventActionError"
       :manageable="!!eventManageable"
@@ -116,22 +156,22 @@ const emit = defineEmits<{
       @act="emit('eventAct')"
       @complete="emit('eventComplete')"
     />
-    <PostDetailTypedFallbackBlock v-else-if="postType === 'event'" :post-type="postType" />
+    <PostDetailTypedFallbackBlock v-else-if="showEventFallback" post-type="event" />
 
     <PostDetailHelpBlock
-      v-if="help && helpPlan"
-      :help="help"
-      :plan="helpPlan"
+      v-if="showHelpBlock"
+      :help="help!"
+      :plan="helpPlan!"
       :busy="!!helpBusy"
       :action-error="helpActionError"
       @act="emit('helpAct')"
       @open-linked-event="emit('helpOpenLinkedEvent', $event)"
     />
-    <PostDetailTypedFallbackBlock v-else-if="postType === 'help'" :post-type="postType" />
+    <PostDetailTypedFallbackBlock v-else-if="showHelpFallback" post-type="help" />
 
     <PostDetailHelpManageBlock
-      v-if="help && helpManagePlan"
-      :plan="helpManagePlan"
+      v-if="showHelpManageBlock"
+      :plan="helpManagePlan!"
       :busy="!!helpManageBusy"
       :action-error="helpManageActionError"
       @link-event="emit('helpManageLinkEvent', $event)"
@@ -141,17 +181,17 @@ const emit = defineEmits<{
     />
 
     <PostDetailMerchantBlock
-      v-if="merchant"
-      :merchant="merchant"
+      v-if="showMerchantBlock"
+      :merchant="merchant!"
       :errand-entry-available="errandEntryAvailable"
       :merchant-post-id="merchantPostId"
       :errand-unavailable-reason="errandUnavailableReason"
       :errand-unavailable-reason-text="errandUnavailableReasonText"
     />
-    <PostDetailTypedFallbackBlock v-else-if="postType === 'merchant'" :post-type="postType" />
+    <PostDetailTypedFallbackBlock v-else-if="showMerchantFallback" post-type="merchant" />
 
-    <PostDetailTradeBlock v-if="trade" :trade="trade" />
-    <PostDetailTypedFallbackBlock v-else-if="postType === 'trade'" :post-type="postType" />
+    <PostDetailTradeBlock v-if="showTradeBlock" :trade="trade!" />
+    <PostDetailTypedFallbackBlock v-else-if="showTradeFallback" post-type="trade" />
 
     <PostDetailInfoStrip
       :primary-tag="primaryTag"
