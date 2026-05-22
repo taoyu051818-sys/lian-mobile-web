@@ -5,13 +5,13 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
-const apiSource = fs.readFileSync(path.join(repoRoot, "src/api/messages.ts"), "utf8");
+const apiSource = fs.readFileSync(path.join(repoRoot, "src/api/channel.ts"), "utf8");
 const channelSource = fs.readFileSync(
   path.join(repoRoot, "src/features/messages/useChannelMessages.ts"),
   "utf8",
 );
 
-test("api/messages.ts exports pagination/order normalization helpers", () => {
+test("api/channel.ts exports pagination/order normalization helpers", () => {
   assert.match(apiSource, /export function mergeChannelMessagesChronologically/);
   assert.match(apiSource, /export function normalizeChannelResponse/);
 });
@@ -35,7 +35,8 @@ test("fetchChannelMessages normalizes the adapter response before returning it",
   assert.match(apiSource, /return normalizeChannelResponse\(response,\s*requestedOffset\)/);
 });
 
-test("useChannelMessages imports mergeChannelMessagesChronologically from the API module", () => {
+test("useChannelMessages imports mergeChannelMessagesChronologically from the channel API module", () => {
+  assert.match(channelSource, /\.\.\/\.\.\/api\/channel/);
   assert.match(channelSource, /mergeChannelMessagesChronologically/);
 });
 
