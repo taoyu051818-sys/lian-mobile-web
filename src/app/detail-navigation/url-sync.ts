@@ -14,6 +14,7 @@
  */
 
 import { parseDeepLink } from "../deepLink";
+import { bootstrapColdStartHistory } from "../post-detail-hash";
 import { dispatch } from "./store";
 
 function readTidFromWindow(): number | null {
@@ -37,6 +38,11 @@ export function installUrlSync(): void {
   if (installed) return;
   installed = true;
   if (typeof window === "undefined") return;
+  // Cold-start synthesis must run BEFORE the FSM observes the hash so the
+  // initial url-sync still sees `#/post/{tid}`. The bootstrap leaves the URL
+  // at the post hash but plants `#/feed` beneath it in the history stack so
+  // a subsequent `history.back()` lands inside the SPA, not outside it.
+  bootstrapColdStartHistory();
   syncFromWindow();
   window.addEventListener("hashchange", syncFromWindow);
   window.addEventListener("popstate", () => {

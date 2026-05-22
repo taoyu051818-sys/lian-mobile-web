@@ -47,6 +47,52 @@ export function pushPostDetailHash(tid: number, options: { replace?: boolean } =
 }
 
 /**
+ * Cold-start history bootstrap.
+ *
+ * When the SPA loads directly at `#/post/{tid}` (deep-link, share-link,
+ * refresh-on-detail, etc.) the browser has exactly one history entry — the
+ * post URL itself. `history.back()` from inside the SPA then has no SPA entry
+ * to walk to: it either no-ops or leaves the page entirely, and the App-level
+ * DetailSurface stays stuck on screen.
+ *
+ * The fix synthesizes a `#/feed` entry beneath the post entry: replaceState
+ * to `#/feed`, then pushState back to the post hash. After this the
+ * detail-navigation FSM still observes the post hash on first paint, but a
+ * subsequent `history.back()` resolves to `#/feed` — popstate fires,
+ * url-sync dispatches `close`, and the underlying FeedView (already mounted
+ * because viewFromHash defaults to "feed") becomes visible.
+ *
+ * Idempotent: only runs the first time the module loads. Because the install
+ * point (url-sync) runs at app boot BEFORE any in-app pushState can fire,
+ * observing a post-detail hash here is by definition a cold-start path — no
+ * extra `history.length` heuristic is needed.
+ *
+ * Cold-start contract trip wire: tests/e2e/post-detail-cold-start.spec.ts
+ * (`deep-link cold start renders detail and underlying tab is feed`).
+ */
+let coldStartBootstrapped = false;
+
+export function bootstrapColdStartHistory(): void {
+  if (coldStartBootstrapped) return;
+  coldStartBootstrapped = true;
+  if (typeof window === "undefined") return;
+  const link = parseDeepLink(readHashFromWindow());
+  if (!link || link.view !== "post-detail") return;
+  const base = `${window.location.pathname}${window.location.search}`;
+  try {
+    window.history.replaceState(window.history.state, "", `${base}${buildViewHash("feed")}`);
+    window.history.pushState(window.history.state, "", `${base}${buildPostDetailHash(link.tid)}`);
+  } catch {
+    /* swallow — FSM stays authoritative */
+  }
+}
+
+/** Test-only reset for the bootstrap one-shot guard. */
+export function __resetColdStartBootstrapForTesting(): void {
+  coldStartBootstrapped = false;
+}
+
+/**
  * Strip `#/post/{tid}` from the URL when the detail panel closes from inside
  * the SPA. replaceState is intentional — `history.back()` would unwind any
  * other entries the user navigated through (tab switches, etc.).
