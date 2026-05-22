@@ -73,7 +73,11 @@ test("notificationChannels marks all five inbox-readout channels as connected no
       new RegExp(`id:\\s*"${id}"[\\s\\S]+?status:\\s*"(connected|pending)"`),
     );
     assert.ok(block, `${id} block should exist`);
-    assert.equal(block?.[1], "connected", `${id} should be connected after ps#476/ps#477/ps#445 + mw#700/#701/#740 merged`);
+    assert.equal(
+      block?.[1],
+      "connected",
+      `${id} should be connected after ps#476/ps#477/ps#445 + mw#700/#701/#740 merged`,
+    );
   }
 });
 
