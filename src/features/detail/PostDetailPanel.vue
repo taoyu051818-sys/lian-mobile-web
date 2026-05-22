@@ -319,7 +319,7 @@ watch(
       </template>
     </div>
 
-    <Teleport defer to="#lian-shell-bottom-slot">
+    <Teleport defer to="#lian-detail-surface-dock-slot">
       <PostReplyDock
         v-if="post && !loading && !error && !locallyHidden"
         :liked="liked"

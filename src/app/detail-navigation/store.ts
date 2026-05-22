@@ -86,12 +86,20 @@ const detailError = computed(() => select.error(stateRef.value));
 const detailPost = computed(() => select.post(stateRef.value));
 
 /**
- * Chrome slot is a derived view of the FSM, not an independently mutated piece
- * of state. Whenever the FSM is open, the shell renders the detail-topbar (top)
- * and reply-dock (bottom); when closed, the bottom region falls back to the
- * tab bar and the top region clears. This single watcher replaces the old
- * `pushSlot` stack and `detailChromeLockCount` defenses (#615) — page chrome
- * cannot collide with this because `applyPageChrome` no longer touches `slot`.
+ * Top chrome slot is a derived view of the FSM. While detail is open, the
+ * top region renders the detail-topbar; when closed, the top region clears
+ * and the page's own chrome (e.g. feed tabs) takes over.
+ *
+ * The BOTTOM slot is intentionally NOT FSM-driven — that was the #636
+ * cold-start regression: flipping bottom to "reply-dock" unmounted the
+ * BottomTabBar and broke the contract that the App-level DetailSurface
+ * overlay must not displace the underlying tab bar. The reply dock now
+ * renders inside the DetailSurface (#lian-detail-surface-dock-slot), so
+ * the bottom region stays in its default `tabs` slot owned by AppShell.
+ *
+ * This single watcher still replaces the old `pushSlot` stack and
+ * `detailChromeLockCount` defenses (#615) — page chrome cannot collide
+ * with this because `applyPageChrome` no longer touches `slot`.
  */
 const chromeBound = { installed: false };
 
@@ -102,13 +110,10 @@ function bindChromeToState(): void {
   watch(
     detailOpen,
     (open) => {
-      if (open) {
-        chrome.setSlot("top", "detail-topbar");
-        chrome.setSlot("bottom", "reply-dock");
-      } else {
-        chrome.setSlot("top", null);
-        chrome.setSlot("bottom", "tabs");
-      }
+      chrome.setSlot("top", open ? "detail-topbar" : null);
+      // Bottom slot is owned by AppShell (ensureBottomSlot('tabs')); the
+      // FSM must not write here or the tab bar will unmount under the
+      // App-level DetailSurface. See cold-start contract in #636.
     },
     { immediate: true },
   );

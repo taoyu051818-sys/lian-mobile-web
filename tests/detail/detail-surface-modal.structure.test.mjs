@@ -48,11 +48,18 @@ test("useActiveView keeps detail independent from the host tab so close returns 
   );
 });
 
-test("stable shell teleport targets stay mounted for detail top and bottom chrome", () => {
+test("stable shell teleport targets stay mounted for the detail topbar; reply-dock lives on the surface", () => {
   const shellSrc = read("src/shell/ShellChrome.vue");
   const detailPanelSrc = read("src/features/detail/PostDetailPanel.vue");
+  const detailSurfaceSrc = read("src/app/DetailSurface.vue");
+  // Top slot still hosts the detail topbar through the shell — it does not
+  // displace the BottomTabBar so it can keep using the shell teleport target.
   assert.match(shellSrc, /id="lian-shell-top-slot"/);
   assert.match(shellSrc, /id="lian-shell-bottom-slot"/);
   assert.match(detailPanelSrc, /<Teleport defer to="#lian-shell-top-slot">/);
-  assert.match(detailPanelSrc, /<Teleport defer to="#lian-shell-bottom-slot">/);
+  // Reply dock now teleports to a surface-owned host so the BottomTabBar can
+  // stay mounted under the App-level overlay (cold-start contract, #636).
+  assert.match(detailPanelSrc, /<Teleport defer to="#lian-detail-surface-dock-slot">/);
+  assert.match(detailSurfaceSrc, /id="lian-detail-surface-dock-slot"/);
+  assert.doesNotMatch(detailPanelSrc, /<Teleport defer to="#lian-shell-bottom-slot">/);
 });
