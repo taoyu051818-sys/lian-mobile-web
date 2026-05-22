@@ -36,11 +36,14 @@ function adminHeaders() {
   return { authorization: `Bearer ${env("LIAN_E2E_ADMIN_TOKEN")}` };
 }
 
-function transitionPath(verificationType: string, verificationId: string) {
-  const encodedId = encodeURIComponent(verificationId);
-  if (verificationType === "org-join") return `/api/admin/verifications/org-join/${encodedId}`;
-  if (verificationType === "realname") return `/api/admin/verifications/realname/${encodedId}`;
-  return `/api/admin/verifications/${verificationType}/${encodedId}`;
+// Aggregate PATCH route — platform-server PR #518 (closes ps#511). One
+// canonical path per verificationId regardless of channel; the backend
+// resolves the channel from the id. Reserved channel segments
+// (`org-join` / `realname` / `merchant` / `runner`) are guarded with 400
+// to surface accidental misuse, so the channel must never appear in the
+// path.
+function aggregateTransitionPath(verificationId: string) {
+  return `/api/admin/verifications/${encodeURIComponent(verificationId)}`;
 }
 
 function expectedTagForType(verificationType: string) {
@@ -108,7 +111,7 @@ test.describe("admin verification aggregate proof @admin", () => {
     const admin = await request.newContext({ baseURL: BASE_URL });
     const user = await request.newContext({ baseURL: BASE_URL });
 
-    const approveResponse = await admin.patch(transitionPath(verificationType, verificationId), {
+    const approveResponse = await admin.patch(aggregateTransitionPath(verificationId), {
       headers: adminHeaders(),
       data: {
         status: "approved",

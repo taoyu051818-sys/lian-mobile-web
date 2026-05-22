@@ -14,12 +14,47 @@ export type AdminVerificationStatus = "pending" | "approved" | "rejected";
 export type AdminVerificationDecisionStatus = "approved" | "rejected";
 export type AdminVerificationType = "org-join" | "realname" | "merchant" | "runner";
 
+// Discriminated union for the aggregate `publicSummary` payload returned by
+// `GET /api/admin/verifications` and `PATCH /api/admin/verifications/:id`.
+// Contract source: platform-server PR #518 (closes #511). The aggregate DTO
+// never surfaces raw `submittedFields` or `payload`; all consumer-visible
+// fields live under `publicSummary`, redacted by default for realname.
+export interface AdminVerificationOrgJoinSummary {
+  orgId?: string;
+  orgName?: string;
+  note?: string;
+}
+
+export interface AdminVerificationRealnameSummary {
+  idType?: string;
+  // Redacted by default — e.g. `张*`, `*1234`. Raw values only via the
+  // explicit reveal endpoint (`GET .../realname/:id?reveal=true`).
+  realName?: string;
+  idNumber?: string;
+  contact?: string;
+}
+
+export interface AdminVerificationMerchantSummary {
+  merchantName?: string;
+  note?: string;
+}
+
+export interface AdminVerificationRunnerSummary {
+  note?: string;
+}
+
+export type AdminVerificationPublicSummary =
+  | AdminVerificationOrgJoinSummary
+  | AdminVerificationRealnameSummary
+  | AdminVerificationMerchantSummary
+  | AdminVerificationRunnerSummary;
+
 export interface AdminVerificationRequest {
   verificationId: string;
   verificationType: AdminVerificationType;
   userId: string;
   status: AdminVerificationStatus;
-  publicSummary?: Record<string, unknown> | null;
+  publicSummary?: AdminVerificationPublicSummary | null;
   reviewerId?: string | null;
   reviewedAt?: string | null;
   reviewerNote?: string | null;
@@ -89,17 +124,14 @@ function withAuthHeader(token: string, init: RequestInit = {}): RequestInit {
   return { ...init, headers };
 }
 
-function verificationTransitionPath(
-  request: Pick<AdminVerificationRequest, "verificationId" | "verificationType">,
-) {
-  const verificationId = encodeURIComponent(request.verificationId);
-  if (request.verificationType === "org-join") {
-    return `/api/admin/verifications/org-join/${verificationId}`;
-  }
-  if (request.verificationType === "realname") {
-    return `/api/admin/verifications/realname/${verificationId}`;
-  }
-  return `/api/admin/verifications/${request.verificationType}/${verificationId}`;
+// Aggregate PATCH path — platform-server PR #518 (closes #511).
+// One canonical route per verificationId regardless of channel; the backend
+// resolves the channel from the id. Reserved channel segments
+// (`org-join` / `realname` / `merchant` / `runner`) under
+// `/api/admin/verifications/` return 400 by design, so the channel must
+// never be sent as the path param.
+function verificationAggregatePath(request: Pick<AdminVerificationRequest, "verificationId">) {
+  return `/api/admin/verifications/${encodeURIComponent(request.verificationId)}`;
 }
 
 function verificationDetailPath(
@@ -227,8 +259,12 @@ export async function patchAdminVerificationRequest(
     reviewerNote?: string | null;
   },
 ): Promise<AdminVerificationDetail> {
+  // Aggregate PATCH — one canonical call per decision regardless of channel.
+  // Contract: platform-server PR #518 (closes ps#511). Backend resolves the
+  // channel from `verificationId`; sending a channel segment as the path
+  // param returns 400 (reserved-segment guard).
   const data = await apiSend<{ verification?: AdminVerificationDetail }>(
-    verificationTransitionPath(request),
+    verificationAggregatePath(request),
     withAuthHeader(token, {
       method: "PATCH",
       body: JSON.stringify(payload),

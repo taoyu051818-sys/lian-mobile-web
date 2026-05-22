@@ -72,14 +72,67 @@ test("api/admin exposes report, user action, audit, and verification operations"
   }
 });
 
-test("api/admin wires aggregate verification queue, backend-owned transitions, and realname reveal", () => {
+test("api/admin wires aggregate verification queue, aggregate PATCH, and realname reveal", () => {
   const src = read("src/api/admin.ts");
+  // Aggregate GET — unchanged from #425.
   assert.match(src, /\/api\/admin\/verifications\?/);
-  assert.match(src, /request\.verificationType === "org-join"/);
-  assert.match(src, /request\.verificationType === "realname"/);
-  assert.match(src, /\/api\/admin\/verifications\/org-join\/\$\{verificationId\}/);
-  assert.match(src, /\/api\/admin\/verifications\/realname\/\$\{verificationId\}/);
+  // Aggregate PATCH — ps#518 / #511 canonical contract: one route per
+  // verificationId, no channel segment in the path.
+  assert.match(
+    src,
+    /\/api\/admin\/verifications\/\$\{encodeURIComponent\(request\.verificationId\)\}/,
+  );
+  // Realname reveal stays per-channel (only that lane has a reveal endpoint).
+  assert.match(
+    src,
+    /\/api\/admin\/verifications\/realname\/\$\{encodeURIComponent\(request\.verificationId\)\}/,
+  );
   assert.match(src, /reviewerNote/);
+  // Decision payload is restricted — no free-form publicSummary writeback
+  // from the client; backend owns publicSummary derivation.
+  assert.doesNotMatch(
+    src,
+    /patchAdminVerificationRequest[\s\S]*publicSummary/,
+    "client must not POST publicSummary back to the aggregate PATCH",
+  );
+});
+
+test("api/admin no longer branches the PATCH path on verificationType", () => {
+  const src = read("src/api/admin.ts");
+  // Per-channel PATCH branching was the legacy contract (pre-ps#518).
+  // The aggregate path resolves the channel server-side from the id.
+  assert.doesNotMatch(
+    src,
+    /\/api\/admin\/verifications\/org-join\/\$\{verificationId\}/,
+    "aggregate cutover (ps#518) drops the org-join PATCH branch",
+  );
+  assert.doesNotMatch(
+    src,
+    /\/api\/admin\/verifications\/merchant\/\$\{verificationId\}/,
+    "aggregate cutover (ps#518) drops the merchant PATCH branch",
+  );
+  assert.doesNotMatch(
+    src,
+    /\/api\/admin\/verifications\/runner\/\$\{verificationId\}/,
+    "aggregate cutover (ps#518) drops the runner PATCH branch",
+  );
+});
+
+test("api/admin exposes a discriminated publicSummary union per channel", () => {
+  const src = read("src/api/admin.ts");
+  for (const name of [
+    "AdminVerificationOrgJoinSummary",
+    "AdminVerificationRealnameSummary",
+    "AdminVerificationMerchantSummary",
+    "AdminVerificationRunnerSummary",
+    "AdminVerificationPublicSummary",
+  ]) {
+    assert.match(
+      src,
+      new RegExp(`export (?:interface|type) ${name}\\b`),
+      `${name} must be exported as part of the aggregate publicSummary contract`,
+    );
+  }
 });
 
 // --- token gate: sessionStorage round-trip + auto-clear on 401 ---
