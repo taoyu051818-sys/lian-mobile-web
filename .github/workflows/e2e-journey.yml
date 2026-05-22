@@ -11,6 +11,7 @@ on:
         options:
           - all
           - account-fixture
+          - event-fixture
           - anonymous
           - registered
           - campus
@@ -42,6 +43,11 @@ jobs:
       LIAN_E2E_RUNNER_PASSWORD: ${{ secrets.LIAN_E2E_RUNNER_PASSWORD }}
       LIAN_E2E_ADMIN_USERNAME: ${{ secrets.LIAN_E2E_ADMIN_USERNAME }}
       LIAN_E2E_ADMIN_PASSWORD: ${{ secrets.LIAN_E2E_ADMIN_PASSWORD }}
+      LIAN_E2E_EVENT_CREATOR_USERNAME: ${{ secrets.LIAN_E2E_EVENT_CREATOR_USERNAME }}
+      LIAN_E2E_EVENT_CREATOR_PASSWORD: ${{ secrets.LIAN_E2E_EVENT_CREATOR_PASSWORD }}
+      LIAN_E2E_ORG_MEMBER_USERNAME: ${{ secrets.LIAN_E2E_ORG_MEMBER_USERNAME }}
+      LIAN_E2E_ORG_MEMBER_PASSWORD: ${{ secrets.LIAN_E2E_ORG_MEMBER_PASSWORD }}
+      LIAN_E2E_SEEDED_EVENT_ID: ${{ secrets.LIAN_E2E_SEEDED_EVENT_ID }}
       # Picked up by playwright.config.ts to filter via --grep when set.
       LIAN_E2E_JOURNEY_GROUP: ${{ inputs.journey_group || 'all' }}
 
