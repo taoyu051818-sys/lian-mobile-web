@@ -1,0 +1,28 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`PR-2 publish primitives DOM structure > PublishGateNotice renders title + slot body + CTA button with aria-label 1`] = `
+"<template>
+  <section class="publish-gate-notice" :aria-label="title">
+    <div class="publish-gate-notice__copy">
+      <strong class="publish-gate-notice__title">{{ title }}</strong>
+      <slot />
+    </div>
+    <button type="button" class="publish-gate-notice__cta" @click="$emit('cta')">
+      {{ ctaLabel }}
+    </button>
+  </section>
+</template>"
+`;
+
+exports[`PR-2 publish primitives DOM structure > PublishMessage variants render as div.publish-message--<variant> with derived aria role/live 1`] = `
+"<template>
+  <div
+    class="publish-message"
+    :class="\`publish-message--\${props.variant}\`"
+    :role="ariaRoleFor(props.variant)"
+    :aria-live="ariaLiveFor(props.variant)"
+  >
+    <slot />
+  </div>
+</template>"
+`;
