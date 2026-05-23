@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from "vue";
+import { onMounted, ref, watch } from "vue";
 import type { PageChromeSpec } from "../../shell/page-model";
 import {
   PUBLISH_SECTION_LABEL,
@@ -8,11 +8,6 @@ import {
   PUBLISH_IMAGE_RESELECT,
   PUBLISH_AI_PENDING,
   PUBLISH_AI_RISK_LABEL,
-  PUBLISH_TYPE_LABEL,
-  PUBLISH_TYPE_REGULAR,
-  PUBLISH_TYPE_EVENT,
-  PUBLISH_TYPE_MERCHANT,
-  PUBLISH_TYPE_TRADE,
 } from "../../config/brand";
 import { GlassPanel } from "../../ui";
 import PublishActionBar from "./PublishActionBar.vue";
@@ -48,42 +43,13 @@ function goToVerification() {
   setActiveView("verification");
 }
 
-function selectPublishKind(kind: "regular" | "event" | "merchant" | "trade") {
-  // The merchant radio is capability-gated via `v-if` on the verified merchant
-  // flag, so this function only ever fires for users who can pick merchant.
-  // Per-kind enabled/disabled rules live in `kindStates` below; the early
-  // return here keeps a disabled radio click from mutating state if the
-  // browser ever lets it fire (e.g. label-driven activation, accessibility
-  // tooling).
-  if (kindStates.value[kind].disabled) return;
-  draft.publishKind.value = kind;
-}
-
-// Single source of truth for the 4 publishKind radios. Both the active /
-// disabled CSS classes and the native `disabled` / `aria-disabled` / `title`
-// attributes read from this map, so future per-kind disabled rules (e.g.
-// trade gaining a campus_verified gate up here, event becoming opt-in)
-// only need a new `disabledReason` line — they cannot drift between the
-// four radios. mw#823 PR-A: existing rules are unchanged (no kind is
-// disabled today), but the wiring is in place so adding one is a
-// one-liner instead of touching four `<label>` blocks plus CSS.
-const kindStates = computed(() => {
-  const active = draft.publishKind.value;
-  function state(kind: "regular" | "event" | "merchant" | "trade", disabledReason: string) {
-    return {
-      active: active === kind,
-      disabled: disabledReason.length > 0,
-      disabledReason,
-    };
-  }
-  return {
-    regular: state("regular", ""),
-    event: state("event", ""),
-    merchant: state("merchant", ""),
-    trade: state("trade", ""),
-  };
-});
-
+// PRD V0.2 step F (§2.2 / §6 step F) — the 4-radio "publishKind" fieldset is
+// gone. Kind is now inferred at submit time from the draft snapshot
+// (`inferKind` in usePublishSubmit). The `publishKind` ref still exists and
+// is mutated by `accept(suggestedComponent)` ghosts (event_time / merchant_info
+// / trade_condition / price), so the merchant / trade / event panels keep
+// their v-if gates and the createEvent branch in usePublishSubmit keeps
+// firing — the watches below preserve all that wiring.
 watch(
   draft.publishKind,
   (kind) => {
@@ -97,19 +63,25 @@ watch(
   { immediate: false },
 );
 
-// Defense-in-depth: if a merchant loses verification mid-session, the merchant
-// radio disappears (capability gate below) and we fall back to "regular" so
-// the form can't sit on a kind whose radio is no longer rendered.
+// Defense-in-depth: if a merchant loses verification mid-session (e.g. the
+// merchant_verified record is revoked while the user has the merchant panel
+// open via `accept(merchant_info)`), reset publishKind to "regular" so the
+// form doesn't sit on a panel the actor can't satisfy. The accept action
+// itself already gates on the verification flag (see
+// createSuggestedComponentsActions in usePublishDraft); this is a second
+// layer that catches mid-session drops.
 watch(draft.merchant.merchantVerified, (verified) => {
   if (!verified && draft.publishKind.value === "merchant") {
     draft.publishKind.value = "regular";
   }
 });
 
-// PR-3 (#813 follow-up): publishKind is now the single "what am I posting"
-// decision. Keep eventDraft.postType in lock-step so the existing
-// usePublishSubmit branch (postType === "event" -> createEvent) stays wired
-// without the separate post-type chooser inside PublishEventControls.
+// PR-3 (#813 follow-up) — keep eventDraft.postType in lock-step with
+// publishKind so usePublishSubmit's createEvent branch (postType === "event")
+// stays wired without a separate post-type chooser inside
+// PublishEventControls. Step F doesn't change this contract; the only
+// difference is publishKind now becomes "event" via `accept(event_time)`
+// instead of a radio click.
 watch(
   draft.publishKind,
   (kind) => {
@@ -268,94 +240,6 @@ onMounted(() => {
       </PublishMessage>
 
       <form class="publish-view__form keyboard-aware-surface" @submit.prevent="submitPublish">
-        <fieldset
-          class="publish-view__type-switch"
-          :aria-label="PUBLISH_TYPE_LABEL"
-          data-testid="publish-type-switch"
-        >
-          <legend>{{ PUBLISH_TYPE_LABEL }}</legend>
-          <label
-            class="publish-view__type-option"
-            :class="{
-              'is-active': kindStates.regular.active,
-              'is-disabled': kindStates.regular.disabled,
-            }"
-            :title="kindStates.regular.disabledReason || undefined"
-          >
-            <input
-              type="radio"
-              name="publish-kind"
-              value="regular"
-              :checked="kindStates.regular.active"
-              :disabled="kindStates.regular.disabled"
-              :aria-disabled="kindStates.regular.disabled"
-              @change="selectPublishKind('regular')"
-            />
-            <span>{{ PUBLISH_TYPE_REGULAR }}</span>
-          </label>
-          <label
-            class="publish-view__type-option"
-            :class="{
-              'is-active': kindStates.event.active,
-              'is-disabled': kindStates.event.disabled,
-            }"
-            :title="kindStates.event.disabledReason || undefined"
-          >
-            <input
-              type="radio"
-              name="publish-kind"
-              value="event"
-              data-testid="publish-type-event"
-              :checked="kindStates.event.active"
-              :disabled="kindStates.event.disabled"
-              :aria-disabled="kindStates.event.disabled"
-              @change="selectPublishKind('event')"
-            />
-            <span>{{ PUBLISH_TYPE_EVENT }}</span>
-          </label>
-          <label
-            v-if="draft.merchant.merchantVerified.value"
-            class="publish-view__type-option"
-            :class="{
-              'is-active': kindStates.merchant.active,
-              'is-disabled': kindStates.merchant.disabled,
-            }"
-            :title="kindStates.merchant.disabledReason || undefined"
-          >
-            <input
-              type="radio"
-              name="publish-kind"
-              value="merchant"
-              data-testid="publish-type-merchant"
-              :checked="kindStates.merchant.active"
-              :disabled="kindStates.merchant.disabled"
-              :aria-disabled="kindStates.merchant.disabled"
-              @change="selectPublishKind('merchant')"
-            />
-            <span>{{ PUBLISH_TYPE_MERCHANT }}</span>
-          </label>
-          <label
-            class="publish-view__type-option"
-            :class="{
-              'is-active': kindStates.trade.active,
-              'is-disabled': kindStates.trade.disabled,
-            }"
-            :title="kindStates.trade.disabledReason || undefined"
-          >
-            <input
-              type="radio"
-              name="publish-kind"
-              value="trade"
-              data-testid="publish-type-trade"
-              :checked="kindStates.trade.active"
-              :disabled="kindStates.trade.disabled"
-              :aria-disabled="kindStates.trade.disabled"
-              @change="selectPublishKind('trade')"
-            />
-            <span>{{ PUBLISH_TYPE_TRADE }}</span>
-          </label>
-        </fieldset>
-
         <PublishEventControls
           v-if="draft.publishKind.value === 'event'"
           :starts-at="eventDraft.startsAt.value"
@@ -527,58 +411,6 @@ onMounted(() => {
   font-weight: 700;
   text-decoration: underline;
   text-underline-offset: 3px;
-}
-
-.publish-view__type-switch {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
-  padding: var(--space-3);
-  margin: 0;
-  border: 1px solid rgba(31, 41, 51, 0.08);
-  border-radius: calc(var(--radius-card) + 2px);
-  background: rgba(255, 255, 255, 0.56);
-}
-
-.publish-view__type-switch legend {
-  width: 100%;
-  margin-bottom: 4px;
-  color: var(--lian-muted);
-  font-size: 12px;
-  font-weight: 900;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-}
-
-.publish-view__type-option {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px var(--space-3);
-  border: 1px solid rgba(31, 41, 51, 0.12);
-  border-radius: var(--radius-chip, 999px);
-  background: rgba(255, 255, 255, 0.74);
-  color: var(--lian-ink);
-  font-weight: 700;
-  cursor: pointer;
-}
-
-.publish-view__type-option input {
-  accent-color: var(--lian-primary, #1fa7a0);
-}
-
-.publish-view__type-option.is-active {
-  border-color: rgba(31, 167, 160, 0.35);
-  background: rgba(31, 167, 160, 0.14);
-}
-
-.publish-view__type-option.is-disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
-}
-
-.publish-view__type-option.is-disabled input {
-  cursor: not-allowed;
 }
 
 /* Affordance-gate styling lives in PublishGateNotice.vue

@@ -5,7 +5,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 /**
- * Polish PR-A (mw#823) — gate-collapse + 4-radio disabled-state lock.
+ * Polish PR-A (mw#823) — gate-collapse lock + step-F follow-up.
  *
  * Issue #823 audit identified two consistency risks in the publish-page
  * affordance lane:
@@ -15,24 +15,20 @@ import { fileURLToPath } from "node:url";
  *      collapse vocabulary instead of each consumer reinventing v-if/details.
  *
  *      Note: the historic top-level affordance banner (the "merchant lock"
- *      panel above the form) was already retired by mw-merchant-gating —
- *      capability `v-if` on the merchant radio replaces it. The PR-A goal
- *      of "consistently collapsed at the top" is satisfied by the radio
- *      simply not rendering for non-merchants. This test pins both branches
- *      of the primitive so the collapse path stays reusable for any future
- *      gate added to PublishView.
+ *      panel above the form) was already retired by mw-merchant-gating.
+ *      Step F (PRD V0.2) further removed the 4-radio publishKind fieldset
+ *      entirely — there is no top-level gate to collapse anymore. This test
+ *      pins both branches of the primitive so the collapse path stays
+ *      reusable for the merchant in-form gate (and any future gate added
+ *      to the publish surface).
  *
  *   2. The 4-radio publishKind switch had `is-disabled` CSS in PublishView
- *      but no shared wiring — merchant got HTML `:disabled` via prior PRs,
- *      trade/event/regular had nothing equivalent. Future per-kind disabled
- *      rules (e.g. trade gaining a campus_verified gate up here) would
- *      drift unless one source of truth feeds all 4 radios.
- *
- *      The fix introduces a `kindStates` computed map. Both the active /
- *      disabled CSS classes and the native `disabled` / `aria-disabled` /
- *      `title` attributes on every radio read from this map, so adding a
- *      new disabled rule is a one-liner that automatically applies to the
- *      right radio with no template duplication.
+ *      but no shared wiring — the original PR-A introduced a `kindStates`
+ *      computed map as the single source of truth. Step F removed the
+ *      radios entirely; the kindStates plumbing is gone with them. This
+ *      test pins the post-step-F state (no radios, no kindStates, no
+ *      selectPublishKind helper) so the cleanup can't silently regress
+ *      to a half-removed shape.
  */
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
@@ -70,72 +66,15 @@ test("PublishGateNotice exposes both expanded and collapsed render paths", () =>
   assert.match(src, /data-testid="publish-gate-notice-collapsible"/);
 });
 
-test("PublishView exposes a single kindStates source of truth for the 4 publishKind radios", () => {
+test("PublishView no longer carries the kindStates / selectPublishKind plumbing (step F)", () => {
   const src = read("src/features/publish/PublishView.vue");
 
-  // The shared computed map exists and produces an entry per kind.
-  assert.match(
-    src,
-    /const\s+kindStates\s*=\s*computed\(/,
-    "kindStates must be a `computed` (auto-tracks publishKind + future per-kind reactive guards)",
-  );
-  for (const kind of ["regular", "event", "merchant", "trade"]) {
-    assert.match(
-      src,
-      new RegExp(`${kind}:\\s*state\\("${kind}"`),
-      `kindStates must produce an entry for ${kind}`,
-    );
-  }
-
-  // Each entry exposes the 3 fields the template binds to. We assert on the
-  // factory so a future per-kind override (e.g. event-only) still flows
-  // through the same shape and can't silently drop a field.
-  assert.match(src, /active:\s*active\s*===\s*kind/);
-  assert.match(src, /disabled:\s*disabledReason\.length\s*>\s*0/);
-  assert.match(src, /disabledReason/);
-});
-
-test("all 4 publishKind radios bind their disabled vocabulary through kindStates", () => {
-  const src = read("src/features/publish/PublishView.vue");
-
-  // For each kind: the <input> reads `disabled` and `aria-disabled` from
-  // the shared map, the wrapping <label> reads `is-active` / `is-disabled`
-  // from the same map, and the disabled-reason flows into a `title`. That
-  // keeps a future "trade is disabled because campus_verified=false" rule
-  // a one-liner instead of a 4-block edit.
-  for (const kind of ["regular", "event", "merchant", "trade"]) {
-    assert.match(
-      src,
-      new RegExp(
-        `value="${kind}"[\\s\\S]*?:checked="kindStates\\.${kind}\\.active"[\\s\\S]*?:disabled="kindStates\\.${kind}\\.disabled"[\\s\\S]*?:aria-disabled="kindStates\\.${kind}\\.disabled"`,
-      ),
-      `${kind} radio <input> must bind :checked / :disabled / :aria-disabled through kindStates`,
-    );
-    assert.match(
-      src,
-      new RegExp(
-        `'is-active':\\s*kindStates\\.${kind}\\.active,\\s*'is-disabled':\\s*kindStates\\.${kind}\\.disabled`,
-      ),
-      `${kind} radio <label> must read both is-active and is-disabled from kindStates`,
-    );
-    assert.match(
-      src,
-      new RegExp(`:title="kindStates\\.${kind}\\.disabledReason \\|\\| undefined"`),
-      `${kind} radio must surface the disabled reason as a title hint`,
-    );
-  }
-});
-
-test("selectPublishKind respects the shared disabled state instead of trusting the click", () => {
-  const src = read("src/features/publish/PublishView.vue");
-
-  // The early-return guards a label-driven activation path (where the
-  // browser may still fire @change on a disabled <input>). Pinning it here
-  // catches a refactor that drops the guard and lets a disabled radio
-  // mutate publishKind through the side door.
-  assert.match(
-    src,
-    /function\s+selectPublishKind\([\s\S]*?\)\s*\{[\s\S]*?if\s*\(kindStates\.value\[kind\]\.disabled\)\s*return;/,
-    "selectPublishKind must early-return when the kind is disabled in kindStates",
-  );
+  // The PR-A `kindStates` computed map fed the 4 radios' shared disabled
+  // vocabulary. Step F removed the radios; the computed is gone with them.
+  assert.doesNotMatch(src, /const\s+kindStates\s*=\s*computed/);
+  assert.doesNotMatch(src, /selectPublishKind\(/);
+  // The radio inputs themselves are gone too (covered in detail by
+  // publishViewControlOrder.structure.test.mjs).
+  assert.doesNotMatch(src, /name="publish-kind"/);
+  assert.doesNotMatch(src, /data-testid="publish-type-switch"/);
 });

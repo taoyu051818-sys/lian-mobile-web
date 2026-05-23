@@ -33,6 +33,7 @@ import type {
 } from "../../types/publish";
 import type { PublishPostType } from "../../composables/useEventPublishDraft";
 import type { PublishKind } from "./usePublishDraft";
+import { inferKind } from "./inferKind";
 
 export function usePublishSubmit(options: {
   title: Ref<string>;
@@ -167,6 +168,19 @@ export function usePublishSubmit(options: {
           ? options.tradePayload()
           : undefined;
       const publishedLocationLabel = options.locationPreviewLabel.value;
+      // PRD V0.2 step F (§2.2) — derive the wire `kind` tag from the draft
+      // snapshot. The 4-radio is gone, so this is the only path that picks
+      // a kind for the post; backend still branches on the value rather
+      // than re-inferring server-side.
+      const kind = inferKind({
+        publishKind: options.publishKind?.value ?? "regular",
+        hasLocation: Boolean(
+          options.selectedLocationDraft.value || options.placeName.value.trim().length > 0,
+        ),
+        hasImage: options.uploadedImageUrls.value.length > 0,
+        hasBody: options.body.value.trim().length > 0,
+        tag: options.normalizedTag.value,
+      });
       const payload = buildPublishPayload({
         imageUrls: options.uploadedImageUrls.value,
         title: options.title.value,
@@ -177,6 +191,7 @@ export function usePublishSubmit(options: {
         visibility: options.visibility.value,
         aliasId: options.aliasId.value,
         locationDraft: options.selectedLocationDraft.value,
+        kind,
         ...(merchant ? { merchant } : {}),
         ...(trade ? { trade } : {}),
       });

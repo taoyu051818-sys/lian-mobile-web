@@ -70,40 +70,17 @@ test("PublishMerchantControls renders gate when not verified, form when verified
   assert.match(src, /goVerify/);
 });
 
-// --- PublishView wires the type switch + gate routing ---
+// --- PublishView wires gate routing (post step F: no radio) ---
 
-test("PublishView exposes a merchant/regular type switch", () => {
+test("PublishView no longer renders the merchant radio (PRD V0.2 step F removed the 4-radio)", () => {
   const src = read("src/features/publish/PublishView.vue");
-  assert.match(src, /data-testid="publish-type-switch"/);
-  assert.match(src, /data-testid="publish-type-merchant"/);
-  // Vue templates use single quotes inside attributes; allow either quote style.
-  assert.match(src, /selectPublishKind\('merchant'\)/);
-  assert.match(src, /selectPublishKind\('regular'\)/);
-});
-
-test("PublishView capability-gates the merchant radio with v-if (non-merchants don't see it)", () => {
-  // mw-merchant-gating: the merchant radio is hidden for non-merchants via
-  // `v-if`, not `v-show` / `display:none`. The trade radio stays visible
-  // because trade uses campus_verified, the baseline most users hit.
-  const src = read("src/features/publish/PublishView.vue");
-
-  // The merchant <label> wraps the radio with v-if on merchantVerified.
-  assert.match(
-    src,
-    /<label\s+v-if="draft\.merchant\.merchantVerified\.value"[\s\S]*?data-testid="publish-type-merchant"/,
-  );
-
-  // The trade radio is NOT capability-gated — it stays unconditionally
-  // rendered. We assert that no v-if guards the trade radio.
-  const tradeBlock = src.match(
-    /<label[^>]*>\s*<input[^>]*data-testid="publish-type-trade"[\s\S]*?<\/label>/,
-  );
-  assert.ok(tradeBlock, "trade radio block must exist");
-  assert.doesNotMatch(tradeBlock[0], /v-if=/);
-
-  // The standalone affordance-gate banner above the form is gone — the
-  // capability gate replaces it (no need to surface a "you can't do this"
-  // banner when the radio itself is hidden for non-merchants).
+  // Step F removed the entire publishKind fieldset. Merchant entry now flows
+  // through accept(merchant_info) on the inline ghost-component list, which
+  // is itself merchant_verified-gated inside createSuggestedComponentsActions.
+  assert.doesNotMatch(src, /data-testid="publish-type-switch"/);
+  assert.doesNotMatch(src, /data-testid="publish-type-merchant"/);
+  assert.doesNotMatch(src, /selectPublishKind\(/);
+  // The standalone affordance banner above the form is also gone.
   assert.doesNotMatch(src, /merchantAffordanceLocked/);
   assert.doesNotMatch(src, /data-testid="publish-merchant-affordance-gate"/);
   assert.doesNotMatch(src, /PUBLISH_MERCHANT_GATE_BLOCK/);
@@ -112,8 +89,8 @@ test("PublishView capability-gates the merchant radio with v-if (non-merchants d
 test("PublishView falls back to regular when merchant verification flips off mid-session", () => {
   const src = read("src/features/publish/PublishView.vue");
   // Defense-in-depth: if the verification ref flips false while publishKind
-  // was already "merchant", reset to "regular" so the form doesn't sit on a
-  // kind whose radio is no longer rendered.
+  // was already "merchant" (set via accept(merchant_info)), reset to "regular"
+  // so the form doesn't sit on a panel the user can't satisfy.
   assert.match(
     src,
     /watch\(draft\.merchant\.merchantVerified[\s\S]*?draft\.publishKind\.value\s*=\s*"regular"/,

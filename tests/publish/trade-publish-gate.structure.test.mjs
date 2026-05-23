@@ -66,19 +66,25 @@ test("PublishTradeControls renders gate when not verified, form when verified", 
   }
 });
 
-// --- PublishView wires the type switch + gate routing ---
+// --- PublishView wires gate routing (post step F: no radio) ---
 
-test("PublishView exposes a trade type switch", () => {
+test("PublishView no longer renders the trade radio (PRD V0.2 step F removed the 4-radio)", () => {
   const src = read("src/features/publish/PublishView.vue");
-  assert.match(src, /data-testid="publish-type-trade"/);
-  // Vue templates use single quotes inside attributes; allow either quote style.
-  assert.match(src, /draft\.publishKind\.value\s*=\s*['"]trade['"]/);
-  assert.match(src, /PUBLISH_TYPE_TRADE/);
+  // Step F removed the entire publishKind fieldset. Trade entry now flows
+  // through accept(trade_condition) on the inline ghost-component list,
+  // which is itself campus_verified-gated inside
+  // createSuggestedComponentsActions. The PublishTradeControls panel keeps
+  // its own gate as defense-in-depth.
+  assert.doesNotMatch(src, /data-testid="publish-type-trade"/);
+  assert.doesNotMatch(src, /data-testid="publish-type-switch"/);
+  assert.doesNotMatch(src, /PUBLISH_TYPE_TRADE/);
 });
 
-test("PublishView refreshes verification when switching to trade", () => {
+test("PublishView refreshes verification when switching to trade (via accept(trade_condition))", () => {
   const src = read("src/features/publish/PublishView.vue");
-  // first switch to trade lazily fetches /api/auth/me — avoids a request on cold start
+  // Lazy-fetch /api/auth/me when publishKind first becomes "trade", whatever
+  // mutated the ref. Mirrors the merchant fetch path; both are gated on
+  // verificationLoaded so we don't refetch on every panel switch.
   assert.match(src, /draft\.publishKind/);
   assert.match(src, /trade\.refreshVerification/);
 });
@@ -99,6 +105,7 @@ test("usePublishSubmit blocks submit when campus_verified is missing", () => {
 test("usePublishDraft includes trade kind + composable", () => {
   const src = read("src/features/publish/usePublishDraft.ts");
   assert.match(src, /useTradePublishDraft/);
-  assert.match(src, /PublishKind\s*=\s*"regular"\s*\|\s*"merchant"\s*\|\s*"trade"/);
+  // PR-3 (#813) promoted "event" to a peer of regular / merchant / trade.
+  assert.match(src, /PublishKind\s*=\s*"regular"\s*\|\s*"event"\s*\|\s*"merchant"\s*\|\s*"trade"/);
   assert.match(src, /publishKind\.value\s*===\s*"trade"/);
 });

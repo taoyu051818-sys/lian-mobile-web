@@ -13,6 +13,7 @@ import type {
   TradePublishInput,
   UploadImageResponse,
 } from "../types/publish";
+import type { InferredKind } from "../types/publishSuggestion";
 import {
   type Audience,
   DEFAULT_AUDIENCE,
@@ -289,6 +290,13 @@ export function buildPublishPayload(input: {
   locationDraft?: PublishLocationDraft | null;
   audience?: Audience;
   /**
+   * PRD V0.2 §2.2 — wire-`kind` tag inferred client-side at submit time
+   * (see `inferKind`). Optional so legacy callers (tests, older code paths)
+   * keep compiling without forcing a `kind` value; the publish view always
+   * passes one in step F+.
+   */
+  kind?: InferredKind;
+  /**
    * PRD §10 — when present, the post enters the merchant publish path:
    * `metadata.presentationIntent = "merchant"` + top-level `contentType`
    * (`merchant_food` / `_service` / `_retail`) + top-level `merchant` block.
@@ -331,6 +339,7 @@ export function buildPublishPayload(input: {
     body: input.body.trim(),
     tag,
     identityTag,
+    ...(input.kind ? { kind: input.kind } : {}),
     metadata,
     locationDraft,
     riskFlags: normalizedLocation.issues.map((issue) => ({ message: issue.message })),
