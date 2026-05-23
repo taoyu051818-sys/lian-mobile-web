@@ -138,7 +138,7 @@ function submitCreate() {
 }
 
 function handleRevoke(link: AuthLink) {
-  if (confirm(ADMIN_AUTH_LINK_REVOKE_CONFIRM)) {
+  if (window.confirm(ADMIN_AUTH_LINK_REVOKE_CONFIRM)) {
     emit("revoke", link.token);
   }
 }

@@ -10,6 +10,7 @@
 # Cleanup is tracked under the architecture-mess umbrella (issue #500); each
 # entry should be migrated to a `use*` composable in a follow-up PR.
 src/features/admin/AdminView.vue
+src/features/admin/AdminAuthLinkBlock.vue
 src/features/auth/AuthInterestPicker.vue
 src/features/auth/AuthRegisterFields.vue
 src/features/detail/PostDetailTradeManageBlock.vue
