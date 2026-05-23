@@ -328,7 +328,10 @@ export class ErrandOrderShareCardError extends Error {
   }
 }
 
-function normalizeErrandOrderShareCard(value: unknown, fallbackOrderId: string): ErrandOrderShareCard {
+function normalizeErrandOrderShareCard(
+  value: unknown,
+  fallbackOrderId: string,
+): ErrandOrderShareCard {
   const record = asRecord(value);
   const channelRecord = asRecord(record.channel);
   const wechatRecord = asRecord(channelRecord.wechat);
