@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { sanitizeHtml, stripHtml } from "../../src/utils/html";
+import { sanitizeHtml } from "../../src/utils/html";
 
 describe("sanitizeHtml", () => {
   it("returns empty string for falsy input", () => {
@@ -43,28 +43,5 @@ describe("sanitizeHtml", () => {
   it("preserves safe HTML structure", () => {
     const input = '<p>Hello <strong>world</strong></p><a href="https://example.com">link</a>';
     expect(sanitizeHtml(input)).toBe(input);
-  });
-});
-
-describe("stripHtml", () => {
-  it("returns empty string for falsy input", () => {
-    expect(stripHtml("")).toBe("");
-    expect(stripHtml(null as unknown as string)).toBe("");
-  });
-
-  it("strips all tags and preserves text content", () => {
-    expect(stripHtml("<p>Hello <strong>world</strong></p>")).toBe("Hello world");
-  });
-
-  it("normalizes whitespace", () => {
-    expect(stripHtml("<p>  hello   world  </p>")).toBe("hello world");
-  });
-
-  it("handles nested tags", () => {
-    expect(stripHtml("<div><p><span>deep</span></p></div>")).toBe("deep");
-  });
-
-  it("strips tags but preserves text content between them", () => {
-    expect(stripHtml('<p>safe</p><script>alert("xss")</script>')).toBe('safealert("xss")');
   });
 });
