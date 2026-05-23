@@ -125,7 +125,10 @@ describe("createSuggestedComponentsActions accept (PRD V0.2 step E-main)", () =>
     expect(h.components.value).toEqual([]);
   });
 
-  it("accept(price) prefers merchant when merchant_verified", () => {
+  it("accept(price) flips publishKind to trade unconditionally (PRD V0.2 §4.2.3)", () => {
+    // §4.2.3 拍板：accept(price) → kind=trade，enum 不变。Verification gates
+    // ghost visibility (capability gating), not kind inference — once the
+    // user can see and accept the ghost, treat it as a trade signal.
     const h = makeHarness([PRICE_HINT], {
       merchantVerified: true,
       campusVerified: true,
@@ -133,11 +136,11 @@ describe("createSuggestedComponentsActions accept (PRD V0.2 step E-main)", () =>
 
     h.actions.accept(PRICE_HINT);
 
-    expect(h.publishKind.value).toBe("merchant");
+    expect(h.publishKind.value).toBe("trade");
     expect(h.components.value).toEqual([]);
   });
 
-  it("accept(price) falls back to trade when only campus_verified", () => {
+  it("accept(price) → trade even when only campus_verified", () => {
     const h = makeHarness([PRICE_HINT], {
       merchantVerified: false,
       campusVerified: true,
@@ -149,7 +152,10 @@ describe("createSuggestedComponentsActions accept (PRD V0.2 step E-main)", () =>
     expect(h.components.value).toEqual([]);
   });
 
-  it("accept(price) leaves publishKind alone when neither flag is set, but still consumes the ghost", () => {
+  it("accept(price) → trade even with no verification flags (visibility gate is upstream)", () => {
+    // Capability gating decides whether the price ghost surfaces at all.
+    // If it did surface (server filter slip, or campusVerified flipped
+    // mid-tick), the inference contract still says trade per §4.2.3.
     const h = makeHarness([PRICE_HINT], {
       merchantVerified: false,
       campusVerified: false,
@@ -157,7 +163,7 @@ describe("createSuggestedComponentsActions accept (PRD V0.2 step E-main)", () =>
 
     h.actions.accept(PRICE_HINT);
 
-    expect(h.publishKind.value).toBe("regular");
+    expect(h.publishKind.value).toBe("trade");
     expect(h.components.value).toEqual([]);
   });
 
