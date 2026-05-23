@@ -33,6 +33,7 @@ import type {
 } from "../../types/publish";
 import type { PublishPostType } from "../../composables/useEventPublishDraft";
 import type { PublishKind } from "./usePublishDraft";
+import type { InferredKind } from "../../types/publishSuggestion";
 import { inferKind } from "./inferKind";
 
 export function usePublishSubmit(options: {
@@ -62,6 +63,13 @@ export function usePublishSubmit(options: {
   eventJoinPolicy?: Ref<EventJoinPolicy>;
   audienceVisibility?: Ref<PublishVisibility>;
   publishKind?: Ref<PublishKind>;
+  /**
+   * PRD V0.2 §4.3 — the LLM `inferredKind` hint sink. Optional so existing
+   * call sites that don't wire the hint don't error; when omitted the
+   * inference falls back to the deterministic chain in `inferKind.ts`.
+   * Wired by `PublishView` from `usePublishDraft.llmInferredKind`.
+   */
+  llmInferredKind?: Ref<InferredKind | null>;
   merchantPayload?: () => { input: MerchantPublishInput; contentType: MerchantContentType };
   merchantVerified?: Ref<boolean>;
   tradePayload?: () => { input: TradePublishInput; contentType: TradeContentType };
@@ -180,6 +188,10 @@ export function usePublishSubmit(options: {
         hasImage: options.uploadedImageUrls.value.length > 0,
         hasBody: options.body.value.trim().length > 0,
         tag: options.normalizedTag.value,
+        // PRD §4.3 — feed the LLM `inferredKind` hint into the chain.
+        // Optional ref; when unwired or null the deterministic chain
+        // remains unchanged.
+        llmInferredKind: options.llmInferredKind?.value ?? null,
       });
       const payload = buildPublishPayload({
         imageUrls: options.uploadedImageUrls.value,

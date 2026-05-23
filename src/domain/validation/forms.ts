@@ -40,6 +40,17 @@ export interface PublishValidationFields {
   uploading: boolean;
   selectedFileCount: number;
   uploadedImageCount: number;
+  /**
+   * True when the draft has a location bound (map_v2 pick or non-empty
+   * `placeName`) and no image is attached. Per PRD V0.2 §2.2 a `place`
+   * post is "无图 + 仅地点" — it doesn't carry body content (场所打卡 /
+   * 地点签到). When this flag is set the body-required check is relaxed.
+   * Title remains required (every post still needs a name).
+   *
+   * Optional so existing callers (event / merchant / trade flows) can omit
+   * it; the body-required check then keeps the pre-existing behaviour.
+   */
+  isPlaceOnly?: boolean;
 }
 
 export function validateAuthForm(fields: AuthValidationFields): string {
@@ -85,7 +96,13 @@ export function validatePublishForm(fields: PublishValidationFields): string {
   }
 
   const normalizedBody = fields.body.trim();
-  if (!normalizedBody) return VALIDATION_BODY_REQUIRED;
+  // PRD V0.2 §2.2 — `place` posts (无图 + 仅地点 → kind=place) are
+  // location-only "场所打卡" / "签到" cards; their semantic content lives
+  // in the bound place, not a body. The body-required check is relaxed
+  // when the caller signals the draft is in that mode. Title still
+  // applies. The body-too-long guard below is also kept (an empty body
+  // trivially satisfies it, so place posts don't trip it either).
+  if (!normalizedBody && !fields.isPlaceOnly) return VALIDATION_BODY_REQUIRED;
   if (normalizedBody.length > PUBLISH_BODY_MAX_LENGTH) {
     return VALIDATION_BODY_MAX.replace("{n}", String(PUBLISH_BODY_MAX_LENGTH));
   }

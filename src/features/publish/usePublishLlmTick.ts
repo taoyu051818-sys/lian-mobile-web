@@ -44,7 +44,7 @@ import {
   type PublishLlmTickRequest,
   type PublishLlmTickResponse,
 } from "../../api/aiPreview";
-import type { SuggestedComponent } from "../../types/publishSuggestion";
+import type { InferredKind, SuggestedComponent } from "../../types/publishSuggestion";
 
 /** PRD §4.1 floor is 600ms; we sit at 800ms to better tolerate burst typing. */
 export const PUBLISH_LLM_TICK_DEBOUNCE_MS = 800;
@@ -72,6 +72,17 @@ export interface UsePublishLlmTickOptions {
   setBodyCandidate: (value: string | null) => void;
   /** Sink for `candidates.suggestedComponents`. Hook owns writes here. */
   suggestedComponents: Ref<SuggestedComponent[]>;
+  /**
+   * Sink for `candidates.inferredKind` (PRD §4.3). Optional — when omitted
+   * the hook silently drops the field. Wired by `usePublishDraft` so
+   * `inferKind` (in `usePublishSubmit`) can pick it up as a low-priority
+   * hint without breaking the existing E-pre call sites.
+   *
+   * Convention: `null` means "no LLM hint available" (degraded path or no
+   * tick has landed yet); the inference chain treats `null` and `undefined`
+   * identically — fall through to the deterministic place / text rules.
+   */
+  llmInferredKind?: Ref<InferredKind | null>;
   /** Override the network call (tests). Defaults to `fetchPublishLlmCandidates`. */
   fetcher?: PublishLlmTickFetcher;
   /** Override the debounce window (tests / future tuning). */
@@ -144,6 +155,12 @@ export function usePublishLlmTick(options: UsePublishLlmTickOptions): UsePublish
     if (response.title !== null) options.setTitleCandidate(response.title);
     if (response.bodyCandidate !== null) options.setBodyCandidate(response.bodyCandidate);
     options.suggestedComponents.value = response.suggestedComponents;
+    // PRD §4.3 — surface the LLM's `inferredKind` hint to the inference
+    // chain. The hint is reset on every tick so a stale value from a prior
+    // round trip never lingers; null signals "no opinion this turn".
+    if (options.llmInferredKind) {
+      options.llmInferredKind.value = response.inferredKind;
+    }
   }
 
   async function refresh() {

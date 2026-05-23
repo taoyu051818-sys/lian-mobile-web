@@ -133,4 +133,43 @@ describe("auth and publish validation helpers", () => {
       ),
     ).toBe("还有图片没有上传成功，请重新选择或移除。");
   });
+
+  // PRD V0.2 §2.2 — `place` posts are 无图 + 仅地点 + 无 body cards. The
+  // body-required check relaxes when `isPlaceOnly` is true so the user can
+  // submit a location-only "签到" draft (Gap 1 fix). Title remains required.
+  it("relaxes body-required for place-only drafts (Gap 1 fix)", () => {
+    expect(
+      validatePublishForm(
+        createPublishFields({
+          title: "在图书馆",
+          body: "",
+          isPlaceOnly: true,
+        }),
+      ),
+    ).toBe("");
+  });
+
+  it("still requires title for place-only drafts", () => {
+    expect(
+      validatePublishForm(
+        createPublishFields({
+          title: "   ",
+          body: "",
+          isPlaceOnly: true,
+        }),
+      ),
+    ).toBe("请填写标题。");
+  });
+
+  it("place-only flag does not bypass body-too-long guard (defensive)", () => {
+    expect(
+      validatePublishForm(
+        createPublishFields({
+          title: "图书馆",
+          body: "文".repeat(PUBLISH_BODY_MAX_LENGTH + 1),
+          isPlaceOnly: true,
+        }),
+      ),
+    ).toBe(`正文最多 ${PUBLISH_BODY_MAX_LENGTH} 个字。`);
+  });
 });

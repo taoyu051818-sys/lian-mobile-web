@@ -23,11 +23,24 @@
  *      has entered the event / merchant / trade flow without an attached
  *      image, that beats place / text. The panel routing in PublishView and
  *      the create-event branch in usePublishSubmit already gate on this.
- *   4. Location-only — a card with a place but no body / image is a
+ *   4. **LLM `inferredKind` hint** — PRD §4.3 ships `candidates.inferredKind`
+ *      from `/api/ai/post-preview`. It sits below user-driven gestures
+ *      (tag/image/panel) so the LLM never overrides a user that has
+ *      explicitly committed to a kind. Defensive guards strip
+ *      hallucinations:
+ *        - `'image'` is rejected unless `hasImage` is also true (LLM may
+ *          echo a default; honoring it would contradict the §2.2 媒体优先
+ *          hard rule).
+ *        - `'help'` is rejected — `help` is the user's typed-tag semantic
+ *          gesture per §2.2, not something the LLM gets to impose.
+ *      All other kinds pass through. With the publishKind panel slot
+ *      sitting above this, the LLM only weighs in when the user has not
+ *      materialized any ghost component (publishKind === "regular").
+ *   5. Location-only — a card with a place but no body / image is a
  *      `place` post (campus map pin), per PRD §2.2. Image is already
  *      handled by rule #2 so the no-image guard collapses to
  *      `hasLocation && !hasBody`.
- *   5. Body / text — content-only fallback.
+ *   6. Body / text — content-only fallback.
  *
  * Pure factory — no Vue, no refs. The submit caller is responsible for
  * snapshotting refs into the input shape. Keeps the function unit-testable
@@ -58,6 +71,17 @@ export interface InferKindInput {
    * already passed the normalized value.
    */
   tag: string;
+  /**
+   * The LLM's `inferredKind` hint from the most recent `/api/ai/post-preview`
+   * response (PRD §4.3 / `candidates.inferredKind`). Optional — when null
+   * or undefined the slot is skipped and the chain falls through to the
+   * deterministic place-only / text rules.
+   *
+   * Trust model: the LLM advises when the user hasn't committed to a panel
+   * kind. Image and help are rejected here regardless of LLM output (see
+   * priority chain comment for the why); the rest pass through.
+   */
+  llmInferredKind?: InferredKind | null;
 }
 
 /** Tags that flip kind to `help`. Single-element today; kept as a set so a
@@ -92,6 +116,29 @@ export function inferKind(input: InferKindInput): InferredKind {
   if (input.publishKind === "event") return "event";
   if (input.publishKind === "merchant") return "merchant";
   if (input.publishKind === "trade") return "trade";
+
+  // LLM hint — PRD §4.3 ships `candidates.inferredKind` from the preview
+  // tick. Only weighed in once the user-driven gestures (tag/image/panel)
+  // have all fallen through, so it never overrides an explicit user
+  // commitment. Two defensive guards strip hallucinations the chain above
+  // already settled:
+  //   - `'image'` requires `hasImage` — honoring an LLM-claimed `image`
+  //     without an actual upload would contradict the §2.2 媒体优先 hard
+  //     rule (无图 不可能 image).
+  //   - `'help'` is the user-tag semantic per §2.2; we never let the LLM
+  //     impose a help-wanted classification.
+  // Other values (event / merchant / trade / place / text) pass through.
+  const llm = input.llmInferredKind;
+  if (llm && llm !== "image" && llm !== "help") {
+    // Don't let the LLM resurrect 'place' when the card has a body — the
+    // place-only contract below still applies. Falling through to the
+    // place / text rules keeps the inference deterministic.
+    if (llm === "place") {
+      if (input.hasLocation && !input.hasBody) return "place";
+    } else {
+      return llm;
+    }
+  }
 
   // Location-only cards — PRD §2.2 "仅地点 → place". `hasImage` is already
   // handled above, so the no-image guard collapses to `!hasBody`. A card
