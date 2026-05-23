@@ -104,6 +104,16 @@ const TOGGLE_BUTTON_WHITELIST: Array<{
     description: "admin verification status filter",
     marker: /@click="handleVerificationFilterChange\(opt\.value\)"/,
   },
+  {
+    // Apple-gap PR-δ: LianButton's optional 6-state vocabulary lets
+    // callers opt into toggle semantics via state="pressed". The base
+    // primitive declares :aria-pressed conditionally — this row pins
+    // that the SFC still owns the binding so the vocabulary cannot
+    // regress to a plain button without aria.
+    file: "src/ui/LianButton.vue",
+    description: "shared button pressed-state binding",
+    marker: /@click="handleClick"/,
+  },
 ];
 
 /**
