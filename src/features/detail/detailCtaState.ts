@@ -1,10 +1,4 @@
-export type DetailCtaState =
-  | "enabled"
-  | "disabled"
-  | "loading"
-  | "success"
-  | "failure"
-  | "reason";
+export type DetailCtaState = "enabled" | "disabled" | "loading" | "success" | "failure" | "reason";
 
 export type DetailCtaTone = "primary" | "muted" | "success" | "danger";
 

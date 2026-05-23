@@ -1,9 +1,6 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import {
-  resolveDetailCtaPresentation,
-  type DetailCtaState,
-} from "./detailCtaState";
+import { resolveDetailCtaPresentation, type DetailCtaState } from "./detailCtaState";
 
 const props = withDefaults(
   defineProps<{
