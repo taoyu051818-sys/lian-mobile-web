@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from "vue";
+import { onMounted, ref, watch } from "vue";
 import type { PageChromeSpec } from "../../shell/page-model";
 import {
   PUBLISH_SECTION_LABEL,
@@ -13,10 +13,6 @@ import {
   PUBLISH_TYPE_EVENT,
   PUBLISH_TYPE_MERCHANT,
   PUBLISH_TYPE_TRADE,
-  PUBLISH_MERCHANT_GATE_TITLE,
-  PUBLISH_MERCHANT_GATE_HINT,
-  PUBLISH_MERCHANT_GATE_BLOCK,
-  PUBLISH_MERCHANT_GATE_CTA,
 } from "../../config/brand";
 import { GlassPanel } from "../../ui";
 import PublishActionBar from "./PublishActionBar.vue";
@@ -27,7 +23,6 @@ import PublishEventControls from "./PublishEventControls.vue";
 import PublishMerchantControls from "./PublishMerchantControls.vue";
 import PublishTradeControls from "./PublishTradeControls.vue";
 import PublishMessage from "./PublishMessage.vue";
-import PublishGateNotice from "./PublishGateNotice.vue";
 import { usePublishDraft } from "./usePublishDraft";
 import { usePublishLocationOptions } from "./usePublishLocationOptions";
 import { clearPublishDraft } from "./publishDraftSession";
@@ -48,16 +43,14 @@ const eventDraft = useEventPublishDraft();
 const locationOptions = usePublishLocationOptions(draft.placeName);
 const resetConfirmationVisible = ref(false);
 const { setActiveView } = useActiveView();
-const merchantAffordanceLocked = computed(
-  () => draft.merchant.verificationLoaded.value && !draft.merchant.merchantVerified.value,
-);
 
 function goToVerification() {
   setActiveView("verification");
 }
 
 function selectPublishKind(kind: "regular" | "event" | "merchant" | "trade") {
-  if (kind === "merchant" && merchantAffordanceLocked.value) return;
+  // The merchant radio is capability-gated via `v-if` on the verified merchant
+  // flag, so this function only ever fires for users who can pick merchant.
   draft.publishKind.value = kind;
 }
 
@@ -74,8 +67,11 @@ watch(
   { immediate: false },
 );
 
-watch(merchantAffordanceLocked, (locked) => {
-  if (locked && draft.publishKind.value === "merchant") {
+// Defense-in-depth: if a merchant loses verification mid-session, the merchant
+// radio disappears (capability gate below) and we fall back to "regular" so
+// the form can't sit on a kind whose radio is no longer rendered.
+watch(draft.merchant.merchantVerified, (verified) => {
+  if (!verified && draft.publishKind.value === "merchant") {
     draft.publishKind.value = "regular";
   }
 });
@@ -276,11 +272,9 @@ onMounted(() => {
             <span>{{ PUBLISH_TYPE_EVENT }}</span>
           </label>
           <label
+            v-if="draft.merchant.merchantVerified.value"
             class="publish-view__type-option"
-            :class="{
-              'is-active': draft.publishKind.value === 'merchant',
-              'is-disabled': merchantAffordanceLocked,
-            }"
+            :class="{ 'is-active': draft.publishKind.value === 'merchant' }"
           >
             <input
               type="radio"
@@ -288,7 +282,6 @@ onMounted(() => {
               value="merchant"
               data-testid="publish-type-merchant"
               :checked="draft.publishKind.value === 'merchant'"
-              :disabled="merchantAffordanceLocked"
               @change="selectPublishKind('merchant')"
             />
             <span>{{ PUBLISH_TYPE_MERCHANT }}</span>
@@ -308,17 +301,6 @@ onMounted(() => {
             <span>{{ PUBLISH_TYPE_TRADE }}</span>
           </label>
         </fieldset>
-
-        <PublishGateNotice
-          v-if="merchantAffordanceLocked"
-          data-testid="publish-merchant-affordance-gate"
-          :title="PUBLISH_MERCHANT_GATE_TITLE"
-          :cta-label="PUBLISH_MERCHANT_GATE_CTA"
-          @cta="goToVerification"
-        >
-          <p>{{ PUBLISH_MERCHANT_GATE_HINT }}</p>
-          <p class="publish-gate-notice__block">{{ PUBLISH_MERCHANT_GATE_BLOCK }}</p>
-        </PublishGateNotice>
 
         <PublishEventControls
           v-if="draft.publishKind.value === 'event'"

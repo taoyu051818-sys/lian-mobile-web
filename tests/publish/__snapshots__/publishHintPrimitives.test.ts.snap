@@ -2,7 +2,7 @@
 
 exports[`PR-2 publish primitives DOM structure > PublishGateNotice renders title + slot body + CTA button with aria-label 1`] = `
 "<template>
-  <section class="publish-gate-notice" :aria-label="title">
+  <section v-if="defaultOpen" class="publish-gate-notice" :aria-label="title">
     <div class="publish-gate-notice__copy">
       <strong class="publish-gate-notice__title">{{ title }}</strong>
       <slot />
@@ -11,6 +11,20 @@ exports[`PR-2 publish primitives DOM structure > PublishGateNotice renders title
       {{ ctaLabel }}
     </button>
   </section>
+  <details
+    v-else
+    class="publish-gate-notice publish-gate-notice--collapsible"
+    :aria-label="title"
+    data-testid="publish-gate-notice-collapsible"
+  >
+    <summary class="publish-gate-notice__title">{{ title }}</summary>
+    <div class="publish-gate-notice__copy">
+      <slot />
+    </div>
+    <button type="button" class="publish-gate-notice__cta" @click="$emit('cta')">
+      {{ ctaLabel }}
+    </button>
+  </details>
 </template>"
 `;
 
