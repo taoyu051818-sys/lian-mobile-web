@@ -80,7 +80,7 @@ function isEventTerminal(event: EventPostExtension | undefined): boolean {
   return event.status === "completed" || event.status === "cancelled";
 }
 
-function isHelpExtensionUsable(help: HelpPostExtension | undefined): boolean {
+function isHelpExtensionUsable(help: HelpPostExtension | undefined): help is HelpPostExtension {
   return typeof help?.helpId === "string" && help.helpId.length > 0;
 }
 
