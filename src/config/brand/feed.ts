@@ -13,6 +13,21 @@ export const FEED_EXPAND = "展开";
 
 /** 卡片模板视觉记号（FeedItemCard.vue templateMark 字符标） */
 export const FEED_CARD_MARK_MERCHANT = "食";
+export const FEED_CARD_MARK_CLUB = "社";
+
+/** 社团卡片 UI */
+export const CLUB_CARD_PRESIDENT_LABEL = "社长";
+export const CLUB_CARD_FOUNDED_LABEL = "成立于";
+export const CLUB_CARD_MEMBERS_LABEL = "成员";
+export const CLUB_CATEGORY_LABELS: Record<string, string> = {
+  academic: "学术",
+  sports: "体育",
+  arts: "艺术",
+  volunteer: "志愿",
+  tech: "科技",
+  culture: "文化",
+  other: "其他",
+};
 
 /** 信息流 UI */
 export const FEED_LOAD_MORE = "加载更多";

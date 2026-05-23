@@ -92,7 +92,7 @@ export interface PostDetail {
  * `event` is canonical; `activity` is kept only as a card-template label
  * (PRD §3.2) so existing Feed cards keep rendering during migration.
  */
-export type PostType = "image" | "text" | "event" | "merchant" | "trade" | "help" | "place";
+export type PostType = "image" | "text" | "event" | "merchant" | "trade" | "help" | "place" | "club";
 
 export const POST_TYPES: ReadonlySet<PostType> = new Set([
   "image",
@@ -102,6 +102,7 @@ export const POST_TYPES: ReadonlySet<PostType> = new Set([
   "trade",
   "help",
   "place",
+  "club",
 ]);
 
 export type PostStatus = "active" | "hidden" | "deleted" | "pending_review";
@@ -156,4 +157,43 @@ export function isKnownPostType(value: unknown): value is PostType {
 export function normalizePostType(value: unknown, hasCover: boolean): PostType {
   if (isKnownPostType(value)) return value;
   return hasCover ? "image" : "text";
+}
+
+// ---------------------------------------------------------------------------
+// Club (社团) metadata
+// ---------------------------------------------------------------------------
+
+/**
+ * Club category taxonomy. Maps to backend `metadata.club.category`.
+ */
+export type ClubCategory =
+  | "academic"
+  | "sports"
+  | "arts"
+  | "volunteer"
+  | "tech"
+  | "culture"
+  | "other";
+
+/**
+ * Read-side club extension as returned by `GET /api/posts/:tid` when
+ * `contentType === "club"`. Wire shape mirrors `metadata.club` exactly.
+ */
+export interface ClubMetadata {
+  /** Unique club identifier. */
+  clubId: string;
+  /** Display name of the club. */
+  name: string;
+  /** Club category for filtering/display. */
+  category: ClubCategory;
+  /** Display name of the club president/leader. */
+  president: string;
+  /** ISO date string when the club was founded. */
+  foundedAt: string;
+  /** Current member count. */
+  memberCount: number;
+  /** Optional brief description. */
+  description?: string;
+  /** Optional logo/avatar URL. */
+  logoUrl?: string;
 }
