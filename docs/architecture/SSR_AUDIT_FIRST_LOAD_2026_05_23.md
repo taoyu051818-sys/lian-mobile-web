@@ -7,6 +7,7 @@ Related: `SSR_PWA_RFC_2026_05_23.md`, `SSR_COMPOSABLE_AUDIT_2026_05_23.md`
 ## 1. Purpose
 
 This document records the current mobile-web runtime contract for:
+
 - First-load rendering path
 - Share-detail / direct-link entry path
 - Current offline / no-network fallback behavior
@@ -30,6 +31,7 @@ src/entry-client.ts
 ```
 
 Key behaviors:
+
 - Mounts Vue app to `#vue-root` synchronously on script load
 - No hydration — pure client-side render
 - Map chunk prefetch fires after 2–3s idle to reduce first-tap latency on map tab
@@ -47,6 +49,7 @@ src/entry-server.ts
 ```
 
 Key behaviors:
+
 - Does NOT call `renderToString` — no Vue SSR rendering yet
 - Emits static HTML with OG meta + a `<script>location.replace("/#/...")</script>` redirect
 - Crawlers/IM previewers see the meta + degraded body; real browsers execute the redirect
@@ -57,7 +60,7 @@ Key behaviors:
 Shared factory for client/server:
 
 ```typescript
-export function createApp(): { app: VueApp; i18n: typeof i18n }
+export function createApp(): { app: VueApp; i18n: typeof i18n };
 ```
 
 - No side effects — does not mount, does not prefetch
@@ -85,6 +88,7 @@ export function createApp(): { app: VueApp; i18n: typeof i18n }
 ```
 
 Key observations:
+
 - 17-line minimal shell
 - Preloads map base image and road network JSON (critical for map tab)
 - No inline critical CSS
@@ -98,24 +102,27 @@ Key observations:
 
 LIAN does NOT use vue-router. Routing is hand-rolled:
 
-| Module | Responsibility |
-|--------|----------------|
-| `src/app/deepLink.ts` | Pure parsing/building for `#/post/{tid}` and `#/{view}` |
-| `src/app/view-hash.ts` | Module singleton for active view; listens to `hashchange`/`popstate` |
-| `src/app/detail-navigation/` | FSM for post-detail overlay; separate hash listener |
-| `src/app/post-detail-hash.ts` | History I/O for `#/post/{tid}` |
+| Module                        | Responsibility                                                       |
+| ----------------------------- | -------------------------------------------------------------------- |
+| `src/app/deepLink.ts`         | Pure parsing/building for `#/post/{tid}` and `#/{view}`              |
+| `src/app/view-hash.ts`        | Module singleton for active view; listens to `hashchange`/`popstate` |
+| `src/app/detail-navigation/`  | FSM for post-detail overlay; separate hash listener                  |
+| `src/app/post-detail-hash.ts` | History I/O for `#/post/{tid}`                                       |
 
 Supported hash shapes:
+
 - `#/post/{tid}` — opens post detail panel (overlay on current tab)
 - `#/{view}` — selects top-level tab or secret view
 
 Views:
+
 - Visible tabs: `feed | map | publish | messages | profile`
 - Secret views: `admin | verification | merchant | errand-order | runner`
 
 ### 3.2 SSR Canonical Paths
 
 SSR layer handles these paths (phase 1):
+
 - `/post/:tid` — post detail (singular, aligned with hash form)
 - `/u/:username` — profile stub (phase 1.5, currently returns brand-default shell)
 - `/` — homepage shell
@@ -170,6 +177,7 @@ Real browsers hitting these paths receive HTML with a redirect script that hands
 ### 4.3 Critical Path Analysis
 
 First contentful paint blockers:
+
 1. Module script fetch + parse (~200-400ms on fast connection)
 2. Vue app instantiation + mount (~50-100ms)
 3. Initial view render (FeedView or detail)
@@ -183,17 +191,18 @@ No SSR hydration — the `#vue-root` div is empty until JS runs. This is the gap
 
 ### 5.1 Share Link Forms
 
-| Form | Handler | Behavior |
-|------|---------|----------|
-| `https://lian.example/post/123` | SSR `/post/:tid` | OG meta + redirect to `/#/post/123` |
-| `https://lian.example/#/post/123` | SPA hash router | Direct SPA load, detail FSM opens |
-| `https://lian.example/posts/123` | (legacy, ps still answers) | Redirect to singular form pending |
+| Form                              | Handler                    | Behavior                            |
+| --------------------------------- | -------------------------- | ----------------------------------- |
+| `https://lian.example/post/123`   | SSR `/post/:tid`           | OG meta + redirect to `/#/post/123` |
+| `https://lian.example/#/post/123` | SPA hash router            | Direct SPA load, detail FSM opens   |
+| `https://lian.example/posts/123`  | (legacy, ps still answers) | Redirect to singular form pending   |
 
 ### 5.2 Cold-Start History Bootstrap
 
 Problem: Direct load at `#/post/{tid}` has only one history entry. `history.back()` leaves the SPA entirely.
 
 Solution (`src/app/post-detail-hash.ts:bootstrapColdStartHistory`):
+
 ```
 1. Detect cold start at #/post/{tid}
 2. replaceState to #/feed
@@ -208,15 +217,16 @@ This runs BEFORE the detail FSM observes the hash, so the initial url-sync still
 
 SSR `entry-server.ts` generates per-kind meta:
 
-| Kind | OG Title | Notes |
-|------|----------|-------|
-| `post` (default) | `{title}` | Fallback for unclassified posts |
-| `event` | `{title}` | (startTimeLocal concat deferred to ps follow-up) |
-| `merchant` | `{title}` | (merchantName/locality deferred to ps follow-up) |
-| `errand` | `可下单：{title}` | Prefix applied SSR-side |
-| `help` | `求助：{title}` | Prefix applied SSR-side |
+| Kind             | OG Title          | Notes                                            |
+| ---------------- | ----------------- | ------------------------------------------------ |
+| `post` (default) | `{title}`         | Fallback for unclassified posts                  |
+| `event`          | `{title}`         | (startTimeLocal concat deferred to ps follow-up) |
+| `merchant`       | `{title}`         | (merchantName/locality deferred to ps follow-up) |
+| `errand`         | `可下单：{title}` | Prefix applied SSR-side                          |
+| `help`           | `求助：{title}`   | Prefix applied SSR-side                          |
 
 Meta fields sourced from ps `share-card` envelope:
+
 - `title`, `summary`, `thumbnailUrl`, `url`, `kind`, `authorName`, `audienceLabel`
 
 SSR does NOT re-derive these fields — ps is the source of truth.
@@ -228,10 +238,12 @@ SSR does NOT re-derive these fields — ps is the source of truth.
 ### 6.1 Current State: No Offline Support
 
 **There is no service worker.** The codebase has:
+
 - `public/manifest.json` — minimal PWA manifest (name, colors, empty icons array)
 - `<link rel="manifest" href="/manifest.json">` in index.html
 
 But no:
+
 - Service worker registration
 - Offline cache strategy
 - Network-first/cache-first logic
@@ -239,16 +251,17 @@ But no:
 
 ### 6.2 Current Failure Behavior
 
-| Scenario | Behavior |
-|----------|----------|
-| Network offline on cold start | Browser shows default offline page (ERR_INTERNET_DISCONNECTED) |
-| Network offline after SPA loaded | API calls fail, error states render in-app |
-| SSR upstream (ps) timeout | SSR returns 503 → Caddy fallback to static index.html |
-| SSR process down | Caddy fallback to static index.html |
+| Scenario                         | Behavior                                                       |
+| -------------------------------- | -------------------------------------------------------------- |
+| Network offline on cold start    | Browser shows default offline page (ERR_INTERNET_DISCONNECTED) |
+| Network offline after SPA loaded | API calls fail, error states render in-app                     |
+| SSR upstream (ps) timeout        | SSR returns 503 → Caddy fallback to static index.html          |
+| SSR process down                 | Caddy fallback to static index.html                            |
 
 ### 6.3 In-App Error Handling
 
 The SPA has error states for API failures:
+
 - `PostDetailPanel` shows error message + retry button when fetch fails
 - `FeedView` shows error state when feed fetch fails
 - No global offline indicator or toast
@@ -256,6 +269,7 @@ The SPA has error states for API failures:
 ### 6.4 PWA Manifest Analysis
 
 Current `public/manifest.json`:
+
 ```json
 {
   "name": "黎安屿你",
@@ -270,6 +284,7 @@ Current `public/manifest.json`:
 ```
 
 Missing for installable PWA:
+
 - Icons (required for install prompt)
 - Service worker (required for offline capability)
 - `scope` field (optional but recommended)
@@ -280,11 +295,11 @@ Missing for installable PWA:
 
 Per `SSR_COMPOSABLE_AUDIT_2026_05_23.md`:
 
-| Phase | Status | Count |
-|-------|--------|-------|
+| Phase                            | Status   | Count                        |
+| -------------------------------- | -------- | ---------------------------- |
 | Phase 1 (post detail + homepage) | Complete | 1 fixed (`useReducedMotion`) |
-| Phase 1.5b (profile SSR) | Pending | 2 mandatory + 8 audit |
-| Phase 2+ (publish/messages/map) | Pending | 4 mandatory + others |
+| Phase 1.5b (profile SSR)         | Pending  | 2 mandatory + 8 audit        |
+| Phase 2+ (publish/messages/map)  | Pending  | 4 mandatory + others         |
 
 The `/post/:tid` and `/` SSR paths are safe. Profile and other routes need composable hardening before SSR expansion.
 
@@ -325,6 +340,7 @@ Based on this audit, the smallest credible next slice is:
 **PWA Phase 2.1: Service Worker + Offline Shell**
 
 Scope:
+
 1. Add `vite-plugin-pwa` to build pipeline
 2. Configure precache for app shell (HTML/JS/CSS/icons)
 3. Implement NetworkFirst strategy for API calls with 5s timeout
@@ -332,12 +348,14 @@ Scope:
 5. Add icons to manifest for install prompt
 
 Non-goals for this slice:
+
 - No Vue SSR rendering (phase 2 SSR)
 - No push notifications
 - No background sync
 - No install prompt UI (defer to 2.3)
 
 Rationale:
+
 - SSR phase 1 is stable; PWA can proceed independently
 - Offline shell is the highest-impact user-facing improvement
 - Precache list depends on stable build manifest (SSR phase 1 provides this)
