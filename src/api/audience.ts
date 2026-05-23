@@ -62,9 +62,12 @@ export async function fetchAudienceOptions(): Promise<AudienceOption[]> {
   try {
     response = await apiGet<AudienceOptionsResponse>("/api/audience/options");
   } catch (error) {
-    // Treat 404 as "feature not deployed yet" and fall back silently.
-    if (error instanceof LianApiError && error.status === 404) {
-      return [...FALLBACK_OPTIONS];
+    // Treat 404/429/5xx as soft failures — fall back silently so the publish
+    // UI keeps working with the default "public" option.
+    if (error instanceof LianApiError) {
+      if (error.status === 404 || error.status === 429 || error.status >= 500) {
+        return [...FALLBACK_OPTIONS];
+      }
     }
     throw error;
   }
