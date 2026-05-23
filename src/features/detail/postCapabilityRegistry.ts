@@ -11,23 +11,24 @@
  * `PostDetailContent.vue`. New capabilities should add a single entry here
  * instead of widening conditionals across the detail panel.
  *
- * Scope (per issue #785):
- *   - capabilities currently shipped: help, event, merchant, trade, place
+ * Scope (per issue #785 / #794):
+ *   - registry-backed typed capabilities currently shipped: help, event,
+ *     merchant, trade
  *   - registry decides selection + fallback only; rendering still happens in
  *     the per-capability block components
+ *   - structured place content still uses the separate `PostPlaceSheetBlock`
+ *     path for now and is intentionally not exposed through this registry
  *   - errand orders, wallet ledgers, verification applications, audit records
  *     are explicitly NOT modeled as post capabilities
  */
 
 import type { PostDetail, PostType } from "../../types/post";
-import type { PlaceRef } from "../../types/place";
 
 /**
  * Capability identifiers known to the registry. These are *rendering*
- * capabilities, not post types — a single post can carry multiple (e.g. an
- * event post with a structured place still gets a place sheet entry).
+ * capabilities, not post types.
  */
-export type PostCapabilityId = "help" | "event" | "merchant" | "trade" | "place";
+export type PostCapabilityId = "help" | "event" | "merchant" | "trade";
 
 /**
  * Selection outcome for one capability against one post.
@@ -36,10 +37,6 @@ export type PostCapabilityId = "help" | "event" | "merchant" | "trade" | "place"
  *   - `fallback`— the post type implies the capability but the payload is
  *     missing or partially populated; render the typed-fallback block instead
  *   - `skip`    — the capability does not apply to this post
- *
- * `fallback` only fires for the four typed action surfaces (help / event /
- * merchant / trade). `place` does not have a typed-fallback equivalent in the
- * shipped UI, so it can only resolve to `render` or `skip`.
  */
 export type PostCapabilitySelection = "render" | "fallback" | "skip";
 
@@ -55,7 +52,7 @@ export interface PostCapabilityResolution {
  */
 export type PostCapabilityInput = Pick<
   PostDetail,
-  "type" | "event" | "help" | "merchant" | "trade" | "place"
+  "type" | "event" | "help" | "merchant" | "trade"
 >;
 
 interface CapabilityDefinition {
@@ -64,8 +61,7 @@ interface CapabilityDefinition {
   hasExtension: (post: PostCapabilityInput) => boolean;
   /**
    * Post types that *imply* the capability. When the type matches but
-   * `hasExtension` is false, the registry returns `fallback`. `null` disables
-   * fallback (used for `place`, which has no typed-fallback block).
+   * `hasExtension` is false, the registry returns `fallback`.
    */
   fallbackType: PostType | null;
 }
@@ -91,11 +87,6 @@ const REGISTRY: readonly CapabilityDefinition[] = [
     hasExtension: (post) => Boolean(post.trade),
     fallbackType: "trade",
   },
-  {
-    id: "place",
-    hasExtension: (post) => isPlaceRefUsable(post.place),
-    fallbackType: null,
-  },
 ];
 
 /**
@@ -116,7 +107,8 @@ export function selectPostCapability(
 
 /**
  * Resolve every capability the registry knows about. Iteration order is
- * stable and matches the order blocks render in `PostDetailContent.vue`.
+ * stable and matches the order registry-backed blocks render in
+ * `PostDetailContent.vue`.
  */
 export function resolvePostCapabilities(
   post: PostCapabilityInput,
@@ -135,7 +127,7 @@ export function shouldRenderCapability(id: PostCapabilityId, post: PostCapabilit
 
 /**
  * True iff the registry would emit the typed-fallback block for this
- * capability + post pair. Place capability never falls back.
+ * capability + post pair.
  */
 export function shouldRenderCapabilityFallback(
   id: PostCapabilityId,
@@ -156,9 +148,4 @@ function isHelpExtensionUsable(help: PostCapabilityInput["help"]): boolean {
   if (!help) return false;
   // Same shape — the help block keys actions off `helpId`.
   return typeof help.helpId === "string" && help.helpId.length > 0;
-}
-
-function isPlaceRefUsable(place: PlaceRef | undefined): boolean {
-  if (!place) return false;
-  return typeof place.id === "string" && place.id.length > 0;
 }

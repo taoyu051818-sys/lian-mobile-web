@@ -159,7 +159,7 @@ Total files: 331
 | `features/auth/useAuthSubmit.ts`                   | export type AuthFormFields = AuthValidationFields;                                                                            |   129 |
 | `features/auth/useEmailCodeCooldown.ts`            | export const AUTH_EMAIL_CODE_DEFAULT_COOLDOWN_SECONDS = 60;                                                                   |   148 |
 | `features/detail/PostActionFeedback.vue`           | Vue SFC                                                                                                                       |    38 |
-| `features/detail/PostDetailContent.vue`            | Issue #785 — single capability lookup. The view used to ladder                                                                |   239 |
+| `features/detail/PostDetailContent.vue`            | Issue #785 — single capability lookup. The view used to ladder                                                                |   240 |
 | `features/detail/PostDetailEventBlock.vue`         | Issue #703 — server-driven status takes precedence when present.                                                              |   556 |
 | `features/detail/PostDetailGallery.vue`            | Vue SFC                                                                                                                       |    78 |
 | `features/detail/PostDetailHelpBlock.vue`          | Vue SFC                                                                                                                       |   221 |
@@ -180,7 +180,7 @@ Total files: 331
 | `features/detail/PostReportBlock.vue`              | Vue SFC                                                                                                                       |   150 |
 | `features/detail/ShareCardSheet.vue`               | Type-only re-export from the composable so the view does not reach into                                                       |   308 |
 | `features/detail/index.ts`                         | TypeScript module                                                                                                             |     2 |
-| `features/detail/postCapabilityRegistry.ts`        | Post capability registry (issue #785). Single canonical lookup for which detail-block capabilities a post should sur...       |   165 |
+| `features/detail/postCapabilityRegistry.ts`        | Post capability registry (issue #785). Single canonical lookup for which detail-block capabilities a post should sur...       |   152 |
 | `features/detail/reportFlow.ts`                    | export interface ReportCategoryOption                                                                                         |    98 |
 | `features/detail/useDetailGallery.ts`              | export function useDetailGallery(options:                                                                                     |    48 |
 | `features/detail/usePlaceSheetLoader.ts`           | export function usePlaceSheetLoader(post: ComputedRef<PostDetail \| null>)                                                    |    56 |
