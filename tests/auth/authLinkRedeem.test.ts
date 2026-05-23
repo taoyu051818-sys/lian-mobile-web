@@ -1,4 +1,4 @@
-import { describe, expect, it, vi, beforeEach } from "vitest";
+import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 
 function readRepoFile(relativePath: string) {
@@ -141,27 +141,27 @@ describe("AuthPanel auth-link integration", () => {
   });
 
   it("passes open state to sheet", () => {
-    expect(panelSource).toContain(":open=\"authLink.open.value\"");
+    expect(panelSource).toContain(':open="authLink.open.value"');
   });
 
   it("passes status to sheet", () => {
-    expect(panelSource).toContain(":status=\"authLink.status.value\"");
+    expect(panelSource).toContain(':status="authLink.status.value"');
   });
 
   it("passes card to sheet", () => {
-    expect(panelSource).toContain(":card=\"authLink.card.value\"");
+    expect(panelSource).toContain(':card="authLink.card.value"');
   });
 
   it("handles close event", () => {
-    expect(panelSource).toContain("@close=\"authLink.close\"");
+    expect(panelSource).toContain('@close="authLink.close"');
   });
 
   it("handles redeem event", () => {
-    expect(panelSource).toContain("@redeem=\"authLink.redeem\"");
+    expect(panelSource).toContain('@redeem="authLink.redeem"');
   });
 
   it("handles retry event", () => {
-    expect(panelSource).toContain("@retry=\"authLink.retry\"");
+    expect(panelSource).toContain('@retry="authLink.retry"');
   });
 });
 

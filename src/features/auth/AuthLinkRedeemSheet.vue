@@ -32,7 +32,7 @@ import { useBodyScrollLock } from "../../composables/useBodyScrollLock";
 import { useEscapeListener } from "../../composables/useEscapeListener";
 import { useFocusRestore } from "../../composables/useFocusRestore";
 import { LianButton } from "../../ui";
-import type { AuthLinkCard } from "../../api/authLink";
+import type { AuthLinkCard } from "./useAuthLinkRedeem";
 
 const props = withDefaults(
   defineProps<{
