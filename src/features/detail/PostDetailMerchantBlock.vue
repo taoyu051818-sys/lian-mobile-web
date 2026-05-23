@@ -46,6 +46,7 @@ const props = defineProps<{
   merchantPostId?: number;
   errandUnavailableReason?: MerchantErrandUnavailableReason | "";
   errandUnavailableReasonText?: string;
+  showErrandAction?: boolean;
 }>();
 
 const CATEGORY_LABEL: Record<MerchantCategory, string> = {
@@ -74,11 +75,12 @@ const verifiedAtLabel = computed(() => {
 // merchant does not support errand at all — we render nothing in that case
 // so non-errand merchants don't grow a "暂未开放" chip.
 const errandUnavailable = computed(() => props.errandEntryAvailable === false);
+const showErrandEntry = computed(() => props.showErrandAction ?? props.errandEntryAvailable === true);
 const errandRoute = useErrandOrderRoute();
 const { setActiveView } = useActiveView();
 const detail = useDetailNavigation();
 const errandEntryClickable = computed(
-  () => props.errandEntryAvailable === true && (props.merchantPostId ?? 0) > 0,
+  () => showErrandEntry.value && (props.merchantPostId ?? 0) > 0,
 );
 const unavailableReasonLabel = computed(() => {
   if (!errandUnavailable.value) return "";
@@ -164,7 +166,7 @@ function handleErrandClick() {
     </dl>
 
     <div
-      v-if="errandEntryAvailable || errandUnavailable"
+      v-if="showErrandEntry || errandUnavailable"
       class="post-detail-merchant-block__errand"
       :class="{ 'is-unavailable': errandUnavailable }"
       :data-testid="errandWrapperTestId"
