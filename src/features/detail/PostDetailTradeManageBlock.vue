@@ -2,10 +2,14 @@
 import { computed, ref, watch } from "vue";
 import { patchTradeState } from "../../api/posts";
 import { fetchAuthMe } from "../../api/profile";
-import { extractErrorMessage } from "../../utils/extractErrorMessage";
 import type { PostDetail } from "../../types/post";
 import type { TradeState } from "../../types/post-extensions";
-import { availablePostActions, type PostActionContext, type PostActionId } from "./postActionRegistry";
+import { extractErrorMessage } from "../../utils/extractErrorMessage";
+import {
+  availablePostActions,
+  type PostActionContext,
+  type PostActionId,
+} from "./postActionRegistry";
 
 const props = defineProps<{
   post: PostDetail | null;
@@ -52,7 +56,9 @@ const tradeManageable = computed(() => {
   if (!user) return false;
   return Boolean(
     (user.id && currentPost.actor?.id && user.id === currentPost.actor.id) ||
-    (user.username && currentPost.actor?.username && user.username === currentPost.actor.username),
+      (user.username &&
+        currentPost.actor?.username &&
+        user.username === currentPost.actor.username),
   );
 });
 
@@ -72,18 +78,28 @@ function tradeStateFromAction(id: Extract<PostActionId, `trade-set-${string}`>):
 
 const tradeActions = computed(() => {
   return availablePostActions(actionContext.value)
-    .filter((id): id is Extract<PostActionId, `trade-set-${string}`> => id.startsWith("trade-set-"))
+    .filter(
+      (id): id is Extract<PostActionId, `trade-set-${string}`> =>
+        id.startsWith("trade-set-"),
+    )
     .map((id) => {
       const state = tradeStateFromAction(id);
       return {
         state,
         label: TRADE_ACTION_LABELS[state],
-        tone: state === "cancelled" ? "danger" : state === "hidden" ? "quiet" : "default",
+        tone:
+          state === "cancelled"
+            ? "danger"
+            : state === "hidden"
+              ? "quiet"
+              : "default",
       };
     });
 });
 
-const showTradeManage = computed(() => tradeManageable.value && tradeActions.value.length > 0);
+const showTradeManage = computed(
+  () => tradeManageable.value && tradeActions.value.length > 0,
+);
 
 async function handleTradeAction(nextState: TradeState) {
   const currentId = post.value?.tid;
