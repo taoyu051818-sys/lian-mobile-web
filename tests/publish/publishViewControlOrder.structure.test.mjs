@@ -5,22 +5,25 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 /**
- * PR-3 (#813 follow-up) — publish-control structural lock.
+ * PRD V0.2 step F (§2.2 / §6 step F) — kind-by-radio is dead, kind-by-panel
+ * is the new shape.
  *
- * The publish view used to mix two "what kind of post am I making" decision
- * cards in the type-decision area: the `publishKind` fieldset (3 options)
- * plus PublishEventControls's inner "内容类型" panel (post / event), which
- * looked like a second decision and put the event-fields panel oddly far
- * from where users picked merchant/trade. This test pins the cleaned-up
- * shape so it can't silently regress:
+ * Pre-step-F: a 4-radio "publishKind" fieldset (regular / event / merchant /
+ * trade) sat at the top of the publish form. PR-3 (#813) had cleaned that up
+ * into a `kindStates` source of truth that all 4 radios shared, but the user-
+ * facing decision was still "pick a kind first, then fill the form".
  *
- *   1. Single 4-option publishKind switch: regular / event / merchant / trade
- *   2. Type-specific blocks (event panel, merchant form, trade form) render
- *      directly inside the form, in switch-order, gated on publishKind
- *   3. PublishEventControls owns the event fields only (the inner post-type
- *      chooser is gone) and is mounted by the parent on publishKind === "event"
- *   4. eventDraft.postType stays in lock-step with publishKind via a parent
- *      watch, so usePublishSubmit's createEvent branch keeps firing
+ * Step F removes the radios entirely. `publishKind` is still a ref; it is now
+ * mutated by:
+ *
+ *   1. `accept(suggestedComponent)` from the inline ghost-component list
+ *      (event_time / merchant_info / trade_condition / price). See
+ *      createSuggestedComponentsActions in usePublishDraft.
+ *   2. Verification drop-out (defense-in-depth watch resets to "regular").
+ *
+ * Wire-`kind` for the post is no longer driven by a user radio choice — it
+ * is inferred at submit time by `inferKind` (src/features/publish/inferKind.ts).
+ * This test pins the post-step-F structure so it can't silently regress.
  */
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
@@ -29,30 +32,34 @@ function read(rel) {
   return fs.readFileSync(path.join(repoRoot, rel), "utf8");
 }
 
-test("PublishView publishKind switch exposes regular / event / merchant / trade", () => {
+test("PublishView no longer renders the 4-radio publishKind fieldset (step F)", () => {
   const src = read("src/features/publish/PublishView.vue");
-  assert.match(src, /data-testid="publish-type-switch"/);
-  assert.match(src, /data-testid="publish-type-event"/);
-  assert.match(src, /data-testid="publish-type-merchant"/);
-  assert.match(src, /data-testid="publish-type-trade"/);
-  assert.match(src, /selectPublishKind\('regular'\)/);
-  assert.match(src, /selectPublishKind\('event'\)/);
-  assert.match(src, /selectPublishKind\('merchant'\)/);
-  assert.match(src, /selectPublishKind\('trade'\)/);
-  assert.match(src, /PUBLISH_TYPE_REGULAR/);
-  assert.match(src, /PUBLISH_TYPE_EVENT/);
-  assert.match(src, /PUBLISH_TYPE_MERCHANT/);
-  assert.match(src, /PUBLISH_TYPE_TRADE/);
+
+  // The radio fieldset, the per-radio testids, the selectPublishKind helper
+  // and the kindStates computed are all gone in step F.
+  assert.doesNotMatch(src, /data-testid="publish-type-switch"/);
+  assert.doesNotMatch(src, /data-testid="publish-type-event"/);
+  assert.doesNotMatch(src, /data-testid="publish-type-merchant"/);
+  assert.doesNotMatch(src, /data-testid="publish-type-trade"/);
+  assert.doesNotMatch(src, /selectPublishKind\(/);
+  assert.doesNotMatch(src, /const\s+kindStates\s*=\s*computed/);
+  assert.doesNotMatch(src, /name="publish-kind"/);
+
+  // The brand-string imports the radios used go with them. The constants
+  // themselves stay defined (PRD §5.2 — "保留至 i18n 迁移完成后再批量清"),
+  // but PublishView no longer references them.
+  assert.doesNotMatch(src, /PUBLISH_TYPE_LABEL/);
+  assert.doesNotMatch(src, /PUBLISH_TYPE_REGULAR/);
+  assert.doesNotMatch(src, /PUBLISH_TYPE_EVENT/);
+  assert.doesNotMatch(src, /PUBLISH_TYPE_MERCHANT/);
+  assert.doesNotMatch(src, /PUBLISH_TYPE_TRADE/);
 });
 
-test("PublishView selectPublishKind accepts the 4-option PublishKind union", () => {
-  const src = read("src/features/publish/PublishView.vue");
-  // The local helper signature should mirror the PublishKind union so
-  // TypeScript catches drift at the call sites.
-  assert.match(src, /selectPublishKind\(kind: "regular" \| "event" \| "merchant" \| "trade"\)/);
-});
-
-test("usePublishDraft promotes 'event' to a peer of regular / merchant / trade", () => {
+test("usePublishDraft still exposes the 4-member PublishKind union (panel v-if keys)", () => {
+  // The 4-member union stays — it keys the panel v-if guards in PublishView
+  // (event/merchant/trade) plus the createEvent branch in usePublishSubmit
+  // (postType === "event"). What changed in step F is *who* mutates the ref:
+  // ghost-component accept actions, not a radio @change.
   const src = read("src/features/publish/usePublishDraft.ts");
   assert.match(src, /PublishKind\s*=\s*"regular"\s*\|\s*"event"\s*\|\s*"merchant"\s*\|\s*"trade"/);
 });
@@ -69,37 +76,34 @@ test("PublishView keeps eventDraft.postType in lock-step with publishKind", () =
   assert.match(src, /immediate:\s*true/);
 });
 
-test("PublishView mounts type-specific blocks in switch-order under the publishKind fieldset", () => {
+test("PublishView mounts type-specific panels gated on publishKind, in switch-order", () => {
   const src = read("src/features/publish/PublishView.vue");
 
   const eventIdx = src.search(/<PublishEventControls/);
   const merchantIdx = src.search(/<PublishMerchantControls/);
   const tradeIdx = src.search(/<PublishTradeControls/);
   const composerIdx = src.search(/<PublishComposer/);
-  const switchIdx = src.search(/data-testid="publish-type-switch"/);
 
   assert.ok(eventIdx > -1, "PublishEventControls must be mounted");
   assert.ok(merchantIdx > -1, "PublishMerchantControls must be mounted");
   assert.ok(tradeIdx > -1, "PublishTradeControls must be mounted");
   assert.ok(composerIdx > -1, "PublishComposer must be mounted");
-  assert.ok(switchIdx > -1, "publishKind switch must be mounted");
 
-  assert.ok(switchIdx < eventIdx, "publishKind switch must come before event panel");
   assert.ok(
     eventIdx < merchantIdx,
-    "event panel must come before merchant form (matches switch order)",
+    "event panel must come before merchant panel (matches PublishKind union order)",
   );
   assert.ok(
     merchantIdx < tradeIdx,
-    "merchant form must come before trade form (matches switch order)",
+    "merchant panel must come before trade panel (matches PublishKind union order)",
   );
   assert.ok(
     tradeIdx < composerIdx,
-    "type-specific blocks must come before the composer (primary input)",
+    "type-specific panels must come before the composer (primary input)",
   );
 });
 
-test("PublishView gates each type-specific block on publishKind", () => {
+test("PublishView gates each type-specific panel on publishKind", () => {
   const src = read("src/features/publish/PublishView.vue");
   assert.match(
     src,
@@ -130,4 +134,13 @@ test("PublishEventControls owns event fields only (no inner post-type chooser)",
   assert.match(src, /data-testid="publish-event-end-at"/);
   assert.match(src, /data-testid="publish-event-capacity"/);
   assert.match(src, /data-testid="publish-event-join-policy"/);
+});
+
+test("usePublishSubmit threads inferred kind onto the wire payload (step F §2.2)", () => {
+  const src = read("src/features/publish/usePublishSubmit.ts");
+  // The submit path imports the inference function and passes its result
+  // into buildPublishPayload as the wire `kind` field.
+  assert.match(src, /import\s+\{\s*inferKind\s*\}/);
+  assert.match(src, /inferKind\(\{[\s\S]*?publishKind:[\s\S]*?\}\)/);
+  assert.match(src, /kind,/);
 });

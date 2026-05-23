@@ -11,13 +11,21 @@ import { fileURLToPath } from "node:url";
  * Locks the structural contract behind two product directives:
  *
  *   1. "做更多无感化隐式提示，例如商家其实不是主要用户的功能，只有商家才出现
- *      对应按钮，普通用户都不出现相关按钮和提示" — non-merchants do not see
- *      the merchant publishKind radio at all (rendered with `v-if`, not
- *      `v-show` / display:none, so the DOM matches the role).
+ *      对应按钮，普通用户都不出现相关按钮和提示" — merchant entry is gated on
+ *      the verification flag at every layer:
+ *        - PRD V0.2 step F removed the 4-radio entirely (no merchant radio
+ *          for any user, verified or not).
+ *        - The remaining merchant entry path is `accept(merchant_info)`
+ *          from the inline ghost-component list, which already gates on
+ *          `merchant_verified` inside `createSuggestedComponentsActions`
+ *          (see usePublishDraft) — non-merchants never see the merchant
+ *          panel even if a malformed server response leaks the ghost.
+ *        - The PublishMerchantControls panel gate inside the form stays
+ *          as defense-in-depth.
  *   2. "发布页的商家贴的提示现在都是默认弹出的，太影响用户体验了" — the
- *      merchant hint inside PublishMerchantControls is now default-collapsed
- *      (PublishGateNotice receives `:default-open="false"`, which renders a
- *      <details> with the body collapsed on initial mount).
+ *      merchant hint inside PublishMerchantControls is default-collapsed
+ *      (PublishGateNotice receives `:default-open="false"`, which renders
+ *      a <details> with the body collapsed on initial mount).
  *
  * Trade is intentionally NOT capability-gated. Trade uses the
  * campus_verified gate (校园邮箱认证) which is the baseline most users hit;
@@ -31,75 +39,43 @@ function read(rel) {
   return fs.readFileSync(path.join(repoRoot, rel), "utf8");
 }
 
-test("non-merchant user: publishKind only renders the non-merchant radios (merchant is v-if-gated)", () => {
+test("PublishView no longer renders any publishKind radio (PRD V0.2 step F)", () => {
   const src = read("src/features/publish/PublishView.vue");
-
-  // The merchant <label> is wrapped with v-if on the merchant verification
-  // ref. When the ref is false (non-merchant), Vue elides the <label> from
-  // the DOM entirely — no v-show / display:none.
-  assert.match(
-    src,
-    /<label\s+v-if="draft\.merchant\.merchantVerified\.value"[\s\S]*?data-testid="publish-type-merchant"/,
-    "merchant <label> must carry v-if on draft.merchant.merchantVerified.value",
-  );
-  assert.doesNotMatch(
-    src,
-    /v-show="[^"]*merchantVerified/,
-    "merchant radio must not be rendered with v-show (non-merchants must not see the DOM node)",
-  );
-
-  // The non-merchant radios (regular / event / trade) are unconditional —
-  // their <label> blocks have no v-if guard. Asserting source-side keeps
-  // this fast (no Vue runtime needed in node:test).
-  for (const testid of ["regular", "event", "trade"]) {
-    const block = src.match(
-      new RegExp(
-        `<label[^>]*>\\s*<input[^>]*name="publish-kind"\\s+value="${testid}"[\\s\\S]*?<\\/label>`,
-      ),
-    );
-    assert.ok(block, `${testid} radio block must exist`);
-    const labelOpen = block[0].match(/<label[^>]*>/)[0];
-    assert.doesNotMatch(
-      labelOpen,
-      /v-if=/,
-      `${testid} radio <label> must not be capability-gated (only merchant is)`,
-    );
-  }
-
-  // The standalone "you can't pick merchant" affordance-gate banner the old
-  // flow rendered above the form is gone — hiding the radio replaces it.
+  // Step F removed the 4-radio fieldset entirely. The merchant-capability
+  // gate now lives at the ghost-component accept layer (verified-only
+  // mutation in createSuggestedComponentsActions) plus the in-panel gate
+  // inside PublishMerchantControls.
+  assert.doesNotMatch(src, /data-testid="publish-type-switch"/);
+  assert.doesNotMatch(src, /data-testid="publish-type-merchant"/);
+  assert.doesNotMatch(src, /data-testid="publish-type-event"/);
+  assert.doesNotMatch(src, /data-testid="publish-type-trade"/);
+  assert.doesNotMatch(src, /name="publish-kind"/);
+  // The standalone affordance banner the old flow rendered above the form is
+  // also gone — hiding the entry point replaces it.
   assert.doesNotMatch(src, /merchantAffordanceLocked/);
   assert.doesNotMatch(src, /data-testid="publish-merchant-affordance-gate"/);
 });
 
-test("merchant user: publishKind exposes all 4 radios (regular / event / merchant / trade)", () => {
+test("createSuggestedComponentsActions enforces merchant_verified before flipping publishKind", () => {
+  // The post-step-F "select merchant" path runs through accept(merchant_info)
+  // — the mutation on publishKind is wrapped in a verification check, so a
+  // leaked ghost cannot dump a non-merchant into the merchant panel.
+  const src = read("src/features/publish/usePublishDraft.ts");
+  assert.match(
+    src,
+    /case\s+"merchant_info":[\s\S]*?if\s*\(params\.merchantVerified\.value\)\s*params\.publishKind\.value\s*=\s*"merchant"/,
+  );
+});
+
+test("PublishView falls back to regular when merchant verification flips off mid-session", () => {
   const src = read("src/features/publish/PublishView.vue");
-
-  // The v-if guard reads draft.merchant.merchantVerified.value — when that
-  // ref is true (merchant user) Vue renders the <label>, so all 4 radios
-  // are present in the DOM. The other 3 are unconditional, asserted in the
-  // sibling test.
-  assert.match(src, /draft\.merchant\.merchantVerified\.value/);
-
-  // All 4 radios + brand strings exist in source. The publishViewControlOrder
-  // structure test already covers ordering; this test covers presence-as-
-  // contract for the 4-option set under the gating commit.
-  assert.match(src, /data-testid="publish-type-event"/);
-  assert.match(src, /data-testid="publish-type-merchant"/);
-  assert.match(src, /data-testid="publish-type-trade"/);
-  assert.match(src, /value="regular"/);
-  assert.match(src, /value="event"/);
-  assert.match(src, /value="merchant"/);
-  assert.match(src, /value="trade"/);
-  assert.match(src, /PUBLISH_TYPE_REGULAR/);
-  assert.match(src, /PUBLISH_TYPE_EVENT/);
-  assert.match(src, /PUBLISH_TYPE_MERCHANT/);
-  assert.match(src, /PUBLISH_TYPE_TRADE/);
-
-  // selectPublishKind still accepts all 4 union members so the click handler
-  // is type-safe for the merchant case once the v-if reveals the radio.
-  assert.match(src, /selectPublishKind\('merchant'\)/);
-  assert.match(src, /selectPublishKind\(kind: "regular" \| "event" \| "merchant" \| "trade"\)/);
+  // Defense-in-depth: if the verification ref flips false while publishKind
+  // was already "merchant" (set via accept(merchant_info)), reset to
+  // "regular" so the form doesn't sit on a panel the user can't satisfy.
+  assert.match(
+    src,
+    /watch\(draft\.merchant\.merchantVerified[\s\S]*?draft\.publishKind\.value\s*=\s*"regular"/,
+  );
 });
 
 test("merchant hint banner default-collapsed (closed <details> on initial render)", () => {

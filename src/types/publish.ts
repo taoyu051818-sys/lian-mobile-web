@@ -6,6 +6,7 @@ import type {
 } from "./place";
 import type { Audience } from "./audience";
 import type { MerchantCategory, TradeState } from "./post-extensions";
+import type { InferredKind } from "./publishSuggestion";
 
 export type PublishVisibility = "public" | "campus" | "school" | "private";
 export type PublishLocationSource = "manual" | "skipped" | "map_v2";
@@ -91,6 +92,17 @@ export interface PublishPayload {
   body: string;
   tag: string;
   identityTag: string;
+  /**
+   * Wire-`kind` tag (PRD V0.2 §2.2). Inferred client-side from the draft at
+   * submit time — see `inferKind` in `src/features/publish/inferKind.ts`.
+   * The backend continues to branch on this value rather than re-inferring,
+   * so the contract is "publish front-end picks the kind, server trusts it".
+   *
+   * Optional on the wire so older clients (pre step F) keep working — when
+   * absent the server falls through to the existing kind defaulting in
+   * `normalizePostTaxonomy`. New clients always send it.
+   */
+  kind?: InferredKind;
   metadata: {
     locationArea?: string;
     visibility: PublishVisibility;
