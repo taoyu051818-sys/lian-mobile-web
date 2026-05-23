@@ -199,7 +199,11 @@ onMounted(() => {
 </script>
 
 <template>
-  <section class="publish-view keyboard-aware-surface" :aria-label="PUBLISH_SECTION_LABEL">
+  <section
+    class="publish-view keyboard-aware-surface"
+    :aria-label="PUBLISH_SECTION_LABEL"
+    data-testid="publish-card"
+  >
     <GlassPanel class="publish-view__card">
       <PublishMessage v-if="draft.errorMessage.value" variant="error">
         {{ draft.errorMessage.value }}
