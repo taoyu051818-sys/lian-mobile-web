@@ -13,6 +13,20 @@ export type ProfileTabKey =
 
 export type ProfileActivityStatus = "published" | "draft" | "pending" | "hidden";
 
+/**
+ * Posts-tab content filter (issue #611, PR-C). Backend
+ * `profile-activity-service.js#parseActivityContentFilter` already parses
+ * `?presentationIntent=` and filters via `topicMatchesContentFilter`. The
+ * frontend chip strip only surfaces three of the backend
+ * `POST_ALLOWED_PRESENTATION_INTENTS` values — merchant / trade / help —
+ * because text/image/place are baseline and event posts ride
+ * `metadata.event` rather than a presentationIntent (followup gate).
+ *
+ * `"all"` is the default and means "do not append `?presentationIntent=` to
+ * the request"; the API client treats it as the no-op sentinel.
+ */
+export type ProfilePostsContentFilter = "all" | "merchant" | "trade" | "help";
+
 export interface ProfileAlias {
   id: string;
   name: string;

@@ -20,7 +20,12 @@ import {
   PROFILE_LIST_ERROR_PREFIX,
 } from "../../config/brand";
 import type { FeedItemId } from "../../types/feed";
-import type { ProfileListItem, ProfileTabKey, ProfileUser } from "../../types/profile";
+import type {
+  ProfileListItem,
+  ProfilePostsContentFilter,
+  ProfileTabKey,
+  ProfileUser,
+} from "../../types/profile";
 
 export function useProfileTabs(options: {
   user: Ref<ProfileUser | null>;
@@ -34,6 +39,10 @@ export function useProfileTabs(options: {
   const listError = ref("");
   const activeTab = ref<ProfileTabKey>("history");
   const profileItems = ref<ProfileListItem[]>([]);
+  // PR-C of #611 — posts-tab content filter. Only used when activeTab is
+  // "posts"; switching to other tabs leaves the value untouched so a return
+  // to posts restores the previous chip selection.
+  const postsContentFilter = ref<ProfilePostsContentFilter>("all");
 
   const tabs: Array<{ key: ProfileTabKey; label: string; empty: string }> = [
     { key: "history", label: PROFILE_TAB_HISTORY, empty: EMPTY_HISTORY },
@@ -63,16 +72,20 @@ export function useProfileTabs(options: {
     return getRecentReadHistoryIds(localStorage, 50);
   }
 
-  async function fetchProfileTabWithSessionRefresh(tab: ProfileTabKey, tids: FeedItemId[] = []) {
+  async function fetchProfileTabWithSessionRefresh(
+    tab: ProfileTabKey,
+    tids: FeedItemId[] = [],
+    contentFilter: ProfilePostsContentFilter = "all",
+  ) {
     try {
-      return await fetchProfileTab(tab, tids);
+      return await fetchProfileTab(tab, tids, { contentFilter });
     } catch (error) {
       if (!isMissingSessionError(error)) throw error;
       const sessionStillValid = await refreshCurrentSession();
       if (!sessionStillValid) throw error;
 
       try {
-        return await fetchProfileTab(tab, tids);
+        return await fetchProfileTab(tab, tids, { contentFilter });
       } catch (retryError) {
         if (isMissingSessionError(retryError)) {
           throw new Error(
@@ -105,6 +118,7 @@ export function useProfileTabs(options: {
       const response = await fetchProfileTabWithSessionRefresh(
         tab,
         tab === "history" ? readHistoryIds() : [],
+        tab === "posts" ? postsContentFilter.value : "all",
       );
       profileItems.value = response.items || [];
     } catch (error) {
@@ -122,6 +136,18 @@ export function useProfileTabs(options: {
     }
   }
 
+  /**
+   * Pick a posts-tab content filter chip and refetch the posts collection.
+   * No-op if the user is not on the posts tab; the chip strip is gated on
+   * `activeTab === "posts"` in the view, so this is defensive.
+   */
+  async function selectPostsContentFilter(filter: ProfilePostsContentFilter) {
+    if (postsContentFilter.value === filter) return;
+    postsContentFilter.value = filter;
+    if (activeTab.value !== "posts") return;
+    await loadProfileList("posts");
+  }
+
   function resetList() {
     profileItems.value = [];
     listError.value = "";
@@ -134,7 +160,9 @@ export function useProfileTabs(options: {
     profileItems,
     tabs,
     listEmptyText,
+    postsContentFilter,
     loadProfileList,
+    selectPostsContentFilter,
     resetList,
   };
 }

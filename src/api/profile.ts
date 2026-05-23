@@ -4,6 +4,7 @@ import type {
   ProfileActivityStatus,
   ProfileListItem,
   ProfileListResponse,
+  ProfilePostsContentFilter,
   ProfileRewards,
   ProfileSettings,
   ProfileSettingsPatch,
@@ -82,9 +83,23 @@ export function normalizeProfileListResponse(data: unknown): ProfileListResponse
   return { items };
 }
 
+export interface ProfileTabRequestOptions {
+  /**
+   * Posts-tab content filter (issue #611, PR-C). When set to anything other
+   * than `"all"` and the active tab is `"posts"`, the resolver appends
+   * `?presentationIntent=<value>` so the backend's existing query parser
+   * (`profile-activity-service.js#parseActivityContentFilter`) narrows the
+   * collection. Filter is intentionally ignored on every other tab — chips
+   * are gated on the posts tab in the view, but defending the contract here
+   * keeps a stray pass from silently mutating the wrong endpoint.
+   */
+  contentFilter?: ProfilePostsContentFilter;
+}
+
 export function resolveProfileTabRequest(
   tab: ProfileTabKey,
   tids: FeedItemId[] = [],
+  options: ProfileTabRequestOptions = {},
 ): { path: string; method: "GET" | "POST"; body?: string } {
   if (tab === "history") {
     return {
@@ -96,7 +111,14 @@ export function resolveProfileTabRequest(
 
   if (tab === "saved") return { path: "/api/me/saved", method: "GET" };
   if (tab === "liked") return { path: "/api/me/liked", method: "GET" };
-  if (tab === "posts") return { path: "/api/me/posts", method: "GET" };
+  if (tab === "posts") {
+    const filter =
+      options.contentFilter && options.contentFilter !== "all" ? options.contentFilter : "";
+    const path = filter
+      ? `/api/me/posts?presentationIntent=${encodeURIComponent(filter)}`
+      : "/api/me/posts";
+    return { path, method: "GET" };
+  }
   if (tab === "replies") return { path: "/api/me/replies", method: "GET" };
   if (tab === "drafts") return { path: "/api/me/drafts", method: "GET" };
   return { path: "/api/me/map-contributions", method: "GET" };
@@ -105,8 +127,9 @@ export function resolveProfileTabRequest(
 export async function fetchProfileTab(
   tab: ProfileTabKey,
   tids: FeedItemId[] = [],
+  options: ProfileTabRequestOptions = {},
 ): Promise<ProfileListResponse> {
-  const request = resolveProfileTabRequest(tab, tids);
+  const request = resolveProfileTabRequest(tab, tids, options);
   if (request.method === "POST") {
     if (tab === "history" && !tids.length) return { items: [] };
     return normalizeProfileListResponse(

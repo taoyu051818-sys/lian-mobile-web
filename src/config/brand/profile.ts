@@ -117,3 +117,19 @@ export const PROFILE_SETTINGS_LOAD_ERROR = "设置加载失败，可以稍后再
 export const PROFILE_SETTINGS_PATCH_ERROR = "设置没有保存成功，已恢复到上一个状态。";
 export const PROFILE_SETTINGS_SAVING = "保存中…";
 export const PROFILE_SETTINGS_RELOAD = "重新加载";
+
+/**
+ * 发布 tab 内容筛选 chip (issue #611, PR-C).
+ *
+ * 后端 `profile-activity-service.js#parseActivityContentFilter` 支持
+ * `?presentationIntent=` 过滤 /api/me/posts，所以 chip 直接转发为 query
+ * 参数。chip 集合只暴露 merchant / trade / help —— 这三类是产品语义里
+ * 用户最常想"只看我自己发的商家/二手/求助"的子集。event 暂不暴露，
+ * 因为后端把 event 信息挂在 `metadata.event` 而不是 presentationIntent，
+ * 加 event 过滤需要单独的 platform-server 改动 (列在 PR-C followup)。
+ */
+export const PROFILE_POSTS_CONTENT_FILTER_LABEL = "发布内容筛选";
+export const PROFILE_POSTS_CONTENT_FILTER_ALL = "全部";
+export const PROFILE_POSTS_CONTENT_FILTER_MERCHANT = "商家";
+export const PROFILE_POSTS_CONTENT_FILTER_TRADE = "二手";
+export const PROFILE_POSTS_CONTENT_FILTER_HELP = "互助";
