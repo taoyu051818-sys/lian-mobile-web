@@ -1,4 +1,4 @@
-import { expect, request, test, type APIRequestContext } from "@playwright/test";
+import { expect, request, test } from "@playwright/test";
 
 const BASE_URL = process.env.APP_BASE_URL ?? "https://lian.nat100.top";
 
@@ -17,7 +17,7 @@ const BASE_URL = process.env.APP_BASE_URL ?? "https://lian.nat100.top";
  * For E2E tests, we use LIAN_E2E_GATE_ANSWER env var to provide it.
  */
 
-const PROTECTED_PATHS = [
+const _PROTECTED_PATHS = [
   "/ops.html",
   "/api/ops/health",
   "/api/admin/me",
@@ -25,7 +25,7 @@ const PROTECTED_PATHS = [
   "/api/setup",
 ];
 
-const UNPROTECTED_PATHS = ["/", "/api/feed", "/#/profile"];
+const _UNPROTECTED_PATHS = ["/", "/api/feed", "/#/profile"];
 
 function getGateAnswer(): string | null {
   return process.env.LIAN_E2E_GATE_ANSWER ?? null;
