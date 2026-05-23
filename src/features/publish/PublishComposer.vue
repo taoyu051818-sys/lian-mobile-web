@@ -19,6 +19,7 @@ import {
 } from "../../config/brand";
 import PublishImagePreview from "./PublishImagePreview.vue";
 import PublishCandidateBar from "./PublishCandidateBar.vue";
+import PublishTitleCandidateBar from "./PublishTitleCandidateBar.vue";
 import type { MapLocation } from "../../types/map";
 
 const MAX_TITLE_LENGTH = 40;
@@ -75,6 +76,12 @@ function openFilePicker() {
         @input="emit('update:title', ($event.target as HTMLInputElement).value)"
       />
     </label>
+
+    <!-- PRD V0.2 step D — LLM title-candidate strip. Mounts directly under
+         the title input so the apply/revert action sits next to the field
+         it edits, mirroring the body bar's placement under the textarea.
+         Bar consumes the title-candidate API via inject. -->
+    <PublishTitleCandidateBar />
 
     <label class="publish-composer__body-field">
       <span class="publish-composer__body-label">{{ PUBLISH_BODY_LABEL }}</span>
