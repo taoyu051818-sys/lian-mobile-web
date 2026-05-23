@@ -6,14 +6,16 @@ import {
   asRecord,
   asString,
   asStringArray,
+  extractV2Components,
   normalizeDisplayActor,
-  normalizeEventExtension,
+  normalizeEventExtensionV2,
   normalizeFeedItemId,
-  normalizeHelpExtension,
-  normalizeMerchantExtension,
+  normalizeHelpExtensionV2,
+  normalizeMerchantExtensionV2,
   normalizePlaceRef,
   normalizeSourceSignal,
   normalizeTradeExtension,
+  normalizeTradeExtensionV2,
 } from "../platform/api-normalizers";
 import type { FeedItemId } from "../types/feed";
 import { normalizePostType, type PostDetail, type PostReply, type PostType } from "../types/post";
@@ -104,17 +106,20 @@ export function normalizePostDetail(value: unknown, fallbackId: FeedItemId): Pos
   const bookmarkedValue = "bookmarked" in record ? record.bookmarked : record.saved;
   const cover = asString(record.cover);
   const type = normalizeDetailPostType(record, Boolean(cover));
-  const event = normalizeEventExtension(record.event);
+
+  // V2 metadata components — prefer when present, fall back to V1 flat fields
+  const v2Components = extractV2Components(record);
+  const event = normalizeEventExtensionV2(v2Components, record.event);
   const eventJoined = "eventJoined" in record ? asBoolean(record.eventJoined) : undefined;
   // Issue #703 — backend may ship eventManageable so the detail page does not
   // double-resolve author/admin client-side. Absent value = let the frontend
   // probe via /api/auth/me + /api/admin/me.
   const eventManageable =
     "eventManageable" in record ? asBoolean(record.eventManageable) : undefined;
-  const help = normalizeHelpExtension(record.help);
+  const help = normalizeHelpExtensionV2(v2Components, record.help);
   const helpVoted = "helpVoted" in record ? asBoolean(record.helpVoted) : undefined;
   const helpManageable = "helpManageable" in record ? asBoolean(record.helpManageable) : undefined;
-  const merchant = normalizeMerchantExtension(record.merchant);
+  const merchant = normalizeMerchantExtensionV2(v2Components, record.merchant);
   // `errandEntryAvailable` is hoisted to the top level by the backend DTO. We
   // only surface it when the merchant block is present so callers can rely on
   // `(post.merchant && post.errandEntryAvailable)` without a null check.
@@ -138,7 +143,9 @@ export function normalizePostDetail(value: unknown, fallbackId: FeedItemId): Pos
     merchant && errandEntryAvailable === false
       ? asString(record.errandUnavailableReasonText) || errandEligibility?.reasonText || ""
       : undefined;
-  const trade = normalizeTradeExtensionFromDetail(record.trade);
+  // V2 trade normalizer with state override for detail endpoint compatibility
+  const tradeRecord = asRecord(record.trade);
+  const trade = normalizeTradeExtensionV2(v2Components, record.trade, tradeRecord.state);
   const tradeManageable =
     "tradeManageable" in record ? asBoolean(record.tradeManageable) : undefined;
 
