@@ -1,4 +1,14 @@
-import { computed, onBeforeUnmount, ref } from "vue";
+import {
+  computed,
+  inject,
+  onBeforeUnmount,
+  provide,
+  ref,
+  watch,
+  type ComputedRef,
+  type InjectionKey,
+  type Ref,
+} from "vue";
 import {
   ERROR_PUBLISH_IMAGE,
   PUBLISH_IMAGE_MAX,
@@ -34,6 +44,130 @@ import { useTradePublishDraft } from "./useTradePublishDraft";
 export type PublishKind = "regular" | "event" | "merchant" | "trade";
 
 /**
+ * Body candidate slot (PRD V0.2 step B).
+ *
+ * The LLM-polished body lives in `bodyCandidate` until the user explicitly
+ * applies it via `applyBodyCandidate`; the previous body is parked in
+ * `bodyBeforeCandidate` so a single `revertBodyCandidate` call rolls back.
+ *
+ * Persistence: transient. The candidate is LLM-derived and can always be
+ * regenerated; persisting it across sessions would re-surface stale
+ * suggestions (e.g. user edited body offline, candidate is now wrong) and
+ * the PRD explicitly reserves storage for what the user typed. Step C will
+ * write into this slot from the LLM response — same lifetime, same rules.
+ */
+export interface PublishBodyCandidateApi {
+  body: Ref<string>;
+  bodyCandidate: Ref<string | null>;
+  bodyBeforeCandidate: Ref<string | null>;
+  bodyCandidateApplied: ComputedRef<boolean>;
+  bodyCandidateVisible: ComputedRef<boolean>;
+  setBodyCandidate: (value: string | null) => void;
+  applyBodyCandidate: () => void;
+  revertBodyCandidate: () => void;
+}
+
+export const PublishBodyCandidateKey: InjectionKey<PublishBodyCandidateApi> =
+  Symbol("PublishBodyCandidate");
+
+export function useInjectedBodyCandidate(): PublishBodyCandidateApi {
+  const api = inject(PublishBodyCandidateKey, null);
+  if (!api) {
+    throw new Error(
+      "usePublishDraft must be installed (provided) before consuming PublishBodyCandidateKey",
+    );
+  }
+  return api;
+}
+
+/**
+ * Pure factory for the candidate state machine.
+ *
+ * Exported so tests can drive the state machine directly without booting a
+ * component (the surrounding `usePublishDraft` calls `provide()`, which
+ * requires a setup context).
+ */
+export function createBodyCandidate(body: Ref<string>): PublishBodyCandidateApi {
+  const bodyCandidate = ref<string | null>(null);
+  const bodyBeforeCandidate = ref<string | null>(null);
+
+  // The candidate's lifecycle relative to `body`:
+  //   1. setBodyCandidate(x)       → bodyCandidate = x, body untouched.
+  //   2. applyBodyCandidate()      → save body into bodyBeforeCandidate, set
+  //                                  body = bodyCandidate. Candidate stays so
+  //                                  the bar morphs into "撤回润色" mode.
+  //   3. revertBodyCandidate()     → restore body from bodyBeforeCandidate.
+  //                                  Both candidate and bodyBeforeCandidate
+  //                                  stay so the bar reverts to "帮我润色"
+  //                                  mode (still applicable, one-step revert
+  //                                  is the only history we keep).
+  //   4. user types in body to a   → invalidate the entire candidate (no
+  //      third value                 implicit overwrite, typing means
+  //                                   "I don't want this suggestion").
+  function setBodyCandidate(value: string | null) {
+    bodyCandidate.value = value;
+    if (value === null) {
+      bodyBeforeCandidate.value = null;
+    }
+  }
+  function applyBodyCandidate() {
+    if (bodyCandidate.value === null) return;
+    bodyBeforeCandidate.value = body.value;
+    body.value = bodyCandidate.value;
+  }
+  function revertBodyCandidate() {
+    if (bodyBeforeCandidate.value === null) return;
+    body.value = bodyBeforeCandidate.value;
+  }
+  const bodyCandidateApplied = computed(
+    () =>
+      bodyCandidate.value !== null &&
+      bodyBeforeCandidate.value !== null &&
+      body.value === bodyCandidate.value,
+  );
+  // Bar shows when there is a candidate AND either we're in applied mode
+  // (offer revert) or the candidate is a fresh, distinct suggestion the user
+  // has not seen yet (different from current body and from any saved
+  // pre-apply snapshot — the latter avoids re-suggesting what we just
+  // overwrote).
+  const bodyCandidateVisible = computed(() => {
+    if (bodyCandidate.value === null) return false;
+    if (bodyCandidateApplied.value) return true;
+    if (bodyCandidate.value === body.value) return false;
+    if (bodyBeforeCandidate.value !== null && bodyCandidate.value === bodyBeforeCandidate.value) {
+      return false;
+    }
+    return true;
+  });
+  // Body-edit invalidates a candidate that no longer reflects user intent.
+  // Skip when the new body value is either the candidate (apply just ran)
+  // or the saved-previous (revert just ran). Anything else means the user
+  // typed.
+  watch(
+    body,
+    (current) => {
+      if (bodyCandidate.value === null) return;
+      if (current === bodyCandidate.value) return;
+      if (current === bodyBeforeCandidate.value) return;
+      bodyCandidate.value = null;
+      bodyBeforeCandidate.value = null;
+    },
+    { flush: "sync" },
+  );
+
+  return {
+    body,
+    bodyCandidate,
+    bodyBeforeCandidate,
+    bodyCandidateApplied,
+    bodyCandidateVisible,
+    setBodyCandidate,
+    applyBodyCandidate,
+    revertBodyCandidate,
+  };
+}
+
+/**
  * Composes the three slices of publish-form state — form fields & uploads
  * (this file), identity (`usePublishIdentity`), and AI suggestions
  * (`usePublishAi`) — into the single object PublishView consumes. Splitting
@@ -46,6 +180,10 @@ export type PublishKind = "regular" | "event" | "merchant" | "trade";
 export function usePublishDraft() {
   const title = ref("");
   const body = ref("");
+  // PRD V0.2 step B — LLM-polished body candidate slot. State machine and
+  // body-edit invalidation live in createBodyCandidate (pure factory, easy
+  // to drive from tests); this composable just wires it up + provides it.
+  const candidate = createBodyCandidate(body);
   const tagInput = ref("");
   const placeName = ref("");
   const visibility = ref<PublishVisibility>("public");
@@ -207,9 +345,15 @@ export function usePublishDraft() {
     visibilityPanelOpen.value = !visibilityPanelOpen.value;
   }
 
+  // PRD V0.2 step B — expose the candidate state machine to descendants
+  // (PublishCandidateBar) without prop-drilling. Tests can build their own
+  // via `createBodyCandidate` directly; mounting components inject it here.
+  provide(PublishBodyCandidateKey, candidate);
+
   function resetForm(clearLocation: () => void) {
     title.value = "";
     body.value = "";
+    candidate.setBodyCandidate(null);
     tagInput.value = "";
     identity.identityTag.value = "";
     placeName.value = "";

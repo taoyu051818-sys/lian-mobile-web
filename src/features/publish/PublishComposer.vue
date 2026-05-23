@@ -18,6 +18,7 @@ import {
   PUBLISH_OPTIONAL,
 } from "../../config/brand";
 import PublishImagePreview from "./PublishImagePreview.vue";
+import PublishCandidateBar from "./PublishCandidateBar.vue";
 import type { MapLocation } from "../../types/map";
 
 const MAX_TITLE_LENGTH = 40;
@@ -86,6 +87,12 @@ function openFilePicker() {
       />
       <strong>{{ bodyCount }}/{{ MAX_BODY_LENGTH }}</strong>
     </label>
+
+    <!-- PRD V0.2 step B — LLM polish candidate strip. Mounts directly under
+         the body textarea so the apply/revert action sits next to the field
+         it edits. Bar consumes the candidate API via inject so neither this
+         component nor PublishView has to prop-drill the state. -->
+    <PublishCandidateBar />
 
     <div
       v-if="

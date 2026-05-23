@@ -72,6 +72,18 @@ export const PUBLISH_AI_PENDING = "AI 正在分析图片，稍后会自动填入
 export const PUBLISH_AI_RISK_LABEL = "AI 风险提示";
 export const PUBLISH_AI_UNAVAILABLE = "AI 草稿暂时不可用，可以手动填写后直接发布。";
 
+/**
+ * 发布 LLM 润色候选 (PRD V0.2 step B).
+ *
+ * 候选区是给 LLM 改写正文留的“候选槽位”——不会静默覆盖用户写的内容，
+ * 必须由用户在 PublishCandidateBar 里点 `帮我润色` 显式应用，再可一键
+ * `撤回润色` 回到上一步。Step B 仅落 UI 状态机，候选来源（实际 LLM
+ * 调用）由 step C 接入。
+ */
+export const PUBLISH_BODY_CANDIDATE_APPLY = "✨ 帮我润色";
+export const PUBLISH_BODY_CANDIDATE_REVERT = "↶ 撤回润色";
+export const PUBLISH_BODY_CANDIDATE_LABEL = "AI 正文润色候选";
+
 /** 发布事件 (PRD V0.1 §6.3 / §11.2) */
 export const PUBLISH_POST_TYPE_LABEL = "内容类型";
 export const PUBLISH_POST_TYPE_POST = "普通帖子";
