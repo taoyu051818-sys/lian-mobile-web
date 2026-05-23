@@ -84,6 +84,18 @@ export const PUBLISH_BODY_CANDIDATE_APPLY = "✨ 帮我润色";
 export const PUBLISH_BODY_CANDIDATE_REVERT = "↶ 撤回润色";
 export const PUBLISH_BODY_CANDIDATE_LABEL = "AI 正文润色候选";
 
+/**
+ * 发布 LLM 标题候选 (PRD V0.2 step D).
+ *
+ * 标题候选与正文候选共用同一套「候选槽 + 一键应用 / 一键撤回」状态机
+ * (见 §4.2.1 / §4.2.2)。本 step 仅落槽位与 UI，标题候选来源（实际 LLM
+ * 调用）由 step E/F 接入。当前 PR 只保证：注入 candidate -> 出 bar；点应用
+ * -> title 被替换；点撤回 -> title 被还原；用户键入 -> candidate 失效。
+ */
+export const PUBLISH_TITLE_CANDIDATE_APPLY = "✨ 帮我起标题";
+export const PUBLISH_TITLE_CANDIDATE_REVERT = "↶ 撤回标题";
+export const PUBLISH_TITLE_CANDIDATE_LABEL = "AI 标题候选";
+
 /** 发布事件 (PRD V0.1 §6.3 / §11.2) */
 export const PUBLISH_POST_TYPE_LABEL = "内容类型";
 export const PUBLISH_POST_TYPE_POST = "普通帖子";
