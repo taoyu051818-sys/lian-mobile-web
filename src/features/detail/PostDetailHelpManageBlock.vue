@@ -3,8 +3,8 @@
  * Help manage block (PRD V0.1 §6.5 / §11.3).
  *
  * Manager-side actions for help posts: link to an event, mark resolved, mark
- * closed. Only renders when `plan.canManage` is true; the parent gates this
- * by reading `helpManageable` off PostDetail (backend-driven).
+ * closed. The parent keeps deciding whether the block belongs on-screen; this
+ * component only applies the final action-surface visibility it was given.
  *
  * Status transitions follow `planHelpManage()` — the view never reasons
  * about HelpStatus directly. All copy comes from brand/i18n.
@@ -26,6 +26,10 @@ const props = defineProps<{
   plan: HelpManagePlan;
   busy: boolean;
   actionError?: string;
+  showLinkEvent?: boolean;
+  showUnlinkEvent?: boolean;
+  showResolve?: boolean;
+  showClose?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -39,10 +43,13 @@ const linkInput = ref("");
 const localError = ref("");
 
 const allowed = computed(() => props.plan.allowed);
-const canLink = computed(() => allowed.value.has("linkEvent"));
-const canUnlink = computed(() => allowed.value.has("unlinkEvent"));
-const canResolve = computed(() => allowed.value.has("resolve"));
-const canClose = computed(() => allowed.value.has("close"));
+const canLink = computed(() => props.showLinkEvent ?? allowed.value.has("linkEvent"));
+const canUnlink = computed(() => props.showUnlinkEvent ?? allowed.value.has("unlinkEvent"));
+const canResolve = computed(() => props.showResolve ?? allowed.value.has("resolve"));
+const canClose = computed(() => props.showClose ?? allowed.value.has("close"));
+const hasVisibleActions = computed(
+  () => canLink.value || canUnlink.value || canResolve.value || canClose.value,
+);
 
 function submitLink() {
   if (!canLink.value || props.busy) return;
@@ -59,7 +66,7 @@ function submitLink() {
 
 <template>
   <section
-    v-if="plan.canManage"
+    v-if="plan.canManage && hasVisibleActions"
     class="post-detail-help-manage"
     :aria-label="HELP_MANAGE_BLOCK_LABEL"
     data-testid="post-detail-help-manage"
