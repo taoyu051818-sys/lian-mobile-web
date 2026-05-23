@@ -13,7 +13,7 @@
 import { computed, type Ref } from "vue";
 import { configureWeChatShare } from "../../platform/wechatShare";
 import { SHARE_LINK_COPIED, SHARE_USE_WECHAT_MENU } from "../../config/brand";
-import { useErrandOrderShareCard, type ErrandOrderShareCard } from "./useErrandOrderShareCard";
+import { useErrandOrderShareCard } from "./useErrandOrderShareCard";
 
 function isWeChatBrowser(): boolean {
   if (typeof navigator === "undefined") return false;
