@@ -378,6 +378,8 @@ test("PostDetailMerchantBlock dispatches the errand CTA into the route singleton
   const src = read("src/features/detail/PostDetailMerchantBlock.vue");
   assert.match(src, /data-testid="post-detail-merchant-errand-cta"/);
   assert.match(src, /useErrandOrderRoute/);
+  assert.match(src, /useDetailNavigation/);
+  assert.match(src, /detail\.close\("view-change"\)/);
   assert.match(src, /enterForMerchant/);
   assert.match(src, /setActiveView\("errand-order"\)/);
 });

@@ -88,6 +88,8 @@ test("PostDetailMerchantBlock click dispatches into useErrandOrderRoute with ori
   // runner-facing label that actually matters.
   const src = read("src/features/detail/PostDetailMerchantBlock.vue");
   assert.match(src, /useErrandOrderRoute/);
+  assert.match(src, /useDetailNavigation/);
+  assert.match(src, /detail\.close\("view-change"\)/);
   assert.match(
     src,
     /errandRoute\.enterForMerchant\([\s\S]*?props\.merchantPostId as number,[\s\S]*?"feed",[\s\S]*?props\.merchant\.name/,
@@ -127,7 +129,8 @@ test("PostDetailContent mounts MerchantBlock when merchant is present", () => {
   const src = read("src/features/detail/PostDetailContent.vue");
   assert.match(src, /import PostDetailMerchantBlock/);
   assert.match(src, /<PostDetailMerchantBlock/);
-  assert.match(src, /v-if="merchant"/);
+  assert.match(src, /showMerchantBlock/);
+  assert.match(src, /v-if="showMerchantBlock"/);
   assert.match(src, /:errand-entry-available="errandEntryAvailable"/);
 });
 
