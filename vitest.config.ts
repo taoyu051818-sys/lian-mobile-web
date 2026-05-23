@@ -27,6 +27,7 @@ export default defineConfig({
       "tests/runner/**/*.test.ts",
       "tests/errand/**/*.test.ts",
       "tests/scripts/**/*.test.ts",
+      "tests/ui/**/*.test.ts",
     ],
   },
 });
