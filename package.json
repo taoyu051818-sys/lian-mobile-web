@@ -42,6 +42,7 @@
     "test:vue": "node scripts/smoke-vue-frontend.js http://127.0.0.1:4301"
   },
   "dependencies": {
+    "@vue/server-renderer": "3.5.13",
     "leaflet": "^1.9.4",
     "vue": "^3.5.13",
     "vue-i18n": "^10.0.8"
