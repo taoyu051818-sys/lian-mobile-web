@@ -1,4 +1,4 @@
-import { apiGet, apiSend } from "./http";
+import { apiGet, apiSend, LianApiError } from "./http";
 import type {
   AdminAuditListResponse,
   AdminPostAction,
@@ -184,7 +184,7 @@ export async function patchAdminReport(
       body: JSON.stringify(payload),
     }),
   );
-  if (!data.report) throw new Error("管理员后台未返回 report 数据");
+  if (!data.report) throw new LianApiError("管理员后台未返回 report 数据", 0, "MALFORMED_RESPONSE");
   return data.report;
 }
 
@@ -270,7 +270,8 @@ export async function patchAdminVerificationRequest(
       body: JSON.stringify(payload),
     }),
   );
-  if (!data.verification) throw new Error("管理员后台未返回 verification 数据");
+  if (!data.verification)
+    throw new LianApiError("管理员后台未返回 verification 数据", 0, "MALFORMED_RESPONSE");
   return data.verification;
 }
 
@@ -283,7 +284,8 @@ export async function fetchAdminVerificationDetail(
     verificationDetailPath(request, options),
     withAuthHeader(token),
   );
-  if (!data.verification) throw new Error("管理员后台未返回 verification 明细");
+  if (!data.verification)
+    throw new LianApiError("管理员后台未返回 verification 明细", 0, "MALFORMED_RESPONSE");
   return data.verification;
 }
 
