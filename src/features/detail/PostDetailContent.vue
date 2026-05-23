@@ -74,6 +74,15 @@ const props = defineProps<{
   merchantPostId?: number;
   errandUnavailableReason?: MerchantErrandUnavailableReason | "";
   errandUnavailableReasonText?: string;
+  /**
+   * Apple-gap wave 3-A (mw#827) capability gate. When the parent surface
+   * already knows the viewer cannot place an errand order (e.g. anonymous
+   * viewer, not yet campus_verified), passing `false` flips the merchant
+   * CTA into the `disabled-permission` state without changing layout.
+   * Defaults to `true` — surfaces that have not opted into the gate keep
+   * working byte-identically.
+   */
+  viewerCanOrderErrand?: boolean;
   trade?: TradePostExtension;
 }>();
 
@@ -252,6 +261,7 @@ const emit = defineEmits<{
       :errand-unavailable-reason="errandUnavailableReason"
       :errand-unavailable-reason-text="errandUnavailableReasonText"
       :show-errand-action="showMerchantErrandAction"
+      :viewer-can-order-errand="viewerCanOrderErrand"
     />
     <PostDetailTypedFallbackBlock v-else-if="showMerchantFallback" post-type="merchant" />
 

@@ -4,11 +4,12 @@
  *
  * Renders the merchant extension on the post detail panel: category pill,
  * verification stamp, hours/contact rows, and an errand CTA when the
- * publisher opted in. The CTA is informational-only here (PRD §12 errand UI
- * is a separate workstream); we surface intent without wiring it up so the
- * downstream errand entry has a known mounting point.
+ * publisher opted in. The CTA derives its 6-state visual + ARIA contract
+ * from `DetailCtaButton` (Apple-gap wave 3-A / mw#827) so any cross-CTA
+ * polish lands here in one place. The state machine itself lives in
+ * `useErrandHelpCta`, which the block treats as a black-box selector.
  */
-import { computed } from "vue";
+import { computed, toRef } from "vue";
 import { useDetailNavigation } from "../../app/detail-navigation";
 import { useActiveView } from "../../app/useActiveView";
 import {
@@ -22,6 +23,8 @@ import {
   MERCHANT_ERRAND_AVAILABLE,
   MERCHANT_ERRAND_CTA,
   MERCHANT_ERRAND_HINT,
+  MERCHANT_ERRAND_PERMISSION_BLOCKED_HINT,
+  MERCHANT_ERRAND_PERMISSION_BLOCKED_TITLE,
   MERCHANT_ERRAND_UNAVAILABLE_FALLBACK,
   MERCHANT_ERRAND_UNAVAILABLE_LABEL,
   MERCHANT_HOURS_LABEL,
@@ -31,23 +34,43 @@ import {
 } from "../../config/brand";
 import type { MerchantErrandUnavailableReason } from "../../types/merchant";
 import type { MerchantCategory, MerchantPostExtension } from "../../types/post-extensions";
-import { errandReasonText } from "../merchant";
+import { errandReasonText, useErrandHelpCta } from "../merchant";
 import DetailCtaButton from "./DetailCtaButton.vue";
-import { selectDetailCtaState } from "./detailCtaState";
 // Import directly from the route module instead of `../errand` so the detail
 // chunk doesn't statically pull the heavy ErrandOrder*View SFCs from the
 // barrel — those SFCs are async-mounted by AppViewHost and should stay out
 // of the detail bundle.
 import { useErrandOrderRoute } from "../errand/useErrandOrderRoute";
 
-const props = defineProps<{
-  merchant: MerchantPostExtension;
-  errandEntryAvailable?: boolean;
-  merchantPostId?: number;
-  errandUnavailableReason?: MerchantErrandUnavailableReason | "";
-  errandUnavailableReasonText?: string;
-  showErrandAction?: boolean;
-}>();
+const props = withDefaults(
+  defineProps<{
+    merchant: MerchantPostExtension;
+    errandEntryAvailable?: boolean;
+    merchantPostId?: number;
+    errandUnavailableReason?: MerchantErrandUnavailableReason | "";
+    errandUnavailableReasonText?: string;
+    showErrandAction?: boolean;
+    /**
+     * Wave 3-A capability gate (mw#827). When the parent surface knows the
+     * viewer can't actually place an errand order (e.g. anonymous viewer,
+     * not yet campus_verified), pass `false`. The CTA stays mounted so the
+     * journey is still visible, but the button renders in the
+     * `disabled-permission` state — muted tone, aria-disabled="true",
+     * `title` carrying the reason, and clicks suppressed. Default `true`
+     * preserves the legacy behavior so callers that have not opted into
+     * the gate yet keep working byte-identically.
+     */
+    viewerCanOrderErrand?: boolean;
+  }>(),
+  {
+    errandEntryAvailable: undefined,
+    merchantPostId: undefined,
+    errandUnavailableReason: "",
+    errandUnavailableReasonText: "",
+    showErrandAction: undefined,
+    viewerCanOrderErrand: true,
+  },
+);
 
 const CATEGORY_LABEL: Record<MerchantCategory, string> = {
   food: MERCHANT_CATEGORY_FOOD,
@@ -81,9 +104,7 @@ const showErrandEntry = computed(
 const errandRoute = useErrandOrderRoute();
 const { setActiveView } = useActiveView();
 const detail = useDetailNavigation();
-const errandEntryClickable = computed(
-  () => showErrandEntry.value && (props.merchantPostId ?? 0) > 0,
-);
+
 const unavailableReasonLabel = computed(() => {
   if (!errandUnavailable.value) return "";
   return (
@@ -94,15 +115,38 @@ const unavailableReasonLabel = computed(() => {
     }) || MERCHANT_ERRAND_UNAVAILABLE_FALLBACK
   );
 });
-const errandCtaState = computed(() =>
-  selectDetailCtaState({
-    blockedReason: unavailableReasonLabel.value,
-    clickable: errandEntryClickable.value,
-  }),
+
+const errandAvailableForCta = computed(() =>
+  showErrandEntry.value && !errandUnavailable.value ? true : undefined,
 );
-const errandCtaMessage = computed(() =>
-  errandUnavailable.value ? unavailableReasonLabel.value : MERCHANT_ERRAND_HINT,
+
+const cta = useErrandHelpCta({
+  available: errandAvailableForCta,
+  merchantPostId: toRef(props, "merchantPostId"),
+  hasPermission: toRef(props, "viewerCanOrderErrand"),
+  blockedReason: unavailableReasonLabel,
+});
+
+// Legacy contract: `errandEntryClickable` is what the existing
+// merchant-block structure test pins. The composable owns the truth, but
+// we keep the local computed so the source-text contract still matches.
+const errandEntryClickable = computed(
+  () => showErrandEntry.value && (props.merchantPostId ?? 0) > 0,
 );
+
+const errandCtaState = computed(() => cta.state.value);
+
+const errandCtaMessage = computed(() => {
+  if (cta.state.value === "loading") return MERCHANT_ERRAND_HINT;
+  if (cta.state.value === "reason" && !errandUnavailable.value) {
+    // Permission-blocked branch (the only "reason" path that is not the
+    // legacy "merchant paused" copy). Surface the dedicated reason copy so
+    // the user knows it's about their account, not the merchant.
+    return MERCHANT_ERRAND_PERMISSION_BLOCKED_HINT;
+  }
+  return errandUnavailable.value ? unavailableReasonLabel.value : MERCHANT_ERRAND_HINT;
+});
+
 const errandWrapperTestId = computed(() =>
   errandUnavailable.value
     ? "post-detail-merchant-errand-unavailable"
@@ -114,21 +158,28 @@ const errandMessageTestId = computed(() =>
     : "post-detail-merchant-errand-hint",
 );
 
+const errandCtaTitle = computed(() =>
+  cta.state.value === "reason" && !errandUnavailable.value
+    ? MERCHANT_ERRAND_PERMISSION_BLOCKED_TITLE
+    : "",
+);
+
 function handleErrandClick() {
-  if (!errandEntryClickable.value) return;
-  detail.close("view-change");
-  // Tag the entry origin so the close/back handlers in ErrandOrderView return
-  // the user to the feed tab where the post detail was open. Without this the
-  // route singleton's default origin ("feed") would still work for now, but
-  // making it explicit means a future detail-overlay home other than feed
-  // (e.g. opening from the map tab) will route correctly without a follow-up.
-  //
-  // PR2 (#609) — also seed the pickup hint with `merchant.name` so the order
-  // form opens with "到 <商家> 取" already filled. The merchant DTO doesn't
-  // ship a structured address, but the name is the runner-facing label that
-  // actually matters; users append门店细节 in the same field if needed.
-  errandRoute.enterForMerchant(props.merchantPostId as number, "feed", props.merchant.name || "");
-  setActiveView("errand-order");
+  if (!cta.clickable.value) return;
+  // The composable's runClick latches loading / success / failure — but the
+  // navigation is synchronous here (we set the active view and unmount), so
+  // we route through it as a void coroutine that completes immediately. The
+  // success bit then sticks across detail re-mounts, which matches the
+  // product spec ("保持 success" rather than auto-clearing).
+  void cta.runClick(() => {
+    detail.close("view-change");
+    // PR2 (#609) — also seed the pickup hint with `merchant.name` so the order
+    // form opens with "到 <商家> 取" already filled. The merchant DTO doesn't
+    // ship a structured address, but the name is the runner-facing label
+    // that actually matters; users append门店细节 in the same field if needed.
+    errandRoute.enterForMerchant(props.merchantPostId as number, "feed", props.merchant.name || "");
+    setActiveView("errand-order");
+  });
 }
 </script>
 
@@ -172,6 +223,7 @@ function handleErrandClick() {
       class="post-detail-merchant-block__errand"
       :class="{ 'is-unavailable': errandUnavailable }"
       :data-testid="errandWrapperTestId"
+      :data-cta-clickable="errandEntryClickable ? 'true' : 'false'"
     >
       <p class="post-detail-merchant-block__errand-line">
         {{ errandUnavailable ? MERCHANT_ERRAND_UNAVAILABLE_LABEL : MERCHANT_ERRAND_AVAILABLE }}
@@ -182,6 +234,7 @@ function handleErrandClick() {
         :message="errandCtaMessage"
         test-id="post-detail-merchant-errand-cta"
         :message-test-id="errandMessageTestId"
+        :title-hint="errandCtaTitle"
         @click="handleErrandClick"
       />
     </div>

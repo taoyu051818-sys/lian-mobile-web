@@ -15,12 +15,19 @@ import { computed } from "vue";
  * vocabulary the `.is-*` class names follow.
  *
  *   default   — rest. No `.is-*` class, no aria-pressed, click enabled.
- *   loading   — `.is-loading` + native :disabled + spinner. Click suppressed.
- *   disabled  — `.is-disabled` + native :disabled. Click suppressed.
+ *   loading   — `.is-loading` + native :disabled + spinner + aria-busy.
+ *   disabled  — `.is-disabled` + native :disabled + aria-disabled.
  *   pressed   — `.is-pressed` + aria-pressed="true". Click still enabled.
  *   success   — `.is-success`. Click still enabled. Visual transition uses
  *               `--motion-ease-emphasized` (mw#835) for the entry.
  *   error     — `.is-error`. Same as success: emphasized ease on entry.
+ *
+ * Apple-gap wave 3-A (mw#827) layered the toggle-aware ARIA hooks
+ * (`pressed`, `ariaBusy`) so wrappers like `DetailCtaButton` can derive a
+ * 6-state CTA vocabulary (errand-help and friends) from this base without
+ * each call site having to hand-roll its own button + ARIA wiring. These
+ * hooks are additive — every legacy call site is zero-edit because the
+ * defaults preserve the previous attribute output exactly.
  */
 const props = withDefaults(
   defineProps<{
@@ -34,6 +41,21 @@ const props = withDefaults(
     state?: "default" | "loading" | "disabled" | "pressed" | "success" | "error";
     disabled?: boolean;
     loading?: boolean;
+    /**
+     * Toggle-aware ARIA hook (mw#827). When set explicitly the value drives
+     * `aria-pressed` independently of `state`. Pass `false` to mark this
+     * button as a toggle whose pressed state is "off" (the Apple favourite-
+     * button pattern). Pass `true` to assert the toggle is on. Leave
+     * undefined to fall back to the legacy `state="pressed"` derivation.
+     */
+    pressed?: boolean;
+    /**
+     * Forces `aria-busy="true"` independently of `state`. `state="loading"`
+     * already implies `aria-busy="true"`, so most call sites never need to
+     * pass this — it exists for wrappers that visually represent "busy"
+     * with a different state class.
+     */
+    ariaBusy?: boolean;
     type?: "button" | "submit" | "reset";
   }>(),
   {
@@ -42,6 +64,7 @@ const props = withDefaults(
     state: "default",
     disabled: false,
     loading: false,
+    ariaBusy: false,
     type: "button",
   },
 );
@@ -92,6 +115,31 @@ function handleClick(event: MouseEvent) {
   if (isDisabled()) return;
   emit("click", event);
 }
+
+// mw#827 ARIA toggle/busy hooks. The legacy contract (state==="pressed" →
+// aria-pressed="true", everything else → no attribute) is preserved when
+// the wrapper does not supply explicit `pressed` / `ariaBusy`. Wrappers
+// that need toggle-aware semantics (e.g. an "off" toggle for a like button
+// per Apple gap §5) pass `pressed={false}` to assert "this is a toggle and
+// it is currently off" — aria-pressed renders as "false", which is the
+// correct ARIA semantic for an unpressed toggle. aria-busy follows the
+// loading effective state by default; an explicit prop overrides.
+const ariaPressedAttr = computed<"true" | "false" | undefined>(() => {
+  if (typeof props.pressed === "boolean") return props.pressed ? "true" : "false";
+  return showPressedClass.value ? "true" : undefined;
+});
+const ariaBusyAttr = computed<"true" | undefined>(() => {
+  if (props.ariaBusy) return "true";
+  return effectiveState.value === "loading" ? "true" : undefined;
+});
+// aria-disabled tracks the effective "disabled" state (mw#827 toggle-aware
+// pattern: when a toggle is non-interactive but not natively disabled, e.g.
+// because we still want focus + screen-reader announcement, aria-disabled
+// is the right marker). Mirrors the existing native :disabled semantic so
+// older callers still see "true" only when they were already gated.
+const ariaDisabledAttr = computed<"true" | undefined>(() =>
+  isDisabledState.value ? "true" : undefined,
+);
 </script>
 
 <template>
@@ -110,7 +158,9 @@ function handleClick(event: MouseEvent) {
     ]"
     :type="type"
     :disabled="isDisabledState"
-    :aria-pressed="showPressedClass ? 'true' : undefined"
+    :aria-pressed="ariaPressedAttr"
+    :aria-disabled="ariaDisabledAttr"
+    :aria-busy="ariaBusyAttr"
     @click="handleClick"
   >
     <span v-if="showLoadingClass" class="lian-button__spinner" aria-hidden="true"></span>

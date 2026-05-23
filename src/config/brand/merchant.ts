@@ -19,6 +19,18 @@ export const MERCHANT_ERRAND_REASON_NOT_VERIFIED = "商家认证失效，先重�
 export const MERCHANT_ERRAND_REASON_NO_RUNNER_COVERAGE = "附近暂无跑腿同学接单，可稍后再试。";
 export const MERCHANT_ERRAND_REASON_OFF_HOURS = "已过商家公布的营业时间，下个时段再来。";
 export const MERCHANT_ERRAND_REASON_MERCHANT_PAUSED = "商家暂时关闭了帮我取入口。";
+/**
+ * Apple-gap wave 3-A (mw#827) — `disabled-permission` reason copy.
+ *
+ * Surfaced when the merchant supports errand-help and the entry is open,
+ * but the *viewer* hasn't cleared the role gate to actually place an
+ * order. We render this without going to the server so an anonymous /
+ * unverified user gets a stable explanation of why the CTA is muted
+ * before they tap. The TITLE variant is the native tooltip; the HINT
+ * variant is the body copy below the button.
+ */
+export const MERCHANT_ERRAND_PERMISSION_BLOCKED_TITLE = "需要先完成校园认证";
+export const MERCHANT_ERRAND_PERMISSION_BLOCKED_HINT = "完成校园认证后即可使用帮我取下单。";
 
 /** 跑腿下单 (PRD V0.1 §12 / issue #647) */
 export const ERRAND_ORDER_SECTION_LABEL = "帮我取下单";
