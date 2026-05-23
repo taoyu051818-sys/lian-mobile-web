@@ -9,6 +9,8 @@
  * downstream errand entry has a known mounting point.
  */
 import { computed } from "vue";
+import { useDetailNavigation } from "../../app/detail-navigation";
+import { useActiveView } from "../../app/useActiveView";
 import {
   MERCHANT_BLOCK_LABEL,
   MERCHANT_CATEGORY_FOOD,
@@ -27,8 +29,11 @@ import {
   MERCHANT_VERIFIED_AT_PREFIX,
   MERCHANT_VERIFIED_PREFIX,
 } from "../../config/brand";
-import { useActiveView } from "../../app/useActiveView";
-import { useDetailNavigation } from "../../app/detail-navigation";
+import type { MerchantErrandUnavailableReason } from "../../types/merchant";
+import type {
+  MerchantCategory,
+  MerchantPostExtension,
+} from "../../types/post-extensions";
 import { errandReasonText } from "../merchant";
 import DetailCtaButton from "./DetailCtaButton.vue";
 import { selectDetailCtaState } from "./detailCtaState";
@@ -37,8 +42,6 @@ import { selectDetailCtaState } from "./detailCtaState";
 // barrel — those SFCs are async-mounted by AppViewHost and should stay out
 // of the detail bundle.
 import { useErrandOrderRoute } from "../errand/useErrandOrderRoute";
-import type { MerchantErrandUnavailableReason } from "../../types/merchant";
-import type { MerchantCategory, MerchantPostExtension } from "../../types/post-extensions";
 
 const props = defineProps<{
   merchant: MerchantPostExtension;
@@ -75,7 +78,9 @@ const verifiedAtLabel = computed(() => {
 // merchant does not support errand at all — we render nothing in that case
 // so non-errand merchants don't grow a "暂未开放" chip.
 const errandUnavailable = computed(() => props.errandEntryAvailable === false);
-const showErrandEntry = computed(() => props.showErrandAction ?? props.errandEntryAvailable === true);
+const showErrandEntry = computed(
+  () => props.showErrandAction ?? props.errandEntryAvailable === true,
+);
 const errandRoute = useErrandOrderRoute();
 const { setActiveView } = useActiveView();
 const detail = useDetailNavigation();
@@ -125,7 +130,11 @@ function handleErrandClick() {
   // form opens with "到 <商家> 取" already filled. The merchant DTO doesn't
   // ship a structured address, but the name is the runner-facing label that
   // actually matters; users append门店细节 in the same field if needed.
-  errandRoute.enterForMerchant(props.merchantPostId as number, "feed", props.merchant.name || "");
+  errandRoute.enterForMerchant(
+    props.merchantPostId as number,
+    "feed",
+    props.merchant.name || "",
+  );
   setActiveView("errand-order");
 }
 </script>
@@ -137,7 +146,10 @@ function handleErrandClick() {
     data-testid="post-detail-merchant-block"
   >
     <header class="post-detail-merchant-block__header">
-      <span class="post-detail-merchant-block__category" :data-category="merchant.category">
+      <span
+        class="post-detail-merchant-block__category"
+        :data-category="merchant.category"
+      >
         {{ categoryLabel }}
       </span>
       <span class="post-detail-merchant-block__verified">
@@ -172,7 +184,9 @@ function handleErrandClick() {
       :data-testid="errandWrapperTestId"
     >
       <p class="post-detail-merchant-block__errand-line">
-        {{ errandUnavailable ? MERCHANT_ERRAND_UNAVAILABLE_LABEL : MERCHANT_ERRAND_AVAILABLE }}
+        {{
+          errandUnavailable ? MERCHANT_ERRAND_UNAVAILABLE_LABEL : MERCHANT_ERRAND_AVAILABLE
+        }}
       </p>
       <DetailCtaButton
         :label="MERCHANT_ERRAND_CTA"
