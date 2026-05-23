@@ -12,7 +12,7 @@
  * documented sentinel (`unknown` reason / `created` status) rather than
  * surfacing as garbage.
  */
-import { apiGet, apiSend } from "./http";
+import { apiGet, apiSend, LianApiError } from "./http";
 import {
   asBoolean,
   asEnum,
@@ -290,4 +290,80 @@ export async function fetchMyErrandOrders(): Promise<ErrandOrderListResponse> {
     .map((entry) => normalizeErrandOrderSummary(entry))
     .filter((entry): entry is ErrandOrderSummary => entry !== null);
   return { items };
+}
+
+/**
+ * Errand order share card (mw#892 / ps#552).
+ *
+ * Backend route: `GET /api/errands/orders/:orderId/share-card`. Returns a
+ * WeChat-ready share card for recruiting runners. Only available for orders
+ * in `pending` or `accepted` status — terminal orders return 404.
+ */
+export interface ErrandOrderShareCard {
+  orderId: string;
+  title: string;
+  summary: string;
+  thumbnailUrl: string;
+  url: string;
+  channel: {
+    wechat?: {
+      title: string;
+      description: string;
+      imageUrl: string;
+    };
+  };
+}
+
+export type ErrandOrderShareCardErrorReason = "not-found" | "network";
+
+export class ErrandOrderShareCardError extends Error {
+  reason: ErrandOrderShareCardErrorReason;
+  status: number;
+
+  constructor(reason: ErrandOrderShareCardErrorReason, status: number, message = "") {
+    super(message || reason);
+    this.name = "ErrandOrderShareCardError";
+    this.reason = reason;
+    this.status = status;
+  }
+}
+
+function normalizeErrandOrderShareCard(value: unknown, fallbackOrderId: string): ErrandOrderShareCard {
+  const record = asRecord(value);
+  const channelRecord = asRecord(record.channel);
+  const wechatRecord = asRecord(channelRecord.wechat);
+  const wechat =
+    wechatRecord.title || wechatRecord.description || wechatRecord.imageUrl
+      ? {
+          title: asString(wechatRecord.title),
+          description: asString(wechatRecord.description),
+          imageUrl: asString(wechatRecord.imageUrl),
+        }
+      : undefined;
+  return {
+    orderId: asString(record.orderId) || fallbackOrderId,
+    title: asString(record.title),
+    summary: asString(record.summary),
+    thumbnailUrl: asString(record.thumbnailUrl),
+    url: asString(record.url),
+    channel: wechat ? { wechat } : {},
+  };
+}
+
+export async function fetchErrandOrderShareCard(orderId: string): Promise<ErrandOrderShareCard> {
+  try {
+    const data = await apiGet<unknown>(
+      `/api/errands/orders/${encodeURIComponent(orderId)}/share-card`,
+    );
+    const record = asRecord(data);
+    return normalizeErrandOrderShareCard(record.card ?? record, orderId);
+  } catch (error) {
+    if (error instanceof LianApiError) {
+      if (error.status === 404) {
+        throw new ErrandOrderShareCardError("not-found", 404, error.message);
+      }
+      throw new ErrandOrderShareCardError("network", error.status, error.message);
+    }
+    throw new ErrandOrderShareCardError("network", 0, error instanceof Error ? error.message : "");
+  }
 }
