@@ -1,0 +1,32 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`PublishTitleCandidateBar DOM structure (PRD V0.2 step D) > PublishTitleCandidateBar renders a single button gated on titleCandidateVisible 1`] = `
+"<template>
+  <div
+    v-if="candidate.titleCandidateVisible.value"
+    class="publish-title-candidate-bar"
+    :aria-label="PUBLISH_TITLE_CANDIDATE_LABEL"
+    role="status"
+    data-testid="publish-title-candidate-bar"
+  >
+    <button
+      type="button"
+      class="publish-title-candidate-bar__action"
+      :aria-label="
+        candidate.titleCandidateApplied.value
+          ? PUBLISH_TITLE_CANDIDATE_REVERT
+          : PUBLISH_TITLE_CANDIDATE_APPLY
+      "
+      :data-mode="candidate.titleCandidateApplied.value ? 'revert' : 'apply'"
+      data-testid="publish-title-candidate-bar-action"
+      @click="onClick"
+    >
+      {{
+        candidate.titleCandidateApplied.value
+          ? PUBLISH_TITLE_CANDIDATE_REVERT
+          : PUBLISH_TITLE_CANDIDATE_APPLY
+      }}
+    </button>
+  </div>
+</template>"
+`;

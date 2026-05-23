@@ -168,6 +168,114 @@ export function createBodyCandidate(body: Ref<string>): PublishBodyCandidateApi 
 }
 
 /**
+ * Title candidate slot (PRD V0.2 step D).
+ *
+ * Same state machine as `createBodyCandidate`, just bound to `title`. Kept
+ * as a separate factory rather than a generic `createCandidateSlot` because
+ * the two slots are likely to diverge (different telemetry channels,
+ * different invalidation rules — e.g. title may eventually re-suggest from
+ * a body edit, body never does the reverse). Sharing the implementation
+ * now would make those independent rules harder to add later.
+ *
+ * Persistence: transient, identical to body. The PRD reserves localStorage
+ * for what the user actually typed; LLM candidates are always re-derivable
+ * from a fresh preview tick.
+ *
+ * Step D scope is the slot + UI only. The actual LLM wiring that fills
+ * `titleCandidate` lives in steps E/F.
+ */
+export interface PublishTitleCandidateApi {
+  title: Ref<string>;
+  titleCandidate: Ref<string | null>;
+  titleBeforeCandidate: Ref<string | null>;
+  titleCandidateApplied: ComputedRef<boolean>;
+  titleCandidateVisible: ComputedRef<boolean>;
+  setTitleCandidate: (value: string | null) => void;
+  applyTitleCandidate: () => void;
+  revertTitleCandidate: () => void;
+}
+
+export const PublishTitleCandidateKey: InjectionKey<PublishTitleCandidateApi> =
+  Symbol("PublishTitleCandidate");
+
+export function useInjectedTitleCandidate(): PublishTitleCandidateApi {
+  const api = inject(PublishTitleCandidateKey, null);
+  if (!api) {
+    throw new Error(
+      "usePublishDraft must be installed (provided) before consuming PublishTitleCandidateKey",
+    );
+  }
+  return api;
+}
+
+/**
+ * Pure factory for the title-candidate state machine. Lifecycle mirrors the
+ * body factory exactly (set / apply / revert / user-typing invalidates).
+ * See `createBodyCandidate` for the per-step rationale; the comments aren't
+ * duplicated here.
+ */
+export function createTitleCandidate(title: Ref<string>): PublishTitleCandidateApi {
+  const titleCandidate = ref<string | null>(null);
+  const titleBeforeCandidate = ref<string | null>(null);
+
+  function setTitleCandidate(value: string | null) {
+    titleCandidate.value = value;
+    if (value === null) {
+      titleBeforeCandidate.value = null;
+    }
+  }
+  function applyTitleCandidate() {
+    if (titleCandidate.value === null) return;
+    titleBeforeCandidate.value = title.value;
+    title.value = titleCandidate.value;
+  }
+  function revertTitleCandidate() {
+    if (titleBeforeCandidate.value === null) return;
+    title.value = titleBeforeCandidate.value;
+  }
+  const titleCandidateApplied = computed(
+    () =>
+      titleCandidate.value !== null &&
+      titleBeforeCandidate.value !== null &&
+      title.value === titleCandidate.value,
+  );
+  const titleCandidateVisible = computed(() => {
+    if (titleCandidate.value === null) return false;
+    if (titleCandidateApplied.value) return true;
+    if (titleCandidate.value === title.value) return false;
+    if (
+      titleBeforeCandidate.value !== null &&
+      titleCandidate.value === titleBeforeCandidate.value
+    ) {
+      return false;
+    }
+    return true;
+  });
+  watch(
+    title,
+    (current) => {
+      if (titleCandidate.value === null) return;
+      if (current === titleCandidate.value) return;
+      if (current === titleBeforeCandidate.value) return;
+      titleCandidate.value = null;
+      titleBeforeCandidate.value = null;
+    },
+    { flush: "sync" },
+  );
+
+  return {
+    title,
+    titleCandidate,
+    titleBeforeCandidate,
+    titleCandidateApplied,
+    titleCandidateVisible,
+    setTitleCandidate,
+    applyTitleCandidate,
+    revertTitleCandidate,
+  };
+}
+
+/**
  * Composes the three slices of publish-form state — form fields & uploads
  * (this file), identity (`usePublishIdentity`), and AI suggestions
  * (`usePublishAi`) — into the single object PublishView consumes. Splitting
@@ -184,6 +292,10 @@ export function usePublishDraft() {
   // body-edit invalidation live in createBodyCandidate (pure factory, easy
   // to drive from tests); this composable just wires it up + provides it.
   const candidate = createBodyCandidate(body);
+  // PRD V0.2 step D — title candidate slot. Same state machine as body, just
+  // bound to `title`. See createTitleCandidate for why this stays a separate
+  // factory rather than a generic slot.
+  const titleCandidate = createTitleCandidate(title);
   const tagInput = ref("");
   const placeName = ref("");
   const visibility = ref<PublishVisibility>("public");
@@ -349,11 +461,15 @@ export function usePublishDraft() {
   // (PublishCandidateBar) without prop-drilling. Tests can build their own
   // via `createBodyCandidate` directly; mounting components inject it here.
   provide(PublishBodyCandidateKey, candidate);
+  // PRD V0.2 step D — same wiring for the title slot. Separate key so the
+  // two bars don't have to discriminate at runtime.
+  provide(PublishTitleCandidateKey, titleCandidate);
 
   function resetForm(clearLocation: () => void) {
     title.value = "";
     body.value = "";
     candidate.setBodyCandidate(null);
+    titleCandidate.setTitleCandidate(null);
     tagInput.value = "";
     identity.identityTag.value = "";
     placeName.value = "";
@@ -424,5 +540,13 @@ export function usePublishDraft() {
     publishKind,
     merchant,
     trade,
+    // PRD V0.2 step D — title candidate slot.
+    titleCandidate: titleCandidate.titleCandidate,
+    titleBeforeCandidate: titleCandidate.titleBeforeCandidate,
+    titleCandidateApplied: titleCandidate.titleCandidateApplied,
+    titleCandidateVisible: titleCandidate.titleCandidateVisible,
+    setTitleCandidate: titleCandidate.setTitleCandidate,
+    applyTitleCandidate: titleCandidate.applyTitleCandidate,
+    revertTitleCandidate: titleCandidate.revertTitleCandidate,
   };
 }
