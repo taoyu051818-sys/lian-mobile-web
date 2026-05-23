@@ -10,7 +10,7 @@ function read(rel) {
   return fs.readFileSync(path.join(repoRoot, rel), "utf8");
 }
 
-const apiSource = read("src/api/messages.ts");
+const apiSource = read("src/api/channel.ts");
 const viewSource = read("src/features/messages/MessagesView.vue");
 const channelSource = read("src/features/messages/useChannelMessages.ts");
 const threadSource = read("src/features/messages/ChannelThread.vue");
@@ -18,7 +18,7 @@ const composerVueSource = read("src/features/messages/ChannelComposer.vue");
 
 // --- buildPendingChannelMessage contract ---
 
-test("api/messages.ts exports buildPendingChannelMessage", () => {
+test("api/channel.ts exports buildPendingChannelMessage", () => {
   assert.match(apiSource, /export function buildPendingChannelMessage/);
 });
 
@@ -45,7 +45,7 @@ test("buildPendingChannelMessage generates local-only id with pending- prefix", 
 test("useChannelMessages imports buildPendingChannelMessage", () => {
   assert.match(
     channelSource,
-    /import \{[^}]*buildPendingChannelMessage[^}]*\} from "\.\.\/\.\.\/api\/messages"/,
+    /import \{[^}]*buildPendingChannelMessage[^}]*\} from "\.\.\/\.\.\/api\/channel"/,
   );
 });
 
