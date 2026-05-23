@@ -28,6 +28,7 @@ export default defineConfig({
       "tests/errand/**/*.test.ts",
       "tests/scripts/**/*.test.ts",
       "tests/structure/**/*.test.ts",
+      "tests/ui/**/*.test.ts",
     ],
   },
 });
