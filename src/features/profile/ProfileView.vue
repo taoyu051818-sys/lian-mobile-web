@@ -190,8 +190,6 @@ onMounted(() => {
 
       <ProfileStatsBlock />
 
-      <ProfileSettingsBlock />
-
       <ProfileServerChanBlock :is-authenticated="Boolean(user)" />
 
       <ProfileTabs :tabs="tabs" :active-tab="activeTab" @select="loadProfileList" />
@@ -228,6 +226,8 @@ onMounted(() => {
         @retry="loadProfileList(activeTab)"
         @open-item="openItem"
       />
+
+      <ProfileSettingsBlock />
 
       <section
         v-if="unlockCards.length"
