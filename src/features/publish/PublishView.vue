@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref, watch } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import type { PageChromeSpec } from "../../shell/page-model";
 import {
   PUBLISH_SECTION_LABEL,
@@ -51,8 +51,38 @@ function goToVerification() {
 function selectPublishKind(kind: "regular" | "event" | "merchant" | "trade") {
   // The merchant radio is capability-gated via `v-if` on the verified merchant
   // flag, so this function only ever fires for users who can pick merchant.
+  // Per-kind enabled/disabled rules live in `kindStates` below; the early
+  // return here keeps a disabled radio click from mutating state if the
+  // browser ever lets it fire (e.g. label-driven activation, accessibility
+  // tooling).
+  if (kindStates.value[kind].disabled) return;
   draft.publishKind.value = kind;
 }
+
+// Single source of truth for the 4 publishKind radios. Both the active /
+// disabled CSS classes and the native `disabled` / `aria-disabled` / `title`
+// attributes read from this map, so future per-kind disabled rules (e.g.
+// trade gaining a campus_verified gate up here, event becoming opt-in)
+// only need a new `disabledReason` line — they cannot drift between the
+// four radios. mw#823 PR-A: existing rules are unchanged (no kind is
+// disabled today), but the wiring is in place so adding one is a
+// one-liner instead of touching four `<label>` blocks plus CSS.
+const kindStates = computed(() => {
+  const active = draft.publishKind.value;
+  function state(kind: "regular" | "event" | "merchant" | "trade", disabledReason: string) {
+    return {
+      active: active === kind,
+      disabled: disabledReason.length > 0,
+      disabledReason,
+    };
+  }
+  return {
+    regular: state("regular", ""),
+    event: state("event", ""),
+    merchant: state("merchant", ""),
+    trade: state("trade", ""),
+  };
+});
 
 watch(
   draft.publishKind,
@@ -246,27 +276,39 @@ onMounted(() => {
           <legend>{{ PUBLISH_TYPE_LABEL }}</legend>
           <label
             class="publish-view__type-option"
-            :class="{ 'is-active': draft.publishKind.value === 'regular' }"
+            :class="{
+              'is-active': kindStates.regular.active,
+              'is-disabled': kindStates.regular.disabled,
+            }"
+            :title="kindStates.regular.disabledReason || undefined"
           >
             <input
               type="radio"
               name="publish-kind"
               value="regular"
-              :checked="draft.publishKind.value === 'regular'"
+              :checked="kindStates.regular.active"
+              :disabled="kindStates.regular.disabled"
+              :aria-disabled="kindStates.regular.disabled"
               @change="selectPublishKind('regular')"
             />
             <span>{{ PUBLISH_TYPE_REGULAR }}</span>
           </label>
           <label
             class="publish-view__type-option"
-            :class="{ 'is-active': draft.publishKind.value === 'event' }"
+            :class="{
+              'is-active': kindStates.event.active,
+              'is-disabled': kindStates.event.disabled,
+            }"
+            :title="kindStates.event.disabledReason || undefined"
           >
             <input
               type="radio"
               name="publish-kind"
               value="event"
               data-testid="publish-type-event"
-              :checked="draft.publishKind.value === 'event'"
+              :checked="kindStates.event.active"
+              :disabled="kindStates.event.disabled"
+              :aria-disabled="kindStates.event.disabled"
               @change="selectPublishKind('event')"
             />
             <span>{{ PUBLISH_TYPE_EVENT }}</span>
@@ -274,28 +316,40 @@ onMounted(() => {
           <label
             v-if="draft.merchant.merchantVerified.value"
             class="publish-view__type-option"
-            :class="{ 'is-active': draft.publishKind.value === 'merchant' }"
+            :class="{
+              'is-active': kindStates.merchant.active,
+              'is-disabled': kindStates.merchant.disabled,
+            }"
+            :title="kindStates.merchant.disabledReason || undefined"
           >
             <input
               type="radio"
               name="publish-kind"
               value="merchant"
               data-testid="publish-type-merchant"
-              :checked="draft.publishKind.value === 'merchant'"
+              :checked="kindStates.merchant.active"
+              :disabled="kindStates.merchant.disabled"
+              :aria-disabled="kindStates.merchant.disabled"
               @change="selectPublishKind('merchant')"
             />
             <span>{{ PUBLISH_TYPE_MERCHANT }}</span>
           </label>
           <label
             class="publish-view__type-option"
-            :class="{ 'is-active': draft.publishKind.value === 'trade' }"
+            :class="{
+              'is-active': kindStates.trade.active,
+              'is-disabled': kindStates.trade.disabled,
+            }"
+            :title="kindStates.trade.disabledReason || undefined"
           >
             <input
               type="radio"
               name="publish-kind"
               value="trade"
               data-testid="publish-type-trade"
-              :checked="draft.publishKind.value === 'trade'"
+              :checked="kindStates.trade.active"
+              :disabled="kindStates.trade.disabled"
+              :aria-disabled="kindStates.trade.disabled"
               @change="selectPublishKind('trade')"
             />
             <span>{{ PUBLISH_TYPE_TRADE }}</span>
