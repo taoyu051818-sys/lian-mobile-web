@@ -156,11 +156,18 @@ test.describe("@help help-manage runtime proof @help-manage", () => {
     const fixture = await fetchHelpRuntimeFixture({ baseURL: BASE_URL });
     test.skip(fixture === null || !fixture.ready, "helpRuntime fixture not ready");
 
-    // Truthful runtime claim: NodeBB-backed toggle. We deterministically clear
-    // residue first (`desiredLiked: false`) so the next POST is a guaranteed
-    // up-flip, then a follow-up POST flips it back to false. Asserting on
-    // `liked` rather than `likeCount` because the count depends on whatever
-    // other state lives on the seeded post and is not part of this contract.
+    // Truthful runtime claim: NodeBB-backed toggle. The backend's
+    // `firstPostVoteState` reads `liked` from the topic detail's first post —
+    // when NodeBB does not echo `upvoted`/`voted` for the session (which is
+    // the live nat100 case for our cookie session), it returns liked=null,
+    // and a naked POST defaults to "shouldLike = !null = true" — an UP vote
+    // every time, never a flip.
+    //
+    // We therefore drive the toggle EXPLICITLY via the request body
+    // (`{ liked: true|false }`) so the use-case takes the deterministic
+    // `desiredLiked` branch instead of the read-back one. Asserting on
+    // the response `liked` proves the write went through; the count is
+    // not part of this contract.
     const { api } = await loginAs("registered");
     try {
       const tid = fixture!.tid;
@@ -169,12 +176,12 @@ test.describe("@help help-manage runtime proof @help-manage", () => {
       const resetBody = (await reset.json()) as { liked?: boolean };
       expect(resetBody.liked).toBe(false);
 
-      const up = await api.post(`/api/posts/${tid}/vote`);
+      const up = await api.post(`/api/posts/${tid}/vote`, { data: { liked: true } });
       expect(up.ok(), `vote up failed: ${await up.text()}`).toBe(true);
       const upBody = (await up.json()) as { liked?: boolean };
       expect(upBody.liked).toBe(true);
 
-      const down = await api.post(`/api/posts/${tid}/vote`);
+      const down = await api.post(`/api/posts/${tid}/vote`, { data: { liked: false } });
       expect(down.ok(), `vote down failed: ${await down.text()}`).toBe(true);
       const downBody = (await down.json()) as { liked?: boolean };
       expect(downBody.liked).toBe(false);

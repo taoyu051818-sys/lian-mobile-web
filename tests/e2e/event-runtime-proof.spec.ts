@@ -152,6 +152,23 @@ test.describe("@event event runtime proof @event-runtime", () => {
         `expected 200 or typed denial (400/403/409), got ${status}: ${await response.text()}`,
       ).toBe(true);
 
+      // Re-fetch the live post detail so the reward-block expectation lines
+      // up with what the renderer will see. The fixture-path `sample` shape
+      // does NOT carry rewardSummary (eventRuntime fixture exposes
+      // rewardBudget/rewardPerJoiner only), so deciding on `sample.event.rewardSummary`
+      // produced a false-zero against a page that does render the block.
+      let detailExpectsReward = false;
+      try {
+        const detailResp = await api.get(`/api/posts/${sample!.tid}`);
+        if (detailResp.ok()) {
+          const detailJson = (await detailResp.json()) as PostDetail;
+          detailExpectsReward = Boolean(detailJson.event?.rewardSummary);
+        }
+      } catch {
+        // fall back to sample's hint — best-effort only.
+        detailExpectsReward = Boolean(sample!.event!.rewardSummary);
+      }
+
       // Browser proof: detail page renders the event block.
       const context = await browser.newContext({ storageState: await api.storageState() });
       const page = await context.newPage();
@@ -163,11 +180,10 @@ test.describe("@event event runtime proof @event-runtime", () => {
         });
         await expect(page.locator('[data-testid="post-detail-event-action"]')).toBeVisible();
         // Reward block is conditional — only assert that the testid is
-        // present iff the API returned rewardSummary, otherwise confirm it
-        // is genuinely absent (not silently swallowed).
-        const expectReward = Boolean(sample!.event!.rewardSummary);
+        // present iff the live detail returned rewardSummary, otherwise
+        // confirm it is genuinely absent (not silently swallowed).
         await expect(page.locator('[data-testid="post-detail-event-reward"]')).toHaveCount(
-          expectReward ? 1 : 0,
+          detailExpectsReward ? 1 : 0,
         );
       } finally {
         await context.close();
