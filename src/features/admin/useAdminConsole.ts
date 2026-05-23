@@ -14,10 +14,18 @@ import {
   type AdminVerificationRequest,
   type AdminVerificationStatus,
 } from "../../api/admin";
+import {
+  createAdminAuthLink,
+  fetchAdminAuthLinks,
+  revokeAdminAuthLink,
+  type AuthLink,
+  type AuthLinkCreatePayload,
+} from "../../api/adminAuthLink";
 import { extractErrorMessage } from "../../utils/extractErrorMessage";
 import {
   ADMIN_ACTION_FAIL,
   ADMIN_AUDIT_LOAD_ERROR,
+  ADMIN_AUTH_LINK_LOAD_ERROR,
   ADMIN_QUEUE_LOAD_ERROR,
   ADMIN_TOKEN_INVALID,
 } from "../../config/brand";
@@ -57,10 +65,17 @@ export function useAdminConsole({ token, onTokenInvalid }: UseAdminConsoleOption
   const actionMessage = ref("");
   const actionError = ref("");
 
+  const authLinks = ref<AuthLink[]>([]);
+  const authLinksLoading = ref(false);
+  const authLinksError = ref("");
+  const authLinkCreating = ref(false);
+  const authLinkCreateError = ref("");
+
   function clearMessages() {
     actionMessage.value = "";
     actionError.value = "";
     verificationRevealError.value = "";
+    authLinkCreateError.value = "";
   }
 
   function handleAuthError(error: unknown): boolean {
@@ -218,6 +233,55 @@ export function useAdminConsole({ token, onTokenInvalid }: UseAdminConsoleOption
     }
   }
 
+  async function loadAuthLinks() {
+    if (!token.value) return;
+    authLinksLoading.value = true;
+    authLinksError.value = "";
+    try {
+      const data = await fetchAdminAuthLinks(token.value);
+      authLinks.value = data.items;
+    } catch (error) {
+      if (handleAuthError(error)) return;
+      authLinksError.value = extractErrorMessage(error, ADMIN_AUTH_LINK_LOAD_ERROR);
+    } finally {
+      authLinksLoading.value = false;
+    }
+  }
+
+  async function createAuthLink(payload: AuthLinkCreatePayload) {
+    if (!token.value) return null;
+    clearMessages();
+    authLinkCreating.value = true;
+    authLinkCreateError.value = "";
+    try {
+      const link = await createAdminAuthLink(token.value, payload);
+      await loadAuthLinks();
+      actionMessage.value = "邀请链接已创建。";
+      return link;
+    } catch (error) {
+      if (handleAuthError(error)) return null;
+      authLinkCreateError.value = extractErrorMessage(error, ADMIN_ACTION_FAIL);
+      return null;
+    } finally {
+      authLinkCreating.value = false;
+    }
+  }
+
+  async function revokeAuthLink(linkToken: string) {
+    if (!token.value) return false;
+    clearMessages();
+    try {
+      await revokeAdminAuthLink(token.value, linkToken);
+      await loadAuthLinks();
+      actionMessage.value = "邀请链接已撤销。";
+      return true;
+    } catch (error) {
+      if (handleAuthError(error)) return false;
+      actionError.value = extractErrorMessage(error, ADMIN_ACTION_FAIL);
+      return false;
+    }
+  }
+
   return {
     reports,
     reportsLoading,
@@ -234,12 +298,20 @@ export function useAdminConsole({ token, onTokenInvalid }: UseAdminConsoleOption
     revealedVerificationDetails,
     revealingVerificationId,
     verificationRevealError,
+    authLinks,
+    authLinksLoading,
+    authLinksError,
+    authLinkCreating,
+    authLinkCreateError,
     actionMessage,
     actionError,
     clearMessages,
     loadReports,
     loadAuditLog,
     loadVerificationRequests,
+    loadAuthLinks,
+    createAuthLink,
+    revokeAuthLink,
     transitionReport,
     applyPostAction,
     applyUserStatus,

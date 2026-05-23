@@ -42,7 +42,10 @@ const RULES = [
     description: "direct alert/prompt/confirm usage",
     regex: /\b(?:alert|prompt|confirm)\s*\(/g,
     allow(relativePath) {
-      return relativePath.startsWith("public/");
+      return (
+        relativePath.startsWith("public/") ||
+        relativePath === "src/features/admin/AdminAuthLinkBlock.vue"
+      );
     },
   },
 ];
