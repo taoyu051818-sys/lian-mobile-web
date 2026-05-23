@@ -58,11 +58,7 @@ const masonryColumns = computed(() => splitIntoMasonryColumns(props.items));
           :item="item"
           @open="(id, payload) => emit('open', id, payload)"
         />
-        <FeedItemCard
-          v-else
-          :item="item"
-          @open="(id, payload) => emit('open', id, payload)"
-        />
+        <FeedItemCard v-else :item="item" @open="(id, payload) => emit('open', id, payload)" />
       </template>
     </div>
   </div>

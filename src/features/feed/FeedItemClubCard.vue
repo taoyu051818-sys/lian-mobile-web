@@ -25,7 +25,9 @@ const emit = defineEmits<{
 const club = computed<ClubMetadata | undefined>(() => props.item.club);
 const clubName = computed(() => club.value?.name || props.item.title || "");
 const category = computed(() => club.value?.category || "other");
-const categoryLabel = computed(() => CLUB_CATEGORY_LABELS[category.value] || CLUB_CATEGORY_LABELS.other);
+const categoryLabel = computed(
+  () => CLUB_CATEGORY_LABELS[category.value] || CLUB_CATEGORY_LABELS.other,
+);
 const president = computed(() => club.value?.president || "");
 const memberCount = computed(() => club.value?.memberCount ?? 0);
 const logoUrl = computed(() => club.value?.logoUrl || props.item.cover || "");

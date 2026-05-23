@@ -92,7 +92,15 @@ export interface PostDetail {
  * `event` is canonical; `activity` is kept only as a card-template label
  * (PRD §3.2) so existing Feed cards keep rendering during migration.
  */
-export type PostType = "image" | "text" | "event" | "merchant" | "trade" | "help" | "place" | "club";
+export type PostType =
+  | "image"
+  | "text"
+  | "event"
+  | "merchant"
+  | "trade"
+  | "help"
+  | "place"
+  | "club";
 
 export const POST_TYPES: ReadonlySet<PostType> = new Set([
   "image",
