@@ -211,15 +211,24 @@ test.describe.serial("@event event-complete-reward proof @event-complete-reward"
       expect(body.status).toBe("completed");
       expect(body.eventId).toBe(fixture!.event!.eventId);
 
-      // Re-read detail to confirm the persisted block agrees. /api/posts
-      // reads from the same metadata store the fixture surface samples,
-      // so this catches a write that succeeded in /complete but never
-      // landed (route-handler vs storage-adapter drift).
+      // Re-probe the persisted block via the fixture-discovery surface.
+      // The fixture path is the only public surface that reflects the live
+      // event-block `status`; the /api/posts/:tid feed-shape (event extension)
+      // intentionally does NOT carry status (deriveEventExtension in
+      // feed-handlers.js exposes timing + capacity + reward only). We hit
+      // /api/fixtures so the assertion catches a write that returned 200
+      // but never landed in metadata (route-handler vs storage-adapter drift).
+      const refreshed = await fetchEventRuntimeFixture({ baseURL: BASE_URL });
+      expect(refreshed, "fixture surface must still be reachable post-/complete").not.toBeNull();
+      expect(refreshed!.event, "event block must be present after /complete").not.toBeNull();
+      expect(refreshed!.event!.status).toBe("completed");
+
+      // Sanity: detail still surfaces the event extension at all (so we'd
+      // catch a regression that drops the block entirely on /api/posts/:tid).
       const detailResponse = await api.get(`/api/posts/${fixture!.tid}`);
       expect(detailResponse.ok(), await detailResponse.text()).toBe(true);
       const detail = (await detailResponse.json()) as PostDetail;
       expect(detail.event).toBeTruthy();
-      expect(detail.event!.status).toBe("completed");
     } finally {
       await api.dispose();
     }

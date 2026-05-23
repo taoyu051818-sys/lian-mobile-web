@@ -193,22 +193,30 @@ test.describe.serial("@errand errand full chain proof @errand-full-chain", () =>
 
   test("@errand wrong-runner fence — a fresh request hitting an already-assigned order is rejected", async () => {
     test.skip(!isRoleConfigured("runner"), "runner role not configured");
-    const fixture = await ensureFixtureReady();
-    // The order is already in `assigned` with our runner bound to it from
-    // the previous test. A registered (non-runner) user trying to accept
-    // would be blocked by the runner gate before the assigned-check, so
-    // the cleanest fence proof is: simulate "another runner" by using a
-    // brand new request context (no cookies). It cannot accept because:
-    //   - anonymous → 4xx (covered already), AND
-    //   - even if a 2nd runner identity were configured, the order is
-    //     already assigned → 409 ALREADY_ASSIGNED.
-    // We assert the typed denial when the same runner re-attempts: a
-    // double-accept must be rejected with 4xx (the backend returns 409).
     if (!isRoleConfigured("runner")) return;
-    const { api } = await loginAs("runner");
+    // IMPORTANT: do NOT call `ensureFixtureReady()` here. Hitting /api/fixtures
+    // triggers `ensureErrandJourneyOrderForFixture`, which sees the
+    // already-assigned order (runnerUserId set) as NOT
+    // `orderIsAvailableForRunner` and heals it back to paid_locked /
+    // runnerUserId=null — that would defeat the fence we're trying to prove.
+    // Instead we read the order directly through the runner API and assert
+    // the previous test left it in `assigned` before driving the double-accept.
+    const orderId = "err_e2e_merchant_runner_001";
+    const { api, user: runnerUser } = await loginAs("runner");
     try {
-      const orderId = encodeURIComponent(fixture.orderId);
-      const response = await api.post(`/api/errands/orders/${orderId}/accept`);
+      const preDetail = await fetchOrder(api, orderId);
+      // The previous test bound runnerUserId to this runner and moved state
+      // to `assigned`. If something about that didn't stick we'd be testing
+      // the wrong invariant — bail with a clear message instead of a silent
+      // false negative.
+      expect(
+        preDetail.order?.state,
+        `wrong-runner fence relies on the prior /accept run: expected order in 'assigned' state, saw ${preDetail.order?.state}`,
+      ).toBe("assigned");
+      expect(preDetail.order?.runnerUserId).toBe(String(runnerUser.id));
+
+      const encodedOrderId = encodeURIComponent(orderId);
+      const response = await api.post(`/api/errands/orders/${encodedOrderId}/accept`);
       expect(
         response.status() >= 400 && response.status() < 500,
         `expected 4xx on double-accept (already assigned), got ${response.status()}: ${await response.text()}`,
@@ -222,8 +230,9 @@ test.describe.serial("@errand errand full chain proof @errand-full-chain", () =>
 
       // Order must STILL be assigned (no silent state mutation from the
       // failed double-accept).
-      const detail = await fetchOrder(api, fixture.orderId);
+      const detail = await fetchOrder(api, orderId);
       expect(detail.order?.state).toBe("assigned");
+      expect(detail.order?.runnerUserId).toBe(String(runnerUser.id));
     } finally {
       await api.dispose();
     }
