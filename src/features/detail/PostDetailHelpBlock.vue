@@ -26,7 +26,10 @@ import {
   HELP_DISABLED_NOT_SIGNED_IN,
   HELP_LINKED_EVENT_LABEL,
 } from "../../config/brand";
-import { helpHasLinkedEvent, type HelpVotePlan } from "../../domain/helpVotePolicy";
+import {
+  helpHasLinkedEvent,
+  type HelpVotePlan,
+} from "../../domain/helpVotePolicy";
 import type { HelpPostExtension, HelpStatus } from "../../types/post-extensions";
 
 const props = defineProps<{
@@ -52,7 +55,9 @@ const STATUS_LABEL: Record<HelpStatus, string> = {
 };
 
 const statusLabel = computed(() => STATUS_LABEL[props.help.status]);
-const voteLabel = computed(() => `${HELP_VOTE_COUNT_PREFIX} ${Math.max(0, props.help.voteCount)}`);
+const voteLabel = computed(
+  () => `${HELP_VOTE_COUNT_PREFIX} ${Math.max(0, props.help.voteCount)}`,
+);
 const buttonLabel = computed(() => {
   if (props.busy) return HELP_VOTE_PENDING;
   if (props.plan.mode === "unvote") return HELP_UNVOTE;
@@ -90,9 +95,9 @@ function handleOpenLinkedEvent() {
     data-testid="post-detail-help-block"
   >
     <header class="post-detail-help-block__header">
-      <span class="post-detail-help-block__status" :data-status="help.status">{{
-        statusLabel
-      }}</span>
+      <span class="post-detail-help-block__status" :data-status="help.status">
+        {{ statusLabel }}
+      </span>
       <span class="post-detail-help-block__votes">{{ voteLabel }}</span>
     </header>
 
@@ -109,7 +114,10 @@ function handleOpenLinkedEvent() {
       {{ buttonLabel }}
     </button>
 
-    <p v-if="showPrimaryAction && disabledReason && !plan.enabled" class="post-detail-help-block__hint">
+    <p
+      v-if="showPrimaryAction && disabledReason && !plan.enabled"
+      class="post-detail-help-block__hint"
+    >
       {{ disabledReason }}
     </p>
 
