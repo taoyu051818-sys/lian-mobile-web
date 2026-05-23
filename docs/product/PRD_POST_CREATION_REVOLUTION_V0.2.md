@@ -79,17 +79,17 @@ kind 不再是用户的第一决策，而是 LLM 通过文本/图片推断 + 用
 
 **UI 上**：`kind` 不在发布页暴露成 radio。
 
-**推断优先级**（来源：PR #868 step F 实施，`src/features/publish/inferKind.ts`）：
+**推断优先级**（2026-05-23 产品决策锁；实施载体 `src/features/publish/inferKind.ts`，PR #868 step F）：
 
-1. **panel** > **求助 tag** > **location-only** > **image** > **text**
+1. **image** > **panel（event/merchant/trade）/ ghost component** > **求助 tag** > **location-only** > **text**
 2. 具体分支：
-   - 启用了「时间 + 地点 + 名额」 → `event`
-   - 启用了「价格 + 商家信息」 → `merchant`
-   - 启用了「价格 + 二手物品状态」 → `trade`
-   - tagInput 含「求助」标签 → `help`
-   - 仅地点 → `place`
-   - 有图无 panel → `image`
-   - 仅文 → `text`（默认 fallback）
+   - **有任意图片附件** → `kind=image`（最高优先级；只要有任意图片附件，无论用户是否化实 ghost component，无论文字写了什么，kind 一律 `image`。"有图即图文帖" 是产品决策的硬约束，不可被 panel/ghost component 覆盖）
+   - 无图 + 启用「时间 + 地点 + 名额」 → `event`
+   - 无图 + 启用「价格 + 商家信息」 → `merchant`
+   - 无图 + 启用「价格 + 二手物品状态」 → `trade`（accept(price) ghost component 化实即触发 trade kind 推断，详见 §4.2.3）
+   - 无图 + tagInput 含「求助」标签 → `help`
+   - 无图 + 仅地点 → `place`
+   - 无图 + 仅文 → `text`（默认 fallback）
 3. **降级**：若推断不出，落 `image` 或 `text`（按是否有图）。
 
 **审计**：发布请求体里仍带显式 `kind` 字段；`PublishPayload.kind` 在 wire 上保持 optional 以让较老客户端继续解析（PR #868）。
@@ -197,6 +197,8 @@ LLM 推断当前内容更适合做 `event` / `merchant` / `place` 时，在卡�
 - 用户继续输入或切到下一个 LLM tick → ghost 静默消失。
 - 一次 accept 后该候选从 list 移除（"用户继续输入或切到下一个 LLM tick 时静默消失"的对应实现）。
 
+**accept(price) → kind=trade 决策**（2026-05-23 产品决策锁）：用户化实「价格」ghost component 后，**在无图前提下**，kind 推断为 `trade`（详见 §2.2 priority chain）。enum 不变（image/text/event/merchant/trade/help/place）。该映射的实施载体是 `src/features/publish/inferKind.ts`，由 step F 后续 PR 落地。
+
 **6 类 inline ghost component 与角色 capability 门**（PR #860 实现，PR #882 / S13 e2e 锁定）：
 
 | 候选 kind         | 用户点「加入」后的 draft 动作                               | 门控                                                      |
@@ -204,7 +206,7 @@ LLM 推断当前内容更适合做 `event` / `merchant` / `place` 时，在卡�
 | `event_time`      | `publishKind = "event"`（活动面板打开）                     | 任何登录用户                                              |
 | `merchant_info`   | `publishKind = "merchant"`                                  | **仅 `merchant_verified`**                                |
 | `trade_condition` | `publishKind = "trade"`                                     | **仅 `campus_verified`**                                  |
-| `price`           | merchant 优先；否则 trade；否则 no-op                       | 沿用 merchant / trade 的 gate（注：见 §11 open question） |
+| `price`           | **`publishKind = "trade"`**（无图前提下；2026-05-23 产品决策锁，覆盖此前 merchant 优先的临时方案） | `campus_verified`（沿用 trade gate）                      |
 | `help_tag`        | `tagInput = "求助"`（仅当为空，绝不静默覆盖用户已写的 tag） | 任何登录用户                                              |
 | `location`        | draft 不动（PRD §2.2 `place` kind 留给 step F 推断）        | 任何登录用户                                              |
 
@@ -452,7 +454,7 @@ PRD §4.1 mandates "记录每次 LLM 调用的响应时间到 telemetry，用于
 
 1. **Ghost-text DOM strategy**（S3）：`PublishComposer.vue` 当下还没渲染标题 ghost（仅槽接到）。`::placeholder` overlay vs sibling `<span aria-hidden>` vs `::before` 伪元素三种实现里挑哪种，会改 §4.2.1 验收里的 DOM 形状。Resolve before opening S3 / #872 PR。
 2. **Telemetry sink**（S9）：见 §9。
-3. **`accept(price)` fallback 语义**（S5）：merge 后实现是 `merchant 优先, fallback trade, no-op otherwise`。本 PRD §4.2.3 表沿用此实现。如果产品要 clarify 非 merchant 非 campus 用户**不应**看到 `price` ghost，需要回到 §4.2.3 修。
+3. ~~**`accept(price)` fallback 语义**（S5）~~：**已 resolve 2026-05-23**：accept(price) → `kind=trade`（无图前提下），见 §4.2.3 + §2.2。`inferKind.ts` price→trade 实施 PR 跟在本 PRD 后落地。
 
 ---
 
@@ -491,3 +493,9 @@ PRD §4.1 mandates "记录每次 LLM 调用的响应时间到 telemetry，用于
 - **Wave 1**（依赖已合）：S4 / S5 / S8 / S11 / S12。
 - **Wave 2**（step F 合并后）：S2 / S6 / S7 / S9 / S13。
 - **Wave 3**（step G + 标题 ghost-text 渲染后续 PR 落地后）：S1 / S3 / S10。
+
+---
+
+## 附录 B：Changelog
+
+- **2026-05-23** — 用户拍板 §2.2 priority chain（image 最高）+ §4.2.3 accept(price) → trade 链路。`inferKind.ts` 中 image 最高优先级与 price→trade 的实施 PR 跟在本 PRD 之后。同步 resolve §11 open question 3。
