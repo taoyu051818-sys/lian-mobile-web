@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { computed } from "vue";
+import type { EventActionPlan } from "../../domain/eventActionPolicy";
+import type { HelpManagePlan } from "../../domain/helpManagePolicy";
+import type { HelpVotePlan } from "../../domain/helpVotePolicy";
+import type { MerchantErrandUnavailableReason } from "../../types/merchant";
 import type { PlaceRef, PlaceSheet } from "../../types/place";
 import type { PostType } from "../../types/post";
-import type { EventActionPlan } from "../../domain/eventActionPolicy";
-import type { HelpVotePlan } from "../../domain/helpVotePolicy";
-import type { HelpManagePlan } from "../../domain/helpManagePolicy";
-import type { MerchantErrandUnavailableReason } from "../../types/merchant";
 import type {
   EventPostExtension,
   HelpPostExtension,
@@ -17,19 +17,22 @@ import {
   type PostCapabilityId,
   type PostCapabilitySelection,
 } from "./postCapabilityRegistry";
-import { isPostActionAvailable, type PostActionContext } from "./postActionRegistry";
-import PostDetailGallery from "./PostDetailGallery.vue";
-import PostDetailMainBody from "./PostDetailMainBody.vue";
-import PostDetailInfoStrip from "./PostDetailInfoStrip.vue";
+import {
+  isPostActionAvailable,
+  type PostActionContext,
+} from "./postActionRegistry";
+import PostActionFeedback from "./PostActionFeedback.vue";
 import PostDetailEventBlock from "./PostDetailEventBlock.vue";
+import PostDetailGallery from "./PostDetailGallery.vue";
 import PostDetailHelpBlock from "./PostDetailHelpBlock.vue";
 import PostDetailHelpManageBlock from "./PostDetailHelpManageBlock.vue";
+import PostDetailInfoStrip from "./PostDetailInfoStrip.vue";
+import PostDetailMainBody from "./PostDetailMainBody.vue";
 import PostDetailMerchantBlock from "./PostDetailMerchantBlock.vue";
 import PostDetailTradeBlock from "./PostDetailTradeBlock.vue";
 import PostDetailTypedFallbackBlock from "./PostDetailTypedFallbackBlock.vue";
 import PostPlaceSheetBlock from "./PostPlaceSheetBlock.vue";
 import PostReportBlock from "./PostReportBlock.vue";
-import PostActionFeedback from "./PostActionFeedback.vue";
 
 const props = defineProps<{
   title?: string;
@@ -126,7 +129,9 @@ const showEventCompleteAction = computed(() =>
 );
 const showEventFallback = computed(() => selectionFor("event") === "fallback");
 
-const showHelpBlock = computed(() => selectionFor("help") === "render" && Boolean(props.helpPlan));
+const showHelpBlock = computed(
+  () => selectionFor("help") === "render" && Boolean(props.helpPlan),
+);
 const showHelpAction = computed(
   () => isPostActionAvailable("help-act", actionContext.value) && Boolean(props.helpPlan),
 );
@@ -135,17 +140,25 @@ const showHelpLinkedEvent = computed(() =>
 );
 const showHelpFallback = computed(() => selectionFor("help") === "fallback");
 
-const showHelpManageLinkEvent = computed(() =>
-  Boolean(props.helpManagePlan) && isPostActionAvailable("help-link-event", actionContext.value),
+const showHelpManageLinkEvent = computed(
+  () =>
+    Boolean(props.helpManagePlan) &&
+    isPostActionAvailable("help-link-event", actionContext.value),
 );
-const showHelpManageUnlinkEvent = computed(() =>
-  Boolean(props.helpManagePlan) && isPostActionAvailable("help-unlink-event", actionContext.value),
+const showHelpManageUnlinkEvent = computed(
+  () =>
+    Boolean(props.helpManagePlan) &&
+    isPostActionAvailable("help-unlink-event", actionContext.value),
 );
-const showHelpManageResolve = computed(() =>
-  Boolean(props.helpManagePlan) && isPostActionAvailable("help-resolve", actionContext.value),
+const showHelpManageResolve = computed(
+  () =>
+    Boolean(props.helpManagePlan) &&
+    isPostActionAvailable("help-resolve", actionContext.value),
 );
-const showHelpManageClose = computed(() =>
-  Boolean(props.helpManagePlan) && isPostActionAvailable("help-close", actionContext.value),
+const showHelpManageClose = computed(
+  () =>
+    Boolean(props.helpManagePlan) &&
+    isPostActionAvailable("help-close", actionContext.value),
 );
 const showHelpManageBlock = computed(
   () =>
@@ -250,7 +263,10 @@ const emit = defineEmits<{
       :errand-unavailable-reason-text="errandUnavailableReasonText"
       :show-errand-action="showMerchantErrandAction"
     />
-    <PostDetailTypedFallbackBlock v-else-if="showMerchantFallback" post-type="merchant" />
+    <PostDetailTypedFallbackBlock
+      v-else-if="showMerchantFallback"
+      post-type="merchant"
+    />
 
     <PostDetailTradeBlock v-if="showTradeBlock" :trade="trade!" />
     <PostDetailTypedFallbackBlock v-else-if="showTradeFallback" post-type="trade" />
@@ -295,6 +311,9 @@ const emit = defineEmits<{
       @update:report-reason="emit('update:reportReason', $event)"
     />
 
-    <PostActionFeedback :action-error="actionError" :action-message="actionMessage" />
+    <PostActionFeedback
+      :action-error="actionError"
+      :action-message="actionMessage"
+    />
   </div>
 </template>
