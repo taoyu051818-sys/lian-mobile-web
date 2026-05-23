@@ -1,4 +1,4 @@
-import { apiGet, apiSend } from "./http";
+import { apiGet, apiSend, LianApiError } from "./http";
 import type {
   RunnerOrder,
   RunnerOrderListResponse,
@@ -83,7 +83,7 @@ async function transitionRunnerOrder(
     { method: "POST" },
   );
   const order = normalizeRunnerOrder(data as BackendRunnerOrder);
-  if (!order) throw new Error("跑腿后台未返回 order 数据");
+  if (!order) throw new LianApiError("跑腿后台未返回 order 数据", 0, "MALFORMED_RESPONSE");
   return order;
 }
 
