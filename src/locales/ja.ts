@@ -49,7 +49,8 @@ export default {
     loadNotification: "通知を読み込めませんでした。後でもう一度お試しください。",
     sendMessage: "メッセージを送信できませんでした。後でもう一度お試しください。",
     sendReply: "返信を送信できませんでした。後でもう一度お試しください。",
-    publishImage: "画像のアップロードに失敗しました。別の画像を選ぶか、後でもう一度お試しください。",
+    publishImage:
+      "画像のアップロードに失敗しました。別の画像を選ぶか、後でもう一度お試しください。",
     publishLocation: "位置情報を読み込めませんでした。場所名を手動で入力できます。",
     likeAction: "いいねできませんでした。後でもう一度お試しください。",
     saveAction: "保存できませんでした。後でもう一度お試しください。",
@@ -83,12 +84,14 @@ export default {
     emailHint:
       "認証コードを大学メールに送信します。招待コードで登録する場合は空欄のままで構いません。",
     loginPlaceholder: "メールアドレスまたはニックネームでログイン",
-    interestSkipHint: "興味はフィードの最適化に使われます。スキップして後で設定することもできます。",
+    interestSkipHint:
+      "興味はフィードの最適化に使われます。スキップして後で設定することもできます。",
     interestLoading: "興味の選択肢を読み込み中…",
     interestEmpty: "興味の選択肢がありません。登録を完了して後で設定できます。",
     interestError: "興味の選択肢を読み込めませんでした。登録を完了して後で設定できます。",
     interestPickHint: "フィードを最適化するため、興味を1つ以上選んでください。後で変更できます。",
-    interestSkipDefault: "興味はフィードの最適化に使われます。スキップして後で設定することもできます。",
+    interestSkipDefault:
+      "興味はフィードの最適化に使われます。スキップして後で設定することもできます。",
     loggedInRefresh: "ログインしました。プロフィールを更新中…",
     emailRequired: "まず大学メールアドレスを入力してください。",
     codeSent: "認証コードを送信しました。メールをご確認ください。",
@@ -288,8 +291,7 @@ export default {
     success: "投稿しました。まもなくホームに表示されます。",
     successBound: "投稿しました。「{n}」に紐付けられました。",
     viewPost: "投稿を見る",
-    aiPending:
-      "AIが画像を読み取り中です。下書きが自動入力されます。その間に場所を選択できます。",
+    aiPending: "AIが画像を読み取り中です。下書きが自動入力されます。その間に場所を選択できます。",
     aiRiskFlagsLabel: "AIリスク警告",
     aiUnavailable: "AI下書き機能は現在利用できません。手動で投稿できます。",
   },
@@ -379,11 +381,11 @@ export default {
     resendHint: "{n}秒後に再送信できます。",
     cooldownHint: "送信後、コードはクールダウンに入ります。{n}秒後に再試行できます。",
     rateLimit: "送信回数が多すぎます。{n}秒後にお試しください。",
-    rateLimitDefault: "送信回数が多すぎます。後でもう一度お試しください。{n}秒間クールダウンします。",
+    rateLimitDefault:
+      "送信回数が多すぎます。後でもう一度お試しください。{n}秒間クールダウンします。",
     sentInst: "コードを送信しました。{n}として認識されました。",
     rateLimitResend: "送信頻度が高すぎます。{n}秒後にお試しください。",
-    rateLimitFallback:
-      "サーバーから待機時間が返されない場合、{n}秒間クールダウンします。",
+    rateLimitFallback: "サーバーから待機時間が返されない場合、{n}秒間クールダウンします。",
   },
   eventDetail: {
     blockLabel: "イベント情報",
