@@ -41,7 +41,7 @@ function handleFocusOut(event: FocusEvent) {
   <form
     ref="composerRef"
     class="messages-view__composer"
-    :class="{ 'is-compact': isCompact }"
+    :class="{ 'messages-view__composer--compact': isCompact }"
     @submit.prevent="emit('submit')"
     @focusin="focused = true"
     @focusout="handleFocusOut"
@@ -85,7 +85,7 @@ function handleFocusOut(event: FocusEvent) {
   padding: var(--space-3);
 }
 
-.messages-view__composer.is-compact {
+.messages-view__composer.messages-view__composer--compact {
   gap: 0;
 }
 
@@ -134,13 +134,13 @@ function handleFocusOut(event: FocusEvent) {
   min-width: 0;
 }
 
-.messages-view__composer.is-compact .messages-view__field textarea {
+.messages-view__composer.messages-view__composer--compact .messages-view__field textarea {
   min-height: 40px;
   padding: var(--space-2) var(--space-3);
   border-radius: var(--radius-button);
 }
 
-.messages-view__composer.is-compact .messages-view__input-row {
+.messages-view__composer.messages-view__composer--compact .messages-view__input-row {
   align-items: center;
 }
 </style>

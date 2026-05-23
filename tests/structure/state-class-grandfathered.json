@@ -2,27 +2,9 @@
   "$comment": "Grandfathered .is-* state classes that pre-date docs/frontend/state-vocabulary.md. This list may only shrink — adding a new class fails review. Each entry will be migrated either to a vocabulary entry (.is-loading / .is-open / .is-active / .is-pressed / etc.) or out of the .is-* namespace entirely (BEM modifier or component-scoped class) in PR-gamma-2.",
   "grandfathered": [
     {
-      "class": "is-self",
-      "files": ["src/features/messages/ChannelThread.vue"],
-      "reason": "messages thread own-message marker; rename to messages-view__message--self in PR-gamma-2."
-    },
-    {
       "class": "is-expanded",
       "files": ["src/features/detail/PostReplyDock.vue", "src/features/feed/FeedItemCardShell.vue"],
       "reason": "Synonym of .is-open per vocab; rename in PR-gamma-2 with aria-expanded coverage."
-    },
-    {
-      "class": "is-compact",
-      "files": ["src/features/messages/ChannelComposer.vue"],
-      "reason": "Visual variant; move to BEM modifier (__composer--compact) in PR-gamma-2."
-    },
-    {
-      "class": "is-pending",
-      "files": [
-        "src/features/messages/ChannelThread.vue",
-        "src/features/messages/NotificationList.vue"
-      ],
-      "reason": "Two distinct usages: (1) optimistic-message awaiting server ack, (2) channel awaiting load. Both fold into .is-loading in PR-gamma-2."
     },
     {
       "class": "is-clickable",

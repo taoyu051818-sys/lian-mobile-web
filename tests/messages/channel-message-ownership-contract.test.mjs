@@ -105,7 +105,7 @@ test("useChannelMessages imports ChannelMessage types", () => {
 });
 
 test("ChannelThread uses isSelf for message CSS class", () => {
-  assert.match(channelThreadSource, /is-self.*item\.isSelf/);
+  assert.match(channelThreadSource, /messages-view__message--self.*item\.isSelf/);
 });
 
 test("ChannelThread shows delivery state for self messages", () => {

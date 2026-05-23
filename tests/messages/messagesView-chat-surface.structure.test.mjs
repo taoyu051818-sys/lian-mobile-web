@@ -52,6 +52,6 @@ test("ChannelThread preserves sender identity layout from #376: avatar left of b
 });
 
 test("ChannelComposer compact state uses consistent button radius", () => {
-  assert.match(composerSource, /is-compact/);
+  assert.match(composerSource, /messages-view__composer--compact/);
   assert.match(composerSource, /var\(--radius-button\)/);
 });
