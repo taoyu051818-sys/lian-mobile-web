@@ -110,7 +110,7 @@ function handleClick(event: MouseEvent) {
     ]"
     :type="type"
     :disabled="isDisabledState"
-    :aria-pressed="showPressedClass ? 'true' : null"
+    :aria-pressed="showPressedClass ? 'true' : undefined"
     @click="handleClick"
   >
     <span v-if="showLoadingClass" class="lian-button__spinner" aria-hidden="true"></span>
