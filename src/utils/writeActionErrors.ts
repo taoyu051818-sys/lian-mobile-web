@@ -11,8 +11,8 @@ interface WriteActionCopy {
   fallback: string;
 }
 
-export const WRITE_ACTION_FALLBACK_PUBLISH = "发布暂时没成功，内容已保留，请稍后重试。";
-export const WRITE_ACTION_FALLBACK_REPLY = "回复发送失败，内容已保留，请稍后再试。";
+const WRITE_ACTION_FALLBACK_PUBLISH = "发布暂时没成功，内容已保留，请稍后重试。";
+const WRITE_ACTION_FALLBACK_REPLY = "回复发送失败，内容已保留，请稍后再试。";
 
 const WRITE_ACTION_COPY: Record<WriteActionKind, WriteActionCopy> = {
   publish: {
