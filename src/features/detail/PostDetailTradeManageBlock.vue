@@ -38,25 +38,6 @@ const TRADE_ACTION_SUCCESS: Record<TradeState, string> = {
   hidden: "已暂时隐藏这条二手帖。",
 };
 
-const TRADE_ACTION_TO_STATE: Readonly<Record<PostActionId, TradeState>> = {
-  report: "available",
-  "hide-reported": "available",
-  "event-act": "available",
-  "event-complete": "available",
-  "help-act": "available",
-  "help-open-linked-event": "available",
-  "help-link-event": "available",
-  "help-unlink-event": "available",
-  "help-resolve": "available",
-  "help-close": "available",
-  "merchant-errand": "available",
-  "trade-set-available": "available",
-  "trade-set-reserved": "reserved",
-  "trade-set-sold": "sold",
-  "trade-set-cancelled": "cancelled",
-  "trade-set-hidden": "hidden",
-};
-
 const currentUser = ref<{ id?: string; username?: string } | null>(null);
 const tradeStateBusy = ref(false);
 
@@ -85,11 +66,15 @@ const actionContext = computed<PostActionContext>(() => ({
   trade: trade.value ?? undefined,
 }));
 
+function tradeStateFromAction(id: Extract<PostActionId, `trade-set-${string}`>): TradeState {
+  return id.replace("trade-set-", "") as TradeState;
+}
+
 const tradeActions = computed(() => {
   return availablePostActions(actionContext.value)
     .filter((id): id is Extract<PostActionId, `trade-set-${string}`> => id.startsWith("trade-set-"))
     .map((id) => {
-      const state = TRADE_ACTION_TO_STATE[id];
+      const state = tradeStateFromAction(id);
       return {
         state,
         label: TRADE_ACTION_LABELS[state],
