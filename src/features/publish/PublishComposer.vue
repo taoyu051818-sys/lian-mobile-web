@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from "vue";
+import { ref, toRef } from "vue";
 import { LocationChip, TagChip } from "../../ui";
 import {
   PUBLISH_COMPOSER_LABEL,
@@ -20,12 +20,18 @@ import {
 import PublishImagePreview from "./PublishImagePreview.vue";
 import PublishCandidateBar from "./PublishCandidateBar.vue";
 import PublishTitleCandidateBar from "./PublishTitleCandidateBar.vue";
+import {
+  useInjectedBodyCandidate,
+  useInjectedTitleCandidate,
+  useInjectedSuggestedComponents,
+} from "./usePublishDraft";
+import { usePublishLlmTick } from "./usePublishLlmTick";
 import type { MapLocation } from "../../types/map";
 
 const MAX_TITLE_LENGTH = 40;
 const MAX_BODY_LENGTH = 300;
 
-defineProps<{
+const props = defineProps<{
   localPreviewUrls: string[];
   imageStatus: string;
   title: string;
@@ -62,6 +68,29 @@ const fileInputRef = ref<HTMLInputElement | null>(null);
 function openFilePicker() {
   fileInputRef.value?.click();
 }
+
+// PRD V0.2 step E-pre — wire the LLM preview tick at the composer level so
+// it can `inject()` the candidate APIs and the suggestedComponents pipe that
+// usePublishDraft `provide()`d up the tree. Mounting it inside usePublishDraft
+// would force `inject` and `provide` of the same key in the same setup,
+// which Vue treats as a mutual dependency we'd rather avoid; the composer is
+// the first descendant in scope, so this is the natural seam.
+//
+// `props.title` / `props.body` are reactive (Vue auto-tracks prop access in
+// setup), but the watcher inside usePublishLlmTick wants real Refs to compare
+// snapshots against the live values across an async gap. `toRef` gives us
+// that without breaking reactivity.
+const bodyCandidate = useInjectedBodyCandidate();
+const titleCandidate = useInjectedTitleCandidate();
+const suggestedComponents = useInjectedSuggestedComponents();
+
+usePublishLlmTick({
+  title: toRef(props, "title"),
+  body: toRef(props, "body"),
+  setTitleCandidate: titleCandidate.setTitleCandidate,
+  setBodyCandidate: bodyCandidate.setBodyCandidate,
+  suggestedComponents,
+});
 </script>
 
 <template>

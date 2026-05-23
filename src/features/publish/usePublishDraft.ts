@@ -35,6 +35,7 @@ import { usePublishIdentity } from "./usePublishIdentity";
 import { usePublishAi } from "./usePublishAi";
 import { useMerchantPublishDraft } from "./useMerchantPublishDraft";
 import { useTradePublishDraft } from "./useTradePublishDraft";
+import type { SuggestedComponent } from "../../types/publishSuggestion";
 
 // PR-3 (#813 follow-up): "event" promoted to a peer of regular / merchant /
 // trade so the publishKind switch is the single "what kind of post am I
@@ -209,6 +210,33 @@ export function useInjectedTitleCandidate(): PublishTitleCandidateApi {
 }
 
 /**
+ * Suggested-component pipe (PRD V0.2 step E-pre).
+ *
+ * Holds the most recent `candidates.suggestedComponents` array from the LLM
+ * preview tick. `usePublishLlmTick` is the only writer; step E-main will be
+ * the first reader (rendering inline ghost components in
+ * `PublishGhostComponent.vue`). Provided here so descendants can `inject` the
+ * ref without prop-drilling, mirroring the body/title candidate pattern.
+ *
+ * Step E-pre scope is the pipe. The hook empties the array between LLM
+ * round-trips when the model returns no components, so a stale "5 hints"
+ * list never lingers after the user has typed past their relevance.
+ */
+export const PublishSuggestedComponentsKey: InjectionKey<Ref<SuggestedComponent[]>> = Symbol(
+  "PublishSuggestedComponents",
+);
+
+export function useInjectedSuggestedComponents(): Ref<SuggestedComponent[]> {
+  const ref$ = inject(PublishSuggestedComponentsKey, null);
+  if (!ref$) {
+    throw new Error(
+      "usePublishDraft must be installed (provided) before consuming PublishSuggestedComponentsKey",
+    );
+  }
+  return ref$;
+}
+
+/**
  * Pure factory for the title-candidate state machine. Lifecycle mirrors the
  * body factory exactly (set / apply / revert / user-typing invalidates).
  * See `createBodyCandidate` for the per-step rationale; the comments aren't
@@ -296,6 +324,12 @@ export function usePublishDraft() {
   // bound to `title`. See createTitleCandidate for why this stays a separate
   // factory rather than a generic slot.
   const titleCandidate = createTitleCandidate(title);
+  // PRD V0.2 step E-pre — sink for the LLM tick's suggestedComponents block.
+  // `usePublishLlmTick` (mounted from PublishComposer) is the only writer;
+  // step E-main will be the first reader (PublishGhostComponent.vue).
+  // Empty array is the natural "no suggestions" state — keeps consumer
+  // templates simple (`v-for` over an empty list is a no-op).
+  const suggestedComponents = ref<SuggestedComponent[]>([]);
   const tagInput = ref("");
   const placeName = ref("");
   const visibility = ref<PublishVisibility>("public");
@@ -464,6 +498,11 @@ export function usePublishDraft() {
   // PRD V0.2 step D — same wiring for the title slot. Separate key so the
   // two bars don't have to discriminate at runtime.
   provide(PublishTitleCandidateKey, titleCandidate);
+  // PRD V0.2 step E-pre — provide the suggestedComponents pipe so
+  // usePublishLlmTick (mounted from PublishComposer) can write to it via
+  // inject without prop-drilling, and step E-main's ghost UI can read via
+  // the same key.
+  provide(PublishSuggestedComponentsKey, suggestedComponents);
 
   function resetForm(clearLocation: () => void) {
     title.value = "";
@@ -548,5 +587,11 @@ export function usePublishDraft() {
     setTitleCandidate: titleCandidate.setTitleCandidate,
     applyTitleCandidate: titleCandidate.applyTitleCandidate,
     revertTitleCandidate: titleCandidate.revertTitleCandidate,
+    // PRD V0.2 step E-pre — suggestedComponents pipe. Step E-main reader
+    // (PublishGhostComponent.vue) will consume via inject; this is here so
+    // tests / debug surfaces that already hold a `draft` handle can read it
+    // without going through inject.
+    suggestedComponents,
+    setBodyCandidate: candidate.setBodyCandidate,
   };
 }
