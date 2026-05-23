@@ -17,9 +17,9 @@ function readRepoFile(rel: string) {
 }
 
 describe("Phase 1: unified PostType vocabulary (PRD V0.1 §6.1)", () => {
-  it("ships exactly the seven post types the PRD lists", () => {
+  it("ships exactly the eight post types the PRD lists", () => {
     expect([...POST_TYPES].sort()).toEqual(
-      ["event", "help", "image", "merchant", "place", "text", "trade"].sort(),
+      ["club", "event", "help", "image", "merchant", "place", "text", "trade"].sort(),
     );
   });
 

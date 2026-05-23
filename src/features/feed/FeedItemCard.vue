@@ -7,11 +7,11 @@ import {
   FEED_CARD_MARK_MERCHANT,
 } from "../../config/brand";
 import { actorAvatarText, actorAvatarUrl, actorDisplayName } from "../../domain/actor";
-import type { FeedItem, FeedItemId, FeedPresentationIntent } from "../../types/feed";
+import type { FeedItem, FeedItemId, FeedItemShellCardTemplate } from "../../types/feed";
 import FeedItemCardShell from "./FeedItemCardShell.vue";
 import { useCardPointerInteraction } from "./useCardPointerInteraction";
 
-type CardTemplate = FeedPresentationIntent;
+type CardTemplate = FeedItemShellCardTemplate;
 
 const MAX_VISIBLE_TITLE_CHARS = 42;
 const MAX_VISIBLE_AUTHOR_CHARS = 10;
