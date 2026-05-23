@@ -1,17 +1,17 @@
 /**
- * Issue #785 — focused tests for the post capability registry.
+ * Issue #785 / #794 — focused tests for the post capability registry.
  *
  * Cover the two responsibilities the registry takes on from the previous
  * inline-conditional ladder in PostDetailContent.vue:
  *
- *   1. Selection — which capability blocks render for the currently shipped
- *      post types (help / event / merchant / trade / place).
+ *   1. Selection — which registry-backed capability blocks render for the
+ *      currently shipped typed post surfaces (help / event / merchant / trade).
  *   2. Fallback — when a typed post arrives without a usable extension, the
  *      typed-fallback block is selected instead of silently skipping.
  *
- * The registry is a pure function over already-normalized PostDetail fields,
- * so these tests stay focused on selection and never touch DOM, components,
- * or HTTP. Adapter-side normalization is covered by tests/api/posts.adapter.
+ * Structured place content still uses its separate place-sheet path, so the
+ * registry surface deliberately excludes it. Adapter-side normalization is
+ * covered by tests/api/posts.adapter.
  */
 
 import { describe, expect, it } from "vitest";
@@ -28,7 +28,6 @@ import type {
   MerchantPostExtension,
   TradePostExtension,
 } from "../../src/types/post-extensions";
-import type { PlaceRef } from "../../src/types/place";
 
 function makeEvent(overrides: Partial<EventPostExtension> = {}): EventPostExtension {
   return {
@@ -72,14 +71,6 @@ function makeTrade(overrides: Partial<TradePostExtension> = {}): TradePostExtens
   };
 }
 
-function makePlace(overrides: Partial<PlaceRef> = {}): PlaceRef {
-  return {
-    id: "place-1",
-    name: "图书馆",
-    ...overrides,
-  };
-}
-
 describe("postCapabilityRegistry — selection for the currently shipped capability set", () => {
   it("renders the event block when an event extension is present", () => {
     const post: PostCapabilityInput = { type: "event", event: makeEvent() };
@@ -102,24 +93,20 @@ describe("postCapabilityRegistry — selection for the currently shipped capabil
     expect(selectPostCapability("trade", post)).toBe("render");
   });
 
-  it("renders the place capability when a structured place ref is present", () => {
-    const post: PostCapabilityInput = { type: "place", place: makePlace() };
-    expect(selectPostCapability("place", post)).toBe("render");
-  });
-
-  it("resolves multiple capabilities on a single post (event + place)", () => {
+  it("resolves the registry-backed capabilities in stable render order", () => {
     const post: PostCapabilityInput = {
       type: "event",
       event: makeEvent(),
-      place: makePlace(),
+      help: makeHelp(),
+      merchant: makeMerchant(),
+      trade: makeTrade(),
     };
-    const resolutions = resolvePostCapabilities(post);
-    const map = Object.fromEntries(resolutions.map((r) => [r.id, r.selection]));
-    expect(map.event).toBe("render");
-    expect(map.place).toBe("render");
-    expect(map.help).toBe("skip");
-    expect(map.merchant).toBe("skip");
-    expect(map.trade).toBe("skip");
+    expect(resolvePostCapabilities(post)).toEqual([
+      { id: "event", selection: "render" },
+      { id: "help", selection: "render" },
+      { id: "merchant", selection: "render" },
+      { id: "trade", selection: "render" },
+    ]);
   });
 });
 
@@ -155,18 +142,9 @@ describe("postCapabilityRegistry — fallback for partially populated typed post
     expect(selectPostCapability("help", post)).toBe("fallback");
   });
 
-  it("does not emit a fallback for capabilities that have no typed-fallback block", () => {
-    // Place has no typed-fallback in the shipped UI. Missing place ref must
-    // resolve to skip (not fallback) so the place sheet entry simply doesn't
-    // render.
-    const post: PostCapabilityInput = { type: "place" };
-    expect(selectPostCapability("place", post)).toBe("skip");
-    expect(shouldRenderCapabilityFallback("place", post)).toBe(false);
-  });
-
   it("does not emit a fallback for image / text posts (no capability implied)", () => {
     const post: PostCapabilityInput = { type: "image" };
-    for (const id of ["event", "help", "merchant", "trade", "place"] as const) {
+    for (const id of ["event", "help", "merchant", "trade"] as const) {
       expect(selectPostCapability(id, post)).toBe("skip");
     }
   });
@@ -188,14 +166,8 @@ describe("postCapabilityRegistry — adapter boundary", () => {
     expect(selectPostCapability("totally-unknown", post)).toBe("skip");
   });
 
-  it("treats a place ref without an id as skip (adapter contract)", () => {
-    // PlaceRef.id is the canonical handle; an empty id is the signal the
-    // adapter used to mean "no structured place" (mirrors normalizePlaceRef
-    // behavior in src/platform/api-normalizers).
-    const post: PostCapabilityInput = {
-      type: "place",
-      place: { ...makePlace(), id: "" },
-    };
-    expect(selectPostCapability("place", post)).toBe("skip");
+  it("does not expose place as a registry capability", () => {
+    const ids = resolvePostCapabilities({ type: "place" }).map((entry) => entry.id);
+    expect(ids).toEqual(["event", "help", "merchant", "trade"]);
   });
 });
