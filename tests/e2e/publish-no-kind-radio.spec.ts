@@ -62,9 +62,7 @@ test.describe("@registered publish §6 step F — no kind-radio", () => {
     );
   });
 
-  test("PublishView no longer renders any radio for the legacy 4 kinds", async ({
-    browser,
-  }) => {
+  test("PublishView no longer renders any radio for the legacy 4 kinds", async ({ browser }) => {
     const { api } = await loginAs("registered");
     const context = await browser.newContext({ storageState: await api.storageState() });
     const page = await context.newPage();
@@ -79,21 +77,15 @@ test.describe("@registered publish §6 step F — no kind-radio", () => {
       // name. The legacy DOM used `name="publish-kind"`; the issue body
       // quotes `publishKind`. Cover both spellings so a regression that
       // brings the fieldset back under either name still trips.
-      await expect(
-        page.locator('input[type="radio"][name="publish-kind"]'),
-      ).toHaveCount(0);
-      await expect(
-        page.locator('input[type="radio"][name="publishKind"]'),
-      ).toHaveCount(0);
+      await expect(page.locator('input[type="radio"][name="publish-kind"]')).toHaveCount(0);
+      await expect(page.locator('input[type="radio"][name="publishKind"]')).toHaveCount(0);
 
       // Belt-and-braces: the legacy fieldset rendered each kind as a
       // `<input value="regular|event|merchant|trade">` radio. Even if a
       // regression renames the radio group, the per-value radios still
       // would not exist as type=radio inputs.
       for (const value of ["regular", "event", "merchant", "trade"]) {
-        await expect(
-          page.locator(`input[type="radio"][value="${value}"]`),
-        ).toHaveCount(0);
+        await expect(page.locator(`input[type="radio"][value="${value}"]`)).toHaveCount(0);
       }
 
       // Brand-label check: the labels next to each legacy radio came from
