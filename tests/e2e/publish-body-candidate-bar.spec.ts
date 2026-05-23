@@ -53,10 +53,7 @@ const POLISHED_BODY = "AI 帮你打磨过的更顺的正文";
  * task brief — we do not touch the shared `tests/e2e/fixtures` directory or
  * any helper module another sibling spec might also be writing into.
  */
-async function stubLlmPreview(
-  page: import("@playwright/test").Page,
-  bodyCandidate: string | null,
-) {
+async function stubLlmPreview(page: import("@playwright/test").Page, bodyCandidate: string | null) {
   await page.route("**/api/ai/post-preview", async (route) => {
     await route.fulfill({
       status: 200,
