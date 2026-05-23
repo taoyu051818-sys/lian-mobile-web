@@ -1,5 +1,8 @@
 export { default as AdminView } from "./AdminView.vue";
 export { default as AdminTokenGate } from "./AdminTokenGate.vue";
+export { default as AdminReportsBlock } from "./AdminReportsBlock.vue";
+export { default as AdminVerificationBlock } from "./AdminVerificationBlock.vue";
+export { default as AdminAuditBlock } from "./AdminAuditBlock.vue";
 export { default as AdminQueueList } from "./AdminQueueList.vue";
 export { default as AdminQueueItem } from "./AdminQueueItem.vue";
 export { default as AdminUserActionPanel } from "./AdminUserActionPanel.vue";
