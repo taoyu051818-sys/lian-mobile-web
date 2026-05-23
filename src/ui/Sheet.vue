@@ -61,32 +61,75 @@ watch(isOpen, (open) => {
 
 <template>
   <Teleport to="body">
-    <div
-      v-if="open"
-      ref="overlay"
-      class="lian-sheet"
-      role="dialog"
-      aria-modal="true"
-      :aria-label="title || '弹层'"
-      @focusin="handleFocusIn"
-    >
-      <div class="lian-sheet__backdrop" @click="emit('close')"></div>
-      <section class="lian-sheet__panel keyboard-aware-surface">
-        <header v-if="title || $slots.actions" class="lian-sheet__header">
-          <h2 v-if="title">{{ title }}</h2>
-          <slot name="actions">
-            <button
-              class="lian-sheet__close"
-              type="button"
-              aria-label="关闭"
-              @click="emit('close')"
-            >
-              ×
-            </button>
-          </slot>
-        </header>
-        <slot />
-      </section>
-    </div>
+    <Transition name="lian-sheet" appear>
+      <div
+        v-if="open"
+        ref="overlay"
+        class="lian-sheet"
+        role="dialog"
+        aria-modal="true"
+        :aria-label="title || '弹层'"
+        @focusin="handleFocusIn"
+      >
+        <div class="lian-sheet__backdrop" @click="emit('close')"></div>
+        <section class="lian-sheet__panel keyboard-aware-surface">
+          <header v-if="title || $slots.actions" class="lian-sheet__header">
+            <h2 v-if="title">{{ title }}</h2>
+            <slot name="actions">
+              <button
+                class="lian-sheet__close"
+                type="button"
+                aria-label="关闭"
+                @click="emit('close')"
+              >
+                ×
+              </button>
+            </slot>
+          </header>
+          <slot />
+        </section>
+      </div>
+    </Transition>
   </Teleport>
 </template>
+
+<style>
+/*
+ * Apple Music gap PR-α: bottom-sheet enter/leave uses --motion-ease-decelerate
+ * so the panel slides into rest at a slowing pace (matches Apple Music's
+ * sheet timing). The backdrop fades on the standard ease.
+ * Reduced-motion is honored via the global CSS guard in floating-chrome.css
+ * and the per-property `transition: none` overrides below.
+ */
+.lian-sheet-enter-active .lian-sheet__panel,
+.lian-sheet-leave-active .lian-sheet__panel {
+  transition:
+    transform var(--motion-standard) var(--motion-ease-decelerate),
+    opacity var(--motion-fast) var(--motion-ease-decelerate);
+}
+
+.lian-sheet-enter-active .lian-sheet__backdrop,
+.lian-sheet-leave-active .lian-sheet__backdrop {
+  transition: opacity var(--motion-fast) var(--motion-ease-standard);
+}
+
+.lian-sheet-enter-from .lian-sheet__panel,
+.lian-sheet-leave-to .lian-sheet__panel {
+  transform: translateY(16px);
+  opacity: 0;
+}
+
+.lian-sheet-enter-from .lian-sheet__backdrop,
+.lian-sheet-leave-to .lian-sheet__backdrop {
+  opacity: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lian-sheet-enter-active .lian-sheet__panel,
+  .lian-sheet-leave-active .lian-sheet__panel,
+  .lian-sheet-enter-active .lian-sheet__backdrop,
+  .lian-sheet-leave-active .lian-sheet__backdrop {
+    transition: none;
+  }
+}
+</style>

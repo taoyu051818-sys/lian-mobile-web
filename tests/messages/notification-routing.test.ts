@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import { normalizeNotificationItem, normalizeNotificationResponse } from "../../src/api/messages";
+import {
+  normalizeNotificationItem,
+  normalizeNotificationResponse,
+} from "../../src/api/notifications";
 
 describe("notification routing normalization", () => {
   it("routes reply notifications to post detail", () => {
