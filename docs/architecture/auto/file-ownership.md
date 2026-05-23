@@ -372,7 +372,7 @@ Total files: 326
 | `ui/GlassPanel.vue`          | Vue SFC                                                                                                                 |    25 |
 | `ui/IdentityBadge.vue`       | Vue SFC                                                                                                                 |    24 |
 | `ui/InlineError.vue`         | Vue SFC                                                                                                                 |     6 |
-| `ui/LianButton.vue`          | Vue SFC                                                                                                                 |    62 |
+| `ui/LianButton.vue`          | `state` is the single source of truth when it's not the default;                                                        |   152 |
 | `ui/LocationChip.vue`        | Vue SFC                                                                                                                 |    18 |
 | `ui/SafeHtml.vue`            | Vue SFC                                                                                                                 |    23 |
 | `ui/Sheet.vue`               | Vue SFC                                                                                                                 |   136 |
