@@ -1,8 +1,5 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
-import { fileURLToPath } from "node:url";
-import type { FeedItem, FeedPresentationIntent } from "../../src/types/feed";
-import type { ClubMetadata, ClubCategory } from "../../src/types/post";
 
 function readRepoFile(rel: string) {
   return readFileSync(new URL(rel, import.meta.url), "utf8").replace(/\r\n/g, "\n");
