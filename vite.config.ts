@@ -1,5 +1,6 @@
 import { defineConfig } from "vite";
 import vue from "@vitejs/plugin-vue";
+import { VitePWA } from "vite-plugin-pwa";
 import { fileURLToPath, URL } from "node:url";
 
 function parseEnvUrl(raw: string | undefined, label: string): string {
@@ -16,7 +17,56 @@ const imageProxyBaseUrl = parseEnvUrl(process.env.LIAN_IMAGE_PROXY_BASE_URL, "LI
   || "http://127.0.0.1:4201";
 
 export default defineConfig({
-  plugins: [vue()],
+  plugins: [
+    vue(),
+    VitePWA({
+      registerType: "prompt",
+      includeAssets: ["assets/pwa-icon-*.png", "assets/share-cover.png", "assets/aliases/**/*"],
+      manifest: false, // Use existing public/manifest.json
+      workbox: {
+        // Precache only app shell files (JS, CSS, HTML, small icons)
+        // Exclude large map assets (>2MB) - they use runtime CacheFirst
+        globPatterns: ["**/*.{js,css,html,ico,svg,woff,woff2}"],
+        globIgnores: [
+          // Large map building assets - loaded on-demand
+          "**/campus-*.png",
+          "**/bupt-*.png",
+          "**/library*.png",
+          "**/life-zone-*.png",
+          "**/lian-academy*.png",
+          "**/*书院*.png",
+        ],
+        runtimeCaching: [
+          {
+            // API feed/listing endpoints: NetworkFirst with 5s timeout
+            urlPattern: /^https?:\/\/[^/]+\/api\/(feed|posts|merchants|events)/,
+            handler: "NetworkFirst",
+            options: {
+              cacheName: "api-cache",
+              networkTimeoutSeconds: 5,
+              expiration: {
+                maxAgeSeconds: 5 * 60, // 5 minutes
+              },
+            },
+          },
+          {
+            // Images: CacheFirst with 30-day TTL
+            urlPattern: /\.(?:png|jpg|jpeg|svg|gif|webp)$/,
+            handler: "CacheFirst",
+            options: {
+              cacheName: "image-cache",
+              expiration: {
+                maxEntries: 100,
+                maxAgeSeconds: 30 * 24 * 60 * 60, // 30 days
+              },
+            },
+          },
+        ],
+        // Never cache session/auth endpoints
+        navigateFallbackDenylist: [/^\/api\/session/, /^\/api\/auth/],
+      },
+    }),
+  ],
   resolve: {
     alias: {
       "~": fileURLToPath(new URL("./src", import.meta.url)),
