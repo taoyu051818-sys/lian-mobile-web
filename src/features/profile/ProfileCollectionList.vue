@@ -116,6 +116,8 @@ const itemStates = computed(() =>
 .profile-collection {
   display: grid;
   gap: var(--space-3);
+  /* issue #829: stable min-height prevents layout jump when switching tabs */
+  min-height: 180px;
 }
 
 .profile-collection h3,
