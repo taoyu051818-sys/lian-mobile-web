@@ -174,9 +174,7 @@ function handleErrandClick() {
       :data-testid="errandWrapperTestId"
     >
       <p class="post-detail-merchant-block__errand-line">
-        {{
-          errandUnavailable ? MERCHANT_ERRAND_UNAVAILABLE_LABEL : MERCHANT_ERRAND_AVAILABLE
-        }}
+        {{ errandUnavailable ? MERCHANT_ERRAND_UNAVAILABLE_LABEL : MERCHANT_ERRAND_AVAILABLE }}
       </p>
       <DetailCtaButton
         :label="MERCHANT_ERRAND_CTA"
