@@ -99,7 +99,7 @@ function stubPublishSink(context: BrowserContext): Promise<{ body: string }> {
   return new Promise((resolve) => {
     context.route("**/api/ai/post-publish", async (route) => {
       const raw = route.request().postData() ?? "{}";
-      let parsed: { body?: unknown } = {};
+      let parsed: { body?: unknown };
       try {
         parsed = JSON.parse(raw) as { body?: unknown };
       } catch {
