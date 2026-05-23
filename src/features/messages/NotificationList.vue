@@ -126,7 +126,7 @@ function openNotification(item: NotificationItem) {
           v-for="channel in props.channels"
           :key="channel.id"
           class="messages-view__channel"
-          :class="{ 'is-pending': channel.status === 'pending' }"
+          :class="{ 'is-loading': channel.status === 'pending' }"
           data-testid="notification-channel-row"
           :data-channel-id="channel.id"
           :data-channel-status="channel.status"
@@ -269,7 +269,7 @@ function openNotification(item: NotificationItem) {
   background: rgba(255, 255, 255, 0.74);
 }
 
-.messages-view__channel.is-pending {
+.messages-view__channel.is-loading {
   border-style: dashed;
   background: rgba(255, 255, 255, 0.44);
 }

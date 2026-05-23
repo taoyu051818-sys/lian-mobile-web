@@ -159,14 +159,14 @@ test("ChannelThread shows retry button for failed messages", () => {
   assert.match(threadSource, /emit\('retryMessage'/);
 });
 
-test("ChannelThread marks pending messages with is-pending class", () => {
-  assert.match(threadSource, /is-pending.*startsWith\('pending-'\)/);
+test("ChannelThread marks pending messages with is-loading class", () => {
+  assert.match(threadSource, /is-loading.*startsWith\('pending-'\)/);
 });
 
 // --- ChannelThread pending message styling ---
 
 test("ChannelThread reduces opacity for pending messages", () => {
-  assert.match(threadSource, /\.messages-view__message\.is-pending/);
+  assert.match(threadSource, /\.messages-view__message\.is-loading/);
   assert.match(threadSource, /opacity:\s*0\.7/);
 });
 
@@ -196,7 +196,7 @@ test("MessagesView uses declarative page chrome spec", () => {
 });
 
 test("ChannelComposer preserves compact state with button radius", () => {
-  assert.match(composerVueSource, /is-compact/);
+  assert.match(composerVueSource, /messages-view__composer--compact/);
   assert.match(composerVueSource, /var\(--radius-button\)/);
 });
 

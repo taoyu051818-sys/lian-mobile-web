@@ -83,7 +83,10 @@ function messageMeta(item: ChannelMessage) {
         v-for="item in items"
         :key="String(item.id)"
         class="messages-view__message"
-        :class="{ 'is-self': item.isSelf, 'is-pending': String(item.id).startsWith('pending-') }"
+        :class="{
+          'messages-view__message--self': item.isSelf,
+          'is-loading': String(item.id).startsWith('pending-'),
+        }"
       >
         <span
           v-if="!item.isSelf"
@@ -146,12 +149,12 @@ function messageMeta(item: ChannelMessage) {
   max-width: 85%;
 }
 
-.messages-view__message.is-self {
+.messages-view__message--self {
   align-self: flex-end;
   grid-template-columns: minmax(0, 1fr);
 }
 
-.messages-view__message:not(.is-self) {
+.messages-view__message:not(.messages-view__message--self) {
   align-self: flex-start;
 }
 
@@ -168,7 +171,7 @@ function messageMeta(item: ChannelMessage) {
   min-width: 0;
 }
 
-.messages-view__message.is-self .messages-view__message-body {
+.messages-view__message--self .messages-view__message-body {
   grid-column: 1;
 }
 
@@ -196,7 +199,7 @@ function messageMeta(item: ChannelMessage) {
   min-width: 0;
 }
 
-.messages-view__message.is-self .messages-view__bubble {
+.messages-view__message--self .messages-view__bubble {
   border-color: rgba(31, 167, 160, 0.18);
   background: rgba(31, 167, 160, 0.06);
 }
@@ -219,7 +222,7 @@ function messageMeta(item: ChannelMessage) {
   line-height: 1.4;
 }
 
-.messages-view__message.is-self .messages-view__bubble footer {
+.messages-view__message--self .messages-view__bubble footer {
   justify-content: flex-end;
 }
 
@@ -249,7 +252,7 @@ function messageMeta(item: ChannelMessage) {
   font-weight: 900;
 }
 
-.messages-view__message.is-pending {
+.messages-view__message.is-loading {
   opacity: 0.7;
 }
 

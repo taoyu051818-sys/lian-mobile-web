@@ -48,7 +48,7 @@ test("MessagesView does not use floating chrome CSS attributes", () => {
 
 test("ChannelComposer has compact and expanded states", () => {
   const src = read("src/features/messages/ChannelComposer.vue");
-  assert.match(src, /is-compact/);
+  assert.match(src, /messages-view__composer--compact/);
 });
 
 test("ChannelComposer includes textarea for message input", () => {
