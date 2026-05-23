@@ -117,4 +117,3 @@ export function sanitizeHtml(value: string) {
 
   return document.body.innerHTML.trim();
 }
-
