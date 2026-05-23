@@ -55,3 +55,18 @@ export const AUTH_CODE_SENT_INST = "验证码已发送，识别为 {n}。";
 export const AUTH_CODE_RATE_LIMIT_RESEND = "当前发送过于频繁，请在 {n} 秒后重新获取验证码。";
 export const AUTH_CODE_RATE_LIMIT_FALLBACK =
   "如果服务端没有返回具体等待时间，页面会先按 {n} 秒冷却处理。";
+
+/** Auth-link redeem flow (RFC §2.3 mw#B) */
+export const AUTH_LINK_SHEET_LABEL = "邀请链接";
+export const AUTH_LINK_SHEET_TITLE = "你收到了一个邀请";
+export const AUTH_LINK_LOADING = "正在加载邀请信息…";
+export const AUTH_LINK_THUMBNAIL_ALT = "邀请缩略图";
+export const AUTH_LINK_REDEEM = "领取";
+export const AUTH_LINK_REDEEMING = "领取中…";
+export const AUTH_LINK_CANCEL = "取消";
+export const AUTH_LINK_RETRY = "重试";
+export const AUTH_LINK_ERROR_NOT_FOUND = "这个邀请链接不存在或已失效。";
+export const AUTH_LINK_ERROR_EXPIRED = "这个邀请链接已过期。";
+export const AUTH_LINK_ERROR_EXHAUSTED = "这个邀请链接已被使用完毕。";
+export const AUTH_LINK_ERROR_NETWORK = "邀请信息暂时取不到，可以稍后再试。";
+export const AUTH_LINK_REDEEM_SUCCESS = "领取成功，正在刷新…";

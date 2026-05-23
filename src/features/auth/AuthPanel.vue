@@ -13,14 +13,20 @@ import {
   AUTH_INVITE_CODE_HINT,
 } from "../../config/brand";
 import { useAuthForm } from "./useAuthForm";
+import { useAuthLinkRedeem } from "./useAuthLinkRedeem";
 import AuthModeTabs from "./AuthModeTabs.vue";
 import AuthLoginFields from "./AuthLoginFields.vue";
 import AuthRegisterFields from "./AuthRegisterFields.vue";
 import AuthSubmitState from "./AuthSubmitState.vue";
+import AuthLinkRedeemSheet from "./AuthLinkRedeemSheet.vue";
 
 const emit = defineEmits<{
   authenticated: [user: ProfileUser | null];
 }>();
+
+const authLink = useAuthLinkRedeem({
+  onRedeemed: () => emit("authenticated", null),
+});
 
 const {
   mode,
@@ -173,6 +179,18 @@ const inviteCodeHintId = "auth-invite-code-hint";
       />
     </form>
   </section>
+
+  <AuthLinkRedeemSheet
+    :open="authLink.open.value"
+    :status="authLink.status.value"
+    :card="authLink.card.value"
+    :error-message="authLink.errorMessage.value"
+    :success-message="authLink.successMessage.value"
+    :can-retry="authLink.canRetry.value"
+    @close="authLink.close"
+    @redeem="authLink.redeem"
+    @retry="authLink.retry"
+  />
 </template>
 
 <style scoped>
