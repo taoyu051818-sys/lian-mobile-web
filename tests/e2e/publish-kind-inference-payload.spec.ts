@@ -57,10 +57,7 @@
 
 import { expect, test, type BrowserContext, type Page, type Request } from "@playwright/test";
 
-import {
-  PUBLISH_SUBMIT,
-  PUBLISH_SUGGESTED_ACCEPT,
-} from "../../src/config/brand/publish";
+import { PUBLISH_SUBMIT, PUBLISH_SUGGESTED_ACCEPT } from "../../src/config/brand/publish";
 
 import { isRoleConfigured, loginAs } from "./fixtures/accounts";
 
@@ -380,10 +377,9 @@ test.describe("@registered publish kind inference payload — V0.2 §4.3 / §6 s
       // Crucial assertion of the event-branch divergence: the publish
       // endpoint never fired. inferKind's "event" branch lives entirely on
       // the /api/events path.
-      expect(
-        publishCalled,
-        "publish branch must NOT fire when publishKind === 'event'",
-      ).toBe(false);
+      expect(publishCalled, "publish branch must NOT fire when publishKind === 'event'").toBe(
+        false,
+      );
     } finally {
       await context.close();
       await api.dispose();
@@ -446,14 +442,19 @@ test.describe("@registered publish kind inference payload — V0.2 §4.3 / §6 s
       // The merchant panel mounts when publishKind === "merchant". Fill the
       // required name field — usePublishSubmit#validateMerchantFields blocks
       // submission otherwise (PUBLISH_MERCHANT_NAME_REQUIRED).
-      await expect(page.locator(".publish-merchant__panel, [data-testid=\"publish-merchant-panel\"], .publish-merchant"))
+      await expect(
+        page.locator(
+          '.publish-merchant__panel, [data-testid="publish-merchant-panel"], .publish-merchant',
+        ),
+      )
         .toBeVisible({ timeout: 5_000 })
         .catch(async () => {
           // The merchant panel selector varies by codebase; fall back to
           // verifying the merchant-name input is mounted somewhere on the
           // form when the panel test-id isn't wired up.
-          await expect(page.locator('input[name="merchant-name"], [data-testid="publish-merchant-name"]'))
-            .toHaveCount(0);
+          await expect(
+            page.locator('input[name="merchant-name"], [data-testid="publish-merchant-name"]'),
+          ).toHaveCount(0);
         });
       const merchantNameInput = page
         .locator('[data-testid="publish-merchant-name"], input[name="merchant-name"]')
