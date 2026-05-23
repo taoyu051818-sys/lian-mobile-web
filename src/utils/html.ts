@@ -117,19 +117,3 @@ export function sanitizeHtml(value: string) {
 
   return document.body.innerHTML.trim();
 }
-
-export function stripHtml(value: string) {
-  const raw = String(value || "");
-  if (!raw) return "";
-
-  if (typeof window === "undefined" || typeof DOMParser === "undefined") {
-    return raw
-      .replace(/<[^>]+>/g, "")
-      .replace(/\s+/g, " ")
-      .trim();
-  }
-
-  const parser = new DOMParser();
-  const document = parser.parseFromString(raw, "text/html");
-  return document.body.textContent?.replace(/\s+/g, " ").trim() || "";
-}

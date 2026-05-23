@@ -18,9 +18,8 @@ export const AUTH_USERNAME_MAX_LENGTH = 30;
 export const AUTH_EMAIL_CODE_LENGTH = 6;
 export const AUTH_MAX_INTEREST_SELECTIONS = 5;
 
-export const PUBLISH_TITLE_MAX_LENGTH = 40;
-export const PUBLISH_BODY_MAX_LENGTH = 300;
-export const PUBLISH_MAX_IMAGE_COUNT = 9;
+const PUBLISH_TITLE_MAX_LENGTH = 40;
+const PUBLISH_BODY_MAX_LENGTH = 300;
 
 export interface AuthValidationFields {
   mode: "login" | "register";
