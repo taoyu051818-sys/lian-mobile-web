@@ -1,0 +1,88 @@
+{
+  "$comment": "Grandfathered .is-* state classes that pre-date docs/frontend/state-vocabulary.md. This list may only shrink — adding a new class fails review. Each entry will be migrated either to a vocabulary entry (.is-loading / .is-open / .is-active / .is-pressed / etc.) or out of the .is-* namespace entirely (BEM modifier or component-scoped class) in PR-gamma-2.",
+  "grandfathered": [
+    {
+      "class": "is-self",
+      "files": ["src/features/messages/ChannelThread.vue"],
+      "reason": "messages thread own-message marker; rename to messages-view__message--self in PR-gamma-2."
+    },
+    {
+      "class": "is-expanded",
+      "files": ["src/features/detail/PostReplyDock.vue", "src/features/feed/FeedItemCardShell.vue"],
+      "reason": "Synonym of .is-open per vocab; rename in PR-gamma-2 with aria-expanded coverage."
+    },
+    {
+      "class": "is-compact",
+      "files": ["src/features/messages/ChannelComposer.vue"],
+      "reason": "Visual variant; move to BEM modifier (__composer--compact) in PR-gamma-2."
+    },
+    {
+      "class": "is-pending",
+      "files": [
+        "src/features/messages/ChannelThread.vue",
+        "src/features/messages/NotificationList.vue"
+      ],
+      "reason": "Two distinct usages: (1) optimistic-message awaiting server ack, (2) channel awaiting load. Both fold into .is-loading in PR-gamma-2."
+    },
+    {
+      "class": "is-clickable",
+      "files": ["src/features/messages/NotificationList.vue"],
+      "reason": "Affordance, not state; collapse with the static-pair into a component-scoped class in PR-gamma-2."
+    },
+    {
+      "class": "is-static",
+      "files": ["src/features/profile/ProfileCollectionList.vue"],
+      "reason": "Inverse of clickable affordance; replace with .is-disabled or component-scoped class in PR-gamma-2."
+    },
+    {
+      "class": "is-current",
+      "files": ["src/features/errand/ErrandOrderTimelineView.vue"],
+      "reason": "Synonym of .is-active per vocab; rename in PR-gamma-2."
+    },
+    {
+      "class": "is-detail-open",
+      "files": ["src/features/feed/FeedView.vue", "src/styles/main.css"],
+      "reason": "Shell-level layout flag that drives feed padding offset; move to component-scoped class on the shell or feed root in PR-gamma-2 (it is not a per-element state)."
+    },
+    {
+      "class": "is-fallback",
+      "files": ["src/features/messages/NotificationList.vue"],
+      "reason": "Notification-target-unknown variant; component-scoped modifier in PR-gamma-2."
+    },
+    {
+      "class": "is-liked",
+      "files": ["src/features/feed/FeedItemCardFooter.vue"],
+      "reason": "Toggle on a single button; rename to .is-pressed with aria-pressed in PR-gamma-2."
+    },
+    {
+      "class": "is-revoked",
+      "files": ["src/features/verification/VerificationView.vue"],
+      "reason": "Domain status (verification revoked); component-scoped class in PR-gamma-2 (verification is the only thing that has a revoked state)."
+    },
+    {
+      "class": "is-single",
+      "files": ["src/features/detail/PostDetailGallery.vue"],
+      "reason": "Visual variant (single image gallery); BEM modifier in PR-gamma-2."
+    },
+    {
+      "class": "is-unavailable",
+      "files": ["src/features/detail/PostDetailMerchantBlock.vue"],
+      "reason": "Domain status; either fold into .is-disabled (with aria-disabled) or rename to component-scoped in PR-gamma-2."
+    },
+    {
+      "class": "is-unread",
+      "files": ["src/features/messages/NotificationList.vue"],
+      "reason": "Read-state; component-scoped modifier in PR-gamma-2 (read-state is owned by NodeBB and lives on the list item)."
+    },
+    {
+      "class": "is-confirming",
+      "files": ["src/features/errand/ErrandOrderTimelineView.vue"],
+      "reason": "Inline confirmation flow; component-scoped class in PR-gamma-2."
+    },
+    {
+      "class": "is-deferred",
+      "files": ["src/features/errand/ErrandOrderTimelineView.vue"],
+      "reason": "Runner-location postponed marker; component-scoped class in PR-gamma-2."
+    }
+  ]
+}
