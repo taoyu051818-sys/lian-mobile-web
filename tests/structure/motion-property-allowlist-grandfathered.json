@@ -57,11 +57,5 @@
       "reason": "Glass backdrop crossfade: `filter: blur(4px)` matches RFC §3.5's allowed exception (≤12px backdrop blur on shell slot enter/leave). Permanent grandfather; revisit only if §3.5 is amended."
     }
   ],
-  "banned_pending_fix": [
-    {
-      "file": "src/shell/shell-chrome.css",
-      "property": "width",
-      "reason": "Floating-chrome dynamic-island width animation. RFC §3.2 bans width transitions (reflow cost). Follow-up source PR: convert to a fixed-width container with transform: scaleX() animating a child, or a clip-path crossfade."
-    }
-  ]
+  "banned_pending_fix": []
 }

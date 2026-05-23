@@ -29,9 +29,7 @@
 
 /* Dynamic island transitions for floating pill */
 .shell-chrome__inner.lian-floating-chrome {
-  transition:
-    width var(--motion-standard) var(--motion-ease-standard),
-    transform var(--motion-standard) var(--motion-ease-standard);
+  transition: transform var(--motion-standard) var(--motion-ease-standard);
 }
 
 .shell-chrome__identity,
