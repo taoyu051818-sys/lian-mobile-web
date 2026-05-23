@@ -2,15 +2,15 @@
 
 This document used to be a manually maintained per-file table. It drifted whenever files were added, renamed, or deleted, and frequently disagreed with the code.
 
-The file table is now auto-generated. See:
+The file table is now auto-generated locally on demand. See:
 
-- **`docs/architecture/auto/file-ownership.md`** — every `src/` file with a one-line summary and line count, regenerated from source by `npm run ownership-doc`.
-- The generator runs in warning-only check mode as part of `npm run check`, so stale snapshots are visible without blocking unrelated PRs. The auto-refresh workflow still uses strict mode after regeneration to catch generator nondeterminism.
+- **`docs/architecture/auto/file-ownership.md`** — every `src/` file with a one-line summary and line count, regenerated from source by `npm run ownership-doc`. The file is **not tracked in git** (it lives in `.gitignore`); regenerate it locally whenever you want the latest snapshot.
+- `npm run check:ownership-doc` regenerates the file and then re-runs the generator in `--check` mode, so CI catches any nondeterminism in the generator without ever needing the artifact in the index. There is no PR-side workflow that writes back to your branch.
 
 ## How this stays truthful
 
-- `package.json` exposes `npm run ownership-doc` for regeneration and `npm run check:ownership-doc` for check mode.
-- `npm run check` pulls that ownership-doc warning together with `scripts/validate-project-structure.js`; broken boundary rules still fail the lane, while stale ownership output is reported as a warning.
+- `package.json` exposes `npm run ownership-doc` for regeneration and `npm run check:ownership-doc` for the regenerate-then-verify-determinism check that runs as part of `npm run check`.
+- `npm run check` exercises that ownership-doc check together with `scripts/validate-project-structure.js`; broken boundary rules and nondeterministic generator output both fail the lane.
 - `scripts/generate-ownership-doc.js` owns the generated snapshot, while `scripts/validate-project-structure.js` owns the layer and barrel rules that the ownership docs describe.
 - `vite.config.ts` does not generate ownership data, but it is part of the same runtime-sensitive root contract surface. When root runtime/config behavior changes, this ownership guide may need a refresh so the repo story stays coherent.
 

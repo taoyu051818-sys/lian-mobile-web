@@ -159,7 +159,7 @@ This runs:
 2. `test:unit` — vitest.
 3. `verify:smoke` — builds, starts preview, runs the smoke suite against it.
 
-If `verify:static` reports a stale ownership doc (`docs/architecture/auto/file-ownership.md`), run `npm run ownership-doc` and commit the regenerated file when the PR already changes ownership-sensitive files. Don't suppress the warning by editing the doc by hand.
+If you want to read the auto-generated file ownership snapshot, run `npm run ownership-doc` locally; the file at `docs/architecture/auto/file-ownership.md` is gitignored and regenerated on demand. `npm run check` regenerates it and then re-runs the generator in check mode, so CI catches generator nondeterminism without that artifact ever entering a PR diff.
 
 If you cannot run `verify:smoke` locally (no Node 22, no preview port available), say so explicitly in the PR description — CI will catch it, but the absence should be visible.
 

@@ -24,3 +24,6 @@ pnpm-debug.log*
 Thumbs.db
 .idea/
 .vscode/
+
+# Generated artifacts (deterministic; regenerate locally with `npm run ownership-doc`)
+docs/architecture/auto/file-ownership.md

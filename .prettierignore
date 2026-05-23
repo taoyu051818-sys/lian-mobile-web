@@ -7,3 +7,6 @@ public/assets/
 public/tools/
 *.config.*
 package-lock.json
+
+# Generated, gitignored — see scripts/generate-ownership-doc.js
+docs/architecture/auto/file-ownership.md

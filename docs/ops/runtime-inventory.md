@@ -22,7 +22,7 @@ The production process manager name and deploy path are intentionally not hardco
 The following file groups must update this inventory or explicitly document why the runtime contract is unchanged:
 
 - `.github/workflows/*`
-- `package.json` — owns Node/npm policy plus the operator and CI entrypoints (`npm start`, `npm run check`, `npm run ops:guard`, `npm run verify`, `npm run ownership-doc`, `npm run check:ownership-doc`, `npm run check:ownership-doc:strict`, `npm run check:dead-code`)
+- `package.json` — owns Node/npm policy plus the operator and CI entrypoints (`npm start`, `npm run check`, `npm run ops:guard`, `npm run verify`, `npm run ownership-doc`, `npm run check:ownership-doc`, `npm run check:dead-code`)
 - `index.html`
 - `vite.config.ts` — owns the `~` alias, env URL validation, dev proxy contract, and production build settings
 - `scripts/validate-project-structure.js` — executable repo-shape and boundary guard behind `npm run check`; it verifies required frontend files, backend-only exclusions, and layer/barrel rules
