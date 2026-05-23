@@ -201,14 +201,14 @@ LLM 推断当前内容更适合做 `event` / `merchant` / `place` 时，在卡�
 
 **6 类 inline ghost component 与角色 capability 门**（PR #860 实现，PR #882 / S13 e2e 锁定）：
 
-| 候选 kind         | 用户点「加入」后的 draft 动作                               | 门控                                                      |
-| ----------------- | ----------------------------------------------------------- | --------------------------------------------------------- |
-| `event_time`      | `publishKind = "event"`（活动面板打开）                     | 任何登录用户                                              |
-| `merchant_info`   | `publishKind = "merchant"`                                  | **仅 `merchant_verified`**                                |
-| `trade_condition` | `publishKind = "trade"`                                     | **仅 `campus_verified`**                                  |
-| `price`           | **`publishKind = "trade"`**（无图前提下；2026-05-23 产品决策锁，覆盖此前 merchant 优先的临时方案） | `campus_verified`（沿用 trade gate）                      |
-| `help_tag`        | `tagInput = "求助"`（仅当为空，绝不静默覆盖用户已写的 tag） | 任何登录用户                                              |
-| `location`        | draft 不动（PRD §2.2 `place` kind 留给 step F 推断）        | 任何登录用户                                              |
+| 候选 kind         | 用户点「加入」后的 draft 动作                                                                      | 门控                                 |
+| ----------------- | -------------------------------------------------------------------------------------------------- | ------------------------------------ |
+| `event_time`      | `publishKind = "event"`（活动面板打开）                                                            | 任何登录用户                         |
+| `merchant_info`   | `publishKind = "merchant"`                                                                         | **仅 `merchant_verified`**           |
+| `trade_condition` | `publishKind = "trade"`                                                                            | **仅 `campus_verified`**             |
+| `price`           | **`publishKind = "trade"`**（无图前提下；2026-05-23 产品决策锁，覆盖此前 merchant 优先的临时方案） | `campus_verified`（沿用 trade gate） |
+| `help_tag`        | `tagInput = "求助"`（仅当为空，绝不静默覆盖用户已写的 tag）                                        | 任何登录用户                         |
+| `location`        | draft 不动（PRD §2.2 `place` kind 留给 step F 推断）                                               | 任何登录用户                         |
 
 **a11y 合规**（PR #860）：
 
