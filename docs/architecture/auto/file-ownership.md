@@ -76,7 +76,7 @@ Total files: 329
 | `composables/useHelpVote.ts`             | Help vote composable (PRD V0.1 §6.5 / §11.3). Wires `planHelpVote` to live state and exposes a single `act()` that c...  |    71 |
 | `composables/usePostDetailExtensions.ts` | Post detail extension wiring (PRD V0.1 §6.3 / §6.5 / §11.2 / §11.3). Bundles the event / help-vote / help-manage sta...  |   231 |
 | `composables/usePublishAiDraft.ts`       | uploadedImageUrls: Ref<string[]>; title: Ref<string>; body: Ref<string>; locationLabel: Ref<string>; Called once per ... |   101 |
-| `composables/useReducedMotion.ts`        | Reactive reduced-motion preference composable. SSR-safe: returns `false` when `window` / `matchMedia` are unavailabl...  |    40 |
+| `composables/useReducedMotion.ts`        | Reactive reduced-motion preference composable. SSR contract (RFC §6 phase 1.5 — `docs/architecture/SSR*PWA_RFC_2026*...  |    62 |
 | `composables/useVisualViewport.ts`       | Reactive visual-viewport keyboard-inset composable. Tracks `window.visualViewport` resize/scroll events and exposes ...  |    51 |
 
 ## src/config/ (23 files)
