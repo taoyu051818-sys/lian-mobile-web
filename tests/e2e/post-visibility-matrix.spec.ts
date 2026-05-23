@@ -41,13 +41,6 @@ interface PublishResponse {
   message?: string;
 }
 
-interface PostDetailResponse {
-  tid?: number | string;
-  title?: string;
-  content?: string;
-  body?: string;
-}
-
 type VisibilityLevel = "public" | "school" | "private" | "linkOnly";
 
 /**
