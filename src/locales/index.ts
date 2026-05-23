@@ -1,5 +1,6 @@
 import { createI18n } from "vue-i18n";
 import zhCN from "./zh-CN";
+import zhTW from "./zh-TW";
 import en from "./en";
 import ja from "./ja";
 import { detectAppLocale, persistAppLocale, type AppLocale } from "./resolveLocale";
@@ -12,6 +13,7 @@ export const i18n = createI18n({
   fallbackLocale: "en",
   messages: {
     "zh-CN": zhCN,
+    "zh-TW": zhTW,
     en,
     ja,
   },
