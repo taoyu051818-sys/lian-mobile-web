@@ -1,5 +1,12 @@
 import { describe, it, expect } from "vitest";
 import { i18n, t } from "../../src/locales";
+import {
+  resolveAppLocale,
+  detectAppLocale,
+  persistAppLocale,
+  LOCALE_STORAGE_KEY,
+  DEFAULT_LOCALE,
+} from "../../src/locales/resolveLocale";
 import zhCN from "../../src/locales/zh-CN";
 import en from "../../src/locales/en";
 
@@ -65,5 +72,71 @@ describe("i18n setup", () => {
   it("t() returns key for unknown keys (fallback behavior)", () => {
     const result = t("nonexistent.key");
     expect(result).toBe("nonexistent.key");
+  });
+});
+
+describe("resolveAppLocale priority and mapping (PRD V0.1 §9.2)", () => {
+  it("storedLocale wins over navigator hints", () => {
+    expect(
+      resolveAppLocale({
+        storedLocale: "zh-CN",
+        navigatorLanguages: ["en-US", "fr-FR"],
+        navigatorLanguage: "en-US",
+      }),
+    ).toBe("zh-CN");
+  });
+
+  it("navigator.languages is consulted in order before navigator.language", () => {
+    expect(
+      resolveAppLocale({
+        navigatorLanguages: ["fr-FR", "en-US"],
+        navigatorLanguage: "zh-CN",
+      }),
+    ).toBe("en");
+  });
+
+  it("falls back to navigator.language when languages[] has no match", () => {
+    expect(
+      resolveAppLocale({
+        navigatorLanguages: ["fr-FR", "de-DE"],
+        navigatorLanguage: "zh-Hans-CN",
+      }),
+    ).toBe("zh-CN");
+  });
+
+  it("zh / zh-CN / zh-Hans / zh_TW all map to zh-CN", () => {
+    for (const tag of ["zh", "zh-CN", "zh-Hans", "zh-Hant", "zh_TW", "ZH-cn"]) {
+      expect(resolveAppLocale({ navigatorLanguage: tag })).toBe("zh-CN");
+    }
+  });
+
+  it("unknown navigator tag falls back to en (DEFAULT_LOCALE)", () => {
+    expect(resolveAppLocale({ navigatorLanguage: "fr-FR" })).toBe(DEFAULT_LOCALE);
+    expect(resolveAppLocale({})).toBe(DEFAULT_LOCALE);
+  });
+
+  it("ignores empty / whitespace-only locale tags", () => {
+    expect(
+      resolveAppLocale({
+        storedLocale: "   ",
+        navigatorLanguages: ["", "  ", "zh-CN"],
+      }),
+    ).toBe("zh-CN");
+  });
+});
+
+describe("persistAppLocale + detectAppLocale round-trip", () => {
+  it("persistAppLocale writes the storage key detectAppLocale reads", () => {
+    if (typeof window === "undefined") return;
+    try {
+      window.localStorage.setItem(LOCALE_STORAGE_KEY, "");
+    } catch {
+      /* ignore */
+    }
+    persistAppLocale("zh-CN");
+    expect(window.localStorage.getItem(LOCALE_STORAGE_KEY)).toBe("zh-CN");
+    expect(detectAppLocale()).toBe("zh-CN");
+    persistAppLocale("en");
+    expect(detectAppLocale()).toBe("en");
   });
 });
