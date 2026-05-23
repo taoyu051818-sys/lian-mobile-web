@@ -71,9 +71,7 @@ test.describe("feed image loading", () => {
     // naturalWidth > 0 indicates the image loaded (broken images have naturalWidth = 0)
     await expect(coverImg).toHaveJSProperty("complete", true);
 
-    const naturalWidth = await coverImg.evaluate(
-      (img: HTMLImageElement) => img.naturalWidth
-    );
+    const naturalWidth = await coverImg.evaluate((img: HTMLImageElement) => img.naturalWidth);
     expect(naturalWidth).toBeGreaterThan(0);
   });
 
@@ -154,9 +152,7 @@ test.describe("feed image loading", () => {
       await expect(coverImg).toBeVisible({ timeout: 5_000 });
       await expect(coverImg).toHaveJSProperty("complete", true);
 
-      const naturalWidth = await coverImg.evaluate(
-        (img: HTMLImageElement) => img.naturalWidth
-      );
+      const naturalWidth = await coverImg.evaluate((img: HTMLImageElement) => img.naturalWidth);
       expect(naturalWidth).toBeGreaterThan(0);
     }
   });
