@@ -89,6 +89,10 @@
   --motion-standard: 220ms;
   --motion-return: 380ms;
   --motion-ease-standard: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --motion-ease-decelerate: cubic-bezier(0.52, 0.16, 0.52, 0.84);
+  --motion-ease-emphasized: cubic-bezier(0.04, 0.04, 0.12, 0.96);
+  --motion-ease-overshoot: cubic-bezier(0.76, 0.665, 0.37, 1.35);
+  --motion-transition: opacity var(--motion-fast) var(--motion-ease-standard);
   --bg: var(--lian-bg);
   --paper: var(--lian-surface);
   --ink: var(--lian-ink);

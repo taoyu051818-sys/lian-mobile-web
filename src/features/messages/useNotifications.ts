@@ -1,5 +1,5 @@
 import { ref } from "vue";
-import { fetchNotifications } from "../../api/messages";
+import { fetchNotifications } from "../../api/notifications";
 import { extractErrorMessage } from "../../utils/extractErrorMessage";
 import { ERROR_LOAD_NOTIFICATION } from "../../config/brand";
 import type { NotificationItem } from "../../types/messages";
