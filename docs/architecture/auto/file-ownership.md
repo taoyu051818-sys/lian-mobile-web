@@ -257,15 +257,15 @@ Total files: 323
 | `features/publish/PublishActionBar.vue`            | Vue SFC                                                                                                                       |    41 |
 | `features/publish/PublishComposer.vue`             | Vue SFC                                                                                                                       |   293 |
 | `features/publish/PublishEventControls.vue`        | Vue SFC                                                                                                                       |   178 |
-| `features/publish/PublishGateNotice.vue`           | Vue SFC                                                                                                                       |    90 |
+| `features/publish/PublishGateNotice.vue`           | Vue SFC                                                                                                                       |   134 |
 | `features/publish/PublishImagePreview.vue`         | Vue SFC                                                                                                                       |   105 |
 | `features/publish/PublishLocationControls.vue`     | Vue SFC                                                                                                                       |   268 |
-| `features/publish/PublishMerchantControls.vue`     | Vue SFC                                                                                                                       |   218 |
+| `features/publish/PublishMerchantControls.vue`     | Vue SFC                                                                                                                       |   219 |
 | `features/publish/PublishMessage.vue`              | Vue SFC                                                                                                                       |   120 |
 | `features/publish/PublishMetaControls.vue`         | PRD V0.1 §3.1 — backend-driven gating. Optional: when omitted (older                                                          |   245 |
 | `features/publish/PublishResetConfirm.vue`         | Vue SFC                                                                                                                       |    59 |
 | `features/publish/PublishTradeControls.vue`        | Vue SFC                                                                                                                       |   172 |
-| `features/publish/PublishView.vue`                 | PR-3 (#813 follow-up): publishKind is now the single "what am I posting"                                                      |   554 |
+| `features/publish/PublishView.vue`                 | The merchant radio is capability-gated via `v-if` on the verified merchant                                                    |   536 |
 | `features/publish/index.ts`                        | TypeScript module                                                                                                             |     3 |
 | `features/publish/publishDraftSession.ts`          | Drop every scoped publish-draft entry. Called on logout / account switch so a different account can't restore the pre...      |   255 |
 | `features/publish/useMerchantPublishDraft.ts`      | Publish-side merchant draft + verification gate. Owns: - merchant form fields (name / category / hours / contact / ...        |   100 |

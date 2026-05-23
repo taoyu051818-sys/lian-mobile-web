@@ -59,6 +59,10 @@ test("PublishMerchantControls renders gate when not verified, form when verified
   assert.match(src, /<PublishGateNotice[\s\S]*?data-testid="publish-merchant-gate"/);
   assert.match(src, /:cta-label="PUBLISH_MERCHANT_GATE_CTA"/);
   assert.match(src, /@cta="emit\('goVerify'\)"/);
+  // mw-merchant-gating: the merchant gate is now default-collapsed so a
+  // non-merchant who somehow lands here doesn't see a default-popped prompt.
+  // Trade keeps the default `true` because campus verification is the baseline.
+  assert.match(src, /:default-open="false"/);
   assert.match(src, /data-testid="publish-merchant-form"/);
   assert.match(src, /data-testid="publish-merchant-name"/);
   assert.match(src, /data-testid="publish-merchant-category"/);
@@ -77,25 +81,54 @@ test("PublishView exposes a merchant/regular type switch", () => {
   assert.match(src, /selectPublishKind\('regular'\)/);
 });
 
-test("PublishView locks the merchant affordance when merchant_verified is inactive", () => {
+test("PublishView capability-gates the merchant radio with v-if (non-merchants don't see it)", () => {
+  // mw-merchant-gating: the merchant radio is hidden for non-merchants via
+  // `v-if`, not `v-show` / `display:none`. The trade radio stays visible
+  // because trade uses campus_verified, the baseline most users hit.
   const src = read("src/features/publish/PublishView.vue");
-  assert.match(src, /merchantAffordanceLocked/);
-  assert.match(src, /data-testid="publish-merchant-affordance-gate"/);
-  // The CTA is owned by the shared PublishGateNotice primitive (PR-2);
-  // PublishView wires the title / cta-label / @cta wire-up, not the button.
-  assert.match(src, /<PublishGateNotice[\s\S]*?data-testid="publish-merchant-affordance-gate"/);
-  assert.match(src, /:cta-label="PUBLISH_MERCHANT_GATE_CTA"/);
-  assert.match(src, /@cta="goToVerification"/);
-  assert.match(src, /:disabled="merchantAffordanceLocked"/);
-  assert.match(src, /PUBLISH_MERCHANT_GATE_BLOCK/);
+
+  // The merchant <label> wraps the radio with v-if on merchantVerified.
+  assert.match(
+    src,
+    /<label\s+v-if="draft\.merchant\.merchantVerified\.value"[\s\S]*?data-testid="publish-type-merchant"/,
+  );
+
+  // The trade radio is NOT capability-gated — it stays unconditionally
+  // rendered. We assert that no v-if guards the trade radio.
+  const tradeBlock = src.match(
+    /<label[^>]*>\s*<input[^>]*data-testid="publish-type-trade"[\s\S]*?<\/label>/,
+  );
+  assert.ok(tradeBlock, "trade radio block must exist");
+  assert.doesNotMatch(tradeBlock[0], /v-if=/);
+
+  // The standalone affordance-gate banner above the form is gone — the
+  // capability gate replaces it (no need to surface a "you can't do this"
+  // banner when the radio itself is hidden for non-merchants).
+  assert.doesNotMatch(src, /merchantAffordanceLocked/);
+  assert.doesNotMatch(src, /data-testid="publish-merchant-affordance-gate"/);
+  assert.doesNotMatch(src, /PUBLISH_MERCHANT_GATE_BLOCK/);
+});
+
+test("PublishView falls back to regular when merchant verification flips off mid-session", () => {
+  const src = read("src/features/publish/PublishView.vue");
+  // Defense-in-depth: if the verification ref flips false while publishKind
+  // was already "merchant", reset to "regular" so the form doesn't sit on a
+  // kind whose radio is no longer rendered.
+  assert.match(
+    src,
+    /watch\(draft\.merchant\.merchantVerified[\s\S]*?draft\.publishKind\.value\s*=\s*"regular"/,
+  );
 });
 
 test("PublishView routes the verification CTA to the verification view", () => {
   const src = read("src/features/publish/PublishView.vue");
   assert.match(src, /useActiveView/);
   assert.match(src, /setActiveView\("verification"\)/);
+  // mw-merchant-gating: the only remaining @go-verify is the inner merchant
+  // gate inside PublishMerchantControls (defense-in-depth, default-collapsed).
+  // The standalone affordance-gate banner that owned @click="goToVerification"
+  // is gone — hiding the radio for non-merchants replaces it.
   assert.match(src, /@go-verify="goToVerification"/);
-  assert.match(src, /@click="goToVerification"/);
 });
 
 test("PublishView refreshes merchant verification before and during merchant entry", () => {

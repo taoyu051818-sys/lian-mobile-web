@@ -16,12 +16,23 @@
  * Slot usage (default slot is the body copy block; consumers can pass any
  * mix of <p> elements). Title and CTA are bound props because they are
  * the load-bearing semantics for accessibility.
+ *
+ * `defaultOpen` (mw#NN-merchant-gating): set to `false` for role-aware
+ * progressive disclosure — the title stays visible, but the body + CTA
+ * collapse into a tap-to-expand <details> block. Used by the merchant
+ * gate notice so non-merchant flows don't surface a default-popped
+ * merchant prompt. Trade keeps the default `true` because campus
+ * verification is the baseline most users hit.
  */
 
-defineProps<{
-  title: string;
-  ctaLabel: string;
-}>();
+withDefaults(
+  defineProps<{
+    title: string;
+    ctaLabel: string;
+    defaultOpen?: boolean;
+  }>(),
+  { defaultOpen: true },
+);
 
 defineEmits<{
   cta: [];
@@ -29,7 +40,7 @@ defineEmits<{
 </script>
 
 <template>
-  <section class="publish-gate-notice" :aria-label="title">
+  <section v-if="defaultOpen" class="publish-gate-notice" :aria-label="title">
     <div class="publish-gate-notice__copy">
       <strong class="publish-gate-notice__title">{{ title }}</strong>
       <slot />
@@ -38,6 +49,20 @@ defineEmits<{
       {{ ctaLabel }}
     </button>
   </section>
+  <details
+    v-else
+    class="publish-gate-notice publish-gate-notice--collapsible"
+    :aria-label="title"
+    data-testid="publish-gate-notice-collapsible"
+  >
+    <summary class="publish-gate-notice__title">{{ title }}</summary>
+    <div class="publish-gate-notice__copy">
+      <slot />
+    </div>
+    <button type="button" class="publish-gate-notice__cta" @click="$emit('cta')">
+      {{ ctaLabel }}
+    </button>
+  </details>
 </template>
 
 <style scoped>
@@ -51,6 +76,25 @@ defineEmits<{
   border: 1px dashed rgba(31, 167, 160, 0.32);
   border-radius: calc(var(--radius-card) + 2px);
   background: rgba(31, 167, 160, 0.08);
+}
+
+.publish-gate-notice--collapsible {
+  display: block;
+}
+
+.publish-gate-notice--collapsible > .publish-gate-notice__copy,
+.publish-gate-notice--collapsible > .publish-gate-notice__cta {
+  margin-top: var(--space-3);
+}
+
+.publish-gate-notice--collapsible > summary.publish-gate-notice__title {
+  cursor: pointer;
+  list-style: none;
+  font-size: 15px;
+}
+
+.publish-gate-notice--collapsible > summary.publish-gate-notice__title::-webkit-details-marker {
+  display: none;
 }
 
 .publish-gate-notice__copy {

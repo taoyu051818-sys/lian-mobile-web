@@ -63,6 +63,7 @@ const CATEGORY_OPTIONS: Array<{ value: MerchantCategory; label: string }> = [
     data-testid="publish-merchant-gate"
     :title="PUBLISH_MERCHANT_GATE_TITLE"
     :cta-label="PUBLISH_MERCHANT_GATE_CTA"
+    :default-open="false"
     @cta="emit('goVerify')"
   >
     <p>{{ PUBLISH_MERCHANT_GATE_HINT }}</p>
