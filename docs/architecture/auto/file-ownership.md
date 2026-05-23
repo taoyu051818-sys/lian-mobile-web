@@ -149,7 +149,7 @@ Total files: 323
 | `features/detail/PostDetailInfoStrip.vue`          | Vue SFC                                                                                                                       |   113 |
 | `features/detail/PostDetailLightbox.vue`           | Vue SFC                                                                                                                       |    43 |
 | `features/detail/PostDetailMainBody.vue`           | Vue SFC                                                                                                                       |    44 |
-| `features/detail/PostDetailMerchantBlock.vue`      | Import directly from the route module instead of `../errand` so the detail                                                    |   315 |
+| `features/detail/PostDetailMerchantBlock.vue`      | Import directly from the route module instead of `../errand` so the detail                                                    |   318 |
 | `features/detail/PostDetailPanel.vue`              | Vue SFC                                                                                                                       |   433 |
 | `features/detail/PostDetailTopbar.vue`             | Vue SFC                                                                                                                       |   132 |
 | `features/detail/PostDetailTradeBlock.vue`         | Vue SFC                                                                                                                       |   227 |

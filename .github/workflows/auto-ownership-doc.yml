@@ -39,7 +39,7 @@ jobs:
         run: npm run ownership-doc
 
       - name: Verify generator determinism
-        run: npm run check:ownership-doc
+        run: npm run check:ownership-doc:strict
 
       - name: Commit refreshed ownership doc
         run: |

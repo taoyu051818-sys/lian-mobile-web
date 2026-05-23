@@ -6,8 +6,10 @@
  * are added/renamed/deleted. This script regenerates a deterministic snapshot
  * of every src/ file, grouped by top-level domain, so the doc tracks reality.
  *
- * Run: node scripts/generate-ownership-doc.js [--check]
+ * Run: node scripts/generate-ownership-doc.js [--check] [--warn]
  *   --check exits 1 if the regenerated content differs from the file on disk.
+ *   --check --warn prints a warning instead, so CI can surface drift without
+ *   blocking unrelated PRs.
  */
 
 import { promises as fs } from "node:fs";
@@ -76,6 +78,8 @@ function group(rel) {
 }
 
 async function main() {
+  const checkMode = process.argv.includes("--check");
+  const warnOnly = process.argv.includes("--warn");
   const files = await walk(SRC);
   // Sort by POSIX-normalized relative path so output is identical across
   // platforms — raw absolute paths on Windows use `\` (0x5C) and on Linux use
@@ -117,7 +121,7 @@ async function main() {
 
   await fs.mkdir(path.dirname(OUT), { recursive: true });
 
-  if (process.argv.includes("--check")) {
+  if (checkMode) {
     let existing = "";
     try {
       existing = await fs.readFile(OUT, "utf8");
@@ -126,9 +130,13 @@ async function main() {
     }
     const normalized = existing.replace(/\r\n/g, "\n");
     if (normalized !== md) {
-      console.error(
-        `[ownership-doc] ${path.relative(ROOT, OUT)} is stale. Run: node scripts/generate-ownership-doc.js`,
-      );
+      const message = `[ownership-doc] ${path.relative(ROOT, OUT)} is stale. Run: node scripts/generate-ownership-doc.js`;
+      if (warnOnly) {
+        console.warn(`::warning title=Stale ownership doc::${message}`);
+        console.warn(message);
+        return;
+      }
+      console.error(message);
       process.exit(1);
     }
     return;
