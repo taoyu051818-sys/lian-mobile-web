@@ -5,12 +5,12 @@ This document used to be a manually maintained per-file table. It drifted whenev
 The file table is now auto-generated. See:
 
 - **`docs/architecture/auto/file-ownership.md`** — every `src/` file with a one-line summary and line count, regenerated from source by `npm run ownership-doc`.
-- The generator runs in `--check` mode as part of `npm run check`, so a stale snapshot fails CI.
+- The generator runs in warning-only check mode as part of `npm run check`, so stale snapshots are visible without blocking unrelated PRs. The auto-refresh workflow still uses strict mode after regeneration to catch generator nondeterminism.
 
 ## How this stays truthful
 
 - `package.json` exposes `npm run ownership-doc` for regeneration and `npm run check:ownership-doc` for check mode.
-- `npm run check` pulls that ownership-doc check together with `scripts/validate-project-structure.js`, so stale ownership output and broken boundary rules fail the same verification lane.
+- `npm run check` pulls that ownership-doc warning together with `scripts/validate-project-structure.js`; broken boundary rules still fail the lane, while stale ownership output is reported as a warning.
 - `scripts/generate-ownership-doc.js` owns the generated snapshot, while `scripts/validate-project-structure.js` owns the layer and barrel rules that the ownership docs describe.
 - `vite.config.ts` does not generate ownership data, but it is part of the same runtime-sensitive root contract surface. When root runtime/config behavior changes, this ownership guide may need a refresh so the repo story stays coherent.
 

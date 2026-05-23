@@ -159,7 +159,7 @@ This runs:
 2. `test:unit` — vitest.
 3. `verify:smoke` — builds, starts preview, runs the smoke suite against it.
 
-If `verify:static` regenerates the ownership doc (`docs/architecture/auto/file-ownership.md`), commit the regenerated file in the same PR. Don't suppress the warning by editing the doc by hand.
+If `verify:static` reports a stale ownership doc (`docs/architecture/auto/file-ownership.md`), run `npm run ownership-doc` and commit the regenerated file when the PR already changes ownership-sensitive files. Don't suppress the warning by editing the doc by hand.
 
 If you cannot run `verify:smoke` locally (no Node 22, no preview port available), say so explicitly in the PR description — CI will catch it, but the absence should be visible.
 
