@@ -1,17 +1,14 @@
 <script setup lang="ts">
-import { computed, nextTick, ref, watch } from "vue";
+import { computed } from "vue";
 import {
   DEFAULT_USER_LABEL,
   UNTITLED_CONTENT,
   FEED_TIME_JUST_NOW,
-  FEED_COLLAPSE,
-  FEED_EXPAND,
   FEED_CARD_MARK_MERCHANT,
 } from "../../config/brand";
 import { actorAvatarText, actorAvatarUrl, actorDisplayName } from "../../domain/actor";
 import type { FeedItem, FeedItemId, FeedPresentationIntent } from "../../types/feed";
-import FeedItemCardFooter from "./FeedItemCardFooter.vue";
-import FeedItemCardMedia from "./FeedItemCardMedia.vue";
+import FeedItemCardShell from "./FeedItemCardShell.vue";
 import { useCardPointerInteraction } from "./useCardPointerInteraction";
 
 type CardTemplate = FeedPresentationIntent;
@@ -88,31 +85,6 @@ const templateMark = computed(
 );
 
 const bodyPreview = computed(() => props.item.bodyPreview || "");
-const bodyExpanded = ref(false);
-const needsBodyClamp = ref(false);
-const bodyPreviewEl = ref<HTMLParagraphElement | null>(null);
-
-function checkBodyClamp() {
-  const el = bodyPreviewEl.value;
-  if (!el) {
-    needsBodyClamp.value = false;
-    return;
-  }
-  needsBodyClamp.value = el.scrollHeight > el.clientHeight + 2;
-}
-
-function toggleBody() {
-  bodyExpanded.value = !bodyExpanded.value;
-  if (!bodyExpanded.value) nextTick(checkBodyClamp);
-}
-
-watch(
-  () => props.item.tid,
-  () => {
-    bodyExpanded.value = false;
-    nextTick(checkBodyClamp);
-  },
-);
 
 function emitOpen(target: HTMLElement | null) {
   const bounds = target?.getBoundingClientRect();
@@ -145,13 +117,21 @@ const {
 </script>
 
 <template>
-  <article
-    class="feed-item-card"
-    :class="[`feed-item-card--${cardTemplate}`, { 'feed-item-card--with-cover': coverUrl }]"
-    :data-card-warning="cardWarning"
-    role="button"
-    tabindex="0"
-    :aria-label="`${title}，${authorName}`"
+  <FeedItemCardShell
+    :title="title"
+    :cover-url="coverUrl"
+    :primary-tag="primaryTag"
+    :time-label="timeLabel"
+    :author-name="authorName"
+    :author-avatar-url="authorAvatarUrl"
+    :author-initial="authorInitial"
+    :card-template="cardTemplate"
+    :template-mark="templateMark"
+    :body-preview="bodyPreview"
+    :card-warning="cardWarning"
+    :tid="props.item.tid"
+    :liked="Boolean(props.item.liked)"
+    :like-count="Math.max(0, Number(props.item.likeCount || 0))"
     @pointerdown="handlePointerDown"
     @pointermove="handlePointerMove"
     @pointerup="handlePointerUp"
@@ -160,156 +140,5 @@ const {
     @click="openCard"
     @keydown.enter.prevent="openCardFromKeyboard"
     @keydown.space.prevent="openCardFromKeyboard"
-  >
-    <FeedItemCardMedia
-      :cover-url="coverUrl"
-      :title="title"
-      :primary-tag="primaryTag"
-      :card-template="cardTemplate"
-      :template-mark="templateMark"
-    />
-
-    <div class="feed-item-card__body">
-      <span v-if="cardTemplate === 'text' && primaryTag" class="feed-item-card__inline-tag">{{
-        primaryTag
-      }}</span>
-
-      <h3 :title="title">{{ title }}</h3>
-
-      <template v-if="cardTemplate === 'text' && bodyPreview">
-        <p
-          ref="bodyPreviewEl"
-          class="feed-item-card__body-preview"
-          :class="{ 'is-expanded': bodyExpanded }"
-        >
-          {{ bodyPreview }}
-        </p>
-        <button
-          v-if="needsBodyClamp || bodyExpanded"
-          class="feed-item-card__body-toggle"
-          type="button"
-          @click.stop="toggleBody"
-        >
-          {{ bodyExpanded ? FEED_COLLAPSE : FEED_EXPAND }}
-        </button>
-      </template>
-
-      <FeedItemCardFooter
-        :tid="props.item.tid"
-        :author-name="authorName"
-        :author-avatar-url="authorAvatarUrl"
-        :author-initial="authorInitial"
-        :time-label="timeLabel"
-        :liked="Boolean(props.item.liked)"
-        :like-count="Math.max(0, Number(props.item.likeCount || 0))"
-      />
-    </div>
-  </article>
+  />
 </template>
-
-<style scoped>
-.feed-item-card {
-  display: grid;
-  overflow: hidden;
-  border: 1px solid var(--lian-line);
-  border-radius: var(--radius-card);
-  background: var(--lian-card-strong);
-  box-shadow: var(--shadow-card);
-  cursor: pointer;
-  touch-action: manipulation;
-  user-select: none;
-  transition:
-    transform var(--motion-fast) var(--motion-ease-standard),
-    box-shadow var(--motion-fast) var(--motion-ease-standard);
-}
-
-.feed-item-card:focus-visible {
-  outline: 3px solid rgba(31, 167, 160, 0.32);
-  outline-offset: 3px;
-}
-
-.feed-item-card:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
-}
-
-.feed-item-card--text {
-  background:
-    radial-gradient(circle at top left, rgba(31, 167, 160, 0.12), transparent 42%),
-    var(--lian-card-strong);
-}
-
-.feed-item-card--activity {
-  background:
-    linear-gradient(145deg, rgba(255, 255, 255, 0.92), rgba(255, 247, 237, 0.82)),
-    var(--lian-card-strong);
-}
-
-.feed-item-card--place {
-  background:
-    linear-gradient(145deg, rgba(255, 255, 255, 0.92), rgba(236, 253, 245, 0.82)),
-    var(--lian-card-strong);
-}
-
-.feed-item-card--merchant {
-  background:
-    linear-gradient(145deg, rgba(255, 255, 255, 0.94), rgba(255, 251, 235, 0.86)),
-    var(--lian-card-strong);
-}
-
-.feed-item-card--help {
-  background:
-    linear-gradient(145deg, rgba(255, 255, 255, 0.92), rgba(245, 243, 255, 0.82)),
-    var(--lian-card-strong);
-}
-
-.feed-item-card__body {
-  display: grid;
-  gap: var(--space-2);
-  min-width: 0;
-  padding: var(--space-3);
-}
-
-.feed-item-card--text .feed-item-card__body {
-  padding-top: var(--space-4);
-}
-
-.feed-item-card h3 {
-  margin: 0;
-  color: var(--lian-ink);
-  font-size: 15px;
-  line-height: 1.34;
-}
-
-.feed-item-card--text h3 {
-  font-size: 16px;
-  line-height: 1.42;
-}
-
-.feed-item-card__body-preview {
-  display: -webkit-box;
-  overflow: hidden;
-  margin: 0;
-  color: var(--lian-muted);
-  font-size: 13px;
-  line-height: 1.5;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 4;
-}
-
-.feed-item-card__body-preview.is-expanded {
-  display: block;
-  -webkit-line-clamp: unset;
-}
-
-.feed-item-card__body-toggle {
-  justify-self: start;
-  padding: 0;
-  border: none;
-  background: none;
-  color: var(--lian-primary-deep);
-  font-size: 12px;
-  font-weight: 800;
-  cursor: pointer;
-}
-</style>
