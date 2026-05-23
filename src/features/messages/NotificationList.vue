@@ -1,10 +1,8 @@
 <script setup lang="ts">
-import { InlineError, TrustBadge } from "../../ui";
+import { LianButton } from "../../ui";
 import {
   LOADING_NOTIFICATION,
-  EMPTY_NOTIFICATION,
   NOTIFICATION_SECTION_LABEL,
-  CHANNEL_RELOAD,
   NOTIFICATION_READ,
   NOTIFICATION_UNREAD,
   NOTIFICATION_DEFAULT_TITLE,
@@ -16,48 +14,50 @@ import {
   NOTIFICATION_KIND_EVENT,
   NOTIFICATION_KIND_MODERATION,
   NOTIFICATION_KIND_SYSTEM,
-  NOTIFICATION_CHANNELS_LABEL,
-  NOTIFICATION_CHANNELS_HINT,
-  NOTIFICATION_CHANNEL_STATUS_CONNECTED,
-  NOTIFICATION_CHANNEL_STATUS_PENDING,
-  NOTIFICATION_CHANNEL_ISSUE_LINK_LABEL,
-  NOTIFICATION_EMPTY_NEXT_STEP,
+  MESSAGES_AUTH_REQUIRED_TITLE,
+  MESSAGES_AUTH_REQUIRED_BODY,
+  MESSAGES_AUTH_REQUIRED_CTA,
+  MESSAGES_ERROR_TITLE,
+  MESSAGES_ERROR_BODY,
+  MESSAGES_ERROR_RETRY,
 } from "../../config/brand";
 import { actorDisplayName } from "../../domain/actor";
+import { TrustBadge } from "../../ui";
 import type { NotificationItem } from "../../types/messages";
 import { formatRelativeTime } from "../../utils/time";
-import { NOTIFICATION_CHANNELS, type NotificationChannelInfo } from "./notificationChannels";
-
-interface NotificationGapLink {
-  label: string;
-  issueUrl: string;
-}
+import type { NotificationFetchState } from "./useNotifications";
 
 const props = withDefaults(
   defineProps<{
     items: NotificationItem[];
     loading: boolean;
-    error: string;
+    /**
+     * Discriminated fetch state from `useNotifications`. The view renders
+     * three different surfaces depending on this:
+     *   - "auth-required": session expired (401/403) — we route to login.
+     *   - "error": 5xx / timeout / JSON malformed — fail-loud, distinct
+     *     from empty so a 5xx can never silently look like "暂无通知".
+     *   - "idle": ready, possibly empty.
+     */
+    fetchState?: NotificationFetchState;
     title?: string;
     hint?: string;
     emptyTitle?: string;
     emptyBody?: string;
-    channels?: readonly NotificationChannelInfo[];
-    gapLinks?: readonly NotificationGapLink[];
   }>(),
   {
-    title: NOTIFICATION_CHANNELS_LABEL,
-    hint: NOTIFICATION_CHANNELS_HINT,
-    emptyTitle: EMPTY_NOTIFICATION,
+    fetchState: "idle",
+    title: "",
+    hint: "",
+    emptyTitle: "",
     emptyBody: "",
-    channels: () => NOTIFICATION_CHANNELS,
-    gapLinks: () => [],
   },
 );
 
 const emit = defineEmits<{
   retry: [];
   "open-item": [item: NotificationItem];
+  "auth-required": [];
 }>();
 
 function isReplyNotification(item: NotificationItem) {
@@ -112,79 +112,59 @@ function openNotification(item: NotificationItem) {
 
 <template>
   <section class="messages-view__pane" :aria-label="NOTIFICATION_SECTION_LABEL">
-    <section
-      v-if="props.channels.length"
-      class="messages-view__channels"
-      :aria-label="props.title"
-      data-testid="notification-channel-readout"
+    <header v-if="props.title || props.hint" class="messages-view__pane-header">
+      <h2 v-if="props.title">{{ props.title }}</h2>
+      <p v-if="props.hint">{{ props.hint }}</p>
+    </header>
+
+    <!--
+      Auth-required surface (#828) — 401/403. Distinct from both error and
+      empty: a session-expired user must see a re-login CTA, never a quiet
+      "暂无通知" landing that hides the fact that auth dropped.
+    -->
+    <div
+      v-if="props.fetchState === 'auth-required'"
+      class="messages-view__state messages-view__state--auth"
+      data-testid="messages-auth-required"
+      role="alert"
     >
-      <header class="messages-view__channels-header">
-        <strong>{{ props.title }}</strong>
-      </header>
-      <ul class="messages-view__channels-list">
-        <li
-          v-for="channel in props.channels"
-          :key="channel.id"
-          class="messages-view__channel"
-          :class="{ 'is-loading': channel.status === 'pending' }"
-          data-testid="notification-channel-row"
-          :data-channel-id="channel.id"
-          :data-channel-status="channel.status"
-        >
-          <div class="messages-view__channel-heading">
-            <span class="messages-view__channel-title">{{ channel.title }}</span>
-            <TrustBadge :tone="channel.status === 'connected' ? 'confirmed' : 'pending'">
-              {{
-                channel.status === "connected"
-                  ? NOTIFICATION_CHANNEL_STATUS_CONNECTED
-                  : NOTIFICATION_CHANNEL_STATUS_PENDING
-              }}
-            </TrustBadge>
-          </div>
-          <p class="messages-view__channel-desc">{{ channel.description }}</p>
-          <a
-            v-if="channel.issueUrl"
-            class="messages-view__channel-link"
-            :href="channel.issueUrl"
-            target="_blank"
-            rel="noopener noreferrer"
-            data-testid="notification-channel-issue-link"
-          >
-            {{ NOTIFICATION_CHANNEL_ISSUE_LINK_LABEL }}
-          </a>
-        </li>
-      </ul>
-    </section>
+      <strong>{{ MESSAGES_AUTH_REQUIRED_TITLE }}</strong>
+      <p>{{ MESSAGES_AUTH_REQUIRED_BODY }}</p>
+      <LianButton variant="primary" @click="emit('auth-required')">{{
+        MESSAGES_AUTH_REQUIRED_CTA
+      }}</LianButton>
+    </div>
 
-    <InlineError v-if="props.error">
-      {{ props.error }}
-      <button type="button" @click="emit('retry')">{{ CHANNEL_RELOAD }}</button>
-    </InlineError>
+    <!--
+      Error surface (#828) — 5xx / timeout / JSON malformed. Fail-loud:
+      the data layer also keeps `console.error("messages fetch failed", err)`
+      so the contract is observable both in DOM and in devtools. Never
+      silently downgrade to the empty branch below.
+    -->
+    <div
+      v-else-if="props.fetchState === 'error'"
+      class="messages-view__state messages-view__state--error"
+      data-testid="messages-error"
+      role="alert"
+    >
+      <strong>{{ MESSAGES_ERROR_TITLE }}</strong>
+      <p>{{ MESSAGES_ERROR_BODY }}</p>
+      <LianButton variant="ghost" @click="emit('retry')">{{ MESSAGES_ERROR_RETRY }}</LianButton>
+    </div>
 
-    <div v-if="props.loading && !props.items.length" class="messages-view__state" role="status">
+    <div
+      v-else-if="props.loading && !props.items.length"
+      class="messages-view__state"
+      role="status"
+    >
       {{ LOADING_NOTIFICATION }}
     </div>
-    <div
-      v-else-if="!props.items.length"
-      class="messages-view__state"
-      data-testid="notification-empty-state"
-    >
-      <strong>{{ props.emptyTitle || EMPTY_NOTIFICATION }}</strong>
+
+    <div v-else-if="!props.items.length" class="messages-view__state" data-testid="messages-empty">
+      <strong v-if="props.emptyTitle">{{ props.emptyTitle }}</strong>
       <p v-if="props.emptyBody">{{ props.emptyBody }}</p>
-      <div v-if="props.gapLinks.length" class="messages-view__state-links">
-        <span>{{ NOTIFICATION_EMPTY_NEXT_STEP }}</span>
-        <a
-          v-for="link in props.gapLinks"
-          :key="link.issueUrl"
-          :href="link.issueUrl"
-          target="_blank"
-          rel="noopener noreferrer"
-          data-testid="notification-gap-link"
-        >
-          {{ link.label }}
-        </a>
-      </div>
     </div>
+
     <div v-else class="messages-view__list" aria-live="polite">
       <article
         v-for="item in props.items"
@@ -231,81 +211,24 @@ function openNotification(item: NotificationItem) {
   gap: var(--space-4);
 }
 
-.messages-view__channels {
-  display: grid;
-  gap: var(--space-2);
-  padding: var(--space-3);
-  border: 1px dashed rgba(31, 41, 51, 0.16);
-  border-radius: var(--radius-card);
-  background: rgba(255, 255, 255, 0.62);
-}
-
-.messages-view__channels-header {
+.messages-view__pane-header {
   display: grid;
   gap: 4px;
 }
 
-.messages-view__channels-header strong {
-  color: var(--lian-ink);
-  font-size: 13px;
-  font-weight: 850;
-  letter-spacing: 0.02em;
-}
-
-.messages-view__channels-list {
-  display: grid;
-  gap: var(--space-2);
+.messages-view__pane-header h2 {
   margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.messages-view__channel {
-  display: grid;
-  gap: 4px;
-  padding: var(--space-2) var(--space-3);
-  border: 1px solid rgba(31, 41, 51, 0.08);
-  border-radius: var(--radius-card);
-  background: rgba(255, 255, 255, 0.74);
-}
-
-.messages-view__channel.is-loading {
-  border-style: dashed;
-  background: rgba(255, 255, 255, 0.44);
-}
-
-.messages-view__channel-heading {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
-  align-items: center;
-  justify-content: space-between;
-}
-
-.messages-view__channel-title {
   color: var(--lian-ink);
-  font-size: 13px;
-  font-weight: 800;
+  font-size: 15px;
+  font-weight: 850;
+  letter-spacing: 0.01em;
 }
 
-.messages-view__channel-desc {
+.messages-view__pane-header p {
   margin: 0;
   color: var(--lian-muted);
   font-size: 12px;
   line-height: 1.6;
-}
-
-.messages-view__channel-link {
-  justify-self: start;
-  color: var(--lian-primary, #1fa7a0);
-  font-size: 12px;
-  font-weight: 800;
-  text-decoration: none;
-}
-
-.messages-view__channel-link:hover,
-.messages-view__channel-link:focus-visible {
-  text-decoration: underline;
 }
 
 .messages-view__notification header {
@@ -355,6 +278,7 @@ function openNotification(item: NotificationItem) {
   gap: var(--space-2);
   min-height: 112px;
   place-items: center;
+  padding: var(--space-4);
   color: var(--lian-muted);
   text-align: center;
 }
@@ -370,19 +294,11 @@ function openNotification(item: NotificationItem) {
   line-height: 1.6;
 }
 
-.messages-view__state-links {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
-  align-items: center;
-  justify-content: center;
-  font-size: 12px;
-}
-
-.messages-view__state-links a {
-  color: var(--lian-primary, #1fa7a0);
-  font-weight: 800;
-  text-decoration: none;
+.messages-view__state--auth,
+.messages-view__state--error {
+  border: 1px solid rgba(31, 41, 51, 0.1);
+  border-radius: var(--radius-card);
+  background: rgba(255, 255, 255, 0.62);
 }
 
 .messages-view__notification.is-unread {
@@ -400,15 +316,5 @@ function openNotification(item: NotificationItem) {
 .messages-view__notification.is-clickable:focus-visible {
   outline: 2px solid var(--lian-primary, #1fa7a0);
   outline-offset: 2px;
-}
-
-.inline-error button {
-  min-height: 32px;
-  margin-left: var(--space-2);
-  border: 0;
-  border-radius: var(--radius-chip);
-  background: rgba(255, 255, 255, 0.72);
-  color: currentColor;
-  font-weight: 900;
 }
 </style>

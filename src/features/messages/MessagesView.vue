@@ -36,7 +36,7 @@ const {
   sendMessage,
   retryMessage: channelRetryMessage,
 } = useChannelMessages();
-const { notificationItems, notificationLoading, notificationError, loadNotifications } =
+const { notificationItems, notificationLoading, notificationFetchState, loadNotifications } =
   useNotifications();
 const {
   composerContent,
@@ -153,14 +153,13 @@ onMounted(async () => {
       v-else
       :items="visibleNotificationItems"
       :loading="notificationLoading"
-      :error="notificationError"
+      :fetch-state="notificationFetchState"
       :title="activeNotificationSpec?.title"
       :hint="activeNotificationSpec?.hint"
       :empty-title="activeNotificationSpec?.emptyTitle"
       :empty-body="activeNotificationSpec?.emptyBody"
-      :channels="activeNotificationSpec?.channels || []"
-      :gap-links="activeNotificationSpec?.gapLinks || []"
       @retry="loadNotifications"
+      @auth-required="setActiveView('profile')"
       @open-item="openNotification"
     />
 

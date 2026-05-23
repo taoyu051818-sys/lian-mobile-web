@@ -49,13 +49,12 @@ test("MessagesView filters notifications by inbox tab instead of one shared noti
   assert.doesNotMatch(viewSource, /MESSAGE_TAB_NOTIFICATION/);
 });
 
-test("MessagesView passes title, hint, empty copy, channels, and gap links into NotificationList", () => {
+test("MessagesView passes title, hint, empty copy, and fetch state into NotificationList", () => {
   assert.match(viewSource, /:title="activeNotificationSpec\?\.title"/);
   assert.match(viewSource, /:hint="activeNotificationSpec\?\.hint"/);
   assert.match(viewSource, /:empty-title="activeNotificationSpec\?\.emptyTitle"/);
   assert.match(viewSource, /:empty-body="activeNotificationSpec\?\.emptyBody"/);
-  assert.match(viewSource, /:channels="activeNotificationSpec\?\.channels \|\| \[\]"/);
-  assert.match(viewSource, /:gap-links="activeNotificationSpec\?\.gapLinks \|\| \[\]"/);
+  assert.match(viewSource, /:fetch-state="notificationFetchState"/);
 });
 
 test("MessagesView routes errand-order notification targets into the existing errand-order view", () => {
@@ -65,10 +64,23 @@ test("MessagesView routes errand-order notification targets into the existing er
   assert.match(viewSource, /setActiveView\("errand-order"\)/);
 });
 
-test("NotificationList renders a structured empty state with next-step links", () => {
-  assert.match(listSource, /data-testid="notification-empty-state"/);
-  assert.match(listSource, /data-testid="notification-gap-link"/);
-  assert.match(listSource, /NOTIFICATION_EMPTY_NEXT_STEP/);
+test("NotificationList renders three discriminated state surfaces with stable testids (#828)", () => {
+  // Empty / error / auth-required must each be addressable by a distinct
+  // testid so a 5xx can never silently downgrade to "暂无通知".
+  assert.match(listSource, /data-testid="messages-empty"/);
+  assert.match(listSource, /data-testid="messages-error"/);
+  assert.match(listSource, /data-testid="messages-auth-required"/);
+});
+
+test("NotificationList no longer renders the engineering channel readout chrome (#828)", () => {
+  // The "channel readout" block (status pills + GitHub issue links) was the
+  // single biggest signal that the inbox was a debugging surface. #828
+  // strips it; this test pins the rule so it can't sneak back in.
+  assert.doesNotMatch(listSource, /notification-channel-readout/);
+  assert.doesNotMatch(listSource, /NOTIFICATION_CHANNEL_STATUS_PENDING/);
+  assert.doesNotMatch(listSource, /NOTIFICATION_CHANNEL_ISSUE_LINK_LABEL/);
+  assert.doesNotMatch(listSource, /NOTIFICATION_EMPTY_NEXT_STEP/);
+  assert.doesNotMatch(listSource, /notification-gap-link/);
 });
 
 test("NotificationList treats errand-order targets as clickable", () => {
