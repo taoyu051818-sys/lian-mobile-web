@@ -96,6 +96,32 @@ export const PUBLISH_TITLE_CANDIDATE_APPLY = "✨ 帮我起标题";
 export const PUBLISH_TITLE_CANDIDATE_REVERT = "↶ 撤回标题";
 export const PUBLISH_TITLE_CANDIDATE_LABEL = "AI 标题候选";
 
+/**
+ * 发布 LLM inline ghost component (PRD V0.2 step E-main, §4.2.3).
+ *
+ * LLM 推断当前内容应该补充的字段时，在卡片下方以"虚线 ghost 卡片"的形式
+ * 列出建议（地点 / 时间 / 价格 / 商家信息 / 物品状态 / 求助标签）。
+ *
+ *   - 加入 → acceptSuggestedComponent：把 ghost "实化"成对应 sub-draft
+ *     （切换 publishKind / 写入 tagInput 等），然后从列表里移除。
+ *   - 忽略 → dismissSuggestedComponent：仅从列表里移除，不影响 draft。
+ *   - 用户继续输入触发下一次 LLM tick 时，整段列表会被新响应覆盖（pipe
+ *     由 usePublishLlmTick 持续维护）。
+ *
+ * 屏幕阅读器读为「建议添加 X」(PRD §4.2.3 a11y 要求)。
+ */
+export const PUBLISH_SUGGESTED_COMPONENTS_LABEL = "AI 建议添加";
+export const PUBLISH_SUGGESTED_ACCEPT = "加入";
+export const PUBLISH_SUGGESTED_DISMISS = "忽略";
+export const PUBLISH_SUGGESTED_HINT_PREFIX = "建议添加";
+/** Per-kind 视觉前缀，紧跟 LLM 自带的 reason 文案。Emoji 与 PRD §2.1 / §4.2.3 示例对齐。 */
+export const PUBLISH_SUGGESTED_KIND_ICON_LOCATION = "📍";
+export const PUBLISH_SUGGESTED_KIND_ICON_EVENT_TIME = "⏰";
+export const PUBLISH_SUGGESTED_KIND_ICON_PRICE = "💰";
+export const PUBLISH_SUGGESTED_KIND_ICON_MERCHANT_INFO = "🏪";
+export const PUBLISH_SUGGESTED_KIND_ICON_TRADE_CONDITION = "📦";
+export const PUBLISH_SUGGESTED_KIND_ICON_HELP_TAG = "🤝";
+
 /** 发布事件 (PRD V0.1 §6.3 / §11.2) */
 export const PUBLISH_POST_TYPE_LABEL = "内容类型";
 export const PUBLISH_POST_TYPE_POST = "普通帖子";

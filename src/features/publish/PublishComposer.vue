@@ -20,6 +20,7 @@ import {
 import PublishImagePreview from "./PublishImagePreview.vue";
 import PublishCandidateBar from "./PublishCandidateBar.vue";
 import PublishTitleCandidateBar from "./PublishTitleCandidateBar.vue";
+import PublishSuggestedComponents from "./PublishSuggestedComponents.vue";
 import {
   useInjectedBodyCandidate,
   useInjectedTitleCandidate,
@@ -129,6 +130,14 @@ usePublishLlmTick({
          it edits. Bar consumes the candidate API via inject so neither this
          component nor PublishView has to prop-drill the state. -->
     <PublishCandidateBar />
+
+    <!-- PRD V0.2 step E-main — inline ghost components surfaced from the
+         LLM tick's `suggestedComponents` block. Sits under the body bar
+         (the natural spot for "extra fields the model thinks you should
+         add") and renders nothing when the list is empty. Accept/dismiss
+         actions are injected from PublishSuggestedComponentsActionsKey
+         so this composer never reaches into the draft directly. -->
+    <PublishSuggestedComponents />
 
     <div
       v-if="
