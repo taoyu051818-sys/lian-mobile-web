@@ -31,6 +31,7 @@ import { usePostReport } from "./usePostReport";
 import { usePostReplyComposer } from "./usePostReplyComposer";
 import { usePostShare } from "./usePostShare";
 import { useDetailGallery } from "./useDetailGallery";
+import { useViewerErrandPermission } from "./useViewerErrandPermission";
 import { usePostDetailExtensions } from "../../composables/usePostDetailExtensions";
 
 const props = withDefaults(
@@ -178,6 +179,20 @@ const replyIdentityLabel = REPLY_IDENTITY_LABEL;
 
 const isAuthenticated = computed(() => Boolean(post.value));
 
+/**
+ * mw#827 capability gate for the detail-page errand-help CTA.
+ *
+ * The errand order flow requires `campus_verified` (see
+ * `useErrandOrderDraft.deriveLocalGate`). The composable runs the same
+ * cheap probe up-front so the merchant CTA can render the
+ * `disabled-permission` state without making the user click through into
+ * the order form just to be told "needs认证". Probe is fire-and-forget on
+ * mount; failure (401 anonymous, network) lands as `false` which routes
+ * to the muted CTA — same outcome as a confirmed unverified user.
+ */
+const { campusVerified } = useViewerErrandPermission();
+const viewerCanOrderErrand = computed(() => campusVerified.value);
+
 const {
   liveEvent,
   eventPlan,
@@ -322,6 +337,7 @@ watch(
             :merchant-post-id="post?.tid"
             :errand-unavailable-reason="post?.errandUnavailableReason"
             :errand-unavailable-reason-text="post?.errandUnavailableReasonText"
+            :viewer-can-order-errand="viewerCanOrderErrand"
             :trade="post?.trade"
             @gallery-pointer-down="handleGalleryPointerDown"
             @gallery-pointer-move="handleGalleryPointerMove"

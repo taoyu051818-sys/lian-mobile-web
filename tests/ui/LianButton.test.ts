@@ -161,20 +161,48 @@ describe("LianButton click suppression (loading + disabled)", () => {
   });
 });
 
-describe("LianButton aria-pressed binding (state === 'pressed' only)", () => {
-  it("binds aria-pressed only when showPressedClass is true; undefined otherwise", () => {
-    // The `aria-pressed` attribute should NOT default to "false" — that
-    // would pollute non-toggle CTAs with an ARIA toggle role implication.
-    // Vue drops attributes whose value is undefined, so binding to
-    // `showPressedClass ? 'true' : undefined` means: pressed → "true",
-    // anything else → no attribute on the rendered button.
-    expect(source).toMatch(/:aria-pressed="showPressedClass \? 'true' : undefined"/);
+describe("LianButton aria-pressed binding (state === 'pressed' only by default)", () => {
+  it("binds aria-pressed via the ariaPressedAttr computed (toggle-aware as of mw#827)", () => {
+    // Pre-mw#827 the binding was inline `showPressedClass ? 'true' : undefined`.
+    // mw#827 needed an explicit `pressed` toggle hook so wrappers can mark a
+    // button as a toggle whose pressed state is "off" (Apple gap §5 favourite-
+    // button pattern). The new computed preserves the legacy default — when
+    // `pressed` is undefined the binding still resolves to "true" only when
+    // the state is explicitly "pressed", and to undefined otherwise.
+    expect(source).toMatch(/:aria-pressed="ariaPressedAttr"/);
+    expect(source).toMatch(/const ariaPressedAttr = computed</);
+    // Default branch preserves the legacy contract (no aria-pressed on
+    // non-toggle CTAs) byte-for-byte: when `props.pressed` is not a boolean
+    // we fall through to the showPressedClass-driven derivation.
+    expect(source).toMatch(/typeof props\.pressed === "boolean"/);
+    expect(source).toMatch(/return showPressedClass\.value \? "true" : undefined;/);
   });
 
   it("does not emit a default aria-pressed='false' for non-pressed states", () => {
     // Cheap regression smoke: aria-pressed must not appear with a hard-
     // coded "false" value anywhere in the template.
     expect(source).not.toMatch(/aria-pressed="false"/);
+  });
+
+  it("aria-disabled mirrors isDisabledState so the ARIA contract matches the native disabled bit", () => {
+    // mw#827 added aria-disabled so wrappers can announce "disabled" to AT
+    // even when the state class differs (e.g. detail CTA's `reason` state
+    // is visually muted but logically the same as disabled). Native
+    // :disabled and aria-disabled must agree — anything else is a bug.
+    expect(source).toMatch(/:aria-disabled="ariaDisabledAttr"/);
+    expect(source).toMatch(/const ariaDisabledAttr = computed/);
+    expect(source).toMatch(/isDisabledState\.value \? "true" : undefined/);
+  });
+
+  it("aria-busy follows the loading effective state and the explicit ariaBusy prop", () => {
+    // Loading buttons must announce aria-busy="true" so screen-readers wait
+    // for the result rather than flooding with "button button button"
+    // re-announcements. mw#827 also exposed an explicit `ariaBusy` prop for
+    // wrappers that visually represent busy with a different state class.
+    expect(source).toMatch(/:aria-busy="ariaBusyAttr"/);
+    expect(source).toMatch(/const ariaBusyAttr = computed</);
+    expect(source).toMatch(/if \(props\.ariaBusy\) return "true";/);
+    expect(source).toMatch(/effectiveState\.value === "loading" \? "true" : undefined/);
   });
 });
 
