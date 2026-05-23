@@ -153,3 +153,58 @@ export const ADMIN_VERIFICATION_REVIEWER_NOTE_LABEL = "审核备注";
 export const ADMIN_VERIFICATION_REVIEWER_NOTE_PLACEHOLDER = "可填写通过或拒绝理由（选填）。";
 export const ADMIN_VERIFICATION_DECISION_APPROVE = "通过";
 export const ADMIN_VERIFICATION_DECISION_REJECT = "拒绝";
+
+/** Auth-link 管理 tab */
+export const ADMIN_AUTH_LINK_TAB_LABEL = "邀请链接";
+export const ADMIN_AUTH_LINK_LIST_LOADING = "加载邀请链接…";
+export const ADMIN_AUTH_LINK_LOAD_ERROR = "邀请链接加载失败，可以稍后再试。";
+
+/** Auth-link 空态 */
+export const ADMIN_AUTH_LINK_EMPTY_TITLE = "还没有邀请链接";
+export const ADMIN_AUTH_LINK_EMPTY_BODY =
+  "创建邀请链接后可以分享给新用户，他们点击链接即可获得指定的身份或权限。";
+
+/** Auth-link 状态 */
+export const ADMIN_AUTH_LINK_STATUS_ACTIVE = "有效";
+export const ADMIN_AUTH_LINK_STATUS_EXPIRED = "已过期";
+export const ADMIN_AUTH_LINK_STATUS_EXHAUSTED = "已用完";
+
+/** Auth-link 字段标签 */
+export const ADMIN_AUTH_LINK_TOKEN_LABEL = "链接标识";
+export const ADMIN_AUTH_LINK_CREATED_AT_LABEL = "创建时间";
+export const ADMIN_AUTH_LINK_EXPIRES_AT_LABEL = "过期时间";
+export const ADMIN_AUTH_LINK_USAGE_LABEL = "使用次数";
+export const ADMIN_AUTH_LINK_AUDIENCE_LABEL = "受众标签";
+export const ADMIN_AUTH_LINK_GRANT_LABEL = "授予权限";
+
+/** Auth-link 操作 */
+export const ADMIN_AUTH_LINK_CREATE = "创建链接";
+export const ADMIN_AUTH_LINK_COPY_URL = "复制链接";
+export const ADMIN_AUTH_LINK_COPY_SUCCESS = "链接已复制到剪贴板";
+export const ADMIN_AUTH_LINK_REVOKE = "撤销";
+export const ADMIN_AUTH_LINK_REVOKE_CONFIRM = "确定要撤销这个邀请链接吗？撤销后无法恢复。";
+export const ADMIN_AUTH_LINK_PREVIEW_CARD = "预览分享卡";
+
+/** Auth-link 创建表单 */
+export const ADMIN_AUTH_LINK_FORM_TITLE = "创建邀请链接";
+export const ADMIN_AUTH_LINK_FORM_AUDIENCE_LABEL = "受众标签";
+export const ADMIN_AUTH_LINK_FORM_AUDIENCE_PLACEHOLDER = "例如：2026 级新生";
+export const ADMIN_AUTH_LINK_FORM_MAX_USES_LABEL = "最大使用次数";
+export const ADMIN_AUTH_LINK_FORM_TTL_LABEL = "有效期";
+export const ADMIN_AUTH_LINK_FORM_TTL_1H = "1 小时";
+export const ADMIN_AUTH_LINK_FORM_TTL_24H = "24 小时";
+export const ADMIN_AUTH_LINK_FORM_TTL_7D = "7 天";
+export const ADMIN_AUTH_LINK_FORM_TTL_30D = "30 天";
+export const ADMIN_AUTH_LINK_FORM_GRANT_ROLE_LABEL = "授予角色";
+export const ADMIN_AUTH_LINK_FORM_GRANT_ROLE_NONE = "不授予角色";
+export const ADMIN_AUTH_LINK_FORM_GRANT_VERIFICATION_LABEL = "授予认证";
+export const ADMIN_AUTH_LINK_FORM_GRANT_VERIFICATION_NONE = "不授予认证";
+export const ADMIN_AUTH_LINK_FORM_SUBMIT = "创建";
+export const ADMIN_AUTH_LINK_FORM_CANCEL = "取消";
+
+/** Auth-link grant 类型 */
+export const ADMIN_AUTH_LINK_GRANT_CAMPUS_VERIFIED = "校园认证";
+export const ADMIN_AUTH_LINK_GRANT_ORG_MEMBER = "组织成员";
+export const ADMIN_AUTH_LINK_GRANT_REALNAME_VERIFIED = "实名认证";
+export const ADMIN_AUTH_LINK_GRANT_MERCHANT_VERIFIED = "商户认证";
+export const ADMIN_AUTH_LINK_GRANT_RUNNER = "跑腿员";

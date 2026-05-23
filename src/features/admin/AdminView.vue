@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from "vue";
 import {
+  ADMIN_AUTH_LINK_TAB_LABEL,
   ADMIN_AVATAR_TEXT,
   ADMIN_BACK_TO_PROFILE,
   ADMIN_EXIT_LABEL,
@@ -23,6 +24,7 @@ import type {
   AdminUserStatus,
 } from "../../types/admin";
 import AdminAuditBlock from "./AdminAuditBlock.vue";
+import AdminAuthLinkBlock from "./AdminAuthLinkBlock.vue";
 import AdminReportsBlock from "./AdminReportsBlock.vue";
 import AdminTokenGate from "./AdminTokenGate.vue";
 import AdminVerificationBlock from "./AdminVerificationBlock.vue";
@@ -34,7 +36,7 @@ import type {
   AdminVerificationStatus,
 } from "./admin-verification";
 
-type AdminTabKey = "reports" | "verifications" | "audit";
+type AdminTabKey = "reports" | "verifications" | "auth-links" | "audit";
 
 const emit = defineEmits<{
   chrome: [spec: PageChromeSpec];
@@ -68,6 +70,7 @@ const console = useAdminConsole({
 const tabs: Array<{ key: AdminTabKey; label: string }> = [
   { key: "reports", label: ADMIN_TAB_REPORTS },
   { key: "verifications", label: ADMIN_VERIFICATION_TAB_LABEL },
+  { key: "auth-links", label: ADMIN_AUTH_LINK_TAB_LABEL },
   { key: "audit", label: ADMIN_TAB_AUDIT },
 ];
 
@@ -113,6 +116,8 @@ function selectTab(key: AdminTabKey) {
   if (key === "audit") void console.loadAuditLog();
   else if (key === "verifications") {
     void console.loadVerificationRequests(verificationStatusFilter.value);
+  } else if (key === "auth-links") {
+    void console.loadAuthLinks();
   } else {
     void console.loadReports(statusFilter.value);
   }
@@ -254,6 +259,19 @@ onMounted(() => {
         @review="handleVerificationReview"
         @reveal="handleVerificationReveal"
         @note-update="handleVerificationNoteUpdate"
+      />
+
+      <AdminAuthLinkBlock
+        v-else-if="activeTab === 'auth-links'"
+        :links="console.authLinks.value"
+        :loading="console.authLinksLoading.value"
+        :error-message="console.authLinksError.value"
+        :creating="console.authLinkCreating.value"
+        :create-error="console.authLinkCreateError.value"
+        @reload="() => console.loadAuthLinks()"
+        @create="(payload) => console.createAuthLink(payload)"
+        @revoke="(token) => console.revokeAuthLink(token)"
+        @copy-url="() => {}"
       />
 
       <AdminAuditBlock
