@@ -14,6 +14,8 @@ export default [
       "public/assets/",
       "public/tools/",
       "*.config.*",
+      ".claude/",
+      ".worktrees/",
     ],
   },
 
