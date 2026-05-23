@@ -1,7 +1,9 @@
 {
   "$schema": "https://unpkg.com/knip@6/schema.json",
   "entry": [
-    "src/main.ts",
+    "src/entry-client.ts",
+    "src/entry-server.ts",
+    "src/server/ssr/start.ts",
     "src/app/AppViewHost.vue",
     "vite.config.ts",
     "vitest.config.ts",
