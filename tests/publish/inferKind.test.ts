@@ -149,4 +149,166 @@ describe("inferKind (PRD V0.2 §2.2)", () => {
   it("non-help tag does not flip kind", () => {
     expect(inferKind({ ...baseInput(), tag: "#夜跑", hasImage: true })).toBe("image");
   });
+
+  // -- Gap 1 fix: kind=place reachable when location-only and no body ----------
+  // PRD V0.2 §2.2 — `无图 + 仅地点 → place`. The inference returns `place`
+  // when the user has bound a location and not typed a body or attached an
+  // image. The companion fix in usePublishDraft.canSubmit + validatePublishForm
+  // relaxes the body-required guard via `isPlaceOnly` so the user can
+  // actually submit such a draft (previously canSubmit demanded non-empty
+  // body, making the place branch dead code through the UI).
+
+  it("location-only (regular publishKind) returns 'place' (Gap 1 fix: actually reachable)", () => {
+    // The actual canSubmit check that previously blocked submit lives in
+    // usePublishDraft; here we lock the inference contract: bound location,
+    // no body, no image, no panel → place.
+    expect(
+      inferKind({
+        ...baseInput(),
+        publishKind: "regular",
+        hasLocation: true,
+        hasImage: false,
+        hasBody: false,
+      }),
+    ).toBe("place");
+  });
+
+  // -- Gap 2 fix: LLM inferredKind hint plumbed into the priority chain --------
+  // PRD V0.2 §4.3 — `candidates.inferredKind` is now wired through usePublishDraft
+  // and read here as a low-priority hint. Slot lives below tag/image/panel and
+  // above place-only/text. Hallucination guards strip 'image' (without an
+  // actual upload) and 'help' (user-tag semantic, not LLM-imposable).
+
+  it("Gap 2: llmInferredKind='event' with no panel materialized → 'event'", () => {
+    expect(
+      inferKind({
+        ...baseInput(),
+        publishKind: "regular",
+        hasBody: true,
+        llmInferredKind: "event",
+      }),
+    ).toBe("event");
+  });
+
+  it("Gap 2: panel publishKind beats LLM hint (user gesture wins over advisory)", () => {
+    // accept(merchant_info) flipped publishKind to merchant; even if the LLM
+    // is still emitting 'event' from a stale tick, the panel materialization
+    // wins. Locks the priority chain order: publishKind > llmInferredKind.
+    expect(
+      inferKind({
+        ...baseInput(),
+        publishKind: "merchant",
+        hasBody: true,
+        llmInferredKind: "event",
+      }),
+    ).toBe("merchant");
+  });
+
+  it("Gap 2: llmInferredKind='image' is rejected when hasImage is false (anti-hallucination)", () => {
+    // PRD §2.2 hard rule: 无图 不可能 image. The LLM may parrot 'image' as a
+    // default; honoring it without an actual upload would contradict §2.2.
+    // Falls through to the deterministic chain; here that's text.
+    expect(
+      inferKind({
+        ...baseInput(),
+        publishKind: "regular",
+        hasImage: false,
+        hasBody: true,
+        llmInferredKind: "image",
+      }),
+    ).toBe("text");
+  });
+
+  it("Gap 2: llmInferredKind='help' is rejected (help is the user-tag semantic, not LLM-imposable)", () => {
+    // PRD §2.2 reserves 'help' for the explicit 求助 tag. The LLM doesn't get
+    // to impose a help-wanted classification; surface 'help_tag' as a ghost
+    // suggestion and let the user accept(help_tag) instead.
+    expect(
+      inferKind({
+        ...baseInput(),
+        publishKind: "regular",
+        hasBody: true,
+        llmInferredKind: "help",
+      }),
+    ).toBe("text");
+  });
+
+  it("Gap 2: llmInferredKind='trade' with no panel and no image → 'trade'", () => {
+    // The LLM saw trade signals (price + condition) the user hasn't yet
+    // accepted as a ghost; we still lift the wire `kind` so backend routing
+    // matches what the LLM saw, without forcing the user through panel UI.
+    expect(
+      inferKind({
+        ...baseInput(),
+        publishKind: "regular",
+        hasBody: true,
+        llmInferredKind: "trade",
+      }),
+    ).toBe("trade");
+  });
+
+  it("Gap 2: llmInferredKind='place' only honored when card is location-only (deterministic place rule still applies)", () => {
+    // LLM may suggest 'place' on any tick; we only honor it when the
+    // body is empty and a location is bound (matches the deterministic
+    // place rule below). This avoids double-classifying a regular card
+    // with a place attached as 'place'.
+    expect(
+      inferKind({
+        ...baseInput(),
+        publishKind: "regular",
+        hasLocation: true,
+        hasBody: false,
+        llmInferredKind: "place",
+      }),
+    ).toBe("place");
+    expect(
+      inferKind({
+        ...baseInput(),
+        publishKind: "regular",
+        hasLocation: true,
+        hasBody: true,
+        llmInferredKind: "place",
+      }),
+    ).toBe("text");
+  });
+
+  it("Gap 2: null llmInferredKind is treated identically to omitted (back-compat)", () => {
+    expect(
+      inferKind({
+        ...baseInput(),
+        hasLocation: true,
+        hasBody: false,
+        llmInferredKind: null,
+      }),
+    ).toBe("place");
+    expect(
+      inferKind({
+        ...baseInput(),
+        hasBody: true,
+        llmInferredKind: null,
+      }),
+    ).toBe("text");
+  });
+
+  it("Gap 2: tag=求助 still beats LLM hint (priority above LLM)", () => {
+    expect(
+      inferKind({
+        ...baseInput(),
+        tag: "求助",
+        hasBody: true,
+        llmInferredKind: "event",
+      }),
+    ).toBe("help");
+  });
+
+  it("Gap 2: hasImage still beats LLM hint (媒体优先 over advisory)", () => {
+    expect(
+      inferKind({
+        ...baseInput(),
+        hasImage: true,
+        hasBody: true,
+        llmInferredKind: "event",
+      }),
+    ).toBe("image");
+  });
 });

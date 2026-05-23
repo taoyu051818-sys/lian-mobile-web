@@ -142,6 +142,7 @@ const { postDetailUrl, submitPublish } = usePublishSubmit({
   eventJoinPolicy: eventDraft.joinPolicy,
   audienceVisibility: draft.visibility,
   publishKind: draft.publishKind,
+  llmInferredKind: draft.llmInferredKind,
   merchantPayload: () => draft.merchant.payload(),
   merchantVerified: draft.merchant.merchantVerified,
   tradePayload: () => draft.trade.payload(),

@@ -25,6 +25,7 @@ import {
   useInjectedBodyCandidate,
   useInjectedTitleCandidate,
   useInjectedSuggestedComponents,
+  useInjectedLlmInferredKind,
 } from "./usePublishDraft";
 import { usePublishLlmTick } from "./usePublishLlmTick";
 import type { MapLocation } from "../../types/map";
@@ -84,6 +85,11 @@ function openFilePicker() {
 const bodyCandidate = useInjectedBodyCandidate();
 const titleCandidate = useInjectedTitleCandidate();
 const suggestedComponents = useInjectedSuggestedComponents();
+// PRD V0.2 §4.3 — pull the LLM `inferredKind` sink out of the publish
+// draft so the LLM tick below can update it on each round trip; the
+// submit-side reads the same ref via inject when it derives the wire
+// `kind` (priority chain in inferKind.ts).
+const llmInferredKind = useInjectedLlmInferredKind();
 
 usePublishLlmTick({
   title: toRef(props, "title"),
@@ -91,6 +97,7 @@ usePublishLlmTick({
   setTitleCandidate: titleCandidate.setTitleCandidate,
   setBodyCandidate: bodyCandidate.setBodyCandidate,
   suggestedComponents,
+  llmInferredKind,
 });
 </script>
 

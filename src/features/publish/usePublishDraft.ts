@@ -35,7 +35,7 @@ import { usePublishIdentity } from "./usePublishIdentity";
 import { usePublishAi } from "./usePublishAi";
 import { useMerchantPublishDraft } from "./useMerchantPublishDraft";
 import { useTradePublishDraft } from "./useTradePublishDraft";
-import type { SuggestedComponent } from "../../types/publishSuggestion";
+import type { InferredKind, SuggestedComponent } from "../../types/publishSuggestion";
 
 // PR-3 (#813 follow-up): "event" promoted to a peer of regular / merchant /
 // trade so the publishKind switch is the single "what kind of post am I
@@ -232,6 +232,34 @@ export function useInjectedSuggestedComponents(): Ref<SuggestedComponent[]> {
   if (!ref$) {
     throw new Error(
       "usePublishDraft must be installed (provided) before consuming PublishSuggestedComponentsKey",
+    );
+  }
+  return ref$;
+}
+
+/**
+ * LLM `inferredKind` hint sink (PRD V0.2 §4.3).
+ *
+ * `usePublishLlmTick` writes each tick's `candidates.inferredKind` here;
+ * `usePublishSubmit` reads it as a low-priority hint for `inferKind` (the
+ * priority chain in `inferKind.ts` weighs it below tag/image/panel and
+ * above place-only / text). Provided via inject so the LLM tick hook
+ * (mounted from `PublishComposer`) and the submit hook (mounted from
+ * `PublishView`) can both reach the same ref without prop-drilling, and
+ * both go through the same key the rest of the publish slice already
+ * uses.
+ *
+ * `null` is the resting state — no LLM tick has landed, or the latest
+ * tick declined to suggest a kind.
+ */
+export const PublishLlmInferredKindKey: InjectionKey<Ref<InferredKind | null>> =
+  Symbol("PublishLlmInferredKind");
+
+export function useInjectedLlmInferredKind(): Ref<InferredKind | null> {
+  const ref$ = inject(PublishLlmInferredKindKey, null);
+  if (!ref$) {
+    throw new Error(
+      "usePublishDraft must be installed (provided) before consuming PublishLlmInferredKindKey",
     );
   }
   return ref$;
@@ -476,6 +504,12 @@ export function usePublishDraft() {
   // Empty array is the natural "no suggestions" state — keeps consumer
   // templates simple (`v-for` over an empty list is a no-op).
   const suggestedComponents = ref<SuggestedComponent[]>([]);
+  // PRD V0.2 §4.3 — sink for `candidates.inferredKind` from each LLM tick.
+  // `usePublishLlmTick` is the only writer; `usePublishSubmit` reads it as
+  // a low-priority hint to `inferKind` (see §2.2 priority chain).
+  // `null` = no opinion this round; the inference falls through to the
+  // deterministic place-only / text rules.
+  const llmInferredKind = ref<InferredKind | null>(null);
   const tagInput = ref("");
   const placeName = ref("");
   const visibility = ref<PublishVisibility>("public");
@@ -535,12 +569,45 @@ export function usePublishDraft() {
       PUBLISH_VIS_PUBLIC,
   );
 
+  // PRD V0.2 §2.2 — place posts are "无图 + 仅地点 + 无 body" cards (campus
+  // map pin / 签到). They're the only kind in the 7-set whose body is
+  // intentionally empty: location IS the content. The body-required check
+  // in `canSubmit` and `validatePublishForm` relaxes when this is true.
+  //
+  // Why we read `placeName` instead of `selectedMapLocation`:
+  // `usePublishLocationOptions.selectMapLocation` writes the picked
+  // location's name into `placeName.value`, so `placeName.trim()` is the
+  // single source of truth for "draft has a known location" inside this
+  // composable's slice (the location options live one level up and we'd
+  // rather not back-reference them — that would invert the
+  // usePublishDraft → usePublishLocationOptions dependency PublishView
+  // wires today). `usePublishSubmit.inferKind`'s hasLocation check uses
+  // the same `placeName.value.trim().length > 0` predicate (with an extra
+  // `selectedLocationDraft` OR for defense in depth), so the two contracts
+  // agree on what "place-only" means.
+  //
+  // Panel-driven kinds (event / merchant / trade) have their own canSubmit
+  // contracts above and never enter this branch — `publishKind` must be
+  // "regular" for the place fallback to take effect.
+  const isPlaceOnly = computed(() => {
+    if (publishKind.value !== "regular") return false;
+    if (uploadedImageUrls.value.length > 0) return false;
+    if (body.value.trim().length > 0) return false;
+    return placeName.value.trim().length > 0;
+  });
+
   const canSubmit = computed(() => {
     if (title.value.trim().length === 0) return false;
-    if (body.value.trim().length === 0) return false;
     if (uploading.value || publishing.value) return false;
     if (publishKind.value === "merchant") return merchant.canSubmit.value;
     if (publishKind.value === "trade") return trade.canSubmit();
+    // PRD V0.2 §2.2 — `place` posts (无图 + 仅地点 + 无 body) are
+    // location-only "签到 / 打卡" cards. body is not required for those, so
+    // the "body must be non-empty" guard below has to be relaxed when the
+    // draft is in place-only mode. Title still applies (every post has a
+    // name); the title check above already gated this.
+    if (isPlaceOnly.value) return true;
+    if (body.value.trim().length === 0) return false;
     return true;
   });
   const titleCount = computed(() => title.value.length);
@@ -626,6 +693,12 @@ export function usePublishDraft() {
       uploading: uploading.value,
       selectedFileCount: selectedFiles.value.length,
       uploadedImageCount: uploadedImageUrls.value.length,
+      // PRD V0.2 §2.2 — relax body-required for place-only drafts so the
+      // location-only "签到" path actually reaches the publish endpoint.
+      // The same `isPlaceOnly` predicate gates `canSubmit` above; keeping
+      // both checks consistent guarantees the submit button and the form
+      // validator agree on what constitutes a publishable place card.
+      isPlaceOnly: isPlaceOnly.value,
     });
   }
 
@@ -649,6 +722,11 @@ export function usePublishDraft() {
   // inject without prop-drilling, and step E-main's ghost UI can read via
   // the same key.
   provide(PublishSuggestedComponentsKey, suggestedComponents);
+  // PRD V0.2 §4.3 — provide the LLM `inferredKind` hint sink. Same wiring
+  // pattern as `suggestedComponents`: PublishComposer's `usePublishLlmTick`
+  // call writes to it; PublishView's `usePublishSubmit` reads it. Provided
+  // here so neither side has to prop-drill the ref through the composer.
+  provide(PublishLlmInferredKindKey, llmInferredKind);
   // PRD V0.2 step E-main — accept / dismiss actions for the ghost UI. The
   // factory takes refs (publishKind / tagInput / verification flags) so the
   // mutations land back on the same draft the rest of PublishView reads.
@@ -749,6 +827,15 @@ export function usePublishDraft() {
     // tests / debug surfaces that already hold a `draft` handle can read it
     // without going through inject.
     suggestedComponents,
+    // PRD V0.2 §4.3 — LLM `inferredKind` hint sink. PublishComposer wires it
+    // into `usePublishLlmTick` so each tick refreshes the value;
+    // usePublishSubmit reads it as a low-priority hint to `inferKind`.
+    llmInferredKind,
+    // PRD V0.2 §2.2 — exposes the place-only computed so usePublishSubmit
+    // (and any future caller that needs to disambiguate the place card from
+    // a regular card before validate runs) can read it without rebuilding
+    // the predicate.
+    isPlaceOnly,
     setBodyCandidate: candidate.setBodyCandidate,
   };
 }
