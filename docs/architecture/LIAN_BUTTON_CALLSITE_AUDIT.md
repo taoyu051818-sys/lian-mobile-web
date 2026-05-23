@@ -167,14 +167,14 @@ is-loading, is-empty, is-error, is-disabled, is-pressed, is-selected, is-active,
 
 ### 6 态映射 vs 白名单
 
-| `state` 值       | 拟用 `.is-*` 类  | 白名单内？ | 备注                                                                                       |
-| ---------------- | ---------------- | ---------- | ------------------------------------------------------------------------------------------ |
-| `default`        | （无）           | n/a        | 默认态不需要状态类                                                                         |
-| `loading`        | `is-loading`     | ✅          | 已是现状                                                                                   |
-| `disabled`       | `is-disabled`    | ✅          | 与 `[disabled]` 选择器是不同的视觉钩子，词表已留位                                         |
-| `pressed`        | `is-pressed`     | ✅          | 但 LianButton 当前 40 个 caller 里**没有任何 toggle/like/follow 用法**（详见 §6）           |
-| `error`          | `is-error`       | ✅          | 词表本意是 form validation error，复用到瞬态按钮 error 没问题                              |
-| **`success`**    | `is-success`     | ❌ **缺失** | **白名单只有 8 词，没有 success**。这是规避项                                              |
+| `state` 值    | 拟用 `.is-*` 类 | 白名单内？  | 备注                                                                              |
+| ------------- | --------------- | ----------- | --------------------------------------------------------------------------------- |
+| `default`     | （无）          | n/a         | 默认态不需要状态类                                                                |
+| `loading`     | `is-loading`    | ✅          | 已是现状                                                                          |
+| `disabled`    | `is-disabled`   | ✅          | 与 `[disabled]` 选择器是不同的视觉钩子，词表已留位                                |
+| `pressed`     | `is-pressed`    | ✅          | 但 LianButton 当前 40 个 caller 里**没有任何 toggle/like/follow 用法**（详见 §6） |
+| `error`       | `is-error`      | ✅          | 词表本意是 form validation error，复用到瞬态按钮 error 没问题                     |
+| **`success`** | `is-success`    | ❌ **缺失** | **白名单只有 8 词，没有 success**。这是规避项                                     |
 
 ### success 态决策点
 
