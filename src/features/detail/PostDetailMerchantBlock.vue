@@ -30,6 +30,8 @@ import {
 import { useActiveView } from "../../app/useActiveView";
 import { useDetailNavigation } from "../../app/detail-navigation";
 import { errandReasonText } from "../merchant";
+import DetailCtaButton from "./DetailCtaButton.vue";
+import { selectDetailCtaState } from "./detailCtaState";
 // Import directly from the route module instead of `../errand` so the detail
 // chunk doesn't statically pull the heavy ErrandOrder*View SFCs from the
 // barrel — those SFCs are async-mounted by AppViewHost and should stay out
@@ -88,6 +90,25 @@ const unavailableReasonLabel = computed(() => {
     }) || MERCHANT_ERRAND_UNAVAILABLE_FALLBACK
   );
 });
+const errandCtaState = computed(() =>
+  selectDetailCtaState({
+    blockedReason: unavailableReasonLabel.value,
+    clickable: errandEntryClickable.value,
+  }),
+);
+const errandCtaMessage = computed(() =>
+  errandUnavailable.value ? unavailableReasonLabel.value : MERCHANT_ERRAND_HINT,
+);
+const errandWrapperTestId = computed(() =>
+  errandUnavailable.value
+    ? "post-detail-merchant-errand-unavailable"
+    : "post-detail-merchant-errand-entry",
+);
+const errandMessageTestId = computed(() =>
+  errandUnavailable.value
+    ? "post-detail-merchant-errand-reason"
+    : "post-detail-merchant-errand-hint",
+);
 
 function handleErrandClick() {
   if (!errandEntryClickable.value) return;
@@ -143,44 +164,22 @@ function handleErrandClick() {
     </dl>
 
     <div
-      v-if="errandEntryAvailable"
+      v-if="errandEntryAvailable || errandUnavailable"
       class="post-detail-merchant-block__errand"
-      data-testid="post-detail-merchant-errand-entry"
+      :class="{ 'is-unavailable': errandUnavailable }"
+      :data-testid="errandWrapperTestId"
     >
-      <p class="post-detail-merchant-block__errand-line">{{ MERCHANT_ERRAND_AVAILABLE }}</p>
-      <button
-        type="button"
-        class="post-detail-merchant-block__errand-cta"
-        :disabled="!errandEntryClickable"
-        :aria-disabled="!errandEntryClickable"
-        data-testid="post-detail-merchant-errand-cta"
-        @click="handleErrandClick"
-      >
-        {{ MERCHANT_ERRAND_CTA }}
-      </button>
-      <p class="post-detail-merchant-block__errand-hint">{{ MERCHANT_ERRAND_HINT }}</p>
-    </div>
-
-    <div
-      v-else-if="errandUnavailable"
-      class="post-detail-merchant-block__errand is-unavailable"
-      data-testid="post-detail-merchant-errand-unavailable"
-    >
-      <p class="post-detail-merchant-block__errand-line">{{ MERCHANT_ERRAND_UNAVAILABLE_LABEL }}</p>
-      <button
-        type="button"
-        class="post-detail-merchant-block__errand-cta"
-        disabled
-        aria-disabled="true"
-      >
-        {{ MERCHANT_ERRAND_CTA }}
-      </button>
-      <p
-        class="post-detail-merchant-block__errand-hint"
-        data-testid="post-detail-merchant-errand-reason"
-      >
-        {{ unavailableReasonLabel }}
+      <p class="post-detail-merchant-block__errand-line">
+        {{ errandUnavailable ? MERCHANT_ERRAND_UNAVAILABLE_LABEL : MERCHANT_ERRAND_AVAILABLE }}
       </p>
+      <DetailCtaButton
+        :label="MERCHANT_ERRAND_CTA"
+        :state="errandCtaState"
+        :message="errandCtaMessage"
+        test-id="post-detail-merchant-errand-cta"
+        :message-test-id="errandMessageTestId"
+        @click="handleErrandClick"
+      />
     </div>
   </section>
 </template>
@@ -289,29 +288,5 @@ function handleErrandClick() {
   color: var(--lian-ink);
   font-weight: 700;
   font-size: 14px;
-}
-
-.post-detail-merchant-block__errand-cta {
-  justify-self: start;
-  appearance: none;
-  border: 0;
-  border-radius: var(--radius-chip, 999px);
-  background: var(--lian-primary, #1fa7a0);
-  color: rgba(255, 255, 255, 0.9);
-  font-weight: 800;
-  height: 36px;
-  padding: 0 var(--space-3);
-  cursor: pointer;
-}
-
-.post-detail-merchant-block__errand-cta:disabled {
-  background: rgba(120, 120, 120, 0.32);
-  cursor: not-allowed;
-}
-
-.post-detail-merchant-block__errand-hint {
-  margin: 0;
-  color: var(--lian-muted);
-  font-size: 12px;
 }
 </style>
