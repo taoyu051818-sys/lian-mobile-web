@@ -28,6 +28,7 @@ import {
   MERCHANT_VERIFIED_PREFIX,
 } from "../../config/brand";
 import { useActiveView } from "../../app/useActiveView";
+import { useDetailNavigation } from "../../app/detail-navigation";
 import { errandReasonText } from "../merchant";
 // Import directly from the route module instead of `../errand` so the detail
 // chunk doesn't statically pull the heavy ErrandOrder*View SFCs from the
@@ -73,6 +74,7 @@ const verifiedAtLabel = computed(() => {
 const errandUnavailable = computed(() => props.errandEntryAvailable === false);
 const errandRoute = useErrandOrderRoute();
 const { setActiveView } = useActiveView();
+const detail = useDetailNavigation();
 const errandEntryClickable = computed(
   () => props.errandEntryAvailable === true && (props.merchantPostId ?? 0) > 0,
 );
@@ -89,6 +91,7 @@ const unavailableReasonLabel = computed(() => {
 
 function handleErrandClick() {
   if (!errandEntryClickable.value) return;
+  detail.close("view-change");
   // Tag the entry origin so the close/back handlers in ErrandOrderView return
   // the user to the feed tab where the post detail was open. Without this the
   // route singleton's default origin ("feed") would still work for now, but
