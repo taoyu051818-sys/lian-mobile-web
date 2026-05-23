@@ -77,8 +77,12 @@ async function fillMinimalPublishForm(page: Page, title: string, body: string) {
   await expect(page.locator(".publish-composer")).toBeVisible();
 
   // Fill title and body
-  const titleInput = page.locator('input[placeholder*="标题"], textarea[placeholder*="标题"]').first();
-  const bodyInput = page.locator('textarea[placeholder*="内容"], textarea[placeholder*="正文"]').first();
+  const titleInput = page
+    .locator('input[placeholder*="标题"], textarea[placeholder*="标题"]')
+    .first();
+  const bodyInput = page
+    .locator('textarea[placeholder*="内容"], textarea[placeholder*="正文"]')
+    .first();
 
   // Fallback to generic selectors if specific ones don't exist
   if ((await titleInput.count()) === 0) {
@@ -99,9 +103,9 @@ async function fillMinimalPublishForm(page: Page, title: string, body: string) {
  */
 async function clickPublishButton(page: Page) {
   // Look for common publish button patterns
-  const publishButton = page.locator(
-    'button:has-text("发布"), button:has-text("提交"), button[type="submit"]',
-  ).first();
+  const publishButton = page
+    .locator('button:has-text("发布"), button:has-text("提交"), button[type="submit"]')
+    .first();
   await publishButton.click();
 }
 
@@ -188,7 +192,11 @@ test.describe("@role-matrix publish kind inference role matrix", () => {
         const getCaptured = await stubPublishRoute(page);
         await page.goto("/#/publish");
 
-        await fillMinimalPublishForm(page, "E2E merchant text post", "Merchant posting text content");
+        await fillMinimalPublishForm(
+          page,
+          "E2E merchant text post",
+          "Merchant posting text content",
+        );
         await clickPublishButton(page);
 
         await page.waitForTimeout(500);
@@ -231,10 +239,7 @@ test.describe("@role-matrix publish kind inference role matrix", () => {
 
     for (const role of roles) {
       test(`${role} user: help tag triggers kind='help'`, async ({ browser }) => {
-        test.skip(
-          !isRoleConfigured(role),
-          `${role} role not configured — set env credentials`,
-        );
+        test.skip(!isRoleConfigured(role), `${role} role not configured — set env credentials`);
 
         const { api } = await loginAs(role);
         const context = await browser.newContext({ storageState: await api.storageState() });
@@ -247,9 +252,9 @@ test.describe("@role-matrix publish kind inference role matrix", () => {
           await fillMinimalPublishForm(page, "E2E help request", "I need help with something");
 
           // Set the tag to "求助" which should trigger kind='help'
-          const tagInput = page.locator(
-            'input[placeholder*="标签"], input[placeholder*="话题"]',
-          ).first();
+          const tagInput = page
+            .locator('input[placeholder*="标签"], input[placeholder*="话题"]')
+            .first();
           if ((await tagInput.count()) > 0) {
             await tagInput.fill("求助");
           } else {
