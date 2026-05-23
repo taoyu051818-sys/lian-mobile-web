@@ -249,8 +249,10 @@ export function useInjectedSuggestedComponents(): Ref<SuggestedComponent[]> {
  *       event_time      → publishKind = "event"        (event panel opens)
  *       merchant_info   → publishKind = "merchant" if merchant_verified
  *       trade_condition → publishKind = "trade"   if campus_verified
- *       price           → merchant if merchant_verified, else trade if
- *                         campus_verified, else no kind change
+ *       price           → publishKind = "trade" (PRD V0.2 §4.2.3: accept(price)
+ *                         → kind=trade, enum 不变). Verification gates
+ *                         visibility, not inference — once the user can see
+ *                         and accept the ghost, treat it as a trade signal.
  *       help_tag        → tagInput defaults to "求助" when blank
  *       location        → no payload mutation; the location panel is owned
  *                         by usePublishLocationOptions outside this slice
@@ -346,15 +348,15 @@ export function createSuggestedComponentsActions(
         if (params.campusVerified.value) params.publishKind.value = "trade";
         break;
       case "price":
-        // 价格既可属 merchant 也可属 trade。merchant_verified 优先（商家页有
-        // 自己的"营业时间 / 联系方式"），否则落 trade（campus_verified 才进
-        // trade panel）。两个都不满足时不改 publishKind，但 ghost 仍被消费
-        // —— 用户的"忽略一次"意图在视觉上立刻生效。
-        if (params.merchantVerified.value) {
-          params.publishKind.value = "merchant";
-        } else if (params.campusVerified.value) {
-          params.publishKind.value = "trade";
-        }
+        // PRD V0.2 §4.2.3 拍板：accept(price) → kind=trade，enum 不变。
+        // The verification gate is a *visibility* concern (whether the
+        // ghost can appear at all — already enforced by capability gating
+        // upstream), not a *kind inference* concern. Once the user can
+        // see and accept the price ghost, treat it as a trade signal.
+        // merchant flow stays accept(merchant_info) — its own panel has
+        // distinct fields (营业时间 / 联系方式) that 'price' alone doesn't
+        // carry.
+        params.publishKind.value = "trade";
         break;
       case "help_tag":
         // Don't clobber a tag the user already typed — that would be the

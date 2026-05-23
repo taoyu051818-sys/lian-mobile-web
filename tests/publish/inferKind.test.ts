@@ -3,16 +3,19 @@ import { inferKind, type InferKindInput } from "../../src/features/publish/infer
 
 /**
  * PRD V0.2 step F (§2.2) — `kind` is no longer a user-picked radio. At submit
- * time we derive the wire-`kind` tag from a snapshot of the publish draft:
+ * time we derive the wire-`kind` tag from a snapshot of the publish draft.
  *
- *   - publishKind === "event"    → `event`
- *   - publishKind === "merchant" → `merchant`
- *   - publishKind === "trade"    → `trade`
- *   - tag === "#求助"           → `help`
- *   - has location, no image, no body → `place`
- *   - has image                 → `image`
- *   - else                      → `text`   (and `image` when both image+body
- *                                 are present, per PRD's 兜底 rule)
+ * Priority chain (top wins):
+ *
+ *   1. tag === "#求助"           → `help`   (explicit user-typed semantic)
+ *   2. hasImage                  → `image`  (PRD §2.2 媒体优先：有图就一定是
+ *                                            kind=image，即使 ghost 已化实)
+ *   3. publishKind === "event"   → `event`
+ *      publishKind === "merchant" → `merchant`
+ *      publishKind === "trade"  → `trade`   (also the result of
+ *                                            accept(price) per §4.2.3)
+ *   4. hasLocation && !hasBody   → `place`  (location-only card)
+ *   5. fallback                  → `text`
  *
  * Branches map 1:1 to the 7 PRD enum values plus the explicit fallback.
  */
@@ -28,15 +31,17 @@ function baseInput(): InferKindInput {
 }
 
 describe("inferKind (PRD V0.2 §2.2)", () => {
-  it("publishKind=event → 'event'", () => {
+  // -- Priority rule #1: 求助 tag is the top of the chain -------------------
+
+  it("publishKind=event → 'event' (no image, no help tag)", () => {
     expect(inferKind({ ...baseInput(), publishKind: "event", hasLocation: true })).toBe("event");
   });
 
-  it("publishKind=merchant → 'merchant' (merchant panel open ⇒ user explicitly entered merchant flow)", () => {
-    expect(inferKind({ ...baseInput(), publishKind: "merchant", hasImage: true })).toBe("merchant");
+  it("publishKind=merchant → 'merchant' (no image, no help tag)", () => {
+    expect(inferKind({ ...baseInput(), publishKind: "merchant", hasBody: true })).toBe("merchant");
   });
 
-  it("publishKind=trade → 'trade' (trade panel open ⇒ user explicitly entered trade flow)", () => {
+  it("publishKind=trade → 'trade' (no image, no help tag)", () => {
     expect(inferKind({ ...baseInput(), publishKind: "trade", hasBody: true })).toBe("trade");
   });
 
@@ -47,6 +52,30 @@ describe("inferKind (PRD V0.2 §2.2)", () => {
   it("raw 求助 tag without leading # also resolves to 'help' (defensive)", () => {
     expect(inferKind({ ...baseInput(), tag: "求助" })).toBe("help");
   });
+
+  // -- Priority rule #2: 媒体优先 — hasImage beats publishKind ghosts --------
+  // PRD V0.2 §2.2 拍板：「有图就一定是 kind=image。媒体优先级最高，即便用户
+  // 化实了 ghost component（地点/时间/价格），有图都覆盖。」
+
+  it("tag=求助 + hasImage → 'help' (tag still beats image, §2.2 媒体优先 is 图 vs ghost)", () => {
+    expect(inferKind({ ...baseInput(), tag: "求助", hasImage: true })).toBe("help");
+  });
+
+  it("hasImage + publishKind='trade' (from accept(price)) → 'image' (§2.2 媒体优先)", () => {
+    // accept(price) flips publishKind to 'trade' per §4.2.3; if the user
+    // also has an image attached, §2.2 says image wins.
+    expect(inferKind({ ...baseInput(), publishKind: "trade", hasImage: true })).toBe("image");
+  });
+
+  it("hasImage + publishKind='event' → 'image' (§2.2 媒体优先 over ghost-driven event)", () => {
+    expect(inferKind({ ...baseInput(), publishKind: "event", hasImage: true })).toBe("image");
+  });
+
+  it("hasImage + publishKind='merchant' → 'image' (§2.2 媒体优先 over ghost-driven merchant)", () => {
+    expect(inferKind({ ...baseInput(), publishKind: "merchant", hasImage: true })).toBe("image");
+  });
+
+  // -- Priority rule #4: place is location-only (already past image/panel) --
 
   it("only location bound → 'place'", () => {
     expect(inferKind({ ...baseInput(), hasLocation: true })).toBe("place");
@@ -64,7 +93,7 @@ describe("inferKind (PRD V0.2 §2.2)", () => {
     expect(inferKind({ ...baseInput(), hasImage: true, hasBody: true })).toBe("image");
   });
 
-  it("fallback (location + body, no image, no panel) → not 'place' because body is non-empty", () => {
+  it("fallback (location + body, no image, no panel) → 'text' (place is location-only)", () => {
     // 'place' is reserved for "location-only" — once body or image is present
     // the post is content with a place attached, not a place-card.
     expect(inferKind({ ...baseInput(), hasLocation: true, hasBody: true })).toBe("text");
@@ -80,40 +109,34 @@ describe("inferKind (PRD V0.2 §2.2)", () => {
     expect(inferKind(baseInput())).toBe("text");
   });
 
-  it("publishKind=merchant beats every other content-driven signal", () => {
-    // Merchant panel is an explicit user gesture (accept(merchant_info) ghost
-    // or future explicit entry); content-derived inference must defer to it.
+  it("publishKind=merchant without image still resolves to 'merchant' (panel beats place/text)", () => {
     expect(
       inferKind({
         ...baseInput(),
         publishKind: "merchant",
-        tag: "#求助",
-        hasImage: true,
         hasBody: true,
         hasLocation: true,
       }),
     ).toBe("merchant");
   });
 
-  it("publishKind=trade beats help / image / place", () => {
+  it("publishKind=trade without image still resolves to 'trade' (panel beats place/text)", () => {
     expect(
       inferKind({
         ...baseInput(),
         publishKind: "trade",
-        tag: "#求助",
-        hasImage: true,
+        hasBody: true,
         hasLocation: true,
       }),
     ).toBe("trade");
   });
 
-  it("publishKind=event beats help / image / place", () => {
+  it("publishKind=event without image still resolves to 'event' (panel beats place/text)", () => {
     expect(
       inferKind({
         ...baseInput(),
         publishKind: "event",
-        tag: "#求助",
-        hasImage: true,
+        hasBody: true,
         hasLocation: true,
       }),
     ).toBe("event");
