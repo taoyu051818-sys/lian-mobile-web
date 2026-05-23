@@ -42,3 +42,20 @@ function handleClick(event: MouseEvent) {
     <span class="lian-button__content"><slot /></span>
   </button>
 </template>
+
+<style>
+/*
+ * Apple Music gap PR-α: continuous state transition between
+ * rest / :hover / :active / :disabled. Properties are listed
+ * (not `all`) so layout-affecting properties stay snappy and
+ * future state-only changes pick up the easing automatically.
+ * prefers-reduced-motion is handled globally in
+ * src/styles/content-immersive-ui.css.
+ */
+.lian-button {
+  transition:
+    background-color var(--motion-fast) var(--motion-ease-standard),
+    opacity var(--motion-fast) var(--motion-ease-standard),
+    transform var(--motion-micro) var(--motion-ease-standard);
+}
+</style>
