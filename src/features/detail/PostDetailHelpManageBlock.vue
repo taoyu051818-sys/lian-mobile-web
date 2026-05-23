@@ -8,19 +8,28 @@
  *
  * Status transitions follow `planHelpManage()` — the view never reasons
  * about HelpStatus directly. All copy comes from brand/i18n.
+ *
+ * mw#827 PR-3: every author-side action button derives the 6-state CTA
+ * vocabulary from `DetailCtaButton` so the manage row reads through the
+ * same ARIA contract as vote / errand. Per-button "active" tracking
+ * keeps the spinner localized to the action that is actually mid-flight,
+ * the other rows go muted but do not spin (mirrors the trade-manage
+ * block in this PR).
  */
 import { computed, ref } from "vue";
 import {
   HELP_MANAGE_BLOCK_LABEL,
+  HELP_MANAGE_CLOSE,
   HELP_MANAGE_LINK_EVENT,
-  HELP_MANAGE_LINK_EVENT_PLACEHOLDER,
   HELP_MANAGE_LINK_EVENT_HINT,
   HELP_MANAGE_LINK_EVENT_INVALID,
-  HELP_MANAGE_RESOLVE,
-  HELP_MANAGE_CLOSE,
+  HELP_MANAGE_LINK_EVENT_PLACEHOLDER,
   HELP_MANAGE_PENDING,
+  HELP_MANAGE_RESOLVE,
 } from "../../config/brand";
 import { parseEventTidInput, type HelpManagePlan } from "../../domain/helpManagePolicy";
+import DetailCtaButton from "./DetailCtaButton.vue";
+import { selectHelpManageCtaState } from "./detailCtaState";
 
 const props = defineProps<{
   plan: HelpManagePlan;
@@ -39,8 +48,14 @@ const emit = defineEmits<{
   close: [];
 }>();
 
+type ManageActionId = "link" | "unlink" | "resolve" | "close";
+
 const linkInput = ref("");
 const localError = ref("");
+// Per-action spin tracking — only the row the user clicked spins, the rest
+// turn muted. Reset on the next click; `busy` tracks the actual fetch and
+// drives the disabled state for everything else.
+const activeAction = ref<ManageActionId | null>(null);
 
 const allowed = computed(() => props.plan.allowed);
 const canLink = computed(() => props.showLinkEvent ?? allowed.value.has("linkEvent"));
@@ -51,6 +66,25 @@ const hasVisibleActions = computed(
   () => canLink.value || canUnlink.value || canResolve.value || canClose.value,
 );
 
+const ctaState = (id: ManageActionId) =>
+  computed(() =>
+    selectHelpManageCtaState({
+      busy: props.busy,
+      active: activeAction.value === id,
+      hasError: Boolean(props.actionError) && activeAction.value === id,
+    }),
+  );
+
+const linkState = ctaState("link");
+const unlinkState = ctaState("unlink");
+const resolveState = ctaState("resolve");
+const closeState = ctaState("close");
+
+const linkLabel = computed(() => (props.busy ? HELP_MANAGE_PENDING : HELP_MANAGE_LINK_EVENT));
+const unlinkLabel = computed(() => (props.busy ? HELP_MANAGE_PENDING : HELP_MANAGE_LINK_EVENT));
+const resolveLabel = computed(() => (props.busy ? HELP_MANAGE_PENDING : HELP_MANAGE_RESOLVE));
+const closeLabel = computed(() => (props.busy ? HELP_MANAGE_PENDING : HELP_MANAGE_CLOSE));
+
 function submitLink() {
   if (!canLink.value || props.busy) return;
   const tid = parseEventTidInput(linkInput.value);
@@ -59,8 +93,27 @@ function submitLink() {
     return;
   }
   localError.value = "";
+  activeAction.value = "link";
   emit("linkEvent", tid);
   linkInput.value = "";
+}
+
+function handleUnlink() {
+  if (!canUnlink.value || props.busy) return;
+  activeAction.value = "unlink";
+  emit("unlinkEvent");
+}
+
+function handleResolve() {
+  if (!canResolve.value || props.busy) return;
+  activeAction.value = "resolve";
+  emit("resolve");
+}
+
+function handleClose() {
+  if (!canClose.value || props.busy) return;
+  activeAction.value = "close";
+  emit("close");
 }
 </script>
 
@@ -88,56 +141,54 @@ function submitLink() {
           data-testid="help-manage-link-input"
           @keyup.enter="submitLink"
         />
-        <button
-          type="button"
-          class="post-detail-help-manage__button post-detail-help-manage__button--primary"
-          :disabled="busy || !linkInput.trim()"
-          data-testid="help-manage-link-submit"
+        <DetailCtaButton
+          :label="linkLabel"
+          :state="linkState.value"
+          test-id="detail-cta-help-link-event"
           @click="submitLink"
-        >
-          {{ busy ? HELP_MANAGE_PENDING : HELP_MANAGE_LINK_EVENT }}
-        </button>
+        />
       </div>
-      <p v-if="localError" class="post-detail-help-manage__error" role="alert">
+      <p
+        v-if="localError"
+        class="post-detail-help-manage__error"
+        role="alert"
+        data-testid="help-manage-link-error"
+      >
         {{ localError }}
       </p>
     </div>
 
-    <button
+    <DetailCtaButton
       v-if="canUnlink"
-      type="button"
-      class="post-detail-help-manage__button"
-      :disabled="busy"
-      data-testid="help-manage-unlink"
-      @click="emit('unlinkEvent')"
-    >
-      {{ busy ? HELP_MANAGE_PENDING : HELP_MANAGE_LINK_EVENT }}
-    </button>
+      :label="unlinkLabel"
+      :state="unlinkState.value"
+      test-id="detail-cta-help-unlink-event"
+      @click="handleUnlink"
+    />
 
     <div class="post-detail-help-manage__row post-detail-help-manage__row--terminal">
-      <button
+      <DetailCtaButton
         v-if="canResolve"
-        type="button"
-        class="post-detail-help-manage__button post-detail-help-manage__button--resolve"
-        :disabled="busy"
-        data-testid="help-manage-resolve"
-        @click="emit('resolve')"
-      >
-        {{ busy ? HELP_MANAGE_PENDING : HELP_MANAGE_RESOLVE }}
-      </button>
-      <button
+        :label="resolveLabel"
+        :state="resolveState.value"
+        test-id="detail-cta-help-resolve"
+        @click="handleResolve"
+      />
+      <DetailCtaButton
         v-if="canClose"
-        type="button"
-        class="post-detail-help-manage__button post-detail-help-manage__button--close"
-        :disabled="busy"
-        data-testid="help-manage-close"
-        @click="emit('close')"
-      >
-        {{ busy ? HELP_MANAGE_PENDING : HELP_MANAGE_CLOSE }}
-      </button>
+        :label="closeLabel"
+        :state="closeState.value"
+        test-id="detail-cta-help-close"
+        @click="handleClose"
+      />
     </div>
 
-    <p v-if="actionError" class="post-detail-help-manage__error" role="alert">
+    <p
+      v-if="actionError"
+      class="post-detail-help-manage__error"
+      role="alert"
+      data-testid="post-detail-help-manage-error"
+    >
       {{ actionError }}
     </p>
   </section>
@@ -201,42 +252,6 @@ function submitLink() {
 
 .post-detail-help-manage__input:disabled {
   opacity: 0.6;
-}
-
-.post-detail-help-manage__button {
-  appearance: none;
-  border: 1px solid var(--lian-line, rgba(0, 0, 0, 0.12));
-  border-radius: var(--radius-chip, 999px);
-  background: var(--lian-surface-1, rgba(255, 255, 255, 0.92));
-  color: var(--lian-ink);
-  height: 36px;
-  padding: 0 var(--space-3);
-  font-weight: 700;
-  font-size: 13px;
-  cursor: pointer;
-}
-
-.post-detail-help-manage__button:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.post-detail-help-manage__button--primary {
-  background: var(--lian-accent, #2858a5);
-  color: white;
-  border-color: transparent;
-}
-
-.post-detail-help-manage__button--resolve {
-  background: rgba(80, 160, 100, 0.16);
-  color: #2f6f47;
-  border-color: rgba(80, 160, 100, 0.32);
-}
-
-.post-detail-help-manage__button--close {
-  background: rgba(120, 120, 120, 0.12);
-  color: #444;
-  border-color: rgba(120, 120, 120, 0.24);
 }
 
 .post-detail-help-manage__error {

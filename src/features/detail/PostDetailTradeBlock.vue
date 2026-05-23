@@ -5,6 +5,12 @@
  * Renders the trade extension on the post detail panel: state badge, price,
  * category row, verified-campus stamp, and the §J7 risk hint with a contact
  * cue that points back to the existing reply dock (no DM in V0.1).
+ *
+ * mw#827 PR-3: the buyer-facing contact cue is now a `DetailCtaButton` so
+ * it derives the same 6-state ARIA contract as the merchant errand CTA.
+ * For terminal states (sold / cancelled / hidden) the button rolls into
+ * the muted disabled tone with a `reason` chip, killing the "looks
+ * clickable, isn't" surface that the V0.1 plain text used to project.
  */
 import { computed } from "vue";
 import {
@@ -12,6 +18,10 @@ import {
   TRADE_CATEGORY_LABEL,
   TRADE_CATEGORY_UNSET,
   TRADE_CONTACT_CTA,
+  TRADE_CONTACT_DISABLED_CANCELLED,
+  TRADE_CONTACT_DISABLED_HIDDEN,
+  TRADE_CONTACT_DISABLED_RESERVED,
+  TRADE_CONTACT_DISABLED_SOLD,
   TRADE_CONTACT_HINT,
   TRADE_PRICE_LABEL,
   TRADE_RISK_HINT,
@@ -24,6 +34,8 @@ import {
   TRADE_VERIFIED_PREFIX,
 } from "../../config/brand";
 import type { TradePostExtension, TradeState } from "../../types/post-extensions";
+import DetailCtaButton from "./DetailCtaButton.vue";
+import { selectTradeCtaState } from "./detailCtaState";
 
 const props = defineProps<{
   trade: TradePostExtension;
@@ -50,6 +62,33 @@ const verifiedAtLabel = computed(() => {
   const dd = String(date.getDate()).padStart(2, "0");
   return `${TRADE_VERIFIED_AT_PREFIX} ${yyyy}-${mm}-${dd}`;
 });
+
+// mw#827 PR-3 — derive the 6-state CTA from the trade lifecycle. Reserved
+// is enabled (the buyer can still ask "still available?"), terminal states
+// (sold / cancelled / hidden) collapse to muted with the reason copy.
+const contactCtaState = computed(() => selectTradeCtaState(props.trade.state));
+
+const TRADE_CONTACT_DISABLED_LABEL: Record<TradeState, string> = {
+  available: "",
+  reserved: TRADE_CONTACT_DISABLED_RESERVED,
+  sold: TRADE_CONTACT_DISABLED_SOLD,
+  cancelled: TRADE_CONTACT_DISABLED_CANCELLED,
+  hidden: TRADE_CONTACT_DISABLED_HIDDEN,
+};
+
+const contactMessage = computed(() => {
+  const disabled = TRADE_CONTACT_DISABLED_LABEL[props.trade.state];
+  return disabled || TRADE_CONTACT_HINT;
+});
+
+// V0.1 contract: contact happens via the existing reply dock (no DM). The
+// click handler stays a no-op at this layer — `DetailCtaButton` already gates
+// disabled / loading at the LianButton level, and the reply dock owns the
+// actual "compose a message" affordance. PR-4 (overlay-exit) is where the
+// scroll-to-dock follow-up lands.
+function handleContactClick() {
+  /* no-op — see comment above */
+}
 </script>
 
 <template>
@@ -89,9 +128,20 @@ const verifiedAtLabel = computed(() => {
       {{ TRADE_RISK_HINT }}
     </p>
 
-    <div class="post-detail-trade-block__contact" data-testid="post-detail-trade-contact">
-      <p class="post-detail-trade-block__contact-line">{{ TRADE_CONTACT_CTA }}</p>
-      <p class="post-detail-trade-block__contact-hint">{{ TRADE_CONTACT_HINT }}</p>
+    <div
+      class="post-detail-trade-block__contact"
+      :class="{ 'is-disabled': contactCtaState === 'disabled' }"
+      data-testid="post-detail-trade-contact"
+      :data-cta-state="contactCtaState"
+    >
+      <DetailCtaButton
+        :label="TRADE_CONTACT_CTA"
+        :state="contactCtaState"
+        :message="contactMessage"
+        test-id="detail-cta-trade-contact"
+        message-test-id="post-detail-trade-contact-hint"
+        @click="handleContactClick"
+      />
     </div>
   </section>
 </template>
@@ -211,16 +261,8 @@ const verifiedAtLabel = computed(() => {
   background: rgba(31, 167, 160, 0.06);
 }
 
-.post-detail-trade-block__contact-line {
-  margin: 0;
-  color: var(--lian-ink);
-  font-weight: 700;
-  font-size: 14px;
-}
-
-.post-detail-trade-block__contact-hint {
-  margin: 0;
-  color: var(--lian-muted);
-  font-size: 12px;
+.post-detail-trade-block__contact.is-disabled {
+  border-color: rgba(120, 120, 120, 0.32);
+  background: rgba(120, 120, 120, 0.06);
 }
 </style>
