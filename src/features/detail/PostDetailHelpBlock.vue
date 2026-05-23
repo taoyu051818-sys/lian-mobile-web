@@ -9,14 +9,14 @@
  * mw#827 PR-3: the primary vote / unvote CTA derives the 6-state
  * vocabulary from the shared `DetailCtaButton`. State mapping
  * (`selectHelpCtaState` in `detailCtaState.ts`):
- *   - `vote`   (clickable)            → `enabled`
- *   - `unvote` (clickable, latched)   → `success` so aria-pressed="true"
- *                                       reads as the toggle-on Apple §5
- *                                       pattern asks for
- *   - busy                            → `loading` (aria-busy)
- *   - resolved / closed               → `disabled` + reason
- *   - notSignedIn                     → `reason` (permission cause)
- *   - actionError                     → `failure`
+ *   - `vote`   (clickable)            -> `enabled`
+ *   - `unvote` (clickable, latched)   -> `success` so the underlying button
+ *                                       latches its toggle-on ARIA bit per
+ *                                       Apple §5
+ *   - busy                            -> `loading` (aria-busy)
+ *   - resolved / closed               -> `disabled` + reason
+ *   - notSignedIn                     -> `reason` (permission cause)
+ *   - actionError                     -> `failure`
  *
  * The "查看关联活动" entry stays a secondary action (a tonal `LianButton`
  * ghost) so the visual hierarchy keeps the primary vote CTA on top — this
@@ -115,7 +115,11 @@ const ctaMessage = computed(() => {
 });
 
 function handleAct() {
-  if (ctaState.value === "loading" || ctaState.value === "disabled" || ctaState.value === "reason") {
+  if (
+    ctaState.value === "loading" ||
+    ctaState.value === "disabled" ||
+    ctaState.value === "reason"
+  ) {
     return;
   }
   emit("act");

@@ -67,18 +67,16 @@ const hasVisibleActions = computed(
 );
 
 const ctaState = (id: ManageActionId) =>
-  computed(() =>
-    selectHelpManageCtaState({
-      busy: props.busy,
-      active: activeAction.value === id,
-      hasError: Boolean(props.actionError) && activeAction.value === id,
-    }),
-  );
+  selectHelpManageCtaState({
+    busy: props.busy,
+    active: activeAction.value === id,
+    hasError: Boolean(props.actionError) && activeAction.value === id,
+  });
 
-const linkState = ctaState("link");
-const unlinkState = ctaState("unlink");
-const resolveState = ctaState("resolve");
-const closeState = ctaState("close");
+const linkState = computed(() => ctaState("link"));
+const unlinkState = computed(() => ctaState("unlink"));
+const resolveState = computed(() => ctaState("resolve"));
+const closeState = computed(() => ctaState("close"));
 
 const linkLabel = computed(() => (props.busy ? HELP_MANAGE_PENDING : HELP_MANAGE_LINK_EVENT));
 const unlinkLabel = computed(() => (props.busy ? HELP_MANAGE_PENDING : HELP_MANAGE_LINK_EVENT));
@@ -143,7 +141,7 @@ function handleClose() {
         />
         <DetailCtaButton
           :label="linkLabel"
-          :state="linkState.value"
+          :state="linkState"
           test-id="detail-cta-help-link-event"
           @click="submitLink"
         />
@@ -161,7 +159,7 @@ function handleClose() {
     <DetailCtaButton
       v-if="canUnlink"
       :label="unlinkLabel"
-      :state="unlinkState.value"
+      :state="unlinkState"
       test-id="detail-cta-help-unlink-event"
       @click="handleUnlink"
     />
@@ -170,14 +168,14 @@ function handleClose() {
       <DetailCtaButton
         v-if="canResolve"
         :label="resolveLabel"
-        :state="resolveState.value"
+        :state="resolveState"
         test-id="detail-cta-help-resolve"
         @click="handleResolve"
       />
       <DetailCtaButton
         v-if="canClose"
         :label="closeLabel"
-        :state="closeState.value"
+        :state="closeState"
         test-id="detail-cta-help-close"
         @click="handleClose"
       />
