@@ -23,6 +23,7 @@ import { InlineError } from "../../ui";
 import { AuthPanel } from "../auth";
 import ProfileEditorPanel from "./ProfileEditorPanel.vue";
 import ProfileHeader from "./ProfileHeader.vue";
+import ProfilePostsContentFilter from "./ProfilePostsContentFilter.vue";
 import ProfileServerChanBlock from "./ProfileServerChanBlock.vue";
 import ProfileSettingsBlock from "./ProfileSettingsBlock.vue";
 import ProfileStatsBlock from "./ProfileStatsBlock.vue";
@@ -61,7 +62,9 @@ const {
   profileItems,
   tabs,
   listEmptyText,
+  postsContentFilter,
   loadProfileList,
+  selectPostsContentFilter,
   resetList: _resetList,
 } = useProfileTabs({
   user,
@@ -192,6 +195,19 @@ onMounted(() => {
       <ProfileServerChanBlock :is-authenticated="Boolean(user)" />
 
       <ProfileTabs :tabs="tabs" :active-tab="activeTab" @select="loadProfileList" />
+
+      <!--
+        issue #611 PR-C: posts-tab content filter chip strip. Gated on the
+        active tab so chips do not flash when the user is browsing other
+        collections. Backend `/api/me/posts?presentationIntent=` already
+        supports the filter; the chip strip just emits the chosen value
+        through useProfileTabs.selectPostsContentFilter.
+      -->
+      <ProfilePostsContentFilter
+        v-if="activeTab === 'posts'"
+        :model-value="postsContentFilter"
+        @select="selectPostsContentFilter"
+      />
 
       <!--
         issue #609 PR1: orders tab renders ProfileErrandOrdersBlock; every

@@ -23,6 +23,51 @@ describe("profile activity tab routing", () => {
       body: JSON.stringify({ tids: [11, 22] }),
     });
   });
+
+  it("forwards the posts content filter as ?presentationIntent= for non-all values", () => {
+    // PR-C of #611: posts tab can be narrowed to merchant / trade / help by
+    // forwarding presentationIntent through to the existing backend filter
+    // (`profile-activity-service.js` parseActivityContentFilter).
+    expect(resolveProfileTabRequest("posts", [], { contentFilter: "merchant" })).toEqual({
+      path: "/api/me/posts?presentationIntent=merchant",
+      method: "GET",
+    });
+    expect(resolveProfileTabRequest("posts", [], { contentFilter: "trade" })).toEqual({
+      path: "/api/me/posts?presentationIntent=trade",
+      method: "GET",
+    });
+    expect(resolveProfileTabRequest("posts", [], { contentFilter: "help" })).toEqual({
+      path: "/api/me/posts?presentationIntent=help",
+      method: "GET",
+    });
+  });
+
+  it("treats contentFilter='all' as the no-query default", () => {
+    expect(resolveProfileTabRequest("posts", [], { contentFilter: "all" })).toEqual({
+      path: "/api/me/posts",
+      method: "GET",
+    });
+    // Explicitly omitting the option must behave the same as "all" so that
+    // existing callers that never pass a filter keep working.
+    expect(resolveProfileTabRequest("posts")).toEqual({
+      path: "/api/me/posts",
+      method: "GET",
+    });
+  });
+
+  it("ignores contentFilter on tabs other than posts", () => {
+    // The chip strip is gated on activeTab === "posts" in the view, but the
+    // resolver should not silently silently slap a presentationIntent on the
+    // wrong endpoint if a caller ever passes one through.
+    expect(resolveProfileTabRequest("saved", [], { contentFilter: "merchant" })).toEqual({
+      path: "/api/me/saved",
+      method: "GET",
+    });
+    expect(resolveProfileTabRequest("liked", [], { contentFilter: "trade" })).toEqual({
+      path: "/api/me/liked",
+      method: "GET",
+    });
+  });
 });
 
 describe("profile activity normalization", () => {
