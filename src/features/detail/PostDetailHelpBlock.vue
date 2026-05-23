@@ -4,30 +4,47 @@
  *
  * Renders the help extension on the post detail panel: status pill, vote
  * count, primary vote/unvote button, and a "view linked event" entry when
- * the help has been promoted to an event. The button only enables when
- * `planHelpVote()` says it should — disabled state shows the localized
- * reason (resolved / closed / not signed in).
+ * the help has been promoted to an event.
  *
- * All copy comes from brand/i18n; the view only does layout + accessibility.
+ * mw#827 PR-3: the primary vote / unvote CTA derives the 6-state
+ * vocabulary from the shared `DetailCtaButton`. State mapping
+ * (`selectHelpCtaState` in `detailCtaState.ts`):
+ *   - `vote`   (clickable)            -> `enabled`
+ *   - `unvote` (clickable, latched)   -> `success` so the underlying button
+ *                                       latches its toggle-on ARIA bit per
+ *                                       Apple §5
+ *   - busy                            -> `loading` (aria-busy)
+ *   - resolved / closed               -> `disabled` + reason
+ *   - notSignedIn                     -> `reason` (permission cause)
+ *   - actionError                     -> `failure`
+ *
+ * The "查看关联活动" entry stays a secondary action (a tonal `LianButton`
+ * ghost) so the visual hierarchy keeps the primary vote CTA on top — this
+ * is the "作者管理 / vote / link event 与普通互动的优先级分层" the issue
+ * calls out. 普通互动 (like / comment) lives in PostReplyDock and stays
+ * unchanged; the dock already owns its own state vocabulary (#130).
  */
 import { computed } from "vue";
 import {
   HELP_BLOCK_LABEL,
-  HELP_STATUS_OPEN,
-  HELP_STATUS_LINKED_EVENT,
-  HELP_STATUS_RESOLVED,
-  HELP_STATUS_CLOSED,
-  HELP_VOTE_COUNT_PREFIX,
-  HELP_VOTE,
-  HELP_UNVOTE,
-  HELP_VOTE_PENDING,
-  HELP_DISABLED_RESOLVED,
   HELP_DISABLED_CLOSED,
   HELP_DISABLED_NOT_SIGNED_IN,
+  HELP_DISABLED_RESOLVED,
   HELP_LINKED_EVENT_LABEL,
+  HELP_STATUS_CLOSED,
+  HELP_STATUS_LINKED_EVENT,
+  HELP_STATUS_OPEN,
+  HELP_STATUS_RESOLVED,
+  HELP_UNVOTE,
+  HELP_VOTE,
+  HELP_VOTE_COUNT_PREFIX,
+  HELP_VOTE_PENDING,
 } from "../../config/brand";
 import { helpHasLinkedEvent, type HelpVotePlan } from "../../domain/helpVotePolicy";
 import type { HelpPostExtension, HelpStatus } from "../../types/post-extensions";
+import LianButton from "../../ui/LianButton.vue";
+import DetailCtaButton from "./DetailCtaButton.vue";
+import { selectHelpCtaState } from "./detailCtaState";
 
 const props = defineProps<{
   help: HelpPostExtension;
@@ -76,6 +93,38 @@ const showLinkedEntry = computed(() => {
   return helpHasLinkedEvent(props.help);
 });
 
+// mw#827 PR-3 — derive the 6-state CTA from the existing plan + busy +
+// actionError signals. Wrappers do not leak any new state into the
+// composable — `useHelpVote` keeps owning the busy / error truth.
+const ctaState = computed(() =>
+  selectHelpCtaState({
+    mode: props.plan.mode,
+    enabled: props.plan.enabled,
+    reasonKey: props.plan.reasonKey,
+    busy: props.busy,
+    hasError: Boolean(props.actionError),
+  }),
+);
+
+// Reason copy lives below the CTA. Reuse the existing brand strings — the
+// vocabulary swap doesn't change the user-facing copy.
+const ctaMessage = computed(() => {
+  if (props.actionError) return props.actionError;
+  if (!props.plan.enabled && disabledReason.value) return disabledReason.value;
+  return "";
+});
+
+function handleAct() {
+  if (
+    ctaState.value === "loading" ||
+    ctaState.value === "disabled" ||
+    ctaState.value === "reason"
+  ) {
+    return;
+  }
+  emit("act");
+}
+
 function handleOpenLinkedEvent() {
   if (typeof props.help.linkedEventTid === "number") {
     emit("openLinkedEvent", props.help.linkedEventTid);
@@ -96,39 +145,32 @@ function handleOpenLinkedEvent() {
       <span class="post-detail-help-block__votes">{{ voteLabel }}</span>
     </header>
 
-    <button
+    <DetailCtaButton
       v-if="showPrimaryAction"
-      type="button"
-      class="post-detail-help-block__action"
-      :disabled="!plan.enabled || busy"
-      :aria-disabled="!plan.enabled || busy"
+      :label="buttonLabel"
+      :state="ctaState"
+      :message="ctaMessage"
       :data-mode="plan.mode"
-      data-testid="post-detail-help-action"
-      @click="emit('act')"
-    >
-      {{ buttonLabel }}
-    </button>
+      test-id="detail-cta-help-vote"
+      message-test-id="post-detail-help-hint"
+      @click="handleAct"
+    />
 
-    <p
-      v-if="showPrimaryAction && disabledReason && !plan.enabled"
-      class="post-detail-help-block__hint"
-    >
-      {{ disabledReason }}
-    </p>
-
-    <button
+    <div
       v-if="showLinkedEntry"
-      type="button"
-      class="post-detail-help-block__linked"
-      data-testid="post-detail-help-linked-event"
-      @click="handleOpenLinkedEvent"
+      class="post-detail-help-block__secondary"
+      data-testid="post-detail-help-secondary-row"
     >
-      {{ HELP_LINKED_EVENT_LABEL }}
-    </button>
-
-    <p v-if="actionError" class="post-detail-help-block__error" role="alert">
-      {{ actionError }}
-    </p>
+      <LianButton
+        variant="ghost"
+        size="md"
+        class="post-detail-help-block__linked"
+        data-testid="post-detail-help-linked-event"
+        @click="handleOpenLinkedEvent"
+      >
+        {{ HELP_LINKED_EVENT_LABEL }}
+      </LianButton>
+    </div>
   </section>
 </template>
 
@@ -180,52 +222,20 @@ function handleOpenLinkedEvent() {
   font-size: 13px;
 }
 
-.post-detail-help-block__action {
-  appearance: none;
-  border: 0;
-  border-radius: var(--radius-chip, 999px);
-  background: var(--lian-accent, #2858a5);
-  color: white;
-  font-weight: 800;
-  height: 40px;
-  padding: 0 var(--space-4);
-  cursor: pointer;
-}
-
-.post-detail-help-block__action:disabled {
-  background: rgba(120, 120, 120, 0.32);
-  color: rgba(255, 255, 255, 0.84);
-  cursor: not-allowed;
-}
-
-.post-detail-help-block__action[data-mode="unvote"] {
-  background: var(--lian-surface-1, rgba(255, 255, 255, 0.8));
-  color: var(--lian-ink);
-  border: 1px solid var(--lian-line, rgba(0, 0, 0, 0.12));
-}
-
-.post-detail-help-block__hint {
-  margin: 0;
-  color: var(--lian-muted);
-  font-size: 13px;
+/*
+ * Visual hierarchy (mw#827 PR-3): the secondary "linked event" row sits
+ * below the primary vote CTA at lower contrast. Smaller font + muted ink
+ * keeps the primary vote CTA dominant. 普通互动 (like / comment) lives in
+ * the reply dock and stays at its existing contrast — outside this block.
+ */
+.post-detail-help-block__secondary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-1);
 }
 
 .post-detail-help-block__linked {
-  appearance: none;
-  border: 1px solid var(--lian-line, rgba(0, 0, 0, 0.12));
-  border-radius: var(--radius-chip, 999px);
-  background: transparent;
-  color: var(--lian-accent, #2858a5);
-  height: 36px;
-  padding: 0 var(--space-3);
-  font-weight: 700;
-  cursor: pointer;
-  align-self: start;
-}
-
-.post-detail-help-block__error {
-  margin: 0;
-  color: var(--lian-danger, #a14040);
   font-size: 13px;
 }
 </style>

@@ -14,6 +14,11 @@ export const TRADE_STATE_HIDDEN = "已隐藏";
 export const TRADE_RISK_HINT = "请校园内当面交易，警惕异地汇款。";
 export const TRADE_CONTACT_CTA = "评论区联系卖家";
 export const TRADE_CONTACT_HINT = "在下方评论区直接留言，避免脱离平台沟通。";
+/** mw#827 PR-3 — disabled-state copy when the trade is no longer engageable. */
+export const TRADE_CONTACT_DISABLED_RESERVED = "已被预订，等待买家确认中。";
+export const TRADE_CONTACT_DISABLED_SOLD = "已出售，无法继续交易。";
+export const TRADE_CONTACT_DISABLED_CANCELLED = "已取消，作者撤下了这条二手帖。";
+export const TRADE_CONTACT_DISABLED_HIDDEN = "作者已隐藏这条二手帖。";
 
 /** 二手发布 (PRD V0.1 §11) */
 export const PUBLISH_TYPE_TRADE = "二手帖";

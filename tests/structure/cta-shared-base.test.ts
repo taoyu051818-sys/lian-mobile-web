@@ -35,6 +35,15 @@ const detailDir = path.join(repoRoot, "src", "features", "detail");
  * a new entry here requires the reviewer to confirm the button is not a
  * primary CTA — for primary CTAs the right answer is to migrate to
  * `DetailCtaButton`.
+ *
+ * mw#827 PR-3 has migrated the trade + help primary CTAs:
+ *   - PostDetailHelpBlock           → vote / unvote via DetailCtaButton
+ *   - PostDetailHelpManageBlock     → link / unlink / resolve / close via DetailCtaButton
+ *   - PostDetailTradeManageBlock    → state transition matrix via DetailCtaButton
+ *   - PostDetailTradeBlock          → contact CTA via DetailCtaButton
+ * so those entries are gone from this allowlist. The remaining entries are
+ * either chrome (topbar, info strip), affordances inside sheets (lightbox,
+ * share, place sheet), or the IME-bound reply dock.
  */
 const GRANDFATHERED_BARE_BUTTONS: Record<string, string> = {
   "PostDetailGallery.vue": "image thumb tile — not a primary CTA, no 6-state surface needed",
@@ -42,14 +51,8 @@ const GRANDFATHERED_BARE_BUTTONS: Record<string, string> = {
     "info chip dismiss + place-sheet open — affordances on a metadata strip, not a primary CTA",
   "PostDetailPanel.vue":
     "loading-error retry button — temporary, will fold into the 6-state CTA surface in the wave 3-B follow-up",
-  "PostDetailHelpManageBlock.vue":
-    "author-side manage controls — covered by the wave 3-B trade/help CTA migration (mw#827 PR-3)",
   "PostReplyDock.vue":
     "reply composer mode toggles + send — IME-bound surface, owns its own state vocabulary (#130)",
-  "PostDetailHelpBlock.vue":
-    "vote / cancel-vote helper actions — covered by the wave 3-B trade/help CTA migration (mw#827 PR-3)",
-  "PostDetailTradeManageBlock.vue":
-    "trade transition matrix — covered by the wave 3-B trade/help CTA migration (mw#827 PR-3)",
   "PostDetailEventBlock.vue":
     "event join / cancel / complete — covered by the wave 3-B event CTA migration (#827 PR-2)",
   "PostPlaceSheetBlock.vue":

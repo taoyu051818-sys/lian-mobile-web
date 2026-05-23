@@ -208,3 +208,95 @@ export function selectDetailCtaState(input: DetailCtaStateInput): DetailCtaState
   if (input.clickable === false) return "disabled";
   return "enabled";
 }
+
+/**
+ * Help vote CTA state selector (mw#827 PR-3).
+ *
+ * Maps the higher-level help vote inputs to the shared 6-state vocabulary so
+ * `PostDetailHelpBlock` can route vote / unvote / disabled-reason / busy /
+ * failure through `DetailCtaButton` without each block having to hand-roll
+ * its own ARIA wiring.
+ *
+ * Mode mapping:
+ *   - `unvote` (already voted, can retract) → `success`
+ *     The user has confirmed support — `success` is the only state that
+ *     locks `aria-pressed="true"` on the underlying button, which is the
+ *     correct toggle-on semantic per Apple gap §5.
+ *   - `vote` (not yet voted) → `enabled`
+ *   - `disabled` mode with `notSignedIn` → `reason` (permission cause)
+ *   - `disabled` mode with `alreadyResolved` / `alreadyClosed` → `disabled`
+ *     (state cause — the help itself is no longer voteable)
+ *
+ * `busy` and `actionError` always win, in that order, so a spinner does
+ * not disappear mid-flight and a recent failure stays loud until the next
+ * click resets the state.
+ */
+export type HelpCtaInput = {
+  mode: "vote" | "unvote" | "disabled";
+  enabled: boolean;
+  reasonKey: "" | "notSignedIn" | "alreadyResolved" | "alreadyClosed";
+  busy: boolean;
+  hasError: boolean;
+};
+
+export function selectHelpCtaState(input: HelpCtaInput): DetailCtaState {
+  if (input.busy) return "loading";
+  if (input.hasError) return "failure";
+  if (input.mode === "unvote" && input.enabled) return "success";
+  if (input.mode === "vote" && input.enabled) return "enabled";
+  if (input.reasonKey === "notSignedIn") return "reason";
+  return "disabled";
+}
+
+/**
+ * Trade buyer-side CTA state selector (mw#827 PR-3).
+ *
+ * The trade detail surface does not ship a buyer-side write action in
+ * V0.1 (contact happens in the comment dock — see PRD §J7), so the only
+ * inputs that matter are the trade lifecycle state and an optional author
+ * override. State mapping:
+ *   - `available` / `reserved` → `enabled` (buyer can engage via comments)
+ *   - `sold` / `cancelled` / `hidden` → `disabled` (terminal / withdrawn)
+ *
+ * The author-management surface (`PostDetailTradeManageBlock`) is a
+ * separate block; we keep the buyer CTA visible even for the author so
+ * the listing keeps a consistent affordance row.
+ */
+export type TradeCtaState = "available" | "reserved" | "sold" | "cancelled" | "hidden";
+
+export function selectTradeCtaState(state: TradeCtaState): DetailCtaState {
+  if (state === "available" || state === "reserved") return "enabled";
+  return "disabled";
+}
+
+/**
+ * Trade-manage per-button CTA state selector (mw#827 PR-3).
+ *
+ * The author-side transition controls each fire an independent network
+ * request. While any one is in flight the whole row goes muted but only
+ * the active row spins. `failure` surfaces when the most recent action
+ * errored — the next click resets the state via the busy bit.
+ */
+export type TradeManageCtaInput = {
+  busy: boolean;
+  active: boolean;
+  hasError: boolean;
+};
+
+export function selectTradeManageCtaState(input: TradeManageCtaInput): DetailCtaState {
+  if (input.busy && input.active) return "loading";
+  if (input.busy) return "disabled";
+  if (input.hasError) return "failure";
+  return "enabled";
+}
+
+/**
+ * Help-manage per-button CTA state selector (mw#827 PR-3).
+ *
+ * Same wire-shape as the trade-manage selector — the help-manage block
+ * also fans out independent network actions (link / unlink / resolve /
+ * close), only one of which is active at a time.
+ */
+export function selectHelpManageCtaState(input: TradeManageCtaInput): DetailCtaState {
+  return selectTradeManageCtaState(input);
+}

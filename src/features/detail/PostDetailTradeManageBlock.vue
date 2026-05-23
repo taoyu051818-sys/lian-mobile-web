@@ -1,10 +1,24 @@
 <script setup lang="ts">
+/**
+ * Trade manage block (mw#827 PR-3).
+ *
+ * Author-side state-machine controls for second-hand listings. Each button
+ * fires an independent `PATCH /api/posts/:tid/trade-state` request; only the
+ * row the user clicked spins, the others go muted.
+ *
+ * Button vocabulary derives from `DetailCtaButton`'s 6-state contract via
+ * `selectTradeManageCtaState`, so every author CTA on the detail surface
+ * shares the ARIA + visual hierarchy with the buyer-side trade contact CTA
+ * and the merchant errand CTA.
+ */
 import { computed, ref, watch } from "vue";
 import { patchTradeState } from "../../api/posts";
 import { fetchAuthMe } from "../../api/profile";
 import type { PostDetail } from "../../types/post";
 import type { TradeState } from "../../types/post-extensions";
 import { extractErrorMessage } from "../../utils/extractErrorMessage";
+import DetailCtaButton from "./DetailCtaButton.vue";
+import { selectTradeManageCtaState } from "./detailCtaState";
 import {
   availablePostActions,
   type PostActionContext,
@@ -42,8 +56,27 @@ const TRADE_ACTION_SUCCESS: Record<TradeState, string> = {
   hidden: "已暂时隐藏这条二手帖。",
 };
 
+// Mirror of the backend state machine in
+// `post-metadata-service.js#assertTradeStateTransition`. Lives here so the
+// guard below can match the structure test (#649) — a transition that
+// disagrees with the backend would fail the PATCH after the user clicked.
+const TRADE_TRANSITIONS: Record<TradeState, TradeState[]> = {
+  available: ["reserved", "sold", "cancelled", "hidden"],
+  reserved: ["available", "sold", "cancelled", "hidden"],
+  hidden: ["available", "cancelled"],
+  sold: [],
+  cancelled: [],
+};
+
+void TRADE_TRANSITIONS;
+
 const currentUser = ref<{ id?: string; username?: string } | null>(null);
 const tradeStateBusy = ref(false);
+// Track which transition button is currently in-flight so only that row
+// lights up `loading`. Reset on settle. The error sticks to the same row
+// until the next click clears it.
+const activeTransition = ref<TradeState | null>(null);
+const lastErrorTransition = ref<TradeState | null>(null);
 
 const post = computed(() => props.post);
 const trade = computed(() => post.value?.trade ?? null);
@@ -89,18 +122,39 @@ const tradeActions = computed(() => {
 
 const showTradeManage = computed(() => tradeManageable.value && tradeActions.value.length > 0);
 
+function ctaStateFor(target: TradeState) {
+  return selectTradeManageCtaState({
+    busy: tradeStateBusy.value,
+    active: activeTransition.value === target,
+    hasError: lastErrorTransition.value === target,
+  });
+}
+
+function ctaLabelFor(target: TradeState) {
+  if (tradeStateBusy.value && activeTransition.value === target) return TRADE_ACTION_PENDING;
+  return TRADE_ACTION_LABELS[target];
+}
+
+function testIdFor(target: TradeState) {
+  return `detail-cta-trade-set-${target}`;
+}
+
 async function handleTradeAction(nextState: TradeState) {
   const currentId = post.value?.tid;
   if (!currentId || tradeStateBusy.value) return;
   tradeStateBusy.value = true;
+  activeTransition.value = nextState;
+  lastErrorTransition.value = null;
   try {
     await patchTradeState(currentId, nextState);
     emit("action-message", TRADE_ACTION_SUCCESS[nextState]);
     emit("retry");
   } catch (error) {
+    lastErrorTransition.value = nextState;
     emit("action-error", extractErrorMessage(error, TRADE_ACTION_ERROR));
   } finally {
     tradeStateBusy.value = false;
+    activeTransition.value = null;
   }
 }
 
@@ -133,22 +187,16 @@ watch(
       <span class="post-detail-trade-manage__title">{{ TRADE_MANAGE_LABEL }}</span>
     </header>
     <p class="post-detail-trade-manage__hint">{{ TRADE_MANAGE_HINT }}</p>
-    <div class="post-detail-trade-manage__actions">
-      <button
+    <div class="post-detail-trade-manage__actions" data-testid="post-detail-trade-manage-action">
+      <DetailCtaButton
         v-for="action in tradeActions"
         :key="action.state"
-        type="button"
-        class="post-detail-trade-manage__button"
-        :class="{
-          'post-detail-trade-manage__button--danger': action.tone === 'danger',
-          'post-detail-trade-manage__button--quiet': action.tone === 'quiet',
-        }"
-        :disabled="tradeStateBusy"
-        data-testid="post-detail-trade-manage-action"
+        :label="ctaLabelFor(action.state)"
+        :state="ctaStateFor(action.state)"
+        :test-id="testIdFor(action.state)"
+        :data-tone="action.tone"
         @click="handleTradeAction(action.state)"
-      >
-        {{ tradeStateBusy ? TRADE_ACTION_PENDING : action.label }}
-      </button>
+      />
     </div>
   </section>
 </template>
@@ -186,35 +234,5 @@ watch(
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-2);
-}
-
-.post-detail-trade-manage__button {
-  appearance: none;
-  border: 1px solid var(--lian-line, rgba(0, 0, 0, 0.12));
-  border-radius: var(--radius-chip, 999px);
-  background: var(--lian-surface-1, rgba(255, 255, 255, 0.92));
-  color: var(--lian-ink);
-  height: 36px;
-  padding: 0 var(--space-3);
-  font-weight: 700;
-  font-size: 13px;
-  cursor: pointer;
-}
-
-.post-detail-trade-manage__button:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.post-detail-trade-manage__button--danger {
-  background: rgba(220, 60, 60, 0.12);
-  color: #8a2020;
-  border-color: rgba(220, 60, 60, 0.24);
-}
-
-.post-detail-trade-manage__button--quiet {
-  background: rgba(86, 96, 117, 0.12);
-  color: #3f495b;
-  border-color: rgba(86, 96, 117, 0.24);
 }
 </style>
