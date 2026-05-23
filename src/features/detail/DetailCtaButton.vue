@@ -34,7 +34,7 @@ defineEmits<{
     <button
       type="button"
       class="detail-cta-button__control"
-      :class="`is-${presentation.tone}`"
+      :class="`detail-cta-button__control--${presentation.tone}`"
       :disabled="presentation.disabled"
       :aria-disabled="presentation.disabled"
       :data-testid="testId"
@@ -70,22 +70,22 @@ defineEmits<{
     transform 120ms ease;
 }
 
-.detail-cta-button__control.is-primary {
+.detail-cta-button__control--primary {
   background: var(--lian-primary, #1fa7a0);
   color: rgba(255, 255, 255, 0.94);
 }
 
-.detail-cta-button__control.is-muted {
+.detail-cta-button__control--muted {
   background: rgba(120, 120, 120, 0.32);
   color: rgba(24, 24, 24, 0.84);
 }
 
-.detail-cta-button__control.is-success {
+.detail-cta-button__control--success {
   background: rgba(31, 167, 160, 0.18);
   color: #166b67;
 }
 
-.detail-cta-button__control.is-danger {
+.detail-cta-button__control--danger {
   background: rgba(209, 83, 83, 0.14);
   color: #8c2d2d;
 }
