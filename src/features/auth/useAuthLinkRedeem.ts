@@ -19,7 +19,7 @@
  */
 
 import { computed, ref, onMounted } from "vue";
-import { fetchAuthLinkCard, redeemAuthLink, AuthLinkError } from "../../api/authLink";
+import { fetchAuthLinkCard, redeemAuthLink, AuthLinkError, type AuthLinkCard } from "../../api/authLink";
 export type { AuthLinkCard } from "../../api/authLink";
 import {
   AUTH_LINK_ERROR_NOT_FOUND,
