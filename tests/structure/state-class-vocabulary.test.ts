@@ -9,12 +9,16 @@ const SRC = path.join(ROOT, "src");
 const GRANDFATHERED_PATH = path.join(__dirname, "state-class-grandfathered.json");
 
 // Source of truth: docs/frontend/state-vocabulary.md.
-// Eight names. New code must use one of these. New entries require both a doc
-// PR (state-vocabulary.md) AND adding the name here.
+// Nine names. New code must use one of these. New entries require both a doc
+// PR (state-vocabulary.md) AND adding the name here. Apple-gap PR-δ added
+// `.is-success` so the LianButton 6-state vocabulary has a result-positive
+// counterpart to `.is-error` (callers can show "saved" / "joined" / "sent"
+// confirmations through the same primitive).
 const ALLOWED_STATE_CLASSES = new Set([
   "is-loading",
   "is-empty",
   "is-error",
+  "is-success",
   "is-disabled",
   "is-pressed",
   "is-selected",

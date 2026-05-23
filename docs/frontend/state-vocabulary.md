@@ -15,15 +15,16 @@ cross-feature scavenger hunt.
 
 ## Allowed state classes
 
-Exactly these eight names are allowed on new code. New `.is-*` names must
+Exactly these nine names are allowed on new code. New `.is-*` names must
 come through a doc PR that updates this list (and the structure test will
 fail until they do).
 
 | Class          | Meaning                                                                                                                                                             |
 | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `.is-loading`  | Waiting on an async result (API call, upload, submit in flight). Mutually exclusive with `is-empty` / `is-error`.                                                   |
+| `.is-loading`  | Waiting on an async result (API call, upload, submit in flight). Mutually exclusive with `is-empty` / `is-error` / `is-success`.                                    |
 | `.is-empty`    | Data is empty after a successful load. Empty is a settled state, not a loading state.                                                                               |
 | `.is-error`    | Failure state (network / validation / business error).                                                                                                              |
+| `.is-success`  | Settled positive result (saved, joined, sent). Mutually exclusive with `is-loading` / `is-error`. Used by the `LianButton` 6-state vocabulary as the "ack" partner. |
 | `.is-disabled` | Disabled (insufficient permissions, prerequisite unmet, temporarily unavailable). Pair with `aria-disabled` or `disabled`.                                          |
 | `.is-pressed`  | Pressed / toggled on. Pair with `aria-pressed="true"`. Use this for self-referential toggles (a like button on its own post, a bookmark icon).                      |
 | `.is-selected` | Selected from a set. Pair with `aria-selected="true"` for tabs / segmented controls / multi-select. Use this when there are siblings the user could choose instead. |
