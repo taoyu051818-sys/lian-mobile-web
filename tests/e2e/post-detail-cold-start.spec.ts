@@ -15,29 +15,77 @@
  *
  * Tagged @detail. Picked up by the e2e-journey.yml grep matrix.
  *
- * Runs against APP_BASE_URL (default https://lian.nat100.top) — no login
- * needed; we use the first public feed item so anonymous browse works.
+ * Hermetic via page.route stubs against /api/feed and /api/posts/:tid. The
+ * shipping #636 contract (body-level mount, role=dialog, hash transitions,
+ * underlying tab bar untouched, shell slot DOM mounted before teleport) still
+ * runs end-to-end against the real browser; only the data plane is mocked so
+ * the gate does not depend on whether nat100's feed currently exposes a public
+ * topic. Without the stubs the spec was the dominant PR-gate red because
+ * nat100 `/api/feed` is returning `items: []` for every tab right now, which
+ * starves the original `firstPublicFeedTid()` precondition.
  */
 
-import { expect, request, test, type APIRequestContext } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 
-const BASE_URL = process.env.APP_BASE_URL ?? "https://lian.nat100.top";
+const STUB_TID = 999_999;
+const STUB_TITLE = "冷启动契约验证帖";
 
-interface FeedItem {
-  tid?: number | string;
-  title?: string;
-}
-interface FeedResponse {
-  items?: FeedItem[];
-}
+// Shape mirrors what the real backend ships and what `normalizeFeedItem` /
+// `normalizePostDetail` accept. Only the fields the cold-start contract reads
+// (tid + title + a renderable text card) need to be populated; everything else
+// is normalized to safe defaults by the adapters in src/api/{feed,posts}.ts.
+const FEED_STUB = {
+  tabs: [
+    { id: "此刻", label: "此刻" },
+    { id: "精选", label: "精选" },
+  ],
+  items: [
+    {
+      tid: STUB_TID,
+      title: STUB_TITLE,
+      bodyPreview: "page.route 注入的稳定数据。",
+      cover: "",
+      primaryTag: "",
+      timeLabel: "刚刚",
+      timestampISO: new Date().toISOString(),
+      likeCount: 0,
+      liked: false,
+      locationArea: "校园",
+      contentType: "text",
+    },
+  ],
+  hasMore: false,
+  nextPage: null,
+};
 
-async function firstPublicFeedTid(api: APIRequestContext) {
-  const response = await api.get("/api/feed?tab=%E6%AD%A4%E5%88%BB&page=1&limit=12");
-  expect(response.ok(), await response.text()).toBe(true);
-  const body = (await response.json()) as FeedResponse;
-  const item = body.items?.find((candidate) => candidate.tid && candidate.title);
-  expect(item, "nat100 feed must expose at least one public item").toBeTruthy();
-  return { tid: String(item!.tid), title: String(item!.title) };
+const POST_STUB = {
+  tid: STUB_TID,
+  type: "text",
+  title: STUB_TITLE,
+  cover: "",
+  primaryTag: "",
+  timeLabel: "刚刚",
+  timestampISO: new Date().toISOString(),
+  contentHtml: "<p>page.route 注入的稳定 PostDetail。</p>",
+  imageUrls: [],
+  replies: [],
+  likeCount: 0,
+  liked: false,
+  bookmarked: false,
+  locationArea: "校园",
+};
+
+async function installColdStartStubs(page: Page): Promise<void> {
+  // Match `/api/feed` with or without a query string. The detail-related
+  // sibling endpoints (/api/posts/:tid/like, /save, /report, /replies) are
+  // intentionally NOT stubbed so attempting to trigger them from the cold-
+  // start contract surfaces as a network error instead of silently passing.
+  await page.route(/\/api\/feed(\?|$)/, async (route) => {
+    await route.fulfill({ json: FEED_STUB });
+  });
+  await page.route(new RegExp(`/api/posts/${STUB_TID}(\\?|$)`), async (route) => {
+    await route.fulfill({ json: POST_STUB });
+  });
 }
 
 test.describe("@detail cold-start contract (#636)", () => {
@@ -46,6 +94,7 @@ test.describe("@detail cold-start contract (#636)", () => {
   }) => {
     const context = await browser.newContext();
     const page = await context.newPage();
+    await installColdStartStubs(page);
 
     await page.goto("/");
     await expect(page.locator(".feed-view")).toBeVisible();
@@ -83,20 +132,17 @@ test.describe("@detail cold-start contract (#636)", () => {
   });
 
   test("deep-link cold start renders detail and underlying tab is feed", async ({ browser }) => {
-    const api = await request.newContext({ baseURL: BASE_URL });
-    const { tid, title } = await firstPublicFeedTid(api);
-    await api.dispose();
-
     const context = await browser.newContext();
     const page = await context.newPage();
+    await installColdStartStubs(page);
 
     // Cold navigation directly to a post URL — the FSM has to bootstrap from
     // the hash on first paint, with no prior tab state.
-    await page.goto(`/#/post/${tid}`);
+    await page.goto(`/#/post/${STUB_TID}`);
 
     const detailSurface = page.locator("body > .detail-surface");
     await expect(detailSurface).toBeVisible();
-    await expect(detailSurface.locator("#post-detail-title")).toContainText(title);
+    await expect(detailSurface.locator("#post-detail-title")).toContainText(STUB_TITLE);
     await expect(page.locator(".post-detail-panel__state")).toHaveCount(0);
     await expect(page.getByText("详情加载失败")).toHaveCount(0);
 
@@ -117,16 +163,13 @@ test.describe("@detail cold-start contract (#636)", () => {
   test("refresh on #/post/{tid} re-mounts detail cleanly (no shell-slot race)", async ({
     browser,
   }) => {
-    const api = await request.newContext({ baseURL: BASE_URL });
-    const { tid, title } = await firstPublicFeedTid(api);
-    await api.dispose();
-
     const context = await browser.newContext();
     const page = await context.newPage();
+    await installColdStartStubs(page);
 
-    await page.goto(`/#/post/${tid}`);
+    await page.goto(`/#/post/${STUB_TID}`);
     await expect(page.locator("body > .detail-surface")).toBeVisible();
-    await expect(page.locator("#post-detail-title")).toContainText(title);
+    await expect(page.locator("#post-detail-title")).toContainText(STUB_TITLE);
 
     // Hard reload — exercises the cold-start path again. The shell slot DOM
     // (#lian-shell-top-slot / #lian-shell-bottom-slot) must be present before
@@ -137,7 +180,7 @@ test.describe("@detail cold-start contract (#636)", () => {
     await expect(detailSurface).toBeVisible();
     await expect(page.locator("#lian-shell-top-slot")).toHaveCount(1);
     await expect(page.locator("#lian-shell-bottom-slot")).toHaveCount(1);
-    await expect(detailSurface.locator("#post-detail-title")).toContainText(title);
+    await expect(detailSurface.locator("#post-detail-title")).toContainText(STUB_TITLE);
 
     // No stuck loading state — the FSM finished its fetch, didn't leave us on
     // the loading sentinel that pre-#636 used to surface as a flake.
