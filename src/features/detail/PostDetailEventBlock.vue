@@ -12,6 +12,14 @@
  * the participant action. Clicking it opens an Apple-style confirm sheet; the
  * actual POST happens only on explicit confirm.
  *
+ * Apple-gap wave 3-A / mw#827 PR-2 — the primary join/cancel CTA derives its
+ * 6-state visual + ARIA contract (enabled / loading / disabled / reason) from
+ * the shared `DetailCtaButton`, same as the merchant pilot in PR-1 (#840).
+ * `selectEventDetailCtaState` maps `EventActionPlan` + `busy` to that vocab
+ * so the view never grows its own ad-hoc `:disabled || busy` ladder. The
+ * creator-side `结束活动` button stays bare for now and is covered by the
+ * cta-shared-base allowlist — wave 3-B (PR-3 trade/help) owns that migration.
+ *
  * All copy comes from brand/i18n; the view only does layout + accessibility.
  */
 import { computed, ref } from "vue";
@@ -51,6 +59,8 @@ import {
 } from "../../domain/eventActionPolicy";
 import type { EventPostExtension } from "../../types/post-extensions";
 import { formatRelativeTime } from "../../utils/time";
+import DetailCtaButton from "./DetailCtaButton.vue";
+import { selectEventDetailCtaState } from "./eventDetailCtaState";
 
 const props = withDefaults(
   defineProps<{
@@ -130,6 +140,27 @@ const disabledReason = computed(() => {
       return "";
   }
 });
+
+// Apple-gap wave 3-A / mw#827 PR-2 — derive the shared 6-state CTA token
+// from the policy + busy bit. The state owns the visual/ARIA contract:
+//   join/cancel + enabled        → enabled
+//   busy                         → loading (aria-busy="true")
+//   notSignedIn / outOfScope     → reason  (data-cta-cause="permission")
+//   alreadyEnded / full / notOpen → disabled (data-cta-cause="state")
+// Click is gated at `plan.enabled || busy` exactly as before so this is a
+// presentation refactor, not a behavior change.
+const primaryCtaState = computed(() =>
+  selectEventDetailCtaState({ plan: props.plan, busy: props.busy }),
+);
+
+// The reason copy stays where it always was (separate `<p>` line below the
+// CTA) so existing structure tests continue to pass byte-identically. The
+// shared CTA wrapper exposes a `message` slot, but we keep the dedicated
+// `__hint` line so the block layout (and the reward / error siblings) does
+// not shift.
+const showPrimaryReason = computed(
+  () => Boolean(disabledReason.value) && !props.plan.enabled && !props.busy,
+);
 
 const showPrimaryAction = computed(() => props.showAction ?? true);
 
@@ -249,18 +280,15 @@ const settledAtLabel = computed(() => {
     </div>
 
     <div v-if="showPrimaryAction || showCompleteButton" class="post-detail-event-block__actions">
-      <button
+      <DetailCtaButton
         v-if="showPrimaryAction"
-        type="button"
-        class="post-detail-event-block__action"
-        :disabled="!plan.enabled || busy"
-        :aria-disabled="!plan.enabled || busy"
+        class="post-detail-event-block__primary-cta"
+        :label="buttonLabel"
+        :state="primaryCtaState"
+        test-id="post-detail-event-action"
         :data-mode="plan.mode"
-        data-testid="post-detail-event-action"
         @click="emit('act')"
-      >
-        {{ buttonLabel }}
-      </button>
+      />
 
       <button
         v-if="showCompleteButton"
@@ -275,10 +303,7 @@ const settledAtLabel = computed(() => {
       </button>
     </div>
 
-    <p
-      v-if="showPrimaryAction && disabledReason && !plan.enabled"
-      class="post-detail-event-block__hint"
-    >
+    <p v-if="showPrimaryAction && showPrimaryReason" class="post-detail-event-block__hint">
       {{ disabledReason }}
     </p>
 
