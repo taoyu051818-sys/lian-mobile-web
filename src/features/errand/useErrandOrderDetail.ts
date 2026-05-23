@@ -11,9 +11,13 @@
  *    a terminal state (delivered / cancelled / refunded), polling stops on
  *    its own. Caller is responsible for invoking `start(orderId)` /
  *    `stop()` from the view's lifecycle hooks so we never leak a timer.
+ *
+ * Share CTA eligibility (ps#552): the composable also probes the current
+ * user's identity so the view can gate the share button on `isOrderCreator`.
  */
 import { computed, ref } from "vue";
 import { cancelErrandOrder, fetchErrandOrder } from "../../api/errands";
+import { fetchAuthMe } from "../../api/profile";
 import { extractErrorMessage } from "../../utils/extractErrorMessage";
 import { ERRAND_ORDER_DETAIL_LOAD_ERROR, ORDERS_CANCEL_FAILED } from "../../config/brand";
 import type { ErrandOrderDetail } from "../../types/errand";
@@ -28,6 +32,7 @@ export function useErrandOrderDetail() {
   const errorMessage = ref("");
   const cancelling = ref(false);
   const cancelError = ref("");
+  const currentUserId = ref<string>("");
 
   /**
    * Cancel CTA is only meaningful while the order is still in flight.
@@ -40,6 +45,15 @@ export function useErrandOrderDetail() {
   const canCancel = computed(() => {
     const status = detail.value?.order.status;
     return Boolean(status && !isTerminalErrandStatus(status) && !cancelling.value);
+  });
+
+  /**
+   * Share CTA eligibility (ps#552): the current user must be the order
+   * creator (requesterUserId). The view further gates on recruiting status.
+   */
+  const isOrderCreator = computed(() => {
+    if (!detail.value || !currentUserId.value) return false;
+    return detail.value.order.requesterUserId === currentUserId.value;
   });
 
   let pollTimer: ReturnType<typeof setTimeout> | null = null;
@@ -94,6 +108,15 @@ export function useErrandOrderDetail() {
     stop();
     pollOrderId = orderId;
     const generation = ++pollGeneration;
+
+    // Probe current user identity for share CTA eligibility (ps#552).
+    void fetchAuthMe()
+      .then((me) => {
+        if (me) currentUserId.value = me.id || "";
+      })
+      .catch(() => {
+        // Soft-fail — share CTA stays hidden if we can't identify the user.
+      });
 
     const tick = async () => {
       if (generation !== pollGeneration) return;
@@ -176,6 +199,7 @@ export function useErrandOrderDetail() {
     cancelling,
     cancelError,
     canCancel,
+    isOrderCreator,
     refresh,
     start,
     stop,

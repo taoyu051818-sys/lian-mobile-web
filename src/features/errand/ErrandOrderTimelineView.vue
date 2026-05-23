@@ -18,6 +18,8 @@
  *   we surface a labeled "实时位置 V0.2 即将开放" panel instead of the
  *   actual map. This keeps the user informed without lying about a feature
  *   that isn't shipped.
+ * - share CTA (ps#552) — order creator can share to recruit runners while
+ *   the order is still recruiting (created / paid_locked, before assigned).
  */
 import { computed, onMounted, onBeforeUnmount, ref, watch } from "vue";
 import {
@@ -36,6 +38,7 @@ import {
   ERRAND_ORDER_PICKUP_TITLE,
   ERRAND_ORDER_POINTS_SUFFIX,
   ERRAND_ORDER_RETRY,
+  ERRAND_ORDER_SHARE_CTA,
   ORDERS_CANCEL_CONFIRM,
   ORDERS_CANCEL_CTA,
   ORDERS_CANCEL_PENDING,
@@ -44,12 +47,14 @@ import {
   ORDERS_RUNNER_LOCATION_TITLE,
 } from "../../config/brand";
 import { useErrandOrderDetail } from "./useErrandOrderDetail";
+import { useErrandOrderShareCard } from "./useErrandOrderShareCard";
 import {
   formatTimelineTimestamp,
   isTerminalErrandStatus,
   modeLabel,
   statusLabel,
 } from "./errand-format";
+import { ShareCardSheet } from "../detail";
 
 const props = defineProps<{
   orderId: string;
@@ -71,11 +76,14 @@ const {
   cancelling,
   cancelError,
   canCancel,
+  isOrderCreator,
   refresh: refreshDetail,
   start: startDetail,
   stop: stopDetail,
   cancel: cancelDetail,
 } = useErrandOrderDetail();
+
+const shareCard = useErrandOrderShareCard();
 
 onMounted(() => {
   if (props.orderId) startDetail(props.orderId);
@@ -101,6 +109,17 @@ const isLivePolling = computed(() => !!order.value && !isTerminalErrandStatus(or
 // the panel is purely read-only, derived from `runnerUserId` already on
 // the order detail payload.
 const hasRunnerAssigned = computed(() => !!order.value?.runnerUserId);
+
+/**
+ * Share CTA visibility (ps#552): only the order creator can share, and only
+ * while the order is still recruiting (created / paid_locked). Once a runner
+ * is assigned the share flow no longer makes sense.
+ */
+const RECRUITING_STATUSES = new Set(["created", "paid_locked"]);
+const canShare = computed(() => {
+  if (!order.value || !isOrderCreator.value) return false;
+  return RECRUITING_STATUSES.has(order.value.status);
+});
 
 function handleRefresh() {
   if (props.orderId) void refreshDetail(props.orderId);
@@ -133,6 +152,21 @@ watch(
     confirmingCancel.value = false;
   },
 );
+
+function handleShare() {
+  if (!props.orderId || !canShare.value) return;
+  shareCard.start(props.orderId);
+}
+
+function handleShareConfirm() {
+  const card = shareCard.card.value;
+  if (!card?.url) return;
+  // Copy the share URL to clipboard (same pattern as post share).
+  if (navigator.clipboard && typeof navigator.clipboard.writeText === "function") {
+    void navigator.clipboard.writeText(card.url);
+  }
+  shareCard.close();
+}
 </script>
 
 <template>
@@ -281,11 +315,21 @@ watch(
         guard, and a custom modal is out-of-scope for PR1.
       -->
       <div
-        v-if="canCancel"
+        v-if="canCancel || canShare"
         class="errand-order-timeline-view__actions"
         data-testid="errand-order-timeline-actions"
       >
         <button
+          v-if="canShare"
+          type="button"
+          class="errand-order-timeline-view__share"
+          data-testid="errand-order-timeline-share"
+          @click="handleShare"
+        >
+          {{ ERRAND_ORDER_SHARE_CTA }}
+        </button>
+        <button
+          v-if="canCancel"
           type="button"
           class="errand-order-timeline-view__cancel"
           :class="{ 'is-confirming': confirmingCancel }"
@@ -312,6 +356,17 @@ watch(
         {{ cancelError }}
       </p>
     </template>
+
+    <ShareCardSheet
+      :open="shareCard.open.value"
+      :status="shareCard.status.value"
+      :card="shareCard.card.value"
+      :error-message="shareCard.errorMessage.value"
+      :can-retry="shareCard.canRetry.value"
+      @close="shareCard.close"
+      @confirm="handleShareConfirm"
+      @retry="shareCard.retry"
+    />
   </section>
 </template>
 
@@ -497,6 +552,19 @@ watch(
 .errand-order-timeline-view__actions {
   display: flex;
   justify-content: flex-end;
+  gap: var(--space-2);
+}
+
+.errand-order-timeline-view__share {
+  appearance: none;
+  border: 0;
+  border-radius: var(--radius-chip, 999px);
+  background: rgba(31, 167, 160, 0.16);
+  color: var(--lian-primary-deep, #0f6b66);
+  font-weight: 800;
+  height: 36px;
+  padding: 0 var(--space-3);
+  cursor: pointer;
 }
 
 .errand-order-timeline-view__cancel {

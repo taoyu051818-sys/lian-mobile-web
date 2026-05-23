@@ -36,13 +36,13 @@ import { useFocusRestore } from "../../composables/useFocusRestore";
 import { LianButton } from "../../ui";
 // Type-only re-export from the composable so the view does not reach into
 // `src/api/*` directly. The composable owns the api seam (issue #795).
-import type { ShareCard } from "./useShareCardPreview";
+import type { ShareCardBase } from "./useShareCardPreview";
 
 const props = withDefaults(
   defineProps<{
     open?: boolean;
     status?: "idle" | "loading" | "ready" | "error";
-    card?: ShareCard | null;
+    card?: ShareCardBase | null;
     errorMessage?: string;
     canRetry?: boolean;
   }>(),

@@ -40,8 +40,12 @@ export interface ShareCardChannels {
   wechat?: ShareCardChannelWechat;
 }
 
-export interface ShareCard {
-  tid: FeedItemId;
+/**
+ * Base share-card fields shared by post and errand-order cards.
+ * ShareCardSheet renders these fields; the identifier (tid vs orderId) is
+ * source-specific and not displayed.
+ */
+export interface ShareCardBase {
   title: string;
   summary: string;
   thumbnailUrl: string;
@@ -50,6 +54,10 @@ export interface ShareCard {
   authorName: string;
   audienceLabel: string;
   channel: ShareCardChannels;
+}
+
+export interface ShareCard extends ShareCardBase {
+  tid: FeedItemId;
 }
 
 export type ShareCardErrorReason = "not-found" | "network";
@@ -117,6 +125,61 @@ export async function fetchShareCard(tid: FeedItemId): Promise<ShareCard> {
       throw new ShareCardError("network", error.status, error.message);
     }
     // fetch rejection (no network), JSON parse failure, etc.
+    throw new ShareCardError("network", 0, error instanceof Error ? error.message : "");
+  }
+}
+
+/**
+ * Errand-order share-card envelope (ps#552).
+ *
+ * Backend route: `GET /api/errands/orders/:orderId/share-card`. Auth policy
+ * requires the viewer to be the order creator (requester); non-creators get
+ * 403 and the frontend hides the share CTA for them.
+ *
+ * Response envelope mirrors the post share-card V1 shape so ShareCardSheet
+ * can render both sources without branching.
+ */
+export interface ErrandOrderShareCard extends ShareCardBase {
+  orderId: string;
+}
+
+function normalizeErrandOrderCard(raw: unknown, fallbackOrderId: string): ErrandOrderShareCard {
+  const record = asRecord(raw);
+  const channelRecord = asRecord(record.channel);
+  const wechat = normalizeWechatChannel(channelRecord.wechat);
+  return {
+    orderId: asString(record.orderId, fallbackOrderId),
+    title: asString(record.title),
+    summary: asString(record.summary),
+    thumbnailUrl: asString(record.thumbnailUrl),
+    url: asString(record.url),
+    kind: asString(record.kind, "errand-order"),
+    authorName: asString(record.authorName),
+    audienceLabel: asString(record.audienceLabel),
+    channel: wechat ? { wechat } : {},
+  };
+}
+
+/**
+ * Fetch and normalize the share-card envelope for an errand order.
+ *
+ * Throws `ShareCardError` on failure so callers can branch on `.reason`
+ * (not-found vs network) without repeating status checks. 403 maps to
+ * `not-found` so the UI treats "not your order" the same as "order gone".
+ */
+export async function fetchErrandOrderShareCard(orderId: string): Promise<ErrandOrderShareCard> {
+  try {
+    const data = await apiGet<ShareCardEnvelope>(
+      `/api/errands/orders/${encodeURIComponent(orderId)}/share-card`,
+    );
+    return normalizeErrandOrderCard(data?.card, orderId);
+  } catch (error) {
+    if (error instanceof LianApiError) {
+      if (error.status === 404 || error.status === 403) {
+        throw new ShareCardError("not-found", error.status, error.message);
+      }
+      throw new ShareCardError("network", error.status, error.message);
+    }
     throw new ShareCardError("network", 0, error instanceof Error ? error.message : "");
   }
 }

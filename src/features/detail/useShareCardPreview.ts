@@ -30,7 +30,7 @@ import type { FeedItemId } from "../../types/feed";
 // type their props against the same domain type without reaching into
 // `src/api/*` directly. The composable owns the api seam; views depend on
 // the composable. Keeps `check-view-imports-composable` green (issue #795).
-export type { ShareCard } from "../../api/share-card";
+export type { ShareCard, ShareCardBase } from "../../api/share-card";
 
 export type ShareCardPreviewStatus = "idle" | "loading" | "ready" | "error";
 

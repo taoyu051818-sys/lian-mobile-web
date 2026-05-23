@@ -89,6 +89,10 @@ export const ERRAND_ORDER_STATUS_CANCELLED = "已取消";
 export const ERRAND_ORDER_STATUS_REFUNDED = "已退款";
 export const ERRAND_ORDER_STATUS_DISPUTED = "申诉中";
 
+/** 跑腿订单分享 (ps#552) */
+export const ERRAND_ORDER_SHARE_CTA = "分享招募跑腿";
+export const ERRAND_ORDER_SHARE_SHEET_TITLE = "分享订单招募跑腿";
+
 /** 我的跑腿订单 (profile 入口 / issue #647 follow-up) */
 export const PROFILE_ERRAND_ORDERS_SECTION_LABEL = "我的跑腿订单";
 export const PROFILE_ERRAND_ORDERS_RELOAD = "重新加载";
