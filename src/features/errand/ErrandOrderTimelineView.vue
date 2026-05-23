@@ -53,7 +53,7 @@ import {
   modeLabel,
   statusLabel,
 } from "./errand-format";
-import ShareCardSheet from "../detail/ShareCardSheet.vue";
+import { ShareCardSheet } from "../detail";
 
 const props = defineProps<{
   orderId: string;
