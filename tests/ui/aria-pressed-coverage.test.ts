@@ -100,9 +100,13 @@ const TOGGLE_BUTTON_WHITELIST: Array<{
     marker: /@click="emit\('filterChange', opt\.value\)"/,
   },
   {
-    file: "src/features/admin/AdminView.vue",
+    // Post #831 split — verification filter button now lives in
+    // AdminVerificationBlock.vue. We anchor on the v-for iteration source
+    // (`verificationFilters`) because the @click handler text alone is
+    // identical to the queue filter button in AdminQueueList.vue.
+    file: "src/features/admin/AdminVerificationBlock.vue",
     description: "admin verification status filter",
-    marker: /@click="handleVerificationFilterChange\(opt\.value\)"/,
+    marker: /v-for="opt in verificationFilters"/,
   },
   {
     // Apple-gap PR-δ: LianButton's optional 6-state vocabulary lets

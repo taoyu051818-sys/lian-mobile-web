@@ -83,6 +83,21 @@
       "class": "is-deferred",
       "files": ["src/features/errand/ErrandOrderTimelineView.vue"],
       "reason": "Runner-location postponed marker; component-scoped class in PR-gamma-2."
+    },
+    {
+      "class": "is-primary",
+      "files": ["src/features/detail/DetailCtaButton.vue"],
+      "reason": "DetailCtaButton visual variant from #840 CTA state base; rename to detail-cta-button__control--primary (BEM modifier) in PR-gamma-2."
+    },
+    {
+      "class": "is-muted",
+      "files": ["src/features/detail/DetailCtaButton.vue"],
+      "reason": "DetailCtaButton visual variant from #840 CTA state base; rename to detail-cta-button__control--muted (BEM modifier) in PR-gamma-2."
+    },
+    {
+      "class": "is-danger",
+      "files": ["src/features/detail/DetailCtaButton.vue"],
+      "reason": "DetailCtaButton visual variant from #840 CTA state base; rename to detail-cta-button__control--danger (BEM modifier) in PR-gamma-2."
     }
   ]
 }
