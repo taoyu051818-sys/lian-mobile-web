@@ -42,14 +42,18 @@ import {
   ORDERS_RUNNER_LOCATION_DEFERRED,
   ORDERS_RUNNER_LOCATION_DEFERRED_HINT,
   ORDERS_RUNNER_LOCATION_TITLE,
+  ORDERS_SHARE_RECRUIT_CTA,
+  ORDERS_SHARE_RECRUIT_HINT,
 } from "../../config/brand";
 import { useErrandOrderDetail } from "./useErrandOrderDetail";
+import { useErrandOrderShare } from "./useErrandOrderShare";
 import {
   formatTimelineTimestamp,
   isTerminalErrandStatus,
   modeLabel,
   statusLabel,
 } from "./errand-format";
+import { ShareCardSheet } from "../detail";
 
 const props = defineProps<{
   orderId: string;
@@ -123,6 +127,44 @@ async function handleCancel() {
 }
 
 const confirmingCancel = ref(false);
+
+// Share functionality for recruiting runners (mw#892)
+const actionMessage = ref("");
+const actionError = ref("");
+
+function showActionMessage(message: string) {
+  actionError.value = "";
+  actionMessage.value = message;
+}
+
+function showError(_error: unknown, fallback: string) {
+  actionMessage.value = "";
+  actionError.value = fallback;
+}
+
+const {
+  handleShare,
+  handleShareConfirm,
+  handleShareClose,
+  handleShareRetry,
+  sharePreviewOpen,
+  sharePreviewStatus,
+  sharePreviewCard,
+  sharePreviewErrorMessage,
+  sharePreviewCanRetry,
+} = useErrandOrderShare({
+  orderId: () => props.orderId,
+  showActionMessage,
+  showError,
+});
+
+// Show share button only for pending/accepted (non-terminal, no runner yet)
+const canShare = computed(() => {
+  const o = order.value;
+  if (!o) return false;
+  // Only show for orders that are still looking for a runner
+  return o.status === "created" || o.status === "paid_locked";
+});
 
 // Reset the inline confirm whenever the order changes — a different order
 // must not inherit the previous one's "armed" state, otherwise a tap meant
@@ -270,6 +312,28 @@ watch(
       </section>
 
       <!--
+        Share/recruit CTA (mw#892) — only while the order is pending/paid_locked
+        (still looking for a runner). Once assigned, the share button disappears.
+      -->
+      <section
+        v-if="canShare"
+        class="errand-order-timeline-view__share-recruit"
+        data-testid="errand-order-timeline-share-recruit"
+      >
+        <p class="errand-order-timeline-view__share-recruit-hint">
+          {{ ORDERS_SHARE_RECRUIT_HINT }}
+        </p>
+        <button
+          type="button"
+          class="errand-order-timeline-view__share-recruit-cta"
+          data-testid="errand-order-timeline-share-cta"
+          @click="handleShare"
+        >
+          {{ ORDERS_SHARE_RECRUIT_CTA }}
+        </button>
+      </section>
+
+      <!--
         Cancel CTA — only while the order is non-terminal. The composable's
         `canCancel` already excludes terminal states + an in-flight cancel.
         We do NOT touch the assign endpoint (501); cancel is one of the five
@@ -311,7 +375,36 @@ watch(
       >
         {{ cancelError }}
       </p>
+
+      <p
+        v-if="actionMessage"
+        class="errand-order-timeline-view__status is-success"
+        role="status"
+        data-testid="errand-order-timeline-action-message"
+      >
+        {{ actionMessage }}
+      </p>
+
+      <p
+        v-if="actionError"
+        class="errand-order-timeline-view__status is-error"
+        role="alert"
+        data-testid="errand-order-timeline-action-error"
+      >
+        {{ actionError }}
+      </p>
     </template>
+
+    <ShareCardSheet
+      :open="sharePreviewOpen"
+      :status="sharePreviewStatus"
+      :card="sharePreviewCard"
+      :error-message="sharePreviewErrorMessage"
+      :can-retry="sharePreviewCanRetry"
+      @close="handleShareClose"
+      @confirm="handleShareConfirm"
+      @retry="handleShareRetry"
+    />
   </section>
 </template>
 
@@ -514,5 +607,42 @@ watch(
 .errand-order-timeline-view__cancel:disabled {
   opacity: 0.5;
   cursor: progress;
+}
+
+.errand-order-timeline-view__share-recruit {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border: 1px solid rgba(31, 167, 160, 0.32);
+  border-radius: var(--radius-card);
+  background: rgba(31, 167, 160, 0.06);
+}
+
+.errand-order-timeline-view__share-recruit-hint {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--lian-muted);
+}
+
+.errand-order-timeline-view__share-recruit-cta {
+  appearance: none;
+  border: 0;
+  border-radius: var(--radius-chip, 999px);
+  background: var(--lian-primary, #1fa7a0);
+  color: #fff;
+  font-weight: 800;
+  height: 40px;
+  padding: 0 var(--space-4);
+  cursor: pointer;
+}
+
+.errand-order-timeline-view__share-recruit-cta:hover {
+  background: var(--lian-primary-deep, #0f6b66);
+}
+
+.errand-order-timeline-view__status.is-success {
+  background: rgba(31, 167, 160, 0.12);
+  color: var(--lian-primary-deep, #0f6b66);
 }
 </style>

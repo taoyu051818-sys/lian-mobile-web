@@ -131,6 +131,10 @@ export const ORDERS_RUNNER_LOCATION_DEFERRED = "实时位置 V0.2 即将开放";
 export const ORDERS_RUNNER_LOCATION_DEFERRED_HINT =
   "等跑腿同学接单后，会在这里显示位置和送达进度。当前版本暂未开放实时位置。";
 
+/** 跑腿订单分享招募 (mw#892) */
+export const ORDERS_SHARE_RECRUIT_CTA = "招募跑腿";
+export const ORDERS_SHARE_RECRUIT_HINT = "分享订单卡片，邀请同学帮你跑腿。";
+
 /** 商家中心 (issue #646) */
 export const MERCHANT_CENTER_SECTION_LABEL = "商家中心";
 export const MERCHANT_CENTER_ENTER_LABEL = "商家中心";
