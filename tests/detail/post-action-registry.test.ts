@@ -54,9 +54,7 @@ function makeHelp(overrides: Partial<HelpPostExtension> = {}): HelpPostExtension
   };
 }
 
-function makeMerchant(
-  overrides: Partial<MerchantPostExtension> = {},
-): MerchantPostExtension {
+function makeMerchant(overrides: Partial<MerchantPostExtension> = {}): MerchantPostExtension {
   return {
     name: "测试小吃",
     category: "food",
@@ -89,24 +87,16 @@ function ctx(overrides: Partial<PostActionContext> = {}): PostActionContext {
 describe("postActionRegistry — universal actions", () => {
   it("always surfaces report", () => {
     expect(isPostActionAvailable("report", ctx({ type: "image" }))).toBe(true);
-    expect(
-      isPostActionAvailable("report", ctx({ type: "event", event: makeEvent() })),
-    ).toBe(true);
+    expect(isPostActionAvailable("report", ctx({ type: "event", event: makeEvent() }))).toBe(true);
     expect(isPostActionAvailable("report", ctx({ type: "help" }))).toBe(true);
   });
 
   it("only surfaces hide-reported after the report follow-up opens", () => {
     expect(
-      isPostActionAvailable(
-        "hide-reported",
-        ctx({ type: "image", reportFollowUpVisible: false }),
-      ),
+      isPostActionAvailable("hide-reported", ctx({ type: "image", reportFollowUpVisible: false })),
     ).toBe(false);
     expect(
-      isPostActionAvailable(
-        "hide-reported",
-        ctx({ type: "image", reportFollowUpVisible: true }),
-      ),
+      isPostActionAvailable("hide-reported", ctx({ type: "image", reportFollowUpVisible: true })),
     ).toBe(true);
   });
 });
@@ -127,10 +117,7 @@ describe("postActionRegistry — event actions", () => {
     ).toBe(false);
     for (const status of ["completed", "cancelled"] as const) {
       expect(
-        isPostActionAvailable(
-          "event-act",
-          ctx({ type: "event", event: makeEvent({ status }) }),
-        ),
+        isPostActionAvailable("event-act", ctx({ type: "event", event: makeEvent({ status }) })),
       ).toBe(false);
       expect(
         isPostActionAvailable(
@@ -213,10 +200,7 @@ describe("postActionRegistry — help actions", () => {
       "help-close",
     ] as const) {
       expect(
-        isPostActionAvailable(
-          id,
-          ctx({ type: "help", help: makeHelp(), viewer: viewerNo }),
-        ),
+        isPostActionAvailable(id, ctx({ type: "help", help: makeHelp(), viewer: viewerNo })),
       ).toBe(false);
     }
 
@@ -273,30 +257,21 @@ describe("postActionRegistry — merchant errand entry", () => {
         ctx({ type: "merchant", merchant, errandEntryAvailable: false }),
       ),
     ).toBe(false);
-    expect(
-      isPostActionAvailable("merchant-errand", ctx({ type: "merchant", merchant })),
-    ).toBe(false);
+    expect(isPostActionAvailable("merchant-errand", ctx({ type: "merchant", merchant }))).toBe(
+      false,
+    );
   });
 });
 
 describe("postActionRegistry — trade transitions", () => {
-  const allTargets: TradeState[] = [
-    "available",
-    "reserved",
-    "sold",
-    "cancelled",
-    "hidden",
-  ];
+  const allTargets: TradeState[] = ["available", "reserved", "sold", "cancelled", "hidden"];
 
   it("hides every trade transition for non-managers", () => {
     const trade = makeTrade({ state: "available" });
     const viewer = makeViewer({ canManageTrade: false });
     for (const target of allTargets) {
       expect(
-        isPostActionAvailable(
-          `trade-set-${target}`,
-          ctx({ type: "trade", trade, viewer }),
-        ),
+        isPostActionAvailable(`trade-set-${target}`, ctx({ type: "trade", trade, viewer })),
       ).toBe(false);
     }
   });
@@ -395,12 +370,7 @@ describe("postActionRegistry — availablePostActions", () => {
         reportFollowUpVisible: true,
       }),
     );
-    expect(list).toEqual([
-      "report",
-      "hide-reported",
-      "event-act",
-      "event-complete",
-    ]);
+    expect(list).toEqual(["report", "hide-reported", "event-act", "event-complete"]);
   });
 
   it("returns the active help manager surface in stable order", () => {

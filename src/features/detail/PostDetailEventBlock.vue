@@ -172,9 +172,7 @@ const settlement = computed(() => props.event.rewardSettlement);
 
 function fillTemplate(template: string, params: Record<string, string | number>) {
   return template.replace(/\{(\w+)\}/g, (_, key) =>
-    Object.prototype.hasOwnProperty.call(params, key)
-      ? String(params[key])
-      : `{${key}}`,
+    Object.prototype.hasOwnProperty.call(params, key) ? String(params[key]) : `{${key}}`,
   );
 }
 
@@ -250,10 +248,7 @@ const settledAtLabel = computed(() => {
       </dl>
     </div>
 
-    <div
-      v-if="showPrimaryAction || showCompleteButton"
-      class="post-detail-event-block__actions"
-    >
+    <div v-if="showPrimaryAction || showCompleteButton" class="post-detail-event-block__actions">
       <button
         v-if="showPrimaryAction"
         type="button"
@@ -309,10 +304,7 @@ const settledAtLabel = computed(() => {
         :aria-label="EVENT_COMPLETE_CONFIRM_TITLE"
         data-testid="post-detail-event-complete-confirm"
       >
-        <div
-          class="post-detail-event-block__confirm-backdrop"
-          @click="dismissConfirm"
-        />
+        <div class="post-detail-event-block__confirm-backdrop" @click="dismissConfirm" />
         <section class="post-detail-event-block__confirm-panel">
           <h2 class="post-detail-event-block__confirm-title">
             {{ EVENT_COMPLETE_CONFIRM_TITLE }}

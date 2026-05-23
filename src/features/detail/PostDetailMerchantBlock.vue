@@ -30,10 +30,7 @@ import {
   MERCHANT_VERIFIED_PREFIX,
 } from "../../config/brand";
 import type { MerchantErrandUnavailableReason } from "../../types/merchant";
-import type {
-  MerchantCategory,
-  MerchantPostExtension,
-} from "../../types/post-extensions";
+import type { MerchantCategory, MerchantPostExtension } from "../../types/post-extensions";
 import { errandReasonText } from "../merchant";
 import DetailCtaButton from "./DetailCtaButton.vue";
 import { selectDetailCtaState } from "./detailCtaState";
@@ -130,11 +127,7 @@ function handleErrandClick() {
   // form opens with "到 <商家> 取" already filled. The merchant DTO doesn't
   // ship a structured address, but the name is the runner-facing label that
   // actually matters; users append门店细节 in the same field if needed.
-  errandRoute.enterForMerchant(
-    props.merchantPostId as number,
-    "feed",
-    props.merchant.name || "",
-  );
+  errandRoute.enterForMerchant(props.merchantPostId as number, "feed", props.merchant.name || "");
   setActiveView("errand-order");
 }
 </script>
@@ -146,10 +139,7 @@ function handleErrandClick() {
     data-testid="post-detail-merchant-block"
   >
     <header class="post-detail-merchant-block__header">
-      <span
-        class="post-detail-merchant-block__category"
-        :data-category="merchant.category"
-      >
+      <span class="post-detail-merchant-block__category" :data-category="merchant.category">
         {{ categoryLabel }}
       </span>
       <span class="post-detail-merchant-block__verified">
