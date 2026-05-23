@@ -9,10 +9,7 @@ export async function fetchRoadNetworkPreview(): Promise<MapRoadNetworkPreview |
   const response = await fetch("/assets/road-network-preview.json", { cache: "force-cache" });
   if (response.status === 404) return null;
   if (!response.ok) {
-    throw new LianApiError(
-      `路网预览加载失败（状态码 ${response.status}）`,
-      response.status,
-    );
+    throw new LianApiError(`路网预览加载失败（状态码 ${response.status}）`, response.status);
   }
   return response.json() as Promise<MapRoadNetworkPreview>;
 }

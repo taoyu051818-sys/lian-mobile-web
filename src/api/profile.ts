@@ -152,7 +152,8 @@ export async function uploadProfileAvatar(file: File): Promise<string> {
     form,
     "头像上传失败，可以换一张图片或稍后再试。",
   );
-  if (!data.url) throw new LianApiError("头像上传成功但没有返回地址，请稍后再试。", 0, "MALFORMED_RESPONSE");
+  if (!data.url)
+    throw new LianApiError("头像上传成功但没有返回地址，请稍后再试。", 0, "MALFORMED_RESPONSE");
   return data.url;
 }
 
