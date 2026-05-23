@@ -27,6 +27,7 @@ import {
 import { fetchDetailWithToken } from "./fetcher";
 import { clearPostDetailHash, pushPostDetailHash } from "../post-detail-hash";
 import { useShellChrome } from "../../shell/useShellChrome";
+import { registerBeforeNavigate } from "../view-hash";
 
 const stateRef = ref<DetailState>(initialState());
 
@@ -120,6 +121,47 @@ function bindChromeToState(): void {
 }
 
 bindChromeToState();
+
+/**
+ * Auto-close the detail overlay when in-app navigation runs while the FSM is
+ * open (mw#827 PR-4 — detail overlay exit contract).
+ *
+ * Before this hook landed, callers like `PostDetailMerchantBlock` had to
+ * manually `detail.close('view-change')` BEFORE `setActiveView(...)` or the
+ * App-level `DetailSurface` would stay mounted on top of the next view.
+ * Other CTAs that forgot the dance produced the user-visible bug: 帮我取 /
+ * 报名 / 交易 navigations from a detail surface left a ghost overlay over
+ * the next route, and浏览器 back / UI 返回 disagreed.
+ *
+ * The fix: the only in-app navigation entry point (`pushViewHash`) fires
+ * registered before-navigate hooks BEFORE mutating its own ref. We dispatch
+ * `close('view-change')` here, which:
+ *   1. flips the FSM to `closed` (DetailSurface unmounts via its v-if), and
+ *   2. emits a `history-clear` effect — `clearPostDetailHash` reads the
+ *      OLD `viewFromHash` value and `replaceState`s it over `#/post/{tid}`,
+ *      so the dead detail entry is gone before the new view's pushState
+ *      lands on top.
+ *
+ * Browser back is unaffected: it routes through the existing popstate
+ * listener in `url-sync.ts`, which dispatches `close('popstate')` and
+ * skips the history-clear effect (the browser already popped).
+ *
+ * Hook is registered eagerly at module load — by the time any user action
+ * fires, the store has been imported (everyone goes through
+ * `useDetailNavigation`) so the contract is in place.
+ */
+const navigateBound = { installed: false };
+
+function bindNavigateAwayClose(): void {
+  if (navigateBound.installed) return;
+  navigateBound.installed = true;
+  registerBeforeNavigate(() => {
+    if (!select.isOpen(stateRef.value)) return;
+    dispatch({ type: "close", source: "view-change" });
+  });
+}
+
+bindNavigateAwayClose();
 
 export interface DetailNavigation {
   state: Readonly<Ref<DetailState>>;

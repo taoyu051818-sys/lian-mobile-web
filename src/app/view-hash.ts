@@ -45,15 +45,63 @@ if (typeof window !== "undefined") {
 }
 
 /**
+ * Before-navigate hook registry (mw#827 PR-4).
+ *
+ * In-app navigation goes through `pushViewHash`. Before this PR, that path
+ * called `history.pushState` and mutated `viewFromHash.value` synchronously,
+ * but neither operation fires `hashchange`, so the detail-navigation FSM's
+ * url-sync listener had no chance to observe the navigation. The App-level
+ * `DetailSurface` therefore stayed mounted painting on top of the next view.
+ *
+ * The hook fires with the OLD `viewFromHash` value still in place, which lets
+ * the detail-navigation store dispatch `close('view-change')` and have its
+ * `history-clear` effect `replaceState` the dead `#/post/{tid}` entry with
+ * `#/{view-before-detail}`. The subsequent `pushState` here then layers
+ * `#/{newview}` on top — back walks `[newview, view-before-detail]`, never
+ * re-entering the dead detail entry.
+ *
+ * The hook surface is intentionally generic: anything that needs to react to
+ * an in-app view change before the URL flips can subscribe. Today only the
+ * detail-navigation store does, but the contract is reusable.
+ */
+type BeforeNavigateHook = (target: AppViewKey) => void;
+const beforeNavigateHooks = new Set<BeforeNavigateHook>();
+
+export function registerBeforeNavigate(hook: BeforeNavigateHook): () => void {
+  beforeNavigateHooks.add(hook);
+  return () => {
+    beforeNavigateHooks.delete(hook);
+  };
+}
+
+/** Test-only — drop every registered hook so module reloads don't bleed across cases. */
+export function __resetBeforeNavigateHooksForTesting(): void {
+  beforeNavigateHooks.clear();
+}
+
+/**
  * Push `#/{view}` onto history (or replace, when `replace` is set). Used by
  * `useActiveView.setActiveView` so the bottom-tab bar drives the URL.
  *
  * Pushing a view hash from inside a `#/post/{tid}` URL is the user-initiated
- * "switch tab while detail is open" path: the new hash replaces the post hash,
- * which causes the detail-navigation url-sync to dispatch `close` so the
- * App-level DetailSurface unmounts.
+ * "switch tab while detail is open" path. Registered before-navigate hooks
+ * fire BEFORE `viewFromHash` mutates and BEFORE `history.pushState`, so a
+ * subscriber (the detail-navigation store) can clear an open overlay using
+ * the still-current view as the replaceState fall-through.
  */
 export function pushViewHash(view: AppViewKey, options: { replace?: boolean } = {}) {
+  // Hooks observe the OLD viewFromHash AND the OLD history entry. The detail
+  // FSM's close path uses both: history-clear replaceState writes #/{old-view}
+  // over the dead post-detail entry while the URL is still `#/post/{tid}`.
+  // A throwing hook must not block navigation — swallow per-hook so the SPA
+  // never gets stuck on a half-applied URL.
+  for (const hook of beforeNavigateHooks) {
+    try {
+      hook(view);
+    } catch {
+      /* swallow — navigation contract trumps hook robustness */
+    }
+  }
   viewFromHash.value = view;
   if (typeof window === "undefined") return;
   const target = `${window.location.pathname}${window.location.search}${buildViewHash(view)}`;
