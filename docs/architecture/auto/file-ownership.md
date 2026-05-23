@@ -216,7 +216,7 @@ Total files: 323
 | `features/messages/ChannelThread.vue`              | Vue SFC                                                                                                                       |   268 |
 | `features/messages/MessagesTabs.vue`               | Vue SFC                                                                                                                       |    58 |
 | `features/messages/MessagesView.vue`               | Vue SFC                                                                                                                       |   211 |
-| `features/messages/NotificationList.vue`           | Vue SFC                                                                                                                       |   423 |
+| `features/messages/NotificationList.vue`           | Vue SFC                                                                                                                       |   415 |
 | `features/messages/index.ts`                       | TypeScript module                                                                                                             |     6 |
 | `features/messages/messageInbox.ts`                | export interface NotificationGapLink                                                                                          |    85 |
 | `features/messages/notificationChannels.ts`        | Backend issue tracking the channel. `null` when the channel is already shipping (no follow-up needed).                        |    70 |

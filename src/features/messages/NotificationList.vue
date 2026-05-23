@@ -120,7 +120,6 @@ function openNotification(item: NotificationItem) {
     >
       <header class="messages-view__channels-header">
         <strong>{{ props.title }}</strong>
-        <p>{{ props.hint }}</p>
       </header>
       <ul class="messages-view__channels-list">
         <li
@@ -251,13 +250,6 @@ function openNotification(item: NotificationItem) {
   font-size: 13px;
   font-weight: 850;
   letter-spacing: 0.02em;
-}
-
-.messages-view__channels-header p {
-  margin: 0;
-  color: var(--lian-muted);
-  font-size: 12px;
-  line-height: 1.6;
 }
 
 .messages-view__channels-list {
