@@ -1,0 +1,67 @@
+{
+  "$comment": "Grandfathered transition-property occurrences that pre-date docs/architecture/MOTION_CONTRACT_RFC_2026_05_23.md §3.2. Each entry is a (file, property, reason) triple — the test asserts the property is observed in that file, allowed to live there for now, and queued for migration. Two arrays: `files` for properties that are off the allowlist but not on the §3.2 ban list, and `banned_pending_fix` for outright banned properties that need a follow-up source PR. New entries to either array require a follow-up issue cited in the reason. The list may only shrink.",
+  "files": [
+    {
+      "file": "src/features/detail/PostReplyDock.vue",
+      "property": "align-items",
+      "reason": "Dock layout switches to flex-end on .is-expanded; not strictly animatable. Follow-up: convert to transform-based or class-bound enter/leave per RFC §3.2."
+    },
+    {
+      "file": "src/features/detail/PostReplyDock.vue",
+      "property": "min-height",
+      "reason": "Reply dock expands height when the editor opens. min-height has the same reflow cost as height (banned by §3.2 in spirit). Follow-up: animate via transform/scale or a class-bound transition group."
+    },
+    {
+      "file": "src/features/profile/profile-header.css",
+      "property": "background",
+      "reason": "Pre-RFC short-form. Follow-up: rewrite as `background-color` per §3.2 allowlist (color is the only animated channel here)."
+    },
+    {
+      "file": "src/features/profile/profile-header.css",
+      "property": "background",
+      "reason": "Second occurrence in the same file (alias-option vs alias-card-clickable). Same follow-up: rewrite as `background-color`."
+    },
+    {
+      "file": "src/features/profile/ProfileServerChanBlock.vue",
+      "property": "background",
+      "reason": "Pre-RFC short-form on the toggle thumb. Follow-up: rewrite as `background-color` per §3.2."
+    },
+    {
+      "file": "src/features/profile/ProfileSettingsBlock.vue",
+      "property": "background",
+      "reason": "Pre-RFC short-form on the settings toggle thumb. Follow-up: rewrite as `background-color` per §3.2."
+    },
+    {
+      "file": "src/features/profile/ProfileView.vue",
+      "property": "background",
+      "reason": "Pre-RFC short-form. Follow-up: rewrite as `background-color` per §3.2."
+    },
+    {
+      "file": "src/features/profile/ProfileView.vue",
+      "property": "background",
+      "reason": "Second occurrence in the same file. Same follow-up: rewrite as `background-color`."
+    },
+    {
+      "file": "src/shell/shell-chrome.css",
+      "property": "background",
+      "reason": "Pre-RFC short-form on the floating-chrome filter chip. Follow-up: rewrite as `background-color` per §3.2."
+    },
+    {
+      "file": "src/shell/shell-chrome.css",
+      "property": "background",
+      "reason": "Pre-RFC short-form on the floating-chrome tab. Follow-up: rewrite as `background-color` per §3.2."
+    },
+    {
+      "file": "src/shell/shell-chrome.css",
+      "property": "filter",
+      "reason": "Glass backdrop crossfade: `filter: blur(4px)` matches RFC §3.5's allowed exception (≤12px backdrop blur on shell slot enter/leave). Permanent grandfather; revisit only if §3.5 is amended."
+    }
+  ],
+  "banned_pending_fix": [
+    {
+      "file": "src/shell/shell-chrome.css",
+      "property": "width",
+      "reason": "Floating-chrome dynamic-island width animation. RFC §3.2 bans width transitions (reflow cost). Follow-up source PR: convert to a fixed-width container with transform: scaleX() animating a child, or a clip-path crossfade."
+    }
+  ]
+}
