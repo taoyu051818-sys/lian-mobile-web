@@ -162,13 +162,13 @@ describe("LianButton click suppression (loading + disabled)", () => {
 });
 
 describe("LianButton aria-pressed binding (state === 'pressed' only)", () => {
-  it("binds aria-pressed only when showPressedClass is true; null otherwise", () => {
+  it("binds aria-pressed only when showPressedClass is true; undefined otherwise", () => {
     // The `aria-pressed` attribute should NOT default to "false" — that
     // would pollute non-toggle CTAs with an ARIA toggle role implication.
-    // Vue drops attributes whose value is null, so binding to
-    // `showPressedClass ? 'true' : null` means: pressed → "true",
+    // Vue drops attributes whose value is undefined, so binding to
+    // `showPressedClass ? 'true' : undefined` means: pressed → "true",
     // anything else → no attribute on the rendered button.
-    expect(source).toMatch(/:aria-pressed="showPressedClass \? 'true' : null"/);
+    expect(source).toMatch(/:aria-pressed="showPressedClass \? 'true' : undefined"/);
   });
 
   it("does not emit a default aria-pressed='false' for non-pressed states", () => {
