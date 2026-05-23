@@ -88,7 +88,7 @@ Total files: 324
 | `config/brand/messages.ts`     | export const MESSAGE_EMPTY_CONTENT = "这条消息暂时没有内容。"; export const MESSAGE_TAB_LABEL = "消息分类"; export const MESSAGE_S...                 |    36 |
 | `config/brand/notification.ts` | export const NOTIFICATION_SECTION_LABEL = "通知"; export const NOTIFICATION_READ = "已读"; export const NOTIFICATION_UNRE...                          |   113 |
 | `config/brand/profile.ts`      | export const PROFILE*CAMPUS_USER = "校园用户"; export const PROFILE_INVITE_USER = "邀请码用户"; export const PROFILE_IDENTITY*...                     |   120 |
-| `config/brand/publish.ts`      | export const PUBLISH_CLEAR = "清空"; export const PUBLISH_SUBMIT = "发布"; export const PUBLISH_LOCATION_LABEL = "地点"; e...                         |    96 |
+| `config/brand/publish.ts`      | export const PUBLISH_CLEAR = "清空"; export const PUBLISH_SUBMIT = "发布"; export const PUBLISH_LOCATION_LABEL = "地点"; e...                         |   108 |
 | `config/brand/report.ts`       | export const REPORT_CAT_PRIVACY = "隐私问题"; export const REPORT_CAT_FALSE_INFO = "虚假信息"; export const REPORT_CAT_ABUSE ...                      |    19 |
 | `config/brand/runner.ts`       | export const RUNNER_SECTION_LABEL = "跑腿员中心"; export const RUNNER_ENTER_LABEL = "跑腿员中心"; export const RUNNER_BACK_TO_P...                    |    56 |
 | `config/brand/serverchan.ts`   | Server酱 (ps#504 I2) — external notification settings + opt-in dialog copy. Constants for: - Profile settings sectio...                               |    76 |
@@ -256,7 +256,8 @@ Total files: 324
 | `features/profile/useServerChanOptIn.ts`           | Server酱 reminder opt-in dialog controller (ps#504 I2). Owns the "should we prompt the user to opt into a reminder?" ...      |   144 |
 | `features/profile/useServerChanPreferences.ts`     | Server酱 preferences composable (ps#504 I2). Module-scope singleton — there is exactly one preferences object per ses...      |   160 |
 | `features/publish/PublishActionBar.vue`            | Vue SFC                                                                                                                       |    41 |
-| `features/publish/PublishComposer.vue`             | Vue SFC                                                                                                                       |   293 |
+| `features/publish/PublishCandidateBar.vue`         | Vue SFC                                                                                                                       |   111 |
+| `features/publish/PublishComposer.vue`             | Vue SFC                                                                                                                       |   300 |
 | `features/publish/PublishEventControls.vue`        | Vue SFC                                                                                                                       |   178 |
 | `features/publish/PublishGateNotice.vue`           | Vue SFC                                                                                                                       |   134 |
 | `features/publish/PublishImagePreview.vue`         | Vue SFC                                                                                                                       |   105 |
@@ -271,7 +272,7 @@ Total files: 324
 | `features/publish/publishDraftSession.ts`          | Drop every scoped publish-draft entry. Called on logout / account switch so a different account can't restore the pre...      |   255 |
 | `features/publish/useMerchantPublishDraft.ts`      | Publish-side merchant draft + verification gate. Owns: - merchant form fields (name / category / hours / contact / ...        |   100 |
 | `features/publish/usePublishAi.ts`                 | AI suggestion glue for the publish view (PRD V0.1 Phase 3 / §7.4.2). Runs the underlying AI composable and pipes acc...       |    56 |
-| `features/publish/usePublishDraft.ts`              | Composes the three slices of publish-form state — form fields & uploads (this file), identity (`usePublishIdentity`),...      |   285 |
+| `features/publish/usePublishDraft.ts`              | Body candidate slot (PRD V0.2 step B). The LLM-polished body lives in `bodyCandidate` until the user explicitly appl...       |   429 |
 | `features/publish/usePublishDraftSession.ts`       | Stable identifier for the signed-in account, or null when the identity has not been resolved yet (e.g. while /api/aut...      |   202 |
 | `features/publish/usePublishIdentity.ts`           | Identity-side of the publish view: the avatar/name/meta strip that the shell renders, the alias the post is attribute...      |    82 |
 | `features/publish/usePublishLocationOptions.ts`    | export function usePublishLocationOptions(placeName: Ref<string>)                                                             |   139 |
