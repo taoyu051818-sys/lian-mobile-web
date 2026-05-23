@@ -36,6 +36,7 @@ const emit = defineEmits<{
       type="button"
       :disabled="likeBusy"
       :aria-busy="likeBusy ? 'true' : 'false'"
+      :aria-pressed="Boolean(liked)"
       @click="emit('like')"
     >
       <span class="post-reply-dock__action-icon">{{ liked ? "♥" : "♡" }}</span>
@@ -51,6 +52,7 @@ const emit = defineEmits<{
       type="button"
       :disabled="saveBusy"
       :aria-busy="saveBusy ? 'true' : 'false'"
+      :aria-pressed="Boolean(saved)"
       @click="emit('save')"
     >
       <span class="post-reply-dock__action-icon">{{ saved ? "★" : "☆" }}</span>
