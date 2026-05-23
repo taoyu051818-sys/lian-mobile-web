@@ -26,12 +26,16 @@ export interface RoleDefinition {
   envPass: string | null;
   expectedTags: readonly VerificationTag[];
   /**
-   * Free-form verification tags we accept on the user record (anything from
-   * `expectedTags` plus optional sibling tags such as `realname_verified` that
-   * commonly accompany a merchant account). The `@account-fixture` spec
-   * asserts every entry in `expectedTags` is present and tolerates extras.
+   * Sibling tags we accept on the user record alongside `expectedTags`. Two
+   * shapes coexist on nat100:
+   *  - `VerificationTag` enum values (`realname_verified`, `campus_verified`,
+   *    …) that the typed verification pipeline emits.
+   *  - Free-form Chinese display labels (`高校认证`, `实名认证`, `商家认证`)
+   *    that the legacy NodeBB user record still carries for UI badges.
+   * The `@account-fixture` spec asserts every entry in `expectedTags` is
+   * present and tolerates anything listed here without warning.
    */
-  toleratedExtraTags?: readonly VerificationTag[];
+  toleratedExtraTags?: readonly string[];
 }
 
 const ROLE_TABLE: Record<RoleId, RoleDefinition> = {
@@ -55,7 +59,9 @@ const ROLE_TABLE: Record<RoleId, RoleDefinition> = {
     envUser: "LIAN_E2E_CAMPUS_USERNAME",
     envPass: "LIAN_E2E_CAMPUS_PASSWORD",
     expectedTags: ["campus_verified"],
-    toleratedExtraTags: ["org_member"],
+    // "高校认证" is the legacy NodeBB display label that pairs with the
+    // `campus_verified` enum value on the user record.
+    toleratedExtraTags: ["org_member", "高校认证"],
   },
   merchant: {
     id: "merchant",
@@ -63,7 +69,9 @@ const ROLE_TABLE: Record<RoleId, RoleDefinition> = {
     envUser: "LIAN_E2E_MERCHANT_USERNAME",
     envPass: "LIAN_E2E_MERCHANT_PASSWORD",
     expectedTags: ["merchant_verified"],
-    toleratedExtraTags: ["realname_verified"],
+    // The merchant seed is also campus_verified on nat100 and carries the
+    // legacy display labels "高校认证" (campus) and "商家认证" (merchant).
+    toleratedExtraTags: ["realname_verified", "campus_verified", "高校认证", "商家认证"],
   },
   runner: {
     id: "runner",
@@ -71,7 +79,8 @@ const ROLE_TABLE: Record<RoleId, RoleDefinition> = {
     envUser: "LIAN_E2E_RUNNER_USERNAME",
     envPass: "LIAN_E2E_RUNNER_PASSWORD",
     expectedTags: ["runner"],
-    toleratedExtraTags: ["campus_verified", "realname_verified"],
+    // Legacy display labels "高校认证" / "实名认证" accompany the enum siblings.
+    toleratedExtraTags: ["campus_verified", "realname_verified", "高校认证", "实名认证"],
   },
   admin: {
     id: "admin",
@@ -79,6 +88,9 @@ const ROLE_TABLE: Record<RoleId, RoleDefinition> = {
     envUser: "LIAN_E2E_ADMIN_USERNAME",
     envPass: "LIAN_E2E_ADMIN_PASSWORD",
     expectedTags: [],
+    // The admin seed on nat100 also happens to be campus_verified + carries
+    // the legacy display label "高校认证".
+    toleratedExtraTags: ["campus_verified", "高校认证"],
   },
   event_creator: {
     id: "event_creator",
@@ -87,6 +99,8 @@ const ROLE_TABLE: Record<RoleId, RoleDefinition> = {
     envUser: "LIAN_E2E_EVENT_CREATOR_USERNAME",
     envPass: "LIAN_E2E_EVENT_CREATOR_PASSWORD",
     expectedTags: ["campus_verified", "realname_verified"],
+    // Legacy display labels "高校认证" / "实名认证" accompany the enum tags.
+    toleratedExtraTags: ["高校认证", "实名认证"],
   },
   org_member: {
     id: "org_member",
@@ -95,6 +109,8 @@ const ROLE_TABLE: Record<RoleId, RoleDefinition> = {
     envUser: "LIAN_E2E_ORG_MEMBER_USERNAME",
     envPass: "LIAN_E2E_ORG_MEMBER_PASSWORD",
     expectedTags: ["campus_verified", "org_member"],
+    // Legacy display label "高校认证" accompanies campus_verified.
+    toleratedExtraTags: ["高校认证"],
   },
 };
 
