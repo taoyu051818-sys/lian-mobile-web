@@ -264,7 +264,10 @@ test.describe("@post-visibility post visibility permission matrix @post-visibili
         !isRoleConfigured("registered"),
         "registered role not configured — cannot create test post",
       );
-      test.skip(!privateTid, "private post creation failed — backend may not support this visibility");
+      test.skip(
+        !privateTid,
+        "private post creation failed — backend may not support this visibility",
+      );
 
       const anonApi = await request.newContext({ baseURL: BASE_URL });
       try {
@@ -287,7 +290,10 @@ test.describe("@post-visibility post visibility permission matrix @post-visibili
         !isRoleConfigured("campus"),
         "campus role not configured — need a different user to test non-author access",
       );
-      test.skip(!privateTid, "private post creation failed — backend may not support this visibility");
+      test.skip(
+        !privateTid,
+        "private post creation failed — backend may not support this visibility",
+      );
 
       const { api: viewerApi } = await loginAs("campus", BASE_URL);
       try {
@@ -306,7 +312,10 @@ test.describe("@post-visibility post visibility permission matrix @post-visibili
         !isRoleConfigured("registered"),
         "registered role not configured — cannot create test post",
       );
-      test.skip(!privateTid, "private post creation failed — backend may not support this visibility");
+      test.skip(
+        !privateTid,
+        "private post creation failed — backend may not support this visibility",
+      );
 
       const status = await fetchPostStatus(authorApi!, privateTid!);
       expect(status, "author should see own private post").toBe(200);
@@ -317,7 +326,10 @@ test.describe("@post-visibility post visibility permission matrix @post-visibili
         !isRoleConfigured("registered"),
         "registered role not configured — cannot create test post",
       );
-      test.skip(!privateTid, "private post creation failed — backend may not support this visibility");
+      test.skip(
+        !privateTid,
+        "private post creation failed — backend may not support this visibility",
+      );
       test.skip(!adminToken(), "LIAN_E2E_ADMIN_TOKEN not configured");
 
       const adminApi = await request.newContext({ baseURL: BASE_URL });
@@ -364,7 +376,10 @@ test.describe("@post-visibility post visibility permission matrix @post-visibili
         !isRoleConfigured("campus"),
         "campus role not configured — cannot create school-visibility post",
       );
-      test.skip(!schoolTid, "school post creation failed — backend may not support this visibility");
+      test.skip(
+        !schoolTid,
+        "school post creation failed — backend may not support this visibility",
+      );
 
       const anonApi = await request.newContext({ baseURL: BASE_URL });
       try {
@@ -387,7 +402,10 @@ test.describe("@post-visibility post visibility permission matrix @post-visibili
         !isRoleConfigured("registered"),
         "registered role not configured — need unverified user",
       );
-      test.skip(!schoolTid, "school post creation failed — backend may not support this visibility");
+      test.skip(
+        !schoolTid,
+        "school post creation failed — backend may not support this visibility",
+      );
 
       const { api: viewerApi } = await loginAs("registered", BASE_URL);
       try {
@@ -409,7 +427,10 @@ test.describe("@post-visibility post visibility permission matrix @post-visibili
         !isRoleConfigured("campus"),
         "campus role not configured — cannot create school-visibility post",
       );
-      test.skip(!schoolTid, "school post creation failed — backend may not support this visibility");
+      test.skip(
+        !schoolTid,
+        "school post creation failed — backend may not support this visibility",
+      );
 
       const status = await fetchPostStatus(authorApi!, schoolTid!);
       expect(status, "author should see own school post").toBe(200);
@@ -420,7 +441,10 @@ test.describe("@post-visibility post visibility permission matrix @post-visibili
         !isRoleConfigured("campus"),
         "campus role not configured — cannot create school-visibility post",
       );
-      test.skip(!schoolTid, "school post creation failed — backend may not support this visibility");
+      test.skip(
+        !schoolTid,
+        "school post creation failed — backend may not support this visibility",
+      );
       test.skip(!adminToken(), "LIAN_E2E_ADMIN_TOKEN not configured");
 
       const adminApi = await request.newContext({ baseURL: BASE_URL });
@@ -466,7 +490,10 @@ test.describe("@post-visibility post visibility permission matrix @post-visibili
         !isRoleConfigured("registered"),
         "registered role not configured — cannot create test post",
       );
-      test.skip(!linkOnlyTid, "linkOnly post creation failed — backend may not support this visibility");
+      test.skip(
+        !linkOnlyTid,
+        "linkOnly post creation failed — backend may not support this visibility",
+      );
 
       const anonApi = await request.newContext({ baseURL: BASE_URL });
       try {
@@ -491,7 +518,10 @@ test.describe("@post-visibility post visibility permission matrix @post-visibili
         !isRoleConfigured("campus"),
         "campus role not configured — need a different user to test non-author access",
       );
-      test.skip(!linkOnlyTid, "linkOnly post creation failed — backend may not support this visibility");
+      test.skip(
+        !linkOnlyTid,
+        "linkOnly post creation failed — backend may not support this visibility",
+      );
 
       const { api: viewerApi } = await loginAs("campus", BASE_URL);
       try {
@@ -511,7 +541,10 @@ test.describe("@post-visibility post visibility permission matrix @post-visibili
         !isRoleConfigured("registered"),
         "registered role not configured — cannot create test post",
       );
-      test.skip(!linkOnlyTid, "linkOnly post creation failed — backend may not support this visibility");
+      test.skip(
+        !linkOnlyTid,
+        "linkOnly post creation failed — backend may not support this visibility",
+      );
 
       const status = await fetchPostStatus(authorApi!, linkOnlyTid!);
       expect(status, "author should see own linkOnly post").toBe(200);
@@ -522,7 +555,10 @@ test.describe("@post-visibility post visibility permission matrix @post-visibili
         !isRoleConfigured("registered"),
         "registered role not configured — cannot create test post",
       );
-      test.skip(!linkOnlyTid, "linkOnly post creation failed — backend may not support this visibility");
+      test.skip(
+        !linkOnlyTid,
+        "linkOnly post creation failed — backend may not support this visibility",
+      );
       test.skip(!adminToken(), "LIAN_E2E_ADMIN_TOKEN not configured");
 
       const adminApi = await request.newContext({ baseURL: BASE_URL });
