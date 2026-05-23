@@ -7,7 +7,9 @@ const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..")
 
 const requiredFiles = [
   "index.html",
-  "src/main.ts",
+  "src/app.ts",
+  "src/entry-client.ts",
+  "src/entry-server.ts",
   "src/App.vue",
   "src/styles/main.css",
   "src/styles/lian-tokens.css",
@@ -50,7 +52,6 @@ const frontendJsFiles = [
 
 const backendOnlyPaths = [
   "server.js",
-  "src/server",
   "scripts/test-routes.js",
   "scripts/prepare-backend-repo-export.js",
   "test/audience-regression.test.mjs",
