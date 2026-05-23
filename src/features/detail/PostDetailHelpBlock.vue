@@ -34,6 +34,9 @@ const props = defineProps<{
   plan: HelpVotePlan;
   busy: boolean;
   actionError?: string;
+  /** Issue #793 — action registry controls button visibility, not block visibility. */
+  showAction?: boolean;
+  showLinkedEntry?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -67,7 +70,11 @@ const disabledReason = computed(() => {
       return "";
   }
 });
-const showLinkedEntry = computed(() => helpHasLinkedEvent(props.help));
+const showPrimaryAction = computed(() => props.showAction ?? true);
+const showLinkedEntry = computed(() => {
+  if (typeof props.showLinkedEntry === "boolean") return props.showLinkedEntry;
+  return helpHasLinkedEvent(props.help);
+});
 
 function handleOpenLinkedEvent() {
   if (typeof props.help.linkedEventTid === "number") {
@@ -83,13 +90,14 @@ function handleOpenLinkedEvent() {
     data-testid="post-detail-help-block"
   >
     <header class="post-detail-help-block__header">
-      <span class="post-detail-help-block__status" :data-status="help.status">{{
-        statusLabel
-      }}</span>
+      <span class="post-detail-help-block__status" :data-status="help.status">
+        {{ statusLabel }}
+      </span>
       <span class="post-detail-help-block__votes">{{ voteLabel }}</span>
     </header>
 
     <button
+      v-if="showPrimaryAction"
       type="button"
       class="post-detail-help-block__action"
       :disabled="!plan.enabled || busy"
@@ -101,7 +109,10 @@ function handleOpenLinkedEvent() {
       {{ buttonLabel }}
     </button>
 
-    <p v-if="disabledReason && !plan.enabled" class="post-detail-help-block__hint">
+    <p
+      v-if="showPrimaryAction && disabledReason && !plan.enabled"
+      class="post-detail-help-block__hint"
+    >
       {{ disabledReason }}
     </p>
 

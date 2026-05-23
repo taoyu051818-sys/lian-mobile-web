@@ -62,6 +62,9 @@ const props = withDefaults(
     manageable?: boolean;
     completeBusy?: boolean;
     completeActionError?: string;
+    /** Issue #793 — action registry controls button visibility, not block visibility. */
+    showAction?: boolean;
+    showCompleteAction?: boolean;
   }>(),
   {
     manageable: false,
@@ -128,12 +131,15 @@ const disabledReason = computed(() => {
   }
 });
 
+const showPrimaryAction = computed(() => props.showAction ?? true);
+
 // Issue #703 — completion button is hidden (not just disabled) when:
 //   - viewer is not author/admin (manageable === false)
 //   - status already completed/cancelled
-// Hiding (v-if) — never disabled — is the explicit issue requirement so that
-// non-author non-admin users do not even know the button exists.
+// Issue #793 lets the upstream action registry override this button-level
+// visibility without affecting whether the event block itself renders.
 const showCompleteButton = computed(() => {
+  if (typeof props.showCompleteAction === "boolean") return props.showCompleteAction;
   if (!props.manageable) return false;
   if (status.value === "completed" || status.value === "cancelled") return false;
   return true;
@@ -202,8 +208,12 @@ const settledAtLabel = computed(() => {
     data-testid="post-detail-event-block"
   >
     <header class="post-detail-event-block__header">
-      <span class="post-detail-event-block__status" :data-status="status">{{ statusLabel }}</span>
-      <span v-if="timeRangeLabel" class="post-detail-event-block__time">{{ timeRangeLabel }}</span>
+      <span class="post-detail-event-block__status" :data-status="status">
+        {{ statusLabel }}
+      </span>
+      <span v-if="timeRangeLabel" class="post-detail-event-block__time">
+        {{ timeRangeLabel }}
+      </span>
     </header>
 
     <p class="post-detail-event-block__participants">{{ participantLabel }}</p>
@@ -238,8 +248,9 @@ const settledAtLabel = computed(() => {
       </dl>
     </div>
 
-    <div class="post-detail-event-block__actions">
+    <div v-if="showPrimaryAction || showCompleteButton" class="post-detail-event-block__actions">
       <button
+        v-if="showPrimaryAction"
         type="button"
         class="post-detail-event-block__action"
         :disabled="!plan.enabled || busy"
@@ -264,7 +275,10 @@ const settledAtLabel = computed(() => {
       </button>
     </div>
 
-    <p v-if="disabledReason && !plan.enabled" class="post-detail-event-block__hint">
+    <p
+      v-if="showPrimaryAction && disabledReason && !plan.enabled"
+      class="post-detail-event-block__hint"
+    >
       {{ disabledReason }}
     </p>
 
@@ -292,8 +306,12 @@ const settledAtLabel = computed(() => {
       >
         <div class="post-detail-event-block__confirm-backdrop" @click="dismissConfirm" />
         <section class="post-detail-event-block__confirm-panel">
-          <h2 class="post-detail-event-block__confirm-title">{{ EVENT_COMPLETE_CONFIRM_TITLE }}</h2>
-          <p class="post-detail-event-block__confirm-body">{{ EVENT_COMPLETE_CONFIRM_BODY }}</p>
+          <h2 class="post-detail-event-block__confirm-title">
+            {{ EVENT_COMPLETE_CONFIRM_TITLE }}
+          </h2>
+          <p class="post-detail-event-block__confirm-body">
+            {{ EVENT_COMPLETE_CONFIRM_BODY }}
+          </p>
           <div class="post-detail-event-block__confirm-actions">
             <button
               type="button"

@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { computed } from "vue";
+import type { EventActionPlan } from "../../domain/eventActionPolicy";
+import type { HelpManagePlan } from "../../domain/helpManagePolicy";
+import type { HelpVotePlan } from "../../domain/helpVotePolicy";
+import type { MerchantErrandUnavailableReason } from "../../types/merchant";
 import type { PlaceRef, PlaceSheet } from "../../types/place";
 import type { PostType } from "../../types/post";
-import type { EventActionPlan } from "../../domain/eventActionPolicy";
-import type { HelpVotePlan } from "../../domain/helpVotePolicy";
-import type { HelpManagePlan } from "../../domain/helpManagePolicy";
-import type { MerchantErrandUnavailableReason } from "../../types/merchant";
 import type {
   EventPostExtension,
   HelpPostExtension,
@@ -17,18 +17,19 @@ import {
   type PostCapabilityId,
   type PostCapabilitySelection,
 } from "./postCapabilityRegistry";
-import PostDetailGallery from "./PostDetailGallery.vue";
-import PostDetailMainBody from "./PostDetailMainBody.vue";
-import PostDetailInfoStrip from "./PostDetailInfoStrip.vue";
+import { isPostActionAvailable, type PostActionContext } from "./postActionRegistry";
+import PostActionFeedback from "./PostActionFeedback.vue";
 import PostDetailEventBlock from "./PostDetailEventBlock.vue";
+import PostDetailGallery from "./PostDetailGallery.vue";
 import PostDetailHelpBlock from "./PostDetailHelpBlock.vue";
 import PostDetailHelpManageBlock from "./PostDetailHelpManageBlock.vue";
+import PostDetailInfoStrip from "./PostDetailInfoStrip.vue";
+import PostDetailMainBody from "./PostDetailMainBody.vue";
 import PostDetailMerchantBlock from "./PostDetailMerchantBlock.vue";
 import PostDetailTradeBlock from "./PostDetailTradeBlock.vue";
 import PostDetailTypedFallbackBlock from "./PostDetailTypedFallbackBlock.vue";
 import PostPlaceSheetBlock from "./PostPlaceSheetBlock.vue";
 import PostReportBlock from "./PostReportBlock.vue";
-import PostActionFeedback from "./PostActionFeedback.vue";
 
 const props = defineProps<{
   title?: string;
@@ -97,16 +98,70 @@ function selectionFor(id: PostCapabilityId): PostCapabilitySelection {
   return capabilityResolutions.value.find((entry) => entry.id === id)?.selection ?? "skip";
 }
 
+// Issue #793 — keep block rendering on the capability path, but centralize
+// which action surfaces are available for the already-rendered blocks.
+const actionContext = computed<PostActionContext>(() => ({
+  type: props.postType,
+  viewer: {
+    canManageEvent: Boolean(props.eventManageable),
+    canManageHelp: Boolean(props.helpManagePlan?.canManage),
+    canManageTrade: false,
+  },
+  event: props.event,
+  help: props.help,
+  merchant: props.merchant,
+  trade: props.trade,
+  errandEntryAvailable: props.errandEntryAvailable,
+  reportFollowUpVisible: props.reportFollowUpVisible,
+}));
+
 const showEventBlock = computed(
   () => selectionFor("event") === "render" && Boolean(props.eventPlan),
 );
-const showEventFallback = computed(() => selectionFor("event") === "fallback");
-const showHelpBlock = computed(() => selectionFor("help") === "render" && Boolean(props.helpPlan));
-const showHelpFallback = computed(() => selectionFor("help") === "fallback");
-const showHelpManageBlock = computed(
-  () => selectionFor("help") === "render" && Boolean(props.helpManagePlan),
+const showEventAction = computed(
+  () => isPostActionAvailable("event-act", actionContext.value) && Boolean(props.eventPlan),
 );
+const showEventCompleteAction = computed(() =>
+  isPostActionAvailable("event-complete", actionContext.value),
+);
+const showEventFallback = computed(() => selectionFor("event") === "fallback");
+
+const showHelpBlock = computed(() => selectionFor("help") === "render" && Boolean(props.helpPlan));
+const showHelpAction = computed(
+  () => isPostActionAvailable("help-act", actionContext.value) && Boolean(props.helpPlan),
+);
+const showHelpLinkedEvent = computed(() =>
+  isPostActionAvailable("help-open-linked-event", actionContext.value),
+);
+const showHelpFallback = computed(() => selectionFor("help") === "fallback");
+
+const showHelpManageLinkEvent = computed(
+  () =>
+    Boolean(props.helpManagePlan) && isPostActionAvailable("help-link-event", actionContext.value),
+);
+const showHelpManageUnlinkEvent = computed(
+  () =>
+    Boolean(props.helpManagePlan) &&
+    isPostActionAvailable("help-unlink-event", actionContext.value),
+);
+const showHelpManageResolve = computed(
+  () => Boolean(props.helpManagePlan) && isPostActionAvailable("help-resolve", actionContext.value),
+);
+const showHelpManageClose = computed(
+  () => Boolean(props.helpManagePlan) && isPostActionAvailable("help-close", actionContext.value),
+);
+const showHelpManageBlock = computed(
+  () =>
+    showHelpManageLinkEvent.value ||
+    showHelpManageUnlinkEvent.value ||
+    showHelpManageResolve.value ||
+    showHelpManageClose.value,
+);
+
 const showMerchantBlock = computed(() => selectionFor("merchant") === "render");
+const showMerchantErrandAction = computed(() =>
+  isPostActionAvailable("merchant-errand", actionContext.value),
+);
 const showMerchantFallback = computed(() => selectionFor("merchant") === "fallback");
 const showTradeBlock = computed(() => selectionFor("trade") === "render");
 const showTradeFallback = computed(() => selectionFor("trade") === "fallback");
@@ -154,6 +209,8 @@ const emit = defineEmits<{
       :manageable="!!eventManageable"
       :complete-busy="!!eventCompleteBusy"
       :complete-action-error="eventCompleteActionError"
+      :show-action="showEventAction"
+      :show-complete-action="showEventCompleteAction"
       @act="emit('eventAct')"
       @complete="emit('eventComplete')"
     />
@@ -165,6 +222,8 @@ const emit = defineEmits<{
       :plan="helpPlan!"
       :busy="!!helpBusy"
       :action-error="helpActionError"
+      :show-action="showHelpAction"
+      :show-linked-entry="showHelpLinkedEvent"
       @act="emit('helpAct')"
       @open-linked-event="emit('helpOpenLinkedEvent', $event)"
     />
@@ -175,6 +234,10 @@ const emit = defineEmits<{
       :plan="helpManagePlan!"
       :busy="!!helpManageBusy"
       :action-error="helpManageActionError"
+      :show-link-event="showHelpManageLinkEvent"
+      :show-unlink-event="showHelpManageUnlinkEvent"
+      :show-resolve="showHelpManageResolve"
+      :show-close="showHelpManageClose"
       @link-event="emit('helpManageLinkEvent', $event)"
       @unlink-event="emit('helpManageUnlinkEvent')"
       @resolve="emit('helpManageResolve')"
@@ -188,6 +251,7 @@ const emit = defineEmits<{
       :merchant-post-id="merchantPostId"
       :errand-unavailable-reason="errandUnavailableReason"
       :errand-unavailable-reason-text="errandUnavailableReasonText"
+      :show-errand-action="showMerchantErrandAction"
     />
     <PostDetailTypedFallbackBlock v-else-if="showMerchantFallback" post-type="merchant" />
 

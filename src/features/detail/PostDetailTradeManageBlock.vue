@@ -2,9 +2,14 @@
 import { computed, ref, watch } from "vue";
 import { patchTradeState } from "../../api/posts";
 import { fetchAuthMe } from "../../api/profile";
-import { extractErrorMessage } from "../../utils/extractErrorMessage";
 import type { PostDetail } from "../../types/post";
 import type { TradeState } from "../../types/post-extensions";
+import { extractErrorMessage } from "../../utils/extractErrorMessage";
+import {
+  availablePostActions,
+  type PostActionContext,
+  type PostActionId,
+} from "./postActionRegistry";
 
 const props = defineProps<{
   post: PostDetail | null;
@@ -37,14 +42,6 @@ const TRADE_ACTION_SUCCESS: Record<TradeState, string> = {
   hidden: "已暂时隐藏这条二手帖。",
 };
 
-const TRADE_TRANSITIONS: Record<TradeState, TradeState[]> = {
-  available: ["reserved", "sold", "cancelled", "hidden"],
-  reserved: ["available", "sold", "cancelled", "hidden"],
-  hidden: ["available", "cancelled"],
-  sold: [],
-  cancelled: [],
-};
-
 const currentUser = ref<{ id?: string; username?: string } | null>(null);
 const tradeStateBusy = ref(false);
 
@@ -63,14 +60,31 @@ const tradeManageable = computed(() => {
   );
 });
 
+const actionContext = computed<PostActionContext>(() => ({
+  type: post.value?.type,
+  viewer: {
+    canManageEvent: false,
+    canManageHelp: false,
+    canManageTrade: tradeManageable.value,
+  },
+  trade: trade.value ?? undefined,
+}));
+
+function tradeStateFromAction(id: Extract<PostActionId, `trade-set-${string}`>): TradeState {
+  return id.replace("trade-set-", "") as TradeState;
+}
+
 const tradeActions = computed(() => {
-  const currentState = trade.value?.state;
-  if (!currentState || !tradeManageable.value) return [];
-  return TRADE_TRANSITIONS[currentState].map((state) => ({
-    state,
-    label: TRADE_ACTION_LABELS[state],
-    tone: state === "cancelled" ? "danger" : state === "hidden" ? "quiet" : "default",
-  }));
+  return availablePostActions(actionContext.value)
+    .filter((id): id is Extract<PostActionId, `trade-set-${string}`> => id.startsWith("trade-set-"))
+    .map((id) => {
+      const state = tradeStateFromAction(id);
+      return {
+        state,
+        label: TRADE_ACTION_LABELS[state],
+        tone: state === "cancelled" ? "danger" : state === "hidden" ? "quiet" : "default",
+      };
+    });
 });
 
 const showTradeManage = computed(() => tradeManageable.value && tradeActions.value.length > 0);

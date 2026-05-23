@@ -9,6 +9,8 @@
  * downstream errand entry has a known mounting point.
  */
 import { computed } from "vue";
+import { useDetailNavigation } from "../../app/detail-navigation";
+import { useActiveView } from "../../app/useActiveView";
 import {
   MERCHANT_BLOCK_LABEL,
   MERCHANT_CATEGORY_FOOD,
@@ -27,8 +29,8 @@ import {
   MERCHANT_VERIFIED_AT_PREFIX,
   MERCHANT_VERIFIED_PREFIX,
 } from "../../config/brand";
-import { useActiveView } from "../../app/useActiveView";
-import { useDetailNavigation } from "../../app/detail-navigation";
+import type { MerchantErrandUnavailableReason } from "../../types/merchant";
+import type { MerchantCategory, MerchantPostExtension } from "../../types/post-extensions";
 import { errandReasonText } from "../merchant";
 import DetailCtaButton from "./DetailCtaButton.vue";
 import { selectDetailCtaState } from "./detailCtaState";
@@ -37,8 +39,6 @@ import { selectDetailCtaState } from "./detailCtaState";
 // barrel — those SFCs are async-mounted by AppViewHost and should stay out
 // of the detail bundle.
 import { useErrandOrderRoute } from "../errand/useErrandOrderRoute";
-import type { MerchantErrandUnavailableReason } from "../../types/merchant";
-import type { MerchantCategory, MerchantPostExtension } from "../../types/post-extensions";
 
 const props = defineProps<{
   merchant: MerchantPostExtension;
@@ -46,6 +46,7 @@ const props = defineProps<{
   merchantPostId?: number;
   errandUnavailableReason?: MerchantErrandUnavailableReason | "";
   errandUnavailableReasonText?: string;
+  showErrandAction?: boolean;
 }>();
 
 const CATEGORY_LABEL: Record<MerchantCategory, string> = {
@@ -74,11 +75,14 @@ const verifiedAtLabel = computed(() => {
 // merchant does not support errand at all — we render nothing in that case
 // so non-errand merchants don't grow a "暂未开放" chip.
 const errandUnavailable = computed(() => props.errandEntryAvailable === false);
+const showErrandEntry = computed(
+  () => props.showErrandAction ?? props.errandEntryAvailable === true,
+);
 const errandRoute = useErrandOrderRoute();
 const { setActiveView } = useActiveView();
 const detail = useDetailNavigation();
 const errandEntryClickable = computed(
-  () => props.errandEntryAvailable === true && (props.merchantPostId ?? 0) > 0,
+  () => showErrandEntry.value && (props.merchantPostId ?? 0) > 0,
 );
 const unavailableReasonLabel = computed(() => {
   if (!errandUnavailable.value) return "";
@@ -164,7 +168,7 @@ function handleErrandClick() {
     </dl>
 
     <div
-      v-if="errandEntryAvailable || errandUnavailable"
+      v-if="showErrandEntry || errandUnavailable"
       class="post-detail-merchant-block__errand"
       :class="{ 'is-unavailable': errandUnavailable }"
       :data-testid="errandWrapperTestId"
