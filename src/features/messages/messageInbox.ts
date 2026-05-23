@@ -13,25 +13,24 @@ import {
   NOTIFICATION_SYSTEM_INBOX_LABEL,
 } from "../../config/brand";
 import type { MessageTabKey, NotificationItem } from "../../types/messages";
-import { NOTIFICATION_CHANNELS, type NotificationChannelInfo } from "./notificationChannels";
 
-export interface NotificationGapLink {
-  label: string;
-  issueUrl: string;
-}
-
+/**
+ * Per-tab inbox copy for the messages page (#828 product inbox).
+ *
+ * The previous spec carried `channels` / `gapLinks` arrays so the view could
+ * render an engineering "channel readout" block above the items list (status
+ * pills + GitHub issue links). That readout was the single biggest signal
+ * that the inbox was a debugging surface, not a product surface, so #828
+ * stripped it. The remaining shape is intentionally narrow: title + hint +
+ * empty title/body — everything the product copy surface needs and nothing
+ * more.
+ */
 export interface NotificationInboxSpec {
   tab: "replies" | "system" | "orders";
   title: string;
   hint: string;
   emptyTitle: string;
   emptyBody: string;
-  channels: readonly NotificationChannelInfo[];
-  gapLinks: readonly NotificationGapLink[];
-}
-
-function selectChannels(ids: NotificationChannelInfo["id"][]) {
-  return NOTIFICATION_CHANNELS.filter((channel) => ids.includes(channel.id));
 }
 
 export const NOTIFICATION_INBOX_SPECS: Record<NotificationInboxSpec["tab"], NotificationInboxSpec> =
@@ -42,8 +41,6 @@ export const NOTIFICATION_INBOX_SPECS: Record<NotificationInboxSpec["tab"], Noti
       hint: NOTIFICATION_REPLY_INBOX_HINT,
       emptyTitle: NOTIFICATION_REPLY_EMPTY_TITLE,
       emptyBody: NOTIFICATION_REPLY_EMPTY_BODY,
-      channels: selectChannels(["reply"]),
-      gapLinks: [],
     },
     system: {
       tab: "system",
@@ -51,8 +48,6 @@ export const NOTIFICATION_INBOX_SPECS: Record<NotificationInboxSpec["tab"], Noti
       hint: NOTIFICATION_SYSTEM_INBOX_HINT,
       emptyTitle: NOTIFICATION_SYSTEM_EMPTY_TITLE,
       emptyBody: NOTIFICATION_SYSTEM_EMPTY_BODY,
-      channels: selectChannels(["verification", "event-completion", "admin-review"]),
-      gapLinks: [],
     },
     orders: {
       tab: "orders",
@@ -60,8 +55,6 @@ export const NOTIFICATION_INBOX_SPECS: Record<NotificationInboxSpec["tab"], Noti
       hint: NOTIFICATION_ORDER_INBOX_HINT,
       emptyTitle: NOTIFICATION_ORDER_EMPTY_TITLE,
       emptyBody: NOTIFICATION_ORDER_EMPTY_BODY,
-      channels: selectChannels(["errand-status"]),
-      gapLinks: [],
     },
   };
 

@@ -70,14 +70,11 @@ export const NOTIF_MOD_POST_UNLOCKED_BODY = "该帖子已解除锁定，可以�
 export const NOTIF_MOD_POST_RESTORED_TITLE = "您的帖子已恢复显示";
 export const NOTIF_MOD_POST_RESTORED_BODY = "该帖子已恢复正常显示。";
 
-/** 通知通道 readout */
-export const NOTIFICATION_CHANNELS_LABEL = "当前收件箱来源";
-export const NOTIFICATION_CHANNELS_HINT = "下面列出这个收件箱已经接入或仍在补线的消息来源。";
-export const NOTIFICATION_CHANNEL_STATUS_CONNECTED = "已接入";
-export const NOTIFICATION_CHANNEL_STATUS_PENDING = "未接入";
-export const NOTIFICATION_CHANNEL_ISSUE_LINK_LABEL = "查看对应 issue";
-export const NOTIFICATION_EMPTY_NEXT_STEP = "下一步";
-
+/**
+ * Inbox section labels. Each one is what the user sees as the "this is what
+ * the tab is for" headline; #828 stripped the engineering channel-readout
+ * block (status pills + GitHub issue links) that used to ride above this.
+ */
 export const NOTIFICATION_REPLY_INBOX_LABEL = "回复收件箱";
 export const NOTIFICATION_REPLY_INBOX_HINT = "别人回复你的帖子或评论后，会集中出现在这里。";
 export const NOTIFICATION_REPLY_EMPTY_TITLE = "还没有新的回复";
@@ -96,17 +93,16 @@ export const NOTIFICATION_ORDER_EMPTY_TITLE = "暂时没有新的订单提醒";
 export const NOTIFICATION_ORDER_EMPTY_BODY =
   "跑腿、配送和争议相关的状态变更会在这里集中提醒，新的状态到来时会自动出现。";
 
-export const NOTIFICATION_CHANNEL_REPLY_TITLE = "回复通知";
-export const NOTIFICATION_CHANNEL_REPLY_DESC =
-  "有人回复你的帖子时进入此处，点击直接跳转到帖子详情。";
-export const NOTIFICATION_CHANNEL_ADMIN_REVIEW_TITLE = "管理员审核";
-export const NOTIFICATION_CHANNEL_ADMIN_REVIEW_DESC =
-  "管理员处理举报或对帖子下架时暂未推送独立的系统通知。";
-export const NOTIFICATION_CHANNEL_VERIFICATION_TITLE = "认证结果";
-export const NOTIFICATION_CHANNEL_VERIFICATION_DESC =
-  "校园 / 商家 / 跑腿 / 实名认证通过或拒绝的结果都会推送到这里。";
-export const NOTIFICATION_CHANNEL_ERRAND_TITLE = "跑腿订单状态";
-export const NOTIFICATION_CHANNEL_ERRAND_DESC =
-  "订单从接单到送达的所有状态变更都会同步到这里，点开可直接进入订单详情。";
-export const NOTIFICATION_CHANNEL_EVENT_TITLE = "活动完成";
-export const NOTIFICATION_CHANNEL_EVENT_DESC = "活动结束、奖励发放、活动过期都会推送到这里。";
+/**
+ * Fail-loud / login-expired surfaces (#828). The error surface is rendered
+ * for every non-auth failure path (5xx, timeout, JSON malformed) so a 5xx is
+ * never silently downgraded to "暂无通知". The auth-required surface is
+ * rendered for 401 / 403 — its CTA routes back to the profile view's
+ * AuthPanel.
+ */
+export const MESSAGES_ERROR_TITLE = "暂时无法加载消息";
+export const MESSAGES_ERROR_BODY = "网络或服务器开了个小差，稍后再试就好。";
+export const MESSAGES_ERROR_RETRY = "重新加载";
+export const MESSAGES_AUTH_REQUIRED_TITLE = "登录已过期";
+export const MESSAGES_AUTH_REQUIRED_BODY = "重新登录后才能查看你的消息。";
+export const MESSAGES_AUTH_REQUIRED_CTA = "重新登录";
