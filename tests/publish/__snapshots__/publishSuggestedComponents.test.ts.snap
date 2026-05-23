@@ -1,0 +1,48 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`PublishSuggestedComponents DOM structure (PRD V0.2 step E-main) > PublishSuggestedComponents renders a list gated on items.length 1`] = `
+"<template>
+  <ul
+    v-if="items.length > 0"
+    class="publish-suggested"
+    :class="{ 'publish-suggested--reduced': reduced }"
+    :aria-label="PUBLISH_SUGGESTED_COMPONENTS_LABEL"
+    data-testid="publish-suggested-components"
+  >
+    <li
+      v-for="component in items"
+      :key="\`\${component.kind}::\${component.label}\`"
+      class="publish-suggested__item"
+      :data-kind="component.kind"
+      data-testid="publish-suggested-item"
+    >
+      <span class="publish-suggested__icon" aria-hidden="true">
+        {{ KIND_ICON[component.kind] }}
+      </span>
+      <span class="publish-suggested__label">
+        {{ component.label }}
+      </span>
+      <div class="publish-suggested__actions">
+        <button
+          type="button"
+          class="publish-suggested__action publish-suggested__action--accept"
+          :aria-label="acceptAriaLabel(component)"
+          data-testid="publish-suggested-accept"
+          @click="onAccept(component)"
+        >
+          {{ PUBLISH_SUGGESTED_ACCEPT }}
+        </button>
+        <button
+          type="button"
+          class="publish-suggested__action publish-suggested__action--dismiss"
+          :aria-label="PUBLISH_SUGGESTED_DISMISS"
+          data-testid="publish-suggested-dismiss"
+          @click="onDismiss(component)"
+        >
+          {{ PUBLISH_SUGGESTED_DISMISS }}
+        </button>
+      </div>
+    </li>
+  </ul>
+</template>"
+`;

@@ -213,12 +213,13 @@ export function useInjectedTitleCandidate(): PublishTitleCandidateApi {
  * Suggested-component pipe (PRD V0.2 step E-pre).
  *
  * Holds the most recent `candidates.suggestedComponents` array from the LLM
- * preview tick. `usePublishLlmTick` is the only writer; step E-main will be
- * the first reader (rendering inline ghost components in
- * `PublishGhostComponent.vue`). Provided here so descendants can `inject` the
- * ref without prop-drilling, mirroring the body/title candidate pattern.
+ * preview tick. `usePublishLlmTick` is the only writer; step E-main is the
+ * first reader (rendering inline ghost components in
+ * `PublishSuggestedComponents.vue`). Provided here so descendants can
+ * `inject` the ref without prop-drilling, mirroring the body/title candidate
+ * pattern.
  *
- * Step E-pre scope is the pipe. The hook empties the array between LLM
+ * Step E-pre scope was the pipe. The hook empties the array between LLM
  * round-trips when the model returns no components, so a stale "5 hints"
  * list never lingers after the user has typed past their relevance.
  */
@@ -234,6 +235,149 @@ export function useInjectedSuggestedComponents(): Ref<SuggestedComponent[]> {
     );
   }
   return ref$;
+}
+
+/**
+ * Suggested-component accept / dismiss API (PRD V0.2 step E-main, §4.2.3).
+ *
+ * Step E-pre exposed `suggestedComponents` (a writable ref) but no consumer
+ * — the pipe was inert. Step E-main introduces:
+ *
+ *   - `accept(component)` — "实化" the ghost into the publish draft. Each
+ *     kind maps to the smallest visible payload mutation that surfaces the
+ *     corresponding fields in the existing publish UI:
+ *       event_time      → publishKind = "event"        (event panel opens)
+ *       merchant_info   → publishKind = "merchant" if merchant_verified
+ *       trade_condition → publishKind = "trade"   if campus_verified
+ *       price           → merchant if merchant_verified, else trade if
+ *                         campus_verified, else no kind change
+ *       help_tag        → tagInput defaults to "求助" when blank
+ *       location        → no payload mutation; the location panel is owned
+ *                         by usePublishLocationOptions outside this slice
+ *                         (PRD §2.2 reserves "place" kind for step F)
+ *     After mutation the component is removed from the list so it can't be
+ *     accepted twice in a row.
+ *   - `dismiss(component)` — purely local: removes from the list. The next
+ *     LLM tick may re-emit the same kind; that's intended behavior per
+ *     PRD §4.2.3 ("用户继续输入或切到下一个 LLM tick 时静默消失").
+ *
+ * Defensive design: accept uses `===` on `kind` + `label` to identify the
+ * target. The same-kind+same-label pair is the contract step E-pre's
+ * `parseSuggestedComponents` already enforces (kinds are deduped before
+ * insert), so two-of-a-kind never appears in the list.
+ *
+ * Verification gates (merchant / trade): a defensive UI guard already
+ * lives in PublishView (the merchant radio is `v-if`-gated on
+ * `merchantVerified` and a watch resets publishKind back to "regular" if
+ * verification drops). We layer one more guard here so `accept(merchant_info)`
+ * never sets publishKind for an unverified user, even though the server
+ * filter (PRD §2.3) makes that case unreachable in practice.
+ */
+export interface PublishSuggestedComponentsActionsApi {
+  components: Ref<SuggestedComponent[]>;
+  accept: (component: SuggestedComponent) => void;
+  dismiss: (component: SuggestedComponent) => void;
+}
+
+export const PublishSuggestedComponentsActionsKey: InjectionKey<PublishSuggestedComponentsActionsApi> =
+  Symbol("PublishSuggestedComponentsActions");
+
+export function useInjectedSuggestedComponentsActions(): PublishSuggestedComponentsActionsApi {
+  const api = inject(PublishSuggestedComponentsActionsKey, null);
+  if (!api) {
+    throw new Error(
+      "usePublishDraft must be installed (provided) before consuming PublishSuggestedComponentsActionsKey",
+    );
+  }
+  return api;
+}
+
+export interface CreateSuggestedComponentsActionsParams {
+  components: Ref<SuggestedComponent[]>;
+  publishKind: Ref<PublishKind>;
+  tagInput: Ref<string>;
+  /** /api/auth/me-derived merchant_verified flag. accept(merchant_info) and accept(price) consult this. */
+  merchantVerified: Ref<boolean>;
+  /** /api/auth/me-derived campus_verified flag. accept(trade_condition) and accept(price) consult this. */
+  campusVerified: Ref<boolean>;
+}
+
+/**
+ * Pure factory for the suggested-component actions API.
+ *
+ * Exported so tests can drive accept/dismiss directly without booting a
+ * component (the wrapping `usePublishDraft` calls `provide()`, which
+ * requires a setup context). This is the same code path the composable
+ * runs through — see `createBodyCandidate` for prior art.
+ */
+export function createSuggestedComponentsActions(
+  params: CreateSuggestedComponentsActionsParams,
+): PublishSuggestedComponentsActionsApi {
+  function indexOf(target: SuggestedComponent): number {
+    // kind alone would suffice today (the parser dedupes by kind), but
+    // matching label too keeps us robust if the dedupe rule is ever
+    // relaxed and two same-kind ghosts coexist.
+    return params.components.value.findIndex(
+      (entry) => entry.kind === target.kind && entry.label === target.label,
+    );
+  }
+  function removeAt(index: number) {
+    if (index < 0) return;
+    const next = params.components.value.slice();
+    next.splice(index, 1);
+    params.components.value = next;
+  }
+  function dismiss(target: SuggestedComponent) {
+    removeAt(indexOf(target));
+  }
+  function accept(target: SuggestedComponent) {
+    const idx = indexOf(target);
+    // No-op when the ghost is already gone — protects against double-fire
+    // from accidentally tapping twice during a slow render frame.
+    if (idx < 0) return;
+    switch (target.kind) {
+      case "event_time":
+        params.publishKind.value = "event";
+        break;
+      case "merchant_info":
+        if (params.merchantVerified.value) params.publishKind.value = "merchant";
+        break;
+      case "trade_condition":
+        if (params.campusVerified.value) params.publishKind.value = "trade";
+        break;
+      case "price":
+        // 价格既可属 merchant 也可属 trade。merchant_verified 优先（商家页有
+        // 自己的"营业时间 / 联系方式"），否则落 trade（campus_verified 才进
+        // trade panel）。两个都不满足时不改 publishKind，但 ghost 仍被消费
+        // —— 用户的"忽略一次"意图在视觉上立刻生效。
+        if (params.merchantVerified.value) {
+          params.publishKind.value = "merchant";
+        } else if (params.campusVerified.value) {
+          params.publishKind.value = "trade";
+        }
+        break;
+      case "help_tag":
+        // Don't clobber a tag the user already typed — that would be the
+        // "AI 静默覆盖" reflex the PRD calls out as a reflex to avoid.
+        if (params.tagInput.value.trim().length === 0) {
+          params.tagInput.value = "求助";
+        }
+        break;
+      case "location":
+        // 仅地点 → "place" kind in PRD §2.2, but the publish UI doesn't
+        // surface a "place" radio yet (step F territory). The location
+        // panel is owned by usePublishLocationOptions one level up; the
+        // accept gesture here is a no-op on draft state and the SFC at
+        // the call site handles the actual panel-open side effect.
+        break;
+    }
+    removeAt(idx);
+  }
+  return {
+    components: params.components,
+    accept,
+    dismiss,
+  };
 }
 
 /**
@@ -326,7 +470,7 @@ export function usePublishDraft() {
   const titleCandidate = createTitleCandidate(title);
   // PRD V0.2 step E-pre — sink for the LLM tick's suggestedComponents block.
   // `usePublishLlmTick` (mounted from PublishComposer) is the only writer;
-  // step E-main will be the first reader (PublishGhostComponent.vue).
+  // step E-main is the first reader (PublishSuggestedComponents.vue).
   // Empty array is the natural "no suggestions" state — keeps consumer
   // templates simple (`v-for` over an empty list is a no-op).
   const suggestedComponents = ref<SuggestedComponent[]>([]);
@@ -503,6 +647,17 @@ export function usePublishDraft() {
   // inject without prop-drilling, and step E-main's ghost UI can read via
   // the same key.
   provide(PublishSuggestedComponentsKey, suggestedComponents);
+  // PRD V0.2 step E-main — accept / dismiss actions for the ghost UI. The
+  // factory takes refs (publishKind / tagInput / verification flags) so the
+  // mutations land back on the same draft the rest of PublishView reads.
+  const suggestedComponentsActions = createSuggestedComponentsActions({
+    components: suggestedComponents,
+    publishKind,
+    tagInput,
+    merchantVerified: merchant.merchantVerified,
+    campusVerified: trade.campusVerified,
+  });
+  provide(PublishSuggestedComponentsActionsKey, suggestedComponentsActions);
 
   function resetForm(clearLocation: () => void) {
     title.value = "";
