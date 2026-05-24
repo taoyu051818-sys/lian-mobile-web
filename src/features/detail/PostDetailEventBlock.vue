@@ -77,8 +77,10 @@ const props = withDefaults(
     showCompleteAction?: boolean;
   }>(),
   {
+    actionError: undefined,
     manageable: false,
     completeBusy: false,
+    completeActionError: undefined,
   },
 );
 
