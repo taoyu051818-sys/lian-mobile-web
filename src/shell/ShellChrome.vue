@@ -51,10 +51,19 @@ const isDetailTopbarSlot = computed(() => regionSpec.value.slot === "detail-topb
 // own chrome rendering and lets the slot host carry the floating-chrome
 // surface so the teleported content fills it edge-to-edge.
 const isFeedFilterSlot = computed(() => regionSpec.value.slot === "feed-filter");
+// Channel filter slot — messages-page sibling of feed-filter. MessagesView
+// teleports the dual-state bar (visibility chips ↔ inbox categories) into
+// the same `#lian-shell-top-slot`. Mirrors `feed-filter` so both top-region
+// filter bars share one floating-chrome rendering branch.
+const isChannelFilterSlot = computed(() => regionSpec.value.slot === "channel-filter");
 const rendersStableTopTarget = computed(() => props.region === "top");
 const rendersStableBottomTarget = computed(() => props.region === "bottom");
 const rendersRegularChrome = computed(
-  () => !isReplyDockSlot.value && !isDetailTopbarSlot.value && !isFeedFilterSlot.value,
+  () =>
+    !isReplyDockSlot.value &&
+    !isDetailTopbarSlot.value &&
+    !isFeedFilterSlot.value &&
+    !isChannelFilterSlot.value,
 );
 
 function handleButtonClick(button: ChromeButtonSpec) {
@@ -88,10 +97,16 @@ function handleFilterToggle(filterId: string) {
         'shell-chrome--reply-dock': isReplyDockSlot,
         'shell-chrome--detail-topbar': isDetailTopbarSlot,
         'shell-chrome--feed-filter': isFeedFilterSlot,
+        'shell-chrome--channel-filter': isChannelFilterSlot,
       },
     ]"
     :aria-hidden="
-      hasTabs || isSlottedTabs || isReplyDockSlot || isDetailTopbarSlot || isFeedFilterSlot
+      hasTabs ||
+      isSlottedTabs ||
+      isReplyDockSlot ||
+      isDetailTopbarSlot ||
+      isFeedFilterSlot ||
+      isChannelFilterSlot
         ? undefined
         : !isVisible
     "
@@ -105,10 +120,12 @@ function handleFilterToggle(filterId: string) {
       id="lian-shell-top-slot"
       class="shell-chrome__top-slot"
       :class="{
-        'lian-floating-chrome': isDetailTopbarSlot || isFeedFilterSlot,
-        'lian-floating-chrome--top': isDetailTopbarSlot || isFeedFilterSlot,
+        'lian-floating-chrome': isDetailTopbarSlot || isFeedFilterSlot || isChannelFilterSlot,
+        'lian-floating-chrome--top': isDetailTopbarSlot || isFeedFilterSlot || isChannelFilterSlot,
       }"
-      :data-floating-chrome="isDetailTopbarSlot || isFeedFilterSlot ? 'top' : undefined"
+      :data-floating-chrome="
+        isDetailTopbarSlot || isFeedFilterSlot || isChannelFilterSlot ? 'top' : undefined
+      "
     />
     <div
       v-if="rendersStableBottomTarget"
