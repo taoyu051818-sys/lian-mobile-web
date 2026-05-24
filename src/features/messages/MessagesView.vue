@@ -4,17 +4,12 @@ import { computed, onMounted, ref, watch } from "vue";
 import { useActiveView } from "../../app/useActiveView";
 import { useDetailNavigation } from "../../app/detail-navigation";
 import { useVisualViewport } from "../../composables/useVisualViewport";
-import {
-  MESSAGE_SECTION_LABEL,
-  MESSAGE_TAB_CHANNEL,
-  MESSAGE_TAB_LABEL,
-  MESSAGE_TAB_ORDERS,
-  MESSAGE_TAB_REPLIES,
-  MESSAGE_TAB_SYSTEM,
-} from "../../config/brand";
+import { MESSAGE_SECTION_LABEL } from "../../config/brand";
 import type { AudienceVisibility } from "../../types/audience";
 import type { MessageTabKey, NotificationItem } from "../../types/messages";
 import type { PageChromeSpec } from "../../shell/page-model";
+import { useShellChrome } from "../../shell/useShellChrome";
+import { useFloatingChromeState } from "../../shell/floatingChromeState";
 import { ChannelComposer, ChannelFilterBar, ChannelThread, NotificationList } from "./";
 import type { FilterState } from "./ChannelFilterBar.vue";
 import { isNotificationInboxTab, itemsForInboxTab, NOTIFICATION_INBOX_SPECS } from "./messageInbox";
@@ -51,7 +46,6 @@ const {
   composerContent,
   composerIdentityTag,
   composerVisibility,
-  currentUser,
   identityTags,
   sending,
   sendError,
@@ -90,13 +84,6 @@ function openNotification(item: NotificationItem) {
 
 useVisualViewport();
 
-const tabs: Array<{ key: MessageTabKey; label: string }> = [
-  { key: "channel", label: MESSAGE_TAB_CHANNEL },
-  { key: "replies", label: MESSAGE_TAB_REPLIES },
-  { key: "system", label: MESSAGE_TAB_SYSTEM },
-  { key: "orders", label: MESSAGE_TAB_ORDERS },
-];
-
 const activeNotificationSpec = computed(() =>
   isNotificationInboxTab(activeTab.value) ? NOTIFICATION_INBOX_SPECS[activeTab.value] : null,
 );
@@ -106,24 +93,21 @@ const visibleNotificationItems = computed(() =>
     : [],
 );
 
+// MessagesView no longer paints typed top.tabs into the chrome — the four
+// inbox tabs (channel/replies/system/orders) are now rendered as State-B
+// chips inside ChannelFilterBar, which is teleported into the top floating
+// chrome via the `channel-filter` slot. The detail FSM still owns the slot
+// when a post is open; we only stake our claim while it is closed.
 const pageChrome = computed<PageChromeSpec>(() => ({
-  top: {
-    tabs: {
-      kind: "tabs",
-      items: tabs.map((t) => ({ id: t.key, label: t.label })),
-      activeKey: activeTab.value,
-      ariaLabel: MESSAGE_TAB_LABEL,
-    },
-    identity: currentUser.value
-      ? {
-          avatarText: composerAvatarText.value,
-          name: composerActorName.value,
-        }
-      : null,
-    onTabSelect: (tabId: string) => {
-      void switchTab(tabId as MessageTabKey);
-    },
-  },
+  top: detail.detailOpen.value
+    ? {
+        // Detail-open: leave the slot alone — the FSM flips it to "detail-topbar".
+        tabs: null,
+      }
+    : {
+        tabs: null,
+        slot: "channel-filter",
+      },
   bottom: {
     visible: true,
   },
@@ -131,9 +115,34 @@ const pageChrome = computed<PageChromeSpec>(() => ({
 
 watch(pageChrome, (spec) => emit("chrome", spec), { deep: true });
 
-/** Handle filter state changes */
+const { shellVisible } = useFloatingChromeState();
+const chrome = useShellChrome();
+
+// When detail closes, the FSM clears the slot back to null. Re-stake our
+// claim so the channel filter bar re-mounts in the top region.
+watch(
+  () => detail.detailOpen.value,
+  (open, wasOpen) => {
+    if (wasOpen && !open) {
+      chrome.setSlot("top", "channel-filter");
+    }
+  },
+);
+
+/** Handle filter state changes.
+ *
+ * `[...]` always brings the user "home" to State A on the channel tab — if
+ * they switched away (e.g. to replies/system/orders) and then toggled back
+ * to visibility, ChannelFilterBar would otherwise leave them stranded on a
+ * non-channel tab with no way to see channel content. So whenever the bar
+ * emits `update:filter-state` -> "visibility", we also flip activeTab back
+ * to "channel" if it isn't already there.
+ */
 function handleFilterStateChange(state: FilterState) {
   filterState.value = state;
+  if (state === "visibility" && activeTab.value !== "channel") {
+    void switchTab("channel");
+  }
 }
 
 /** Handle visibility selection changes */
@@ -156,8 +165,27 @@ async function switchTab(tab: MessageTabKey) {
   }
 }
 
+// State-B lock: when a non-channel tab is active, force the bar into category
+// state so the user can always see which inbox they're on. State A only makes
+// sense for the channel tab (visibility filters channel posts). Switching to
+// channel doesn't auto-flip back to State A — that happens via the `[x]`
+// toggle or by tapping the channel chip.
+const effectiveFilterState = computed<FilterState>(() =>
+  activeTab.value === "channel" ? filterState.value : "category",
+);
+
+// Mount the teleported bar whenever we own the slot (no detail panel) and
+// the shell is visible. The bar handles both filter states internally.
+const filterBarMounted = computed(() => !detail.detailOpen.value && shellVisible.value);
+
 onMounted(async () => {
   emit("chrome", pageChrome.value);
+  // Set the slot eagerly so the teleport target carries the floating-chrome
+  // surface on first paint (applyPageChrome only writes `slot` when the
+  // emitted spec includes it; the initial emit may race the mount watcher).
+  if (!detail.detailOpen.value) {
+    chrome.setSlot("top", "channel-filter");
+  }
   await loadCurrentUser();
   await loadChannel(true);
 });
@@ -165,18 +193,23 @@ onMounted(async () => {
 
 <template>
   <section class="messages-view" :aria-label="MESSAGE_SECTION_LABEL">
-    <!-- Dual-state filter bar -->
-    <ChannelFilterBar
-      v-if="activeTab === 'channel'"
-      class="messages-view__filter-bar"
-      :filter-state="filterState"
-      :selected-visibility="selectedVisibility"
-      :active-category="activeTab"
-      :is-guest="isGuest"
-      @update:filter-state="handleFilterStateChange"
-      @update:selected-visibility="handleVisibilityChange"
-      @update:active-category="handleCategoryChange"
-    />
+    <!--
+      Dual-state filter bar lives in the top floating chrome via the
+      `channel-filter` slot. Teleport target is the stable
+      `#lian-shell-top-slot` div ShellChrome always renders for the top
+      region (mirrors FeedFilterBar's `feed-filter` slot).
+    -->
+    <Teleport v-if="filterBarMounted" defer to="#lian-shell-top-slot">
+      <ChannelFilterBar
+        :filter-state="effectiveFilterState"
+        :selected-visibility="selectedVisibility"
+        :active-category="activeTab"
+        :is-guest="isGuest"
+        @update:filter-state="handleFilterStateChange"
+        @update:selected-visibility="handleVisibilityChange"
+        @update:active-category="handleCategoryChange"
+      />
+    </Teleport>
 
     <ChannelThread
       v-if="activeTab === 'channel'"
@@ -230,10 +263,6 @@ onMounted(async () => {
   gap: var(--space-4);
   padding-top: calc(var(--floating-bar-height) + env(safe-area-inset-top));
   padding-bottom: calc(var(--space-8) + env(safe-area-inset-bottom) + var(--keyboard-inset-bottom));
-}
-
-.messages-view__filter-bar {
-  padding: 0 var(--space-3);
 }
 
 .messages-view__chrome-composer {

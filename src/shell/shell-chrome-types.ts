@@ -2,16 +2,27 @@ export type ShellRegionKey = "top" | "bottom";
 
 /**
  * Named slot kinds rendered inside a shell region. The slot value drives
- * which sub-component (tabs / detail topbar / reply dock / feed filter)
- * the shell renders at the corresponding edge. Adding a new kind requires
- * updating ShellChrome's render branches and the docs in floating-chrome.css.
+ * which sub-component (tabs / detail topbar / reply dock / feed filter /
+ * channel filter) the shell renders at the corresponding edge. Adding a
+ * new kind requires updating ShellChrome's render branches and the docs
+ * in floating-chrome.css.
  *
  * `feed-filter` is the dual-state filter bar (visibility chips ↔ feed tabs)
  * that FeedView teleports into `#lian-shell-top-slot`. It behaves like
  * `detail-topbar` from the shell's POV: regular chrome rendering is
  * suppressed and the slot host div carries the floating-chrome surface.
+ *
+ * `channel-filter` is the messages-page sibling: a dual-state filter bar
+ * (visibility chips ↔ message inbox categories) that MessagesView teleports
+ * into the same `#lian-shell-top-slot`. It mirrors `feed-filter` so both
+ * top-region filter bars share one floating-chrome rendering branch.
  */
-export type ChromeSlotKind = "tabs" | "detail-topbar" | "reply-dock" | "feed-filter";
+export type ChromeSlotKind =
+  | "tabs"
+  | "detail-topbar"
+  | "reply-dock"
+  | "feed-filter"
+  | "channel-filter";
 
 export interface ChromeButtonSpec {
   id: string;
