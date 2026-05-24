@@ -98,7 +98,7 @@ describe("resolveAppLocale priority and mapping (PRD V0.1 §9.2)", () => {
   it("falls back to navigator.language when languages[] has no match", () => {
     expect(
       resolveAppLocale({
-        navigatorLanguages: ["sw-KE", "tr-TR"],
+        navigatorLanguages: ["sw-KE", "uk-UA"],
         navigatorLanguage: "zh-Hans-CN",
       }),
     ).toBe("zh-CN");
