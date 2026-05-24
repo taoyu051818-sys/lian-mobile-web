@@ -31,7 +31,6 @@ import type { FeedItem, FeedItemId, FeedItemShellCardTemplate } from "../../type
 import FeedItemCardShell from "./FeedItemCardShell.vue";
 import FeedContextMenu from "./FeedContextMenu.vue";
 import { useCardPointerInteraction } from "./useCardPointerInteraction";
-import { useLongPress } from "../../composables/useLongPress";
 import { hapticMedium } from "../../composables/useHapticFeedback";
 
 type CardTemplate = FeedItemShellCardTemplate;
@@ -148,21 +147,7 @@ const {
   openCardFromKeyboard,
 } = useCardPointerInteraction(emitOpen);
 
-// Long press handling for context menu
-function handleLongPress(event: TouchEvent | PointerEvent) {
-  // Get touch/pointer position for menu placement
-  if ("touches" in event && event.touches.length > 0) {
-    contextMenuX.value = event.touches[0].clientX;
-    contextMenuY.value = event.touches[0].clientY;
-  } else if ("clientX" in event) {
-    contextMenuX.value = event.clientX;
-    contextMenuY.value = event.clientY;
-  }
-  showContextMenu.value = true;
-}
-
 function handleShare() {
-  // TODO: Implement share functionality
   if (typeof navigator !== "undefined" && navigator.share) {
     navigator
       .share({

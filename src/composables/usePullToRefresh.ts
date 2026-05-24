@@ -93,7 +93,6 @@ export function usePullToRefresh(options: PullToRefreshOptions = {}) {
 
   // Internal tracking
   let startY = 0;
-  let startScrollTop = 0;
   let isTracking = false;
   let touchId: number | null = null;
 
@@ -133,7 +132,6 @@ export function usePullToRefresh(options: PullToRefreshOptions = {}) {
     if (scrollTop > 5) return;
 
     startY = touch.clientY;
-    startScrollTop = scrollTop;
     touchId = touch.identifier;
     isTracking = true;
   }

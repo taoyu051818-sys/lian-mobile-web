@@ -12,26 +12,6 @@
 
 import { expect, test, type Page } from "@playwright/test";
 
-const BASE_URL = process.env.APP_BASE_URL ?? "https://lian.nat100.top";
-
-// Visibility chip labels from brand config
-const VISIBILITY_CHIPS = {
-  all: "全部",
-  public: "公开",
-  campus: "园区",
-  school: "学校",
-  private: "私密",
-  linkOnly: "仅链接",
-};
-
-// Category chip labels from brand config
-const CATEGORY_CHIPS = {
-  channel: "频道",
-  replies: "回复",
-  system: "系统",
-  orders: "订单",
-};
-
 /**
  * Stub common endpoints to make tests hermetic.
  */

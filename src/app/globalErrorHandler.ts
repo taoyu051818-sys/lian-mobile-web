@@ -82,8 +82,10 @@ function vueErrorHandler(
   };
 
   if (import.meta.env.DEV) {
+    // eslint-disable-next-line no-console -- surface unhandled component errors to dev console for triage
     console.error(formatErrorLog(error, context));
     if (error instanceof Error && error.stack) {
+      // eslint-disable-next-line no-console -- preserve stack trace alongside the formatted log line
       console.error(error.stack);
     }
   }
@@ -105,8 +107,10 @@ function unhandledRejectionHandler(event: PromiseRejectionEvent): void {
   };
 
   if (import.meta.env.DEV) {
+    // eslint-disable-next-line no-console -- surface unhandled rejections to dev console for triage
     console.error(formatErrorLog(error, context));
     if (error instanceof Error && error.stack) {
+      // eslint-disable-next-line no-console -- preserve stack trace alongside the formatted log line
       console.error(error.stack);
     }
   }
@@ -132,6 +136,7 @@ function windowErrorHandler(event: ErrorEvent): void {
   };
 
   if (import.meta.env.DEV) {
+    // eslint-disable-next-line no-console -- surface uncaught window errors to dev console for triage
     console.error(formatErrorLog(event.error || event.message, context));
   }
 

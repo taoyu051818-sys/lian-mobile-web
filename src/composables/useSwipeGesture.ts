@@ -94,7 +94,6 @@ export function useSwipeGesture(options: SwipeGestureOptions = {}) {
   // Internal tracking
   let startX = 0;
   let startY = 0;
-  let startTime = 0;
   let isTracking = false;
   let directionLocked = false;
 
@@ -113,7 +112,6 @@ export function useSwipeGesture(options: SwipeGestureOptions = {}) {
     const touch = event.touches[0];
     startX = touch.clientX;
     startY = touch.clientY;
-    startTime = performance.now();
     isTracking = true;
     directionLocked = false;
     direction.value = null;

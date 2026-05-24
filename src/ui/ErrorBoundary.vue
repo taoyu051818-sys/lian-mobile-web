@@ -38,7 +38,9 @@ onErrorCaptured((error: Error, _instance, info) => {
 
   // Log for debugging in development
   if (import.meta.env.DEV) {
+    // eslint-disable-next-line no-console -- surface boundary-caught errors to dev console for triage
     console.error("[ErrorBoundary] Caught error:", error);
+    // eslint-disable-next-line no-console -- preserve component info alongside the error log line
     console.error("[ErrorBoundary] Component info:", info);
   }
 

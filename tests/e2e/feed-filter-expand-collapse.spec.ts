@@ -12,8 +12,6 @@
 
 import { expect, test, type Page } from "@playwright/test";
 
-const BASE_URL = process.env.APP_BASE_URL ?? "https://lian.nat100.top";
-
 // Visibility chip labels from brand config (feed.ts)
 const VISIBILITY_CHIPS = {
   all: "全部",
