@@ -270,7 +270,8 @@ export async function patchAdminVerificationRequest(
       body: JSON.stringify(payload),
     }),
   );
-  if (!data.verification) throw new LianApiError("管理员后台未返回 verification 数据", 0, "MALFORMED_RESPONSE");
+  if (!data.verification)
+    throw new LianApiError("管理员后台未返回 verification 数据", 0, "MALFORMED_RESPONSE");
   return data.verification;
 }
 
@@ -283,7 +284,8 @@ export async function fetchAdminVerificationDetail(
     verificationDetailPath(request, options),
     withAuthHeader(token),
   );
-  if (!data.verification) throw new LianApiError("管理员后台未返回 verification 明细", 0, "MALFORMED_RESPONSE");
+  if (!data.verification)
+    throw new LianApiError("管理员后台未返回 verification 明细", 0, "MALFORMED_RESPONSE");
   return data.verification;
 }
 
