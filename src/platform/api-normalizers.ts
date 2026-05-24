@@ -119,6 +119,7 @@ export function normalizeDisplayActor(value: unknown): DisplayActor | undefined 
   const avatarUrl = optionalString(record.avatarUrl);
   const avatarText = optionalString(record.avatarText);
   const identityTag = optionalString(record.identityTag);
+  const aliasId = optionalString(record.aliasId);
 
   if (id) actor.id = id;
   if (displayName) actor.displayName = displayName;
@@ -127,6 +128,7 @@ export function normalizeDisplayActor(value: unknown): DisplayActor | undefined 
   if (avatarUrl) actor.avatarUrl = avatarUrl;
   if (avatarText) actor.avatarText = avatarText;
   if (identityTag) actor.identityTag = identityTag;
+  if (aliasId) actor.aliasId = aliasId;
 
   return Object.keys(actor).length ? actor : undefined;
 }

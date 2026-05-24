@@ -16,6 +16,13 @@ export interface DisplayActor {
   avatarUrl?: string;
   avatarText?: string;
   identityTag?: string;
+  /**
+   * Issue #938 — when the post is attributed to an alias identity, the actor
+   * carries the alias key here. The avatar resolver uses this as the trigger
+   * to fall back to the generic anonymous SVG instead of leaking the user's
+   * real avatar.
+   */
+  aliasId?: string;
 }
 
 export interface SourceSignal {
