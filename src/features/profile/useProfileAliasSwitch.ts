@@ -11,7 +11,13 @@ export function useProfileAliasSwitch() {
     onError: (message: string) => void,
   ) {
     const result = await run(
-      () => (aliasId ? activateProfileAlias(aliasId) : deactivateProfileAlias()),
+      async () => {
+        if (aliasId) {
+          await activateProfileAlias(aliasId);
+        } else {
+          await deactivateProfileAlias();
+        }
+      },
       PROFILE_IDENTITY_SWITCH_ERROR,
       onSuccess,
     );
