@@ -73,9 +73,7 @@ function handleVisibilityChange(visibilities: Set<AudienceVisibility>) {
       <button type="button" @click="feedData.loadFeed(true)">{{ CHANNEL_RELOAD }}</button>
     </InlineError>
 
-    <div v-if="feedData.loading.value" class="feed-view__state" role="status">
-      {{ feedData.LOADING_FEED }}
-    </div>
+    <FeedSkeleton v-if="feedData.loading.value" />
 
     <div v-else-if="feedData.isEmpty.value" class="feed-view__state feed-view__state--empty">
       <strong>{{ feedData.EMPTY_FEED }}</strong>

@@ -44,6 +44,7 @@ const props = defineProps<{
   titleCount: number;
   bodyCount: number;
   selectedFilesCount: number;
+  uploadedImageCount: number;
   selectedMapLocation: MapLocation | null;
   placeName: string;
   normalizedTag: string;
