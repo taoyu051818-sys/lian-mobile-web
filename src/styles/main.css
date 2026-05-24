@@ -17,6 +17,8 @@ body,
   min-height: 100%;
   margin: 0;
   overscroll-behavior: none;
+  /* Block double-tap zoom globally; scoped overrides (.feed-view: pan-y, etc.) keep gesture handlers working. */
+  touch-action: manipulation;
 }
 
 body {
@@ -39,6 +41,8 @@ select {
   font: inherit;
   -webkit-appearance: none;
   appearance: none;
+  /* iOS Safari auto-zooms when input font-size <16px on focus. Pin to 16px floor. */
+  font-size: max(16px, 1em);
 }
 
 button {
