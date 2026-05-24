@@ -35,9 +35,17 @@ export function useMessageComposer(options: {
     if (!user?.aliases?.length) return null;
     return user.aliases.find((alias) => alias.id === user.activeAliasId) || user.aliases[0] || null;
   });
-  const composerActorName = computed(
-    () => activeAlias.value?.name || currentUser.value?.username || DEFAULT_USER_LABEL,
-  );
+  // When an alias is active the composer is in alias/anonymous mode — empty
+  // alias.name must NOT fall back to username, which would leak the real
+  // account identity onto an anonymity-sensitive surface (#952). Username is
+  // only an acceptable display when there is no alias at all (real identity).
+  const composerActorName = computed(() => {
+    const alias = activeAlias.value;
+    if (alias) {
+      return alias.name || DEFAULT_USER_LABEL;
+    }
+    return currentUser.value?.username || DEFAULT_USER_LABEL;
+  });
   const composerAvatarText = computed(
     () => composerActorName.value.slice(0, 2) || USER_AVATAR_FALLBACK,
   );
