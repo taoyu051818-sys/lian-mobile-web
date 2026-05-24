@@ -46,9 +46,16 @@ const hasTabs = computed(() => regionSpec.value.tabs != null);
 const isSlottedTabs = computed(() => !hasTabs.value && regionSpec.value.slot === "tabs");
 const isReplyDockSlot = computed(() => regionSpec.value.slot === "reply-dock");
 const isDetailTopbarSlot = computed(() => regionSpec.value.slot === "detail-topbar");
+// Feed filter slot (option C, dual-state visibility ↔ tabs bar). FeedView
+// teleports the bar into `#lian-shell-top-slot`; the shell suppresses its
+// own chrome rendering and lets the slot host carry the floating-chrome
+// surface so the teleported content fills it edge-to-edge.
+const isFeedFilterSlot = computed(() => regionSpec.value.slot === "feed-filter");
 const rendersStableTopTarget = computed(() => props.region === "top");
 const rendersStableBottomTarget = computed(() => props.region === "bottom");
-const rendersRegularChrome = computed(() => !isReplyDockSlot.value && !isDetailTopbarSlot.value);
+const rendersRegularChrome = computed(
+  () => !isReplyDockSlot.value && !isDetailTopbarSlot.value && !isFeedFilterSlot.value,
+);
 
 function handleButtonClick(button: ChromeButtonSpec) {
   if (!button.disabled && isVisible.value) {
@@ -80,10 +87,13 @@ function handleFilterToggle(filterId: string) {
         'shell-chrome--tabs': hasTabs || isSlottedTabs,
         'shell-chrome--reply-dock': isReplyDockSlot,
         'shell-chrome--detail-topbar': isDetailTopbarSlot,
+        'shell-chrome--feed-filter': isFeedFilterSlot,
       },
     ]"
     :aria-hidden="
-      hasTabs || isSlottedTabs || isReplyDockSlot || isDetailTopbarSlot ? undefined : !isVisible
+      hasTabs || isSlottedTabs || isReplyDockSlot || isDetailTopbarSlot || isFeedFilterSlot
+        ? undefined
+        : !isVisible
     "
     role="complementary"
     :aria-label="region === 'top' ? SHELL_TOP_REGION : SHELL_BOTTOM_REGION"
@@ -95,10 +105,10 @@ function handleFilterToggle(filterId: string) {
       id="lian-shell-top-slot"
       class="shell-chrome__top-slot"
       :class="{
-        'lian-floating-chrome': isDetailTopbarSlot,
-        'lian-floating-chrome--top': isDetailTopbarSlot,
+        'lian-floating-chrome': isDetailTopbarSlot || isFeedFilterSlot,
+        'lian-floating-chrome--top': isDetailTopbarSlot || isFeedFilterSlot,
       }"
-      :data-floating-chrome="isDetailTopbarSlot ? 'top' : undefined"
+      :data-floating-chrome="isDetailTopbarSlot || isFeedFilterSlot ? 'top' : undefined"
     />
     <div
       v-if="rendersStableBottomTarget"

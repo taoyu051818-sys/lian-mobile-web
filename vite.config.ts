@@ -21,7 +21,12 @@ export default defineConfig({
     vue(),
     VitePWA({
       registerType: "prompt",
-      includeAssets: ["assets/pwa-icon-*.png", "assets/share-cover.png", "assets/aliases/**/*"],
+      // alias SVGs (assets/aliases/**/*.svg) are already covered by the
+      // workbox.globPatterns SVG entry below; listing them here again caused
+      // every alias to land twice in the precache manifest, which made the SW
+      // install reject the manifest as having duplicate URLs and left the
+      // bundle stale (#230 ChannelFilterBar invisibility root cause).
+      includeAssets: ["assets/pwa-icon-*.png", "assets/share-cover.png"],
       manifest: false, // Use existing public/manifest.json
       workbox: {
         // Immediate activation: take control on install without waiting

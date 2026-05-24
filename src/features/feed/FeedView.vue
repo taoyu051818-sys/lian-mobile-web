@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, watch } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import type { PageChromeSpec } from "../../shell/page-model";
 import type { FeedItemId } from "../../types/feed";
 import type { AudienceVisibility } from "../../types/audience";
@@ -8,11 +8,13 @@ import FeedList from "./FeedList.vue";
 import FeedLoadMore from "./FeedLoadMore.vue";
 import PullToRefreshIndicator from "./PullToRefreshIndicator.vue";
 
-import FeedFilterBar from "./FeedFilterBar.vue";
+import FeedFilterBar, { type FeedFilterState } from "./FeedFilterBar.vue";
 import { useFeedData } from "./useFeedData";
 import { useDetailNavigation } from "../../app/detail-navigation";
 import { usePullToRefresh } from "../../composables/usePullToRefresh";
-import { CHANNEL_RELOAD, FEED_FILTER_LABEL, FEED_VIEW_TITLE } from "../../config/brand";
+import { useShellChrome } from "../../shell/useShellChrome";
+import { useFloatingChromeState } from "../../shell/floatingChromeState";
+import { CHANNEL_RELOAD, FEED_VIEW_TITLE } from "../../config/brand";
 
 const emit = defineEmits<{
   chrome: [spec: PageChromeSpec];
@@ -39,22 +41,50 @@ const pullToRefresh = usePullToRefresh({
   },
 });
 
+// Dual-state filter bar (option C): defaults to visibility chips. Toggle
+// to "tabs" via the [...] button to expose the feed tabs (此刻/精选/...).
+const filterState = ref<FeedFilterState>("visibility");
+
+// The feed page owns no typed `tabs` spec on the chrome anymore — tabs are
+// rendered inside the teleported FeedFilterBar under the `feed-filter` slot.
+// The detail FSM still flips the slot to `detail-topbar` when a post is
+// open; we only claim the slot when the FSM is closed.
 const pageChrome = computed<PageChromeSpec>(() => ({
-  top: {
-    tabs: {
-      kind: "tabs",
-      items: feedData.tabs.value,
-      activeKey: feedData.activeTab.value,
-      ariaLabel: FEED_FILTER_LABEL,
-    },
-    onTabSelect: feedData.switchTab,
-  },
+  top: detail.detailOpen.value
+    ? {
+        // Detail-open: do not touch slot — the FSM owns it ("detail-topbar").
+        tabs: null,
+      }
+    : {
+        tabs: null,
+        slot: "feed-filter",
+      },
 }));
 
 watch(pageChrome, (spec) => emit("chrome", spec), { deep: true });
 
+const { shellVisible } = useFloatingChromeState();
+const chrome = useShellChrome();
+
+// When detail closes, the FSM clears the slot back to null. Re-stake our
+// claim so the filter bar re-mounts in the top region.
+watch(
+  () => detail.detailOpen.value,
+  (open, wasOpen) => {
+    if (wasOpen && !open) {
+      chrome.setSlot("top", "feed-filter");
+    }
+  },
+);
+
 onMounted(() => {
   emit("chrome", pageChrome.value);
+  // Set the slot eagerly so the teleport target carries the floating-chrome
+  // surface on first paint (the page-chrome merge runs through applyPageChrome
+  // which only writes `slot` when the spec includes it).
+  if (!detail.detailOpen.value) {
+    chrome.setSlot("top", "feed-filter");
+  }
   void feedData.loadFeed(true);
 });
 
@@ -66,6 +96,19 @@ function openItem(id: FeedItemId) {
 function handleVisibilityChange(visibilities: Set<AudienceVisibility>) {
   feedData.setSelectedVisibilities(visibilities);
 }
+
+function handleTabChange(tabId: string) {
+  feedData.switchTab(tabId);
+}
+
+function handleFilterStateChange(next: FeedFilterState) {
+  filterState.value = next;
+}
+
+// Only mount the teleported filter bar while the page actually owns the
+// top slot. During detail-open the FSM flips it to "detail-topbar"; we
+// must withdraw or two components race for the same teleport target.
+const filterBarMounted = computed(() => !detail.detailOpen.value && shellVisible.value);
 </script>
 
 <template>
@@ -80,10 +123,22 @@ function handleVisibilityChange(visibilities: Set<AudienceVisibility>) {
       :pull-distance="pullToRefresh.state.pullDistance.value"
     />
 
-    <FeedFilterBar
-      :selected-visibilities="feedData.selectedVisibilities.value"
-      @update:selected-visibilities="handleVisibilityChange"
-    />
+    <!--
+      Dual-state filter bar lives in the top floating chrome via the
+      `feed-filter` slot. Teleport target is the stable `#lian-shell-top-slot`
+      div ShellChrome always renders for the top region.
+    -->
+    <Teleport v-if="filterBarMounted" defer to="#lian-shell-top-slot">
+      <FeedFilterBar
+        :filter-state="filterState"
+        :selected-visibilities="feedData.selectedVisibilities.value"
+        :tabs="feedData.tabs.value"
+        :active-tab-id="feedData.activeTab.value"
+        @update:filter-state="handleFilterStateChange"
+        @update:selected-visibilities="handleVisibilityChange"
+        @update:active-tab-id="handleTabChange"
+      />
+    </Teleport>
 
     <InlineError v-if="feedData.errorMessage.value">
       {{ feedData.errorMessage.value }}
