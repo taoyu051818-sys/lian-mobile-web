@@ -50,7 +50,8 @@ export default {
     sendMessage: "El mensaje no se envió. Puedes intentarlo más tarde.",
     sendReply: "La respuesta no se envió. Puedes intentarlo más tarde.",
     publishImage: "La carga de imagen falló. Elige otra imagen o inténtalo más tarde.",
-    publishLocation: "Los datos de ubicación no se cargaron. Puedes escribir el nombre del lugar manualmente.",
+    publishLocation:
+      "Los datos de ubicación no se cargaron. Puedes escribir el nombre del lugar manualmente.",
     likeAction: "El me gusta no se registró. Puedes intentarlo más tarde.",
     saveAction: "El guardado no se completó. Puedes intentarlo más tarde.",
     authGeneric: "El inicio de sesión/registro no se completó. Puedes intentarlo más tarde.",
@@ -84,8 +85,10 @@ export default {
     loginPlaceholder: "Inicia sesión con correo o apodo.",
     interestSkipHint: "Los intereses alimentan tu feed. Puedes omitir y ajustar después.",
     interestLoading: "Cargando opciones de intereses…",
-    interestEmpty: "No hay opciones de intereses disponibles — puedes terminar el registro y ajustar después.",
-    interestError: "Las opciones de intereses no se cargaron — puedes terminar el registro y ajustar después.",
+    interestEmpty:
+      "No hay opciones de intereses disponibles — puedes terminar el registro y ajustar después.",
+    interestError:
+      "Las opciones de intereses no se cargaron — puedes terminar el registro y ajustar después.",
     interestPickHint: "Elige al menos 1 interés para iniciar tu feed; puedes cambiarlo después.",
     interestSkipDefault: "Los intereses alimentan tu feed. Puedes omitir y ajustar después.",
     loggedInRefresh: "Sesión iniciada. Actualizando perfil…",
@@ -205,7 +208,8 @@ export default {
     catWrongLocation: "Ubicación incorrecta",
     catExpired: "Contenido desactualizado",
     catOther: "Otro",
-    placeholderPrivacy: "Describe qué información privada se filtró para que el equipo pueda actuar más rápido.",
+    placeholderPrivacy:
+      "Describe qué información privada se filtró para que el equipo pueda actuar más rápido.",
     placeholderAbuse: "Describe el acoso, ataque o violación.",
     placeholderOther: "Describe lo que te gustaría que se revisara.",
     duplicate: "Esta publicación ya ha sido reportada. Seguiremos dándole seguimiento.",
@@ -281,12 +285,13 @@ export default {
     imageReady: "Listo",
     imageCountSuffix: "imagen(es)",
     success: "Publicado — debería aparecer en Inicio pronto.",
-    successBound: "Publicado — vinculado a \"{n}\".",
+    successBound: 'Publicado — vinculado a "{n}".',
     viewPost: "Ver publicación",
     aiPending:
       "La IA está leyendo la imagen. El borrador se completará en breve — mientras tanto puedes elegir una ubicación.",
     aiRiskFlagsLabel: "Advertencias de riesgo de IA",
-    aiUnavailable: "El borrador con IA no está disponible en este momento. Aún puedes publicar manualmente.",
+    aiUnavailable:
+      "El borrador con IA no está disponible en este momento. Aún puedes publicar manualmente.",
   },
   publishComposer: {
     label: "Contenido a publicar",
@@ -322,7 +327,8 @@ export default {
     aliasDescription: "Descripción",
     realIdentityHint: "Actualmente publicando con tu identidad real.",
     aliasDefaultHint: "Este alias es tu identidad predeterminada en Lian.",
-    aliasMoreHint: "Este alias es tu identidad predeterminada en Lian. Más detalles del alias próximamente.",
+    aliasMoreHint:
+      "Este alias es tu identidad predeterminada en Lian. Más detalles del alias próximamente.",
     emptyContent: "Nada aquí todavía",
     loadErrorPrefix: "Perfil",
     listErrorPrefix: "Lista",
@@ -377,8 +383,7 @@ export default {
     rateLimitDefault: "Demasiados envíos — por favor inténtalo más tarde. La página esperará {n}s.",
     sentInst: "Código enviado — reconocido como {n}.",
     rateLimitResend: "Enviando con demasiada frecuencia — por favor reintenta en {n}s.",
-    rateLimitFallback:
-      "Si el servidor no devuelve un tiempo de espera, la página esperará {n}s.",
+    rateLimitFallback: "Si el servidor no devuelve un tiempo de espera, la página esperará {n}s.",
   },
   eventDetail: {
     blockLabel: "Información del evento",
@@ -397,7 +402,8 @@ export default {
     disabledNotOpen: "No está abierto para inscripción",
     disabledFull: "Capacidad alcanzada",
     disabledOutOfScope: "Fuera del alcance de participantes",
-    actionUnavailable: "Las acciones del evento no están disponibles en este momento. Puedes intentarlo más tarde.",
+    actionUnavailable:
+      "Las acciones del evento no están disponibles en este momento. Puedes intentarlo más tarde.",
     joinSuccess: "Estás inscrito — nos vemos allí.",
     cancelSuccess: "Inscripción cancelada.",
   },
@@ -415,7 +421,8 @@ export default {
     disabledClosed: "Esta solicitud está cerrada",
     disabledNotSignedIn: "Inicia sesión para apoyar esta solicitud",
     linkedEventLabel: "Abrir el evento vinculado",
-    actionUnavailable: "Las acciones de ayuda no están disponibles en este momento. Puedes intentarlo más tarde.",
+    actionUnavailable:
+      "Las acciones de ayuda no están disponibles en este momento. Puedes intentarlo más tarde.",
     voteSuccess: "Gracias por tu apoyo.",
     unvoteSuccess: "Apoyo retirado.",
   },
@@ -431,7 +438,8 @@ export default {
     linkSuccess: "Vinculado al evento.",
     resolveSuccess: "Marcado como resuelto.",
     closeSuccess: "Publicación de ayuda cerrada.",
-    unavailable: "Las acciones del gestor no están disponibles en este momento. Puedes intentarlo más tarde.",
+    unavailable:
+      "Las acciones del gestor no están disponibles en este momento. Puedes intentarlo más tarde.",
   },
   publishEvent: {
     postTypeLabel: "Tipo de contenido",
@@ -452,7 +460,8 @@ export default {
     capacityNotInt: "La capacidad debe ser un número entero.",
     capacityNegative: "La capacidad no puede ser negativa.",
     joinPolicyUnknown: "Elige una política de inscripción.",
-    success: "Evento publicado. Los participantes pueden inscribirse en la página de detalles del evento.",
+    success:
+      "Evento publicado. Los participantes pueden inscribirse en la página de detalles del evento.",
     unavailable:
       "La publicación de eventos no está disponible en este momento. Puedes intentarlo más tarde o publicar como publicación regular.",
   },

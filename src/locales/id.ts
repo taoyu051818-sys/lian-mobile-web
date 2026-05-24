@@ -281,7 +281,7 @@ export default {
     imageReady: "Siap",
     imageCountSuffix: "gambar",
     success: "Berhasil diposting — akan segera muncul di Beranda.",
-    successBound: "Berhasil diposting — terhubung ke \"{n}\".",
+    successBound: 'Berhasil diposting — terhubung ke "{n}".',
     viewPost: "Lihat postingan",
     aiPending:
       "AI sedang membaca gambar. Draf akan terisi sendiri sebentar lagi — Anda bisa pilih lokasi sementara itu.",
@@ -322,7 +322,8 @@ export default {
     aliasDescription: "Deskripsi",
     realIdentityHint: "Saat ini memposting sebagai identitas asli Anda.",
     aliasDefaultHint: "Alias ini adalah identitas default Anda di Lian.",
-    aliasMoreHint: "Alias ini adalah identitas default Anda di Lian. Detail alias lainnya akan menyusul.",
+    aliasMoreHint:
+      "Alias ini adalah identitas default Anda di Lian. Detail alias lainnya akan menyusul.",
     emptyContent: "Belum ada apa-apa di sini",
     loadErrorPrefix: "Profil",
     listErrorPrefix: "Daftar",
@@ -374,7 +375,8 @@ export default {
     resendHint: "Anda bisa kirim ulang dalam {n} detik.",
     cooldownHint: "Setelah mengirim, kode memasuki jeda — coba lagi dalam {n} detik.",
     rateLimit: "Terlalu banyak pengiriman — silakan coba lagi dalam {n} detik.",
-    rateLimitDefault: "Terlalu banyak pengiriman — silakan coba lagi nanti. Halaman akan jeda selama {n} detik.",
+    rateLimitDefault:
+      "Terlalu banyak pengiriman — silakan coba lagi nanti. Halaman akan jeda selama {n} detik.",
     sentInst: "Kode terkirim — dikenali sebagai {n}.",
     rateLimitResend: "Terlalu sering mengirim — silakan coba lagi dalam {n} detik.",
     rateLimitFallback:

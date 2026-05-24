@@ -45,7 +45,8 @@ export default {
     loadNotification: "알림을 로드할 수 없습니다. 나중에 다시 시도해 주세요.",
     sendMessage: "메시지를 전송할 수 없습니다. 나중에 다시 시도해 주세요.",
     sendReply: "답글을 전송할 수 없습니다. 나중에 다시 시도해 주세요.",
-    publishImage: "이미지 업로드에 실패했습니다. 다른 이미지를 선택하거나 나중에 다시 시도해 주세요.",
+    publishImage:
+      "이미지 업로드에 실패했습니다. 다른 이미지를 선택하거나 나중에 다시 시도해 주세요.",
     publishLocation: "위치 데이터를 로드할 수 없습니다. 장소명을 직접 입력할 수 있습니다.",
     likeAction: "좋아요를 처리할 수 없습니다. 나중에 다시 시도해 주세요.",
     saveAction: "저장할 수 없습니다. 나중에 다시 시도해 주세요.",
@@ -81,8 +82,10 @@ export default {
     interestSkipHint: "관심사는 피드 최적화에 사용됩니다. 건너뛰고 나중에 설정할 수 있습니다.",
     interestLoading: "관심사 옵션 로딩 중…",
     interestEmpty: "관심사 옵션이 없습니다. 회원가입을 완료하고 나중에 설정할 수 있습니다.",
-    interestError: "관심사 옵션을 로드할 수 없습니다. 회원가입을 완료하고 나중에 설정할 수 있습니다.",
-    interestPickHint: "피드를 최적화하려면 관심사를 1개 이상 선택해 주세요. 나중에 변경할 수 있습니다.",
+    interestError:
+      "관심사 옵션을 로드할 수 없습니다. 회원가입을 완료하고 나중에 설정할 수 있습니다.",
+    interestPickHint:
+      "피드를 최적화하려면 관심사를 1개 이상 선택해 주세요. 나중에 변경할 수 있습니다.",
     interestSkipDefault: "관심사는 피드 최적화에 사용됩니다. 건너뛰고 나중에 설정할 수 있습니다.",
     loggedInRefresh: "로그인되었습니다. 프로필 새로고침 중…",
     emailRequired: "먼저 학교 이메일을 입력해 주세요.",
@@ -277,9 +280,10 @@ export default {
     imageReady: "준비 완료",
     imageCountSuffix: "장의 이미지",
     success: "게시되었습니다. 곧 홈에 표시됩니다.",
-    successBound: "게시되었습니다. \"{n}\"에 연결되었습니다.",
+    successBound: '게시되었습니다. "{n}"에 연결되었습니다.',
     viewPost: "게시물 보기",
-    aiPending: "AI가 이미지를 읽고 있습니다. 초안이 자동으로 채워집니다. 그동안 위치를 선택할 수 있습니다.",
+    aiPending:
+      "AI가 이미지를 읽고 있습니다. 초안이 자동으로 채워집니다. 그동안 위치를 선택할 수 있습니다.",
     aiRiskFlagsLabel: "AI 위험 경고",
     aiUnavailable: "AI 초안 기능을 현재 사용할 수 없습니다. 직접 게시할 수 있습니다.",
   },
@@ -369,7 +373,8 @@ export default {
     resendHint: "{n}초 후에 재전송할 수 있습니다.",
     cooldownHint: "전송 후 코드는 쿨다운에 들어갑니다. {n}초 후에 재시도할 수 있습니다.",
     rateLimit: "전송 횟수가 너무 많습니다. {n}초 후에 시도해 주세요.",
-    rateLimitDefault: "전송 횟수가 너무 많습니다. 나중에 다시 시도해 주세요. {n}초 동안 쿨다운됩니다.",
+    rateLimitDefault:
+      "전송 횟수가 너무 많습니다. 나중에 다시 시도해 주세요. {n}초 동안 쿨다운됩니다.",
     sentInst: "코드가 전송되었습니다. {n}(으)로 인식되었습니다.",
     rateLimitResend: "전송 빈도가 너무 높습니다. {n}초 후에 시도해 주세요.",
     rateLimitFallback: "서버에서 대기 시간을 반환하지 않으면 {n}초 동안 쿨다운됩니다.",
@@ -447,6 +452,7 @@ export default {
     capacityNegative: "정원은 0 이상이어야 합니다.",
     joinPolicyUnknown: "참가 정책을 선택해 주세요.",
     success: "이벤트가 게시되었습니다. 상세 페이지에서 참가 등록할 수 있습니다.",
-    unavailable: "이벤트 게시를 현재 사용할 수 없습니다. 나중에 다시 시도하거나 일반 게시물로 게시해 주세요.",
+    unavailable:
+      "이벤트 게시를 현재 사용할 수 없습니다. 나중에 다시 시도하거나 일반 게시물로 게시해 주세요.",
   },
 } as const;

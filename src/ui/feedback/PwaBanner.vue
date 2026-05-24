@@ -12,7 +12,9 @@ const { isOnline } = useNetworkStatus();
     <div v-if="!isOnline" class="pwa-banner pwa-banner--offline" role="alert">
       <span class="pwa-banner__icon" aria-hidden="true">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M1 1l22 22M16.72 11.06A10.94 10.94 0 0 1 19 12.55M5 12.55a10.94 10.94 0 0 1 5.17-2.39M10.71 5.05A16 16 0 0 1 22.58 9M1.42 9a15.91 15.91 0 0 1 4.7-2.88M8.53 16.11a6 6 0 0 1 6.95 0M12 20h.01" />
+          <path
+            d="M1 1l22 22M16.72 11.06A10.94 10.94 0 0 1 19 12.55M5 12.55a10.94 10.94 0 0 1 5.17-2.39M10.71 5.05A16 16 0 0 1 22.58 9M1.42 9a15.91 15.91 0 0 1 4.7-2.88M8.53 16.11a6 6 0 0 1 6.95 0M12 20h.01"
+          />
         </svg>
       </span>
       <span class="pwa-banner__text">当前处于离线状态</span>
@@ -24,7 +26,11 @@ const { isOnline } = useNetworkStatus();
     <div v-if="updateAvailable && isOnline" class="pwa-banner pwa-banner--update" role="alert">
       <span class="pwa-banner__text">有新版本可用</span>
       <div class="pwa-banner__actions">
-        <button type="button" class="pwa-banner__btn pwa-banner__btn--dismiss" @click="dismissUpdate">
+        <button
+          type="button"
+          class="pwa-banner__btn pwa-banner__btn--dismiss"
+          @click="dismissUpdate"
+        >
           稍后
         </button>
         <button type="button" class="pwa-banner__btn pwa-banner__btn--apply" @click="applyUpdate">

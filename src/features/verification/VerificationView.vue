@@ -140,106 +140,114 @@ onBeforeUnmount(() => {
         <h2>{{ VERIFICATION_SECTION_LABEL }}</h2>
       </header>
 
-    <ul class="verification-view__list">
-      <li
-        v-for="descriptor in VERIFICATION_DESCRIPTORS"
-        :key="descriptor.tag"
-        class="verification-view__item"
-      >
-        <div class="verification-view__row">
-          <span class="verification-view__label">{{ descriptor.label }}</span>
-          <span
-            class="verification-view__status"
-            :class="{
-              'is-active': verificationState[descriptor.tag]?.active,
-              'is-revoked': verificationState[descriptor.tag]?.revokedAt,
-            }"
-          >
-            {{ statusLabelFor(verificationState[descriptor.tag]) }}
-          </span>
-        </div>
-        <dl v-if="verificationState[descriptor.tag]" class="verification-view__meta">
-          <template v-if="verificationState[descriptor.tag]?.grantedAt">
-            <dt>{{ VERIFICATION_GRANTED_AT_LABEL }}</dt>
-            <dd>{{ formatTimestamp(verificationState[descriptor.tag]?.grantedAt) }}</dd>
-          </template>
-          <template v-if="verificationState[descriptor.tag]?.expiresAt">
-            <dt>{{ VERIFICATION_EXPIRES_AT_LABEL }}</dt>
-            <dd>{{ formatTimestamp(verificationState[descriptor.tag]?.expiresAt) }}</dd>
-          </template>
-          <template v-if="verificationState[descriptor.tag]?.source">
-            <dt>{{ VERIFICATION_SOURCE_LABEL }}</dt>
-            <dd>{{ verificationState[descriptor.tag]?.source }}</dd>
-          </template>
-        </dl>
-        <p v-else class="verification-view__placeholder" data-testid="verification-empty-grant">
-          <span class="verification-view__placeholder-headline">{{
-            VERIFICATION_NO_GRANT_HINT
-          }}</span>
-          <span class="verification-view__placeholder-hint">{{ VERIFICATION_NO_GRANT_NEXT }}</span>
-        </p>
-      </li>
-    </ul>
+      <ul class="verification-view__list">
+        <li
+          v-for="descriptor in VERIFICATION_DESCRIPTORS"
+          :key="descriptor.tag"
+          class="verification-view__item"
+        >
+          <div class="verification-view__row">
+            <span class="verification-view__label">{{ descriptor.label }}</span>
+            <span
+              class="verification-view__status"
+              :class="{
+                'is-active': verificationState[descriptor.tag]?.active,
+                'is-revoked': verificationState[descriptor.tag]?.revokedAt,
+              }"
+            >
+              {{ statusLabelFor(verificationState[descriptor.tag]) }}
+            </span>
+          </div>
+          <dl v-if="verificationState[descriptor.tag]" class="verification-view__meta">
+            <template v-if="verificationState[descriptor.tag]?.grantedAt">
+              <dt>{{ VERIFICATION_GRANTED_AT_LABEL }}</dt>
+              <dd>{{ formatTimestamp(verificationState[descriptor.tag]?.grantedAt) }}</dd>
+            </template>
+            <template v-if="verificationState[descriptor.tag]?.expiresAt">
+              <dt>{{ VERIFICATION_EXPIRES_AT_LABEL }}</dt>
+              <dd>{{ formatTimestamp(verificationState[descriptor.tag]?.expiresAt) }}</dd>
+            </template>
+            <template v-if="verificationState[descriptor.tag]?.source">
+              <dt>{{ VERIFICATION_SOURCE_LABEL }}</dt>
+              <dd>{{ verificationState[descriptor.tag]?.source }}</dd>
+            </template>
+          </dl>
+          <p v-else class="verification-view__placeholder" data-testid="verification-empty-grant">
+            <span class="verification-view__placeholder-headline">{{
+              VERIFICATION_NO_GRANT_HINT
+            }}</span>
+            <span class="verification-view__placeholder-hint">{{
+              VERIFICATION_NO_GRANT_NEXT
+            }}</span>
+          </p>
+        </li>
+      </ul>
 
-    <section class="verification-view__campus" aria-labelledby="verification-campus-title">
-      <h3 id="verification-campus-title">{{ VERIFICATION_CAMPUS_TITLE }}</h3>
-      <p class="verification-view__hint">{{ VERIFICATION_CAMPUS_HINT }}</p>
+      <section class="verification-view__campus" aria-labelledby="verification-campus-title">
+        <h3 id="verification-campus-title">{{ VERIFICATION_CAMPUS_TITLE }}</h3>
+        <p class="verification-view__hint">{{ VERIFICATION_CAMPUS_HINT }}</p>
 
-      <label class="verification-view__field">
-        <span>{{ VERIFICATION_CAMPUS_EMAIL_LABEL }}</span>
-        <input
-          v-model="campus.email.value"
-          type="email"
-          inputmode="email"
-          autocomplete="email"
-          spellcheck="false"
-          :placeholder="VERIFICATION_CAMPUS_EMAIL_PLACEHOLDER"
-          :disabled="campus.submitting.value"
-        />
-      </label>
-
-      <label class="verification-view__field">
-        <span>{{ VERIFICATION_CAMPUS_CODE_LABEL }}</span>
-        <div class="verification-view__code-row">
+        <label class="verification-view__field">
+          <span>{{ VERIFICATION_CAMPUS_EMAIL_LABEL }}</span>
           <input
-            v-model="campus.code.value"
-            inputmode="numeric"
-            autocomplete="one-time-code"
+            v-model="campus.email.value"
+            type="email"
+            inputmode="email"
+            autocomplete="email"
             spellcheck="false"
-            maxlength="6"
-            :placeholder="VERIFICATION_CAMPUS_CODE_PLACEHOLDER"
+            :placeholder="VERIFICATION_CAMPUS_EMAIL_PLACEHOLDER"
             :disabled="campus.submitting.value"
           />
-          <button
-            type="button"
-            class="verification-view__send"
-            :disabled="campus.sending.value || campus.cooldownRemaining.value > 0"
-            @click="() => void campus.requestCode()"
-          >
-            {{ sendButtonLabel }}
-          </button>
-        </div>
-      </label>
+        </label>
 
-      <p v-if="campus.errorMessage.value" class="verification-view__feedback is-error" role="alert">
-        {{ campus.errorMessage.value }}
+        <label class="verification-view__field">
+          <span>{{ VERIFICATION_CAMPUS_CODE_LABEL }}</span>
+          <div class="verification-view__code-row">
+            <input
+              v-model="campus.code.value"
+              inputmode="numeric"
+              autocomplete="one-time-code"
+              spellcheck="false"
+              maxlength="6"
+              :placeholder="VERIFICATION_CAMPUS_CODE_PLACEHOLDER"
+              :disabled="campus.submitting.value"
+            />
+            <button
+              type="button"
+              class="verification-view__send"
+              :disabled="campus.sending.value || campus.cooldownRemaining.value > 0"
+              @click="() => void campus.requestCode()"
+            >
+              {{ sendButtonLabel }}
+            </button>
+          </div>
+        </label>
+
+        <p
+          v-if="campus.errorMessage.value"
+          class="verification-view__feedback is-error"
+          role="alert"
+        >
+          {{ campus.errorMessage.value }}
+        </p>
+        <p v-else-if="campus.noticeMessage.value" class="verification-view__feedback" role="status">
+          {{ campus.noticeMessage.value }}
+        </p>
+
+        <LianButton
+          variant="primary"
+          :disabled="campus.submitting.value"
+          @click="() => void campus.submitCode()"
+        >
+          {{
+            campus.submitting.value ? VERIFICATION_CAMPUS_SUBMITTING : VERIFICATION_CAMPUS_SUBMIT
+          }}
+        </LianButton>
+      </section>
+
+      <p class="verification-view__placeholder verification-view__other">
+        {{ VERIFICATION_OTHER_PLACEHOLDER }}
       </p>
-      <p v-else-if="campus.noticeMessage.value" class="verification-view__feedback" role="status">
-        {{ campus.noticeMessage.value }}
-      </p>
-
-      <LianButton
-        variant="primary"
-        :disabled="campus.submitting.value"
-        @click="() => void campus.submitCode()"
-      >
-        {{ campus.submitting.value ? VERIFICATION_CAMPUS_SUBMITTING : VERIFICATION_CAMPUS_SUBMIT }}
-      </LianButton>
-    </section>
-
-    <p class="verification-view__placeholder verification-view__other">
-      {{ VERIFICATION_OTHER_PLACEHOLDER }}
-    </p>
     </template>
   </section>
 </template>

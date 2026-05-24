@@ -85,7 +85,8 @@ export default {
     interestSkipHint: "Sở thích khởi tạo bảng tin. Bạn có thể bỏ qua và điều chỉnh sau.",
     interestLoading: "Đang tải tùy chọn sở thích…",
     interestEmpty: "Không có tùy chọn sở thích — bạn có thể hoàn tất đăng ký và điều chỉnh sau.",
-    interestError: "Tùy chọn sở thích không tải được — bạn có thể hoàn tất đăng ký và điều chỉnh sau.",
+    interestError:
+      "Tùy chọn sở thích không tải được — bạn có thể hoàn tất đăng ký và điều chỉnh sau.",
     interestPickHint: "Chọn ít nhất 1 sở thích để khởi tạo bảng tin; bạn có thể thay đổi sau.",
     interestSkipDefault: "Sở thích khởi tạo bảng tin. Bạn có thể bỏ qua và điều chỉnh sau.",
     loggedInRefresh: "Đã đăng nhập. Đang làm mới hồ sơ…",
@@ -281,7 +282,7 @@ export default {
     imageReady: "Sẵn sàng",
     imageCountSuffix: "ảnh",
     success: "Đã đăng — sẽ hiển thị trên Trang chủ trong giây lát.",
-    successBound: "Đã đăng — liên kết với \"{n}\".",
+    successBound: 'Đã đăng — liên kết với "{n}".',
     viewPost: "Xem bài đăng",
     aiPending:
       "AI đang đọc ảnh. Bản nháp sẽ tự động điền trong giây lát — bạn có thể chọn vị trí trong lúc chờ.",
@@ -322,7 +323,8 @@ export default {
     aliasDescription: "Mô tả",
     realIdentityHint: "Hiện đang đăng bài với danh tính thật.",
     aliasDefaultHint: "Bí danh này là danh tính mặc định của bạn trên Lian.",
-    aliasMoreHint: "Bí danh này là danh tính mặc định của bạn trên Lian. Chi tiết bí danh sẽ theo sau.",
+    aliasMoreHint:
+      "Bí danh này là danh tính mặc định của bạn trên Lian. Chi tiết bí danh sẽ theo sau.",
     emptyContent: "Chưa có gì ở đây",
     loadErrorPrefix: "Hồ sơ",
     listErrorPrefix: "Danh sách",
@@ -377,8 +379,7 @@ export default {
     rateLimitDefault: "Gửi quá nhiều — vui lòng thử lại sau. Trang sẽ chờ {n}s.",
     sentInst: "Đã gửi mã — nhận dạng là {n}.",
     rateLimitResend: "Gửi quá thường xuyên — vui lòng thử lại sau {n}s.",
-    rateLimitFallback:
-      "Nếu máy chủ không trả về thời gian chờ, trang sẽ chờ {n}s.",
+    rateLimitFallback: "Nếu máy chủ không trả về thời gian chờ, trang sẽ chờ {n}s.",
   },
   eventDetail: {
     blockLabel: "Thông tin sự kiện",

@@ -17,7 +17,17 @@
 
 export type AppLocale = "zh-CN" | "zh-TW" | "en" | "ja" | "ko" | "ru" | "vi" | "id" | "es";
 
-export const SUPPORTED_LOCALES: readonly AppLocale[] = ["zh-CN", "zh-TW", "en", "ja", "ko", "ru", "vi", "id", "es"];
+export const SUPPORTED_LOCALES: readonly AppLocale[] = [
+  "zh-CN",
+  "zh-TW",
+  "en",
+  "ja",
+  "ko",
+  "ru",
+  "vi",
+  "id",
+  "es",
+];
 export const DEFAULT_LOCALE: AppLocale = "en";
 export const LOCALE_STORAGE_KEY = "lian.language";
 

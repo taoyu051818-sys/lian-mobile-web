@@ -179,8 +179,12 @@ function renderPostHtml(card: ShareCardSlim, wechat?: WechatChannelOverrides): R
     `<meta name="twitter:description" content="${escapeHtml(description)}">`,
     `<meta name="twitter:image" content="${escapeHtml(image)}">`,
     // Article-specific meta (author attribution)
-    card.authorName ? `<meta property="article:author" content="${escapeHtml(card.authorName)}">` : "",
-  ].filter(Boolean).join("\n");
+    card.authorName
+      ? `<meta property="article:author" content="${escapeHtml(card.authorName)}">`
+      : "",
+  ]
+    .filter(Boolean)
+    .join("\n");
 
   const authorMeta = card.authorName
     ? `<p class="ssr-shell__meta">作者：${escapeHtml(card.authorName)}</p>`
@@ -313,7 +317,11 @@ function normalizeShareCard(payload: unknown, fallbackTid: number): ShareCardSli
       const description = toTrimmedString(wechatRecord.description);
       const imageUrl = toTrimmedString(wechatRecord.imageUrl);
       if (title || description || imageUrl) {
-        wechat = { title: title || undefined, description: description || undefined, imageUrl: imageUrl || undefined };
+        wechat = {
+          title: title || undefined,
+          description: description || undefined,
+          imageUrl: imageUrl || undefined,
+        };
       }
     }
   }
