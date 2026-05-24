@@ -143,3 +143,8 @@ export const PUBLISH_EVENT_CAPACITY_NEGATIVE = "人数上限不能小于 0。";
 export const PUBLISH_EVENT_JOIN_POLICY_UNKNOWN = "请选择一种报名方式。";
 export const PUBLISH_EVENT_SUCCESS = "活动已发布，参与者可以在活动详情页报名。";
 export const PUBLISH_EVENT_UNAVAILABLE = "活动发布暂时不可用，可以稍后再试或先发普通帖子。";
+
+/** 发布登录门禁 */
+export const PUBLISH_AUTH_GATE_TITLE = "请先登录";
+export const PUBLISH_AUTH_GATE_HINT = "登录后才能发布内容。";
+export const PUBLISH_AUTH_GATE_CTA = "去登录";

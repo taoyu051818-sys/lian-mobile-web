@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { useId } from "vue";
 import { PROFILE_TABS_LABEL } from "../../config/brand";
 import type { ProfileTabKey } from "../../types/profile";
 
@@ -10,18 +11,23 @@ defineProps<{
 const emit = defineEmits<{
   select: [tab: ProfileTabKey];
 }>();
+
+// Generate a unique ID prefix for aria-controls linkage
+const idPrefix = useId();
 </script>
 
 <template>
   <nav class="profile-tabs" role="tablist" :aria-label="PROFILE_TABS_LABEL">
     <button
       v-for="tab in tabs"
+      :id="`${idPrefix}-tab-${tab.key}`"
       :key="tab.key"
       type="button"
       role="tab"
       class="profile-tabs__tab"
       :class="{ 'is-active': activeTab === tab.key }"
       :aria-selected="activeTab === tab.key"
+      :aria-controls="`${idPrefix}-panel-${tab.key}`"
       @click="emit('select', tab.key)"
     >
       {{ tab.label }}

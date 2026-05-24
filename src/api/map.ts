@@ -11,5 +11,13 @@ export async function fetchRoadNetworkPreview(): Promise<MapRoadNetworkPreview |
   if (!response.ok) {
     throw new LianApiError(`路网预览加载失败（状态码 ${response.status}）`, response.status);
   }
-  return response.json() as Promise<MapRoadNetworkPreview>;
+  const contentType = response.headers.get("content-type") || "";
+  if (!contentType.includes("application/json")) {
+    throw new LianApiError("路网预览响应格式错误", response.status, "INVALID_CONTENT_TYPE");
+  }
+  try {
+    return (await response.json()) as MapRoadNetworkPreview;
+  } catch {
+    throw new LianApiError("路网预览数据解析失败", response.status, "JSON_PARSE_ERROR");
+  }
 }

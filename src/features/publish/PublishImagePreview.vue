@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { computed } from "vue";
 import {
   PUBLISH_IMAGE_TOOLBAR,
   PUBLISH_IMAGE_PREVIEW_LABEL,
@@ -6,14 +7,23 @@ import {
   PUBLISH_IMAGE_REMOVE_LABEL,
 } from "../../config/brand";
 
-defineProps<{
+const props = defineProps<{
   localPreviewUrls: string[];
   imageStatus: string;
+  uploading?: boolean;
+  uploadedCount?: number;
 }>();
 
 const emit = defineEmits<{
   removeImage: [index: number];
 }>();
+
+// Progress percentage for the upload bar
+const uploadProgress = computed(() => {
+  if (!props.uploading || !props.localPreviewUrls.length) return 100;
+  const uploaded = props.uploadedCount ?? 0;
+  return Math.round((uploaded / props.localPreviewUrls.length) * 100);
+});
 </script>
 
 <template>
@@ -26,9 +36,31 @@ const emit = defineEmits<{
       <strong>{{ PUBLISH_IMAGE_TOOLBAR }}</strong>
       <span>{{ imageStatus }}</span>
     </div>
+    <div
+      v-if="uploading"
+      class="publish-image-preview__progress"
+      role="progressbar"
+      :aria-valuenow="uploadProgress"
+      aria-valuemin="0"
+      aria-valuemax="100"
+    >
+      <div
+        class="publish-image-preview__progress-bar"
+        :style="{ width: `${uploadProgress}%` }"
+      ></div>
+    </div>
     <div class="publish-image-preview__grid">
-      <div v-for="(url, index) in localPreviewUrls" :key="url" class="publish-image-preview__item">
-        <img :src="url" :alt="PUBLISH_IMAGE_PREVIEW_ALT" />
+      <!--
+        Performance: v-memo skips re-rendering image preview items when their
+        URL hasn't changed. Image previews are static once added.
+      -->
+      <div
+        v-for="(url, index) in localPreviewUrls"
+        :key="url"
+        v-memo="[url]"
+        class="publish-image-preview__item"
+      >
+        <img :src="url" :alt="PUBLISH_IMAGE_PREVIEW_ALT" loading="lazy" />
         <button
           type="button"
           :aria-label="PUBLISH_IMAGE_REMOVE_LABEL"
@@ -63,6 +95,20 @@ const emit = defineEmits<{
   color: var(--lian-muted);
   font-size: 12px;
   font-weight: 800;
+}
+
+.publish-image-preview__progress {
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(31, 41, 51, 0.08);
+  overflow: hidden;
+}
+
+.publish-image-preview__progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, var(--lian-primary), var(--lian-primary-deep));
+  border-radius: 2px;
+  transition: width 200ms var(--motion-ease-standard, ease-out);
 }
 
 .publish-image-preview__grid {
@@ -100,5 +146,11 @@ const emit = defineEmits<{
   color: var(--lian-ink);
   font-size: 18px;
   font-weight: 900;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .publish-image-preview__progress-bar {
+    transition: none;
+  }
 }
 </style>

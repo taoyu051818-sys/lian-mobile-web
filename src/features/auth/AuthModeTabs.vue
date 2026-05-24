@@ -11,17 +11,21 @@ defineEmits<{
 </script>
 
 <template>
-  <nav class="auth-mode-tabs" :aria-label="AUTH_MODE_LABEL">
+  <nav class="auth-mode-tabs" role="tablist" :aria-label="AUTH_MODE_LABEL">
     <button
       type="button"
+      role="tab"
       :class="{ 'is-active': mode === 'login' }"
+      :aria-selected="mode === 'login'"
       @click="$emit('switchMode', 'login')"
     >
       {{ AUTH_TAB_LOGIN }}
     </button>
     <button
       type="button"
+      role="tab"
       :class="{ 'is-active': mode === 'register' }"
+      :aria-selected="mode === 'register'"
       @click="$emit('switchMode', 'register')"
     >
       {{ AUTH_TAB_REGISTER }}

@@ -41,11 +41,7 @@ import {
 } from "../../config/brand";
 import { useErrandOrderDetail } from "./useErrandOrderDetail";
 import { useErrandOrderShare } from "./useErrandOrderShare";
-import {
-  formatTimelineTimestamp,
-  isTerminalErrandStatus,
-  statusLabel,
-} from "./errand-format";
+import { formatTimelineTimestamp, isTerminalErrandStatus, statusLabel } from "./errand-format";
 import { ShareCardSheet } from "../detail";
 import ErrandOrderMeta from "./ErrandOrderMeta.vue";
 
@@ -238,9 +234,14 @@ watch(
       >
         <h3>{{ ERRAND_ORDER_DETAIL_TIMELINE }}</h3>
         <ol>
+          <!--
+            Performance: v-memo skips re-rendering timeline entries when their
+            key properties haven't changed. Timeline events are immutable.
+          -->
           <li
             v-for="(event, index) in timeline"
             :key="`${event.status}-${event.at}-${index}`"
+            v-memo="[event.status, event.at, event.note, index === timeline.length - 1]"
             class="errand-order-timeline-view__entry"
             :class="{ 'is-current': index === timeline.length - 1 }"
             data-testid="errand-order-timeline-entry"

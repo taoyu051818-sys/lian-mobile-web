@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import { LianButton } from "../../ui";
-import { PUBLISH_CLEAR, PUBLISH_SUBMIT } from "../../config/brand";
+import {
+  PUBLISH_CLEAR,
+  PUBLISH_SUBMIT,
+  PUBLISH_IMAGE_UPLOADING as PUBLISH_UPLOADING,
+} from "../../config/brand";
 
 defineProps<{
   publishing: boolean;
@@ -15,7 +19,7 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <div class="publish-action__bar">
+  <div class="publish-action-bar">
     <LianButton
       type="button"
       variant="ghost"
@@ -23,14 +27,19 @@ const emit = defineEmits<{
       @click="emit('resetForm')"
       >{{ PUBLISH_CLEAR }}</LianButton
     >
-    <LianButton type="submit" variant="primary" :loading="publishing" :disabled="!canSubmit">{{
-      PUBLISH_SUBMIT
-    }}</LianButton>
+    <LianButton
+      type="submit"
+      variant="primary"
+      :loading="publishing || uploading"
+      :disabled="!canSubmit"
+      :aria-busy="uploading || publishing"
+      >{{ uploading ? PUBLISH_UPLOADING : PUBLISH_SUBMIT }}</LianButton
+    >
   </div>
 </template>
 
 <style scoped>
-.publish-action__bar {
+.publish-action-bar {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-2);

@@ -14,7 +14,7 @@
  * post; non-event posts skip it entirely.
  */
 
-import { computed, ref, watch, type Ref } from "vue";
+import { computed, onBeforeUnmount, ref, watch, type Ref } from "vue";
 import { fetchAdminMe, isAdminMeRoleEligible } from "../api/admin";
 import { fetchAuthMe } from "../api/profile";
 import {
@@ -198,7 +198,11 @@ export function usePostDetailExtensions(options: UsePostDetailExtensionsOptions)
     void probeEventManageable(next);
   }
 
-  watch(post, reset, { immediate: true });
+  const stopWatch = watch(post, reset, { immediate: true });
+
+  onBeforeUnmount(() => {
+    stopWatch();
+  });
 
   return {
     liveEvent,

@@ -1,5 +1,25 @@
 <script setup lang="ts">
-import { computed } from "vue";
+/**
+ * FeedItemCard - Feed item display component with interaction handling.
+ *
+ * Renders a feed item card with support for multiple presentation templates
+ * (image, text, activity, place, merchant, help). Handles pointer interactions,
+ * long-press context menus, and keyboard navigation. Delegates visual rendering
+ * to FeedItemCardShell.
+ *
+ * @component
+ * @example
+ * ```vue
+ * <FeedItemCard :item="feedItem" @open="handleOpen" />
+ * ```
+ *
+ * @fires open - Emitted when the card is activated (click/keyboard)
+ *   @param {FeedItemId} id - The topic ID of the opened item
+ *   @param {Object} [payload] - Optional payload with item data and bounding rect
+ *   @param {FeedItem} payload.item - The full feed item object
+ *   @param {Object} payload.rect - Bounding rectangle for transition animations
+ */
+import { computed, ref } from "vue";
 import {
   DEFAULT_USER_LABEL,
   UNTITLED_CONTENT,
@@ -9,7 +29,9 @@ import {
 import { actorAvatarText, actorAvatarUrl, actorDisplayName } from "../../domain/actor";
 import type { FeedItem, FeedItemId, FeedItemShellCardTemplate } from "../../types/feed";
 import FeedItemCardShell from "./FeedItemCardShell.vue";
+import FeedContextMenu from "./FeedContextMenu.vue";
 import { useCardPointerInteraction } from "./useCardPointerInteraction";
+import { hapticMedium } from "../../composables/useHapticFeedback";
 
 type CardTemplate = FeedItemShellCardTemplate;
 
@@ -36,6 +58,15 @@ const CARD_TEMPLATES: ReadonlySet<CardTemplate> = new Set([
   "help",
 ]);
 
+const TEMPLATE_MARKS: Readonly<Record<CardTemplate, string>> = {
+  image: "◐",
+  text: "✎",
+  activity: "◦",
+  place: "⌖",
+  merchant: FEED_CARD_MARK_MERCHANT,
+  help: "＋",
+};
+
 function normalizePresentationIntent(
   value: FeedItem["cardTemplate"] | FeedItem["presentationIntent"],
 ): CardTemplate | null {
@@ -44,48 +75,48 @@ function normalizePresentationIntent(
     : null;
 }
 
-const title = computed(() => props.item.title || UNTITLED_CONTENT);
-const coverUrl = computed(() => props.item.cover || "");
-const primaryTag = computed(() => props.item.primaryTag || "");
-const timeLabel = computed(() => props.item.timeLabel || FEED_TIME_JUST_NOW);
-const actor = computed(() => props.item.actor || {});
-const authorName = computed(() => actorDisplayName(actor.value, DEFAULT_USER_LABEL));
-const authorAvatarUrl = computed(() => actorAvatarUrl(actor.value));
-const authorInitial = computed(() => actorAvatarText(actor.value, authorName.value));
-const normalizedCardTemplate = computed(() => normalizePresentationIntent(props.item.cardTemplate));
-const serverPresentationIntent = computed(() =>
-  normalizePresentationIntent(props.item.presentationIntent),
-);
-const cardWarning = computed(
-  () =>
-    [
-      title.value.length > MAX_VISIBLE_TITLE_CHARS ? "title-clamped" : "",
-      authorName.value.length > MAX_VISIBLE_AUTHOR_CHARS ? "author-ellipsized" : "",
-    ]
-      .filter(Boolean)
-      .join(" ") || undefined,
-);
+// Performance: consolidate computed properties to reduce reactivity overhead.
+// Instead of 13 separate computed properties that each trigger their own
+// dependency tracking, derive all card display data in a single pass.
+// This reduces Vue's reactivity bookkeeping and avoids redundant recalculations
+// when multiple properties depend on the same source data (e.g., actor).
+const cardDisplayData = computed(() => {
+  const item = props.item;
+  const actor = item.actor || {};
+  const title = item.title || UNTITLED_CONTENT;
+  const authorName = actorDisplayName(actor, DEFAULT_USER_LABEL);
+  const coverUrl = item.cover || "";
 
-const cardTemplate = computed<CardTemplate>(() => {
-  if (normalizedCardTemplate.value) return normalizedCardTemplate.value;
-  if (serverPresentationIntent.value) return serverPresentationIntent.value;
-  return coverUrl.value ? "image" : "text";
+  const normalizedTemplate = normalizePresentationIntent(item.cardTemplate);
+  const serverIntent = normalizePresentationIntent(item.presentationIntent);
+  const cardTemplate: CardTemplate =
+    normalizedTemplate || serverIntent || (coverUrl ? "image" : "text");
+
+  const warnings: string[] = [];
+  if (title.length > MAX_VISIBLE_TITLE_CHARS) warnings.push("title-clamped");
+  if (authorName.length > MAX_VISIBLE_AUTHOR_CHARS) warnings.push("author-ellipsized");
+
+  return {
+    title,
+    coverUrl,
+    primaryTag: item.primaryTag || "",
+    timeLabel: item.timeLabel || FEED_TIME_JUST_NOW,
+    authorName,
+    authorAvatarUrl: actorAvatarUrl(actor),
+    authorInitial: actorAvatarText(actor, authorName),
+    cardTemplate,
+    templateMark: TEMPLATE_MARKS[cardTemplate],
+    bodyPreview: item.bodyPreview || "",
+    visibility: item.visibility || "public",
+    cardWarning: warnings.length ? warnings.join(" ") : undefined,
+  };
 });
 
-const templateMark = computed(
-  () =>
-    ({
-      image: "◐",
-      text: "✎",
-      activity: "◦",
-      place: "⌖",
-      merchant: FEED_CARD_MARK_MERCHANT,
-      help: "＋",
-    })[cardTemplate.value],
-);
-
-const bodyPreview = computed(() => props.item.bodyPreview || "");
-const visibility = computed(() => props.item.visibility || "public");
+// Context menu state for long press
+const showContextMenu = ref(false);
+const contextMenuX = ref(0);
+const contextMenuY = ref(0);
+const isBookmarked = ref(false); // TODO: integrate with actual bookmark state
 
 function emitOpen(target: HTMLElement | null) {
   const bounds = target?.getBoundingClientRect();
@@ -115,32 +146,88 @@ const {
   openCard,
   openCardFromKeyboard,
 } = useCardPointerInteraction(emitOpen);
+
+function handleShare() {
+  if (typeof navigator !== "undefined" && navigator.share) {
+    navigator
+      .share({
+        title: cardDisplayData.value.title,
+        url: `${window.location.origin}/#/post/${props.item.tid}`,
+      })
+      .catch(() => {
+        // User cancelled or share failed
+      });
+  }
+}
+
+function handleBookmark() {
+  // TODO: Integrate with actual bookmark API
+  isBookmarked.value = !isBookmarked.value;
+  hapticMedium();
+}
+
+function handleReport() {
+  // TODO: Navigate to report flow
+  // For now, just close the menu
+}
+
+function closeContextMenu() {
+  showContextMenu.value = false;
+}
+
+// Override context menu to show our custom menu
+function handleCustomContextMenu(event: MouseEvent) {
+  handleContextMenu(event);
+  contextMenuX.value = event.clientX;
+  contextMenuY.value = event.clientY;
+  showContextMenu.value = true;
+}
 </script>
 
 <template>
-  <FeedItemCardShell
-    :title="title"
-    :cover-url="coverUrl"
-    :primary-tag="primaryTag"
-    :time-label="timeLabel"
-    :author-name="authorName"
-    :author-avatar-url="authorAvatarUrl"
-    :author-initial="authorInitial"
-    :card-template="cardTemplate"
-    :template-mark="templateMark"
-    :body-preview="bodyPreview"
-    :card-warning="cardWarning"
-    :tid="props.item.tid"
-    :liked="Boolean(props.item.liked)"
-    :like-count="Math.max(0, Number(props.item.likeCount || 0))"
-    :visibility="visibility"
-    @pointerdown="handlePointerDown"
-    @pointermove="handlePointerMove"
-    @pointerup="handlePointerUp"
-    @pointercancel="handlePointerCancel"
-    @contextmenu="handleContextMenu"
-    @click="openCard"
-    @keydown.enter.prevent="openCardFromKeyboard"
-    @keydown.space.prevent="openCardFromKeyboard"
-  />
+  <div class="feed-item-card-wrapper">
+    <FeedItemCardShell
+      :title="cardDisplayData.title"
+      :cover-url="cardDisplayData.coverUrl"
+      :primary-tag="cardDisplayData.primaryTag"
+      :time-label="cardDisplayData.timeLabel"
+      :author-name="cardDisplayData.authorName"
+      :author-avatar-url="cardDisplayData.authorAvatarUrl"
+      :author-initial="cardDisplayData.authorInitial"
+      :card-template="cardDisplayData.cardTemplate"
+      :template-mark="cardDisplayData.templateMark"
+      :body-preview="cardDisplayData.bodyPreview"
+      :card-warning="cardDisplayData.cardWarning"
+      :tid="props.item.tid"
+      :liked="Boolean(props.item.liked)"
+      :like-count="Math.max(0, Number(props.item.likeCount || 0))"
+      :visibility="cardDisplayData.visibility"
+      @pointerdown="handlePointerDown"
+      @pointermove="handlePointerMove"
+      @pointerup="handlePointerUp"
+      @pointercancel="handlePointerCancel"
+      @contextmenu="handleCustomContextMenu"
+      @click="openCard"
+      @keydown.enter.prevent="openCardFromKeyboard"
+      @keydown.space.prevent="openCardFromKeyboard"
+    />
+
+    <!-- Context menu for long press -->
+    <FeedContextMenu
+      :visible="showContextMenu"
+      :x="contextMenuX"
+      :y="contextMenuY"
+      :bookmarked="isBookmarked"
+      @share="handleShare"
+      @bookmark="handleBookmark"
+      @report="handleReport"
+      @close="closeContextMenu"
+    />
+  </div>
 </template>
+
+<style scoped>
+.feed-item-card-wrapper {
+  display: contents;
+}
+</style>

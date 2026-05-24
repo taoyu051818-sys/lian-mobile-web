@@ -16,7 +16,7 @@ import { useBodyScrollLock } from "../../composables/useBodyScrollLock";
 import { useEscapeListener } from "../../composables/useEscapeListener";
 import { useFocusRestore } from "../../composables/useFocusRestore";
 import { LianButton } from "../../ui";
-import { SERVERCHAN_DIALOG_LABEL } from "../../config/brand";
+import { SERVERCHAN_DIALOG_LABEL, DIALOG_BACKDROP_LABEL } from "../../config/brand";
 
 const props = withDefaults(
   defineProps<{
@@ -77,7 +77,13 @@ watch(isOpen, (open) => {
       :aria-label="SERVERCHAN_DIALOG_LABEL"
       data-testid="serverchan-optin-dialog"
     >
-      <div class="sc-optin__backdrop" @click="emit('secondary')"></div>
+      <div
+        class="sc-optin__backdrop"
+        role="button"
+        tabindex="-1"
+        :aria-label="DIALOG_BACKDROP_LABEL"
+        @click="emit('secondary')"
+      ></div>
       <section class="sc-optin__panel">
         <h2 class="sc-optin__title">{{ title }}</h2>
         <p class="sc-optin__body">{{ body }}</p>

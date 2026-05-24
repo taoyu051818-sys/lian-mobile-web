@@ -6,10 +6,12 @@ import type { AudienceVisibility } from "../../types/audience";
 import { InlineError } from "../../ui";
 import FeedList from "./FeedList.vue";
 import FeedLoadMore from "./FeedLoadMore.vue";
-// eslint-disable-next-line @typescript-eslint/no-unused-vars -- used in template
+import PullToRefreshIndicator from "./PullToRefreshIndicator.vue";
+
 import FeedFilterBar from "./FeedFilterBar.vue";
 import { useFeedData } from "./useFeedData";
 import { useDetailNavigation } from "../../app/detail-navigation";
+import { usePullToRefresh } from "../../composables/usePullToRefresh";
 import { CHANNEL_RELOAD, FEED_FILTER_LABEL, FEED_VIEW_TITLE } from "../../config/brand";
 
 const emit = defineEmits<{
@@ -26,6 +28,15 @@ const detail = useDetailNavigation();
 const feedData = useFeedData({
   detailOpen: () => detail.detailOpen.value,
   closeDetail: () => detail.close("tab-switch"),
+});
+
+// Pull-to-refresh integration
+const pullToRefresh = usePullToRefresh({
+  threshold: 80,
+  maxPull: 150,
+  onRefresh: async () => {
+    await feedData.loadFeed(true);
+  },
 });
 
 const pageChrome = computed<PageChromeSpec>(() => ({
@@ -52,15 +63,22 @@ function openItem(id: FeedItemId) {
   detail.open(Number(id), "card");
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars -- used in template
 function handleVisibilityChange(visibilities: Set<AudienceVisibility>) {
   feedData.setSelectedVisibilities(visibilities);
 }
 </script>
 
 <template>
-  <section class="feed-view" aria-labelledby="feed-view-title">
+  <section class="feed-view" aria-labelledby="feed-view-title" v-bind="pullToRefresh.handlers">
     <h1 id="feed-view-title" class="feed-view__sr-title">{{ FEED_VIEW_TITLE }}</h1>
+
+    <!-- Pull-to-refresh indicator -->
+    <PullToRefreshIndicator
+      :progress="pullToRefresh.state.progress.value"
+      :is-refreshing="pullToRefresh.state.isRefreshing.value"
+      :can-refresh="pullToRefresh.state.canRefresh.value"
+      :pull-distance="pullToRefresh.state.pullDistance.value"
+    />
 
     <FeedFilterBar
       :selected-visibilities="feedData.selectedVisibilities.value"
@@ -101,9 +119,11 @@ function handleVisibilityChange(visibilities: Set<AudienceVisibility>) {
 
 <style scoped>
 .feed-view {
+  position: relative;
   display: grid;
   gap: var(--space-3);
   padding-top: calc(var(--floating-bar-height) + env(safe-area-inset-top));
+  touch-action: pan-y;
 }
 
 .feed-view.is-detail-open {

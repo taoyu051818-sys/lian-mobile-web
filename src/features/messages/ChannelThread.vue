@@ -133,9 +133,16 @@ function messageMeta(item: ChannelMessage) {
 
     <!-- Message list -->
     <div v-else ref="listRef" class="messages-view__list" aria-live="polite">
+      <!--
+        Performance: v-memo skips re-rendering message items when their key
+        properties haven't changed. Messages are immutable once delivered,
+        so we only need to re-render when deliveryState changes (for pending
+        messages) or when the message content itself changes.
+      -->
       <article
         v-for="item in items"
         :key="String(item.id)"
+        v-memo="[item.id, item.deliveryState, item.content, item.isSelf]"
         class="messages-view__message"
         data-testid="channel-message-item"
         :class="{

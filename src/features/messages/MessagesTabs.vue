@@ -13,13 +13,15 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <nav class="messages-view__tabs" :aria-label="MESSAGE_TAB_LABEL">
+  <nav class="messages-tabs" role="tablist" :aria-label="MESSAGE_TAB_LABEL">
     <button
       v-for="tab in tabs"
       :key="tab.key"
       type="button"
-      class="messages-view__tab"
+      role="tab"
+      class="messages-tabs__item"
       :class="{ 'is-active': activeTab === tab.key }"
+      :aria-selected="activeTab === tab.key"
       @click="emit('switch', tab.key)"
     >
       {{ tab.label }}
@@ -28,7 +30,7 @@ const emit = defineEmits<{
 </template>
 
 <style scoped>
-.messages-view__tabs {
+.messages-tabs {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-1);
@@ -36,7 +38,7 @@ const emit = defineEmits<{
   justify-content: flex-start;
 }
 
-.messages-view__tab {
+.messages-tabs__item {
   flex: 0 0 auto;
   min-height: var(--floating-bar-button-height, 36px);
   padding: 0 var(--space-3);
@@ -49,7 +51,7 @@ const emit = defineEmits<{
   white-space: nowrap;
 }
 
-.messages-view__tab.is-active {
+.messages-tabs__item.is-active {
   background: var(--lian-ink);
   color: #fff;
   transform: translateY(-1px);

@@ -114,9 +114,15 @@ const TOGGLE_BUTTON_WHITELIST: Array<{
     // primitive declares :aria-pressed conditionally — this row pins
     // that the SFC still owns the binding so the vocabulary cannot
     // regress to a plain button without aria.
+    //
+    // Marker is the toggle-aware computed attr (rather than the
+    // @click="handleClick" string, which also appears verbatim in the
+    // JSDoc `@example` block above the script as `<LianButton ... @click=
+    // "handleClick">Submit</LianButton>`). The computed attr only lives
+    // in the template, so the walk-back lands on the actual <button>.
     file: "src/ui/LianButton.vue",
     description: "shared button pressed-state binding",
-    marker: /@click="handleClick"/,
+    marker: /:aria-pressed="ariaPressedAttr"/,
   },
   {
     file: "src/features/feed/FeedFilterBar.vue",
@@ -124,14 +130,22 @@ const TOGGLE_BUTTON_WHITELIST: Array<{
     marker: /@click="toggleVisibility\(chip\.value\)"/,
   },
   {
-    file: "src/features/messages/ChannelComposer.vue",
-    description: "channel composer visibility toggle",
-    marker: /@click="selectVisibility\(opt\.value\)"/,
+    // Channel filter bar splits its visibility chips onto a `selectVisibility`
+    // handler (single-active selection inside the visibility group). We anchor
+    // on that handler rather than `toggleVisibility` because the bar reuses
+    // the same v-for chip pattern for both visibility and category groups,
+    // and only the visibility chips bind aria-pressed today.
+    file: "src/features/messages/ChannelFilterBar.vue",
+    description: "channel filter visibility toggle",
+    marker: /@click="selectVisibility\(chip\.value\)"/,
   },
   {
-    file: "src/features/messages/ChannelFilterBar.vue",
-    description: "channel filter toggle",
-    marker: /@click="toggleVisibility\(chip\.value\)"/,
+    // Bookmark menuitem is a stateful toggle (pressed === bookmarked).
+    // It lives inside a role="menu" wrapper but the menuitem itself is
+    // still a <button>, so the same aria-pressed contract applies.
+    file: "src/features/feed/FeedContextMenu.vue",
+    description: "feed context-menu bookmark toggle",
+    marker: /@click="handleBookmarkAction"/,
   },
   {
     file: "src/features/publish/PublishComposer.vue",

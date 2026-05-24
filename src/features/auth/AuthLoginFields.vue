@@ -29,6 +29,6 @@ defineEmits<{
       :placeholder="AUTH_EMAIL_OR_NICKNAME"
       @input="$emit('update:login', ($event.target as HTMLInputElement).value)"
     />
-    <small :id="hintId" class="auth-panel__hint">{{ AUTH_EMAIL_OR_NICKNAME_HINT }}</small>
+    <small :id="hintId" class="auth-login-fields__hint">{{ AUTH_EMAIL_OR_NICKNAME_HINT }}</small>
   </label>
 </template>

@@ -40,7 +40,13 @@ watch(isOpen, (open) => {
       aria-modal="true"
       :aria-label="DETAIL_SHEET_LABEL"
     >
-      <div class="detail-sheet__backdrop" @click="handleClose" />
+      <div
+        class="detail-sheet__backdrop"
+        role="button"
+        tabindex="-1"
+        :aria-label="CLOSE_BUTTON_LABEL"
+        @click="handleClose"
+      />
       <section class="detail-sheet__panel">
         <header class="detail-sheet__header">
           <slot name="header">

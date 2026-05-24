@@ -42,6 +42,9 @@ function splitIntoMasonryColumns(sourceItems: FeedItem[]) {
   return columns;
 }
 
+// Performance: use computed instead of watch + shallowRef. Computed properties
+// are lazily evaluated and cached, avoiding unnecessary recalculations. The
+// masonry layout only recomputes when the items array reference changes.
 const masonryColumns = computed(() => splitIntoMasonryColumns(props.items));
 </script>
 

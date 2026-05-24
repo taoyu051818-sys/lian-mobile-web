@@ -44,6 +44,7 @@ const props = defineProps<{
   titleCount: number;
   bodyCount: number;
   selectedFilesCount: number;
+  uploadedImageCount: number;
   selectedMapLocation: MapLocation | null;
   placeName: string;
   normalizedTag: string;
@@ -220,6 +221,8 @@ const visibilityIcon = computed<LianIconName>(() =>
         accept="image/*"
         multiple
         class="publish-composer__hidden-input"
+        aria-hidden="true"
+        tabindex="-1"
         @change="emit('handleFiles', $event)"
       />
     </div>
@@ -228,6 +231,8 @@ const visibilityIcon = computed<LianIconName>(() =>
   <PublishImagePreview
     :local-preview-urls="localPreviewUrls"
     :image-status="imageStatus"
+    :uploading="uploading"
+    :uploaded-count="uploadedImageCount"
     @remove-image="emit('removeImage', $event)"
   />
 </template>

@@ -188,7 +188,16 @@ onMounted(async () => {
           <span class="runner-view__empty-hint">{{ RUNNER_LIST_EMPTY_AVAILABLE_HINT }}</span>
         </p>
         <ul v-else class="runner-view__list" data-testid="runner-list-available">
-          <li v-for="order in availableOrders" :key="order.id" class="runner-view__list-item">
+          <!--
+            Performance: v-memo skips re-rendering order cards when their key
+            properties haven't changed. Orders update infrequently.
+          -->
+          <li
+            v-for="order in availableOrders"
+            :key="order.id"
+            v-memo="[order.id, order.status, pendingActionFor(order.id)]"
+            class="runner-view__list-item"
+          >
             <RunnerOrderCard
               :order="order"
               :pending-action="pendingActionFor(order.id)"
@@ -220,7 +229,16 @@ onMounted(async () => {
           <span class="runner-view__empty-hint">{{ RUNNER_LIST_EMPTY_ACTIVE_HINT }}</span>
         </p>
         <ul v-else class="runner-view__list" data-testid="runner-list-active">
-          <li v-for="order in activeOrders" :key="order.id" class="runner-view__list-item">
+          <!--
+            Performance: v-memo skips re-rendering order cards when their key
+            properties haven't changed. Orders update infrequently.
+          -->
+          <li
+            v-for="order in activeOrders"
+            :key="order.id"
+            v-memo="[order.id, order.status, pendingActionFor(order.id)]"
+            class="runner-view__list-item"
+          >
             <RunnerOrderCard
               :order="order"
               :pending-action="pendingActionFor(order.id)"

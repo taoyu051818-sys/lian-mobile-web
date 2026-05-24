@@ -1,4 +1,37 @@
 <script setup lang="ts">
+/**
+ * ChannelComposer - Message composition form for channel threads.
+ *
+ * A form component for composing and sending messages with identity selection,
+ * visibility controls, and character limit enforcement. Supports compact mode
+ * for minimal footprint when not actively composing.
+ *
+ * @component
+ * @example
+ * ```vue
+ * <ChannelComposer
+ *   :avatar-text="user.initials"
+ *   :actor-name="user.displayName"
+ *   :signal-meta="user.meta"
+ *   :identity-tags="['Student', 'Alumni']"
+ *   v-model:content="messageContent"
+ *   v-model:identity-tag="selectedTag"
+ *   v-model:visibility="selectedVisibility"
+ *   :sending="isSending"
+ *   :send-error="errorMessage"
+ *   :is-guest="!isAuthenticated"
+ *   @submit="handleSend"
+ * />
+ * ```
+ *
+ * @fires update:content - Emitted when message content changes
+ *   @param {string} value - The new content value
+ * @fires update:identityTag - Emitted when identity tag selection changes
+ *   @param {string} value - The selected identity tag
+ * @fires update:visibility - Emitted when visibility selection changes
+ *   @param {AudienceVisibility} value - The selected visibility level
+ * @fires submit - Emitted when the form is submitted (Enter key or button click)
+ */
 import { computed, ref } from "vue";
 import { IdentityBadge, InlineError, LianButton, LianIcon } from "../../ui";
 import type { LianIconName } from "../../ui";
@@ -147,12 +180,13 @@ function handleKeydown(event: KeyboardEvent) {
           v-for="opt in visibilityOptions"
           :key="opt.value"
           type="button"
+          role="radio"
           class="messages-view__visibility-chip"
           :class="{
             'messages-view__visibility-chip--selected': visibility === opt.value,
             'messages-view__visibility-chip--disabled': opt.disabled,
           }"
-          :aria-pressed="visibility === opt.value"
+          :aria-checked="visibility === opt.value"
           :aria-disabled="opt.disabled"
           :disabled="opt.disabled"
           @click="selectVisibility(opt.value)"

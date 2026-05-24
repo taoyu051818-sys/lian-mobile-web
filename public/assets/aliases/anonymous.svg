@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <!-- Apple SF Symbols style anonymous person silhouette -->
+  <circle cx="32" cy="32" r="32" fill="#F3F4F6"/>
+  <!-- Head -->
+  <circle cx="32" cy="24" r="9" fill="#9CA3AF"/>
+  <!-- Body/shoulders -->
+  <path d="M16 52c0-8.837 7.163-16 16-16s16 7.163 16 16" fill="#9CA3AF"/>
+</svg>

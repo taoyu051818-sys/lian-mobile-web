@@ -24,3 +24,6 @@ export const TIME_UNKNOWN = "时间未知";
 
 /** 分享 */
 export const SHARE_LINK_COPIED = "链接已复制";
+
+/** 对话框无障碍 */
+export const DIALOG_BACKDROP_LABEL = "点击关闭对话框";

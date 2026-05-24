@@ -38,9 +38,9 @@ function pick(value: ProfilePostsContentFilter) {
 </script>
 
 <template>
-  <nav
+  <div
     class="profile-posts-content-filter"
-    role="tablist"
+    role="radiogroup"
     :aria-label="PROFILE_POSTS_CONTENT_FILTER_LABEL"
     data-testid="profile-posts-content-filter"
   >
@@ -48,17 +48,17 @@ function pick(value: ProfilePostsContentFilter) {
       v-for="chip in chips"
       :key="chip.value"
       type="button"
-      role="tab"
+      role="radio"
       class="profile-posts-content-filter__chip"
       :class="{ 'is-active': modelValue === chip.value }"
-      :aria-selected="modelValue === chip.value"
+      :aria-checked="modelValue === chip.value"
       :data-filter-value="chip.value"
       data-testid="profile-posts-content-filter-chip"
       @click="pick(chip.value)"
     >
       {{ chip.label }}
     </button>
-  </nav>
+  </div>
 </template>
 
 <style scoped>

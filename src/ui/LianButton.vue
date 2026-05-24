@@ -1,5 +1,25 @@
 <script setup lang="ts">
+/**
+ * LianButton - Core button component with 6-state vocabulary.
+ *
+ * A versatile button component supporting multiple visual variants, sizes,
+ * and interaction states. Implements Apple-style accessibility patterns
+ * with proper ARIA attributes for toggle buttons and loading states.
+ *
+ * @component
+ * @example
+ * ```vue
+ * <LianButton variant="primary" @click="handleClick">Submit</LianButton>
+ * <LianButton variant="tonal" :loading="isLoading">Save</LianButton>
+ * <LianButton state="pressed" :pressed="isLiked">Like</LianButton>
+ * ```
+ *
+ * @fires click - Emitted when button is clicked (not fired when disabled/loading)
+ *
+ * @slot default - Button label content
+ */
 import { computed } from "vue";
+import { hapticLight } from "../composables/useHapticFeedback";
 
 /**
  * LianButton — Apple-gap PR-δ: 6-state vocabulary.
@@ -113,6 +133,7 @@ function isDisabled() {
 
 function handleClick(event: MouseEvent) {
   if (isDisabled()) return;
+  hapticLight();
   emit("click", event);
 }
 

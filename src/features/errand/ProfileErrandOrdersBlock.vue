@@ -103,9 +103,14 @@ function openOrder(orderId: string) {
     </div>
 
     <ul v-else class="profile-errand-orders__list" data-testid="profile-errand-orders-list">
+      <!--
+        Performance: v-memo skips re-rendering order items when their key
+        properties haven't changed. Orders are typically static once loaded.
+      -->
       <li
         v-for="order in items"
         :key="order.orderId"
+        v-memo="[order.orderId, order.status, order.createdAt]"
         class="profile-errand-orders__item"
         data-testid="profile-errand-orders-item"
       >
