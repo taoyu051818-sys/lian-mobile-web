@@ -65,6 +65,34 @@
       "class": "is-deferred",
       "files": ["src/features/errand/ErrandOrderTimelineView.vue"],
       "reason": "Runner-location postponed marker; component-scoped class in PR-gamma-2."
+    },
+    {
+      "class": "is-visible",
+      "files": ["src/features/feed/FeedContextMenu.vue"],
+      "reason": "Long-press context-menu enter/leave visibility toggle (4 occurrences: two CSS selectors and two `:class` bindings). Synonym of .is-open per vocab; rename in PR-gamma-2 alongside aria-expanded coverage on the menu trigger."
+    },
+    {
+      "class": "is-close",
+      "files": [
+        "src/features/feed/FeedFilterBar.vue",
+        "src/features/messages/ChannelFilterBar.vue"
+      ],
+      "reason": "Filter-bar morphing toggle button (ellipsis ↔ X icon). Affordance, not state — the button always exists; the class drives the icon morph. Component-scoped modifier (filter-bar__toggle--close) in PR-gamma-2."
+    },
+    {
+      "class": "is-refreshing",
+      "files": ["src/features/feed/PullToRefreshIndicator.vue"],
+      "reason": "Pull-to-refresh indicator entered the refresh state. Synonym of .is-loading per vocab; rename in PR-gamma-2 alongside aria-busy coverage on the indicator."
+    },
+    {
+      "class": "is-flipped",
+      "files": ["src/features/feed/PullToRefreshIndicator.vue"],
+      "reason": "SVG arrow flip when the user has pulled past the threshold. BEM modifier (indicator__arrow--flipped) in PR-gamma-2."
+    },
+    {
+      "class": "is-channel",
+      "files": ["src/features/messages/ChannelFilterBar.vue"],
+      "reason": "Variant flag on the messages tab chip — singles out the channel chip among the category set so it can render in a heavier weight. Visual variant, not state. BEM modifier in PR-gamma-2."
     }
   ]
 }

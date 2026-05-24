@@ -37,7 +37,10 @@ describe("useBodyScrollLock stacked-modal contract", () => {
   });
 
   it("watches the active ref for lock/unlock transitions", () => {
-    expect(source).toMatch(/watch\(active/);
+    // Match either single-line `watch(active, ...)` or the multi-line
+    // form `watch(\n  active,` that prettier emits when the watcher's
+    // signature wraps onto its own line.
+    expect(source).toMatch(/watch\(\s*active\b/);
   });
 
   it("unlocks on unmount as a safety net", () => {

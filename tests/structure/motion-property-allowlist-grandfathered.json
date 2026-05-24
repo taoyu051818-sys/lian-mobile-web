@@ -55,7 +55,33 @@
       "file": "src/shell/shell-chrome.css",
       "property": "filter",
       "reason": "Glass backdrop crossfade: `filter: blur(4px)` matches RFC §3.5's allowed exception (≤12px backdrop blur on shell slot enter/leave). Permanent grandfather; revisit only if §3.5 is amended."
+    },
+    {
+      "file": "src/features/feed/FeedContextMenu.vue",
+      "property": "background",
+      "reason": "Pre-RFC short-form on the context-menu item hover. Follow-up: rewrite as `background-color` per §3.2 allowlist."
+    },
+    {
+      "file": "src/features/feed/FeedContextMenu.vue",
+      "property": "background",
+      "reason": "Second occurrence on the destructive (.is-destructive) menu item. Same follow-up: rewrite as `background-color`."
+    },
+    {
+      "file": "src/features/feed/PullToRefreshIndicator.vue",
+      "property": "stroke-dashoffset",
+      "reason": "SVG progress-ring fill animation on pull-to-refresh. Stroke-dashoffset is paint-only (no reflow) but lives outside the §3.2 allowlist. Follow-up: encode the same crossfade as a transform on a clipped child or move to a Lottie-style sprite."
+    },
+    {
+      "file": "src/ui/feedback/PwaBanner.vue",
+      "property": "background",
+      "reason": "Pre-RFC short-form on the install-banner CTA. Follow-up: rewrite as `background-color` per §3.2 allowlist."
     }
   ],
-  "banned_pending_fix": []
+  "banned_pending_fix": [
+    {
+      "file": "src/features/publish/PublishImagePreview.vue",
+      "property": "width",
+      "reason": "Image-thumbnail width animates while the upload completes (visual progress collapse). Width is banned by §3.2 (reflow trap). Follow-up: convert to transform: scale() driven by a CSS variable or class-bound enter transition."
+    }
+  ]
 }

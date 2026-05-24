@@ -141,8 +141,15 @@ describe("LianButton click suppression (loading + disabled)", () => {
   });
 
   it("handleClick suppresses emit when isDisabled() is true", () => {
+    // The disabled gate is the load-bearing assertion: when isDisabled()
+    // returns true the handler must `return` *before* the emit. Anything in
+    // between (e.g. the `hapticLight()` haptic feedback ping added during
+    // the Apple-gap polish wave) is a runtime side-effect that runs only
+    // on the enabled path — the gate above it ensures it cannot fire when
+    // the button is disabled. The regex therefore allows extra body lines
+    // between the early-return and the emit.
     expect(source).toMatch(
-      /function handleClick\(event: MouseEvent\)\s*\{\s*\n\s*if \(isDisabled\(\)\) return;\s*\n\s*emit\("click", event\);\s*\n\s*\}/,
+      /function handleClick\(event: MouseEvent\)\s*\{\s*\n\s*if \(isDisabled\(\)\) return;\s*\n[\s\S]*?\n\s*emit\("click", event\);\s*\n\s*\}/,
     );
   });
 

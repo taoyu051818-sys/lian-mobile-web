@@ -152,42 +152,51 @@ describe("issue #705 — event without a settlement renders unchanged", () => {
 });
 
 describe("issue #705 — PostDetailEventBlock renders the readout (read-only)", () => {
-  const view = readRepoFile("../../src/features/detail/PostDetailEventBlock.vue");
+  // The settlement readout was extracted into its own SFC
+  // (`PostDetailEventSettlement.vue`) so the parent block stays focused on
+  // the join/cancel + creator-side complete flow. The contract is unchanged
+  // — brand-only copy, stable testid, read-only — but the assertions now
+  // target the extracted component (which owns the imports + testid + DOM)
+  // and the parent's wiring (v-if gate + child render).
+  const block = readRepoFile("../../src/features/detail/PostDetailEventBlock.vue");
+  const settlement = readRepoFile("../../src/features/detail/PostDetailEventSettlement.vue");
 
   it("imports the four new EVENT_REWARD_SETTLED_* brand strings", () => {
-    expect(view).toMatch(/EVENT_REWARD_SETTLED_LABEL/);
-    expect(view).toMatch(/EVENT_REWARD_SETTLED_PER_JOINER/);
-    expect(view).toMatch(/EVENT_REWARD_SETTLED_TOTAL/);
-    expect(view).toMatch(/EVENT_REWARD_SETTLED_AT/);
+    expect(settlement).toMatch(/EVENT_REWARD_SETTLED_LABEL/);
+    expect(settlement).toMatch(/EVENT_REWARD_SETTLED_PER_JOINER/);
+    expect(settlement).toMatch(/EVENT_REWARD_SETTLED_TOTAL/);
+    expect(settlement).toMatch(/EVENT_REWARD_SETTLED_AT/);
   });
 
   it("declares a stable testid the F3 / e2e proof can latch onto", () => {
-    expect(view).toMatch(/data-testid="post-detail-event-reward-settlement"/);
+    expect(settlement).toMatch(/data-testid="post-detail-event-reward-settlement"/);
   });
 
   it("hides (v-if) the readout when rewardSettlement is missing", () => {
-    const blockMatch = view.match(
-      /<div[^>]*class="post-detail-event-block__settlement"[^>]*>[\s\S]*?<\/div>/,
+    // Parent block gates the rendered child on `settlement`, which is the
+    // computed wrapper around `props.event.rewardSettlement`. Equivalent to
+    // the previous `v-if="settlement"` on an inline div.
+    expect(block).toMatch(
+      /<PostDetailEventSettlement\s+v-if="settlement"\s+:settlement="settlement"\s*\/>/,
     );
-    expect(blockMatch, "settlement block must exist as its own element").toBeTruthy();
-    const block = blockMatch![0];
-    expect(block).toMatch(/v-if="settlement"/);
   });
 
   it("does NOT inline raw Chinese — every label flows through brand", () => {
-    expect(view).not.toMatch(/>奖励已结算</);
-    expect(view).not.toMatch(/>每人\s*\{?amount\}?\s*积分</);
-    expect(view).not.toMatch(/>结算于</);
+    expect(settlement).not.toMatch(/>奖励已结算</);
+    expect(settlement).not.toMatch(/>每人\s*\{?amount\}?\s*积分</);
+    expect(settlement).not.toMatch(/>结算于</);
   });
 
   it("contains no buttons / actions / API calls in the settlement block", () => {
-    const blockMatch = view.match(
-      /<div[^>]*class="post-detail-event-block__settlement"[^>]*>[\s\S]*?<\/div>/,
-    );
-    expect(blockMatch).toBeTruthy();
-    const block = blockMatch![0];
-    expect(block).not.toMatch(/<button/);
-    expect(block).not.toMatch(/@click/);
-    expect(block).not.toMatch(/emit\(/);
+    // Read-only readout: no buttons, no click handlers, no emits. Scan the
+    // template region of the settlement SFC (the `<style>` block uses none
+    // of these; the `<script setup>` declares `defineProps` but does not
+    // emit, so a global scan over the file is also safe here).
+    const templateMatch = settlement.match(/<template>[\s\S]*?<\/template>/);
+    expect(templateMatch, "settlement template must exist").toBeTruthy();
+    const template = templateMatch![0];
+    expect(template).not.toMatch(/<button/);
+    expect(template).not.toMatch(/@click/);
+    expect(settlement).not.toMatch(/\bemit\(/);
   });
 });
