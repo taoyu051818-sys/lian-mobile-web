@@ -13,6 +13,7 @@ import type {
   MerchantPostExtension,
   TradePostExtension,
 } from "../../types/post-extensions";
+import type { PostDetailMetadataV2 } from "../../types/post";
 import {
   resolvePostCapabilities,
   type PostCapabilityId,
@@ -20,6 +21,7 @@ import {
 } from "./postCapabilityRegistry";
 import { isPostActionAvailable, type PostActionContext } from "./postActionRegistry";
 import PostActionFeedback from "./PostActionFeedback.vue";
+import PostComponentsSlot from "./PostComponentsSlot.vue";
 import PostDetailEventBlock from "./PostDetailEventBlock.vue";
 import PostDetailGallery from "./PostDetailGallery.vue";
 import PostDetailHelpBlock from "./PostDetailHelpBlock.vue";
@@ -86,6 +88,14 @@ const props = defineProps<{
   viewerCanOrderErrand?: boolean;
   trade?: TradePostExtension;
   visibility?: AudienceVisibility;
+  /**
+   * PRD V0.3 §2.1.3 — V2 components block. Forwarded straight to
+   * PostComponentsSlot; the slot looks up renderers in
+   * `postComponentRegistry` and silently skips unregistered types so future
+   * component additions (delivery / groupbuy / channel / ledger) can land
+   * without widening this component's prop set.
+   */
+  metadata?: PostDetailMetadataV2;
 }>();
 
 // Issue #785 — single capability lookup. The view used to ladder
@@ -269,6 +279,8 @@ const emit = defineEmits<{
 
     <PostDetailTradeBlock v-if="showTradeBlock" :trade="trade!" />
     <PostDetailTypedFallbackBlock v-else-if="showTradeFallback" post-type="trade" />
+
+    <PostComponentsSlot :metadata="metadata" />
 
     <PostDetailInfoStrip
       :primary-tag="primaryTag"
