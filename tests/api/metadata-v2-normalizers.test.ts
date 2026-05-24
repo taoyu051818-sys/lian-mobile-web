@@ -271,9 +271,7 @@ describe("V2 trade extension normalization", () => {
   });
 
   it("uses state override when provided", () => {
-    const v2Components = [
-      { type: "trade" as const, price: "¥200", state: "available" as const },
-    ];
+    const v2Components = [{ type: "trade" as const, price: "¥200", state: "available" as const }];
 
     const result = normalizeTradeExtensionV2(v2Components, {}, "sold");
     expect(result?.state).toBe("sold");
@@ -317,7 +315,14 @@ describe("normalizePostDetail V2 integration", () => {
       cover: "https://example.com/cover.jpg",
       event: { eventId: "evt_v1", capacity: 100, joinedCount: 5, startsAt: "2026-06-01T10:00:00Z" },
       help: { helpId: "help_v1", status: "open", voteCount: 5, commentCount: 1 },
-      merchant: { name: "V1 Shop", category: "retail", hours: "", contact: "", errandSupported: false, verifiedAt: "" },
+      merchant: {
+        name: "V1 Shop",
+        category: "retail",
+        hours: "",
+        contact: "",
+        errandSupported: false,
+        verifiedAt: "",
+      },
       trade: { price: "¥100", state: "available", category: "books", verifiedAt: "" },
     };
 
@@ -334,12 +339,17 @@ describe("normalizePostDetail V2 integration", () => {
       tid: 123,
       title: "Test Post",
       metadata: {
-        components: [
-          { type: "event", eventId: "evt_v2", capacity: 50, joinedCount: 10 },
-        ],
+        components: [{ type: "event", eventId: "evt_v2", capacity: 50, joinedCount: 10 }],
       },
       event: { eventId: "evt_v1", capacity: 100, joinedCount: 5 },
-      merchant: { name: "V1 Shop", category: "service", hours: "", contact: "", errandSupported: false, verifiedAt: "" },
+      merchant: {
+        name: "V1 Shop",
+        category: "service",
+        hours: "",
+        contact: "",
+        errandSupported: false,
+        verifiedAt: "",
+      },
     };
 
     const result = normalizePostDetail(payload, 123);
