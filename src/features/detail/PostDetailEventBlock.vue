@@ -41,10 +41,6 @@ import {
   EVENT_DISABLED_FULL,
   EVENT_DISABLED_OUT_OF_SCOPE,
   EVENT_REWARD_LABEL,
-  EVENT_REWARD_SETTLED_LABEL,
-  EVENT_REWARD_SETTLED_PER_JOINER,
-  EVENT_REWARD_SETTLED_TOTAL,
-  EVENT_REWARD_SETTLED_AT,
   EVENT_COMPLETE_BUTTON_LABEL,
   EVENT_COMPLETE_CONFIRM_TITLE,
   EVENT_COMPLETE_CONFIRM_BODY,
@@ -58,8 +54,8 @@ import {
   type EventStatus,
 } from "../../domain/eventActionPolicy";
 import type { EventPostExtension } from "../../types/post-extensions";
-import { formatRelativeTime } from "../../utils/time";
 import DetailCtaButton from "./DetailCtaButton.vue";
+import PostDetailEventSettlement from "./PostDetailEventSettlement.vue";
 import { selectEventDetailCtaState } from "./eventDetailCtaState";
 
 const props = withDefaults(
@@ -202,36 +198,6 @@ function confirmComplete() {
 // Issue #705 — read-only post-settlement readout. Drives a `v-if` on the
 // settled-reward block so events without a settlement render exactly as today.
 const settlement = computed(() => props.event.rewardSettlement);
-
-function fillTemplate(template: string, params: Record<string, string | number>) {
-  return template.replace(/\{(\w+)\}/g, (_, key) =>
-    Object.prototype.hasOwnProperty.call(params, key) ? String(params[key]) : `{${key}}`,
-  );
-}
-
-const settledPerJoinerLabel = computed(() => {
-  const s = settlement.value;
-  if (!s) return "";
-  return fillTemplate(EVENT_REWARD_SETTLED_PER_JOINER, { amount: s.perJoiner });
-});
-
-const settledTotalLabel = computed(() => {
-  const s = settlement.value;
-  if (!s) return "";
-  return fillTemplate(EVENT_REWARD_SETTLED_TOTAL, {
-    total: s.totalPaid,
-    count: s.joinerCount,
-  });
-});
-
-const settledAtLabel = computed(() => {
-  const s = settlement.value;
-  if (!s || !s.settledAt) return "";
-  // Reuse the relative-time helper (same one feed cards use). Falls back to
-  // the raw ISO when parsing fails so the user is never shown an empty hint.
-  const humanized = formatRelativeTime(s.settledAt) || s.settledAt;
-  return fillTemplate(EVENT_REWARD_SETTLED_AT, { at: humanized });
-});
 </script>
 
 <template>
@@ -260,26 +226,10 @@ const settledAtLabel = computed(() => {
       <span class="post-detail-event-block__reward-body">{{ event.rewardSummary }}</span>
     </div>
 
-    <div
+    <PostDetailEventSettlement
       v-if="settlement"
-      class="post-detail-event-block__settlement"
-      data-testid="post-detail-event-reward-settlement"
-    >
-      <span class="post-detail-event-block__settlement-label">
-        {{ EVENT_REWARD_SETTLED_LABEL }}
-      </span>
-      <dl class="post-detail-event-block__settlement-body">
-        <div data-settlement-field="per-joiner">
-          <dd>{{ settledPerJoinerLabel }}</dd>
-        </div>
-        <div data-settlement-field="total">
-          <dd>{{ settledTotalLabel }}</dd>
-        </div>
-        <div v-if="settledAtLabel" data-settlement-field="settled-at">
-          <dd>{{ settledAtLabel }}</dd>
-        </div>
-      </dl>
-    </div>
+      :settlement="settlement"
+    />
 
     <div v-if="showPrimaryAction || showCompleteButton" class="post-detail-event-block__actions">
       <DetailCtaButton
@@ -438,39 +388,6 @@ const settledAtLabel = computed(() => {
   line-height: 1.5;
   white-space: pre-wrap;
   word-break: break-word;
-}
-
-.post-detail-event-block__settlement {
-  display: grid;
-  gap: 4px;
-  padding: var(--space-2) var(--space-3);
-  border-radius: var(--radius-3, 8px);
-  background: rgba(31, 167, 160, 0.12);
-}
-
-.post-detail-event-block__settlement-label {
-  color: var(--lian-primary-deep, #0f6b66);
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-}
-
-.post-detail-event-block__settlement-body {
-  display: grid;
-  gap: 2px;
-  margin: 0;
-}
-
-.post-detail-event-block__settlement-body > div {
-  margin: 0;
-}
-
-.post-detail-event-block__settlement-body dd {
-  margin: 0;
-  color: var(--lian-ink);
-  font-size: 13px;
-  line-height: 1.5;
 }
 
 .post-detail-event-block__actions {
