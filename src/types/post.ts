@@ -6,6 +6,7 @@ import type {
   EventPostExtension,
   HelpPostExtension,
   MerchantPostExtension,
+  MetadataComponentV2,
   TradePostExtension,
 } from "./post-extensions";
 
@@ -82,6 +83,30 @@ export interface PostDetail {
    * Frontend can fall back to `/api/auth/me` + actor matching when absent.
    */
   tradeManageable?: boolean;
+  /**
+   * PRD V0.3 §2.1.3 — V2 components block. When the backend grows to echo raw
+   * `metadata` on the wire (currently the post-detail DTO does not), this
+   * field carries the version-tagged components array. PostComponentsSlot
+   * renders any registered component types it finds here; unregistered types
+   * are silently skipped so future component additions do not require a
+   * frontend release. Both legacy event/help/merchant/trade extensions above
+   * AND this block can coexist — the existing flat fields keep their existing
+   * blocks while new component types (delivery / groupbuy / channel / ledger)
+   * land via this slot.
+   */
+  metadata?: PostDetailMetadataV2;
+}
+
+/**
+ * Optional V2 metadata block surfaced on the post-detail DTO. Mirrors the
+ * backend storage shape (`_v` discriminator + `components` array). The
+ * `components` field is array-shaped on the wire — backend dual-write
+ * normalization converts internal object-map storage to this canonical
+ * array form before serialization.
+ */
+export interface PostDetailMetadataV2 {
+  _v?: number;
+  components?: MetadataComponentV2[];
 }
 
 /**

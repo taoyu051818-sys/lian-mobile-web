@@ -340,6 +340,7 @@ watch(
             :viewer-can-order-errand="viewerCanOrderErrand"
             :trade="post?.trade"
             :visibility="post?.visibility"
+            :metadata="post?.metadata"
             @gallery-pointer-down="handleGalleryPointerDown"
             @gallery-pointer-move="handleGalleryPointerMove"
             @open-gallery-image="openGalleryImage"
