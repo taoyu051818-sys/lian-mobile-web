@@ -115,6 +115,7 @@ function handleKeydown(event: KeyboardEvent) {
     ref="composerRef"
     class="messages-view__composer"
     :class="{ 'messages-view__composer--compact': isCompact }"
+    data-testid="channel-composer"
     @submit.prevent="emit('submit')"
     @focusin="focused = true"
     @focusout="handleFocusOut"
@@ -190,7 +191,7 @@ function handleKeydown(event: KeyboardEvent) {
           {{ charCountText }}
         </span>
       </label>
-      <LianButton type="submit" :loading="sending" :disabled="!canSubmit">{{
+      <LianButton type="submit" :loading="sending" :disabled="!canSubmit" data-testid="channel-send-button">{{
         COMPOSER_SEND
       }}</LianButton>
     </div>

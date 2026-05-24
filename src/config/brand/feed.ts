@@ -41,6 +41,14 @@ export const FEED_VISIBILITY_LABELS: Record<string, string> = {
   linkOnly: "链接可见",
 };
 
+/** 可见性图标（统一用 graduation-cap 表示 campus） */
+export const FEED_VISIBILITY_ICONS: Record<string, string> = {
+  campus: "graduation-cap",
+  school: "building",
+  private: "lock",
+  linkOnly: "link",
+};
+
 /** Feed 筛选 UI */
 export const FEED_FILTER_BAR_LABEL = "可见范围筛选";
 export const FEED_FILTER_VISIBILITY_ALL = "全部";

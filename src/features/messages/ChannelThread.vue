@@ -137,6 +137,7 @@ function messageMeta(item: ChannelMessage) {
         v-for="item in items"
         :key="String(item.id)"
         class="messages-view__message"
+        data-testid="channel-message-item"
         :class="{
           'messages-view__message--self': item.isSelf,
           'is-loading': String(item.id).startsWith('pending-'),

@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
 import { togglePostLike } from "../../api/posts";
-import { FEED_LIKE, FEED_UNLIKE, FEED_VISIBILITY_LABELS } from "../../config/brand";
+import { FEED_LIKE, FEED_UNLIKE } from "../../config/brand";
 import type { AudienceVisibility } from "../../types/audience";
-import { LianIcon } from "../../ui";
+import { VisibilityBadge } from "../../ui";
 
 const props = defineProps<{
   tid: number;
@@ -29,23 +29,6 @@ const likeBusy = ref(false);
 const likeLabel = computed(
   () => `${liked.value ? FEED_UNLIKE : FEED_LIKE}，当前 ${likeCount.value} 个喜欢`,
 );
-
-// Visibility label — only show for non-public posts
-const visibilityLabel = computed(() => {
-  const v = props.visibility || "public";
-  return v !== "public" ? FEED_VISIBILITY_LABELS[v] || null : null;
-});
-
-const visibilityIcon = computed(() => {
-  const v = props.visibility || "public";
-  const iconMap: Record<string, "building" | "graduation-cap" | "lock" | "link"> = {
-    campus: "building",
-    school: "graduation-cap",
-    private: "lock",
-    linkOnly: "link",
-  };
-  return iconMap[v] || null;
-});
 
 watch(
   () => [props.liked, props.likeCount],
@@ -92,10 +75,11 @@ async function handleLike() {
       <span class="feed-item-card__author-name" :title="authorName">{{ authorName }}</span>
     </div>
 
-    <span v-if="visibilityLabel && visibilityIcon" class="feed-item-card__visibility">
-      <LianIcon :name="visibilityIcon" :size="12" />
-      <span>{{ visibilityLabel }}</span>
-    </span>
+    <VisibilityBadge
+      :visibility="visibility"
+      :show-icon="true"
+      class="feed-item-card__visibility"
+    />
 
     <span class="feed-item-card__motion-time" aria-hidden="true">{{ timeLabel }}</span>
 

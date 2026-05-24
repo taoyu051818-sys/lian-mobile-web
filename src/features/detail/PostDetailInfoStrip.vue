@@ -56,8 +56,9 @@ const visibilityMap: Record<Exclude<AudienceVisibility, "public">, VisibilityDis
         v-if="visibility && visibility !== 'public' && visibilityMap[visibility]"
         class="post-detail-info-strip__pill post-detail-info-strip__pill--visibility"
         :title="visibilityMap[visibility].label"
+        :aria-label="visibilityMap[visibility].label"
       >
-        <LianIcon :name="visibilityMap[visibility].icon" :size="14" />
+        <LianIcon :name="visibilityMap[visibility].icon" :size="14" aria-hidden="true" />
         {{ visibilityMap[visibility].label }}
       </span>
       <button

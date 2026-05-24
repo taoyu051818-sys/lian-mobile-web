@@ -91,6 +91,7 @@ function toggleMode() {
       :aria-label="
         filterMode === 'visibility' ? CHANNEL_FILTER_MODE_VISIBILITY : CHANNEL_FILTER_MODE_CATEGORY
       "
+      data-testid="channel-filter-chips"
     >
       <template v-if="filterMode === 'visibility'">
         <button

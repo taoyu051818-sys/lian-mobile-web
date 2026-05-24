@@ -1,19 +1,37 @@
 <script setup lang="ts">
 import type { AudienceVisibility } from "../types/audience";
-import { FEED_VISIBILITY_LABELS } from "../config/brand";
+import { FEED_VISIBILITY_LABELS, FEED_VISIBILITY_ICONS } from "../config/brand";
+import type { LianIconName } from "./icons/paths";
+import LianIcon from "./icons/LianIcon.vue";
 
 const props = defineProps<{
   visibility?: AudienceVisibility;
+  showIcon?: boolean;
 }>();
 
 function visibilityLabel(v?: AudienceVisibility): string | null {
   if (!v || v === "public") return null;
   return FEED_VISIBILITY_LABELS[v] || null;
 }
+
+function visibilityIcon(v?: AudienceVisibility): LianIconName | null {
+  if (!v || v === "public") return null;
+  return (FEED_VISIBILITY_ICONS[v] as LianIconName) || null;
+}
 </script>
 
 <template>
-  <span v-if="visibilityLabel(props.visibility)" class="visibility-badge">
+  <span
+    v-if="visibilityLabel(props.visibility)"
+    class="visibility-badge"
+    :aria-label="visibilityLabel(props.visibility) ?? undefined"
+  >
+    <LianIcon
+      v-if="props.showIcon && visibilityIcon(props.visibility)"
+      :name="visibilityIcon(props.visibility)!"
+      :size="12"
+      aria-hidden="true"
+    />
     {{ visibilityLabel(props.visibility) }}
   </span>
 </template>
@@ -21,6 +39,7 @@ function visibilityLabel(v?: AudienceVisibility): string | null {
 <style scoped>
 .visibility-badge {
   display: inline-flex;
+  gap: 4px;
   align-items: center;
   padding: 2px 6px;
   border-radius: var(--radius-chip, 4px);
