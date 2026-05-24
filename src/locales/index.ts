@@ -10,6 +10,13 @@ import id from "./id";
 import es from "./es";
 import fr from "./fr";
 import ar from "./ar";
+import de from "./de";
+import it from "./it";
+import pt from "./pt";
+import tr from "./tr";
+import th from "./th";
+import mn from "./mn";
+import kk from "./kk";
 import { detectAppLocale, isRtlLocale, persistAppLocale, type AppLocale } from "./resolveLocale";
 
 const initialLocale = detectAppLocale();
@@ -30,6 +37,13 @@ export const i18n = createI18n({
     es,
     fr,
     ar,
+    de,
+    it,
+    pt,
+    tr,
+    th,
+    mn,
+    kk,
   },
 });
 

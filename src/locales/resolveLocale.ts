@@ -26,7 +26,14 @@ export type AppLocale =
   | "id"
   | "es"
   | "fr"
-  | "ar";
+  | "ar"
+  | "de"
+  | "it"
+  | "pt"
+  | "tr"
+  | "th"
+  | "mn"
+  | "kk";
 
 export const SUPPORTED_LOCALES: readonly AppLocale[] = [
   "zh-CN",
@@ -40,6 +47,13 @@ export const SUPPORTED_LOCALES: readonly AppLocale[] = [
   "es",
   "fr",
   "ar",
+  "de",
+  "it",
+  "pt",
+  "tr",
+  "th",
+  "mn",
+  "kk",
 ];
 export const DEFAULT_LOCALE: AppLocale = "en";
 export const LOCALE_STORAGE_KEY = "lian.language";
@@ -108,6 +122,27 @@ function matchLocale(tag: string | undefined | null): AppLocale | null {
   }
   if (normalized === "ar" || normalized.startsWith("ar-") || normalized.startsWith("ar_")) {
     return "ar";
+  }
+  if (normalized === "de" || normalized.startsWith("de-") || normalized.startsWith("de_")) {
+    return "de";
+  }
+  if (normalized === "it" || normalized.startsWith("it-") || normalized.startsWith("it_")) {
+    return "it";
+  }
+  if (normalized === "pt" || normalized.startsWith("pt-") || normalized.startsWith("pt_")) {
+    return "pt";
+  }
+  if (normalized === "tr" || normalized.startsWith("tr-") || normalized.startsWith("tr_")) {
+    return "tr";
+  }
+  if (normalized === "th" || normalized.startsWith("th-") || normalized.startsWith("th_")) {
+    return "th";
+  }
+  if (normalized === "mn" || normalized.startsWith("mn-") || normalized.startsWith("mn_")) {
+    return "mn";
+  }
+  if (normalized === "kk" || normalized.startsWith("kk-") || normalized.startsWith("kk_")) {
+    return "kk";
   }
   return null;
 }

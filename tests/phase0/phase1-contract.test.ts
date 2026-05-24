@@ -153,7 +153,7 @@ describe("Phase 0/1 sanity: helpers behave", () => {
         navigatorLanguage: "en-US",
       }),
     ).toBe("zh-CN");
-    expect(resolveAppLocale({ navigatorLanguages: ["sw-KE", "tr-TR"] })).toBe("en");
+    expect(resolveAppLocale({ navigatorLanguages: ["sw-KE", "uk-UA"] })).toBe("en");
     expect(resolveAppLocale({ navigatorLanguages: ["zh-Hans-CN"] })).toBe("zh-CN");
     expect(resolveAppLocale({})).toBe("en");
   });
