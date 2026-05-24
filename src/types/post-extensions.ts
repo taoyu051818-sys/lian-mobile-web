@@ -243,3 +243,113 @@ export interface InteractionToggleResult {
   active: boolean;
   count: number;
 }
+
+// ---------------------------------------------------------------------------
+// V2 Metadata Components (lian-platform-server #560)
+// ---------------------------------------------------------------------------
+
+/**
+ * V2 component type discriminator. Each component in the `components` array
+ * carries a `type` field that identifies its shape.
+ */
+export type MetadataComponentType =
+  | "location"
+  | "time"
+  | "media"
+  | "quality"
+  | "audience"
+  | "tags"
+  | "event"
+  | "merchant"
+  | "trade"
+  | "help";
+
+/**
+ * V2 LocationComponent — structured place/location data.
+ */
+export interface LocationComponentV2 {
+  type: "location";
+  placeId?: string;
+  label?: string;
+  lat?: number;
+  lng?: number;
+}
+
+/**
+ * V2 TimeComponent — event timing data.
+ */
+export interface TimeComponentV2 {
+  type: "time";
+  startsAt?: string;
+  endsAt?: string;
+}
+
+/**
+ * V2 EventComponent — event-specific metadata.
+ */
+export interface EventComponentV2 {
+  type: "event";
+  eventId: string;
+  capacity?: number;
+  joinedCount?: number;
+  rewardSummary?: string;
+  status?: EventStatus;
+  completedAt?: string;
+  location?: string;
+}
+
+/**
+ * V2 MerchantComponent — merchant-specific metadata.
+ */
+export interface MerchantComponentV2 {
+  type: "merchant";
+  name: string;
+  category?: MerchantCategory;
+  hours?: string;
+  contact?: string;
+  errandSupported?: boolean;
+  verifiedAt?: string;
+}
+
+/**
+ * V2 TradeComponent — trade/second-hand listing metadata.
+ */
+export interface TradeComponentV2 {
+  type: "trade";
+  price: string;
+  state?: TradeState;
+  category?: string;
+  verifiedAt?: string;
+}
+
+/**
+ * V2 HelpComponent — help post metadata.
+ */
+export interface HelpComponentV2 {
+  type: "help";
+  helpId: string;
+  status?: HelpStatus;
+  voteCount?: number;
+  commentCount?: number;
+  linkedEventTid?: number;
+}
+
+/**
+ * Union of all V2 metadata component types.
+ */
+export type MetadataComponentV2 =
+  | LocationComponentV2
+  | TimeComponentV2
+  | EventComponentV2
+  | MerchantComponentV2
+  | TradeComponentV2
+  | HelpComponentV2;
+
+/**
+ * V2 metadata block as returned by the backend when `components` is present.
+ * The frontend reads from this when available, falling back to V1 flat fields.
+ */
+export interface MetadataV2 {
+  version: 2;
+  components: MetadataComponentV2[];
+}

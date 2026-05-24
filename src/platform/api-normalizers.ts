@@ -1,13 +1,18 @@
 import type { DisplayActor, SourceSignal } from "../types/feed";
 import type { PlaceRef, PlaceStatus } from "../types/place";
 import type {
+  EventComponentV2,
   EventPostExtension,
   EventRewardSettlement,
   EventStatus,
+  HelpComponentV2,
   HelpPostExtension,
   HelpStatus,
   MerchantCategory,
+  MerchantComponentV2,
   MerchantPostExtension,
+  MetadataComponentV2,
+  TradeComponentV2,
   TradePostExtension,
   TradeState,
 } from "../types/post-extensions";
@@ -379,4 +384,136 @@ export function normalizeTradeExtension(value: unknown): TradePostExtension | un
     category: asString(record.category),
     verifiedAt: asString(record.verifiedAt),
   };
+}
+
+// ---------------------------------------------------------------------------
+// V2 Metadata Component Extraction (lian-platform-server #560)
+// ---------------------------------------------------------------------------
+
+/**
+ * Extract the V2 components array from a raw payload. Returns undefined when
+ * the payload does not contain a valid V2 components block.
+ */
+export function extractV2Components(value: unknown): MetadataComponentV2[] | undefined {
+  const record = asRecord(value);
+  const metadata = asRecord(record.metadata);
+  if (!Array.isArray(metadata.components)) return undefined;
+  return metadata.components.filter(
+    (c): c is MetadataComponentV2 => c && typeof c === "object" && typeof c.type === "string",
+  );
+}
+
+/**
+ * Find a component of a specific type from the V2 components array.
+ */
+function findComponent<T extends MetadataComponentV2>(
+  components: MetadataComponentV2[] | undefined,
+  type: T["type"],
+): T | undefined {
+  if (!components) return undefined;
+  return components.find((c) => c.type === type) as T | undefined;
+}
+
+/**
+ * Extract EventPostExtension from V2 EventComponent, falling back to V1 flat
+ * fields. Returns undefined when neither V2 nor V1 data is present.
+ */
+export function normalizeEventExtensionV2(
+  v2Components: MetadataComponentV2[] | undefined,
+  v1Value: unknown,
+): EventPostExtension | undefined {
+  const v2 = findComponent<EventComponentV2>(v2Components, "event");
+  if (v2) {
+    const eventId = optionalString(v2.eventId);
+    if (!eventId) return normalizeEventExtension(v1Value);
+    return {
+      eventId,
+      ...(v2.location ? { location: v2.location } : {}),
+      ...(v2.capacity !== undefined ? { capacity: v2.capacity } : {}),
+      ...(v2.rewardSummary ? { rewardSummary: v2.rewardSummary } : {}),
+      joinedCount: asNonNegInt(v2.joinedCount),
+      ...(v2.status ? { status: v2.status } : {}),
+      ...(v2.completedAt ? { completedAt: v2.completedAt } : {}),
+    };
+  }
+  return normalizeEventExtension(v1Value);
+}
+
+/**
+ * Extract HelpPostExtension from V2 HelpComponent, falling back to V1 flat
+ * fields. Returns undefined when neither V2 nor V1 data is present.
+ */
+export function normalizeHelpExtensionV2(
+  v2Components: MetadataComponentV2[] | undefined,
+  v1Value: unknown,
+): HelpPostExtension | undefined {
+  const v2 = findComponent<HelpComponentV2>(v2Components, "help");
+  if (v2) {
+    const helpId = optionalString(v2.helpId);
+    if (!helpId) return normalizeHelpExtension(v1Value);
+    const status = asEnum(v2.status, HELP_STATUSES);
+    if (!status) return normalizeHelpExtension(v1Value);
+    return {
+      helpId,
+      status,
+      voteCount: asNonNegInt(v2.voteCount),
+      commentCount: asNonNegInt(v2.commentCount),
+      ...(v2.linkedEventTid !== undefined ? { linkedEventTid: v2.linkedEventTid } : {}),
+    };
+  }
+  return normalizeHelpExtension(v1Value);
+}
+
+/**
+ * Extract MerchantPostExtension from V2 MerchantComponent, falling back to V1
+ * flat fields. Returns undefined when neither V2 nor V1 data is present.
+ */
+export function normalizeMerchantExtensionV2(
+  v2Components: MetadataComponentV2[] | undefined,
+  v1Value: unknown,
+): MerchantPostExtension | undefined {
+  const v2 = findComponent<MerchantComponentV2>(v2Components, "merchant");
+  if (v2) {
+    const name = optionalString(v2.name);
+    if (!name) return normalizeMerchantExtension(v1Value);
+    const rawCategory = (optionalString(v2.category) || "").toLowerCase();
+    const category = MERCHANT_CATEGORIES.has(rawCategory as MerchantCategory)
+      ? (rawCategory as MerchantCategory)
+      : "service";
+    return {
+      name,
+      category,
+      hours: asString(v2.hours),
+      contact: asString(v2.contact),
+      errandSupported: asBoolean(v2.errandSupported),
+      verifiedAt: asString(v2.verifiedAt),
+    };
+  }
+  return normalizeMerchantExtension(v1Value);
+}
+
+/**
+ * Extract TradePostExtension from V2 TradeComponent, falling back to V1 flat
+ * fields. Returns undefined when neither V2 nor V1 data is present.
+ * Accepts an optional state override for detail endpoint compatibility.
+ */
+export function normalizeTradeExtensionV2(
+  v2Components: MetadataComponentV2[] | undefined,
+  v1Value: unknown,
+  stateOverride?: unknown,
+): TradePostExtension | undefined {
+  const v2 = findComponent<TradeComponentV2>(v2Components, "trade");
+  if (v2) {
+    const price = optionalString(v2.price);
+    if (!price) return normalizeTradeExtension(v1Value);
+    const rawState = (optionalString(stateOverride ?? v2.state) || "").toLowerCase();
+    const state = TRADE_STATES.has(rawState as TradeState) ? (rawState as TradeState) : "available";
+    return {
+      price,
+      state,
+      category: asString(v2.category),
+      verifiedAt: asString(v2.verifiedAt),
+    };
+  }
+  return normalizeTradeExtension(v1Value);
 }
