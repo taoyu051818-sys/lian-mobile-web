@@ -92,13 +92,13 @@ describe("resolveAppLocale priority and mapping (PRD V0.1 §9.2)", () => {
         navigatorLanguages: ["fr-FR", "en-US"],
         navigatorLanguage: "zh-CN",
       }),
-    ).toBe("en");
+    ).toBe("fr");
   });
 
   it("falls back to navigator.language when languages[] has no match", () => {
     expect(
       resolveAppLocale({
-        navigatorLanguages: ["fr-FR", "de-DE"],
+        navigatorLanguages: ["sw-KE", "tr-TR"],
         navigatorLanguage: "zh-Hans-CN",
       }),
     ).toBe("zh-CN");
@@ -117,7 +117,7 @@ describe("resolveAppLocale priority and mapping (PRD V0.1 §9.2)", () => {
   });
 
   it("unknown navigator tag falls back to en (DEFAULT_LOCALE)", () => {
-    expect(resolveAppLocale({ navigatorLanguage: "fr-FR" })).toBe(DEFAULT_LOCALE);
+    expect(resolveAppLocale({ navigatorLanguage: "sw-KE" })).toBe(DEFAULT_LOCALE);
     expect(resolveAppLocale({})).toBe(DEFAULT_LOCALE);
   });
 
