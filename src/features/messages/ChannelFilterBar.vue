@@ -210,18 +210,22 @@ function toggleState() {
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  padding: var(--space-1) 0;
+  width: 100%;
+  min-height: var(--floating-bar-height);
+  padding: var(--floating-bar-padding);
 }
 
 .channel-filter-bar__chips-container {
   position: relative;
   flex: 1;
-  min-height: 32px;
+  min-height: var(--floating-bar-button-height);
   overflow: hidden;
 }
 
 .channel-filter-bar__chips {
   display: flex;
+  /* Center chips when they fit; fall back to start when scrolling kicks in. */
+  justify-content: safe center;
   gap: var(--space-2);
   align-items: center;
   overflow-x: auto;

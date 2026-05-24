@@ -202,6 +202,8 @@ function toggleState() {
 
 .feed-filter-bar__chips {
   display: flex;
+  /* Center chips when they fit; fall back to start when scrolling kicks in. */
+  justify-content: safe center;
   gap: var(--space-2);
   align-items: center;
   overflow-x: auto;

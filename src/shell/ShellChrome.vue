@@ -172,6 +172,7 @@ function handleFilterToggle(filterId: string) {
         <div
           key="default"
           class="shell-chrome__inner lian-floating-chrome lian-floating-chrome--top"
+          data-floating-chrome="top"
         >
           <div v-if="identity" class="shell-chrome__identity" :aria-label="SHELL_CURRENT_IDENTITY">
             <span class="shell-chrome__identity-avatar" aria-hidden="true">{{
