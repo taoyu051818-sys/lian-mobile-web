@@ -1,12 +1,21 @@
 <script setup lang="ts">
-defineProps<{
+import { computed } from "vue";
+import { useBodyScrollLock } from "../../composables/useBodyScrollLock";
+import { useEscapeListener } from "../../composables/useEscapeListener";
+
+const props = defineProps<{
   src?: string;
   alt?: string;
 }>();
 
-defineEmits<{
+const emit = defineEmits<{
   close: [];
 }>();
+
+const isOpen = computed(() => Boolean(props.src));
+
+useBodyScrollLock(isOpen);
+useEscapeListener(isOpen, () => emit("close"));
 </script>
 
 <template>

@@ -23,9 +23,14 @@ const emit = defineEmits<{
       @click="emit('resetForm')"
       >{{ PUBLISH_CLEAR }}</LianButton
     >
-    <LianButton type="submit" variant="primary" :loading="publishing" :disabled="!canSubmit">{{
-      PUBLISH_SUBMIT
-    }}</LianButton>
+    <LianButton
+      type="submit"
+      variant="primary"
+      :loading="publishing || uploading"
+      :disabled="!canSubmit"
+      :aria-busy="uploading || publishing"
+      >{{ uploading ? PUBLISH_UPLOADING : PUBLISH_SUBMIT }}</LianButton
+    >
   </div>
 </template>
 

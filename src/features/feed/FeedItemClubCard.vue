@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, ref, watch } from "vue";
 import type { FeedItem, FeedItemId } from "../../types/feed";
 import type { ClubMetadata } from "../../types/post";
 import {
@@ -40,6 +40,20 @@ const foundedYear = computed(() => {
     return "";
   }
 });
+
+const logoError = ref(false);
+
+// Reset logo error state when URL changes
+watch(
+  () => logoUrl.value,
+  () => {
+    logoError.value = false;
+  },
+);
+
+function handleLogoError() {
+  logoError.value = true;
+}
 
 const ariaLabel = computed(
   () => `${clubName.value}，${categoryLabel.value}社团，${memberCount.value}名成员`,

@@ -1,22 +1,39 @@
 <script setup lang="ts">
-defineProps<{
+import { ref, watch } from "vue";
+
+const props = defineProps<{
   coverUrl?: string;
   title?: string;
   primaryTag?: string;
   cardTemplate?: string;
   templateMark?: string;
 }>();
+
+const imageError = ref(false);
+
+// Reset error state when coverUrl changes
+watch(
+  () => props.coverUrl,
+  () => {
+    imageError.value = false;
+  },
+);
+
+function handleImageError() {
+  imageError.value = true;
+}
 </script>
 
 <template>
   <div v-if="cardTemplate !== 'text' || coverUrl" class="feed-item-card__media">
     <img
-      v-if="coverUrl"
+      v-if="coverUrl && !imageError"
       class="feed-item-card__cover"
       :src="coverUrl"
       :alt="title"
       loading="lazy"
       draggable="false"
+      @error="handleImageError"
     />
     <div v-else class="feed-item-card__placeholder" aria-hidden="true">
       <span>{{ templateMark }}</span>

@@ -25,6 +25,7 @@ const liked = ref(false);
 // eslint-disable-next-line vue/no-dupe-keys -- intentional optimistic update: props synced to local refs
 const likeCount = ref(0);
 const likeBusy = ref(false);
+const avatarError = ref(false);
 
 const likeLabel = computed(
   () => `${liked.value ? FEED_UNLIKE : FEED_LIKE}，当前 ${likeCount.value} 个喜欢`,
@@ -38,6 +39,18 @@ watch(
   },
   { immediate: true },
 );
+
+// Reset avatar error state when URL changes
+watch(
+  () => props.authorAvatarUrl,
+  () => {
+    avatarError.value = false;
+  },
+);
+
+function handleAvatarError() {
+  avatarError.value = true;
+}
 
 async function handleLike() {
   if (likeBusy.value) return;
@@ -65,11 +78,12 @@ async function handleLike() {
   <footer class="feed-item-card__footer">
     <div class="feed-item-card__author">
       <img
-        v-if="authorAvatarUrl"
+        v-if="authorAvatarUrl && !avatarError"
         :src="authorAvatarUrl"
         :alt="authorName"
         loading="lazy"
         draggable="false"
+        @error="handleAvatarError"
       />
       <span v-else class="feed-item-card__avatar-text" aria-hidden="true">{{ authorInitial }}</span>
       <span class="feed-item-card__author-name" :title="authorName">{{ authorName }}</span>

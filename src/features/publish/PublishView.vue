@@ -1,7 +1,10 @@
 <script setup lang="ts">
-import { onMounted, ref, watch } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import type { PageChromeSpec } from "../../shell/page-model";
 import {
+  PUBLISH_AUTH_GATE_CTA,
+  PUBLISH_AUTH_GATE_HINT,
+  PUBLISH_AUTH_GATE_TITLE,
   PUBLISH_SECTION_LABEL,
   PUBLISH_VIEW_POST,
   PUBLISH_CLEAR_CONFIRM,
@@ -38,6 +41,13 @@ const eventDraft = useEventPublishDraft();
 const locationOptions = usePublishLocationOptions(draft.placeName);
 const resetConfirmationVisible = ref(false);
 const { setActiveView } = useActiveView();
+
+// Auth gate: detect guest state after identity loads
+const isGuest = computed(() => draft.identityLoaded.value && !draft.userId.value);
+
+function goLogin() {
+  setActiveView("profile");
+}
 
 function goToVerification() {
   setActiveView("verification");
@@ -205,7 +215,26 @@ onMounted(() => {
     :aria-label="PUBLISH_SECTION_LABEL"
     data-testid="publish-card"
   >
-    <GlassPanel class="publish-view__card">
+    <!-- Auth gate: redirect guests to profile for login -->
+    <section
+      v-if="isGuest"
+      class="publish-view__auth-gate"
+      :aria-label="PUBLISH_AUTH_GATE_TITLE"
+      data-testid="publish-auth-gate"
+    >
+      <strong>{{ PUBLISH_AUTH_GATE_TITLE }}</strong>
+      <p>{{ PUBLISH_AUTH_GATE_HINT }}</p>
+      <button
+        type="button"
+        class="publish-view__auth-gate-cta"
+        data-testid="publish-auth-gate-cta"
+        @click="goLogin"
+      >
+        {{ PUBLISH_AUTH_GATE_CTA }}
+      </button>
+    </section>
+
+    <GlassPanel v-else class="publish-view__card">
       <PublishMessage v-if="draft.errorMessage.value" variant="error">
         {{ draft.errorMessage.value }}
       </PublishMessage>
