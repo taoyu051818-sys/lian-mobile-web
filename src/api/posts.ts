@@ -217,6 +217,7 @@ export function normalizePostDetail(value: unknown, fallbackId: FeedItemId): Pos
     ...(errandUnavailableReasonText ? { errandUnavailableReasonText } : {}),
     ...(trade ? { trade } : {}),
     ...(tradeManageable !== undefined ? { tradeManageable } : {}),
+    ...(metadata ? { metadata } : {}),
   };
 }
 

@@ -280,6 +280,8 @@ const emit = defineEmits<{
     <PostDetailTradeBlock v-if="showTradeBlock" :trade="trade!" />
     <PostDetailTypedFallbackBlock v-else-if="showTradeFallback" post-type="trade" />
 
+    <PostComponentsSlot :metadata="metadata" />
+
     <PostDetailInfoStrip
       :primary-tag="primaryTag"
       :time-label="timeLabel"
