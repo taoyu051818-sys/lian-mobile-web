@@ -49,3 +49,5 @@ export const COMPOSER_VISIBILITY_CAMPUS = "校区可见";
 export const COMPOSER_VISIBILITY_SCHOOL = "学校可见";
 export const COMPOSER_VISIBILITY_PRIVATE = "私密";
 export const COMPOSER_VISIBILITY_LINK_ONLY = "仅链接";
+export const COMPOSER_CHAR_LIMIT = 500;
+export const COMPOSER_CHAR_COUNT = "{n}/{max}";

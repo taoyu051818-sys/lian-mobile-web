@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { InlineError, LianButton } from "../../ui";
+import { nextTick, onMounted, ref, watch } from "vue";
+import { EmptyState, InlineError, LianButton } from "../../ui";
 import { actorAvatarText, actorDisplayName } from "../../domain/actor";
 import type { ChannelMessage, ChannelMessageActor } from "../../types/messages";
 import { formatRelativeTime } from "../../utils/time";
 import {
   CHANNEL_DEFAULT_TAG,
   MESSAGE_EMPTY_CONTENT,
-  LOADING_CHANNEL,
   EMPTY_CHANNEL,
   CHANNEL_RELOAD,
   CHANNEL_LOAD_MORE,
@@ -18,7 +18,10 @@ import {
   FEED_TIME_JUST_NOW,
 } from "../../config/brand";
 
-defineProps<{
+const EMPTY_CHANNEL_HINT = "发送第一条消息开始聊天";
+const SKELETON_COUNT = 4;
+
+const props = defineProps<{
   items: ChannelMessage[];
   loading: boolean;
   error: string;
@@ -30,6 +33,33 @@ const emit = defineEmits<{
   loadMore: [];
   retryMessage: [pendingId: string];
 }>();
+
+const listRef = ref<HTMLElement | null>(null);
+
+// Auto-scroll to bottom when new messages arrive
+watch(
+  () => props.items.length,
+  async (newLen, oldLen) => {
+    if (newLen > oldLen) {
+      await nextTick();
+      scrollToBottom();
+    }
+  },
+);
+
+onMounted(() => {
+  if (props.items.length) {
+    scrollToBottom();
+  }
+});
+
+function scrollToBottom() {
+  if (!listRef.value) return;
+  const lastMessage = listRef.value.lastElementChild;
+  if (lastMessage) {
+    lastMessage.scrollIntoView({ behavior: "smooth", block: "end" });
+  }
+}
 
 function stripHtml(html?: string) {
   if (!html) return "";
@@ -74,11 +104,35 @@ function messageMeta(item: ChannelMessage) {
       }}</LianButton>
     </div>
 
-    <div v-if="loading && !items.length" class="messages-view__state" role="status">
-      {{ LOADING_CHANNEL }}
+    <!-- Skeleton loading state -->
+    <div v-if="loading && !items.length" class="messages-view__list" role="status" aria-busy="true">
+      <div
+        v-for="n in SKELETON_COUNT"
+        :key="`skeleton-${n}`"
+        class="messages-view__message messages-view__skeleton"
+        :class="{ 'messages-view__message--self': n % 3 === 0 }"
+      >
+        <span v-if="n % 3 !== 0" class="messages-view__skeleton-avatar" aria-hidden="true"></span>
+        <div class="messages-view__message-body">
+          <span v-if="n % 3 !== 0" class="messages-view__skeleton-author"></span>
+          <div class="messages-view__skeleton-bubble">
+            <span class="messages-view__skeleton-line"></span>
+            <span class="messages-view__skeleton-line messages-view__skeleton-line--short"></span>
+          </div>
+        </div>
+      </div>
     </div>
-    <div v-else-if="!items.length" class="messages-view__state">{{ EMPTY_CHANNEL }}</div>
-    <div v-else class="messages-view__list" aria-live="polite">
+
+    <!-- Empty state -->
+    <EmptyState
+      v-else-if="!items.length"
+      class="messages-view__empty"
+      :title="EMPTY_CHANNEL"
+      :description="EMPTY_CHANNEL_HINT"
+    />
+
+    <!-- Message list -->
+    <div v-else ref="listRef" class="messages-view__list" aria-live="polite">
       <article
         v-for="item in items"
         :key="String(item.id)"
@@ -232,6 +286,83 @@ function messageMeta(item: ChannelMessage) {
   place-items: center;
   color: var(--lian-muted);
   text-align: center;
+}
+
+.messages-view__empty {
+  min-height: 160px;
+  padding: var(--space-6) var(--space-4);
+}
+
+/* Skeleton loading styles */
+.messages-view__skeleton {
+  pointer-events: none;
+}
+
+.messages-view__skeleton-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: linear-gradient(90deg, rgba(31, 41, 51, 0.06) 25%, rgba(31, 41, 51, 0.12) 50%, rgba(31, 41, 51, 0.06) 75%);
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.5s ease-in-out infinite;
+}
+
+.messages-view__skeleton-author {
+  width: 80px;
+  height: 14px;
+  border-radius: var(--radius-chip);
+  background: linear-gradient(90deg, rgba(31, 41, 51, 0.06) 25%, rgba(31, 41, 51, 0.12) 50%, rgba(31, 41, 51, 0.06) 75%);
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.5s ease-in-out infinite;
+}
+
+.messages-view__skeleton-bubble {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border-radius: var(--radius-card);
+  background: rgba(31, 41, 51, 0.04);
+}
+
+.messages-view__skeleton-line {
+  width: 100%;
+  max-width: 180px;
+  height: 14px;
+  border-radius: var(--radius-chip);
+  background: linear-gradient(90deg, rgba(31, 41, 51, 0.06) 25%, rgba(31, 41, 51, 0.12) 50%, rgba(31, 41, 51, 0.06) 75%);
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.5s ease-in-out infinite;
+}
+
+.messages-view__skeleton-line--short {
+  max-width: 120px;
+}
+
+.messages-view__message--self .messages-view__skeleton-bubble {
+  background: rgba(31, 167, 160, 0.04);
+}
+
+.messages-view__message--self .messages-view__skeleton-line {
+  margin-left: auto;
+}
+
+@keyframes skeleton-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .messages-view__skeleton-avatar,
+  .messages-view__skeleton-author,
+  .messages-view__skeleton-line {
+    animation: none;
+    background: rgba(31, 41, 51, 0.08);
+  }
 }
 
 .messages-view__load-more {

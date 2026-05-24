@@ -20,6 +20,21 @@ import {
 import type { FeedItemId } from "../types/feed";
 import { normalizePostType, type PostDetail, type PostReply, type PostType } from "../types/post";
 import type { TradePostExtension, TradeState } from "../types/post-extensions";
+import type { AudienceVisibility } from "../types/audience";
+
+const KNOWN_VISIBILITIES: ReadonlySet<AudienceVisibility> = new Set([
+  "public",
+  "campus",
+  "school",
+  "private",
+  "linkOnly",
+]);
+
+function normalizeVisibility(value: unknown): AudienceVisibility {
+  return typeof value === "string" && KNOWN_VISIBILITIES.has(value as AudienceVisibility)
+    ? (value as AudienceVisibility)
+    : "public";
+}
 
 export interface PostLikeResponse {
   liked: boolean;
@@ -168,6 +183,9 @@ export function normalizePostDetail(value: unknown, fallbackId: FeedItemId): Pos
     sourceUrl: asString(record.sourceUrl ?? record.url),
     replies: rawReplies.map((reply, index) => normalizePostReply(reply, tid * 1000 + index + 1)),
     bookmarked: asBoolean(bookmarkedValue),
+    ...(normalizeVisibility(record.visibility) !== "public"
+      ? { visibility: normalizeVisibility(record.visibility) }
+      : {}),
     ...(event ? { event } : {}),
     ...(eventJoined !== undefined ? { eventJoined } : {}),
     ...(eventManageable !== undefined ? { eventManageable } : {}),

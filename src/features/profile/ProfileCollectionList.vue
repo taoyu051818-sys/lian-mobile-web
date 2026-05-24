@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import { InlineError } from "../../ui";
+import { InlineError, LianIcon } from "../../ui";
+import type { LianIconName } from "../../ui";
 import {
   UNTITLED_CONTENT,
   CHANNEL_RELOAD,
@@ -9,8 +10,10 @@ import {
   CONTENT_AVATAR_FALLBACK,
   TIME_UNKNOWN,
 } from "../../config/brand";
+import { FEED_VISIBILITY_LABELS } from "../../config/brand/feed";
 import type { FeedItemId } from "../../types/feed";
 import type { ProfileActivityStatus, ProfileListItem } from "../../types/profile";
+import type { AudienceVisibility } from "../../types/audience";
 import { formatRelativeTime } from "../../utils/time";
 
 const props = defineProps<{
@@ -30,6 +33,14 @@ const STATUS_LABELS: Record<ProfileActivityStatus, string> = {
   draft: "草稿",
   pending: "待审核",
   hidden: "仅自己可见",
+};
+
+const VISIBILITY_ICONS: Record<AudienceVisibility, LianIconName> = {
+  public: "globe",
+  campus: "graduation-cap",
+  school: "building",
+  private: "lock",
+  linkOnly: "link",
 };
 
 function canOpen(item: ProfileListItem) {
@@ -54,6 +65,18 @@ function itemMeta(item: ProfileListItem) {
   return parts.filter(Boolean).join(" · ");
 }
 
+function itemVisibility(item: ProfileListItem): {
+  icon: LianIconName;
+  label: string;
+} | null {
+  const visibility = item.visibility;
+  if (!visibility || visibility === "public") return null;
+  return {
+    icon: VISIBILITY_ICONS[visibility] || "globe",
+    label: FEED_VISIBILITY_LABELS[visibility] || "",
+  };
+}
+
 const itemStates = computed(() =>
   props.items.map((item) => ({
     key:
@@ -62,6 +85,7 @@ const itemStates = computed(() =>
     statusLabel: itemStatusLabel(item),
     meta: itemMeta(item),
     canOpen: canOpen(item),
+    visibility: itemVisibility(item),
   })),
 );
 </script>
@@ -103,6 +127,14 @@ const itemStates = computed(() =>
             <h3>{{ item.title || UNTITLED_CONTENT }}</h3>
             <span v-if="itemStates[index]?.statusLabel" class="profile-collection__badge">
               {{ itemStates[index]?.statusLabel }}
+            </span>
+            <span
+              v-if="itemStates[index]?.visibility"
+              class="profile-collection__visibility"
+              :aria-label="itemStates[index]?.visibility?.label"
+            >
+              <LianIcon :name="itemStates[index]?.visibility?.icon" :size="12" />
+              {{ itemStates[index]?.visibility?.label }}
             </span>
           </div>
           <p>{{ itemStates[index]?.meta }}</p>
@@ -230,6 +262,20 @@ const itemStates = computed(() =>
   color: var(--lian-primary-deep);
   font-size: 11px;
   font-weight: 900;
+  white-space: nowrap;
+}
+
+.profile-collection__visibility {
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+  min-height: 20px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: rgba(31, 41, 51, 0.06);
+  color: var(--lian-muted);
+  font-size: 11px;
+  font-weight: 700;
   white-space: nowrap;
 }
 

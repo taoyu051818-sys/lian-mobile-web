@@ -1,18 +1,53 @@
 <script setup lang="ts">
+import { computed, ref } from "vue";
 import { SafeHtml } from "../../ui";
 import {
   EMPTY_REPLIES,
   REPLY_SECTION_TITLE,
   REPLY_COUNT_LABEL,
   REPLY_EMPTY_PROMPT,
+  REPLY_SORT_LABEL,
+  REPLY_SORT_NEWEST,
+  REPLY_SORT_OLDEST,
 } from "../../config/brand";
 import { actorDisplayName } from "../../domain/actor";
 import type { PostReply } from "../../types/post";
 import { formatRelativeTime } from "../../utils/time";
 
-defineProps<{
+type ReplySortOrder = "newest" | "oldest";
+
+interface SortChip {
+  value: ReplySortOrder;
+  label: string;
+}
+
+const sortChips: readonly SortChip[] = [
+  { value: "newest", label: REPLY_SORT_NEWEST },
+  { value: "oldest", label: REPLY_SORT_OLDEST },
+];
+
+const props = defineProps<{
   replies?: PostReply[];
 }>();
+
+const sortOrder = ref<ReplySortOrder>("newest");
+
+const sortedReplies = computed(() => {
+  if (!props.replies?.length) return [];
+  const sorted = [...props.replies];
+  if (sortOrder.value === "newest") {
+    // Descending by timestamp (newest first)
+    sorted.sort((a, b) => new Date(b.timestampISO).getTime() - new Date(a.timestampISO).getTime());
+  } else {
+    // Ascending by timestamp (oldest first)
+    sorted.sort((a, b) => new Date(a.timestampISO).getTime() - new Date(b.timestampISO).getTime());
+  }
+  return sorted;
+});
+
+function selectSort(value: ReplySortOrder) {
+  sortOrder.value = value;
+}
 
 function sanitizeReplyHtml(value: string) {
   return String(value || "")
@@ -29,7 +64,31 @@ function sanitizeReplyHtml(value: string) {
       <h3 id="post-detail-replies-title">{{ REPLY_SECTION_TITLE }}</h3>
       <span>{{ replies?.length ? `${replies.length} ${REPLY_COUNT_LABEL}` : EMPTY_REPLIES }}</span>
     </div>
-    <article v-for="reply in replies" :key="String(reply.id)" class="post-replies__item">
+
+    <nav
+      v-if="replies?.length"
+      class="post-replies__sort-bar"
+      role="tablist"
+      :aria-label="REPLY_SORT_LABEL"
+      data-testid="reply-sort-bar"
+    >
+      <button
+        v-for="chip in sortChips"
+        :key="chip.value"
+        type="button"
+        role="tab"
+        class="post-replies__sort-chip"
+        :class="{ 'is-active': sortOrder === chip.value }"
+        :aria-selected="sortOrder === chip.value"
+        :data-sort-value="chip.value"
+        data-testid="reply-sort-chip"
+        @click="selectSort(chip.value)"
+      >
+        {{ chip.label }}
+      </button>
+    </nav>
+
+    <article v-for="reply in sortedReplies" :key="String(reply.id)" class="post-replies__item">
       <div class="post-replies__meta">
         <strong v-if="actorDisplayName(reply.actor)">{{ actorDisplayName(reply.actor) }}</strong>
         <span v-if="formatRelativeTime(reply.timestampISO)">{{
@@ -66,6 +125,46 @@ function sanitizeReplyHtml(value: string) {
 .post-replies__section-title span {
   color: var(--lian-muted);
   font-size: 12px;
+}
+
+.post-replies__sort-bar {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+.post-replies__sort-chip {
+  flex: 0 0 auto;
+  min-height: 28px;
+  padding: 0 var(--space-2);
+  border: 1px solid var(--lian-line);
+  border-radius: var(--radius-chip);
+  background: rgba(255, 255, 255, 0.72);
+  color: var(--lian-muted);
+  font-size: 12px;
+  font-weight: 850;
+  cursor: pointer;
+  transition:
+    background-color var(--motion-fast) var(--motion-ease-standard),
+    color var(--motion-fast) var(--motion-ease-standard),
+    border-color var(--motion-fast) var(--motion-ease-standard);
+}
+
+.post-replies__sort-chip:hover,
+.post-replies__sort-chip:focus-visible {
+  color: var(--lian-ink);
+  border-color: var(--lian-primary);
+}
+
+.post-replies__sort-chip.is-active {
+  background: var(--lian-primary, #1fa7a0);
+  border-color: var(--lian-primary, #1fa7a0);
+  color: #fff;
+}
+
+.post-replies__sort-chip:focus-visible {
+  outline: 2px solid var(--lian-primary);
+  outline-offset: 2px;
 }
 
 .post-replies__item {

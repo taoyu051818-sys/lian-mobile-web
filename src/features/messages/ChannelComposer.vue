@@ -15,6 +15,8 @@ import {
   COMPOSER_VISIBILITY_SCHOOL,
   COMPOSER_VISIBILITY_PRIVATE,
   COMPOSER_VISIBILITY_LINK_ONLY,
+  COMPOSER_CHAR_LIMIT,
+  COMPOSER_CHAR_COUNT,
 } from "../../config/brand";
 
 interface VisibilityOption {
@@ -48,6 +50,19 @@ const composerRef = ref<HTMLElement | null>(null);
 const focused = ref(false);
 const isCompact = computed(() => !props.content.trim() && !focused.value);
 
+const charCount = computed(() => props.content.length);
+const isOverLimit = computed(() => charCount.value > COMPOSER_CHAR_LIMIT);
+const isNearLimit = computed(() => charCount.value >= COMPOSER_CHAR_LIMIT * 0.9);
+const charCountText = computed(() =>
+  COMPOSER_CHAR_COUNT.replace("{n}", String(charCount.value)).replace(
+    "{max}",
+    String(COMPOSER_CHAR_LIMIT),
+  ),
+);
+const canSubmit = computed(
+  () => props.content.trim().length > 0 && !isOverLimit.value && !props.sending,
+);
+
 const visibilityOptions = computed((): VisibilityOption[] => [
   { value: "public", label: COMPOSER_VISIBILITY_PUBLIC, icon: "globe", disabled: false },
   { value: "campus", label: COMPOSER_VISIBILITY_CAMPUS, icon: "building", disabled: props.isGuest },
@@ -77,6 +92,15 @@ function selectVisibility(value: AudienceVisibility) {
   const option = visibilityOptions.value.find((opt) => opt.value === value);
   if (option && !option.disabled) {
     emit("update:visibility", value);
+  }
+}
+
+function handleKeydown(event: KeyboardEvent) {
+  if (event.key === "Enter" && !event.shiftKey) {
+    event.preventDefault();
+    if (canSubmit.value) {
+      emit("submit");
+    }
   }
 }
 </script>
@@ -146,10 +170,24 @@ function selectVisibility(value: AudienceVisibility) {
           :value="content"
           :rows="isCompact ? 1 : 3"
           :placeholder="`发到${CHANNEL_DEFAULT_TAG}…`"
+          :maxlength="COMPOSER_CHAR_LIMIT + 50"
           @input="emit('update:content', ($event.target as HTMLTextAreaElement).value)"
+          @keydown="handleKeydown"
         />
+        <span
+          v-if="!isCompact && charCount > 0"
+          class="messages-view__char-count"
+          :class="{
+            'messages-view__char-count--warning': isNearLimit && !isOverLimit,
+            'messages-view__char-count--error': isOverLimit,
+          }"
+        >
+          {{ charCountText }}
+        </span>
       </label>
-      <LianButton type="submit" :loading="sending">{{ COMPOSER_SEND }}</LianButton>
+      <LianButton type="submit" :loading="sending" :disabled="!canSubmit">{{
+        COMPOSER_SEND
+      }}</LianButton>
     </div>
     <InlineError v-if="sendError">{{ sendError }}</InlineError>
   </form>
@@ -273,5 +311,27 @@ function selectVisibility(value: AudienceVisibility) {
   width: 36px;
   height: 40px;
   color: var(--lian-muted);
+}
+
+.messages-view__field--content {
+  position: relative;
+}
+
+.messages-view__char-count {
+  position: absolute;
+  right: var(--space-2);
+  bottom: var(--space-2);
+  font-size: 11px;
+  color: var(--lian-faint);
+  pointer-events: none;
+  transition: color 0.15s;
+}
+
+.messages-view__char-count--warning {
+  color: var(--lian-warning, #e6a700);
+}
+
+.messages-view__char-count--error {
+  color: var(--lian-error, #dc3545);
 }
 </style>

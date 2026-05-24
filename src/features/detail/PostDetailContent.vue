@@ -6,6 +6,7 @@ import type { HelpVotePlan } from "../../domain/helpVotePolicy";
 import type { MerchantErrandUnavailableReason } from "../../types/merchant";
 import type { PlaceRef, PlaceSheet } from "../../types/place";
 import type { PostType } from "../../types/post";
+import type { AudienceVisibility } from "../../types/audience";
 import type {
   EventPostExtension,
   HelpPostExtension,
@@ -84,6 +85,7 @@ const props = defineProps<{
    */
   viewerCanOrderErrand?: boolean;
   trade?: TradePostExtension;
+  visibility?: AudienceVisibility;
 }>();
 
 // Issue #785 — single capability lookup. The view used to ladder
@@ -277,6 +279,7 @@ const emit = defineEmits<{
       :place-sheet-open="placeSheetOpen"
       :report-open="reportOpen"
       :report-busy="reportBusy"
+      :visibility="visibility"
       @open-place-sheet="emit('openPlaceSheet')"
       @toggle-report="emit('toggleReport')"
     />

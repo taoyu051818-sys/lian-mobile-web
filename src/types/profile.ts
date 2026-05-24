@@ -1,3 +1,4 @@
+import type { AudienceVisibility } from "./audience";
 import type { FeedItemId } from "./feed";
 import type { VerificationState, VerificationTag } from "./verification";
 
@@ -76,6 +77,7 @@ export interface ProfileListItem {
   timeLabel?: string;
   locationArea?: string;
   status?: ProfileActivityStatus;
+  visibility?: AudienceVisibility;
 }
 
 export interface ProfileListResponse {

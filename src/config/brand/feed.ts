@@ -32,3 +32,20 @@ export const CLUB_CATEGORY_LABELS: Record<string, string> = {
 /** 信息流 UI */
 export const FEED_LOAD_MORE = "加载更多";
 export const FEED_SEEN_ALL = "已经看到这里啦";
+
+/** 可见性标签 */
+export const FEED_VISIBILITY_LABELS: Record<string, string> = {
+  campus: "本校",
+  school: "校园",
+  private: "私密",
+  linkOnly: "链接可见",
+};
+
+/** Feed 筛选 UI */
+export const FEED_FILTER_BAR_LABEL = "可见范围筛选";
+export const FEED_FILTER_VISIBILITY_ALL = "全部";
+export const FEED_FILTER_VISIBILITY_PUBLIC = "公开";
+export const FEED_FILTER_VISIBILITY_CAMPUS = "校区";
+export const FEED_FILTER_VISIBILITY_SCHOOL = "学校";
+export const FEED_FILTER_VISIBILITY_PRIVATE = "私密";
+export const FEED_FILTER_VISIBILITY_LINK_ONLY = "仅链接";

@@ -24,6 +24,9 @@ export default defineConfig({
       includeAssets: ["assets/pwa-icon-*.png", "assets/share-cover.png", "assets/aliases/**/*"],
       manifest: false, // Use existing public/manifest.json
       workbox: {
+        // Immediate activation: take control on install without waiting
+        skipWaiting: true,
+        clientsClaim: true,
         // Precache only app shell files (JS, CSS, HTML, small icons)
         // Exclude large map assets (>2MB) - they use runtime CacheFirst
         globPatterns: ["**/*.{js,css,html,ico,svg,woff,woff2}"],
@@ -40,27 +43,60 @@ export default defineConfig({
         navigateFallback: "/offline.html",
         runtimeCaching: [
           {
-            // API feed/listing endpoints: NetworkFirst with 5s timeout
-            urlPattern: /^https?:\/\/[^/]+\/api\/(feed|posts|merchants|events)/,
+            // API endpoints: NetworkFirst with 5s timeout fallback to cache
+            urlPattern: /^https?:\/\/[^/]+\/api\//,
             handler: "NetworkFirst",
             options: {
               cacheName: "api-cache",
               networkTimeoutSeconds: 5,
               expiration: {
-                maxEntries: 50,
+                maxEntries: 100,
                 maxAgeSeconds: 5 * 60, // 5 minutes
+              },
+              cacheableResponse: {
+                statuses: [0, 200],
               },
             },
           },
           {
-            // Images: CacheFirst with 30-day TTL
-            urlPattern: /\.(?:png|jpg|jpeg|svg|gif|webp)$/,
+            // Google Fonts stylesheets: StaleWhileRevalidate
+            urlPattern: /^https:\/\/fonts\.googleapis\.com\//,
+            handler: "StaleWhileRevalidate",
+            options: {
+              cacheName: "google-fonts-stylesheets",
+              expiration: {
+                maxEntries: 10,
+                maxAgeSeconds: 60 * 60 * 24 * 365, // 1 year
+              },
+            },
+          },
+          {
+            // Google Fonts webfonts: CacheFirst (immutable)
+            urlPattern: /^https:\/\/fonts\.gstatic\.com\//,
+            handler: "CacheFirst",
+            options: {
+              cacheName: "google-fonts-webfonts",
+              expiration: {
+                maxEntries: 30,
+                maxAgeSeconds: 60 * 60 * 24 * 365, // 1 year
+              },
+              cacheableResponse: {
+                statuses: [0, 200],
+              },
+            },
+          },
+          {
+            // Images (local and CDN): CacheFirst with 30-day TTL
+            urlPattern: /\.(?:png|jpg|jpeg|svg|gif|webp)$/i,
             handler: "CacheFirst",
             options: {
               cacheName: "image-cache",
               expiration: {
-                maxEntries: 100,
+                maxEntries: 200,
                 maxAgeSeconds: 30 * 24 * 60 * 60, // 30 days
+              },
+              cacheableResponse: {
+                statuses: [0, 200],
               },
             },
           },

@@ -13,6 +13,7 @@
 // Publish (step G) can mount this shell without registering any listeners.
 import { computed, nextTick, ref, watch } from "vue";
 import { FEED_COLLAPSE, FEED_EXPAND } from "../../config/brand";
+import type { AudienceVisibility } from "../../types/audience";
 import FeedItemCardFooter from "./FeedItemCardFooter.vue";
 import FeedItemCardMedia from "./FeedItemCardMedia.vue";
 
@@ -36,6 +37,7 @@ const props = defineProps<{
   tid: number;
   liked?: boolean;
   likeCount?: number;
+  visibility?: AudienceVisibility;
 }>();
 
 const ariaLabel = computed(() => `${props.title}，${props.authorName}`);
@@ -118,6 +120,7 @@ watch(
         :time-label="timeLabel"
         :liked="Boolean(liked)"
         :like-count="Math.max(0, Number(likeCount || 0))"
+        :visibility="visibility"
       />
     </div>
   </article>

@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
 import { togglePostLike } from "../../api/posts";
-import { FEED_LIKE, FEED_UNLIKE } from "../../config/brand";
+import { FEED_LIKE, FEED_UNLIKE, FEED_VISIBILITY_LABELS } from "../../config/brand";
+import type { AudienceVisibility } from "../../types/audience";
+import { LianIcon } from "../../ui";
 
 const props = defineProps<{
   tid: number;
@@ -11,6 +13,7 @@ const props = defineProps<{
   timeLabel: string;
   liked?: boolean;
   likeCount?: number;
+  visibility?: AudienceVisibility;
 }>();
 
 const emit = defineEmits<{
@@ -26,6 +29,23 @@ const likeBusy = ref(false);
 const likeLabel = computed(
   () => `${liked.value ? FEED_UNLIKE : FEED_LIKE}，当前 ${likeCount.value} 个喜欢`,
 );
+
+// Visibility label — only show for non-public posts
+const visibilityLabel = computed(() => {
+  const v = props.visibility || "public";
+  return v !== "public" ? FEED_VISIBILITY_LABELS[v] || null : null;
+});
+
+const visibilityIcon = computed(() => {
+  const v = props.visibility || "public";
+  const iconMap: Record<string, "building" | "graduation-cap" | "lock" | "link"> = {
+    campus: "building",
+    school: "graduation-cap",
+    private: "lock",
+    linkOnly: "link",
+  };
+  return iconMap[v] || null;
+});
 
 watch(
   () => [props.liked, props.likeCount],
@@ -71,6 +91,11 @@ async function handleLike() {
       <span v-else class="feed-item-card__avatar-text" aria-hidden="true">{{ authorInitial }}</span>
       <span class="feed-item-card__author-name" :title="authorName">{{ authorName }}</span>
     </div>
+
+    <span v-if="visibilityLabel && visibilityIcon" class="feed-item-card__visibility">
+      <LianIcon :name="visibilityIcon" :size="12" />
+      <span>{{ visibilityLabel }}</span>
+    </span>
 
     <span class="feed-item-card__motion-time" aria-hidden="true">{{ timeLabel }}</span>
 
@@ -180,5 +205,19 @@ async function handleLike() {
 
 .feed-item-card__like:disabled {
   opacity: 0.64;
+}
+
+.feed-item-card__visibility {
+  display: inline-flex;
+  flex: 0 0 auto;
+  gap: 3px;
+  align-items: center;
+  padding: 2px 6px;
+  border-radius: var(--radius-chip);
+  background: rgba(31, 41, 51, 0.06);
+  color: var(--lian-muted);
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1.2;
 }
 </style>
