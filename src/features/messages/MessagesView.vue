@@ -88,6 +88,10 @@ function openNotification(item: NotificationItem) {
   }
 }
 
+function goLogin() {
+  setActiveView("profile");
+}
+
 useVisualViewport();
 
 const tabs: Array<{ key: MessageTabKey; label: string }> = [

@@ -88,6 +88,20 @@ const uploadProgress = computed(() => {
   font-weight: 800;
 }
 
+.publish-image-preview__progress {
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(31, 41, 51, 0.08);
+  overflow: hidden;
+}
+
+.publish-image-preview__progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, var(--lian-primary), var(--lian-primary-deep));
+  border-radius: 2px;
+  transition: width 200ms var(--motion-ease-standard, ease-out);
+}
+
 .publish-image-preview__grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
@@ -123,5 +137,11 @@ const uploadProgress = computed(() => {
   color: var(--lian-ink);
   font-size: 18px;
   font-weight: 900;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .publish-image-preview__progress-bar {
+    transition: none;
+  }
 }
 </style>

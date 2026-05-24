@@ -228,6 +228,8 @@ const visibilityIcon = computed<LianIconName>(() =>
   <PublishImagePreview
     :local-preview-urls="localPreviewUrls"
     :image-status="imageStatus"
+    :uploading="uploading"
+    :uploaded-count="localPreviewUrls.length - (uploading ? (localPreviewUrls.length - selectedFilesCount + uploadedCount) : 0)"
     @remove-image="emit('removeImage', $event)"
   />
 </template>

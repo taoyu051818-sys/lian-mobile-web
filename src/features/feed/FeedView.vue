@@ -6,7 +6,8 @@ import type { AudienceVisibility } from "../../types/audience";
 import { InlineError } from "../../ui";
 import FeedList from "./FeedList.vue";
 import FeedLoadMore from "./FeedLoadMore.vue";
- 
+import FeedSkeleton from "./FeedSkeleton.vue";
+
 import FeedFilterBar from "./FeedFilterBar.vue";
 import { useFeedData } from "./useFeedData";
 import { useDetailNavigation } from "../../app/detail-navigation";
