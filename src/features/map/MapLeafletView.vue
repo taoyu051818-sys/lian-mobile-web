@@ -3,10 +3,12 @@ import { computed, onActivated, onMounted, watch } from "vue";
 import type { MapLocation, MapPost } from "../../types/map";
 import type { PageChromeSpec } from "../../shell/page-model";
 import MapCanvas from "./MapCanvas.vue";
+import MapPickerOverlay from "./MapPickerOverlay.vue";
 import MapPlaceSheet from "./MapPlaceSheet.vue";
 import MapStatus from "./MapStatus.vue";
 import { useMapChrome } from "./useMapChrome";
 import { useMapDataCache } from "./useMapDataCache";
+import { useMapPickerMode } from "./useMapPickerMode";
 import { useMapSelection } from "./useMapSelection";
 import { useDetailNavigation } from "../../app/detail-navigation";
 import { MAP_ARIA_LABEL } from "../../config/brand";
@@ -26,9 +28,17 @@ const { selectedTarget, selectLocation, closePlaceSheet } = useMapSelection(
   () => mapData.value?.posts || [],
 );
 
+// mw#943 — picker mode is driven by `#/map?picker=1`. The composable owns
+// the URL query read, picker selection state, and the confirm/cancel
+// navigation. Browse-mode behaviour is preserved when the flag is false.
+const picker = useMapPickerMode();
+
 const detail = useDetailNavigation();
 
 const selectedPlace = computed<MapLocation | MapPost | null>(() => {
+  // Picker mode owns its own selection chrome (the floating overlay), so the
+  // legacy place sheet stays hidden — surfacing both at once would clash.
+  if (picker.isPickerMode.value) return null;
   const target = selectedTarget.value;
   if (target?.kind === "location") return target.item;
   return null;
@@ -44,11 +54,30 @@ function isMapPost(place: MapLocation | MapPost): place is MapPost {
 }
 
 function handlePlaceSelect(place: MapLocation | MapPost) {
+  // Picker mode reroutes both marker and post taps. Posts are still places
+  // on the map, so tapping a post pin in picker mode treats it as the post's
+  // anchor location (lat/lng) rather than opening detail. This matches the
+  // WeChat / 小红书 behaviour where every visible map dot is a candidate.
+  if (picker.isPickerMode.value) {
+    if (isMapPost(place)) {
+      picker.dropPin({ lat: place.lat, lng: place.lng });
+    } else {
+      picker.selectLocation(place);
+    }
+    return;
+  }
   if (isMapPost(place)) {
     detail.open(Number(place.tid), "card");
   } else {
     selectLocation(place);
   }
+}
+
+function handleLongpress(latlng: { lat: number; lng: number }) {
+  // Long-press is a no-op outside picker mode — the regular browse UX has
+  // never wired this gesture, so silent ignore is the safe default.
+  if (!picker.isPickerMode.value) return;
+  picker.dropPin(latlng);
 }
 
 function onCanvasError(message: string) {
@@ -93,9 +122,17 @@ onActivated(() => {
         :viewport-policy="DEFAULT_MAP_VIEWPORT_POLICY"
         @load-error="onCanvasError"
         @place-select="handlePlaceSelect"
+        @map-longpress="handleLongpress"
       />
       <MapStatus :loading="loading" :error-message="errorMessage" />
       <MapPlaceSheet :selected-place="selectedPlace" @close="closePlaceSheet" />
+      <MapPickerOverlay
+        v-if="picker.isPickerMode.value"
+        :selection="picker.selection.value"
+        data-testid="map-picker-overlay"
+        @confirm="picker.commitSelection"
+        @cancel="picker.cancel"
+      />
     </section>
   </section>
 </template>

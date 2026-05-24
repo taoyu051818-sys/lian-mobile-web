@@ -13,6 +13,25 @@ export const PUBLISH_LOCATION_SEARCH_PLACEHOLDER = "搜索图书馆、食堂、�
 export const PUBLISH_LOCATION_NO_MATCH = "没有匹配地点，可以手填地点发布。";
 export const PUBLISH_LOCATION_SWITCH_MANUAL = "改用手填";
 
+/** 发布地点选择器 (mw#943 — map picker + geolocation) */
+export const PUBLISH_LOCATION_USE_CURRENT = "📍 使用当前位置";
+export const PUBLISH_LOCATION_PICK_ON_MAP = "🗺️ 在地图上选";
+export const PUBLISH_LOCATION_GEOLOC_FETCHING = "正在定位…";
+export const PUBLISH_LOCATION_GEOLOC_DENIED = "位置权限被拒绝，请在浏览器设置开启";
+export const PUBLISH_LOCATION_GEOLOC_UNAVAILABLE = "无法获取当前位置";
+export const PUBLISH_LOCATION_GEOLOC_TIMEOUT = "定位超时，请重试";
+export const PUBLISH_LOCATION_GEOLOC_UNSUPPORTED = "当前设备不支持定位";
+export const PUBLISH_LOCATION_GEOLOC_HINT = "使用了当前坐标，可以手填一个名字让别人更好认";
+export const PUBLISH_LOCATION_PIN_LABEL = "自定义坐标";
+
+/** 地图选择模式 (mw#943 — picker overlay) */
+export const MAP_PICKER_TITLE = "选择地点";
+export const MAP_PICKER_HINT = "点击已有地点，或长按地图任意位置放置自定义坐标";
+export const MAP_PICKER_CONFIRM = "选这里";
+export const MAP_PICKER_CANCEL = "取消";
+export const MAP_PICKER_NO_SELECTION = "尚未选择地点";
+export const MAP_PICKER_DROPPED_PIN = "自定义坐标";
+
 /** 发布 meta UI */
 export const PUBLISH_TAG_SETTINGS = "标签设置";
 export const PUBLISH_TAG_LABEL = "标签";

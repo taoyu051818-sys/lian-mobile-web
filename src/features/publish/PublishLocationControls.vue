@@ -7,6 +7,9 @@ import {
   PUBLISH_LOCATION_HINT,
   PUBLISH_LOCATION_MANUAL,
   PUBLISH_LOCATION_MANUAL_PLACEHOLDER,
+  PUBLISH_LOCATION_PICK_ON_MAP,
+  PUBLISH_LOCATION_USE_CURRENT,
+  PUBLISH_LOCATION_GEOLOC_FETCHING,
   PUBLISH_LOCATION_SEARCH,
   PUBLISH_LOCATION_SEARCH_PLACEHOLDER,
   CHANNEL_RELOAD,
@@ -27,6 +30,13 @@ defineProps<{
   knownPlaceLabel: string;
   locationPreviewLabel: string;
   locationBindingMeta: string;
+  /**
+   * Geolocation state (mw#943). The parent owns the composable; we render
+   * the loading text + error inline. Keeping these as props instead of
+   * reaching into a global keeps PublishLocationControls presentational.
+   */
+  geolocationFetching?: boolean;
+  geolocationError?: string;
 }>();
 
 const emit = defineEmits<{
@@ -35,6 +45,18 @@ const emit = defineEmits<{
   selectMapLocation: [location: MapLocation];
   clearMapLocation: [];
   loadMapLocations: [];
+  /**
+   * mw#943 — request the parent to navigate the map view into picker mode.
+   * The parent flips `window.location.hash` rather than this component
+   * doing it directly so the picker UX stays testable without route side
+   * effects bleeding into a presentational component.
+   */
+  pickOnMap: [];
+  /**
+   * mw#943 — request the parent to fetch the user's current geolocation
+   * and write it through the publish handoff.
+   */
+  useCurrentLocation: [];
 }>();
 </script>
 
@@ -53,6 +75,32 @@ const emit = defineEmits<{
       <LocationChip>{{ locationPreviewLabel }}</LocationChip>
       <span>{{ locationBindingMeta }}</span>
     </div>
+
+    <div class="publish-location__quick-actions">
+      <LianButton
+        type="button"
+        variant="ghost"
+        size="sm"
+        :loading="geolocationFetching"
+        data-testid="publish-location-use-current"
+        @click="emit('useCurrentLocation')"
+      >
+        {{ geolocationFetching ? PUBLISH_LOCATION_GEOLOC_FETCHING : PUBLISH_LOCATION_USE_CURRENT }}
+      </LianButton>
+      <LianButton
+        type="button"
+        variant="ghost"
+        size="sm"
+        data-testid="publish-location-pick-on-map"
+        @click="emit('pickOnMap')"
+      >
+        {{ PUBLISH_LOCATION_PICK_ON_MAP }}
+      </LianButton>
+    </div>
+
+    <InlineError v-if="geolocationError" data-testid="publish-location-geoloc-error">
+      {{ geolocationError }}
+    </InlineError>
 
     <label class="publish-location__field publish-location__field--compact">
       <span>{{ PUBLISH_LOCATION_MANUAL }}</span>
@@ -155,6 +203,12 @@ const emit = defineEmits<{
   color: var(--lian-muted);
   font-size: 12px;
   font-weight: 800;
+}
+
+.publish-location__quick-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
 }
 
 .publish-location__field {

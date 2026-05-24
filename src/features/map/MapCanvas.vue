@@ -45,7 +45,21 @@ const props = defineProps<{
 const emit = defineEmits<{
   "load-error": [message: string];
   "place-select": [place: MapLocation | MapPost];
+  /**
+   * Long-press / contextmenu on the underlying tile layer (mw#943).
+   *
+   * Fires `(latlng)` after a 600ms hold without significant movement, OR
+   * immediately on a desktop right-click (contextmenu). Used by picker mode
+   * in `MapLeafletView` to drop a free pin at an arbitrary coordinate.
+   *
+   * Outside picker mode the parent ignores this — the regular browse UX
+   * never wired a "long-press anywhere" gesture, so this is purely additive.
+   */
+  "map-longpress": [latlng: { lat: number; lng: number }];
 }>();
+
+const LONGPRESS_HOLD_MS = 600;
+const LONGPRESS_MOVE_TOLERANCE_PX = 10;
 
 const stageEl = ref<HTMLElement | null>(null);
 const map = shallowRef<LeafletMapLike | null>(null);
@@ -144,6 +158,7 @@ function initMap() {
   bindMapIconScale(newMap);
   attachZoomControl(newMap);
   newMap.on("zoomend resize", renderMap);
+  attachLongpressHandlers(newMap);
   map.value = newMap;
   setTimeout(() => {
     map.value?.invalidateSize();
@@ -159,6 +174,87 @@ async function refreshMap() {
     return;
   }
   initMap();
+}
+
+/**
+ * Long-press / contextmenu wiring (mw#943).
+ *
+ * Two paths into the same emit:
+ *   1. Desktop right-click → Leaflet's `contextmenu` event fires immediately
+ *      with a `latlng` payload. No timer needed.
+ *   2. Touch/mouse hold → `mousedown` starts a 600ms countdown, `mousemove`
+ *      cancels if the cursor drifts more than 10px (prevents pan gestures
+ *      from accidentally dropping pins), `mouseup`/`mouseout` cancels.
+ *
+ * Both run on the Leaflet map instance, which already deduplicates touch
+ * vs mouse events on touch devices, so we don't need to wire native
+ * touchstart/touchmove ourselves.
+ *
+ * Pinch-zoom is blocked globally (PR #941 — useDisableGestureZoom), so the
+ * "long-press during pinch" edge case isn't reachable here.
+ */
+type LongpressLatLng = { lat: number; lng: number };
+type LongpressLeafletEvent = {
+  latlng?: { lat: number; lng: number };
+  containerPoint?: { x: number; y: number };
+  originalEvent?: { preventDefault?: () => void };
+};
+
+function attachLongpressHandlers(mapInstance: LeafletMapLike) {
+  let holdTimer: ReturnType<typeof setTimeout> | null = null;
+  let startPoint: { x: number; y: number } | null = null;
+
+  function clearTimer() {
+    if (holdTimer !== null) {
+      clearTimeout(holdTimer);
+      holdTimer = null;
+    }
+    startPoint = null;
+  }
+
+  function emitLongpress(latlng: LongpressLatLng | undefined) {
+    if (!latlng) return;
+    if (!Number.isFinite(latlng.lat) || !Number.isFinite(latlng.lng)) return;
+    emit("map-longpress", { lat: latlng.lat, lng: latlng.lng });
+  }
+
+  // Cast to a relaxed event shape — the platform/leaflet adapter only types
+  // the canonical events used by the legacy browse path, but Leaflet runtime
+  // accepts arbitrary string event names.
+  const m = mapInstance as unknown as {
+    on(event: string, handler: (event: LongpressLeafletEvent) => void): void;
+  };
+
+  m.on("contextmenu", (event) => {
+    // Desktop right-click. Suppress the browser's native menu so the user
+    // sees only the picker overlay reaction.
+    event.originalEvent?.preventDefault?.();
+    clearTimer();
+    emitLongpress(event.latlng);
+  });
+
+  m.on("mousedown", (event) => {
+    if (!event.containerPoint) return;
+    startPoint = { x: event.containerPoint.x, y: event.containerPoint.y };
+    const target = event.latlng;
+    holdTimer = setTimeout(() => {
+      holdTimer = null;
+      emitLongpress(target);
+    }, LONGPRESS_HOLD_MS);
+  });
+
+  m.on("mousemove", (event) => {
+    if (!holdTimer || !startPoint || !event.containerPoint) return;
+    const dx = event.containerPoint.x - startPoint.x;
+    const dy = event.containerPoint.y - startPoint.y;
+    if (Math.hypot(dx, dy) > LONGPRESS_MOVE_TOLERANCE_PX) clearTimer();
+  });
+
+  m.on("mouseup", clearTimer);
+  m.on("mouseout", clearTimer);
+  // Pan / zoom should never count as a long-press regardless of timer state.
+  m.on("dragstart", clearTimer);
+  m.on("zoomstart", clearTimer);
 }
 
 watch(
