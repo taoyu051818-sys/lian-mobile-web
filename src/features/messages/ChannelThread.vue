@@ -302,7 +302,12 @@ function messageMeta(item: ChannelMessage) {
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  background: linear-gradient(90deg, rgba(31, 41, 51, 0.06) 25%, rgba(31, 41, 51, 0.12) 50%, rgba(31, 41, 51, 0.06) 75%);
+  background: linear-gradient(
+    90deg,
+    rgba(31, 41, 51, 0.06) 25%,
+    rgba(31, 41, 51, 0.12) 50%,
+    rgba(31, 41, 51, 0.06) 75%
+  );
   background-size: 200% 100%;
   animation: skeleton-shimmer 1.5s ease-in-out infinite;
 }
@@ -311,7 +316,12 @@ function messageMeta(item: ChannelMessage) {
   width: 80px;
   height: 14px;
   border-radius: var(--radius-chip);
-  background: linear-gradient(90deg, rgba(31, 41, 51, 0.06) 25%, rgba(31, 41, 51, 0.12) 50%, rgba(31, 41, 51, 0.06) 75%);
+  background: linear-gradient(
+    90deg,
+    rgba(31, 41, 51, 0.06) 25%,
+    rgba(31, 41, 51, 0.12) 50%,
+    rgba(31, 41, 51, 0.06) 75%
+  );
   background-size: 200% 100%;
   animation: skeleton-shimmer 1.5s ease-in-out infinite;
 }
@@ -330,7 +340,12 @@ function messageMeta(item: ChannelMessage) {
   max-width: 180px;
   height: 14px;
   border-radius: var(--radius-chip);
-  background: linear-gradient(90deg, rgba(31, 41, 51, 0.06) 25%, rgba(31, 41, 51, 0.12) 50%, rgba(31, 41, 51, 0.06) 75%);
+  background: linear-gradient(
+    90deg,
+    rgba(31, 41, 51, 0.06) 25%,
+    rgba(31, 41, 51, 0.12) 50%,
+    rgba(31, 41, 51, 0.06) 75%
+  );
   background-size: 200% 100%;
   animation: skeleton-shimmer 1.5s ease-in-out infinite;
 }

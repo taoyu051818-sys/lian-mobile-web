@@ -59,16 +59,8 @@ function toggleVisibility(value: AudienceVisibility | "all") {
 </script>
 
 <template>
-  <div
-    class="feed-filter-bar"
-    :aria-label="FEED_FILTER_BAR_LABEL"
-    data-testid="feed-filter-bar"
-  >
-    <nav
-      class="feed-filter-bar__chips"
-      role="group"
-      :aria-label="FEED_FILTER_BAR_LABEL"
-    >
+  <div class="feed-filter-bar" :aria-label="FEED_FILTER_BAR_LABEL" data-testid="feed-filter-bar">
+    <nav class="feed-filter-bar__chips" role="group" :aria-label="FEED_FILTER_BAR_LABEL">
       <button
         v-for="chip in visibilityChips"
         :key="chip.value"

@@ -73,7 +73,12 @@ const visibilityOptions = computed((): VisibilityOption[] => [
     disabled: props.isGuest,
   },
   { value: "private", label: COMPOSER_VISIBILITY_PRIVATE, icon: "lock", disabled: props.isGuest },
-  { value: "linkOnly", label: COMPOSER_VISIBILITY_LINK_ONLY, icon: "link", disabled: props.isGuest },
+  {
+    value: "linkOnly",
+    label: COMPOSER_VISIBILITY_LINK_ONLY,
+    icon: "link",
+    disabled: props.isGuest,
+  },
 ]);
 
 const selectedVisibilityOption = computed(
@@ -324,7 +329,7 @@ function handleKeydown(event: KeyboardEvent) {
   font-size: 11px;
   color: var(--lian-faint);
   pointer-events: none;
-  transition: color 0.15s;
+  transition: color var(--motion-fast) var(--motion-ease-standard);
 }
 
 .messages-view__char-count--warning {

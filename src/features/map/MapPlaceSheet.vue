@@ -47,11 +47,13 @@ function placeName(place: MapLocation | MapPost): string {
 
 /* Slide-up transition for sheet enter/leave */
 .sheet-slide-enter-active {
-  transition: transform var(--motion-standard, 250ms) var(--motion-ease-emphasized, cubic-bezier(0.04, 0.04, 0.12, 0.96));
+  transition: transform var(--motion-standard, 250ms)
+    var(--motion-ease-emphasized, cubic-bezier(0.04, 0.04, 0.12, 0.96));
 }
 
 .sheet-slide-leave-active {
-  transition: transform var(--motion-standard, 250ms) var(--motion-ease-decelerate, cubic-bezier(0.52, 0.16, 0.52, 0.84));
+  transition: transform var(--motion-standard, 250ms)
+    var(--motion-ease-decelerate, cubic-bezier(0.52, 0.16, 0.52, 0.84));
 }
 
 .sheet-slide-enter-from,

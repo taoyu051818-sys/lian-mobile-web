@@ -88,7 +88,9 @@ function toggleMode() {
     <nav
       class="channel-filter-bar__chips"
       role="group"
-      :aria-label="filterMode === 'visibility' ? CHANNEL_FILTER_MODE_VISIBILITY : CHANNEL_FILTER_MODE_CATEGORY"
+      :aria-label="
+        filterMode === 'visibility' ? CHANNEL_FILTER_MODE_VISIBILITY : CHANNEL_FILTER_MODE_CATEGORY
+      "
     >
       <template v-if="filterMode === 'visibility'">
         <button
@@ -125,11 +127,15 @@ function toggleMode() {
     <button
       type="button"
       class="channel-filter-bar__toggle"
-      :aria-label="filterMode === 'visibility' ? CHANNEL_FILTER_MODE_CATEGORY : CHANNEL_FILTER_MODE_VISIBILITY"
+      :aria-label="
+        filterMode === 'visibility' ? CHANNEL_FILTER_MODE_CATEGORY : CHANNEL_FILTER_MODE_VISIBILITY
+      "
       data-testid="channel-filter-mode-toggle"
       @click="toggleMode"
     >
-      {{ filterMode === "visibility" ? CHANNEL_FILTER_MODE_CATEGORY : CHANNEL_FILTER_MODE_VISIBILITY }}
+      {{
+        filterMode === "visibility" ? CHANNEL_FILTER_MODE_CATEGORY : CHANNEL_FILTER_MODE_VISIBILITY
+      }}
     </button>
   </div>
 </template>

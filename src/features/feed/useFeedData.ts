@@ -37,9 +37,8 @@ export function useFeedData(options: { detailOpen: () => boolean; closeDetail: (
     }
 
     try {
-      const visibilityArray = selectedVisibilities.value.size > 0
-        ? Array.from(selectedVisibilities.value)
-        : undefined;
+      const visibilityArray =
+        selectedVisibilities.value.size > 0 ? Array.from(selectedVisibilities.value) : undefined;
 
       const response = await fetchFeed({
         tab: activeTab.value,

@@ -43,7 +43,10 @@ async function openMessagesTab(page: Page, label: string) {
 /**
  * Stub common endpoints to make tests hermetic.
  */
-async function stubCommonEndpoints(page: Page, options: { loggedIn: boolean } = { loggedIn: false }) {
+async function stubCommonEndpoints(
+  page: Page,
+  options: { loggedIn: boolean } = { loggedIn: false },
+) {
   await page.route("**/api/feed**", async (route) => {
     await route.fulfill({
       json: {
