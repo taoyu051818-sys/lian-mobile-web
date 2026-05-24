@@ -28,8 +28,24 @@ export const CHANNEL_READ_COUNT = "次已读";
 /** 频道线程 UI */
 export const CHANNEL_THREAD_LABEL = "校园频道";
 
+/** 频道筛选 UI */
+export const CHANNEL_FILTER_LABEL = "频道筛选";
+export const CHANNEL_FILTER_MODE_VISIBILITY = "按可见范围";
+export const CHANNEL_FILTER_MODE_CATEGORY = "按分类";
+export const CHANNEL_FILTER_VISIBILITY_PUBLIC = "公开";
+export const CHANNEL_FILTER_VISIBILITY_CAMPUS = "校区";
+export const CHANNEL_FILTER_VISIBILITY_SCHOOL = "学校";
+export const CHANNEL_FILTER_VISIBILITY_PRIVATE = "私密";
+export const CHANNEL_FILTER_VISIBILITY_LINK_ONLY = "仅链接";
+
 /** 频道 composer UI */
 export const COMPOSER_IDENTITY_SIGNAL = "身份信号";
 export const COMPOSER_NO_IDENTITY_SIGNAL = "不使用身份信号";
 export const COMPOSER_SAY_SOMETHING = "说点什么";
 export const COMPOSER_SEND = "发送";
+export const COMPOSER_VISIBILITY_LABEL = "可见范围";
+export const COMPOSER_VISIBILITY_PUBLIC = "公开";
+export const COMPOSER_VISIBILITY_CAMPUS = "校区可见";
+export const COMPOSER_VISIBILITY_SCHOOL = "学校可见";
+export const COMPOSER_VISIBILITY_PRIVATE = "私密";
+export const COMPOSER_VISIBILITY_LINK_ONLY = "仅链接";

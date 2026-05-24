@@ -9,17 +9,26 @@ import {
 } from "../../config/brand";
 import { extractErrorMessage } from "../../utils/extractErrorMessage";
 import type { ProfileUser } from "../../types/profile";
+import type { AudienceVisibility } from "../../types/audience";
 
 export function useMessageComposer(options: {
-  onSend: (content: string, identityTag: string, currentUser: ProfileUser | null) => Promise<void>;
+  onSend: (
+    content: string,
+    identityTag: string,
+    currentUser: ProfileUser | null,
+    visibility: AudienceVisibility,
+  ) => Promise<void>;
   onRetry: (pendingId: string, identityTag: string) => Promise<void>;
 }) {
   const composerContent = ref("");
   const composerIdentityTag = ref("");
+  const composerVisibility = ref<AudienceVisibility>("public");
   const currentUser = ref<ProfileUser | null>(null);
   const identityTags = ref<string[]>([]);
   const sending = ref(false);
   const sendError = ref("");
+
+  const isGuest = computed(() => !currentUser.value);
 
   const activeAlias = computed(() => {
     const user = currentUser.value;
@@ -44,10 +53,15 @@ export function useMessageComposer(options: {
       currentUser.value = user || null;
       identityTags.value = user?.identityTags?.length ? user.identityTags : [];
       composerIdentityTag.value = "";
+      // Reset visibility to public when user changes (guest can only use public)
+      if (!user) {
+        composerVisibility.value = "public";
+      }
     } catch {
       currentUser.value = null;
       identityTags.value = [];
       composerIdentityTag.value = "";
+      composerVisibility.value = "public";
     }
   }
 
@@ -60,7 +74,12 @@ export function useMessageComposer(options: {
     composerContent.value = "";
 
     try {
-      await options.onSend(content, composerIdentityTag.value, currentUser.value);
+      await options.onSend(
+        content,
+        composerIdentityTag.value,
+        currentUser.value,
+        composerVisibility.value,
+      );
     } catch (error) {
       sendError.value = extractErrorMessage(error, ERROR_SEND_MESSAGE);
     } finally {
@@ -86,10 +105,12 @@ export function useMessageComposer(options: {
   return {
     composerContent,
     composerIdentityTag,
+    composerVisibility,
     currentUser,
     identityTags,
     sending,
     sendError,
+    isGuest,
     activeAlias,
     composerActorName,
     composerAvatarText,
