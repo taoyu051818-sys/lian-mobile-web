@@ -32,11 +32,14 @@ export const CHANNEL_THREAD_LABEL = "校园频道";
 export const CHANNEL_FILTER_LABEL = "频道筛选";
 export const CHANNEL_FILTER_MODE_VISIBILITY = "按可见范围";
 export const CHANNEL_FILTER_MODE_CATEGORY = "按分类";
+export const CHANNEL_FILTER_VISIBILITY_ALL = "全部";
 export const CHANNEL_FILTER_VISIBILITY_PUBLIC = "公开";
-export const CHANNEL_FILTER_VISIBILITY_CAMPUS = "校区";
+export const CHANNEL_FILTER_VISIBILITY_CAMPUS = "园区";
 export const CHANNEL_FILTER_VISIBILITY_SCHOOL = "学校";
 export const CHANNEL_FILTER_VISIBILITY_PRIVATE = "私密";
 export const CHANNEL_FILTER_VISIBILITY_LINK_ONLY = "仅链接";
+export const CHANNEL_FILTER_EXPAND_CATEGORY = "展开分类";
+export const CHANNEL_FILTER_COLLAPSE_CATEGORY = "收起分类";
 
 /** 频道 composer UI */
 export const COMPOSER_IDENTITY_SIGNAL = "身份信号";
@@ -51,3 +54,8 @@ export const COMPOSER_VISIBILITY_PRIVATE = "私密";
 export const COMPOSER_VISIBILITY_LINK_ONLY = "仅链接";
 export const COMPOSER_CHAR_LIMIT = 500;
 export const COMPOSER_CHAR_COUNT = "{n}/{max}";
+
+/** 消息登录门禁 */
+export const MESSAGE_AUTH_GATE_TITLE = "请先登录";
+export const MESSAGE_AUTH_GATE_HINT = "登录后才能查看消息和参与频道讨论。";
+export const MESSAGE_AUTH_GATE_CTA = "去登录";

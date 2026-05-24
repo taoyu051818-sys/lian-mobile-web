@@ -1,6 +1,7 @@
 import { createApp as createVueApp, type App as VueApp } from "vue";
 import App from "./App.vue";
 import { i18n } from "./locales";
+import { installGlobalErrorHandler } from "./app/globalErrorHandler";
 import "./styles/main.css";
 
 /**
@@ -17,5 +18,10 @@ import "./styles/main.css";
 export function createApp(): { app: VueApp; i18n: typeof i18n } {
   const app = createVueApp(App);
   app.use(i18n);
+
+  // Install global error handler for Vue component errors and unhandled rejections.
+  // This prevents white-screen crashes and provides user-friendly error feedback.
+  installGlobalErrorHandler(app);
+
   return { app, i18n };
 }

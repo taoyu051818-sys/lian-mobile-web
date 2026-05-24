@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ToastHost } from "./ui";
+import { ToastHost, ErrorBoundary } from "./ui";
+import PwaBanner from "./ui/feedback/PwaBanner.vue";
 import AppViewHost from "./app/AppViewHost.vue";
 import DetailSurface from "./app/DetailSurface.vue";
 import { AppShell } from "./shell";
@@ -26,20 +27,23 @@ function handleViewChange(key: string) {
 </script>
 
 <template>
-  <AppShell
-    :active-view-key="activeViewKey"
-    :layout-mode="getShellLayoutMode(activeViewKey)"
-    :tabs="tabs"
-    @view-change="handleViewChange"
-  >
-    <template #default="{ onChrome }">
-      <AppViewHost
-        :active-view-key="activeViewKey"
-        @chrome="onChrome"
-        @close="setActiveView('profile')"
-      />
-    </template>
-  </AppShell>
-  <DetailSurface />
+  <ErrorBoundary>
+    <AppShell
+      :active-view-key="activeViewKey"
+      :layout-mode="getShellLayoutMode(activeViewKey)"
+      :tabs="tabs"
+      @view-change="handleViewChange"
+    >
+      <template #default="{ onChrome }">
+        <AppViewHost
+          :active-view-key="activeViewKey"
+          @chrome="onChrome"
+          @close="setActiveView('profile')"
+        />
+      </template>
+    </AppShell>
+    <DetailSurface />
+  </ErrorBoundary>
   <ToastHost />
+  <PwaBanner />
 </template>

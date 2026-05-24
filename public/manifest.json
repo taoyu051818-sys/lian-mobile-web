@@ -1,11 +1,17 @@
 {
   "name": "黎安屿你",
   "short_name": "黎安屿你",
+  "description": "黎安书院校园生活平台 - 发现、分享、连接",
+  "id": "/",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#f7f4ec",
   "theme_color": "#1fa7a0",
   "orientation": "portrait",
+  "categories": ["social", "lifestyle", "education"],
+  "lang": "zh-CN",
+  "dir": "ltr",
   "icons": [
     {
       "src": "/assets/pwa-icon-192.png",

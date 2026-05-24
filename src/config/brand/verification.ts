@@ -47,3 +47,8 @@ export const VERIFICATION_CAMPUS_CONFIRM_FAIL = "认证未完成，可以重新�
 
 /** 其它认证占位 */
 export const VERIFICATION_OTHER_PLACEHOLDER = "暂未开放申请，可在公告中关注开放进度。";
+
+/** 认证中心登录门禁 */
+export const VERIFICATION_AUTH_GATE_TITLE = "请先登录";
+export const VERIFICATION_AUTH_GATE_HINT = "登录后才能使用认证中心。";
+export const VERIFICATION_AUTH_GATE_CTA = "去登录";

@@ -2,6 +2,9 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import { LianButton } from "../../ui";
 import {
+  VERIFICATION_AUTH_GATE_CTA,
+  VERIFICATION_AUTH_GATE_HINT,
+  VERIFICATION_AUTH_GATE_TITLE,
   VERIFICATION_AVATAR_TEXT,
   VERIFICATION_BACK_TO_PROFILE,
   VERIFICATION_CAMPUS_CODE_LABEL,
@@ -31,15 +34,19 @@ import type { ProfileUser } from "../../types/profile";
 import type { VerificationState } from "../../types/verification";
 import { useCampusEmailVerify } from "./useCampusEmailVerify";
 import { formatTimestamp, statusLabelFor, VERIFICATION_DESCRIPTORS } from "./verification-format";
+import { useActiveView } from "../../app/useActiveView";
 
 const emit = defineEmits<{
   chrome: [spec: PageChromeSpec];
   close: [];
 }>();
 
+const { setActiveView } = useActiveView();
+
 const user = ref<ProfileUser | null>(null);
 const loading = ref(false);
 const loadError = ref("");
+const isGuest = computed(() => !user.value && !loading.value);
 
 const campus = useCampusEmailVerify({
   onConfirmed: async () => {
@@ -87,6 +94,10 @@ const sendButtonLabel = computed(() => {
   return VERIFICATION_CAMPUS_SEND_BUTTON;
 });
 
+function goLogin() {
+  setActiveView("profile");
+}
+
 watch(pageChrome, (spec) => emit("chrome", spec), { deep: true, immediate: false });
 
 onMounted(() => {
@@ -105,9 +116,29 @@ onBeforeUnmount(() => {
       {{ loadError }}
     </p>
 
-    <header class="verification-view__intro">
-      <h2>{{ VERIFICATION_SECTION_LABEL }}</h2>
-    </header>
+    <!-- Auth gate: redirect guests to profile for login -->
+    <section
+      v-if="isGuest"
+      class="verification-view__auth-gate"
+      :aria-label="VERIFICATION_AUTH_GATE_TITLE"
+      data-testid="verification-auth-gate"
+    >
+      <strong>{{ VERIFICATION_AUTH_GATE_TITLE }}</strong>
+      <p>{{ VERIFICATION_AUTH_GATE_HINT }}</p>
+      <button
+        type="button"
+        class="verification-view__auth-gate-cta"
+        data-testid="verification-auth-gate-cta"
+        @click="goLogin"
+      >
+        {{ VERIFICATION_AUTH_GATE_CTA }}
+      </button>
+    </section>
+
+    <template v-else>
+      <header class="verification-view__intro">
+        <h2>{{ VERIFICATION_SECTION_LABEL }}</h2>
+      </header>
 
     <ul class="verification-view__list">
       <li
@@ -209,6 +240,7 @@ onBeforeUnmount(() => {
     <p class="verification-view__placeholder verification-view__other">
       {{ VERIFICATION_OTHER_PLACEHOLDER }}
     </p>
+    </template>
   </section>
 </template>
 
@@ -399,5 +431,42 @@ onBeforeUnmount(() => {
 
 .verification-view__other {
   text-align: center;
+}
+
+.verification-view__auth-gate {
+  display: grid;
+  gap: var(--space-3);
+  max-width: 420px;
+  margin: var(--space-6) auto 0;
+  padding: var(--space-4);
+  border: 1px solid var(--lian-line);
+  border-radius: var(--radius-card);
+  background: var(--lian-card-strong);
+  box-shadow: var(--shadow-card);
+}
+
+.verification-view__auth-gate strong {
+  font-size: 16px;
+  font-weight: 900;
+}
+
+.verification-view__auth-gate p {
+  margin: 0;
+  color: var(--lian-muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.verification-view__auth-gate-cta {
+  justify-self: start;
+  appearance: none;
+  border: 0;
+  border-radius: var(--radius-chip, 999px);
+  background: var(--lian-primary, #1fa7a0);
+  color: white;
+  font-weight: 800;
+  height: 40px;
+  padding: 0 var(--space-4);
+  cursor: pointer;
 }
 </style>

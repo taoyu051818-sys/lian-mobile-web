@@ -12,9 +12,10 @@ import {
   MESSAGE_TAB_REPLIES,
   MESSAGE_TAB_SYSTEM,
 } from "../../config/brand";
+import type { AudienceVisibility } from "../../types/audience";
 import type { MessageTabKey, NotificationItem } from "../../types/messages";
 import type { PageChromeSpec } from "../../shell/page-model";
-import { ChannelComposer, ChannelThread, NotificationList } from "./";
+import { ChannelComposer, ChannelFilterBar, ChannelThread, NotificationList } from "./";
 import { isNotificationInboxTab, itemsForInboxTab, NOTIFICATION_INBOX_SPECS } from "./messageInbox";
 import { useChannelMessages } from "./useChannelMessages";
 import { useNotifications } from "./useNotifications";
@@ -26,6 +27,11 @@ const emit = defineEmits<{
 }>();
 
 const activeTab = ref<MessageTabKey>("channel");
+
+/** Filter bar state: "visibility" (State A) or "category" (State B) */
+type FilterState = "visibility" | "category";
+const filterState = ref<FilterState>("visibility");
+const selectedVisibility = ref<AudienceVisibility | "all">("all");
 
 const {
   channelItems,
@@ -124,11 +130,29 @@ watch(pageChrome, (spec) => emit("chrome", spec), { deep: true });
 
 async function switchTab(tab: MessageTabKey) {
   activeTab.value = tab;
+  // When switching to channel via filter bar, auto-switch to visibility state
   if (tab === "channel") {
+    filterState.value = "visibility";
     if (!channelItems.value.length) await loadChannel(true);
   } else if (!notificationItems.value.length) {
     await loadNotifications();
   }
+}
+
+/** Handle filter state changes from ChannelFilterBar */
+function handleFilterStateChange(state: FilterState) {
+  filterState.value = state;
+}
+
+/** Handle visibility selection from ChannelFilterBar */
+function handleVisibilityChange(visibility: AudienceVisibility | "all") {
+  selectedVisibility.value = visibility;
+  // TODO: Trigger channel reload with visibility filter
+}
+
+/** Handle category selection from ChannelFilterBar */
+function handleCategoryChange(category: MessageTabKey) {
+  void switchTab(category);
 }
 
 onMounted(async () => {
@@ -140,6 +164,18 @@ onMounted(async () => {
 
 <template>
   <section class="messages-view" :aria-label="MESSAGE_SECTION_LABEL">
+    <!-- Dual-state filter bar -->
+    <ChannelFilterBar
+      class="messages-view__filter-bar"
+      :filter-state="filterState"
+      :selected-visibility="selectedVisibility"
+      :active-category="activeTab"
+      :is-guest="isGuest"
+      @update:filter-state="handleFilterStateChange"
+      @update:selected-visibility="handleVisibilityChange"
+      @update:active-category="handleCategoryChange"
+    />
+
     <ChannelThread
       v-if="activeTab === 'channel'"
       :items="channelItems"
@@ -192,6 +228,17 @@ onMounted(async () => {
   gap: var(--space-4);
   padding-top: calc(var(--floating-bar-height) + env(safe-area-inset-top));
   padding-bottom: calc(var(--space-8) + env(safe-area-inset-bottom) + var(--keyboard-inset-bottom));
+}
+
+.messages-view__filter-bar {
+  position: sticky;
+  top: calc(var(--floating-bar-height) + env(safe-area-inset-top) + var(--space-2));
+  z-index: calc(var(--floating-bar-z, 70) - 1);
+  padding: 0 var(--space-3);
+  margin: 0 var(--space-3);
+  border-radius: var(--radius-chip);
+  background: var(--glass-bg-strong);
+  backdrop-filter: blur(var(--glass-blur-light)) saturate(var(--glass-saturate));
 }
 
 .messages-view__chrome-composer {

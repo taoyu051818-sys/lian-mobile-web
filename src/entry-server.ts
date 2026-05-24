@@ -35,6 +35,10 @@ const DEFAULT_PS_INTERNAL_URL = "http://127.0.0.1:3000";
 const BRAND_TITLE = "LIAN";
 const BRAND_DESCRIPTION = "校园生活信息站";
 const BRAND_THUMBNAIL = "/assets/campus-base-map.png";
+const BRAND_LOCALE = "zh_CN";
+/** Default image dimensions for the brand thumbnail (used for og:image:width/height hints). */
+const DEFAULT_IMAGE_WIDTH = 1200;
+const DEFAULT_IMAGE_HEIGHT = 630;
 
 const POST_ROUTE = /^\/post\/(\d+)$/;
 const PROFILE_ROUTE = /^\/u\/[^/]+$/;
@@ -54,6 +58,14 @@ interface ShareCardSlim {
   kind: string;
   authorName: string;
   audienceLabel: string;
+  wechat?: WechatChannelOverrides;
+}
+
+/** WeChat-specific channel overrides from share-card V1 envelope. */
+interface WechatChannelOverrides {
+  title?: string;
+  description?: string;
+  imageUrl?: string;
 }
 
 export class SsrUpstreamError extends Error {
@@ -85,7 +97,7 @@ export async function render(url: string): Promise<RenderResult> {
 
 async function renderPostRoute(tid: number): Promise<RenderResult> {
   const card = await fetchInternalShareCard(tid);
-  return renderPostHtml(card);
+  return renderPostHtml(card, card.wechat);
 }
 
 function renderProfileStub(): RenderResult {
@@ -103,11 +115,18 @@ function renderHomepageShell(): RenderResult {
   const head = [
     `<title>${escapeHtml(title)}</title>`,
     `<meta name="description" content="${escapeHtml(description)}">`,
+    `<link rel="canonical" href="${escapeHtml(canonicalUrl)}">`,
+    // Open Graph
     `<meta property="og:title" content="${escapeHtml(title)}">`,
     `<meta property="og:description" content="${escapeHtml(description)}">`,
     `<meta property="og:image" content="${escapeHtml(thumbnail)}">`,
+    `<meta property="og:image:width" content="${DEFAULT_IMAGE_WIDTH}">`,
+    `<meta property="og:image:height" content="${DEFAULT_IMAGE_HEIGHT}">`,
     `<meta property="og:url" content="${escapeHtml(canonicalUrl)}">`,
     `<meta property="og:type" content="website">`,
+    `<meta property="og:site_name" content="${escapeHtml(BRAND_TITLE)}">`,
+    `<meta property="og:locale" content="${BRAND_LOCALE}">`,
+    // Twitter Card
     `<meta name="twitter:card" content="summary_large_image">`,
     `<meta name="twitter:title" content="${escapeHtml(title)}">`,
     `<meta name="twitter:description" content="${escapeHtml(description)}">`,
@@ -127,26 +146,41 @@ function renderHomepageShell(): RenderResult {
   return { head, html };
 }
 
-function renderPostHtml(card: ShareCardSlim): RenderResult {
+function renderPostHtml(card: ShareCardSlim, wechat?: WechatChannelOverrides): RenderResult {
   const baseTitle = card.title || BRAND_TITLE;
   const decoratedTitle = applyKindTitleDecoration(card.kind, baseTitle);
   const description = card.summary || "";
   const image = card.thumbnailUrl || BRAND_THUMBNAIL;
   const canonicalUrl = card.url || `/post/${card.tid}`;
 
+  // WeChat crawlers may benefit from channel-specific overrides when available.
+  // Fall back to the standard values if channel overrides are absent.
+  const wechatTitle = wechat?.title || decoratedTitle;
+  const wechatDescription = wechat?.description || description;
+  const wechatImage = wechat?.imageUrl || image;
+
   const head = [
     `<title>${escapeHtml(decoratedTitle)}</title>`,
     `<meta name="description" content="${escapeHtml(description)}">`,
-    `<meta property="og:title" content="${escapeHtml(decoratedTitle)}">`,
-    `<meta property="og:description" content="${escapeHtml(description)}">`,
-    `<meta property="og:image" content="${escapeHtml(image)}">`,
+    `<link rel="canonical" href="${escapeHtml(canonicalUrl)}">`,
+    // Open Graph — primary tags for Facebook, WeChat, Weibo, etc.
+    `<meta property="og:title" content="${escapeHtml(wechatTitle)}">`,
+    `<meta property="og:description" content="${escapeHtml(wechatDescription)}">`,
+    `<meta property="og:image" content="${escapeHtml(wechatImage)}">`,
+    `<meta property="og:image:width" content="${DEFAULT_IMAGE_WIDTH}">`,
+    `<meta property="og:image:height" content="${DEFAULT_IMAGE_HEIGHT}">`,
     `<meta property="og:url" content="${escapeHtml(canonicalUrl)}">`,
     `<meta property="og:type" content="article">`,
+    `<meta property="og:site_name" content="${escapeHtml(BRAND_TITLE)}">`,
+    `<meta property="og:locale" content="${BRAND_LOCALE}">`,
+    // Twitter Card
     `<meta name="twitter:card" content="summary_large_image">`,
     `<meta name="twitter:title" content="${escapeHtml(decoratedTitle)}">`,
     `<meta name="twitter:description" content="${escapeHtml(description)}">`,
     `<meta name="twitter:image" content="${escapeHtml(image)}">`,
-  ].join("\n");
+    // Article-specific meta (author attribution)
+    card.authorName ? `<meta property="article:author" content="${escapeHtml(card.authorName)}">` : "",
+  ].filter(Boolean).join("\n");
 
   const authorMeta = card.authorName
     ? `<p class="ssr-shell__meta">作者：${escapeHtml(card.authorName)}</p>`
@@ -268,6 +302,22 @@ function normalizeShareCard(payload: unknown, fallbackTid: number): ShareCardSli
   }
   const card = envelope.card as Record<string, unknown>;
   const tid = toFiniteInt(card.tid, fallbackTid);
+
+  // Extract WeChat channel overrides if present (V1 envelope: card.channel.wechat)
+  let wechat: WechatChannelOverrides | undefined;
+  if (card.channel && typeof card.channel === "object") {
+    const channelRecord = card.channel as Record<string, unknown>;
+    if (channelRecord.wechat && typeof channelRecord.wechat === "object") {
+      const wechatRecord = channelRecord.wechat as Record<string, unknown>;
+      const title = toTrimmedString(wechatRecord.title);
+      const description = toTrimmedString(wechatRecord.description);
+      const imageUrl = toTrimmedString(wechatRecord.imageUrl);
+      if (title || description || imageUrl) {
+        wechat = { title: title || undefined, description: description || undefined, imageUrl: imageUrl || undefined };
+      }
+    }
+  }
+
   return {
     tid,
     title: toTrimmedString(card.title),
@@ -277,6 +327,7 @@ function normalizeShareCard(payload: unknown, fallbackTid: number): ShareCardSli
     kind: toTrimmedString(card.kind) || "post",
     authorName: toTrimmedString(card.authorName),
     audienceLabel: toTrimmedString(card.audienceLabel),
+    wechat,
   };
 }
 
