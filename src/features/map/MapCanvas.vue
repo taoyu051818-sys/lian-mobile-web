@@ -186,7 +186,14 @@ defineExpose({ map });
 </script>
 
 <template>
-  <div ref="stageEl" class="map-canvas" :class="{ 'is-loading': loading }"></div>
+  <div
+    ref="stageEl"
+    class="map-canvas"
+    :class="{ 'is-loading': loading }"
+    role="application"
+    aria-label="校园地图"
+    :aria-busy="loading"
+  ></div>
 </template>
 
 <style scoped>

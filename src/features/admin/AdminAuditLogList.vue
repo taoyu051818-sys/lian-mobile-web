@@ -32,7 +32,16 @@ defineProps<{
     </p>
 
     <ul v-else class="admin-audit-list__items">
-      <li v-for="event in events" :key="event.eventId" class="admin-audit-list__item">
+      <!--
+        Performance: v-memo skips re-rendering audit log items when their key
+        properties haven't changed. Audit events are immutable once created.
+      -->
+      <li
+        v-for="event in events"
+        :key="event.eventId"
+        v-memo="[event.eventId, event.action, event.createdAt]"
+        class="admin-audit-list__item"
+      >
         <header class="admin-audit-list__header">
           <span class="admin-audit-list__action">
             {{ ADMIN_AUDIT_ACTION_LABEL }}: {{ event.action }}

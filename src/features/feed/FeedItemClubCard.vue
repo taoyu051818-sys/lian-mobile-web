@@ -106,7 +106,13 @@ const {
   >
     <div class="club-card__header">
       <div v-if="logoUrl && !logoError" class="club-card__logo">
-        <img :src="logoUrl" :alt="clubName" loading="lazy" draggable="false" @error="handleLogoError" />
+        <img
+          :src="logoUrl"
+          :alt="clubName"
+          loading="lazy"
+          draggable="false"
+          @error="handleLogoError"
+        />
       </div>
       <div v-else class="club-card__logo club-card__logo--placeholder" aria-hidden="true">
         <span>{{ FEED_CARD_MARK_CLUB }}</span>

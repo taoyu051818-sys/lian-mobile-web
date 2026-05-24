@@ -50,7 +50,16 @@ const uploadProgress = computed(() => {
       ></div>
     </div>
     <div class="publish-image-preview__grid">
-      <div v-for="(url, index) in localPreviewUrls" :key="url" class="publish-image-preview__item">
+      <!--
+        Performance: v-memo skips re-rendering image preview items when their
+        URL hasn't changed. Image previews are static once added.
+      -->
+      <div
+        v-for="(url, index) in localPreviewUrls"
+        :key="url"
+        v-memo="[url]"
+        class="publish-image-preview__item"
+      >
         <img :src="url" :alt="PUBLISH_IMAGE_PREVIEW_ALT" loading="lazy" />
         <button
           type="button"

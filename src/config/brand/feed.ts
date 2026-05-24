@@ -57,3 +57,16 @@ export const FEED_FILTER_VISIBILITY_CAMPUS = "校区";
 export const FEED_FILTER_VISIBILITY_SCHOOL = "学校";
 export const FEED_FILTER_VISIBILITY_PRIVATE = "私密";
 export const FEED_FILTER_VISIBILITY_LINK_ONLY = "仅链接";
+export const FEED_FILTER_EXPAND = "展开筛选";
+export const FEED_FILTER_COLLAPSE = "收起筛选";
+
+/** 手势操作 UI */
+export const GESTURE_PULL_TO_REFRESH = "下拉刷新";
+export const GESTURE_RELEASE_TO_REFRESH = "释放刷新";
+export const GESTURE_REFRESHING = "刷新中...";
+export const GESTURE_SWIPE_DELETE = "删除";
+export const GESTURE_SWIPE_MARK_READ = "已读";
+export const GESTURE_SWIPE_BOOKMARK = "收藏";
+export const GESTURE_CONTEXT_SHARE = "分享";
+export const GESTURE_CONTEXT_BOOKMARK = "收藏";
+export const GESTURE_CONTEXT_REPORT = "举报";

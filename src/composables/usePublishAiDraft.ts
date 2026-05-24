@@ -1,4 +1,4 @@
-import { ref, watch, type Ref } from "vue";
+import { onBeforeUnmount, ref, watch, type Ref } from "vue";
 import { fetchAiPostPreview, type AiPreviewSuggestions } from "../api/aiPublish";
 import { LianApiError } from "../api/http";
 import { PUBLISH_AI_UNAVAILABLE } from "../config/brand";
@@ -79,7 +79,7 @@ export function usePublishAiDraft(options: UsePublishAiDraftOptions): UsePublish
     }
   }
 
-  watch(
+  const stopWatch = watch(
     () => options.uploadedImageUrls.value.length,
     (next, prev) => {
       // Trigger only on the empty → non-empty transition, once per session.
@@ -90,6 +90,10 @@ export function usePublishAiDraft(options: UsePublishAiDraftOptions): UsePublish
     },
     { immediate: false },
   );
+
+  onBeforeUnmount(() => {
+    stopWatch();
+  });
 
   async function refresh() {
     hasRun = true;

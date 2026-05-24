@@ -78,6 +78,7 @@ const emit = defineEmits<{
         rows="3"
         maxlength="2000"
         :placeholder="replyIdentityLabel"
+        aria-label="回复内容"
         autofocus
         @input="emit('update:replyContent', ($event.target as HTMLTextAreaElement).value)"
       />

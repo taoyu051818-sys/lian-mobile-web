@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { shallowRef, watch } from "vue";
+import { computed } from "vue";
 import type { FeedItem, FeedItemId } from "../../types/feed";
 import FeedItemCard from "./FeedItemCard.vue";
 import FeedItemClubCard from "./FeedItemClubCard.vue";
@@ -42,19 +42,10 @@ function splitIntoMasonryColumns(sourceItems: FeedItem[]) {
   return columns;
 }
 
-// Performance: use shallowRef to avoid deep reactivity on the masonry columns
-// array. The columns only change when items change, not when individual item
-// properties change (those are handled by the card components themselves).
-const masonryColumns = shallowRef<FeedItem[][]>([[], []]);
-
-// Recompute masonry layout only when items array reference changes
-watch(
-  () => props.items,
-  (items) => {
-    masonryColumns.value = splitIntoMasonryColumns(items);
-  },
-  { immediate: true },
-);
+// Performance: use computed instead of watch + shallowRef. Computed properties
+// are lazily evaluated and cached, avoiding unnecessary recalculations. The
+// masonry layout only recomputes when the items array reference changes.
+const masonryColumns = computed(() => splitIntoMasonryColumns(props.items));
 </script>
 
 <template>

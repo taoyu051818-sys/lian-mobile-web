@@ -80,9 +80,15 @@ const filters: Array<{ value: AdminReportStatus | ""; label: string }> = [
     </p>
 
     <div v-else class="admin-queue-list__items">
+      <!--
+        Performance: v-memo skips re-rendering report items when their key
+        properties haven't changed. Reports are typically static once loaded,
+        so we only need to re-render when the report status changes.
+      -->
       <AdminQueueItem
         v-for="report in reports"
         :key="report.reportId"
+        v-memo="[report.reportId, report.status, report.updatedAt]"
         :report="report"
         @transition="(id, payload) => emit('transition', id, payload)"
         @post-action="(tid, action) => emit('postAction', tid, action)"

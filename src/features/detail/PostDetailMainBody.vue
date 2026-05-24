@@ -8,7 +8,7 @@ defineProps<{
 </script>
 
 <template>
-  <section class="post-detail-main-body">
+  <section class="post-detail-main-body" :aria-labelledby="title ? 'post-detail-title' : undefined">
     <h2 v-if="title" id="post-detail-title" data-testid="post-detail-title">{{ title }}</h2>
     <SafeHtml v-if="bodyHtml" :html="bodyHtml" as="div" class="lian-html" />
   </section>

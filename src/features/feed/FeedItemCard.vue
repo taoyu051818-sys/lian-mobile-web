@@ -164,12 +164,14 @@ function handleLongPress(event: TouchEvent | PointerEvent) {
 function handleShare() {
   // TODO: Implement share functionality
   if (typeof navigator !== "undefined" && navigator.share) {
-    navigator.share({
-      title: cardDisplayData.value.title,
-      url: `${window.location.origin}/#/post/${props.item.tid}`,
-    }).catch(() => {
-      // User cancelled or share failed
-    });
+    navigator
+      .share({
+        title: cardDisplayData.value.title,
+        url: `${window.location.origin}/#/post/${props.item.tid}`,
+      })
+      .catch(() => {
+        // User cancelled or share failed
+      });
   }
 }
 

@@ -226,10 +226,7 @@ const settlement = computed(() => props.event.rewardSettlement);
       <span class="post-detail-event-block__reward-body">{{ event.rewardSummary }}</span>
     </div>
 
-    <PostDetailEventSettlement
-      v-if="settlement"
-      :settlement="settlement"
-    />
+    <PostDetailEventSettlement v-if="settlement" :settlement="settlement" />
 
     <div v-if="showPrimaryAction || showCompleteButton" class="post-detail-event-block__actions">
       <DetailCtaButton
@@ -281,7 +278,13 @@ const settlement = computed(() => props.event.rewardSettlement);
         :aria-label="EVENT_COMPLETE_CONFIRM_TITLE"
         data-testid="post-detail-event-complete-confirm"
       >
-        <div class="post-detail-event-block__confirm-backdrop" @click="dismissConfirm" />
+        <div
+          class="post-detail-event-block__confirm-backdrop"
+          role="button"
+          tabindex="-1"
+          :aria-label="EVENT_COMPLETE_CANCEL"
+          @click="dismissConfirm"
+        />
         <section class="post-detail-event-block__confirm-panel">
           <h2 class="post-detail-event-block__confirm-title">
             {{ EVENT_COMPLETE_CONFIRM_TITLE }}

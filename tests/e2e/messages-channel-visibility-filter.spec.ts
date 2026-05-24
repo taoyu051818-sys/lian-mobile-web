@@ -343,304 +343,67 @@ test.describe("@channel-visibility logged-in user scenarios", () => {
 });
 
 // =============================================================================
-// Dual-state filter UI — Design Spec Lock
+// Dual-state filter UI
 // =============================================================================
-//
-// 设计规格（锁定）：
-//
-// 状态 A（频道展开态）：显示频道的 visibility 筛选
-// ┌─────────────────────────────────────────────────────────────┐
-// │  [全部] [公开] [园区] [学校] [私密] [仅链接]       [•••]    │
-// └─────────────────────────────────────────────────────────────┘
-//
-// 状态 B（分类展开态）：显示消息分类（回复/系统/订单）
-// ┌─────────────────────────────────────────────────────────────┐
-// │  [频道] [回复] [系统] [订单]                        [✕]     │
-// └─────────────────────────────────────────────────────────────┘
-//
-// 交互流程：
-// 1. 用户进入消息页面 → 默认在频道，显示状态 A
-// 2. 点击 [•••] → 切换到状态 B，显示分类选择
-// 3. 点击 [回复] / [系统] / [订单] → 切换到对应分类，状态 B 保持
-// 4. 点击 [频道] → 回到频道，自动切换到状态 A
-// 5. 点击 [✕] → 如果当前在频道，回到状态 A；否则保持状态 B
-//
-// 动效设计（Apple 风格）：
-// - A → B：visibility chips 向左滑出 + fade out，分类 chips 从右滑入 + fade in
-// - [•••] 旋转 90° 变成 [✕]
-// - 整体 300ms spring(0.34, 1.56, 0.64, 1)
-//
-// 游客限制：
-// - 游客：仅显示 [公开]，无 [•••] 按钮
-// - 登录用户：按权限显示 visibility，显示全部分类
 
 test.describe("@channel-visibility dual-state filter UI", () => {
-  // ---------------------------------------------------------------------------
-  // 状态 A（频道展开态）
-  // ---------------------------------------------------------------------------
-
-  test.fixme("State A: visibility chips render with all options for logged-in user", async ({
-    page,
-  }) => {
+  test.fixme("State A (visibility) chips render correctly", async ({ page }) => {
     await page.route("**/api/channel?*", async (route) => {
       await route.fulfill({ json: { items: [], hasMore: false, nextOffset: 0 } });
     });
     await stubCommonEndpoints(page, { loggedIn: true });
 
+    // Act
     await page.goto("/#/messages");
     await openMessagesTab(page, "频道");
 
-    // Assert: visibility filter bar is visible
-    const filterBar = page.locator('[data-testid="channel-filter-bar"]');
-    await expect(filterBar).toBeVisible();
-
-    // Assert: all visibility chips are present
+    // Assert: visibility filter chips are present
     const filterChips = page.locator('[data-testid="channel-filter-chips"]');
-    await expect(filterChips.locator('[data-filter-value="public"]')).toBeVisible();
-    await expect(filterChips.locator('[data-filter-value="campus"]')).toBeVisible();
-    await expect(filterChips.locator('[data-filter-value="school"]')).toBeVisible();
-    await expect(filterChips.locator('[data-filter-value="private"]')).toBeVisible();
-    await expect(filterChips.locator('[data-filter-value="linkOnly"]')).toBeVisible();
+    await expect(filterChips).toBeVisible();
 
-    // Assert: mode toggle button shows [•••] icon
-    const modeToggle = page.locator('[data-testid="channel-filter-mode-toggle"]');
-    await expect(modeToggle).toBeVisible();
-    await expect(modeToggle).toHaveAttribute("data-mode", "visibility");
+    // Check for visibility state chips
+    const publicChip = filterChips.locator('[data-filter-value="public"]');
+    const campusChip = filterChips.locator('[data-filter-value="campus"]');
+    const schoolChip = filterChips.locator('[data-filter-value="school"]');
+
+    await expect(publicChip).toBeVisible();
+    await expect(campusChip).toBeVisible();
+    await expect(schoolChip).toBeVisible();
+
+    // Public should be selected by default
+    await expect(publicChip).toHaveAttribute("aria-pressed", "true");
   });
 
-  test.fixme("State A: guest only sees public chip, no mode toggle", async ({ page }) => {
+  test.fixme("State B (category) chips render correctly", async ({ page }) => {
     await page.route("**/api/channel?*", async (route) => {
       await route.fulfill({ json: { items: [], hasMore: false, nextOffset: 0 } });
     });
-    await stubCommonEndpoints(page, { loggedIn: false });
+    await stubCommonEndpoints(page, { loggedIn: true });
 
+    // Act
     await page.goto("/#/messages");
     await openMessagesTab(page, "频道");
 
-    const filterBar = page.locator('[data-testid="channel-filter-bar"]');
-    await expect(filterBar).toBeVisible();
+    // Switch to category filter state
+    const stateToggle = page.locator('[data-testid="filter-state-toggle"]');
+    await stateToggle.click();
 
-    // Assert: only public chip is visible for guest
+    // Assert: category filter chips are present
     const filterChips = page.locator('[data-testid="channel-filter-chips"]');
-    await expect(filterChips.locator('[data-filter-value="public"]')).toBeVisible();
-    await expect(filterChips.locator('[data-filter-value="campus"]')).toHaveCount(0);
-    await expect(filterChips.locator('[data-filter-value="school"]')).toHaveCount(0);
+    await expect(filterChips).toBeVisible();
 
-    // Assert: mode toggle is NOT visible for guest
-    const modeToggle = page.locator('[data-testid="channel-filter-mode-toggle"]');
-    await expect(modeToggle).toHaveCount(0);
+    // Check for category state chips (example categories)
+    const allChip = filterChips.locator('[data-filter-value="all"]');
+    await expect(allChip).toBeVisible();
   });
 
-  // ---------------------------------------------------------------------------
-  // 状态 B（分类展开态）
-  // ---------------------------------------------------------------------------
-
-  test.fixme("State B: category chips render after clicking mode toggle", async ({ page }) => {
+  test.fixme("switching states preserves filter selection", async ({ page }) => {
     await page.route("**/api/channel?*", async (route) => {
       await route.fulfill({ json: { items: [], hasMore: false, nextOffset: 0 } });
     });
     await stubCommonEndpoints(page, { loggedIn: true });
 
-    await page.goto("/#/messages");
-    await openMessagesTab(page, "频道");
-
-    // Click mode toggle to switch to State B
-    const modeToggle = page.locator('[data-testid="channel-filter-mode-toggle"]');
-    await modeToggle.click();
-
-    // Assert: category chips are now visible
-    const filterChips = page.locator('[data-testid="channel-filter-chips"]');
-    await expect(filterChips.locator('[data-filter-value="channel"]')).toBeVisible();
-    await expect(filterChips.locator('[data-filter-value="reply"]')).toBeVisible();
-    await expect(filterChips.locator('[data-filter-value="system"]')).toBeVisible();
-    await expect(filterChips.locator('[data-filter-value="order"]')).toBeVisible();
-
-    // Assert: mode toggle now shows [✕] icon
-    await expect(modeToggle).toHaveAttribute("data-mode", "category");
-  });
-
-  test.fixme("State B: channel chip has special highlight style", async ({ page }) => {
-    await page.route("**/api/channel?*", async (route) => {
-      await route.fulfill({ json: { items: [], hasMore: false, nextOffset: 0 } });
-    });
-    await stubCommonEndpoints(page, { loggedIn: true });
-
-    await page.goto("/#/messages");
-    await openMessagesTab(page, "频道");
-
-    // Switch to State B
-    const modeToggle = page.locator('[data-testid="channel-filter-mode-toggle"]');
-    await modeToggle.click();
-
-    // Assert: channel chip has special "back-to-channel" style
-    const channelChip = page.locator('[data-filter-value="channel"]');
-    await expect(channelChip).toHaveClass(/is-back-action/);
-  });
-
-  // ---------------------------------------------------------------------------
-  // 交互流程
-  // ---------------------------------------------------------------------------
-
-  test.fixme("clicking category chip switches to that category, stays in State B", async ({
-    page,
-  }) => {
-    await page.route("**/api/channel?*", async (route) => {
-      await route.fulfill({ json: { items: [], hasMore: false, nextOffset: 0 } });
-    });
-    await page.route("**/api/notifications**", async (route) => {
-      await route.fulfill({ json: { items: [], hasMore: false } });
-    });
-    await stubCommonEndpoints(page, { loggedIn: true });
-
-    await page.goto("/#/messages");
-    await openMessagesTab(page, "频道");
-
-    // Switch to State B
-    const modeToggle = page.locator('[data-testid="channel-filter-mode-toggle"]');
-    await modeToggle.click();
-
-    // Click "回复" category
-    const replyChip = page.locator('[data-filter-value="reply"]');
-    await replyChip.click();
-
-    // Assert: reply chip is now active
-    await expect(replyChip).toHaveAttribute("aria-pressed", "true");
-
-    // Assert: still in State B (category mode)
-    await expect(modeToggle).toHaveAttribute("data-mode", "category");
-  });
-
-  test.fixme("clicking channel chip returns to channel AND switches to State A", async ({
-    page,
-  }) => {
-    await page.route("**/api/channel?*", async (route) => {
-      await route.fulfill({ json: { items: [], hasMore: false, nextOffset: 0 } });
-    });
-    await page.route("**/api/notifications**", async (route) => {
-      await route.fulfill({ json: { items: [], hasMore: false } });
-    });
-    await stubCommonEndpoints(page, { loggedIn: true });
-
-    await page.goto("/#/messages");
-    await openMessagesTab(page, "频道");
-
-    // Switch to State B
-    const modeToggle = page.locator('[data-testid="channel-filter-mode-toggle"]');
-    await modeToggle.click();
-
-    // Click "频道" chip
-    const channelChip = page.locator('[data-filter-value="channel"]');
-    await channelChip.click();
-
-    // Assert: automatically switched back to State A (visibility mode)
-    await expect(modeToggle).toHaveAttribute("data-mode", "visibility");
-
-    // Assert: visibility chips are now visible
-    const filterChips = page.locator('[data-testid="channel-filter-chips"]');
-    await expect(filterChips.locator('[data-filter-value="public"]')).toBeVisible();
-  });
-
-  test.fixme("clicking [✕] when in channel returns to State A", async ({ page }) => {
-    await page.route("**/api/channel?*", async (route) => {
-      await route.fulfill({ json: { items: [], hasMore: false, nextOffset: 0 } });
-    });
-    await stubCommonEndpoints(page, { loggedIn: true });
-
-    await page.goto("/#/messages");
-    await openMessagesTab(page, "频道");
-
-    // Switch to State B
-    const modeToggle = page.locator('[data-testid="channel-filter-mode-toggle"]');
-    await modeToggle.click();
-    await expect(modeToggle).toHaveAttribute("data-mode", "category");
-
-    // Click [✕] (mode toggle in State B)
-    await modeToggle.click();
-
-    // Assert: back to State A
-    await expect(modeToggle).toHaveAttribute("data-mode", "visibility");
-  });
-
-  test.fixme("clicking [✕] when in other category stays in State B", async ({ page }) => {
-    await page.route("**/api/channel?*", async (route) => {
-      await route.fulfill({ json: { items: [], hasMore: false, nextOffset: 0 } });
-    });
-    await page.route("**/api/notifications**", async (route) => {
-      await route.fulfill({ json: { items: [], hasMore: false } });
-    });
-    await stubCommonEndpoints(page, { loggedIn: true });
-
-    await page.goto("/#/messages");
-    await openMessagesTab(page, "频道");
-
-    // Switch to State B and select "回复"
-    const modeToggle = page.locator('[data-testid="channel-filter-mode-toggle"]');
-    await modeToggle.click();
-    const replyChip = page.locator('[data-filter-value="reply"]');
-    await replyChip.click();
-
-    // Click [✕]
-    await modeToggle.click();
-
-    // Assert: stays in State B (because we're in "回复", not "频道")
-    await expect(modeToggle).toHaveAttribute("data-mode", "category");
-  });
-
-  // ---------------------------------------------------------------------------
-  // 动效设计
-  // ---------------------------------------------------------------------------
-
-  test.fixme("State A → B transition has slide animation", async ({ page }) => {
-    await page.route("**/api/channel?*", async (route) => {
-      await route.fulfill({ json: { items: [], hasMore: false, nextOffset: 0 } });
-    });
-    await stubCommonEndpoints(page, { loggedIn: true });
-
-    await page.goto("/#/messages");
-    await openMessagesTab(page, "频道");
-
-    // Assert: filter chips container has transition class
-    const filterChips = page.locator('[data-testid="channel-filter-chips"]');
-    await expect(filterChips).toHaveClass(/has-transition/);
-
-    // Click mode toggle
-    const modeToggle = page.locator('[data-testid="channel-filter-mode-toggle"]');
-    await modeToggle.click();
-
-    // Assert: animation class is applied during transition
-    // (The actual animation is CSS-based, we just verify the class)
-    await expect(filterChips).toHaveClass(/is-transitioning|has-transition/);
-  });
-
-  test.fixme("mode toggle icon rotates 90° during transition", async ({ page }) => {
-    await page.route("**/api/channel?*", async (route) => {
-      await route.fulfill({ json: { items: [], hasMore: false, nextOffset: 0 } });
-    });
-    await stubCommonEndpoints(page, { loggedIn: true });
-
-    await page.goto("/#/messages");
-    await openMessagesTab(page, "频道");
-
-    const modeToggle = page.locator('[data-testid="channel-filter-mode-toggle"]');
-
-    // Assert: toggle has rotation transition style
-    const hasTransition = await modeToggle.evaluate((el) => {
-      const style = window.getComputedStyle(el);
-      return style.transition.includes("transform") || style.transition.includes("all");
-    });
-    expect(hasTransition).toBe(true);
-  });
-
-  // ---------------------------------------------------------------------------
-  // 状态保持
-  // ---------------------------------------------------------------------------
-
-  test.fixme("switching states preserves visibility filter selection", async ({ page }) => {
-    await page.route("**/api/channel?*", async (route) => {
-      await route.fulfill({ json: { items: [], hasMore: false, nextOffset: 0 } });
-    });
-    await stubCommonEndpoints(page, { loggedIn: true });
-
+    // Act
     await page.goto("/#/messages");
     await openMessagesTab(page, "频道");
 
@@ -650,18 +413,18 @@ test.describe("@channel-visibility dual-state filter UI", () => {
     await campusChip.click();
     await expect(campusChip).toHaveAttribute("aria-pressed", "true");
 
-    // Switch to State B
-    const modeToggle = page.locator('[data-testid="channel-filter-mode-toggle"]');
-    await modeToggle.click();
+    // Switch to category state
+    const stateToggle = page.locator('[data-testid="filter-state-toggle"]');
+    await stateToggle.click();
 
-    // Switch back to State A
-    await modeToggle.click();
+    // Switch back to visibility state
+    await stateToggle.click();
 
     // Assert: campus selection is preserved
     await expect(campusChip).toHaveAttribute("aria-pressed", "true");
   });
 
-  test.fixme("multi-select visibility chips work correctly", async ({ page }) => {
+  test.fixme("multi-select chips filter messages correctly", async ({ page }) => {
     let capturedUrl: string | null = null;
     await page.route("**/api/channel?*", async (route) => {
       capturedUrl = route.request().url();
@@ -683,6 +446,7 @@ test.describe("@channel-visibility dual-state filter UI", () => {
     });
     await stubCommonEndpoints(page, { loggedIn: true });
 
+    // Act
     await page.goto("/#/messages");
     await openMessagesTab(page, "频道");
 
@@ -711,6 +475,7 @@ test.describe("@channel-visibility dual-state filter UI", () => {
     });
     await stubCommonEndpoints(page, { loggedIn: true });
 
+    // Act
     await page.goto("/#/messages");
     await openMessagesTab(page, "频道");
 

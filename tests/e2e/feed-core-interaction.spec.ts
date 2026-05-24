@@ -145,13 +145,13 @@ test.describe("@feed core interaction", () => {
       // Feed view should be visible
       await expect(page.locator(".feed-view")).toBeVisible();
 
-      // Should have feed cards OR empty state OR loading state
+      // Should have feed cards OR empty state OR loading skeleton
       const hasCards = (await page.locator(".feed-item-card").count()) > 0;
       const hasEmptyState = (await page.locator(".feed-view__state--empty").count()) > 0;
-      const hasLoadingState = (await page.locator(".feed-view__state").count()) > 0;
+      const hasLoadingSkeleton = (await page.locator(".feed-skeleton").count()) > 0;
 
       // At least one of these states should be true
-      expect(hasCards || hasEmptyState || hasLoadingState).toBe(true);
+      expect(hasCards || hasEmptyState || hasLoadingSkeleton).toBe(true);
     });
 
     test("feed view shows loading state then content (stubbed)", async ({ browser }) => {

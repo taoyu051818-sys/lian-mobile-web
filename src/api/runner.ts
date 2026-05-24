@@ -78,11 +78,12 @@ async function transitionRunnerOrder(
   action: RunnerTransitionAction,
 ): Promise<RunnerOrder> {
   const backendAction = action === "at_shop" ? "pickup" : action;
-  const data = await apiSend<RunnerTransitionResponse | BackendRunnerOrder>(
+  const data = await apiSend<BackendRunnerOrder>(
     `/api/errands/orders/${encodeURIComponent(orderId)}/${backendAction}`,
     { method: "POST" },
   );
-  const order = normalizeRunnerOrder(data as BackendRunnerOrder);
+  // Normalize handles arbitrary shapes safely — no type assertion needed
+  const order = normalizeRunnerOrder(data || {});
   if (!order) throw new LianApiError("跑腿后台未返回 order 数据", 0, "MALFORMED_RESPONSE");
   return order;
 }

@@ -23,11 +23,12 @@ const emit = defineEmits<{
       :key="url"
       class="post-detail-gallery__item"
       type="button"
+      :aria-label="`查看图片 ${index + 1}，共 ${images.length} 张${title ? `：${title}` : ''}`"
       @pointerdown="emit('galleryPointerDown', $event)"
       @pointermove="emit('galleryPointerMove', $event)"
       @click="emit('openGalleryImage', index)"
     >
-      <img :src="url" :alt="title" loading="eager" decoding="async" />
+      <img :src="url" :alt="title || `图片 ${index + 1}`" loading="eager" decoding="async" />
     </button>
   </section>
 </template>

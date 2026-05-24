@@ -13,13 +13,15 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <nav class="messages-tabs" :aria-label="MESSAGE_TAB_LABEL">
+  <nav class="messages-tabs" role="tablist" :aria-label="MESSAGE_TAB_LABEL">
     <button
       v-for="tab in tabs"
       :key="tab.key"
       type="button"
+      role="tab"
       class="messages-tabs__item"
       :class="{ 'is-active': activeTab === tab.key }"
+      :aria-selected="activeTab === tab.key"
       @click="emit('switch', tab.key)"
     >
       {{ tab.label }}

@@ -22,6 +22,7 @@ import { buildPublishPayload, publishPost } from "../../api/publish";
 import { createEvent } from "../../api/events";
 import { parseCapacityInput, validateEventPublishForm } from "../../domain/eventPublishPolicy";
 import { normalizeAudience } from "../../types/audience";
+import { hapticSuccess, hapticError } from "../../composables/useHapticFeedback";
 import type { EventJoinPolicy } from "../../types/post-extensions";
 import type {
   MerchantContentType,
@@ -141,12 +142,14 @@ export function usePublishSubmit(options: {
       });
       options.lastTid.value = response.tid || null;
       options.successMessage.value = PUBLISH_EVENT_SUCCESS;
+      hapticSuccess();
       options.resetForm();
     } catch (error) {
       const message = resolveWriteActionErrorMessage("publish", error);
       options.errorMessage.value = isWriteActionGenericFallback("publish", message)
         ? PUBLISH_EVENT_UNAVAILABLE
         : message;
+      hapticError();
     }
   }
 
@@ -214,9 +217,11 @@ export function usePublishSubmit(options: {
         boundPlaceName && boundPlaceName !== PUBLISH_LOCATION_UNBOUND
           ? PUBLISH_SUCCESS_BOUND.replace("{n}", boundPlaceName)
           : PUBLISH_SUCCESS;
+      hapticSuccess();
       options.resetForm();
     } catch (error) {
       options.errorMessage.value = resolveWriteActionErrorMessage("publish", error);
+      hapticError();
     } finally {
       options.publishing.value = false;
     }

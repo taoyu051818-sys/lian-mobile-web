@@ -88,7 +88,17 @@ function sanitizeReplyHtml(value: string) {
       </button>
     </div>
 
-    <article v-for="reply in sortedReplies" :key="String(reply.id)" class="post-replies__item">
+    <!--
+      Performance: v-memo skips re-rendering reply items when their key
+      properties haven't changed. Replies are immutable once loaded, so we
+      only need to re-render when the reply content or timestamp changes.
+    -->
+    <article
+      v-for="reply in sortedReplies"
+      :key="String(reply.id)"
+      v-memo="[reply.id, reply.content, reply.timestampISO]"
+      class="post-replies__item"
+    >
       <div class="post-replies__meta">
         <strong v-if="actorDisplayName(reply.actor)">{{ actorDisplayName(reply.actor) }}</strong>
         <span v-if="formatRelativeTime(reply.timestampISO)">{{

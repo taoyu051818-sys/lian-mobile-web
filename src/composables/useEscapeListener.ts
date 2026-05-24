@@ -8,10 +8,14 @@ export function useEscapeListener(active: Ref<boolean>, onEscape: () => void) {
     }
   }
 
-  watch(active, (isActive) => {
-    if (isActive) document.addEventListener("keydown", handleKeydown);
-    else document.removeEventListener("keydown", handleKeydown);
-  });
+  watch(
+    active,
+    (isActive) => {
+      if (isActive) document.addEventListener("keydown", handleKeydown);
+      else document.removeEventListener("keydown", handleKeydown);
+    },
+    { immediate: true },
+  );
 
   onBeforeUnmount(() => document.removeEventListener("keydown", handleKeydown));
 }

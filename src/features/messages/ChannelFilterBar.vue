@@ -23,7 +23,7 @@ import type { MessageTabKey } from "../../types/messages";
  * - "visibility" (State A): Shows visibility chips + [...] button
  * - "category" (State B): Shows category chips + [x] button
  */
-type FilterState = "visibility" | "category";
+export type FilterState = "visibility" | "category";
 
 const props = defineProps<{
   /** Current filter state (A=visibility, B=category) */
@@ -74,9 +74,7 @@ const categoryChips: readonly CategoryChip[] = [
   { value: "orders", label: MESSAGE_TAB_ORDERS },
 ];
 
-const visibilityChips = computed(() =>
-  props.isGuest ? guestVisibilityChips : allVisibilityChips,
-);
+const visibilityChips = computed(() => (props.isGuest ? guestVisibilityChips : allVisibilityChips));
 
 /** Whether to show the toggle button (guests don't see it) */
 const showToggleButton = computed(() => !props.isGuest);
@@ -101,11 +99,8 @@ function toggleState() {
     // [...] clicked -> switch to category state (State B)
     emit("update:filterState", "category");
   } else {
-    // [x] clicked -> if on channel, go to State A; otherwise stay in State B
-    if (props.activeCategory === "channel") {
-      emit("update:filterState", "visibility");
-    }
-    // If not on channel, clicking [x] does nothing (stays in State B)
+    // [x] clicked -> switch back to visibility state (State A)
+    emit("update:filterState", "visibility");
   }
 }
 </script>

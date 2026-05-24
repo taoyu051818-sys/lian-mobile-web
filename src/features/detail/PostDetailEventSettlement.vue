@@ -54,10 +54,7 @@ const settledAtLabel = (() => {
 </script>
 
 <template>
-  <div
-    class="post-detail-event-settlement"
-    data-testid="post-detail-event-reward-settlement"
-  >
+  <div class="post-detail-event-settlement" data-testid="post-detail-event-reward-settlement">
     <span class="post-detail-event-settlement__label">
       {{ EVENT_REWARD_SETTLED_LABEL }}
     </span>

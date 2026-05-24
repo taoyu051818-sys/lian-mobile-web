@@ -325,6 +325,7 @@ onMounted(() => {
           :title-count="draft.titleCount.value"
           :body-count="draft.bodyCount.value"
           :selected-files-count="draft.selectedFiles.value.length"
+          :uploaded-image-count="draft.uploadedImageUrls.value.length"
           :selected-map-location="locationOptions.selectedMapLocation.value"
           :place-name="draft.placeName.value"
           :normalized-tag="draft.normalizedTag.value"

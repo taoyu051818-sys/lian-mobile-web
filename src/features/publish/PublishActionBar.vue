@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import { LianButton } from "../../ui";
-import { PUBLISH_CLEAR, PUBLISH_SUBMIT, PUBLISH_IMAGE_UPLOADING as PUBLISH_UPLOADING } from "../../config/brand";
+import {
+  PUBLISH_CLEAR,
+  PUBLISH_SUBMIT,
+  PUBLISH_IMAGE_UPLOADING as PUBLISH_UPLOADING,
+} from "../../config/brand";
 
 defineProps<{
   publishing: boolean;

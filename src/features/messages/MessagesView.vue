@@ -5,9 +5,6 @@ import { useActiveView } from "../../app/useActiveView";
 import { useDetailNavigation } from "../../app/detail-navigation";
 import { useVisualViewport } from "../../composables/useVisualViewport";
 import {
-  MESSAGE_AUTH_GATE_CTA,
-  MESSAGE_AUTH_GATE_HINT,
-  MESSAGE_AUTH_GATE_TITLE,
   MESSAGE_SECTION_LABEL,
   MESSAGE_TAB_CHANNEL,
   MESSAGE_TAB_LABEL,
@@ -19,6 +16,7 @@ import type { AudienceVisibility } from "../../types/audience";
 import type { MessageTabKey, NotificationItem } from "../../types/messages";
 import type { PageChromeSpec } from "../../shell/page-model";
 import { ChannelComposer, ChannelFilterBar, ChannelThread, NotificationList } from "./";
+import type { FilterState } from "./ChannelFilterBar.vue";
 import { isNotificationInboxTab, itemsForInboxTab, NOTIFICATION_INBOX_SPECS } from "./messageInbox";
 import { useChannelMessages } from "./useChannelMessages";
 import { useNotifications } from "./useNotifications";
@@ -29,12 +27,14 @@ const emit = defineEmits<{
   chrome: [spec: PageChromeSpec];
 }>();
 
-const activeTab = ref<MessageTabKey>("channel");
-
-/** Filter bar state: "visibility" (State A) or "category" (State B) */
-type FilterState = "visibility" | "category";
+/** Filter bar state: visibility (State A) or category (State B) */
 const filterState = ref<FilterState>("visibility");
+
+/** Selected visibility filter */
 const selectedVisibility = ref<AudienceVisibility | "all">("all");
+
+/** Active category/tab */
+const activeTab = ref<MessageTabKey>("channel");
 
 const {
   channelItems,
@@ -88,10 +88,6 @@ function openNotification(item: NotificationItem) {
   }
 }
 
-function goLogin() {
-  setActiveView("profile");
-}
-
 useVisualViewport();
 
 const tabs: Array<{ key: MessageTabKey; label: string }> = [
@@ -135,31 +131,29 @@ const pageChrome = computed<PageChromeSpec>(() => ({
 
 watch(pageChrome, (spec) => emit("chrome", spec), { deep: true });
 
-async function switchTab(tab: MessageTabKey) {
-  activeTab.value = tab;
-  // When switching to channel via filter bar, auto-switch to visibility state
-  if (tab === "channel") {
-    filterState.value = "visibility";
-    if (!channelItems.value.length) await loadChannel(true);
-  } else if (!notificationItems.value.length) {
-    await loadNotifications();
-  }
-}
-
-/** Handle filter state changes from ChannelFilterBar */
+/** Handle filter state changes */
 function handleFilterStateChange(state: FilterState) {
   filterState.value = state;
 }
 
-/** Handle visibility selection from ChannelFilterBar */
+/** Handle visibility selection changes */
 function handleVisibilityChange(visibility: AudienceVisibility | "all") {
   selectedVisibility.value = visibility;
-  // TODO: Trigger channel reload with visibility filter
+  // TODO: Trigger channel reload with visibility filter when API supports it
 }
 
-/** Handle category selection from ChannelFilterBar */
+/** Handle category/tab selection changes */
 function handleCategoryChange(category: MessageTabKey) {
   void switchTab(category);
+}
+
+async function switchTab(tab: MessageTabKey) {
+  activeTab.value = tab;
+  if (tab === "channel") {
+    if (!channelItems.value.length) await loadChannel(true);
+  } else if (!notificationItems.value.length) {
+    await loadNotifications();
+  }
 }
 
 onMounted(async () => {
@@ -173,6 +167,7 @@ onMounted(async () => {
   <section class="messages-view" :aria-label="MESSAGE_SECTION_LABEL">
     <!-- Dual-state filter bar -->
     <ChannelFilterBar
+      v-if="activeTab === 'channel'"
       class="messages-view__filter-bar"
       :filter-state="filterState"
       :selected-visibility="selectedVisibility"
@@ -238,14 +233,7 @@ onMounted(async () => {
 }
 
 .messages-view__filter-bar {
-  position: sticky;
-  top: calc(var(--floating-bar-height) + env(safe-area-inset-top) + var(--space-2));
-  z-index: calc(var(--floating-bar-z, 70) - 1);
   padding: 0 var(--space-3);
-  margin: 0 var(--space-3);
-  border-radius: var(--radius-chip);
-  background: var(--glass-bg-strong);
-  backdrop-filter: blur(var(--glass-blur-light)) saturate(var(--glass-saturate));
 }
 
 .messages-view__chrome-composer {

@@ -20,10 +20,14 @@ export function useBodyScrollLock(active: Ref<boolean>) {
     }
   }
 
-  watch(active, (isActive) => {
-    if (isActive) lock();
-    else unlock();
-  });
+  watch(
+    active,
+    (isActive) => {
+      if (isActive) lock();
+      else unlock();
+    },
+    { immediate: true },
+  );
 
   onBeforeUnmount(unlock);
 }

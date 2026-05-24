@@ -1,4 +1,4 @@
-import { ref } from "vue";
+import { onBeforeUnmount, ref } from "vue";
 import { confirmCampusEmailCode, sendCampusEmailCode } from "../../api/verification";
 import { LianApiError } from "../../api/http";
 import {
@@ -117,6 +117,8 @@ export function useCampusEmailVerify(options: UseCampusEmailVerifyOptions = {}) 
   function dispose() {
     clearTimer();
   }
+
+  onBeforeUnmount(dispose);
 
   return {
     email,
