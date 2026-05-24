@@ -2,9 +2,12 @@
 import { computed, onMounted, watch } from "vue";
 import type { PageChromeSpec } from "../../shell/page-model";
 import type { FeedItemId } from "../../types/feed";
+import type { AudienceVisibility } from "../../types/audience";
 import { InlineError } from "../../ui";
 import FeedList from "./FeedList.vue";
 import FeedLoadMore from "./FeedLoadMore.vue";
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- used in template
+import FeedFilterBar from "./FeedFilterBar.vue";
 import { useFeedData } from "./useFeedData";
 import { useDetailNavigation } from "../../app/detail-navigation";
 import { CHANNEL_RELOAD, FEED_FILTER_LABEL, FEED_VIEW_TITLE } from "../../config/brand";
@@ -48,11 +51,21 @@ function openItem(id: FeedItemId) {
   feedData.rememberReadItem(id);
   detail.open(Number(id), "card");
 }
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- used in template
+function handleVisibilityChange(visibilities: Set<AudienceVisibility>) {
+  feedData.setSelectedVisibilities(visibilities);
+}
 </script>
 
 <template>
   <section class="feed-view" aria-labelledby="feed-view-title">
     <h1 id="feed-view-title" class="feed-view__sr-title">{{ FEED_VIEW_TITLE }}</h1>
+
+    <FeedFilterBar
+      :selected-visibilities="feedData.selectedVisibilities.value"
+      @update:selected-visibilities="handleVisibilityChange"
+    />
 
     <InlineError v-if="feedData.errorMessage.value">
       {{ feedData.errorMessage.value }}

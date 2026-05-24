@@ -15,6 +15,7 @@ export { useToast } from "./feedback/useToast";
 export { default as TopBar } from "./TopBar.vue";
 export { default as TrustBadge } from "./TrustBadge.vue";
 export { default as TypeChip } from "./TypeChip.vue";
+export { default as VisibilityBadge } from "./VisibilityBadge.vue";
 export { default as PageSurface } from "./layout/PageSurface.vue";
 export { default as PageSection } from "./layout/PageSection.vue";
 export { default as ContentStack } from "./layout/ContentStack.vue";

@@ -16,6 +16,11 @@ export const REPLY_SECTION_TITLE = "回复";
 export const REPLY_COUNT_LABEL = "条";
 export const REPLY_EMPTY_PROMPT = "还没有回复，来写第一条。";
 
+/** 回复排序 */
+export const REPLY_SORT_LABEL = "回复排序";
+export const REPLY_SORT_NEWEST = "最新";
+export const REPLY_SORT_OLDEST = "最早";
+
 /** 详情弹层 UI */
 export const DETAIL_SHEET_LABEL = "详情弹层";
 export const DETAIL_SHEET_TITLE = "详情";
@@ -46,6 +51,12 @@ export const DETAIL_RELOAD = "重新加载";
 export const INFO_STRIP_LABEL = "帖子属性";
 export const REPORT_TOGGLE_OPEN = "举报";
 export const REPORT_TOGGLE_CLOSE = "收起";
+
+/** 可见范围标签 */
+export const INFO_STRIP_VISIBILITY_CAMPUS = "校区可见";
+export const INFO_STRIP_VISIBILITY_SCHOOL = "学校可见";
+export const INFO_STRIP_VISIBILITY_PRIVATE = "私密";
+export const INFO_STRIP_VISIBILITY_LINK_ONLY = "仅链接";
 
 /** 地点弹层统计 */
 export const DETAIL_PLACE_SHEET_LABEL = "地点信息";

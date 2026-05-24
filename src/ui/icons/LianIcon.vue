@@ -9,7 +9,7 @@ const props = withDefaults(
     strokeWidth?: number;
     title?: string;
   }>(),
-  { size: 24, strokeWidth: 0, title: undefined },
+  { size: 24, strokeWidth: 1.5, title: undefined },
 );
 
 const icon = computed(() => {
@@ -20,6 +20,11 @@ const icon = computed(() => {
   }
   return entry;
 });
+
+const isStroke = computed(() => {
+  const entry = icon.value as { stroke?: boolean } | undefined;
+  return entry?.stroke === true;
+});
 </script>
 
 <template>
@@ -28,7 +33,11 @@ const icon = computed(() => {
     :viewBox="icon.viewBox"
     :width="size"
     :height="size"
-    fill="currentColor"
+    :fill="isStroke ? 'none' : 'currentColor'"
+    :stroke="isStroke ? 'currentColor' : undefined"
+    :stroke-width="isStroke ? strokeWidth : undefined"
+    :stroke-linecap="isStroke ? 'round' : undefined"
+    :stroke-linejoin="isStroke ? 'round' : undefined"
     xmlns="http://www.w3.org/2000/svg"
     :role="title ? 'img' : undefined"
     :aria-hidden="title ? undefined : 'true'"

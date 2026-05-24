@@ -85,6 +85,7 @@ const templateMark = computed(
 );
 
 const bodyPreview = computed(() => props.item.bodyPreview || "");
+const visibility = computed(() => props.item.visibility || "public");
 
 function emitOpen(target: HTMLElement | null) {
   const bounds = target?.getBoundingClientRect();
@@ -132,6 +133,7 @@ const {
     :tid="props.item.tid"
     :liked="Boolean(props.item.liked)"
     :like-count="Math.max(0, Number(props.item.likeCount || 0))"
+    :visibility="visibility"
     @pointerdown="handlePointerDown"
     @pointermove="handlePointerMove"
     @pointerup="handlePointerUp"

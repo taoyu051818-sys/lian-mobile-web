@@ -2,6 +2,8 @@
 import { computed, ref, watch } from "vue";
 import { togglePostLike } from "../../api/posts";
 import { FEED_LIKE, FEED_UNLIKE } from "../../config/brand";
+import type { AudienceVisibility } from "../../types/audience";
+import { VisibilityBadge } from "../../ui";
 
 const props = defineProps<{
   tid: number;
@@ -11,6 +13,7 @@ const props = defineProps<{
   timeLabel: string;
   liked?: boolean;
   likeCount?: number;
+  visibility?: AudienceVisibility;
 }>();
 
 const emit = defineEmits<{
@@ -71,6 +74,12 @@ async function handleLike() {
       <span v-else class="feed-item-card__avatar-text" aria-hidden="true">{{ authorInitial }}</span>
       <span class="feed-item-card__author-name" :title="authorName">{{ authorName }}</span>
     </div>
+
+    <VisibilityBadge
+      :visibility="visibility"
+      :show-icon="true"
+      class="feed-item-card__visibility"
+    />
 
     <span class="feed-item-card__motion-time" aria-hidden="true">{{ timeLabel }}</span>
 
@@ -180,5 +189,19 @@ async function handleLike() {
 
 .feed-item-card__like:disabled {
   opacity: 0.64;
+}
+
+.feed-item-card__visibility {
+  display: inline-flex;
+  flex: 0 0 auto;
+  gap: 3px;
+  align-items: center;
+  padding: 2px 6px;
+  border-radius: var(--radius-chip);
+  background: rgba(31, 41, 51, 0.06);
+  color: var(--lian-muted);
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1.2;
 }
 </style>

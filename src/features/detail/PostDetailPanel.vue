@@ -339,6 +339,7 @@ watch(
             :errand-unavailable-reason-text="post?.errandUnavailableReasonText"
             :viewer-can-order-errand="viewerCanOrderErrand"
             :trade="post?.trade"
+            :visibility="post?.visibility"
             @gallery-pointer-down="handleGalleryPointerDown"
             @gallery-pointer-move="handleGalleryPointerMove"
             @open-gallery-image="openGalleryImage"

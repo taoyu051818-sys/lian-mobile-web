@@ -27,3 +27,6 @@ Thumbs.db
 
 # Generated artifacts (deterministic; regenerate locally with `npm run ownership-doc`)
 docs/architecture/auto/file-ownership.md
+.claude/worktrees/
+.worktrees/
+debug-screenshot.png

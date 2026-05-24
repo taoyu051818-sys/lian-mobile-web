@@ -1,3 +1,4 @@
+import type { AudienceVisibility } from "./audience";
 import type { ClubMetadata } from "./post";
 
 export type FeedItemId = number;
@@ -70,6 +71,8 @@ export interface FeedItem {
   cardTemplateSource?: FeedItemCardTemplateSource;
   /** Club metadata — present iff contentType === "club". */
   club?: ClubMetadata;
+  /** Audience visibility — defaults to "public" if absent. */
+  visibility?: AudienceVisibility;
 }
 
 export interface FeedResponse {
@@ -84,4 +87,5 @@ export interface FeedQuery {
   page: number;
   limit: number;
   read?: string;
+  visibility?: AudienceVisibility[];
 }

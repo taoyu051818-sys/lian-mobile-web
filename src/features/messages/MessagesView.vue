@@ -41,10 +41,12 @@ const { notificationItems, notificationLoading, notificationFetchState, loadNoti
 const {
   composerContent,
   composerIdentityTag,
+  composerVisibility,
   currentUser,
   identityTags,
   sending,
   sendError,
+  isGuest,
   composerActorName,
   composerAvatarText,
   composerSignalMeta,
@@ -172,10 +174,13 @@ onMounted(async () => {
       :identity-tags="identityTags"
       :content="composerContent"
       :identity-tag="composerIdentityTag"
+      :visibility="composerVisibility"
       :sending="sending"
       :send-error="sendError"
+      :is-guest="isGuest"
       @update:content="composerContent = $event"
       @update:identity-tag="composerIdentityTag = $event"
+      @update:visibility="composerVisibility = $event"
       @submit="submitMessage"
     />
   </section>

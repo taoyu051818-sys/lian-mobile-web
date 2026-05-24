@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import { InlineError } from "../../ui";
+import { InlineError, VisibilityBadge } from "../../ui";
 import {
   UNTITLED_CONTENT,
   CHANNEL_RELOAD,
@@ -62,6 +62,7 @@ const itemStates = computed(() =>
     statusLabel: itemStatusLabel(item),
     meta: itemMeta(item),
     canOpen: canOpen(item),
+    visibility: item.visibility,
   })),
 );
 </script>
@@ -104,6 +105,12 @@ const itemStates = computed(() =>
             <span v-if="itemStates[index]?.statusLabel" class="profile-collection__badge">
               {{ itemStates[index]?.statusLabel }}
             </span>
+            <VisibilityBadge
+              v-if="itemStates[index]?.visibility"
+              :visibility="itemStates[index]?.visibility"
+              :show-icon="true"
+              class="profile-collection__visibility"
+            />
           </div>
           <p>{{ itemStates[index]?.meta }}</p>
         </div>
@@ -230,6 +237,20 @@ const itemStates = computed(() =>
   color: var(--lian-primary-deep);
   font-size: 11px;
   font-weight: 900;
+  white-space: nowrap;
+}
+
+.profile-collection__visibility {
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+  min-height: 20px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: rgba(31, 41, 51, 0.06);
+  color: var(--lian-muted);
+  font-size: 11px;
+  font-weight: 700;
   white-space: nowrap;
 }
 

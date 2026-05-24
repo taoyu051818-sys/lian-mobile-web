@@ -102,9 +102,13 @@ test.describe("@ssr SSR meta tag rendering", () => {
       // Verify og:type for homepage
       expect(html).toContain(`<meta property="og:type" content="website">`);
 
+      // Verify og:url for homepage
+      expect(html).toContain(`<meta property="og:url" content="/">`);
+
       // Verify twitter card meta
       expect(html).toContain(`<meta name="twitter:card" content="summary_large_image">`);
       expect(html).toContain(`<meta name="twitter:title" content="${BRAND_TITLE}">`);
+      expect(html).toContain(`<meta name="twitter:description" content="${BRAND_DESCRIPTION}">`);
 
       await api.dispose();
     });

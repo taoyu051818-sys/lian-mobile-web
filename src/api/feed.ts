@@ -175,6 +175,7 @@ export async function fetchFeed(query: FeedQuery): Promise<FeedResponse> {
   params.set("page", String(Math.max(1, query.page || 1)));
   params.set("limit", String(Math.max(1, query.limit || 12)));
   if (query.read) params.set("read", query.read);
+  if (query.visibility?.length) params.set("visibility", query.visibility.join(","));
 
   const data = await apiGet<FeedResponse>(`/api/feed?${params.toString()}`);
 

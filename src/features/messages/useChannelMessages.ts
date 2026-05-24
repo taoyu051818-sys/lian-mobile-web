@@ -10,6 +10,7 @@ import { extractErrorMessage } from "../../utils/extractErrorMessage";
 import { ERROR_LOAD_CHANNEL, MESSAGE_EMPTY_CONTENT } from "../../config/brand";
 import type { ChannelMessage } from "../../types/messages";
 import type { ProfileUser } from "../../types/profile";
+import type { AudienceVisibility } from "../../types/audience";
 
 const SCROLL_BOTTOM_THRESHOLD = 120;
 const REPLACE_RETRY_LIMIT = 2;
@@ -150,6 +151,7 @@ export function useChannelMessages() {
     content: string,
     identityTag: string,
     currentUser: ProfileUser | null,
+    visibility: AudienceVisibility = "public",
   ) {
     const pending = buildPendingChannelMessage(content, identityTag || undefined, currentUser);
     channelItems.value = [...channelItems.value, pending];
@@ -160,6 +162,7 @@ export function useChannelMessages() {
         content,
         identityTag,
         clientNonce: pending.clientNonce,
+        visibility,
       });
       await replacePendingWithLatest(String(pending.id));
     } catch {

@@ -1,6 +1,7 @@
 import { computed, ref } from "vue";
 import { DEFAULT_TABS, fetchFeed } from "../../api/feed";
 import type { FeedItem, FeedTab } from "../../types/feed";
+import type { AudienceVisibility } from "../../types/audience";
 import { LOADING_FEED, EMPTY_FEED, ERROR_LOAD_GENERIC, FEED_EMPTY_HINT } from "../../config/brand";
 import { readHistoryQuery, rememberReadItem } from "../../platform/browser-storage";
 
@@ -15,6 +16,7 @@ export function useFeedData(options: { detailOpen: () => boolean; closeDetail: (
   const loading = ref(false);
   const loadingMore = ref(false);
   const errorMessage = ref("");
+  const selectedVisibilities = ref<Set<AudienceVisibility>>(new Set());
 
   const isEmpty = computed(() => !loading.value && !errorMessage.value && items.value.length === 0);
   const canAutoLoadMore = computed(
@@ -35,11 +37,15 @@ export function useFeedData(options: { detailOpen: () => boolean; closeDetail: (
     }
 
     try {
+      const visibilityArray =
+        selectedVisibilities.value.size > 0 ? Array.from(selectedVisibilities.value) : undefined;
+
       const response = await fetchFeed({
         tab: activeTab.value,
         page: reset ? 1 : page.value,
         limit: PAGE_SIZE,
         read: readHistoryQuery(),
+        visibility: visibilityArray,
       });
 
       tabs.value = response.tabs.length ? response.tabs : DEFAULT_TABS;
@@ -70,6 +76,11 @@ export function useFeedData(options: { detailOpen: () => boolean; closeDetail: (
     void loadFeed(false);
   }
 
+  function setSelectedVisibilities(visibilities: Set<AudienceVisibility>) {
+    selectedVisibilities.value = visibilities;
+    void loadFeed(true);
+  }
+
   return {
     tabs,
     activeTab,
@@ -81,9 +92,11 @@ export function useFeedData(options: { detailOpen: () => boolean; closeDetail: (
     errorMessage,
     isEmpty,
     canAutoLoadMore,
+    selectedVisibilities,
     loadFeed,
     switchTab,
     triggerLoadMore,
+    setSelectedVisibilities,
     rememberReadItem,
     LOADING_FEED,
     EMPTY_FEED,

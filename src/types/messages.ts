@@ -1,4 +1,5 @@
 import type { DisplayActor, SourceSignal } from "./feed";
+import type { AudienceVisibility } from "./audience";
 
 export type MessageTabKey = "channel" | "replies" | "system" | "orders";
 
@@ -11,6 +12,8 @@ export interface ChannelMessageActor extends DisplayActor {
 
 export interface ChannelMessage {
   id: string | number;
+  /** Audience visibility for this message */
+  visibility?: AudienceVisibility;
   /**
    * Client-generated nonce stamped on the optimistic item so we can match the
    * server echo back to it without depending on content equality. Backends
@@ -78,6 +81,7 @@ export interface SendChannelMessagePayload {
   content: string;
   identityTag?: string;
   clientNonce?: string;
+  visibility?: AudienceVisibility;
 }
 
 export interface ChannelReadPayload {

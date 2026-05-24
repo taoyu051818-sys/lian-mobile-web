@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { ref, toRef } from "vue";
-import { LocationChip, TagChip } from "../../ui";
+import { ref, toRef, computed } from "vue";
+import { LocationChip, TagChip, LianIcon } from "../../ui";
+import type { LianIconName } from "../../ui";
 import {
   PUBLISH_COMPOSER_LABEL,
   PUBLISH_TITLE_LABEL,
@@ -99,6 +100,11 @@ usePublishLlmTick({
   suggestedComponents,
   llmInferredKind,
 });
+
+// Visibility icon: eye for public, lock for restricted visibility
+const visibilityIcon = computed<LianIconName>(() =>
+  props.visibilityLabel === "公开" ? "eye" : "lock",
+);
 </script>
 
 <template>
@@ -171,6 +177,7 @@ usePublishLlmTick({
 
     <div class="publish-composer__toolbar" :aria-label="PUBLISH_SETTINGS_LABEL">
       <button type="button" class="publish-composer__tool" @click="openFilePicker">
+        <LianIcon name="photo" :size="18" aria-hidden="true" />
         <strong>{{ PUBLISH_IMAGE_TOOLBAR }}</strong>
         <span>{{ imageStatus }}</span>
       </button>
@@ -178,8 +185,10 @@ usePublishLlmTick({
         type="button"
         class="publish-composer__tool"
         :class="{ 'is-active': locationPanelOpen || !!selectedMapLocation || !!placeName.trim() }"
+        :aria-pressed="locationPanelOpen"
         @click="emit('toggleLocationPanel')"
       >
+        <LianIcon name="map-pin" :size="18" aria-hidden="true" />
         <strong>{{ PUBLISH_LOCATION_TOOLBAR }}</strong>
         <span>{{ locationToolLabel }}</span>
       </button>
@@ -187,8 +196,10 @@ usePublishLlmTick({
         type="button"
         class="publish-composer__tool"
         :class="{ 'is-active': tagPanelOpen || !!normalizedTag || !!normalizedIdentityTag }"
+        :aria-pressed="tagPanelOpen"
         @click="emit('toggleTagPanel')"
       >
+        <LianIcon name="tag" :size="18" aria-hidden="true" />
         <strong>{{ PUBLISH_TAG_TOOLBAR }}</strong>
         <span>{{ normalizedTag || normalizedIdentityTag || PUBLISH_OPTIONAL }}</span>
       </button>
@@ -196,8 +207,10 @@ usePublishLlmTick({
         type="button"
         class="publish-composer__tool"
         :class="{ 'is-active': visibilityPanelOpen }"
+        :aria-pressed="visibilityPanelOpen"
         @click="emit('toggleVisibilityPanel')"
       >
+        <LianIcon :name="visibilityIcon" :size="18" aria-hidden="true" />
         <strong>{{ PUBLISH_VISIBILITY }}</strong>
         <span>{{ visibilityLabel }}</span>
       </button>
