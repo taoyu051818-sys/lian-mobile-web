@@ -20,11 +20,44 @@
 }
 
 .shell-chrome__inner {
-  display: flex;
+  /* 3-column grid keeps leading (identity) / center (filters+slot) / trailing (buttons) balanced. */
+  display: grid;
+  grid-template-columns: minmax(0, auto) minmax(0, 1fr) minmax(0, auto);
   align-items: center;
   gap: var(--space-2);
-  width: min(100%, var(--floating-bar-max-width, 760px));
+  width: 100%;
+  min-height: var(--floating-bar-height);
+  padding: var(--floating-bar-padding);
   pointer-events: auto;
+}
+
+.shell-chrome__inner > * {
+  grid-row: 1;
+}
+
+.shell-chrome__inner > .shell-chrome__identity {
+  grid-column: 1;
+  justify-self: start;
+}
+
+.shell-chrome__inner > .shell-chrome__slot {
+  grid-column: 2;
+  justify-self: stretch;
+}
+
+/* Empty default slot (no caller content) must collapse so filters can claim col 2. */
+.shell-chrome__inner > .shell-chrome__slot:empty {
+  display: none;
+}
+
+.shell-chrome__inner > .shell-chrome__filters {
+  grid-column: 2;
+  justify-self: center;
+}
+
+.shell-chrome__inner > .shell-chrome__buttons {
+  grid-column: 3;
+  justify-self: end;
 }
 
 /* Dynamic island transitions for floating pill */
@@ -151,6 +184,9 @@
 /* Shell-owned tab nav container */
 .shell-chrome__tabs {
   display: flex;
+  /* Center tabs when they fit; fall back to start once they need to scroll. */
+  justify-content: safe center;
+  align-items: center;
   gap: var(--space-1);
   overflow-x: auto;
   padding: var(--floating-bar-padding);
