@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { computed } from "vue";
 import {
   PUBLISH_IMAGE_TOOLBAR,
   PUBLISH_IMAGE_PREVIEW_LABEL,
@@ -6,14 +7,23 @@ import {
   PUBLISH_IMAGE_REMOVE_LABEL,
 } from "../../config/brand";
 
-defineProps<{
+const props = defineProps<{
   localPreviewUrls: string[];
   imageStatus: string;
+  uploading?: boolean;
+  uploadedCount?: number;
 }>();
 
 const emit = defineEmits<{
   removeImage: [index: number];
 }>();
+
+// Progress percentage for the upload bar
+const uploadProgress = computed(() => {
+  if (!props.uploading || !props.localPreviewUrls.length) return 100;
+  const uploaded = props.uploadedCount ?? 0;
+  return Math.round((uploaded / props.localPreviewUrls.length) * 100);
+});
 </script>
 
 <template>

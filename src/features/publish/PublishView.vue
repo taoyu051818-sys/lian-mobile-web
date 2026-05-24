@@ -452,4 +452,41 @@ onMounted(() => {
  * shares that primitive with PublishTradeControls and the merchant /
  * trade in-form gates.
  */
+
+.publish-view__auth-gate {
+  display: grid;
+  gap: var(--space-3);
+  max-width: 420px;
+  margin: var(--space-6) auto 0;
+  padding: var(--space-4);
+  border: 1px solid var(--lian-line);
+  border-radius: var(--radius-card);
+  background: var(--lian-card-strong);
+  box-shadow: var(--shadow-card);
+}
+
+.publish-view__auth-gate strong {
+  font-size: 16px;
+  font-weight: 900;
+}
+
+.publish-view__auth-gate p {
+  margin: 0;
+  color: var(--lian-muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.publish-view__auth-gate-cta {
+  justify-self: start;
+  appearance: none;
+  border: 0;
+  border-radius: var(--radius-chip, 999px);
+  background: var(--lian-primary, #1fa7a0);
+  color: white;
+  font-weight: 800;
+  height: 40px;
+  padding: 0 var(--space-4);
+  cursor: pointer;
+}
 </style>
