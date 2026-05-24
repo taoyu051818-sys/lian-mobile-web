@@ -5,6 +5,9 @@ import { useActiveView } from "../../app/useActiveView";
 import { useDetailNavigation } from "../../app/detail-navigation";
 import { useVisualViewport } from "../../composables/useVisualViewport";
 import {
+  MESSAGE_AUTH_GATE_CTA,
+  MESSAGE_AUTH_GATE_HINT,
+  MESSAGE_AUTH_GATE_TITLE,
   MESSAGE_SECTION_LABEL,
   MESSAGE_TAB_CHANNEL,
   MESSAGE_TAB_LABEL,

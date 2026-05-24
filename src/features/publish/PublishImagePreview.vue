@@ -36,6 +36,19 @@ const uploadProgress = computed(() => {
       <strong>{{ PUBLISH_IMAGE_TOOLBAR }}</strong>
       <span>{{ imageStatus }}</span>
     </div>
+    <div
+      v-if="uploading"
+      class="publish-image-preview__progress"
+      role="progressbar"
+      :aria-valuenow="uploadProgress"
+      aria-valuemin="0"
+      aria-valuemax="100"
+    >
+      <div
+        class="publish-image-preview__progress-bar"
+        :style="{ width: `${uploadProgress}%` }"
+      ></div>
+    </div>
     <div class="publish-image-preview__grid">
       <div v-for="(url, index) in localPreviewUrls" :key="url" class="publish-image-preview__item">
         <img :src="url" :alt="PUBLISH_IMAGE_PREVIEW_ALT" loading="lazy" />
