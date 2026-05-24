@@ -145,7 +145,7 @@ describe("useMapPickerMode — confirm / cancel", () => {
   it("confirm with a known place writes a `place` handoff and steps history back", () => {
     const picker = useMapPickerMode();
     picker.selectLocation(makeLocation());
-    expect(picker.confirm()).toBe(true);
+    expect(picker.commitSelection()).toBe(true);
     expect(backCalls).toBe(1);
     const handoff = consumePendingPublishLocation();
     expect(handoff).toEqual({
@@ -161,7 +161,7 @@ describe("useMapPickerMode — confirm / cancel", () => {
   it("confirm with a free pin writes a `coords` handoff", () => {
     const picker = useMapPickerMode();
     picker.dropPin({ lat: 18.42, lng: 110.05 });
-    expect(picker.confirm()).toBe(true);
+    expect(picker.commitSelection()).toBe(true);
     expect(consumePendingPublishLocation()).toEqual({
       kind: "coords",
       lat: 18.42,
@@ -172,7 +172,7 @@ describe("useMapPickerMode — confirm / cancel", () => {
   it("confirm with a place that lacks a stable id falls back to coords + label", () => {
     const picker = useMapPickerMode();
     picker.selectLocation(makeLocation({ place: undefined, placeId: "" }));
-    picker.confirm();
+    picker.commitSelection();
     expect(consumePendingPublishLocation()).toEqual({
       kind: "coords",
       lat: 18.39,
@@ -183,7 +183,7 @@ describe("useMapPickerMode — confirm / cancel", () => {
 
   it("confirm without a selection does nothing", () => {
     const picker = useMapPickerMode();
-    expect(picker.confirm()).toBe(false);
+    expect(picker.commitSelection()).toBe(false);
     expect(backCalls).toBe(0);
     expect(consumePendingPublishLocation()).toBeNull();
   });
@@ -201,7 +201,7 @@ describe("useMapPickerMode — confirm / cancel", () => {
     fakeWindow.history.length = 1;
     const picker = useMapPickerMode();
     picker.dropPin({ lat: 1, lng: 2 });
-    picker.confirm();
+    picker.commitSelection();
     expect(backCalls).toBe(0);
     expect(fakeWindow.location.hash).toBe("#/publish");
   });

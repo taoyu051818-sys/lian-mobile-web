@@ -150,7 +150,7 @@ export function useMapPickerMode(options: UseMapPickerModeOptions = {}) {
    * history entry behind the picker (deep-linked directly), falls back to
    * `#/publish` so the user lands on the right view.
    */
-  function confirm(): boolean {
+  function commitSelection(): boolean {
     const payload = buildHandoff();
     if (!payload) return false;
     setPendingPublishLocation(payload);
@@ -196,7 +196,7 @@ export function useMapPickerMode(options: UseMapPickerModeOptions = {}) {
     dropPin,
     clearSelection,
     buildHandoff,
-    confirm,
+    commitSelection,
     cancel,
   };
 }

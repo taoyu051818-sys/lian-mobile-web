@@ -4,8 +4,8 @@
  * The publish form lives at `#/publish`, but the location-picker map lives at
  * `#/map?picker=1`. Both routes mount fresh component trees, so a regular
  * Vue ref/composable cannot bridge the two — by the time MapLeafletView's
- * picker overlay calls `confirm()`, PublishView has been unmounted, and by
- * the time PublishView re-mounts on `history.back()` the picker is gone.
+ * picker overlay commits the selection, PublishView has been unmounted, and
+ * by the time PublishView re-mounts on `history.back()` the picker is gone.
  *
  * sessionStorage is the simplest envelope that survives the route change
  * without bloating the hash. The key is single-tenant ("there is at most one

@@ -130,7 +130,7 @@ onActivated(() => {
         v-if="picker.isPickerMode.value"
         :selection="picker.selection.value"
         data-testid="map-picker-overlay"
-        @confirm="picker.confirm"
+        @confirm="picker.commitSelection"
         @cancel="picker.cancel"
       />
     </section>
