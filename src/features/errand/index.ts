@@ -1,5 +1,6 @@
 export { default as ErrandOrderView } from "./ErrandOrderView.vue";
 export { default as ErrandOrderGate } from "./ErrandOrderGate.vue";
+export { default as ErrandOrderMeta } from "./ErrandOrderMeta.vue";
 export { default as ErrandOrderTimelineView } from "./ErrandOrderTimelineView.vue";
 export { default as ProfileErrandOrdersBlock } from "./ProfileErrandOrdersBlock.vue";
 export { useErrandOrderDraft } from "./useErrandOrderDraft";
