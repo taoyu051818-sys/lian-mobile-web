@@ -416,7 +416,9 @@ test.describe("@i18n-locale Key page translation completeness - English", () => 
       // When English locale is set, Chinese UI strings should NOT be present
       const hasPrimaryChineseUI =
         pageContent.includes("我的") &&
-        (pageContent.includes("浏览") || pageContent.includes("收藏") || pageContent.includes("赞过"));
+        (pageContent.includes("浏览") ||
+          pageContent.includes("收藏") ||
+          pageContent.includes("赞过"));
 
       expect(hasPrimaryChineseUI).toBe(false);
 
@@ -497,7 +499,9 @@ test.describe("@i18n-locale No untranslated keys visible", () => {
       await page.waitForTimeout(1000);
 
       pageContent = await page.content();
-      expect(pageContent).not.toMatch(/\b(publishView|publishComposer|publishActionUi)\.[a-zA-Z]+\b/);
+      expect(pageContent).not.toMatch(
+        /\b(publishView|publishComposer|publishActionUi)\.[a-zA-Z]+\b/,
+      );
     } finally {
       await context.close();
     }
@@ -531,7 +535,9 @@ test.describe("@i18n-locale No untranslated keys visible", () => {
       await page.waitForTimeout(1000);
 
       pageContent = await page.content();
-      expect(pageContent).not.toMatch(/\b(publishView|publishComposer|publishActionUi)\.[a-zA-Z]+\b/);
+      expect(pageContent).not.toMatch(
+        /\b(publishView|publishComposer|publishActionUi)\.[a-zA-Z]+\b/,
+      );
     } finally {
       await context.close();
     }
