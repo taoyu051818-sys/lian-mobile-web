@@ -118,6 +118,26 @@ const TOGGLE_BUTTON_WHITELIST: Array<{
     description: "shared button pressed-state binding",
     marker: /@click="handleClick"/,
   },
+  {
+    file: "src/features/feed/FeedFilterBar.vue",
+    description: "feed visibility filter toggle",
+    marker: /@click="toggleVisibility\(chip\.value\)"/,
+  },
+  {
+    file: "src/features/messages/ChannelComposer.vue",
+    description: "channel composer visibility toggle",
+    marker: /@click="selectVisibility\(opt\.value\)"/,
+  },
+  {
+    file: "src/features/messages/ChannelFilterBar.vue",
+    description: "channel filter toggle",
+    marker: /@click="toggleVisibility\(chip\.value\)"/,
+  },
+  {
+    file: "src/features/publish/PublishComposer.vue",
+    description: "publish composer toolbar toggle",
+    marker: /@click="emit\('toggleLocationPanel'\)"/,
+  },
 ];
 
 /**
