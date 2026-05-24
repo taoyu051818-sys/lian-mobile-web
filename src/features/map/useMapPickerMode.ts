@@ -21,10 +21,7 @@
 
 import { computed, onBeforeUnmount, ref } from "vue";
 import { parseDeepLinkQuery } from "../../app/deepLink";
-import {
-  setPendingPublishLocation,
-  type PublishLocationHandoff,
-} from "../publish/usePublishLocationHandoff";
+import { setPendingPublishLocation, type PublishLocationHandoff } from "../publish";
 import type { MapLocation, MapPoint } from "../../types/map";
 
 export interface MapPickerSelection {
