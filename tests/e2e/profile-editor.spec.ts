@@ -6,7 +6,6 @@
  * contains:
  *   - ProfileAvatarEditor: avatar upload with crop/scale controls
  *   - ProfileAliasSelector: identity/alias switching radio buttons
- *   - ProfileInviteCodePanel: invite code generation (permission-gated)
  *
  * These tests verify the editor panel renders correctly and that the avatar
  * editor file input and alias selector radio buttons are functional.
@@ -155,46 +154,6 @@ test.describe.serial("@profile-editor ProfileEditorPanel E2E tests", () => {
       await expect(aliasSection.locator(".profile-editor__alias").first()).toContainText(
         "真实身份",
       );
-    } finally {
-      await context.close();
-    }
-  });
-
-  test("@profile-editor invite code section renders", async ({ browser }) => {
-    test.skip(
-      !isRoleConfigured("registered"),
-      "registered role not configured — set LIAN_E2E_REGISTERED_USERNAME / LIAN_E2E_REGISTERED_PASSWORD",
-    );
-    expect(api, "registered login must have produced an API context").not.toBeNull();
-
-    const context = await browser.newContext({ storageState: await api!.storageState() });
-    const page = await context.newPage();
-    try {
-      await page.goto(`${BASE_URL}/#/profile`);
-      await expect(page.locator(".profile-header")).toBeVisible({ timeout: 10000 });
-
-      // Open the editor panel
-      await page.locator(".shell-chrome .lian-button", { hasText: "编辑资料" }).click();
-      const editorPanel = page.locator(".profile-editor");
-      await expect(editorPanel).toBeVisible();
-
-      // Invite code section should be present with title "邀请码"
-      const inviteSection = editorPanel.locator('section[aria-labelledby="profile-invite-title"]');
-      await expect(inviteSection).toBeVisible();
-      await expect(inviteSection.locator("#profile-invite-title")).toContainText("邀请码");
-
-      // Generate button should exist (may be disabled based on permission)
-      const generateButton = inviteSection.locator("button", { hasText: "生成邀请码" });
-      await expect(generateButton).toBeVisible();
-
-      // Hint text should be present
-      await expect(inviteSection).toContainText("邀请码用于非高校邮箱注册场景");
-
-      // Permission status indicator should show (either "可生成" or "暂无权限")
-      const statusText = await inviteSection
-        .locator(".profile-editor__block-title span")
-        .textContent();
-      expect(["可生成", "暂无权限"]).toContain(statusText?.trim());
     } finally {
       await context.close();
     }

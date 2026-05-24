@@ -2,7 +2,7 @@ import {
   VALIDATION_PASSWORD_MIN,
   VALIDATION_LOGIN_REQUIRED,
   VALIDATION_USERNAME_REQUIRED,
-  VALIDATION_EMAIL_OR_INVITE,
+  VALIDATION_EMAIL_REQUIRED,
   VALIDATION_EMAIL_CODE_REQUIRED,
   VALIDATION_INTEREST_REQUIRED,
   VALIDATION_TITLE_REQUIRED,
@@ -28,7 +28,6 @@ export interface AuthValidationFields {
   email: string;
   emailCode: string;
   password: string;
-  inviteCode: string;
   selectedInterests: string[];
   interestSelectionRequired?: boolean;
 }
@@ -61,10 +60,10 @@ export function validateAuthForm(fields: AuthValidationFields): string {
     return "";
   }
   if (!fields.username.trim()) return VALIDATION_USERNAME_REQUIRED;
-  if (!fields.email.trim() && !fields.inviteCode.trim()) {
-    return VALIDATION_EMAIL_OR_INVITE;
+  if (!fields.email.trim()) {
+    return VALIDATION_EMAIL_REQUIRED;
   }
-  if (fields.email.trim() && !fields.emailCode.trim()) {
+  if (!fields.emailCode.trim()) {
     return VALIDATION_EMAIL_CODE_REQUIRED;
   }
   if (fields.interestSelectionRequired && !fields.selectedInterests.length) {

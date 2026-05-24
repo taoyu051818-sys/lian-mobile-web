@@ -177,10 +177,6 @@ export async function deactivateProfileAlias(): Promise<void> {
   await apiSend("/api/auth/aliases/deactivate", { method: "POST" });
 }
 
-export async function createInviteCode(): Promise<{ code?: string }> {
-  return apiSend<{ code?: string }>("/api/auth/invites", { method: "POST" });
-}
-
 export async function logoutAuth(): Promise<void> {
   await apiSend("/api/auth/logout", { method: "POST" });
 }

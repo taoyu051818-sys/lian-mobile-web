@@ -15,7 +15,6 @@ function loginFields(overrides: Partial<AuthFormFields> = {}): AuthFormFields {
     email: "",
     emailCode: "",
     password: "securepass",
-    inviteCode: "",
     selectedInterests: [],
     interestSelectionRequired: false,
     ...overrides,
@@ -30,7 +29,6 @@ function registerFields(overrides: Partial<AuthFormFields> = {}): AuthFormFields
     email: "xm@edu.cn",
     emailCode: "123456",
     password: "securepass",
-    inviteCode: "",
     selectedInterests: ["art"],
     interestSelectionRequired: false,
     ...overrides,
@@ -71,18 +69,12 @@ describe("validateAuthForm", () => {
       expect(validateAuthForm(registerFields({ username: "   " }))).toContain("昵称");
     });
 
-    it("rejects when both email and inviteCode are empty", () => {
-      expect(validateAuthForm(registerFields({ email: "", inviteCode: "" }))).toContain("高校邮箱");
+    it("rejects when email is empty", () => {
+      expect(validateAuthForm(registerFields({ email: "" }))).toContain("高校邮箱");
     });
 
     it("rejects email without emailCode", () => {
       expect(validateAuthForm(registerFields({ emailCode: "" }))).toContain("验证码");
-    });
-
-    it("accepts inviteCode without email", () => {
-      expect(
-        validateAuthForm(registerFields({ email: "", emailCode: "", inviteCode: "INV123" })),
-      ).toBe("");
     });
 
     it("accepts empty selectedInterests when onboarding can skip preferences", () => {
@@ -99,12 +91,6 @@ describe("validateAuthForm", () => {
 
     it("returns empty string for valid register with email", () => {
       expect(validateAuthForm(registerFields())).toBe("");
-    });
-
-    it("returns empty string for valid register with inviteCode", () => {
-      expect(
-        validateAuthForm(registerFields({ email: "", emailCode: "", inviteCode: "INV" })),
-      ).toBe("");
     });
   });
 });

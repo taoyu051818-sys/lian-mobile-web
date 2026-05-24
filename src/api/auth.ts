@@ -13,7 +13,6 @@ export interface RegisterPayload {
   email?: string;
   emailCode?: string;
   password: string;
-  inviteCode?: string;
   interests?: string[];
 }
 

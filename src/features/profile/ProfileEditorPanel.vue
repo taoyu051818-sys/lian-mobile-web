@@ -13,7 +13,6 @@ import {
 import type { ProfileUser } from "../../types/profile";
 import ProfileAliasSelector from "./ProfileAliasSelector.vue";
 import ProfileAvatarEditor from "./ProfileAvatarEditor.vue";
-import ProfileInviteCodePanel from "./ProfileInviteCodePanel.vue";
 
 const props = defineProps<{
   user: ProfileUser;
@@ -60,14 +59,6 @@ function handleAliasSwitched() {
 function handleAliasError(message: string) {
   showError(message);
 }
-
-function handleInviteSuccess(message: string) {
-  showSuccess(message);
-}
-
-function handleInviteError(message: string) {
-  showError(message);
-}
 </script>
 
 <template>
@@ -96,12 +87,6 @@ function handleInviteError(message: string) {
       :display-name="displayName"
       @switched="handleAliasSwitched"
       @error="handleAliasError"
-    />
-
-    <ProfileInviteCodePanel
-      :user="user"
-      @success="handleInviteSuccess"
-      @error="handleInviteError"
     />
   </section>
 </template>

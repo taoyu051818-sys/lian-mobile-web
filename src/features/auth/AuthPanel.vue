@@ -8,9 +8,6 @@ import {
   AUTH_PASSWORD_LABEL,
   AUTH_PASSWORD_PLACEHOLDER,
   AUTH_PASSWORD_HINT,
-  AUTH_INVITE_CODE,
-  AUTH_INVITE_CODE_PLACEHOLDER,
-  AUTH_INVITE_CODE_HINT,
 } from "../../config/brand";
 import { useAuthForm } from "./useAuthForm";
 import { useAuthLinkRedeem } from "./useAuthLinkRedeem";
@@ -35,7 +32,6 @@ const {
   email,
   emailCode,
   password,
-  inviteCode,
   interestOptions,
   interestStatus,
   selectedInterests,
@@ -53,7 +49,6 @@ const {
   emailHasError,
   emailCodeHasError,
   passwordHasError,
-  inviteCodeHasError,
   hasInterestChoices,
   showInterestSkip,
   interestHint,
@@ -72,7 +67,6 @@ const usernameHintId = "auth-username-hint";
 const emailHintId = "auth-email-hint";
 const emailCodeHintId = "auth-email-code-hint";
 const passwordHintId = "auth-password-hint";
-const inviteCodeHintId = "auth-invite-code-hint";
 </script>
 
 <template>
@@ -150,24 +144,6 @@ const inviteCodeHintId = "auth-invite-code-hint";
         <small :id="passwordHintId" class="auth-panel__hint">{{
           AUTH_PASSWORD_HINT.replace("{n}", String(AUTH_PASSWORD_MIN_LENGTH))
         }}</small>
-      </label>
-
-      <label v-if="mode === 'register'">
-        <span>{{ AUTH_INVITE_CODE }}</span>
-        <input
-          v-model="inviteCode"
-          autocomplete="off"
-          autocapitalize="none"
-          autocorrect="off"
-          spellcheck="false"
-          enterkeyhint="done"
-          :aria-invalid="inviteCodeHasError"
-          :aria-describedby="
-            [inviteCodeHintId, inviteCodeHasError ? formErrorId : null].filter(Boolean).join(' ')
-          "
-          :placeholder="AUTH_INVITE_CODE_PLACEHOLDER"
-        />
-        <small :id="inviteCodeHintId" class="auth-panel__hint">{{ AUTH_INVITE_CODE_HINT }}</small>
       </label>
 
       <AuthSubmitState
