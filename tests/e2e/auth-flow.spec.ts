@@ -69,10 +69,6 @@ test.describe("@auth-flow Auth UI flow", () => {
     const submitButton = authPanel.locator('button[type="submit"]');
     await expect(submitButton).toContainText("注册并登录");
 
-    // Invite code field should be visible in register mode
-    const inviteCodeInput = authPanel.locator('input[enterkeyhint="done"]');
-    await expect(inviteCodeInput).toBeVisible();
-
     // Switch back to login mode
     await loginTab.click();
     await expect(loginTab).toHaveClass(/is-active/);
@@ -188,15 +184,10 @@ test.describe("@auth-flow Auth UI flow", () => {
     // Email field
     const emailInput = authPanel.locator('input[type="email"]');
     await expect(emailInput).toBeVisible();
-    await expect(emailInput).toHaveAttribute("placeholder", "邀请码注册可不填");
 
     // Password field
     const passwordInput = authPanel.locator('input[type="password"]');
     await expect(passwordInput).toBeVisible();
-
-    // Invite code field (use input selector to avoid matching multiple labels)
-    const inviteCodeInput = authPanel.locator('input[enterkeyhint="done"]');
-    await expect(inviteCodeInput).toBeVisible();
 
     // Submit button
     const submitButton = authPanel.locator('button[type="submit"]');

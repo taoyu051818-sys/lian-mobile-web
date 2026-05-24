@@ -28,7 +28,6 @@ export function useAuthForm(onAuthenticated: (user: ProfileUser | null) => void)
   const email = ref("");
   const emailCode = ref("");
   const password = ref("");
-  const inviteCode = ref("");
 
   const interests = useAuthInterests(mode);
 
@@ -40,7 +39,6 @@ export function useAuthForm(onAuthenticated: (user: ProfileUser | null) => void)
     email,
     emailCode,
     password,
-    inviteCode,
     interests.selectedInterests,
     interests.interestsRequired,
     interests.interestOptions,
@@ -71,7 +69,6 @@ export function useAuthForm(onAuthenticated: (user: ProfileUser | null) => void)
     email,
     emailCode,
     password,
-    inviteCode,
     interestOptions: interests.interestOptions,
     interestStatus: interests.interestStatus,
     interestsRequired: interests.interestsRequired,
@@ -92,7 +89,6 @@ export function useAuthForm(onAuthenticated: (user: ProfileUser | null) => void)
     emailHasError: submit.emailHasError,
     emailCodeHasError: submit.emailCodeHasError,
     passwordHasError: submit.passwordHasError,
-    inviteCodeHasError: submit.inviteCodeHasError,
     hasInterestChoices: interests.hasInterestChoices,
     showInterestSkip: interests.showInterestSkip,
     interestHint: interests.interestHint,

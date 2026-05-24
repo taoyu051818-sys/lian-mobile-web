@@ -65,7 +65,7 @@ export default {
     passwordMin: "パスワードは{n}文字以上で入力してください。",
     loginRequired: "メールアドレスまたはニックネームを入力してください。",
     usernameRequired: "ニックネームを入力してください。",
-    emailOrInvite: "大学メールアドレスまたは招待コードを入力してください。",
+    emailRequired: "大学メールアドレスを入力してください。",
     emailCodeRequired: "メール登録には認証コードが必要です。",
     interestRequired: "フィードを最適化するため、興味を1つ以上選んでください。",
     titleRequired: "タイトルを入力してください。",
@@ -81,8 +81,7 @@ export default {
     send: "送信",
     login: "ログイン",
     registerAndLogin: "登録してログイン",
-    emailHint:
-      "認証コードを大学メールに送信します。招待コードで登録する場合は空欄のままで構いません。",
+    emailHint: "認証コードを大学メールに送信します。",
     loginPlaceholder: "メールアドレスまたはニックネームでログイン",
     interestSkipHint:
       "興味はフィードの最適化に使われます。スキップして後で設定することもできます。",
@@ -171,9 +170,8 @@ export default {
     nicknamePlaceholder: "表示名を入力",
     nicknameHint: "最初の公開アイデンティティとして使用されます。",
     emailLabel: "大学メールアドレス",
-    emailPlaceholder: "招待コード使用時は省略可",
-    emailHintFull:
-      "メール登録には{n}桁の認証コードが必要です。招待コード登録の場合は空欄で構いません。",
+    emailPlaceholder: "キャンパス身分の確認に使用",
+    emailHintFull: "メール登録には{n}桁の認証コードが必要です。",
     emailCodeLabel: "メール認証コード",
     interestSection: "興味の設定",
     interestReload: "興味の選択肢を再読み込み",
@@ -181,9 +179,6 @@ export default {
     passwordLabel: "パスワード",
     passwordPlaceholder: "{n}文字以上",
     passwordHint: "{n}文字以上。パスワードマネージャーの自動入力に対応しています。",
-    inviteCode: "招待コード",
-    inviteCodePlaceholder: "大学メールがない場合に使用",
-    inviteCodeHint: "大学メールがない場合は招待コードで登録できます。",
     processing: "処理中…",
   },
   place: {

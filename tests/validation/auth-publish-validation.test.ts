@@ -18,7 +18,6 @@ function createAuthFields(overrides: Partial<AuthValidationFields> = {}): AuthVa
     email: "student@example.edu",
     emailCode: "123456",
     password: "12345678",
-    inviteCode: "",
     selectedInterests: [],
     interestSelectionRequired: false,
     ...overrides,
@@ -57,7 +56,6 @@ describe("auth and publish validation helpers", () => {
           username: "   ",
           email: "",
           emailCode: "",
-          inviteCode: "",
         }),
       ),
     ).toBe("请填写昵称。");
@@ -68,10 +66,9 @@ describe("auth and publish validation helpers", () => {
           mode: "register",
           email: "",
           emailCode: "",
-          inviteCode: "",
         }),
       ),
-    ).toBe("请填写高校邮箱，或填写邀请码。");
+    ).toBe("请填写高校邮箱。");
 
     expect(
       validateAuthForm(

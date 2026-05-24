@@ -28,7 +28,6 @@ export function useAuthSubmit(
   email: Ref<string>,
   emailCode: Ref<string>,
   password: Ref<string>,
-  inviteCode: Ref<string>,
   selectedInterests: Ref<string[]>,
   interestsRequired: Ref<boolean>,
   interestOptions: Ref<AuthInterestOption[]>,
@@ -43,7 +42,7 @@ export function useAuthSubmit(
   const note = computed(() =>
     mode.value === "login" ? AUTH_LOGIN_PLACEHOLDER : AUTH_INTEREST_SKIP_HINT,
   );
-  const passwordEnterKeyHint = computed(() => (mode.value === "login" ? "go" : "next"));
+  const passwordEnterKeyHint = computed(() => (mode.value === "login" ? "go" : "done"));
   const loginHasError = computed(
     () => mode.value === "login" && errorMessage.value.includes("邮箱或昵称"),
   );
@@ -57,9 +56,6 @@ export function useAuthSubmit(
     () => mode.value === "register" && errorMessage.value.includes("验证码"),
   );
   const passwordHasError = computed(() => errorMessage.value.includes("密码至少"));
-  const inviteCodeHasError = computed(
-    () => mode.value === "register" && errorMessage.value.includes("邀请码"),
-  );
 
   function switchMode(nextMode: AuthMode) {
     mode.value = nextMode;
@@ -75,7 +71,6 @@ export function useAuthSubmit(
       email: email.value,
       emailCode: emailCode.value,
       password: password.value,
-      inviteCode: inviteCode.value,
       selectedInterests: selectedInterests.value,
       interestSelectionRequired: interestsRequired.value && interestOptions.value.length > 0,
     });
@@ -97,7 +92,6 @@ export function useAuthSubmit(
               email: email.value.trim() || undefined,
               emailCode: emailCode.value.trim() || undefined,
               password: password.value,
-              inviteCode: inviteCode.value.trim() || undefined,
               interests: selectedInterests.value.length ? selectedInterests.value : undefined,
             });
       successMessage.value = AUTH_LOGGED_IN_REFRESH;
@@ -121,7 +115,6 @@ export function useAuthSubmit(
     emailHasError,
     emailCodeHasError,
     passwordHasError,
-    inviteCodeHasError,
     switchMode,
     submitAuth,
   };

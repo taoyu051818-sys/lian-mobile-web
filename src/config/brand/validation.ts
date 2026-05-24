@@ -2,7 +2,7 @@
 export const VALIDATION_PASSWORD_MIN = "密码至少需要 {n} 位。";
 export const VALIDATION_LOGIN_REQUIRED = "请填写邮箱或昵称。";
 export const VALIDATION_USERNAME_REQUIRED = "请填写昵称。";
-export const VALIDATION_EMAIL_OR_INVITE = "请填写高校邮箱，或填写邀请码。";
+export const VALIDATION_EMAIL_REQUIRED = "请填写高校邮箱。";
 export const VALIDATION_EMAIL_CODE_REQUIRED = "高校邮箱注册需要填写验证码。";
 export const VALIDATION_INTEREST_REQUIRED = "至少选择一个兴趣，用来初始化推荐流。";
 export const VALIDATION_TITLE_REQUIRED = "请填写标题。";

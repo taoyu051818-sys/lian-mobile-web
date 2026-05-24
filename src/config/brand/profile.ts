@@ -63,13 +63,6 @@ export const PROFILE_AVATAR_SAVE = "保存头像";
 export const PROFILE_AVATAR_ERROR = "头像没有更新成功，可以稍后再试。";
 export const PROFILE_CANCEL = "取消";
 
-/** 邀请码 */
-export const PROFILE_INVITE_TITLE = "邀请码";
-export const PROFILE_INVITE_GENERATE = "生成邀请码";
-export const PROFILE_INVITE_HINT = "邀请码用于非高校邮箱注册场景。";
-export const PROFILE_INVITE_AVAILABLE = "可生成";
-export const PROFILE_INVITE_UNAVAILABLE = "暂无权限";
-
 /** 资料编辑 */
 export const PROFILE_EDITOR_TITLE = "编辑资料";
 export const PROFILE_EDITOR_CHIP = "资料管理";
@@ -95,9 +88,6 @@ export const PROFILE_REWARDS_LOAD_ERROR = "钱包数据加载失败，可以稍�
 /** 个人资料操作反馈 */
 export const PROFILE_AVATAR_UPDATED = "头像已更新。";
 export const PROFILE_IDENTITY_SWITCHED = "发布身份已切换。";
-export const PROFILE_INVITE_GENERATED = "邀请码已生成。";
-export const PROFILE_INVITE_SUBMITTED = "邀请码请求已提交。";
-export const PROFILE_INVITE_ERROR = "邀请码没有生成成功，可以稍后再试。";
 export const PROFILE_IDENTITY_SWITCH_ERROR = "发布身份没有切换成功，可以稍后再试。";
 export const PROFILE_AVATAR_CROP_UNSUPPORTED = "浏览器暂时不能裁剪头像，请换一个浏览器再试。";
 export const PROFILE_AVATAR_CROP_ERROR = "头像裁剪失败，请换一张图片再试。";
