@@ -50,7 +50,7 @@ export default defineConfig({
               cacheName: "api-cache",
               networkTimeoutSeconds: 5,
               expiration: {
-                maxEntries: 100,
+                maxEntries: 50,
                 maxAgeSeconds: 5 * 60, // 5 minutes
               },
               cacheableResponse: {
