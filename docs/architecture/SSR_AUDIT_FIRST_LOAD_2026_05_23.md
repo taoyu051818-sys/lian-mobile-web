@@ -1,8 +1,35 @@
 # SSR Audit: First-Load, Share-Detail, and Offline Contracts (2026-05-23)
 
-Status: audit artifact (documents current state; does not propose changes)
-Scope: `lian-mobile-web` runtime contracts for first-load, share-detail, and offline behavior
+Status: **historical pre-PWA snapshot (2026-05-23)** — preserved as-is for context. Findings labelled "current" below describe runtime as of 2026-05-23 and are no longer current truth for offline/PWA behavior. See [§0 Current state and supersession](#0-current-state-and-supersession) before relying on any specific finding.
+Scope: `lian-mobile-web` runtime contracts for first-load, share-detail, and offline behavior, **as of 2026-05-23**
 Related: `SSR_PWA_RFC_2026_05_23.md`, `SSR_COMPOSABLE_AUDIT_2026_05_23.md`
+
+---
+
+## 0. Current state and supersession
+
+This document was written as a pre-implementation audit. After it landed, the PWA foundation it identified as missing was implemented and verified:
+
+- **PWA foundation shipped** in `#916` ("feat(pwa): add PWA foundation with vite-plugin-pwa"): `vite-plugin-pwa` + Workbox precache, service worker registration in `src/entry-client.ts`, `public/offline.html`, PWA icons, runtime caching (NetworkFirst for `/api/`, CacheFirst for images, fonts), and `pwa-update-available` event.
+- **Browser-level proof shipped** in `#920` ("test(e2e): add PWA basics E2E tests"): 13 E2E test cases covering `manifest.json`, `offline.html`, service worker registration, and PWA meta tags.
+
+What this means for readers of this document:
+
+- Section 6 ("Offline / No-Network Fallback Behavior") is **superseded** for current runtime. The "no service worker" / "no offline shell" findings describe the pre-PWA baseline and must not be cited as current state.
+- Section 4 ("First-Load Rendering Path") still describes the SPA cold-start sequence accurately, but a registered service worker now sits in front of network fetches in production builds — the precache and runtime-cache layers in `vite.config.ts` are the source of truth for that behavior.
+- Section 9 ("Recommended Next Implementation Slice") proposed "PWA Phase 2.1: Service Worker + Offline Shell". That slice has **shipped** via `#916`/`#920`. Treat the section as a historical record of the proposal, not as outstanding work.
+
+For current PWA/offline behavior, read in this order:
+
+1. `vite.config.ts` (`VitePWA` plugin block) — precache globs, runtime cache strategies, navigation fallback.
+2. `src/entry-client.ts` (`registerSW` block) — service-worker registration and update-prompt event.
+3. `public/manifest.json` — installable PWA manifest with icons.
+4. `public/offline.html` — offline fallback page.
+5. `docs/architecture/SSR_PWA_RFC_2026_05_23.md` — design intent the shipped implementation followed.
+
+The remainder of this document is preserved unchanged below as a historical artifact. Inline notes have been added to sections whose findings are superseded so that readers landing mid-document do not mistake the pre-PWA state for current truth.
+
+---
 
 ## 1. Purpose
 
@@ -154,6 +181,8 @@ Real browsers hitting these paths receive HTML with a redirect script that hands
 7. FeedView fetches /api/feed, renders cards
 ```
 
+> **Pre-PWA snapshot.** The cold-start sequence below is still structurally accurate, but in current builds a registered Workbox service worker (`#916`) sits in front of step 2: precached app-shell assets serve from cache, `/api/*` uses NetworkFirst with a 5s timeout, and a failed navigation falls back to `/offline.html`. See [§0](#0-current-state-and-supersession).
+
 ### 4.2 Cold Start with SSR (current phase 1)
 
 ```
@@ -235,7 +264,9 @@ SSR does NOT re-derive these fields — ps is the source of truth.
 
 ## 6. Offline / No-Network Fallback Behavior
 
-### 6.1 Current State: No Offline Support
+> **Superseded by `#916` and `#920`.** This section describes the pre-PWA baseline as of 2026-05-23. It is retained as historical context for the gap that motivated the PWA work, not as current runtime truth. For current behavior, read `vite.config.ts` (VitePWA block), `src/entry-client.ts` (`registerSW`), `public/manifest.json`, and `public/offline.html`. See [§0](#0-current-state-and-supersession).
+
+### 6.1 Current State (pre-PWA, 2026-05-23): No Offline Support
 
 **There is no service worker.** The codebase has:
 
@@ -249,7 +280,7 @@ But no:
 - Network-first/cache-first logic
 - Offline fallback page
 
-### 6.2 Current Failure Behavior
+### 6.2 Failure Behavior (pre-PWA)
 
 | Scenario                         | Behavior                                                       |
 | -------------------------------- | -------------------------------------------------------------- |
@@ -334,6 +365,8 @@ Docs are not covered by repo checks (no markdown linting configured).
 ---
 
 ## 9. Recommended Next Implementation Slice
+
+> **Shipped via `#916` and `#920`.** The proposal below is preserved as the historical record of what this audit recommended. It is no longer outstanding work — items 1, 2, 3, 4, and 5 all landed. See [§0](#0-current-state-and-supersession) for the current source of truth.
 
 Based on this audit, the smallest credible next slice is:
 
