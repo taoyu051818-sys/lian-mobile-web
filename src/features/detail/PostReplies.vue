@@ -65,10 +65,10 @@ function sanitizeReplyHtml(value: string) {
       <span>{{ replies?.length ? `${replies.length} ${REPLY_COUNT_LABEL}` : EMPTY_REPLIES }}</span>
     </div>
 
-    <nav
+    <div
       v-if="replies?.length"
       class="post-replies__sort-bar"
-      role="tablist"
+      role="radiogroup"
       :aria-label="REPLY_SORT_LABEL"
       data-testid="reply-sort-bar"
     >
@@ -76,17 +76,17 @@ function sanitizeReplyHtml(value: string) {
         v-for="chip in sortChips"
         :key="chip.value"
         type="button"
-        role="tab"
+        role="radio"
         class="post-replies__sort-chip"
         :class="{ 'is-active': sortOrder === chip.value }"
-        :aria-selected="sortOrder === chip.value"
+        :aria-checked="sortOrder === chip.value"
         :data-sort-value="chip.value"
         data-testid="reply-sort-chip"
         @click="selectSort(chip.value)"
       >
         {{ chip.label }}
       </button>
-    </nav>
+    </div>
 
     <article v-for="reply in sortedReplies" :key="String(reply.id)" class="post-replies__item">
       <div class="post-replies__meta">

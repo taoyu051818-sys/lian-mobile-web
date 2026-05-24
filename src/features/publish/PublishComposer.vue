@@ -221,6 +221,8 @@ const visibilityIcon = computed<LianIconName>(() =>
         accept="image/*"
         multiple
         class="publish-composer__hidden-input"
+        aria-hidden="true"
+        tabindex="-1"
         @change="emit('handleFiles', $event)"
       />
     </div>
@@ -230,7 +232,7 @@ const visibilityIcon = computed<LianIconName>(() =>
     :local-preview-urls="localPreviewUrls"
     :image-status="imageStatus"
     :uploading="uploading"
-    :uploaded-count="localPreviewUrls.length - (uploading ? (localPreviewUrls.length - selectedFilesCount + uploadedCount) : 0)"
+    :uploaded-count="uploadedImageCount"
     @remove-image="emit('removeImage', $event)"
   />
 </template>
