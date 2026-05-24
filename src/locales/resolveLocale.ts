@@ -15,9 +15,9 @@
  * Pure module — no side effects, safe to import in SSR/test.
  */
 
-export type AppLocale = "zh-CN" | "zh-TW" | "en" | "ja" | "ko" | "ru";
+export type AppLocale = "zh-CN" | "zh-TW" | "en" | "ja" | "ko" | "ru" | "vi" | "id";
 
-export const SUPPORTED_LOCALES: readonly AppLocale[] = ["zh-CN", "zh-TW", "en", "ja", "ko", "ru"];
+export const SUPPORTED_LOCALES: readonly AppLocale[] = ["zh-CN", "zh-TW", "en", "ja", "ko", "ru", "vi", "id"];
 export const DEFAULT_LOCALE: AppLocale = "en";
 export const LOCALE_STORAGE_KEY = "lian.language";
 

@@ -5,6 +5,8 @@ import en from "./en";
 import ja from "./ja";
 import ko from "./ko";
 import ru from "./ru";
+import vi from "./vi";
+import id from "./id";
 import { detectAppLocale, persistAppLocale, type AppLocale } from "./resolveLocale";
 
 const initialLocale = detectAppLocale();
@@ -20,6 +22,8 @@ export const i18n = createI18n({
     ja,
     ko,
     ru,
+    vi,
+    id,
   },
 });
 
