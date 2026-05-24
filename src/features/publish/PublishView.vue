@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from "vue";
+import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import type { PageChromeSpec } from "../../shell/page-model";
 import {
   PUBLISH_AUTH_GATE_CTA,
   PUBLISH_AUTH_GATE_HINT,
   PUBLISH_AUTH_GATE_TITLE,
+  PUBLISH_LOCATION_GEOLOC_HINT,
   PUBLISH_SECTION_LABEL,
   PUBLISH_VIEW_POST,
   PUBLISH_CLEAR_CONFIRM,
@@ -12,6 +13,7 @@ import {
   PUBLISH_AI_PENDING,
   PUBLISH_AI_RISK_LABEL,
 } from "../../config/brand";
+import { buildMapPickerHash } from "../../app/deepLink";
 import { GlassPanel } from "../../ui";
 import PublishActionBar from "./PublishActionBar.vue";
 import PublishComposer from "./PublishComposer.vue";
@@ -23,6 +25,12 @@ import PublishTradeControls from "./PublishTradeControls.vue";
 import PublishMessage from "./PublishMessage.vue";
 import { usePublishDraft } from "./usePublishDraft";
 import { usePublishLocationOptions } from "./usePublishLocationOptions";
+import {
+  consumePendingPublishLocation,
+  setPendingPublishLocation,
+  type PublishLocationHandoff,
+} from "./usePublishLocationHandoff";
+import { useGeolocation } from "./useGeolocation";
 import { clearPublishDraft } from "./publishDraftSession";
 import { usePublishDraftSession } from "./usePublishDraftSession";
 import PublishResetConfirm from "./PublishResetConfirm.vue";
@@ -41,6 +49,73 @@ const eventDraft = useEventPublishDraft();
 const locationOptions = usePublishLocationOptions(draft.placeName);
 const resetConfirmationVisible = ref(false);
 const { setActiveView } = useActiveView();
+
+// mw#943 — geolocation + map-picker handoff. Both write through the same
+// sessionStorage key (`usePublishLocationHandoff`) so the consume path on
+// mount is uniform. Geolocation drives a coordinate-only payload; the map
+// picker can write either a known place or a free coordinate.
+const geolocation = useGeolocation();
+const geolocationHint = ref("");
+
+function applyHandoff(payload: PublishLocationHandoff) {
+  if (payload.kind === "place") {
+    // Try to rebind to a known MapLocation if the catalog is loaded so the
+    // selected-state visuals (chip + place type label) match the existing
+    // search-list selection path. When the catalog isn't loaded yet, fall
+    // back to setting the place name directly — the user still sees their
+    // pick reflected, and a later re-pick from the panel can rebind.
+    const known = locationOptions.mapLocations.value.find((entry) => {
+      const placeId = entry.place?.id || entry.placeId || "";
+      return placeId && placeId === payload.placeId;
+    });
+    if (known) {
+      locationOptions.selectMapLocation(known);
+      return;
+    }
+    draft.placeName.value = payload.name;
+    locationOptions.locationPanelOpen.value = true;
+    geolocationHint.value = "";
+    return;
+  }
+  // Free coordinate — no place ID. Use the user-provided label when present,
+  // otherwise leave the place name empty so the user can fill it in. The
+  // hint copy nudges them to add a label.
+  draft.placeName.value = payload.label || draft.placeName.value;
+  locationOptions.clearMapLocation();
+  locationOptions.locationPanelOpen.value = true;
+  geolocationHint.value = PUBLISH_LOCATION_GEOLOC_HINT;
+}
+
+function consumeHandoff() {
+  const pending = consumePendingPublishLocation();
+  if (pending) applyHandoff(pending);
+}
+
+function pickOnMap() {
+  // The map picker reads `consumePendingPublishLocation` on its overlay
+  // confirm, but the publish form has nothing to write yet — the picker is
+  // the writer. We just navigate to the map view in picker mode.
+  if (typeof window !== "undefined") {
+    window.location.hash = buildMapPickerHash();
+  }
+}
+
+async function useCurrentLocation() {
+  geolocation.clearError();
+  const coords = await geolocation.fetchCurrentLocation();
+  if (!coords) return;
+  // Route through the handoff key so both pathways converge on the same
+  // consume logic. The publish form is already mounted, so we consume
+  // immediately rather than waiting for a remount.
+  setPendingPublishLocation({ kind: "coords", lat: coords.lat, lng: coords.lng });
+  consumeHandoff();
+}
+
+// pageshow fires on initial nav AND on bfcache restore (browser back from
+// the picker). onMounted only catches the first case, so we bind both.
+function handlePageShow() {
+  consumeHandoff();
+}
 
 // Auth gate: detect guest state after identity loads
 const isGuest = computed(() => draft.identityLoaded.value && !draft.userId.value);
@@ -206,6 +281,20 @@ onMounted(() => {
   if (!draft.merchant.verificationLoaded.value) {
     void draft.merchant.refreshVerification();
   }
+  // mw#943 — pick up any pending location handoff written by the map picker
+  // or the geolocation button (e.g. on the previous mount of this view).
+  // pageshow covers bfcache restores; consume runs on both to keep the two
+  // pathways idempotent.
+  consumeHandoff();
+  if (typeof window !== "undefined") {
+    window.addEventListener("pageshow", handlePageShow);
+  }
+});
+
+onUnmounted(() => {
+  if (typeof window !== "undefined") {
+    window.removeEventListener("pageshow", handlePageShow);
+  }
 });
 </script>
 
@@ -356,11 +445,15 @@ onMounted(() => {
           :known-place-label="locationOptions.knownPlaceLabel.value"
           :location-preview-label="locationOptions.locationPreviewLabel.value"
           :location-binding-meta="locationOptions.locationBindingMeta.value"
+          :geolocation-fetching="geolocation.isFetching.value"
+          :geolocation-error="geolocation.error.value || geolocationHint"
           @update:location-search="locationOptions.locationSearch.value = $event"
           @update:place-name="draft.placeName.value = $event"
           @select-map-location="locationOptions.selectMapLocation"
           @clear-map-location="locationOptions.clearMapLocation"
           @load-map-locations="locationOptions.loadMapLocations"
+          @pick-on-map="pickOnMap"
+          @use-current-location="useCurrentLocation"
         />
 
         <PublishMetaControls

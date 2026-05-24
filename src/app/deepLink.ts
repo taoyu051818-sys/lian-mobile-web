@@ -57,3 +57,49 @@ export function buildPostDetailHash(tid: number): string {
 export function buildViewHash(view: AppViewKey): string {
   return `#/${view}`;
 }
+
+/**
+ * Parse the query-string tail of a hash (`#/view?key=value&...`) into a flat
+ * record. Returns an empty object when the hash has no `?` segment, when the
+ * value is null/empty, or when parsing fails — callers can read keys with
+ * `result.key === "1"` without null-guarding.
+ *
+ * Kept alongside `parseDeepLink` rather than embedded in it because the view
+ * matcher discards the query tail by design (the view selection has never
+ * depended on query). The picker-mode flag for the publish→map flow is the
+ * first concrete consumer; future feature flags can read the same surface.
+ */
+export function parseDeepLinkQuery(hash: string | null | undefined): Record<string, string> {
+  if (!hash) return {};
+  const trimmed = hash.trim();
+  const queryStart = trimmed.indexOf("?");
+  if (queryStart < 0) return {};
+  const queryTail = trimmed.slice(queryStart + 1);
+  // Strip a trailing fragment (`#section`) — unusual inside a hash, but the
+  // URLSearchParams parser would treat it as part of the last value otherwise.
+  const fragmentIndex = queryTail.indexOf("#");
+  const queryString = fragmentIndex >= 0 ? queryTail.slice(0, fragmentIndex) : queryTail;
+  if (!queryString) return {};
+  const result: Record<string, string> = {};
+  try {
+    const params = new URLSearchParams(queryString);
+    params.forEach((value, key) => {
+      // First occurrence wins. Duplicate keys (`?a=1&a=2`) are not part of any
+      // contract this app exposes, so deterministic "first writer" matches
+      // most parser conventions and keeps the surface predictable.
+      if (!(key in result)) result[key] = value;
+    });
+  } catch {
+    /* swallow — malformed query yields an empty record, matching null/empty */
+  }
+  return result;
+}
+
+/**
+ * Build the `#/map?picker=1` hash that the publish form pushes when the user
+ * taps "在地图上选". Sits alongside `buildViewHash` so callers go through one
+ * canonical builder per shape (no inline string concat at call sites).
+ */
+export function buildMapPickerHash(): string {
+  return "#/map?picker=1";
+}
