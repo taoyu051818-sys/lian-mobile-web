@@ -8,7 +8,7 @@ import { MESSAGE_SECTION_LABEL } from "../../config/brand";
 import type { AudienceVisibility } from "../../types/audience";
 import type { MessageTabKey, NotificationItem } from "../../types/messages";
 import type { PageChromeSpec } from "../../shell/page-model";
-import { useShellChrome } from "../../shell/useShellChrome";
+import { usePageChromeSlot } from "../../shell/usePageChromeSlot";
 import { useFloatingChromeState } from "../../shell/floatingChromeState";
 import { ChannelComposer, ChannelFilterBar, ChannelThread, NotificationList } from "./";
 import type { FilterState } from "./ChannelFilterBar.vue";
@@ -116,18 +116,11 @@ const pageChrome = computed<PageChromeSpec>(() => ({
 watch(pageChrome, (spec) => emit("chrome", spec), { deep: true });
 
 const { shellVisible } = useFloatingChromeState();
-const chrome = useShellChrome();
 
-// When detail closes, the FSM clears the slot back to null. Re-stake our
-// claim so the channel filter bar re-mounts in the top region.
-watch(
-  () => detail.detailOpen.value,
-  (open, wasOpen) => {
-    if (wasOpen && !open) {
-      chrome.setSlot("top", "channel-filter");
-    }
-  },
-);
+// Stake/release the top slot via the shared composable so the slot is freed
+// when MessagesView unmounts on a tab switch (otherwise other views inherit
+// `slot === "channel-filter"` and ShellChrome suppresses their regular chrome).
+usePageChromeSlot("channel-filter");
 
 /** Handle filter state changes.
  *
@@ -180,12 +173,6 @@ const filterBarMounted = computed(() => !detail.detailOpen.value && shellVisible
 
 onMounted(async () => {
   emit("chrome", pageChrome.value);
-  // Set the slot eagerly so the teleport target carries the floating-chrome
-  // surface on first paint (applyPageChrome only writes `slot` when the
-  // emitted spec includes it; the initial emit may race the mount watcher).
-  if (!detail.detailOpen.value) {
-    chrome.setSlot("top", "channel-filter");
-  }
   await loadCurrentUser();
   await loadChannel(true);
 });
