@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from "vue";
+import { computed } from "vue";
 import {
   FEED_FILTER_BAR_LABEL,
   FEED_FILTER_VISIBILITY_ALL,
@@ -8,20 +8,39 @@ import {
   FEED_FILTER_VISIBILITY_SCHOOL,
   FEED_FILTER_VISIBILITY_PRIVATE,
   FEED_FILTER_VISIBILITY_LINK_ONLY,
-  FEED_FILTER_EXPAND,
-  FEED_FILTER_COLLAPSE,
+  FEED_FILTER_SHOW_TABS,
+  FEED_FILTER_SHOW_VISIBILITY,
+  FEED_FILTER_TABS_GROUP_LABEL,
 } from "../../config/brand";
 import type { AudienceVisibility } from "../../types/audience";
+import type { FeedTab } from "../../types/feed";
+
+/**
+ * Filter bar state (option C dual-state):
+ * - "visibility" (State A): visibility chips + [...] toggle button
+ * - "tabs" (State B): feed tab chips + [x] toggle button
+ *
+ * Mirrors ChannelFilterBar's visibility ↔ category pattern so the two
+ * top-region filter bars share a consistent interaction language.
+ */
+export type FeedFilterState = "visibility" | "tabs";
 
 const props = defineProps<{
+  /** Current dual-state mode (visibility vs tabs). */
+  filterState: FeedFilterState;
+  /** Multi-select visibility filters (empty set === "all"). */
   selectedVisibilities: Set<AudienceVisibility>;
+  /** Feed tabs (e.g. 此刻 / 精选). Single-select like the legacy chrome tabs. */
+  tabs: readonly FeedTab[];
+  /** Active feed tab id. */
+  activeTabId: string;
 }>();
 
 const emit = defineEmits<{
+  "update:filterState": [value: FeedFilterState];
   "update:selectedVisibilities": [value: Set<AudienceVisibility>];
+  "update:activeTabId": [value: string];
 }>();
-
-const expanded = ref(false);
 
 interface VisibilityChip {
   value: AudienceVisibility | "all";
@@ -41,22 +60,12 @@ function isAllSelected(): boolean {
   return props.selectedVisibilities.size === 0;
 }
 
-function isSelected(value: AudienceVisibility | "all"): boolean {
+function isVisibilitySelected(value: AudienceVisibility | "all"): boolean {
   if (value === "all") return isAllSelected();
   return props.selectedVisibilities.has(value);
 }
 
-/** Summary label for collapsed state */
-const collapsedLabel = computed(() => {
-  if (isAllSelected()) return FEED_FILTER_VISIBILITY_ALL;
-  const selected = visibilityChips
-    .filter(
-      (chip) =>
-        chip.value !== "all" && props.selectedVisibilities.has(chip.value as AudienceVisibility),
-    )
-    .map((chip) => chip.label);
-  return selected.length ? selected.join("、") : FEED_FILTER_VISIBILITY_ALL;
-});
+const isTabsState = computed(() => props.filterState === "tabs");
 
 function toggleVisibility(value: AudienceVisibility | "all") {
   if (value === "all") {
@@ -73,37 +82,22 @@ function toggleVisibility(value: AudienceVisibility | "all") {
   emit("update:selectedVisibilities", next);
 }
 
-function toggleExpanded() {
-  expanded.value = !expanded.value;
+function selectTab(tabId: string) {
+  emit("update:activeTabId", tabId);
+}
+
+function toggleState() {
+  emit("update:filterState", isTabsState.value ? "visibility" : "tabs");
 }
 </script>
 
 <template>
   <div class="feed-filter-bar" :aria-label="FEED_FILTER_BAR_LABEL" data-testid="feed-filter-bar">
     <div class="feed-filter-bar__chips-container">
-      <!-- Collapsed state: show summary chip -->
+      <!-- State A: Visibility chips -->
       <Transition name="filter-slide-left">
-        <div
-          v-if="!expanded"
-          class="feed-filter-bar__collapsed"
-          data-testid="feed-filter-collapsed"
-        >
-          <button
-            type="button"
-            class="feed-filter-bar__chip is-active"
-            :aria-label="collapsedLabel"
-            data-testid="feed-filter-summary"
-            @click="toggleExpanded"
-          >
-            {{ collapsedLabel }}
-          </button>
-        </div>
-      </Transition>
-
-      <!-- Expanded state: show all visibility chips -->
-      <Transition name="filter-slide-right">
         <nav
-          v-if="expanded"
+          v-if="filterState === 'visibility'"
           class="feed-filter-bar__chips"
           role="group"
           :aria-label="FEED_FILTER_BAR_LABEL"
@@ -114,8 +108,8 @@ function toggleExpanded() {
             :key="chip.value"
             type="button"
             class="feed-filter-bar__chip"
-            :class="{ 'is-active': isSelected(chip.value) }"
-            :aria-pressed="isSelected(chip.value)"
+            :class="{ 'is-active': isVisibilitySelected(chip.value) }"
+            :aria-pressed="isVisibilitySelected(chip.value)"
             :data-filter-value="chip.value"
             data-testid="feed-filter-chip"
             @click="toggleVisibility(chip.value)"
@@ -124,16 +118,42 @@ function toggleExpanded() {
           </button>
         </nav>
       </Transition>
+
+      <!-- State B: Feed tab chips -->
+      <Transition name="filter-slide-right">
+        <nav
+          v-if="filterState === 'tabs'"
+          class="feed-filter-bar__chips"
+          role="tablist"
+          :aria-label="FEED_FILTER_TABS_GROUP_LABEL"
+          data-testid="feed-filter-tabs"
+        >
+          <button
+            v-for="tab in tabs"
+            :key="tab.id"
+            type="button"
+            role="tab"
+            class="feed-filter-bar__chip feed-filter-bar__chip--tab"
+            :class="{ 'is-active': activeTabId === tab.id }"
+            :aria-selected="activeTabId === tab.id"
+            :data-tab-value="tab.id"
+            :data-testid="`feed-filter-tab-${tab.id}`"
+            @click="selectTab(tab.id)"
+          >
+            {{ tab.label }}
+          </button>
+        </nav>
+      </Transition>
     </div>
 
-    <!-- Toggle button: [...] or [x] -->
+    <!-- Toggle button: [...] (show tabs) or [x] (back to visibility) -->
     <button
       type="button"
       class="feed-filter-bar__toggle"
-      :class="{ 'is-close': expanded }"
-      :aria-label="expanded ? FEED_FILTER_COLLAPSE : FEED_FILTER_EXPAND"
+      :class="{ 'is-close': isTabsState }"
+      :aria-label="isTabsState ? FEED_FILTER_SHOW_VISIBILITY : FEED_FILTER_SHOW_TABS"
       data-testid="feed-filter-toggle"
-      @click="toggleExpanded"
+      @click="toggleState"
     >
       <svg
         class="feed-filter-bar__toggle-icon"
@@ -143,7 +163,7 @@ function toggleExpanded() {
         fill="none"
         aria-hidden="true"
       >
-        <template v-if="!expanded">
+        <template v-if="!isTabsState">
           <!-- Ellipsis dots -->
           <circle cx="3" cy="8" r="1.5" fill="currentColor" />
           <circle cx="8" cy="8" r="1.5" fill="currentColor" />
@@ -168,19 +188,16 @@ function toggleExpanded() {
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  padding: var(--space-1) 0;
+  width: 100%;
+  min-height: var(--floating-bar-height);
+  padding: var(--floating-bar-padding);
 }
 
 .feed-filter-bar__chips-container {
   position: relative;
   flex: 1;
-  min-height: 32px;
+  min-height: var(--floating-bar-button-height);
   overflow: hidden;
-}
-
-.feed-filter-bar__collapsed {
-  display: flex;
-  align-items: center;
 }
 
 .feed-filter-bar__chips {
@@ -222,6 +239,14 @@ function toggleExpanded() {
 .feed-filter-bar__chip.is-active {
   background: var(--lian-primary, #1fa7a0);
   border-color: var(--lian-primary, #1fa7a0);
+  color: #fff;
+}
+
+/* Tab chip when active uses the deeper ink fill from the legacy
+   shell-chrome__tab styling so the dual-state read remains "tab-like". */
+.feed-filter-bar__chip--tab.is-active {
+  background: var(--lian-ink);
+  border-color: var(--lian-ink);
   color: #fff;
 }
 
@@ -270,9 +295,11 @@ function toggleExpanded() {
 
 /* ============================================
    Slide transitions (Apple-style spring)
+   Mirrors ChannelFilterBar so both dual-state
+   bars share the same interaction language.
    ============================================ */
 
-/* Collapsed -> Expanded: collapsed slides left + fades out */
+/* State A -> State B: visibility slides left + fades out */
 .filter-slide-left-enter-active,
 .filter-slide-left-leave-active {
   transition:
@@ -290,7 +317,7 @@ function toggleExpanded() {
   opacity: 0;
 }
 
-/* Expanded -> Collapsed: chips slide right + fade out */
+/* State B -> State A: tabs slide right + fade out */
 .filter-slide-right-enter-active,
 .filter-slide-right-leave-active {
   transition:
@@ -310,5 +337,19 @@ function toggleExpanded() {
 .filter-slide-right-leave-to {
   transform: translateX(100%);
   opacity: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .feed-filter-bar__chip,
+  .feed-filter-bar__toggle,
+  .feed-filter-bar__toggle-icon {
+    transition: none;
+  }
+  .filter-slide-left-enter-active,
+  .filter-slide-left-leave-active,
+  .filter-slide-right-enter-active,
+  .filter-slide-right-leave-active {
+    transition: none;
+  }
 }
 </style>

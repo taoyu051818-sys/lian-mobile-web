@@ -59,6 +59,15 @@ export const FEED_FILTER_VISIBILITY_PRIVATE = "私密";
 export const FEED_FILTER_VISIBILITY_LINK_ONLY = "仅链接";
 export const FEED_FILTER_EXPAND = "展开筛选";
 export const FEED_FILTER_COLLAPSE = "收起筛选";
+/**
+ * Dual-state filter bar (option C) — toggle between visibility chips and
+ * feed tabs. The two aria-labels below name the toggle button states; the
+ * existing FEED_FILTER_EXPAND / FEED_FILTER_COLLAPSE are kept for the
+ * legacy single-state collapse-summary mode if a host opts in.
+ */
+export const FEED_FILTER_SHOW_TABS = "展开分类";
+export const FEED_FILTER_SHOW_VISIBILITY = "显示可见范围";
+export const FEED_FILTER_TABS_GROUP_LABEL = "信息分类";
 
 /** 手势操作 UI */
 export const GESTURE_PULL_TO_REFRESH = "下拉刷新";
