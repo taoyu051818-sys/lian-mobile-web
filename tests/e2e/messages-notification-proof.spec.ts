@@ -1,26 +1,22 @@
 import { expect, test, type Page } from "@playwright/test";
 
-/**
- * Open a top-region shell tab by its visible label.
- *
- * The Messages chrome is rendered by `ShellChrome.vue` from the typed
- * `PageChromeSpec.top.tabs` set up by `MessagesView.vue`. After PR #722 the
- * inbox split into four tabs — `频道 / 回复 / 系统 / 订单` — so the legacy
- * `getByRole("tab").nth(1)` was both wrong (the buttons don't have
- * `role="tab"`, so it matched zero elements and clicked-into-the-void until
- * the 60s test timeout) and brittle (only ever resolved replies, never the
- * system or orders sub-tab where verification + order notifications live).
- *
- * We anchor on the structural class (`.shell-chrome__tab`) plus exact-text
- * matching against the brand strings in `src/config/brand/messages.ts`. The
- * source-side ARIA improvement landed in this PR (role="tab" + aria-selected
- * + per-id testids) gives future specs a cleaner anchor once it deploys, but
- * this selector keeps working before and after that rollout.
- */
+// PR #945 moved the inbox tabs into ChannelFilterBar State-B chips (teleported).
+const LABEL_TO_CATEGORY_KEY: Record<string, string> = {
+  频道: "channel",
+  回复: "replies",
+  系统: "system",
+  订单: "orders",
+};
+
 async function openMessagesTab(page: Page, label: string) {
-  const tab = page.locator(".shell-chrome__tab", { hasText: new RegExp(`^\\s*${label}\\s*$`) });
-  await expect(tab).toBeVisible();
-  await tab.click();
+  const key = LABEL_TO_CATEGORY_KEY[label] ?? label;
+  const chip = page.locator(`[data-filter-value="${key}"]`);
+  if ((await chip.count()) === 0) {
+    await page.locator('[data-testid="filter-state-toggle"]').click();
+  }
+  await expect(chip).toBeVisible();
+  // force: skip stability check during the 300ms slide-in transition
+  await chip.click({ force: true });
 }
 
 // Synthetic notification → detail target. Earlier revisions of this spec
@@ -46,7 +42,21 @@ test.describe("messages notification routing proof @anonymous @messages", () => 
       await route.fulfill({ json: { items: [], hasMore: false, nextOffset: 0 } });
     });
     await page.route("**/api/auth/me", async (route) => {
-      await route.fulfill({ json: { user: null } });
+      // Logged-in fixture: PR #945's ChannelFilterBar hides the State-A/B
+      // toggle for guests, so a guest fixture can no longer reach the
+      // replies/system/orders chips through the UI. The notification routing
+      // under test is independent of auth state.
+      await route.fulfill({
+        json: {
+          user: {
+            id: "u1",
+            username: "tester",
+            displayName: "测试同学",
+            identityTags: [],
+            aliases: [],
+          },
+        },
+      });
     });
     // Some shell-level prefetches trigger a feed request even on the messages
     // view; stub it so the spec stays self-contained instead of inheriting

@@ -35,10 +35,23 @@ const FORBIDDEN_ENGINEERING_STRINGS = [
   "当前收件箱来源",
 ];
 
+// PR #945 moved the inbox tabs into ChannelFilterBar State-B chips (teleported).
+const LABEL_TO_CATEGORY_KEY: Record<string, string> = {
+  频道: "channel",
+  回复: "replies",
+  系统: "system",
+  订单: "orders",
+};
+
 async function openMessagesTab(page: Page, label: string) {
-  const tab = page.locator(".shell-chrome__tab", { hasText: new RegExp(`^\\s*${label}\\s*$`) });
-  await expect(tab).toBeVisible();
-  await tab.click();
+  const key = LABEL_TO_CATEGORY_KEY[label] ?? label;
+  const chip = page.locator(`[data-filter-value="${key}"]`);
+  if ((await chip.count()) === 0) {
+    await page.locator('[data-testid="filter-state-toggle"]').click();
+  }
+  await expect(chip).toBeVisible();
+  // force: skip stability check during the 300ms slide-in transition
+  await chip.click({ force: true });
 }
 
 async function stubChannelEmpty(page: Page) {
@@ -94,15 +107,15 @@ test.describe("messages product inbox @anonymous @messages", () => {
 
     await page.goto("/#/messages");
 
-    // The shell chrome (top tabs + bottom nav) must be present on every tab.
-    const topTabs = page.locator(".shell-chrome__tab");
-    await expect(topTabs).toHaveCount(4);
+    // The chrome (filter bar + bottom nav) must be present on every tab.
+    const filterBar = page.locator('[data-testid="channel-filter-bar"]');
+    await expect(filterBar).toBeVisible();
     const bottomBar = page.locator(".bottom-tab-bar");
     await expect(bottomBar).toBeVisible();
 
     for (const label of ["频道", "回复", "系统", "订单"]) {
       await openMessagesTab(page, label);
-      await expect(topTabs).toHaveCount(4);
+      await expect(filterBar).toBeVisible();
       await expect(bottomBar).toBeVisible();
       // Active tab still resolves to messages — the chrome must not drift.
       await expect(page.locator('.bottom-tab-bar__item[aria-current="page"]')).toContainText(
@@ -173,8 +186,21 @@ test.describe("messages product inbox @anonymous @messages", () => {
   test("401 login-expired: distinct auth surface routes to login", async ({ page }) => {
     await stubChannelEmpty(page);
     await stubFeedEmpty(page);
+    // Logged-in fixture: simulates session-expired (auth/me succeeds, then
+    // /api/messages 401s). Guests would have the filter-bar toggle hidden, so
+    // a guest fixture can no longer reach a non-channel tab through the UI.
     await page.route("**/api/auth/me", async (route) => {
-      await route.fulfill({ json: { user: null } });
+      await route.fulfill({
+        json: {
+          user: {
+            id: "u1",
+            username: "tester",
+            displayName: "测试同学",
+            identityTags: [],
+            aliases: [],
+          },
+        },
+      });
     });
     await page.route("**/api/messages", async (route) => {
       await route.fulfill({

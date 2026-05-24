@@ -30,14 +30,26 @@ import { loginAs, skipIfRoleMissing } from "./fixtures/accounts";
 
 const BASE_URL = process.env.APP_BASE_URL ?? "https://lian.nat100.top";
 
+// PR #945 moved the inbox tabs into ChannelFilterBar State-B chips (teleported).
+const LABEL_TO_CATEGORY_KEY: Record<string, string> = {
+  频道: "channel",
+  回复: "replies",
+  系统: "system",
+  订单: "orders",
+};
+
 /**
- * Open a top-region shell tab by its visible label.
+ * Open a top-region category chip by its visible label.
  * Mirrors the pattern from messages-notification-proof.spec.ts.
  */
 async function openMessagesTab(page: Page, label: string) {
-  const tab = page.locator(".shell-chrome__tab", { hasText: new RegExp(`^\\s*${label}\\s*$`) });
-  await expect(tab).toBeVisible();
-  await tab.click();
+  const key = LABEL_TO_CATEGORY_KEY[label] ?? label;
+  const chip = page.locator(`[data-filter-value="${key}"]`);
+  if ((await chip.count()) === 0) {
+    await page.locator('[data-testid="filter-state-toggle"]').click();
+  }
+  await expect(chip).toBeVisible();
+  await chip.click();
 }
 
 /**
