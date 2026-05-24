@@ -1,6 +1,8 @@
 import { createApp } from "./app";
+import { installDisableGestureZoom } from "./composables/useDisableGestureZoom";
 import { registerSW } from "virtual:pwa-register";
 
+installDisableGestureZoom();
 const { app } = createApp();
 app.mount("#vue-root");
 
