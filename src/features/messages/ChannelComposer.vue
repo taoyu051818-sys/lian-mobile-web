@@ -191,9 +191,13 @@ function handleKeydown(event: KeyboardEvent) {
           {{ charCountText }}
         </span>
       </label>
-      <LianButton type="submit" :loading="sending" :disabled="!canSubmit" data-testid="channel-send-button">{{
-        COMPOSER_SEND
-      }}</LianButton>
+      <LianButton
+        type="submit"
+        :loading="sending"
+        :disabled="!canSubmit"
+        data-testid="channel-send-button"
+        >{{ COMPOSER_SEND }}</LianButton
+      >
     </div>
     <InlineError v-if="sendError">{{ sendError }}</InlineError>
   </form>
