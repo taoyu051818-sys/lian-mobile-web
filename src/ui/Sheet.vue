@@ -1,9 +1,33 @@
 <script setup lang="ts">
+/**
+ * Sheet - Modal bottom sheet overlay component.
+ *
+ * A teleported modal dialog that slides up from the bottom of the viewport.
+ * Implements proper focus management, scroll locking, and keyboard navigation.
+ * Uses Apple Music-style motion easing for enter/leave transitions.
+ *
+ * @component
+ * @example
+ * ```vue
+ * <Sheet :open="isOpen" title="Settings" @close="isOpen = false">
+ *   <p>Sheet content here</p>
+ * </Sheet>
+ * ```
+ *
+ * @fires close - Emitted when the sheet should close (backdrop click, escape key, or close button)
+ *
+ * @slot default - Main content of the sheet panel
+ * @slot actions - Custom header actions (replaces default close button when provided)
+ */
 import { computed, watch, useTemplateRef, nextTick } from "vue";
 import { useBodyScrollLock } from "../composables/useBodyScrollLock";
 import { useEscapeListener } from "../composables/useEscapeListener";
 import { useFocusRestore } from "../composables/useFocusRestore";
 
+/**
+ * @property {string} [title=''] - Optional title displayed in the sheet header
+ * @property {boolean} [open=true] - Controls sheet visibility
+ */
 const props = withDefaults(
   defineProps<{
     title?: string;
@@ -71,7 +95,13 @@ watch(isOpen, (open) => {
         :aria-label="title || '弹层'"
         @focusin="handleFocusIn"
       >
-        <div class="lian-sheet__backdrop" @click="emit('close')"></div>
+        <div
+          class="lian-sheet__backdrop"
+          role="button"
+          tabindex="-1"
+          aria-label="关闭"
+          @click="emit('close')"
+        ></div>
         <section class="lian-sheet__panel keyboard-aware-surface">
           <header v-if="title || $slots.actions" class="lian-sheet__header">
             <h2 v-if="title">{{ title }}</h2>
