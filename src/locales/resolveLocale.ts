@@ -8,15 +8,16 @@
  *   4. fallback "en"
  *
  * Mapping:
+ *   - zh-TW / zh-Hant / zh-HK / zh-MO → "zh-TW"
  *   - zh / zh-CN / zh-Hans / zh-* → "zh-CN"
  *   - everything else            → "en"
  *
  * Pure module — no side effects, safe to import in SSR/test.
  */
 
-export type AppLocale = "zh-CN" | "en" | "ja";
+export type AppLocale = "zh-CN" | "zh-TW" | "en" | "ja";
 
-export const SUPPORTED_LOCALES: readonly AppLocale[] = ["zh-CN", "en", "ja"];
+export const SUPPORTED_LOCALES: readonly AppLocale[] = ["zh-CN", "zh-TW", "en", "ja"];
 export const DEFAULT_LOCALE: AppLocale = "en";
 export const LOCALE_STORAGE_KEY = "lian.language";
 
@@ -33,6 +34,20 @@ function matchLocale(tag: string | undefined | null): AppLocale | null {
   if (!tag) return null;
   const normalized = tag.trim().toLowerCase();
   if (!normalized) return null;
+  // Check for Traditional Chinese variants first (more specific)
+  if (
+    normalized === "zh-tw" ||
+    normalized === "zh_tw" ||
+    normalized === "zh-hant" ||
+    normalized === "zh_hant" ||
+    normalized === "zh-hk" ||
+    normalized === "zh_hk" ||
+    normalized === "zh-mo" ||
+    normalized === "zh_mo"
+  ) {
+    return "zh-TW";
+  }
+  // Then check for Simplified Chinese / generic Chinese
   if (normalized === "zh" || normalized.startsWith("zh-") || normalized.startsWith("zh_")) {
     return "zh-CN";
   }
