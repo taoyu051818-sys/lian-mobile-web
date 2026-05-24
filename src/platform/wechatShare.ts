@@ -25,7 +25,39 @@ interface WxSignResponse {
   signature: string;
 }
 
-type WxInstance = any;
+interface WxShareData {
+  title: string;
+  desc?: string;
+  link: string;
+  imgUrl: string;
+}
+
+interface WxTimelineShareData {
+  title: string;
+  link: string;
+  imgUrl: string;
+}
+
+interface WxConfigOptions {
+  debug: boolean;
+  appId: string;
+  timestamp: number;
+  nonceStr: string;
+  signature: string;
+  jsApiList: string[];
+}
+
+/**
+ * WeChat JS-SDK instance interface.
+ * @see https://developers.weixin.qq.com/doc/offiaccount/OA_Web_Apps/JS-SDK.html
+ */
+interface WxInstance {
+  config(options: WxConfigOptions): void;
+  ready(callback: () => void): void;
+  error(callback: (res: { errMsg: string }) => void): void;
+  updateAppMessageShareData(data: WxShareData): void;
+  updateTimelineShareData(data: WxTimelineShareData): void;
+}
 
 declare global {
   interface Window {
