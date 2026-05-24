@@ -113,10 +113,7 @@ function findHelpEventLinkRelation(detail: PostDetailContract): PostRelation | n
   if (Array.isArray(detail.metadata?.relations)) candidates.push(...detail.metadata!.relations!);
   return (
     candidates.find(
-      (rel) =>
-        rel &&
-        typeof rel === "object" &&
-        String(rel.type ?? "") === "help_event_link",
+      (rel) => rel && typeof rel === "object" && String(rel.type ?? "") === "help_event_link",
     ) ?? null
   );
 }
@@ -283,9 +280,7 @@ test.describe("@prd-v03 @components-relations PRD V0.3 A6 — V2 components + re
         // helpRuntime fixture self-heal will also patch this back, but
         // unlinking explicitly removes the dependency on /api/fixtures
         // being hit before the next run.
-        await api
-          .post(`/api/help/${encodeURIComponent(helpId)}/unlink-event`)
-          .catch(() => null);
+        await api.post(`/api/help/${encodeURIComponent(helpId)}/unlink-event`).catch(() => null);
       }
     } finally {
       await api.dispose();
@@ -312,10 +307,7 @@ test.describe("@prd-v03 @components-relations PRD V0.3 A6 — V2 components + re
       eventFixture === null,
       "eventRuntime fixture surface unavailable (production-mode 404 on /api/fixtures)",
     );
-    test.skip(
-      eventFixture !== null && !eventFixture.ready,
-      "eventRuntime fixture not ready",
-    );
+    test.skip(eventFixture !== null && !eventFixture.ready, "eventRuntime fixture not ready");
 
     const eventTid = eventFixture!.tid;
     const api = await request.newContext({ baseURL: BASE_URL });
@@ -343,8 +335,7 @@ test.describe("@prd-v03 @components-relations PRD V0.3 A6 — V2 components + re
       const hasLocationSurface =
         Boolean((eventDetail.place && eventDetail.place.id) || eventDetail.place?.name) ||
         (typeof eventDetail.locationArea === "string" && eventDetail.locationArea.length > 0) ||
-        (typeof eventDetail.event!.location === "string" &&
-          eventDetail.event!.location.length > 0);
+        (typeof eventDetail.event!.location === "string" && eventDetail.event!.location.length > 0);
       // The seeded event may or may not carry a location — when it does
       // the V2 contract requires it to be readable; when it doesn't this
       // assertion is a no-op rather than a fake claim.
@@ -353,8 +344,7 @@ test.describe("@prd-v03 @components-relations PRD V0.3 A6 — V2 components + re
         // proving the components.location V2 → V1 flatten lands on the wire.
         expect(
           (eventDetail.event!.location && typeof eventDetail.event!.location === "string") ||
-            (typeof eventDetail.locationArea === "string" &&
-              eventDetail.locationArea.length > 0) ||
+            (typeof eventDetail.locationArea === "string" && eventDetail.locationArea.length > 0) ||
             Boolean(eventDetail.place?.id || eventDetail.place?.name),
           "V2 components.location must be observable via place / locationArea / event.location",
         ).toBe(true);
