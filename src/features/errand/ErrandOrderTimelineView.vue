@@ -25,16 +25,10 @@ import {
   ERRAND_ORDER_DETAIL_BACK,
   ERRAND_ORDER_DETAIL_LABEL,
   ERRAND_ORDER_DETAIL_LOAD_ERROR,
-  ERRAND_ORDER_DETAIL_NOTES_LABEL,
   ERRAND_ORDER_DETAIL_REFRESH,
   ERRAND_ORDER_DETAIL_REFRESHING,
   ERRAND_ORDER_DETAIL_TIMELINE,
-  ERRAND_ORDER_DROPOFF_TITLE,
-  ERRAND_ORDER_FEE_LABEL,
   ERRAND_ORDER_LOADING,
-  ERRAND_ORDER_MODE_TITLE,
-  ERRAND_ORDER_PICKUP_TITLE,
-  ERRAND_ORDER_POINTS_SUFFIX,
   ERRAND_ORDER_RETRY,
   ORDERS_CANCEL_CONFIRM,
   ORDERS_CANCEL_CTA,
@@ -50,10 +44,10 @@ import { useErrandOrderShare } from "./useErrandOrderShare";
 import {
   formatTimelineTimestamp,
   isTerminalErrandStatus,
-  modeLabel,
   statusLabel,
 } from "./errand-format";
 import { ShareCardSheet } from "../detail";
+import ErrandOrderMeta from "./ErrandOrderMeta.vue";
 
 const props = defineProps<{
   orderId: string;
@@ -235,32 +229,7 @@ watch(
     </div>
 
     <template v-else-if="order">
-      <dl class="errand-order-timeline-view__meta">
-        <div class="errand-order-timeline-view__row">
-          <dt>{{ ERRAND_ORDER_PICKUP_TITLE }}</dt>
-          <dd data-testid="errand-order-timeline-pickup">{{ order.pickupLocation.label }}</dd>
-        </div>
-        <div class="errand-order-timeline-view__row">
-          <dt>{{ ERRAND_ORDER_DROPOFF_TITLE }}</dt>
-          <dd data-testid="errand-order-timeline-dropoff">{{ order.dropoffLocation.label }}</dd>
-        </div>
-        <div class="errand-order-timeline-view__row">
-          <dt>{{ ERRAND_ORDER_MODE_TITLE }}</dt>
-          <dd>{{ modeLabel(order.mode) }}</dd>
-        </div>
-        <div class="errand-order-timeline-view__row">
-          <dt>{{ ERRAND_ORDER_FEE_LABEL }}</dt>
-          <dd>{{ order.feeAmount }} {{ ERRAND_ORDER_POINTS_SUFFIX }}</dd>
-        </div>
-        <div
-          v-if="detailRef?.notes"
-          class="errand-order-timeline-view__row"
-          data-testid="errand-order-timeline-notes"
-        >
-          <dt>{{ ERRAND_ORDER_DETAIL_NOTES_LABEL }}</dt>
-          <dd>{{ detailRef?.notes }}</dd>
-        </div>
-      </dl>
+      <ErrandOrderMeta :order="order" :notes="detailRef?.notes" />
 
       <section
         class="errand-order-timeline-view__timeline"
@@ -474,33 +443,6 @@ watch(
 .errand-order-timeline-view__status.is-error {
   background: rgba(239, 68, 68, 0.12);
   color: rgb(185, 28, 28);
-}
-
-.errand-order-timeline-view__meta {
-  display: grid;
-  gap: var(--space-2);
-  margin: 0;
-  padding: var(--space-3);
-  border: 1px solid var(--lian-line);
-  border-radius: var(--radius-card);
-  background: var(--lian-card-strong);
-}
-
-.errand-order-timeline-view__row {
-  display: grid;
-  grid-template-columns: 6em 1fr;
-  gap: var(--space-2);
-}
-
-.errand-order-timeline-view__row dt {
-  color: var(--lian-muted);
-  font-size: 13px;
-}
-
-.errand-order-timeline-view__row dd {
-  margin: 0;
-  color: var(--lian-ink);
-  font-size: 14px;
 }
 
 .errand-order-timeline-view__timeline {
