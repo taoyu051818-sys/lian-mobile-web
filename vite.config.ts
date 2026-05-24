@@ -36,6 +36,8 @@ export default defineConfig({
           "**/lian-academy*.png",
           "**/*书院*.png",
         ],
+        // Offline fallback: serve offline.html when navigation fails
+        navigateFallback: "/offline.html",
         runtimeCaching: [
           {
             // API feed/listing endpoints: NetworkFirst with 5s timeout
@@ -45,6 +47,7 @@ export default defineConfig({
               cacheName: "api-cache",
               networkTimeoutSeconds: 5,
               expiration: {
+                maxEntries: 50,
                 maxAgeSeconds: 5 * 60, // 5 minutes
               },
             },
