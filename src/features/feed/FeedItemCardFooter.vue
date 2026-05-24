@@ -31,21 +31,18 @@ const likeLabel = computed(
   () => `${liked.value ? FEED_UNLIKE : FEED_LIKE}，当前 ${likeCount.value} 个喜欢`,
 );
 
+// Performance: combine watchers to reduce reactivity overhead
 watch(
-  () => [props.liked, props.likeCount],
-  () => {
-    liked.value = Boolean(props.liked);
-    likeCount.value = Math.max(0, Number(props.likeCount || 0));
+  () => [props.liked, props.likeCount, props.authorAvatarUrl] as const,
+  ([newLiked, newLikeCount, _newAvatarUrl], oldValues) => {
+    liked.value = Boolean(newLiked);
+    likeCount.value = Math.max(0, Number(newLikeCount || 0));
+    // Reset avatar error state when URL changes
+    if (!oldValues || _newAvatarUrl !== oldValues[2]) {
+      avatarError.value = false;
+    }
   },
   { immediate: true },
-);
-
-// Reset avatar error state when URL changes
-watch(
-  () => props.authorAvatarUrl,
-  () => {
-    avatarError.value = false;
-  },
 );
 
 function handleAvatarError() {

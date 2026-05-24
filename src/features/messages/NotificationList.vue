@@ -166,9 +166,15 @@ function openNotification(item: NotificationItem) {
     </div>
 
     <div v-else class="messages-view__list" aria-live="polite">
+      <!--
+        Performance: v-memo skips re-rendering notification items when their
+        key properties haven't changed. Notifications are immutable once
+        received, so we only need to re-render when read state changes.
+      -->
       <article
         v-for="item in props.items"
         :key="String(item.id || item.tid || item.title)"
+        v-memo="[item.id, item.read, item.title, item.excerpt]"
         class="messages-view__notification"
         :class="{
           'is-unread': !item.read,

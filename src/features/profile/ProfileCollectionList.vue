@@ -77,9 +77,15 @@ const itemStates = computed(() =>
     <div v-if="loading" class="profile-collection__state" role="status">{{ LOADING_LIST }}</div>
     <div v-else-if="!items.length" class="profile-collection__state">{{ emptyText }}</div>
     <div v-else class="profile-collection__list" aria-live="polite">
+      <!--
+        Performance: v-memo skips re-rendering collection items when their
+        key properties haven't changed. Collection items are typically static
+        once loaded, so we only need to re-render when the item data changes.
+      -->
       <article
         v-for="(item, index) in items"
         :key="itemStates[index]?.key"
+        v-memo="[itemStates[index]?.key, item.title, item.cover, item.status, item.visibility]"
         class="profile-collection__item"
         :class="{ 'is-static': !itemStates[index]?.canOpen }"
         data-testid="profile-liked-item"
