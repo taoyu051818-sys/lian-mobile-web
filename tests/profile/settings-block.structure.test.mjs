@@ -145,9 +145,15 @@ test("ProfileSettingsBlock surfaces all three visibility options the backend acc
   }
 });
 
-test("ProfileSettingsBlock disables controls while saving and surfaces a save indicator", () => {
+test("ProfileSettingsBlock keeps controls interactive while saving (optimistic) and surfaces a save indicator", () => {
+  // Modern-product feel: the toggle/select flips immediately on click, the
+  // PATCH races in the background, and a rejected response rolls the value
+  // back via the reducer's `previous` snapshot. We deliberately do NOT
+  // disable the controls — the FSM already drops stale `patch-result`s by
+  // token, so the only thing `:disabled` was buying was a "saving…" feel
+  // that turned every toggle into a 200ms wait.
   const src = read("src/features/profile/ProfileSettingsBlock.vue");
-  assert.match(src, /:disabled="settings\.saving\.value"/);
+  assert.doesNotMatch(src, /:disabled="settings\.saving\.value"/);
   assert.match(src, /data-testid="profile-settings-saving"/);
   assert.match(src, /PROFILE_SETTINGS_SAVING/);
 });
