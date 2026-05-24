@@ -1,14 +1,9 @@
 /**
  * AI publish API client (PRD V0.1 §3 / §7.4 / Phase 3).
  *
- * Three endpoints, all already in the backend live surface:
+ * Endpoint:
  *   POST /api/ai/post-preview   — ask the model to draft suggestions from
  *                                 a partial form (image-only is allowed).
- *   POST /api/ai/post-drafts    — persist a draft for later finalization.
- *   POST /api/ai/post-publish   — final publish call (already used today).
- *
- * V0.1 only consumes the *preview* response shape on the frontend. Drafts
- * are persisted opportunistically; the response shape is `{ draftId }`.
  *
  * The AI route is "best effort" — when the backend returns 404 / 429 / 5xx
  * the publish UI keeps working with the user's manual input. We never block
@@ -44,15 +39,6 @@ export interface AiPreviewSuggestions {
   confidence: number;
   /** True when the backend wants a human to vet the post before publish. */
   needsHumanReview: boolean;
-}
-
-export interface AiDraftRequest extends AiPreviewSuggestions {
-  imageUrls: string[];
-  locationLabel?: string;
-}
-
-export interface AiDraftResponse {
-  draftId: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -137,27 +123,6 @@ export async function fetchAiPostPreview(request: AiPreviewRequest): Promise<AiP
       if (error.status === 404 || error.status === 429 || error.status >= 500) {
         return { ...EMPTY_SUGGESTIONS };
       }
-    }
-    throw error;
-  }
-}
-
-/**
- * Persist a draft so the user's progress is recoverable cross-session.
- * Returns null when the route is missing — the UI falls back to local
- * `usePublishDraftSession` storage.
- */
-export async function saveAiPostDraft(input: AiDraftRequest): Promise<AiDraftResponse | null> {
-  try {
-    const data = await apiSend<{ draftId?: unknown }>("/api/ai/post-drafts", {
-      method: "POST",
-      body: JSON.stringify(input),
-    });
-    const draftId = asString(data?.draftId);
-    return draftId ? { draftId } : null;
-  } catch (error) {
-    if (error instanceof LianApiError && (error.status === 404 || error.status >= 500)) {
-      return null;
     }
     throw error;
   }

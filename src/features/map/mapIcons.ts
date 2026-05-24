@@ -3,7 +3,7 @@ import { getLeaflet } from "../../platform/leaflet";
 import { MAP_POST_AVATAR_FALLBACK, MAP_CONTENT_FALLBACK } from "../../config/brand";
 import type { MapAsset, MapLocation, MapPost } from "../../types/map";
 
-export function escapeHtml(value = ""): string {
+function escapeHtml(value = ""): string {
   return String(value)
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
@@ -11,7 +11,7 @@ export function escapeHtml(value = ""): string {
     .replace(/"/g, "&quot;");
 }
 
-export function scaledIconHtml(html: string, anchor: [number, number]): string {
+function scaledIconHtml(html: string, anchor: [number, number]): string {
   const x = Number(anchor[0] ?? 0);
   const y = Number(anchor[1] ?? 0);
   return `
@@ -23,7 +23,7 @@ export function scaledIconHtml(html: string, anchor: [number, number]): string {
   `;
 }
 
-export function htmlIcon(
+function htmlIcon(
   className: string,
   html: string,
   size: [number, number],

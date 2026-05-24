@@ -130,7 +130,7 @@ function parseSuggestedComponents(value: unknown): SuggestedComponent[] {
  * field, drops `candidates` entirely (very old client → very new server, or
  * the reverse), or returns garbage during a degraded fallback path.
  */
-export function parseLlmTickResponse(value: unknown): PublishLlmTickResponse {
+function parseLlmTickResponse(value: unknown): PublishLlmTickResponse {
   if (!value || typeof value !== "object" || Array.isArray(value)) {
     return { ...EMPTY_RESPONSE, suggestedComponents: [] };
   }
