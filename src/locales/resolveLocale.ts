@@ -15,9 +15,9 @@
  * Pure module — no side effects, safe to import in SSR/test.
  */
 
-export type AppLocale = "zh-CN" | "zh-TW" | "en" | "ja" | "ko" | "ru" | "vi" | "id";
+export type AppLocale = "zh-CN" | "zh-TW" | "en" | "ja" | "ko" | "ru" | "vi" | "id" | "es";
 
-export const SUPPORTED_LOCALES: readonly AppLocale[] = ["zh-CN", "zh-TW", "en", "ja", "ko", "ru", "vi", "id"];
+export const SUPPORTED_LOCALES: readonly AppLocale[] = ["zh-CN", "zh-TW", "en", "ja", "ko", "ru", "vi", "id", "es"];
 export const DEFAULT_LOCALE: AppLocale = "en";
 export const LOCALE_STORAGE_KEY = "lian.language";
 
@@ -62,6 +62,15 @@ function matchLocale(tag: string | undefined | null): AppLocale | null {
   }
   if (normalized === "ru" || normalized.startsWith("ru-") || normalized.startsWith("ru_")) {
     return "ru";
+  }
+  if (normalized === "vi" || normalized.startsWith("vi-") || normalized.startsWith("vi_")) {
+    return "vi";
+  }
+  if (normalized === "id" || normalized.startsWith("id-") || normalized.startsWith("id_")) {
+    return "id";
+  }
+  if (normalized === "es" || normalized.startsWith("es-") || normalized.startsWith("es_")) {
+    return "es";
   }
   return null;
 }
