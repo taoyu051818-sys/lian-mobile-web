@@ -104,9 +104,15 @@ describe("resolveAppLocale priority and mapping (PRD V0.1 §9.2)", () => {
     ).toBe("zh-CN");
   });
 
-  it("zh / zh-CN / zh-Hans / zh_TW all map to zh-CN", () => {
-    for (const tag of ["zh", "zh-CN", "zh-Hans", "zh-Hant", "zh_TW", "ZH-cn"]) {
+  it("zh / zh-CN / zh-Hans map to zh-CN (Simplified Chinese)", () => {
+    for (const tag of ["zh", "zh-CN", "zh-Hans", "ZH-cn"]) {
       expect(resolveAppLocale({ navigatorLanguage: tag })).toBe("zh-CN");
+    }
+  });
+
+  it("zh-TW / zh-Hant / zh-HK / zh-MO map to zh-TW (Traditional Chinese)", () => {
+    for (const tag of ["zh-TW", "zh_TW", "zh-Hant", "zh-HK", "zh-MO"]) {
+      expect(resolveAppLocale({ navigatorLanguage: tag })).toBe("zh-TW");
     }
   });
 
