@@ -27,6 +27,7 @@ import {
   AUTH_LINK_SHEET_LABEL,
   AUTH_LINK_SHEET_TITLE,
   AUTH_LINK_THUMBNAIL_ALT,
+  DIALOG_BACKDROP_LABEL,
 } from "../../config/brand";
 import { useBodyScrollLock } from "../../composables/useBodyScrollLock";
 import { useEscapeListener } from "../../composables/useEscapeListener";
@@ -100,7 +101,13 @@ const redeemLabel = computed(() => (isRedeeming.value ? AUTH_LINK_REDEEMING : AU
       :aria-label="AUTH_LINK_SHEET_LABEL"
       data-testid="auth-link-sheet"
     >
-      <div class="auth-link-sheet__backdrop" @click="emit('close')"></div>
+      <div
+        class="auth-link-sheet__backdrop"
+        role="button"
+        tabindex="-1"
+        :aria-label="DIALOG_BACKDROP_LABEL"
+        @click="emit('close')"
+      ></div>
       <section class="auth-link-sheet__panel">
         <header class="auth-link-sheet__header">
           <h2>{{ AUTH_LINK_SHEET_TITLE }}</h2>

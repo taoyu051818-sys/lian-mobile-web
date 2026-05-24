@@ -29,6 +29,7 @@ import {
   SHARE_CARD_SHEET_LABEL,
   SHARE_CARD_SHEET_TITLE,
   SHARE_CARD_THUMBNAIL_ALT,
+  DIALOG_BACKDROP_LABEL,
 } from "../../config/brand";
 import { useBodyScrollLock } from "../../composables/useBodyScrollLock";
 import { useEscapeListener } from "../../composables/useEscapeListener";
@@ -99,7 +100,13 @@ watch(isOpen, (open) => {
       :aria-label="SHARE_CARD_SHEET_LABEL"
       data-testid="share-card-sheet"
     >
-      <div class="share-card-sheet__backdrop" @click="emit('close')"></div>
+      <div
+        class="share-card-sheet__backdrop"
+        role="button"
+        tabindex="-1"
+        :aria-label="DIALOG_BACKDROP_LABEL"
+        @click="emit('close')"
+      ></div>
       <section class="share-card-sheet__panel">
         <header class="share-card-sheet__header">
           <h2>{{ SHARE_CARD_SHEET_TITLE }}</h2>

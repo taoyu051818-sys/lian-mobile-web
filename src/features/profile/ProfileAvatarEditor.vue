@@ -8,6 +8,8 @@ import {
   PROFILE_AVATAR_SELECT,
   PROFILE_AVATAR_RESELECT,
   PROFILE_AVATAR_SCALE,
+  PROFILE_AVATAR_SCALE_ARIA,
+  PROFILE_AVATAR_FILE_INPUT_ARIA,
   PROFILE_AVATAR_SAVE,
   PROFILE_AVATAR_ERROR,
   PROFILE_CANCEL,
@@ -93,11 +95,26 @@ async function saveAvatar() {
     </div>
     <label class="profile-editor__upload">
       <span>{{ previewUrl ? PROFILE_AVATAR_RESELECT : PROFILE_AVATAR_SELECT }}</span>
-      <input type="file" accept="image/*" @change="handleInput" />
+      <input
+        type="file"
+        accept="image/*"
+        :aria-label="PROFILE_AVATAR_FILE_INPUT_ARIA"
+        @change="handleInput"
+      />
     </label>
     <label v-if="previewUrl" class="profile-editor__range">
       <span>{{ PROFILE_AVATAR_SCALE }}</span>
-      <input v-model.number="scale" type="range" min="1" max="2.4" step="0.05" />
+      <input
+        v-model.number="scale"
+        type="range"
+        min="1"
+        max="2.4"
+        step="0.05"
+        :aria-label="PROFILE_AVATAR_SCALE_ARIA"
+        :aria-valuemin="1"
+        :aria-valuemax="2.4"
+        :aria-valuenow="scale"
+      />
     </label>
     <div v-if="previewUrl" class="profile-editor__actions">
       <LianButton type="button" variant="ghost" :disabled="busy" @click="cancel">{{

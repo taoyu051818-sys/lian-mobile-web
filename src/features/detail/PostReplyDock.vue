@@ -60,8 +60,16 @@ const emit = defineEmits<{
         saveBusy ? "处理中…" : saved ? "已收藏" : "收藏"
       }}</span>
     </button>
-    <div class="post-reply-dock__reply-box" @click="emit('update:replyExpanded', true)">
-      <span v-if="!replyExpanded" class="post-reply-dock__reply-placeholder">{{
+    <div
+      class="post-reply-dock__reply-box"
+      :role="replyExpanded ? undefined : 'button'"
+      :tabindex="replyExpanded ? undefined : 0"
+      :aria-label="replyExpanded ? undefined : REPLY_DOCK_PLACEHOLDER"
+      @click="emit('update:replyExpanded', true)"
+      @keydown.enter.prevent="!replyExpanded && emit('update:replyExpanded', true)"
+      @keydown.space.prevent="!replyExpanded && emit('update:replyExpanded', true)"
+    >
+      <span v-if="!replyExpanded" class="post-reply-dock__reply-placeholder" aria-hidden="true">{{
         REPLY_DOCK_PLACEHOLDER
       }}</span>
       <textarea
@@ -144,10 +152,21 @@ const emit = defineEmits<{
   display: grid;
   flex: 1 1 auto;
   min-width: 0;
+  cursor: pointer;
+}
+
+.post-reply-dock__reply-box:focus-visible {
+  outline: 3px solid rgba(31, 167, 160, 0.32);
+  outline-offset: 2px;
+  border-radius: var(--radius-chip);
 }
 
 .post-reply-dock.is-expanded .post-reply-dock__reply-box {
-  width: 100%;
+  cursor: default;
+}
+
+.post-reply-dock.is-expanded .post-reply-dock__reply-box:focus-visible {
+  outline: none;
 }
 
 .post-reply-dock__reply-placeholder {

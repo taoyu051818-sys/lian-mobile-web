@@ -15,7 +15,7 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <div class="publish-action__bar">
+  <div class="publish-action-bar">
     <LianButton
       type="button"
       variant="ghost"
@@ -30,7 +30,7 @@ const emit = defineEmits<{
 </template>
 
 <style scoped>
-.publish-action__bar {
+.publish-action-bar {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-2);
