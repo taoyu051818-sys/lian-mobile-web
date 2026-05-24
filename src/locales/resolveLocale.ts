@@ -15,7 +15,18 @@
  * Pure module — no side effects, safe to import in SSR/test.
  */
 
-export type AppLocale = "zh-CN" | "zh-TW" | "en" | "ja" | "ko" | "ru" | "vi" | "id" | "es";
+export type AppLocale =
+  | "zh-CN"
+  | "zh-TW"
+  | "en"
+  | "ja"
+  | "ko"
+  | "ru"
+  | "vi"
+  | "id"
+  | "es"
+  | "fr"
+  | "ar";
 
 export const SUPPORTED_LOCALES: readonly AppLocale[] = [
   "zh-CN",
@@ -27,9 +38,19 @@ export const SUPPORTED_LOCALES: readonly AppLocale[] = [
   "vi",
   "id",
   "es",
+  "fr",
+  "ar",
 ];
 export const DEFAULT_LOCALE: AppLocale = "en";
 export const LOCALE_STORAGE_KEY = "lian.language";
+
+// Locales whose script reads right-to-left. Consumed by index.ts to set
+// `document.documentElement.dir` whenever the active locale changes.
+export const RTL_LOCALES: readonly AppLocale[] = ["ar"];
+
+export function isRtlLocale(locale: AppLocale): boolean {
+  return RTL_LOCALES.includes(locale);
+}
 
 export interface LocaleResolverInput {
   /** Persisted user setting, if any. Wins over navigator. */
@@ -81,6 +102,12 @@ function matchLocale(tag: string | undefined | null): AppLocale | null {
   }
   if (normalized === "es" || normalized.startsWith("es-") || normalized.startsWith("es_")) {
     return "es";
+  }
+  if (normalized === "fr" || normalized.startsWith("fr-") || normalized.startsWith("fr_")) {
+    return "fr";
+  }
+  if (normalized === "ar" || normalized.startsWith("ar-") || normalized.startsWith("ar_")) {
+    return "ar";
   }
   return null;
 }
