@@ -6,6 +6,7 @@ import type { AudienceVisibility } from "../../types/audience";
 import { InlineError } from "../../ui";
 import FeedList from "./FeedList.vue";
 import FeedLoadMore from "./FeedLoadMore.vue";
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- used in template
 import FeedFilterBar from "./FeedFilterBar.vue";
 import { useFeedData } from "./useFeedData";
 import { useDetailNavigation } from "../../app/detail-navigation";
@@ -51,6 +52,7 @@ function openItem(id: FeedItemId) {
   detail.open(Number(id), "card");
 }
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- used in template
 function handleVisibilityChange(visibilities: Set<AudienceVisibility>) {
   feedData.setSelectedVisibilities(visibilities);
 }
@@ -59,6 +61,11 @@ function handleVisibilityChange(visibilities: Set<AudienceVisibility>) {
 <template>
   <section class="feed-view" aria-labelledby="feed-view-title">
     <h1 id="feed-view-title" class="feed-view__sr-title">{{ FEED_VIEW_TITLE }}</h1>
+
+    <FeedFilterBar
+      :selected-visibilities="feedData.selectedVisibilities.value"
+      @update:selected-visibilities="handleVisibilityChange"
+    />
 
     <InlineError v-if="feedData.errorMessage.value">
       {{ feedData.errorMessage.value }}
