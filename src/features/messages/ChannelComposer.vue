@@ -329,18 +329,18 @@ function handleKeydown(event: KeyboardEvent) {
 
 .messages-view__visibility-chip:hover:not(:disabled) {
   background: rgba(255, 255, 255, 0.9);
-  border-color: var(--lian-accent);
+  border-color: var(--lian-primary, #1fa7a0);
 }
 
 .messages-view__visibility-chip--selected {
-  background: var(--lian-accent);
-  border-color: var(--lian-accent);
-  color: white;
+  background: var(--lian-primary, #1fa7a0);
+  border-color: var(--lian-primary, #1fa7a0);
+  color: #fff;
 }
 
 .messages-view__visibility-chip--selected:hover:not(:disabled) {
-  background: var(--lian-accent);
-  border-color: var(--lian-accent);
+  background: var(--lian-primary-deep, #087b78);
+  border-color: var(--lian-primary-deep, #087b78);
 }
 
 .messages-view__visibility-chip--disabled {
