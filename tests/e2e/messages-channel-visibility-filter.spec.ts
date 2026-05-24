@@ -26,7 +26,7 @@ import { expect, request, test, type Page } from "@playwright/test";
 
 import { CLIENT_ID_KEY } from "../../src/platform/clientIdentity";
 
-import { isRoleConfigured, loginAs, skipIfRoleMissing } from "./fixtures/accounts";
+import { loginAs, skipIfRoleMissing } from "./fixtures/accounts";
 
 const BASE_URL = process.env.APP_BASE_URL ?? "https://lian.nat100.top";
 
