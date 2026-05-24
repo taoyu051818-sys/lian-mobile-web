@@ -2,9 +2,11 @@
 import { computed, onMounted, watch } from "vue";
 import type { PageChromeSpec } from "../../shell/page-model";
 import type { FeedItemId } from "../../types/feed";
+import type { AudienceVisibility } from "../../types/audience";
 import { InlineError } from "../../ui";
 import FeedList from "./FeedList.vue";
 import FeedLoadMore from "./FeedLoadMore.vue";
+import FeedFilterBar from "./FeedFilterBar.vue";
 import { useFeedData } from "./useFeedData";
 import { useDetailNavigation } from "../../app/detail-navigation";
 import { CHANNEL_RELOAD, FEED_FILTER_LABEL, FEED_VIEW_TITLE } from "../../config/brand";
@@ -47,6 +49,10 @@ onMounted(() => {
 function openItem(id: FeedItemId) {
   feedData.rememberReadItem(id);
   detail.open(Number(id), "card");
+}
+
+function handleVisibilityChange(visibilities: Set<AudienceVisibility>) {
+  feedData.setSelectedVisibilities(visibilities);
 }
 </script>
 
