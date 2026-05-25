@@ -16,6 +16,7 @@ import type {
   TradePostExtension,
   TradeState,
 } from "../types/post-extensions";
+import type { PostAvailableAction, PostRelation, PostRelationTarget } from "../types/post";
 
 type JsonRecord = Record<string, unknown>;
 
@@ -525,4 +526,90 @@ export function normalizeTradeExtensionV2(
     };
   }
   return normalizeTradeExtension(v1Value);
+}
+
+/**
+ * Normalize a single PostRelation entry. Backend canonical wire shape (per
+ * lian-platform-server `post-relation-contract.js`) is
+ *   `{ type, target: { kind, id }, role? }`
+ *
+ * Tolerated input variants:
+ *   - `target.id` may arrive as a number — coerced to string.
+ *   - Legacy `targetTid` (number) is folded into `target: { kind: "post", id }`
+ *     so older fixtures still surface a canonical relation rather than getting
+ *     dropped on the floor.
+ *
+ * Returns `undefined` when `type` is missing or no target can be derived.
+ */
+function normalizePostRelation(value: unknown): PostRelation | undefined {
+  const record = asRecord(value);
+  const type = optionalString(record.type);
+  if (!type) return undefined;
+
+  const targetRecord = asRecord(record.target);
+  let target: PostRelationTarget | undefined;
+
+  const targetKind = optionalString(targetRecord.kind);
+  const targetId = optionalString(targetRecord.id);
+  if (targetKind && targetId) {
+    target = { kind: targetKind, id: targetId };
+  } else if ("targetTid" in record) {
+    // Legacy `{ type, targetTid: number }` shape — fold into the canonical
+    // `target: { kind: "post", id }` form so consumers see one wire shape.
+    const legacyId = optionalString(record.targetTid);
+    if (legacyId) target = { kind: "post", id: legacyId };
+  }
+
+  if (!target) return undefined;
+  const role = optionalString(record.role);
+  return {
+    type,
+    target,
+    ...(role ? { role } : {}),
+  };
+}
+
+/**
+ * Normalize a relations[] array. Drops malformed entries; returns undefined
+ * when no usable relations remain so the caller can omit the field on the
+ * normalized PostDetail.
+ */
+export function normalizePostRelations(value: unknown): PostRelation[] | undefined {
+  if (!Array.isArray(value)) return undefined;
+  const relations = value
+    .map(normalizePostRelation)
+    .filter((rel): rel is PostRelation => rel !== undefined);
+  return relations.length ? relations : undefined;
+}
+
+/**
+ * Normalize a single PostAvailableAction entry. Wire shape (PRD V0.3 §2.4):
+ *   `{ type, enabled?, reason?, reasonText? }`
+ * Returns `undefined` when `type` is missing.
+ */
+function normalizePostAvailableAction(value: unknown): PostAvailableAction | undefined {
+  const record = asRecord(value);
+  const type = optionalString(record.type);
+  if (!type) return undefined;
+
+  const reason = optionalString(record.reason);
+  const reasonText = optionalString(record.reasonText);
+  return {
+    type,
+    ...("enabled" in record ? { enabled: asBoolean(record.enabled, true) } : {}),
+    ...(reason ? { reason } : {}),
+    ...(reasonText ? { reasonText } : {}),
+  };
+}
+
+/**
+ * Normalize an availableActions[] array. Drops malformed entries; returns
+ * undefined when nothing usable remains.
+ */
+export function normalizePostAvailableActions(value: unknown): PostAvailableAction[] | undefined {
+  if (!Array.isArray(value)) return undefined;
+  const actions = value
+    .map(normalizePostAvailableAction)
+    .filter((act): act is PostAvailableAction => act !== undefined);
+  return actions.length ? actions : undefined;
 }

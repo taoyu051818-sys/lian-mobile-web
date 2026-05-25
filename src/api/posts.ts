@@ -13,13 +13,15 @@ import {
   normalizeHelpExtensionV2,
   normalizeMerchantExtensionV2,
   normalizePlaceRef,
+  normalizePostAvailableActions,
+  normalizePostRelations,
   normalizeSourceSignal,
   normalizeTradeExtension,
   normalizeTradeExtensionV2,
 } from "../platform/api-normalizers";
 import type { FeedItemId } from "../types/feed";
 import { normalizePostType, type PostDetail, type PostReply, type PostType } from "../types/post";
-import type { TradePostExtension, TradeState } from "../types/post-extensions";
+import type { MetadataComponentV2, TradePostExtension, TradeState } from "../types/post-extensions";
 import type { AudienceVisibility } from "../types/audience";
 
 const KNOWN_VISIBILITIES: ReadonlySet<AudienceVisibility> = new Set([
@@ -139,6 +141,26 @@ export function normalizePostDetail(value: unknown, fallbackId: FeedItemId): Pos
           ...(v2Components ? { components: v2Components } : {}),
         }
       : undefined;
+  // mw#967 — preserve V2 graph primitives that previously fell on the floor.
+  // `components` mirrors `metadata.components` at the top level; the backend
+  // may emit either the nested `metadata.components` form (today) or a flat
+  // top-level `components` (future), and we normalize both into the same
+  // canonical array shape per the team's array-only-on-wire principle.
+  const topLevelComponentsRaw = Array.isArray(record.components) ? record.components : undefined;
+  const topLevelComponents: MetadataComponentV2[] | undefined = topLevelComponentsRaw
+    ? (topLevelComponentsRaw.filter(
+        (c): c is MetadataComponentV2 =>
+          !!c && typeof c === "object" && typeof (c as { type?: unknown }).type === "string",
+      ) as MetadataComponentV2[])
+    : undefined;
+  const components =
+    topLevelComponents && topLevelComponents.length
+      ? topLevelComponents
+      : v2Components && v2Components.length
+        ? v2Components
+        : undefined;
+  const relations = normalizePostRelations(record.relations);
+  const availableActions = normalizePostAvailableActions(record.availableActions);
   const event = normalizeEventExtensionV2(v2Components, record.event);
   const eventJoined = "eventJoined" in record ? asBoolean(record.eventJoined) : undefined;
   // Issue #703 — backend may ship eventManageable so the detail page does not
@@ -218,6 +240,9 @@ export function normalizePostDetail(value: unknown, fallbackId: FeedItemId): Pos
     ...(trade ? { trade } : {}),
     ...(tradeManageable !== undefined ? { tradeManageable } : {}),
     ...(metadata ? { metadata } : {}),
+    ...(components ? { components } : {}),
+    ...(relations ? { relations } : {}),
+    ...(availableActions ? { availableActions } : {}),
   };
 }
 
