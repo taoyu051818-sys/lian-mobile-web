@@ -241,6 +241,17 @@ function handleHelpOpenLinkedEvent(tid: number) {
   emit("retry");
 }
 
+// PRD V0.3 §2.4 / B3-1 — `availableActions[]` button click bubbles up to the
+// panel as a `(type)` payload. The panel intentionally does NOT call any
+// per-type RPC handler yet — the backend's authoritative action enum is still
+// settling (parent issue tracks the source-of-truth ticket). When the enum
+// lands, dispatch happens here; for now the click is a no-op so the data
+// surface is observable end-to-end without committing to a wire contract we
+// can't honor.
+function handleAvailableActionInvoked(type: string) {
+  void type;
+}
+
 function handleLike() {
   const currentId = postId.value;
   return rawHandleLike(currentId, () => postId.value === currentId);
@@ -341,6 +352,8 @@ watch(
             :trade="post?.trade"
             :visibility="post?.visibility"
             :metadata="post?.metadata"
+            :relations="post?.relations"
+            :available-actions="post?.availableActions"
             @gallery-pointer-down="handleGalleryPointerDown"
             @gallery-pointer-move="handleGalleryPointerMove"
             @open-gallery-image="openGalleryImage"
@@ -356,6 +369,7 @@ watch(
             @help-manage-unlink-event="handleHelpManageUnlinkEvent"
             @help-manage-resolve="handleHelpManageResolve"
             @help-manage-close="handleHelpManageClose"
+            @available-action-invoked="handleAvailableActionInvoked"
             @update:report-category="reportCategory = $event"
             @update:report-reason="reportReason = $event"
             @update:place-sheet-open="placeSheetOpen = $event"

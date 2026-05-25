@@ -62,6 +62,10 @@ const GRANDFATHERED_BARE_BUTTONS: Record<string, string> = {
     "typed-fallback explicit blocked-action button — already disabled-state-only, no live state machine",
   "ShareCardSheet.vue": "share card retry — affordance inside a sheet, not a primary CTA",
   "PostReplies.vue": "reply list load-more / retry — pagination affordance, not a primary CTA",
+  "PostDetailRelationsBlock.vue":
+    'graph-relation target link — inline list affordance routing through detail.open(tid, "card"), not a primary CTA',
+  "PostDetailActionsBlock.vue":
+    "availableActions stub renderer — B3-1 emits only; backend RPC wiring lands in a follow-up PR, no live state machine yet",
 };
 
 async function read(rel: string): Promise<string> {
