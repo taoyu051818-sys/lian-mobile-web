@@ -266,25 +266,28 @@ export function useInjectedLlmInferredKind(): Ref<InferredKind | null> {
 }
 
 /**
- * Suggested-component accept / dismiss API (PRD V0.2 step E-main, §4.2.3).
+ * Suggested-component accept / dismiss API (PRD V0.2 step E-main, §4.2.3;
+ * V0.3 stage B2 promotes the wire to V2 component kinds, paired with ps#624).
  *
  * Step E-pre exposed `suggestedComponents` (a writable ref) but no consumer
  * — the pipe was inert. Step E-main introduces:
  *
  *   - `accept(component)` — "实化" the ghost into the publish draft. Each
- *     kind maps to the smallest visible payload mutation that surfaces the
- *     corresponding fields in the existing publish UI:
- *       event_time      → publishKind = "event"        (event panel opens)
- *       merchant_info   → publishKind = "merchant" if merchant_verified
- *       trade_condition → publishKind = "trade"   if campus_verified
- *       price           → publishKind = "trade" (PRD V0.2 §4.2.3: accept(price)
- *                         → kind=trade, enum 不变). Verification gates
- *                         visibility, not inference — once the user can see
- *                         and accept the ghost, treat it as a trade signal.
- *       help_tag        → tagInput defaults to "求助" when blank
+ *     V2 kind maps to the smallest visible payload mutation that surfaces
+ *     the corresponding fields in the existing publish UI:
+ *       event           → publishKind = "event"          (event panel opens)
+ *       time            → publishKind = "event"          (time fields live there)
+ *       merchant        → publishKind = "merchant" if merchant_verified
+ *       trade           → publishKind = "trade" (PRD V0.2 §4.2.3 unconditional;
+ *                         legacy `price` and `trade_condition` both collapse
+ *                         to V2 `trade` at the wire mapper)
+ *       help            → tagInput defaults to "求助" when blank
  *       location        → no payload mutation; the location panel is owned
  *                         by usePublishLocationOptions outside this slice
  *                         (PRD §2.2 reserves "place" kind for step F)
+ *       media / quality / audience / tags → no draft mutation today; ghost
+ *                         is consumed so the visual state matches the user's
+ *                         "I saw it" intent. Future steps may attach effects.
  *     After mutation the component is removed from the list so it can't be
  *     accepted twice in a row.
  *   - `dismiss(component)` — purely local: removes from the list. The next
@@ -296,12 +299,13 @@ export function useInjectedLlmInferredKind(): Ref<InferredKind | null> {
  * `parseSuggestedComponents` already enforces (kinds are deduped before
  * insert), so two-of-a-kind never appears in the list.
  *
- * Verification gates (merchant / trade): a defensive UI guard already
- * lives in PublishView (the merchant radio is `v-if`-gated on
- * `merchantVerified` and a watch resets publishKind back to "regular" if
- * verification drops). We layer one more guard here so `accept(merchant_info)`
- * never sets publishKind for an unverified user, even though the server
- * filter (PRD §2.3) makes that case unreachable in practice.
+ * Verification gates (merchant): a defensive UI guard already lives in
+ * PublishView (the merchant radio is `v-if`-gated on `merchantVerified` and
+ * a watch resets publishKind back to "regular" if verification drops). We
+ * layer one more guard here so `accept(merchant)` never sets publishKind
+ * for an unverified user, even though the server filter (PRD §2.3) makes
+ * that case unreachable in practice. Trade has no inference-time gate per
+ * §4.2.3 — visibility gating happens upstream.
  */
 export interface PublishSuggestedComponentsActionsApi {
   components: Ref<SuggestedComponent[]>;
@@ -326,9 +330,9 @@ export interface CreateSuggestedComponentsActionsParams {
   components: Ref<SuggestedComponent[]>;
   publishKind: Ref<PublishKind>;
   tagInput: Ref<string>;
-  /** /api/auth/me-derived merchant_verified flag. accept(merchant_info) and accept(price) consult this. */
+  /** /api/auth/me-derived merchant_verified flag. accept(merchant) consults this. */
   merchantVerified: Ref<boolean>;
-  /** /api/auth/me-derived campus_verified flag. accept(trade_condition) and accept(price) consult this. */
+  /** /api/auth/me-derived campus_verified flag. Reserved for future per-kind gating. */
   campusVerified: Ref<boolean>;
 }
 
@@ -365,28 +369,31 @@ export function createSuggestedComponentsActions(
     // No-op when the ghost is already gone — protects against double-fire
     // from accidentally tapping twice during a slow render frame.
     if (idx < 0) return;
+    // V0.3 stage B2 (paired with ps#624): wire is V2 kinds. Frontend kind
+    // semantics are unchanged — the same per-kind effects below still apply,
+    // just keyed off canonical V2 names.
     switch (target.kind) {
-      case "event_time":
+      case "event":
+        // V1 `event_time` → V2 `event` (or `time`; see parseSuggestedComponents
+        // for the legacy mapping). Either way the user is opting into the
+        // event flow, so flip publishKind.
         params.publishKind.value = "event";
         break;
-      case "merchant_info":
+      case "time":
+        // Pure-time ghost (V2-only). Same flow as event — the event panel
+        // surfaces the time fields the user wants to fill in.
+        params.publishKind.value = "event";
+        break;
+      case "merchant":
         if (params.merchantVerified.value) params.publishKind.value = "merchant";
         break;
-      case "trade_condition":
-        if (params.campusVerified.value) params.publishKind.value = "trade";
-        break;
-      case "price":
-        // PRD V0.2 §4.2.3 拍板：accept(price) → kind=trade，enum 不变。
-        // The verification gate is a *visibility* concern (whether the
-        // ghost can appear at all — already enforced by capability gating
-        // upstream), not a *kind inference* concern. Once the user can
-        // see and accept the price ghost, treat it as a trade signal.
-        // merchant flow stays accept(merchant_info) — its own panel has
-        // distinct fields (营业时间 / 联系方式) that 'price' alone doesn't
-        // carry.
+      case "trade":
+        // PRD V0.2 §4.2.3 拍板：legacy `price` and `trade_condition` both
+        // map to V2 `trade`. accept(trade) → kind=trade unconditionally;
+        // verification gates ghost *visibility* upstream, not inference.
         params.publishKind.value = "trade";
         break;
-      case "help_tag":
+      case "help":
         // Don't clobber a tag the user already typed — that would be the
         // "AI 静默覆盖" reflex the PRD calls out as a reflex to avoid.
         if (params.tagInput.value.trim().length === 0) {
@@ -399,6 +406,14 @@ export function createSuggestedComponentsActions(
         // panel is owned by usePublishLocationOptions one level up; the
         // accept gesture here is a no-op on draft state and the SFC at
         // the call site handles the actual panel-open side effect.
+        break;
+      case "media":
+      case "quality":
+      case "audience":
+      case "tags":
+        // V2-only kinds with no current draft mutation. The ghost is still
+        // consumed (removed from list) so the user's "I saw it" intent
+        // matches the visual state; future steps can attach side effects.
         break;
     }
     removeAt(idx);

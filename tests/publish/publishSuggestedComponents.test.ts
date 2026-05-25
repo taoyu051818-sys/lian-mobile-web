@@ -45,33 +45,39 @@ function makeHarness(
   return { components, publishKind, tagInput, merchantVerified, campusVerified, actions };
 }
 
+// PRD V0.3 stage B2: V2 component kinds (paired with ps#624). Legacy V1 names
+// (event_time / price / merchant_info / trade_condition / help_tag) are still
+// accepted at the wire boundary by `parseSuggestedComponents`, but every UI
+// state — including this test harness — sees only canonical V2 kinds.
 const LOCATION_HINT: SuggestedComponent = {
   kind: "location",
   payload: {},
   label: "在哪儿？加个地点",
 };
 const EVENT_HINT: SuggestedComponent = {
-  kind: "event_time",
+  kind: "event",
   payload: {},
   label: "活动吗？加个时间",
 };
 const PRICE_HINT: SuggestedComponent = {
-  kind: "price",
+  // V2: legacy `price` collapses into `trade` at the wire mapper. The
+  // §4.2.3 ratchet (accept(price) → kind=trade) lives in the V2 `trade` arm.
+  kind: "trade",
   payload: {},
   label: "加个价格",
 };
 const MERCHANT_HINT: SuggestedComponent = {
-  kind: "merchant_info",
+  kind: "merchant",
   payload: {},
   label: "看起来像商家信息",
 };
 const TRADE_HINT: SuggestedComponent = {
-  kind: "trade_condition",
+  kind: "trade",
   payload: {},
   label: "加个二手物品状态",
 };
 const HELP_HINT: SuggestedComponent = {
-  kind: "help_tag",
+  kind: "help",
   payload: {},
   label: "需要别人帮忙吗？",
 };
@@ -107,7 +113,7 @@ describe("createSuggestedComponentsActions accept (PRD V0.2 step E-main)", () =>
     expect(h.components.value).toEqual([]);
   });
 
-  it("accept(trade_condition) flips publishKind to trade for campus_verified users", () => {
+  it("accept(trade) flips publishKind to trade for campus_verified users", () => {
     const h = makeHarness([TRADE_HINT], { campusVerified: true });
 
     h.actions.accept(TRADE_HINT);
@@ -116,19 +122,24 @@ describe("createSuggestedComponentsActions accept (PRD V0.2 step E-main)", () =>
     expect(h.components.value).toEqual([]);
   });
 
-  it("accept(trade_condition) does not flip publishKind for unverified users but still removes the entry", () => {
+  it("accept(trade) flips publishKind to trade unconditionally — V0.3 stage B2 unifies legacy price + trade_condition under one V2 kind, so capability gating happens upstream (visibility), not at inference", () => {
+    // Legacy `price` was unconditional (§4.2.3), legacy `trade_condition` was
+    // campus-gated. Both collapse to V2 `trade` after ps#624; a single inline
+    // `trade` ghost no longer carries enough wire info to distinguish the
+    // two. We mirror the §4.2.3 unconditional rule so accept() never silently
+    // no-ops on a ghost the user can see.
     const h = makeHarness([TRADE_HINT], { campusVerified: false });
 
     h.actions.accept(TRADE_HINT);
 
-    expect(h.publishKind.value).toBe("regular");
+    expect(h.publishKind.value).toBe("trade");
     expect(h.components.value).toEqual([]);
   });
 
-  it("accept(price) flips publishKind to trade unconditionally (PRD V0.2 §4.2.3)", () => {
-    // §4.2.3 拍板：accept(price) → kind=trade，enum 不变。Verification gates
-    // ghost visibility (capability gating), not kind inference — once the
-    // user can see and accept the ghost, treat it as a trade signal.
+  it("accept(trade) — alias of legacy price ghost — flips publishKind to trade unconditionally (PRD V0.2 §4.2.3)", () => {
+    // §4.2.3 拍板：accept(price) → kind=trade，enum 不变. After ps#624, legacy
+    // `price` wire is mapped to V2 `trade` at the parser; the inference
+    // contract is unchanged for the user.
     const h = makeHarness([PRICE_HINT], {
       merchantVerified: true,
       campusVerified: true,
@@ -140,7 +151,7 @@ describe("createSuggestedComponentsActions accept (PRD V0.2 step E-main)", () =>
     expect(h.components.value).toEqual([]);
   });
 
-  it("accept(price) → trade even when only campus_verified", () => {
+  it("accept(trade) — alias of legacy price — flips publishKind to trade even when only campus_verified", () => {
     const h = makeHarness([PRICE_HINT], {
       merchantVerified: false,
       campusVerified: true,
@@ -152,10 +163,10 @@ describe("createSuggestedComponentsActions accept (PRD V0.2 step E-main)", () =>
     expect(h.components.value).toEqual([]);
   });
 
-  it("accept(price) → trade even with no verification flags (visibility gate is upstream)", () => {
-    // Capability gating decides whether the price ghost surfaces at all.
-    // If it did surface (server filter slip, or campusVerified flipped
-    // mid-tick), the inference contract still says trade per §4.2.3.
+  it("accept(trade) — alias of legacy price — flips publishKind to trade with no verification flags (visibility gate is upstream)", () => {
+    // Capability gating decides whether the ghost surfaces at all. If it
+    // did surface (server filter slip, or campusVerified flipped mid-tick),
+    // the inference contract still says trade per §4.2.3.
     const h = makeHarness([PRICE_HINT], {
       merchantVerified: false,
       campusVerified: false,
@@ -167,7 +178,7 @@ describe("createSuggestedComponentsActions accept (PRD V0.2 step E-main)", () =>
     expect(h.components.value).toEqual([]);
   });
 
-  it("accept(help_tag) seeds tagInput with 求助 only when blank", () => {
+  it("accept(help) seeds tagInput with 求助 only when blank", () => {
     const h = makeHarness([HELP_HINT]);
 
     h.actions.accept(HELP_HINT);
@@ -177,15 +188,12 @@ describe("createSuggestedComponentsActions accept (PRD V0.2 step E-main)", () =>
     expect(h.components.value).toEqual([]);
   });
 
-  it("accept(help_tag) preserves an existing user-typed tag (no silent clobber)", () => {
+  it("accept(help) preserves an existing user-typed tag (no silent clobber)", () => {
     const h = makeHarness([HELP_HINT]);
     h.tagInput.value = "#夜跑";
 
     h.actions.accept(HELP_HINT);
 
-    // Tag stays, ghost is consumed (the user already has a tag they care
-    // about; the suggestion isn't dropped on the floor — the visual state
-    // still reflects the user's "I saw it" intent).
     expect(h.tagInput.value).toBe("#夜跑");
     expect(h.components.value).toEqual([]);
   });
