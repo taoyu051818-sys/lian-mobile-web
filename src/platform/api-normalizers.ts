@@ -395,6 +395,13 @@ export function normalizeTradeExtension(value: unknown): TradePostExtension | un
 /**
  * Extract the V2 components array from a raw payload. Returns undefined when
  * the payload does not contain a valid V2 components block.
+ *
+ * Wire contract (mw#965): `metadata.components` is array-shaped on the API
+ * boundary. Backend storage may keep an object map keyed by component kind,
+ * but the DTO/serializer is responsible for converting that map into an array
+ * before it leaves the server. The frontend deliberately does NOT detect
+ * object shape — array-only keeps the wire contract explicit and keeps
+ * normalization on one side of the boundary instead of two.
  */
 export function extractV2Components(value: unknown): MetadataComponentV2[] | undefined {
   const record = asRecord(value);
