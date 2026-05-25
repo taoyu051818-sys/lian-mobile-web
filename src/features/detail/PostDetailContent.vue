@@ -5,7 +5,12 @@ import type { HelpManagePlan } from "../../domain/helpManagePolicy";
 import type { HelpVotePlan } from "../../domain/helpVotePolicy";
 import type { MerchantErrandUnavailableReason } from "../../types/merchant";
 import type { PlaceRef, PlaceSheet } from "../../types/place";
-import type { PostType } from "../../types/post";
+import type {
+  PostAvailableAction,
+  PostDetailMetadataV2,
+  PostRelation,
+  PostType,
+} from "../../types/post";
 import type { AudienceVisibility } from "../../types/audience";
 import type {
   EventPostExtension,
@@ -13,7 +18,6 @@ import type {
   MerchantPostExtension,
   TradePostExtension,
 } from "../../types/post-extensions";
-import type { PostDetailMetadataV2 } from "../../types/post";
 import {
   resolvePostCapabilities,
   type PostCapabilityId,
@@ -22,6 +26,7 @@ import {
 import { isPostActionAvailable, type PostActionContext } from "./postActionRegistry";
 import PostActionFeedback from "./PostActionFeedback.vue";
 import PostComponentsSlot from "./PostComponentsSlot.vue";
+import PostDetailActionsBlock from "./PostDetailActionsBlock.vue";
 import PostDetailEventBlock from "./PostDetailEventBlock.vue";
 import PostDetailGallery from "./PostDetailGallery.vue";
 import PostDetailHelpBlock from "./PostDetailHelpBlock.vue";
@@ -29,6 +34,7 @@ import PostDetailHelpManageBlock from "./PostDetailHelpManageBlock.vue";
 import PostDetailInfoStrip from "./PostDetailInfoStrip.vue";
 import PostDetailMainBody from "./PostDetailMainBody.vue";
 import PostDetailMerchantBlock from "./PostDetailMerchantBlock.vue";
+import PostDetailRelationsBlock from "./PostDetailRelationsBlock.vue";
 import PostDetailTradeBlock from "./PostDetailTradeBlock.vue";
 import PostDetailTypedFallbackBlock from "./PostDetailTypedFallbackBlock.vue";
 import PostPlaceSheetBlock from "./PostPlaceSheetBlock.vue";
@@ -96,6 +102,18 @@ const props = defineProps<{
    * without widening this component's prop set.
    */
   metadata?: PostDetailMetadataV2;
+  /**
+   * PRD V0.3 §2.4 / B3-1 — backend-emitted post graph relations. Forwarded
+   * to `PostDetailRelationsBlock`, which renders an inline "相关" section
+   * when the array is non-empty and skips entirely otherwise.
+   */
+  relations?: PostRelation[];
+  /**
+   * PRD V0.3 §2.4 / B3-1 — backend-authoritative action availability.
+   * Forwarded to `PostDetailActionsBlock`. Buttons emit `actionInvoked` only;
+   * RPC handlers wire up in a follow-up PR once the action enum is locked.
+   */
+  availableActions?: PostAvailableAction[];
 }>();
 
 // Issue #785 — single capability lookup. The view used to ladder
@@ -203,6 +221,8 @@ const emit = defineEmits<{
   helpManageUnlinkEvent: [];
   helpManageResolve: [];
   helpManageClose: [];
+  /** PRD V0.3 §2.4 / B3-1 — relayed up so a follow-up PR can wire RPC handlers. */
+  availableActionInvoked: [type: string];
   "update:reportCategory": [value: string];
   "update:reportReason": [value: string];
   "update:placeSheetOpen": [value: boolean];
@@ -279,6 +299,13 @@ const emit = defineEmits<{
 
     <PostDetailTradeBlock v-if="showTradeBlock" :trade="trade!" />
     <PostDetailTypedFallbackBlock v-else-if="showTradeFallback" post-type="trade" />
+
+    <PostDetailRelationsBlock :relations="relations" />
+
+    <PostDetailActionsBlock
+      :actions="availableActions"
+      @action-invoked="emit('availableActionInvoked', $event)"
+    />
 
     <PostComponentsSlot :metadata="metadata" />
 
