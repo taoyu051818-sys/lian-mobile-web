@@ -30,7 +30,9 @@ async function read(rel: string): Promise<string> {
 describe("ProfileView mounts ProfileRelationSurfacesBlock", () => {
   it("imports ProfileRelationSurfacesBlock", async () => {
     const src = await read("src/features/profile/ProfileView.vue");
-    expect(src).toMatch(/import ProfileRelationSurfacesBlock from "\.\/ProfileRelationSurfacesBlock\.vue"/);
+    expect(src).toMatch(
+      /import ProfileRelationSurfacesBlock from "\.\/ProfileRelationSurfacesBlock\.vue"/,
+    );
   });
 
   it("mounts ProfileRelationSurfacesBlock with the current items + user id", async () => {

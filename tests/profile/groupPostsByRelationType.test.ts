@@ -96,9 +96,7 @@ describe("groupPostsByRelationType", () => {
   });
 
   it("ignores items with missing relations field", () => {
-    const result = groupPostsByRelationType([
-      { tid: 10, id: "10", title: "无 relations" },
-    ]);
+    const result = groupPostsByRelationType([{ tid: 10, id: "10", title: "无 relations" }]);
 
     expect(result.participated).toHaveLength(0);
     expect(result.helped).toHaveLength(0);
