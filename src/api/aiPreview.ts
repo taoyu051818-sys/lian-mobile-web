@@ -18,9 +18,12 @@
  *       title: string | null,                 // ghost-text title, ≤40 chars
  *       bodyCandidate: string | null,         // 润色 candidate, ≤300 chars
  *       suggestedComponents: Array<{          // typed inline-component hints
- *         type:
- *           | "location" | "event_time" | "price"
- *           | "merchant_info" | "trade_condition" | "help_tag",
+ *         type:                                // PRD V0.3 stage B2: V2 kinds
+ *           | "location" | "time" | "media" | "quality" | "audience"
+ *           | "tags" | "event" | "merchant" | "trade" | "help"
+ *           // V1 kinds still tolerated on input for backward compat:
+ *           | "event_time" | "price" | "merchant_info"
+ *           | "trade_condition" | "help_tag",
  *         reason: string                      // ≤60 chars Chinese
  *       }>,                                   // deduped + capped at 6
  *       inferredKind: "image" | "text" | "event" | "merchant"
@@ -41,8 +44,8 @@
 
 import { apiSend, LianApiError } from "./http";
 import {
+  coerceSuggestedComponentKind,
   isInferredKind,
-  isSuggestedComponentKind,
   type InferredKind,
   type SuggestedComponent,
   type SuggestedComponentKind,
@@ -113,14 +116,18 @@ function parseSuggestedComponents(value: unknown): SuggestedComponent[] {
     const record = entry as Record<string, unknown>;
     // Server emits `type`; we accept `kind` too so an E-main UI mapper
     // round-tripping through this parser doesn't have to rename the field.
-    const kindRaw = record.type ?? record.kind;
-    if (!isSuggestedComponentKind(kindRaw)) continue;
-    if (seen.has(kindRaw)) continue;
+    // V1 wire kinds (event_time / price / merchant_info / trade_condition /
+    // help_tag) are coerced to V2 here so an older server response still
+    // lands as canonical V2 in the rest of the UI.
+    const rawKind = record.type ?? record.kind;
+    const kind = coerceSuggestedComponentKind(rawKind);
+    if (!kind) continue;
+    if (seen.has(kind)) continue;
     const labelRaw = record.reason ?? record.label;
     const label = typeof labelRaw === "string" ? labelRaw.trim() : "";
     if (!label) continue;
-    seen.add(kindRaw);
-    out.push({ kind: kindRaw, payload: {}, label });
+    seen.add(kind);
+    out.push({ kind, payload: {}, label });
   }
   return out;
 }

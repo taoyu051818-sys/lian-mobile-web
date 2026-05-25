@@ -1,36 +1,39 @@
 /**
- * Suggested-component types for the publish LLM tick (PRD V0.2 step E).
+ * Suggested-component types for the publish LLM tick.
  *
- * The backend (`ai-post-preview-candidates.js`) emits one of six typed
- * inline-component hints per LLM response:
+ * PRD V0.3 stage B2 (paired with ps#624): the AI preview now emits canonical
+ * V2 component kinds — `location | time | media | quality | audience | tags |
+ * event | merchant | trade | help`. The wire still tolerates the legacy V1
+ * type strings (`event_time / price / merchant_info / trade_condition /
+ * help_tag`) so an older client/server combo doesn't black-hole the ghost
+ * list; `parseSuggestedComponents` in `aiPreview.ts` is the single point of
+ * V1→V2 mapping.
  *
- *   - location          — "加个地点"
- *   - event_time        — "这是活动吗？加个时间"
- *   - price             — "加个价格"
- *   - merchant_info     — "看起来像商家信息"
- *   - trade_condition   — "加个二手物品状态"
- *   - help_tag          — "需要别人帮忙吗？"
+ * Frontend canonical shape stays `{ kind, payload, label }`:
  *
- * The frontend stores them as `{ kind, payload, label }` rather than the
- * server's `{ type, reason }`:
- *
- *   - `kind`     — same enum as backend `type`, renamed so the frontend
- *                  doesn't shadow the JS `type` keyword and so future
- *                  E-main UI code reads naturally (`if (s.kind === ...)`).
- *   - `label`    — human-readable string the ghost component renders.
- *                  Sourced from backend `reason` for now; E-main may
- *                  override per-kind from a brand constant.
- *   - `payload`  — bag of kind-specific defaults that E-main "实化" code
- *                  hands to the corresponding sub-draft (event/merchant/
- *                  trade/place). Empty here in step E-pre — only the
- *                  pipe is built; E-main will populate.
- *
- * Step E-pre scope: types + state plumbing only. No UI consumes
- * `suggestedComponents` yet; that lands in E-main.
+ *   - `kind`     — V2 enum. `kind` not `type` so it doesn't shadow the JS
+ *                  `type` keyword.
+ *   - `label`    — human-readable string the ghost component renders. Sourced
+ *                  from backend `reason` for now; brand constants may
+ *                  override per-kind in a future pass.
+ *   - `payload`  — bag of kind-specific defaults that `accept()` 实化 code
+ *                  hands to the corresponding sub-draft. Empty today.
  */
 
 export type SuggestedComponentKind =
   | "location"
+  | "time"
+  | "media"
+  | "quality"
+  | "audience"
+  | "tags"
+  | "event"
+  | "merchant"
+  | "trade"
+  | "help";
+
+/** V1 wire-only kinds we still tolerate on input. Mapped to V2 by the parser. */
+export type LegacySuggestedComponentKind =
   | "event_time"
   | "price"
   | "merchant_info"
@@ -45,12 +48,36 @@ export interface SuggestedComponent {
 
 export const SUGGESTED_COMPONENT_KINDS: ReadonlyArray<SuggestedComponentKind> = [
   "location",
-  "event_time",
-  "price",
-  "merchant_info",
-  "trade_condition",
-  "help_tag",
+  "time",
+  "media",
+  "quality",
+  "audience",
+  "tags",
+  "event",
+  "merchant",
+  "trade",
+  "help",
 ];
+
+/**
+ * V1 → V2 wire mapping. Mirrors `V1_TO_V2_COMPONENT_TYPE` in
+ * `lian-platform-server/src/server/post-metadata-components.js` — the parser
+ * uses it to keep an older server's response from being dropped on the floor.
+ * `location` is a passthrough (same name in both versions).
+ */
+const LEGACY_TO_V2_KIND: Readonly<Record<LegacySuggestedComponentKind, SuggestedComponentKind>> = {
+  event_time: "time",
+  price: "trade",
+  merchant_info: "merchant",
+  trade_condition: "trade",
+  help_tag: "help",
+};
+
+const V2_KIND_SET: ReadonlySet<SuggestedComponentKind> = new Set(SUGGESTED_COMPONENT_KINDS);
+
+const LEGACY_KIND_SET: ReadonlySet<LegacySuggestedComponentKind> = new Set(
+  Object.keys(LEGACY_TO_V2_KIND) as LegacySuggestedComponentKind[],
+);
 
 export type InferredKind = "image" | "text" | "event" | "merchant" | "trade" | "help" | "place";
 
@@ -65,10 +92,20 @@ const INFERRED_KIND_VALUES: ReadonlySet<InferredKind> = new Set([
 ]);
 
 export function isSuggestedComponentKind(value: unknown): value is SuggestedComponentKind {
-  return (
-    typeof value === "string" &&
-    (SUGGESTED_COMPONENT_KINDS as ReadonlyArray<string>).includes(value)
-  );
+  return typeof value === "string" && V2_KIND_SET.has(value as SuggestedComponentKind);
+}
+
+/**
+ * Coerce a wire-`type` string (V1 or V2) to the canonical V2 kind, or null
+ * when the value is neither. Pure mapper — no allocation, no logging.
+ */
+export function coerceSuggestedComponentKind(value: unknown): SuggestedComponentKind | null {
+  if (typeof value !== "string") return null;
+  if (V2_KIND_SET.has(value as SuggestedComponentKind)) return value as SuggestedComponentKind;
+  if (LEGACY_KIND_SET.has(value as LegacySuggestedComponentKind)) {
+    return LEGACY_TO_V2_KIND[value as LegacySuggestedComponentKind];
+  }
+  return null;
 }
 
 export function isInferredKind(value: unknown): value is InferredKind {

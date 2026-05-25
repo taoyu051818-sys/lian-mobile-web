@@ -49,7 +49,7 @@ function fullResponse(over: Partial<PublishLlmTickResponse> = {}): PublishLlmTic
     bodyCandidate: "polished body",
     suggestedComponents: [
       { kind: "location", payload: {}, label: "在哪儿？加个地点" },
-      { kind: "event_time", payload: {}, label: "活动吗？加个时间" },
+      { kind: "event", payload: {}, label: "活动吗？加个时间" },
     ],
     inferredKind: "event",
     modelLatencyMs: 320,
@@ -179,7 +179,7 @@ describe("usePublishLlmTick (PRD V0.2 step E-pre)", () => {
     expect(h.setBodyCandidate).toHaveBeenCalledWith("polished body");
     expect(h.suggestedComponents.value).toHaveLength(2);
     expect(h.suggestedComponents.value[0]).toMatchObject({ kind: "location" });
-    expect(h.suggestedComponents.value[1]).toMatchObject({ kind: "event_time" });
+    expect(h.suggestedComponents.value[1]).toMatchObject({ kind: "event" });
     h.scope.stop();
   });
 
@@ -302,7 +302,7 @@ describe("usePublishLlmTick (PRD V0.2 step E-pre)", () => {
         ...emptyResponse(),
         title: null,
         bodyCandidate: "only-body",
-        suggestedComponents: [{ kind: "price", payload: {}, label: "加个价格" }],
+        suggestedComponents: [{ kind: "trade", payload: {}, label: "加个价格" }],
       },
     });
 
@@ -313,7 +313,7 @@ describe("usePublishLlmTick (PRD V0.2 step E-pre)", () => {
     expect(h.setTitleCandidate).not.toHaveBeenCalled();
     expect(h.setBodyCandidate).toHaveBeenCalledWith("only-body");
     expect(h.suggestedComponents.value).toEqual([
-      { kind: "price", payload: {}, label: "加个价格" },
+      { kind: "trade", payload: {}, label: "加个价格" },
     ]);
     h.scope.stop();
   });
