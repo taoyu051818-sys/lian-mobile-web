@@ -1,6 +1,7 @@
 import { apiGet, apiSend } from "./http";
 import { DEFAULT_USER_LABEL } from "../config/brand";
 import { ensureClientId } from "../platform/clientIdentity";
+import type { AudienceVisibility } from "../types/audience";
 import type {
   ChannelMessage,
   ChannelReadPayload,
@@ -98,6 +99,7 @@ export function buildPendingChannelMessage(
   content: string,
   identityTag: string | undefined,
   currentUser: { username?: string; displayName?: string; avatarText?: string; id?: string } | null,
+  visibility: AudienceVisibility = "public",
 ): ChannelMessage {
   void identityTag;
   const nonce = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
@@ -109,6 +111,7 @@ export function buildPendingChannelMessage(
     clientNonce: nonce,
     content,
     plainText: content,
+    visibility,
     actor: {
       id: currentUser?.id || "",
       name,
@@ -131,6 +134,7 @@ export async function sendChannelMessage(payload: SendChannelMessagePayload): Pr
       readerId,
       content: payload.content,
       identityTag: payload.identityTag || "",
+      visibility: payload.visibility || "public",
       // Backends that don't recognize this field will ignore it. Once the
       // server echoes it back on the corresponding ChannelMessage, the optimistic
       // pending item is replaced by exact nonce match instead of content equality.

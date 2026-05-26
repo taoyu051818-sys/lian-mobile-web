@@ -153,7 +153,12 @@ export function useChannelMessages() {
     currentUser: ProfileUser | null,
     visibility: AudienceVisibility = "public",
   ) {
-    const pending = buildPendingChannelMessage(content, identityTag || undefined, currentUser);
+    const pending = buildPendingChannelMessage(
+      content,
+      identityTag || undefined,
+      currentUser,
+      visibility,
+    );
     channelItems.value = [...channelItems.value, pending];
     await scrollToBottom();
 
@@ -191,6 +196,7 @@ export function useChannelMessages() {
         content: pending.content || "",
         identityTag: identityTag || "",
         clientNonce: pending.clientNonce,
+        visibility: pending.visibility || "public",
       });
       await replacePendingWithLatest(pendingId);
     } catch {

@@ -73,6 +73,28 @@ describe("notification routing normalization", () => {
     expect(item.fallbackText).toBe("订单类通知会在后续版本接入目标页。");
   });
 
+  it("normalizes NodeBB-shaped notification actors before rendering", () => {
+    const item = normalizeNotificationItem({
+      id: "reply-nodebb-actor",
+      type: "new-reply",
+      tid: 18,
+      title: "有人回复了你的帖子",
+      actor: {
+        uid: 77,
+        username: "nodebb-notifier",
+        displayname: " NodeBB 通知人 ",
+        picture: " https://cdn.example.com/nodebb-notifier.jpg ",
+      },
+    });
+
+    expect(item.actor).toEqual({
+      id: "77",
+      username: "nodebb-notifier",
+      displayName: "NodeBB 通知人",
+      avatarUrl: "https://cdn.example.com/nodebb-notifier.jpg",
+    });
+  });
+
   it("accepts the notifications alias used by some message payloads", () => {
     const response = normalizeNotificationResponse({
       notifications: [{ id: "reply-2", type: "reply", tid: 7, title: "回复通知" }],
@@ -81,6 +103,7 @@ describe("notification routing normalization", () => {
     expect(response.items).toHaveLength(1);
     expect(response.items?.[0]?.target).toEqual({ kind: "detail", tid: 7 });
   });
+
 });
 
 describe("errand-order notification routing (ps#477 / ps#495 fan-out)", () => {

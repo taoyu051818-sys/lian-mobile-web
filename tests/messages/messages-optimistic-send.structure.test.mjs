@@ -22,10 +22,11 @@ test("api/channel.ts exports buildPendingChannelMessage", () => {
   assert.match(apiSource, /export function buildPendingChannelMessage/);
 });
 
-test("buildPendingChannelMessage accepts content, identityTag, and currentUser", () => {
+test("buildPendingChannelMessage accepts content, identityTag, currentUser, and visibility", () => {
   assert.match(apiSource, /buildPendingChannelMessage\(/);
   assert.match(apiSource, /content:\s*string/);
   assert.match(apiSource, /identityTag:\s*string\s*\|\s*undefined/);
+  assert.match(apiSource, /visibility:\s*AudienceVisibility\s*=\s*"public"/);
 });
 
 test("buildPendingChannelMessage returns a ChannelMessage with deliveryState sending", () => {
@@ -40,7 +41,9 @@ test("buildPendingChannelMessage generates local-only id with pending- prefix", 
   assert.match(apiSource, /pending-/);
 });
 
-// --- useChannelMessages optimistic send flow ---
+test("buildPendingChannelMessage carries visibility onto the optimistic item", () => {
+  assert.match(apiSource, /visibility,/);
+});
 
 test("useChannelMessages imports buildPendingChannelMessage", () => {
   assert.match(
@@ -49,8 +52,11 @@ test("useChannelMessages imports buildPendingChannelMessage", () => {
   );
 });
 
-test("useChannelMessages creates pending message before API call in sendMessage", () => {
-  assert.match(channelSource, /buildPendingChannelMessage\(content/);
+test("useChannelMessages creates pending message with current visibility", () => {
+  assert.match(
+    channelSource,
+    /buildPendingChannelMessage\(\s*content,\s*identityTag \|\| undefined,\s*currentUser,\s*visibility,\s*\)/,
+  );
 });
 
 test("useChannelMessages clears composer immediately after creating pending message", () => {
@@ -61,11 +67,14 @@ test("useChannelMessages clears composer immediately after creating pending mess
   assert.ok(pendingIdx >= 0, "should create pending message");
 });
 
+test("sendChannelMessage posts visibility to the channel API", () => {
+  assert.match(apiSource, /visibility: payload\.visibility \|\| "public"/);
+});
+
 test("useChannelMessages replaces pending message with server response on success", () => {
   assert.match(channelSource, /replacePendingWithLatest/);
 });
 
-test("useChannelMessages marks pending message as failed on send error", () => {
   assert.match(channelSource, /deliveryState:\s*"failed"/);
 });
 
