@@ -34,11 +34,8 @@ const logoUrl = computed(() => club.value?.logoUrl || props.item.cover || "");
 const foundedYear = computed(() => {
   const foundedAt = club.value?.foundedAt;
   if (!foundedAt) return "";
-  try {
-    return new Date(foundedAt).getFullYear().toString();
-  } catch {
-    return "";
-  }
+  const year = new Date(foundedAt).getFullYear();
+  return Number.isFinite(year) ? year.toString() : "";
 });
 
 const logoError = ref(false);

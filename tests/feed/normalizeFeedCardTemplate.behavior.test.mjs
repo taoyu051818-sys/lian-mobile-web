@@ -4,7 +4,7 @@ import assert from "node:assert/strict";
 // Pure normalization helpers extracted from src/api/feed.ts for behavioral testing.
 // These mirror the production logic so node --test can exercise them without TS compilation.
 
-const CARD_TEMPLATES = new Set(["image", "text", "activity", "place", "merchant", "help"]);
+const CARD_TEMPLATES = new Set(["image", "text", "activity", "place", "merchant", "help", "club"]);
 
 const CONTENT_TYPE_CARD_TEMPLATES = {
   image: "image",
@@ -14,6 +14,9 @@ const CONTENT_TYPE_CARD_TEMPLATES = {
   post: "text",
   article: "text",
   discussion: "text",
+  project: "text",
+  review: "text",
+  submission: "text",
   activity: "activity",
   event: "activity",
   opportunity: "activity",
@@ -27,6 +30,7 @@ const CONTENT_TYPE_CARD_TEMPLATES = {
   help: "help",
   support: "help",
   ask: "help",
+  club: "club",
 };
 
 function readableText(value) {
@@ -44,6 +48,36 @@ function normalizeFeedPresentationIntent(value) {
 
 function normalizeFeedContentType(value) {
   return readableText(value).toLowerCase();
+}
+
+function normalizeFeedRelationTarget(value) {
+  if (!value || typeof value !== "object") return undefined;
+  const kind = readableText(value.kind);
+  const id = readableText(value.id);
+  if (!kind || !id) return undefined;
+  return { kind, id };
+}
+
+function normalizeFeedRelations(value) {
+  if (!Array.isArray(value)) return undefined;
+  const relations = value
+    .map((entry) => {
+      if (!entry || typeof entry !== "object") return null;
+      const type = readableText(entry.type);
+      if (!type) return null;
+
+      const target = normalizeFeedRelationTarget(entry.target);
+      if (target?.kind === "post") {
+        const targetTid = normalizeFeedItemId(target.id);
+        if (targetTid > 0) return { type, targetTid };
+      }
+
+      const targetTid = normalizeFeedItemId(entry.targetTid || entry.targetId || entry.tid);
+      if (targetTid <= 0) return null;
+      return { type, targetTid };
+    })
+    .filter(Boolean);
+  return relations.length ? relations : undefined;
 }
 
 function normalizeFeedItemId(value) {
@@ -123,6 +157,7 @@ function normalizeFeedItem(value) {
     presentationIntent,
     cardTemplate,
     cardTemplateSource,
+    relations: normalizeFeedRelations(record.relations),
   };
 }
 
@@ -186,6 +221,9 @@ describe("normalizeFeedCardTemplate: known contentType mapping", () => {
     ["post", "text"],
     ["article", "text"],
     ["discussion", "text"],
+    ["project", "text"],
+    ["review", "text"],
+    ["submission", "text"],
     ["activity", "activity"],
     ["event", "activity"],
     ["opportunity", "activity"],
@@ -199,6 +237,7 @@ describe("normalizeFeedCardTemplate: known contentType mapping", () => {
     ["help", "help"],
     ["support", "help"],
     ["ask", "help"],
+    ["club", "club"],
   ];
 
   for (const [contentType, expected] of knownMappings) {
@@ -609,4 +648,64 @@ describe("normalizeFeedItem: edge cases", () => {
     assert.equal(item.title, "未命名内容");
     assert.equal(item.locationArea, "校园");
   });
+
+  it("normalizes relations with known and unknown types, drops invalid entries", () => {
+    const item = normalizeFeedItem({
+      id: 1,
+      relations: [
+        { type: "help_event_link", targetTid: 101 },
+        { type: "custom_relation", targetTid: "202" },
+        { type: "", targetTid: 303 },
+        { type: "event_followup", targetTid: 0 },
+        { targetTid: 404 },
+      ],
+    });
+    assert.deepEqual(item.relations, [
+      { type: "help_event_link", targetTid: 101 },
+      { type: "custom_relation", targetTid: 202 },
+    ]);
+  });
+});
+
+it("keeps relations undefined when source is not an array", () => {
+  const item = normalizeFeedItem({ id: 1, relations: { type: "help_event_link", targetTid: 10 } });
+  assert.equal(item.relations, undefined);
+});
+
+it("keeps relations undefined when array normalizes to empty", () => {
+  const item = normalizeFeedItem({ id: 1, relations: [{ type: "", targetTid: 0 }] });
+  assert.equal(item.relations, undefined);
+});
+
+it("supports nested target payloads in relation entries", () => {
+  const item = normalizeFeedItem({
+    id: 1,
+    relations: [
+      { type: "help_event_link", target: { kind: "post", id: 31 } },
+      { type: "custom_relation", target: { kind: "user", id: 99 } },
+    ],
+  });
+  assert.deepEqual(item.relations, [{ type: "help_event_link", targetTid: 31 }]);
+});
+
+it("supports targetId and tid aliases in relation entries", () => {
+  const item = normalizeFeedItem({
+    id: 1,
+    relations: [
+      { type: "trade_offer_link", targetId: 11 },
+      { type: "event_followup", tid: 12 },
+    ],
+  });
+  assert.deepEqual(item.relations, [
+    { type: "trade_offer_link", targetTid: 11 },
+    { type: "event_followup", targetTid: 12 },
+  ]);
+});
+
+it("trims relation type text", () => {
+  const item = normalizeFeedItem({
+    id: 1,
+    relations: [{ type: "  help_event_link  ", targetTid: 21 }],
+  });
+  assert.deepEqual(item.relations, [{ type: "help_event_link", targetTid: 21 }]);
 });

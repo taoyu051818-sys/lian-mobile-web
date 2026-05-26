@@ -15,7 +15,11 @@ const feedItemCardSource = fs.readFileSync(
 test("Feed presentationIntent: types the normalized card template fields", () => {
   assert.match(
     feedTypeSource,
-    /export type FeedPresentationIntent = "image" \| "text" \| "activity" \| "place" \| "merchant" \| "help";/,
+    /export type FeedPresentationIntent =\s*\| "image"[\s\S]*\| "help"[\s\S]*\| "club";/,
+  );
+  assert.match(
+    feedTypeSource,
+    /export type FeedItemShellCardTemplate =\s*\| "image"[\s\S]*\| "help";/,
   );
   assert.match(
     feedTypeSource,
@@ -30,7 +34,7 @@ test("Feed presentationIntent: normalizes card templates in the feed adapter bef
   assert.match(feedApiSource, /export function normalizeFeedCardTemplate\(/);
   assert.match(
     feedApiSource,
-    /const normalizedServerTemplate = normalizeFeedPresentationIntent\(item\.cardTemplate\) \|\| normalizeFeedPresentationIntent\(item\.presentationIntent\);/,
+    /const normalizedServerTemplate =[\s\S]*normalizeFeedPresentationIntent\(item\.cardTemplate\)[\s\S]*\|\|[\s\S]*normalizeFeedPresentationIntent\(item\.presentationIntent\);/,
   );
   assert.match(feedApiSource, /cardTemplateSource: "content-type"/);
   assert.match(feedApiSource, /cardTemplate: item\.cover \? "image" : "text"/);
@@ -38,20 +42,18 @@ test("Feed presentationIntent: normalizes card templates in the feed adapter bef
   assert.match(feedApiSource, /normalizeFeedItem\(item\)/);
 });
 
-test("Feed presentationIntent: keeps FeedItemCard on normalized template inputs and safe fallback rendering", () => {
+test("Feed presentationIntent: keeps FeedItemCard on normalized template inputs and club fallback seam", () => {
   assert.match(
     feedItemCardSource,
-    /function normalizePresentationIntent\(value: FeedItem\["cardTemplate"\] \| FeedItem\["presentationIntent"\]\): CardTemplate \| null/,
+    /function normalizePresentationIntent\(\s*value: FeedItem\["cardTemplate"\] \| FeedItem\["presentationIntent"\],\s*\): FeedCardVariant \| null/,
   );
+  assert.match(feedItemCardSource, /const FEED_CARD_VARIANTS: ReadonlySet<FeedCardVariant> = new Set\(\[/);
+  assert.match(feedItemCardSource, /"club",/);
   assert.match(
     feedItemCardSource,
-    /const normalizedCardTemplate = computed\(\(\) => normalizePresentationIntent\(props\.item\.cardTemplate\)\);/,
+    /const shellCardTemplate: CardTemplate = cardTemplate === "club" \? "text" : cardTemplate;/,
   );
-  assert.match(
-    feedItemCardSource,
-    /if \(normalizedCardTemplate\.value\) return normalizedCardTemplate\.value;/,
-  );
-  assert.match(feedItemCardSource, /return coverUrl\.value \? "image" : "text";/);
+  assert.match(feedItemCardSource, /<FeedItemClubCard v-if="cardDisplayData\.cardTemplate === 'club'" :item="props\.item" \/>/);
   assert.doesNotMatch(feedItemCardSource, /const searchText = computed/);
   assert.doesNotMatch(feedItemCardSource, /raw\.includes\(/);
 });

@@ -112,11 +112,11 @@ export function normalizeDisplayActor(value: unknown): DisplayActor | undefined 
   const record = asRecord(value);
   const actor: DisplayActor = {};
 
-  const id = optionalString(record.id);
-  const displayName = optionalString(record.displayName);
+  const id = optionalString(record.id ?? record.uid);
+  const displayName = optionalString(record.displayName ?? record.displayname);
   const username = optionalString(record.username);
   const name = optionalString(record.name);
-  const avatarUrl = optionalString(record.avatarUrl);
+  const avatarUrl = optionalString(record.avatarUrl ?? record.picture);
   const avatarText = optionalString(record.avatarText);
   const identityTag = optionalString(record.identityTag);
   const aliasId = optionalString(record.aliasId);
@@ -399,10 +399,27 @@ export function normalizeTradeExtension(value: unknown): TradePostExtension | un
 export function extractV2Components(value: unknown): MetadataComponentV2[] | undefined {
   const record = asRecord(value);
   const metadata = asRecord(record.metadata);
-  if (!Array.isArray(metadata.components)) return undefined;
-  return metadata.components.filter(
-    (c): c is MetadataComponentV2 => c && typeof c === "object" && typeof c.type === "string",
-  );
+  const rawComponents = metadata.components;
+
+  if (Array.isArray(rawComponents)) {
+    const normalized = rawComponents.filter(
+      (c): c is MetadataComponentV2 => c && typeof c === "object" && typeof c.type === "string",
+    );
+    return normalized.length ? normalized : undefined;
+  }
+
+  if (rawComponents && typeof rawComponents === "object") {
+    const normalized = Object.values(rawComponents as Record<string, unknown>).filter(
+      (c): c is MetadataComponentV2 => c && typeof c === "object" && typeof (c as { type?: unknown }).type === "string",
+    );
+    return normalized.length ? normalized : undefined;
+  }
+
+  return undefined;
+}
+
+export function normalizeMetadataComponents(value: unknown): MetadataComponentV2[] | undefined {
+  return extractV2Components(value);
 }
 
 /**
@@ -455,12 +472,13 @@ export function normalizeHelpExtensionV2(
     if (!helpId) return normalizeHelpExtension(v1Value);
     const status = asEnum(v2.status, HELP_STATUSES);
     if (!status) return normalizeHelpExtension(v1Value);
+    const linkedEventTid = asOptionalPositiveInt(v2.linkedEventTid);
     return {
       helpId,
       status,
       voteCount: asNonNegInt(v2.voteCount),
       commentCount: asNonNegInt(v2.commentCount),
-      ...(v2.linkedEventTid !== undefined ? { linkedEventTid: v2.linkedEventTid } : {}),
+      ...(linkedEventTid !== undefined ? { linkedEventTid } : {}),
     };
   }
   return normalizeHelpExtension(v1Value);

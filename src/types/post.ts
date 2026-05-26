@@ -6,6 +6,7 @@ import type {
   EventPostExtension,
   HelpPostExtension,
   MerchantPostExtension,
+  MetadataComponentV2,
   TradePostExtension,
 } from "./post-extensions";
 
@@ -38,6 +39,8 @@ export interface PostDetail {
   bookmarked: boolean;
   /** Audience visibility level for the post. */
   visibility?: AudienceVisibility;
+  /** Club metadata — present iff contentType === "club". */
+  club?: ClubMetadata;
   /** PRD V0.1 §6.3 — present iff postType === "event". */
   event?: EventPostExtension;
   /** Whether the current viewer has already joined this event. */
@@ -75,6 +78,12 @@ export interface PostDetail {
    * can hand-tailor wording without a frontend release.
    */
   errandUnavailableReasonText?: string;
+  /** Raw backend-shaped metadata components preserved for Phase 1 graph consumers. */
+  components?: MetadataComponentV2[];
+  /** Typed relations graph preserved from the backend contract. */
+  relations?: PostRelation[];
+  /** Backend-declared actions preserved verbatim for future graph consumers. */
+  availableActions?: PostAvailableAction[];
   /** PRD V0.1 §6.4 / §11 — present iff metadata.trade exists. */
   trade?: TradePostExtension;
   /**
@@ -131,9 +140,22 @@ export interface PostLocation {
  * Optional cross-references to other posts. PRD V0.1 §7.1.2 calls out that
  * `help` posts may resolve into `event` posts; that relation lives here.
  */
+export interface PostRelationTarget {
+  kind: string;
+  id: string;
+}
+
 export interface PostRelation {
-  type: "help_event_link" | "trade_offer_link" | "event_followup";
-  targetTid: number;
+  type: string;
+  target: PostRelationTarget;
+  role?: string;
+}
+
+export interface PostAvailableAction {
+  type: string;
+  enabled?: boolean;
+  reason?: string;
+  reasonText?: string;
 }
 
 export interface BasePostShape {

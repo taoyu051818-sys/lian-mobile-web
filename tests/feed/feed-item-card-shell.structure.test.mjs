@@ -44,11 +44,12 @@ test("FeedItemCardShell does not import from composables/, app/, or api/ layers"
   assert.doesNotMatch(shellSource, /from\s+["'][^"']*\/api\//);
 });
 
-test("FeedItemCardShell only imports vue, config/brand, and the two existing leaf SFCs", () => {
+test("FeedItemCardShell only imports vue, config/brand, types/audience, and the two existing leaf SFCs", () => {
   const importRe = /import[^;]*from\s+["']([^"']+)["']/g;
   const allowed = new Set([
     "vue",
     "../../config/brand",
+    "../../types/audience",
     "./FeedItemCardFooter.vue",
     "./FeedItemCardMedia.vue",
   ]);
@@ -80,6 +81,7 @@ test("FeedItemCardShell exposes the display props enumerated in PRD step A", () 
     "authorInitial",
     "cardTemplate",
     "templateMark",
+    "relationHint",
     "bodyPreview",
     "cardWarning",
   ]) {
@@ -98,10 +100,33 @@ test('FeedItemCardShell renders the focusable <article role="button"> root surfa
   assert.match(shellSource, /:aria-label="ariaLabel"/);
 });
 
+test("FeedItemCardShell owns text-card clamp/toggle UI and stops card navigation on toggle interactions", () => {
+  // Expand/collapse stays inside the shell because publish also mounts this leaf.
+  // The toggle must stop propagation so activating it does not trigger the wrapper's
+  // card-open click/keyboard handlers.
+  assert.match(shellSource, /import\s+\{[^}]*FEED_COLLAPSE[^}]*FEED_EXPAND[^}]*\}\s+from\s+["']\.\.\/\.\.\/config\/brand["']/);
+  assert.match(shellSource, /class="feed-item-card__body-preview"/);
+  assert.match(shellSource, /'is-expanded':\s*bodyExpanded/);
+  assert.match(shellSource, /class="feed-item-card__body-toggle"/);
+  assert.match(shellSource, /@click\.stop="toggleBody"/);
+  assert.match(shellSource, /@keydown\.enter\.stop/);
+  assert.match(shellSource, /@keydown\.space\.stop/);
+  assert.match(shellSource, /\{\{\s*bodyExpanded\s*\?\s*FEED_COLLAPSE\s*:\s*FEED_EXPAND\s*\}\}/);
+  assert.match(shellSource, /-webkit-line-clamp:\s*4/);
+});
+
 test("FeedItemCard wrapper still owns useCardPointerInteraction and the open emit", () => {
   // The wrapper is what translates raw DOM events into `emit("open", ...)` for
   // FeedView. Step A must not move that responsibility into the shell.
   assert.match(wrapperSource, /import\s+\{[^}]*useCardPointerInteraction[^}]*\}\s+from/);
   assert.match(wrapperSource, /emit\(\s*"open"/);
   assert.match(wrapperSource, /<FeedItemCardShell\b/);
+});
+
+test("FeedItemCard routes club items to FeedItemClubCard instead of the generic shell", () => {
+  assert.match(wrapperSource, /import\s+FeedItemClubCard\s+from\s+["']\.\/FeedItemClubCard\.vue["']/);
+  assert.match(wrapperSource, /<FeedItemClubCard\b[\s\S]*v-if="cardDisplayData\.cardTemplate === 'club'"/);
+  assert.match(wrapperSource, /@open="handleClubOpen"/);
+  assert.match(wrapperSource, /function handleClubOpen\(/);
+  assert.match(wrapperSource, /<FeedItemCardShell\b[\s\S]*v-else/);
 });
