@@ -12,6 +12,7 @@ import {
   normalizeFeedItemId,
   normalizeHelpExtensionV2,
   normalizeMerchantExtensionV2,
+  normalizeMetadataComponents,
   normalizePlaceRef,
   normalizePostAvailableActions,
   normalizePostRelations,
@@ -295,9 +296,7 @@ export function normalizePostDetail(value: unknown, fallbackId: FeedItemId): Pos
   const components =
     topLevelComponents && topLevelComponents.length
       ? topLevelComponents
-      : v2Components && v2Components.length
-        ? v2Components
-        : undefined;
+      : normalizeMetadataComponents(record);
   const relations = normalizePostRelations(record.relations ?? rawMetadata.relations);
   const availableActions = normalizePostAvailableActions(
     record.availableActions ?? rawMetadata.availableActions,

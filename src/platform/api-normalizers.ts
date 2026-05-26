@@ -418,7 +418,20 @@ export function extractV2Components(value: unknown): MetadataComponentV2[] | und
 }
 
 export function normalizeMetadataComponents(value: unknown): MetadataComponentV2[] | undefined {
-  return extractV2Components(value);
+  const record = asRecord(value);
+  const metadata = asRecord(record.metadata);
+  const rawComponents = metadata.components;
+
+  if (Array.isArray(rawComponents)) return extractV2Components(value);
+  if (rawComponents && typeof rawComponents === "object") {
+    const normalized = Object.values(rawComponents as Record<string, unknown>).filter(
+      (c): c is MetadataComponentV2 =>
+        c && typeof c === "object" && typeof (c as { type?: unknown }).type === "string",
+    );
+    return normalized.length ? normalized : undefined;
+  }
+
+  return undefined;
 }
 
 /**

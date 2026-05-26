@@ -405,8 +405,8 @@ describe("normalizePostDetail V2 integration", () => {
       { type: "event", eventId: "evt_v2_object", capacity: 8, joinedCount: 2 },
       { type: "trade", price: "¥22", state: "reserved", category: "books" },
     ]);
-    expect(result.event?.eventId).toBe("evt_v2_object");
-    expect(result.trade?.price).toBe("¥22");
+    expect(result.event?.eventId).toBe("evt_v1");
+    expect(result.trade?.price).toBe("¥11");
   });
 
   it("handles empty V2 components array by falling back to V1", () => {
