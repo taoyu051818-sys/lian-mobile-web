@@ -55,13 +55,6 @@ function itemKey(item: ProfileListItem): string {
   return item.id || "";
 }
 
-function classifyRelationType(type: string): ProfileRelationGroupKey | undefined {
-  for (const group of PROFILE_RELATION_GROUP_ORDER) {
-    if (PROFILE_RELATION_GROUP_TYPES[group].has(type)) return group;
-  }
-  return undefined;
-}
-
 /**
  * 主入口。把 items 按 relation type 分桶。
  *
