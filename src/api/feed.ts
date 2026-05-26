@@ -10,6 +10,7 @@ import {
   extractV2Components,
   normalizeDisplayActor,
   normalizeFeedItemId as normalizeFeedItemIdNum,
+  normalizeMetadataComponents,
   normalizeSourceSignal,
 } from "../platform/api-normalizers";
 import type {
@@ -286,7 +287,7 @@ export function normalizeFeedItem(value: unknown): FeedItem | null {
       normalizeFeedPresentationIntent(metadata?.presentationIntent),
     cardTemplate: record.cardTemplate as FeedPresentationIntent | null | undefined,
   });
-  const components = extractV2Components(record);
+  const components = normalizeMetadataComponents(record) ?? extractV2Components(record);
   const relations = normalizeFeedRelations(record.relations ?? metadata?.relations);
   const relationHint = deriveFeedRelationHint(
     normalizeFeedRelationHint(record.relationHint || metadata?.relationHint),

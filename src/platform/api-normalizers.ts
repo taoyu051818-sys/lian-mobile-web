@@ -434,7 +434,6 @@ export function normalizeMetadataComponents(value: unknown): MetadataComponentV2
   );
   return normalized.length ? normalized : undefined;
 }
-
 /**
  * Find a component of a specific type from the V2 components array.
  */

@@ -192,7 +192,7 @@ function normalizeDetailPostType(value: unknown, hasCover: boolean): PostType {
 
 export function normalizePostDetail(value: unknown, fallbackId: FeedItemId): PostDetail {
   const record = asRecord(value);
-  const detailMetadata = asRecord(record.metadata);
+  const rawMetadata = asRecord(record.metadata);
   const tid = normalizeFeedItemId(record.tid, fallbackId);
   const rawReplies = Array.isArray(record.replies)
     ? record.replies.filter((reply) => reply && typeof reply === "object")
@@ -200,14 +200,19 @@ export function normalizePostDetail(value: unknown, fallbackId: FeedItemId): Pos
   const bookmarkedValue = "bookmarked" in record ? record.bookmarked : record.saved;
   const cover = asString(record.cover);
   const type = normalizeDetailPostType(record, Boolean(cover));
-  const club = normalizeClubMetadata(record.club || detailMetadata.club);
-  const visibility = normalizeVisibility(record.visibility || detailMetadata.visibility || detailMetadata.audienceVisibility);
+  const club = normalizeClubMetadata(record.club || rawMetadata.club);
+  const visibility = normalizeVisibility(record.visibility || rawMetadata.visibility || rawMetadata.audienceVisibility);
 
   // V2 metadata components — prefer when present, fall back to V1 flat fields
   const v2Components = extractV2Components(record);
-  const rawMetadata = asRecord(record.metadata);
+  // PRD V0.3 §2.1.3 — surface the V2 metadata block on the wire when the
+  // backend echoes it. PostComponentsSlot consumes this for forward-compat
+  // renderers (delivery / groupbuy / channel / ledger). Today the public
+  // post-detail DTO does NOT echo `metadata` so this typically lands as
+  // undefined; when the backend opens the surface, `metadata.components`
+  // becomes the source of truth without a frontend release.
   const metadataVersion = typeof rawMetadata._v === "number" ? rawMetadata._v : undefined;
-  const metadata =
+  const detailMetadata =
     v2Components || metadataVersion !== undefined
       ? {
           ...(metadataVersion !== undefined ? { _v: metadataVersion } : {}),
@@ -215,6 +220,8 @@ export function normalizePostDetail(value: unknown, fallbackId: FeedItemId): Pos
         }
       : undefined;
   const normalizedLegacyComponents = normalizeMetadataComponents(record);
+  // Preserve local club/read-side support while also accepting the remote
+  // graph primitives from the post-detail DTO.
   const topLevelComponentsRaw = Array.isArray(record.components) ? record.components : undefined;
   const topLevelComponents: MetadataComponentV2[] | undefined = topLevelComponentsRaw
     ? (topLevelComponentsRaw.filter(
@@ -230,9 +237,9 @@ export function normalizePostDetail(value: unknown, fallbackId: FeedItemId): Pos
         : normalizedLegacyComponents && normalizedLegacyComponents.length
           ? normalizedLegacyComponents
           : undefined;
-  const relations = normalizePostRelations(record.relations ?? detailMetadata.relations);
+  const relations = normalizePostRelations(record.relations ?? rawMetadata.relations);
   const availableActions = normalizePostAvailableActions(
-    record.availableActions ?? detailMetadata.availableActions,
+    record.availableActions ?? rawMetadata.availableActions,
   );
   const event = normalizeEventExtensionV2(v2Components, record.event);
   const eventJoined = "eventJoined" in record ? asBoolean(record.eventJoined) : undefined;
@@ -316,10 +323,10 @@ export function normalizePostDetail(value: unknown, fallbackId: FeedItemId): Pos
     ...(errandUnavailableReasonText ? { errandUnavailableReasonText } : {}),
     ...(trade ? { trade } : {}),
     ...(tradeManageable !== undefined ? { tradeManageable } : {}),
-    ...(metadata ? { metadata } : {}),
-    ...(components ? { components } : {}),
-    ...(relations ? { relations } : {}),
-    ...(availableActions ? { availableActions } : {}),
+    ...(detailMetadata ? { metadata: detailMetadata } : {}),
+    ...(components?.length ? { components } : {}),
+    ...(relations?.length ? { relations } : {}),
+    ...(availableActions?.length ? { availableActions } : {}),
   };
 }
 
