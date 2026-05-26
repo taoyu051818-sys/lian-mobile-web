@@ -32,6 +32,7 @@
     "audit:v-html": "node scripts/audit-v-html-usage.js",
     "test:html-sanitizer": "node scripts/test-html-sanitizer.js",
     "ops:guard": "node scripts/guard-runtime-inventory.js",
+    "ops:claude-proxy": "node scripts/claude-code-balancer-proxy.mjs",
     "test": "node scripts/smoke-vue-frontend.js http://127.0.0.1:4301",
     "test:e2e": "playwright test",
     "test:unit": "vitest run",
