@@ -2,7 +2,11 @@ import { describe, expect, it } from "vitest";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { ANONYMOUS_ALIAS_AVATAR_URL, actorAvatarUrl, actorDisplayName } from "../../src/domain/actor";
+import {
+  ANONYMOUS_ALIAS_AVATAR_URL,
+  actorAvatarUrl,
+  actorDisplayName,
+} from "../../src/domain/actor";
 import { normalizeDisplayActor } from "../../src/platform/api-normalizers";
 
 /**

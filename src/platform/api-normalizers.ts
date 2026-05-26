@@ -430,7 +430,7 @@ export function normalizeMetadataComponents(value: unknown): MetadataComponentV2
 
   const normalized = Object.values(rawComponents as Record<string, unknown>).filter(
     (c): c is MetadataComponentV2 =>
-      c && typeof c === "object" && typeof (c as { type?: unknown }).type === "string",
+      Boolean(c) && typeof c === "object" && typeof (c as { type?: unknown }).type === "string",
   );
   return normalized.length ? normalized : undefined;
 }

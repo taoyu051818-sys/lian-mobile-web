@@ -21,7 +21,14 @@ import {
   normalizeTradeExtensionV2,
 } from "../platform/api-normalizers";
 import type { FeedItemId } from "../types/feed";
-import { normalizePostType, type ClubCategory, type ClubMetadata, type PostDetail, type PostReply, type PostType } from "../types/post";
+import {
+  normalizePostType,
+  type ClubCategory,
+  type ClubMetadata,
+  type PostDetail,
+  type PostReply,
+  type PostType,
+} from "../types/post";
 import type { MetadataComponentV2, TradePostExtension, TradeState } from "../types/post-extensions";
 import type { AudienceVisibility } from "../types/audience";
 
@@ -75,7 +82,9 @@ function normalizeClubMetadata(value: unknown): ClubMetadata | undefined {
   const foundedAt = readableText(record.foundedAt || record.createdAt);
   const memberCount = Math.max(0, Math.trunc(asNumber(record.memberCount || record.members, 0)));
   const description = readableText(record.description || record.summary);
-  const logoUrl = readableText(record.logoUrl || record.avatarUrl || record.coverUrl || record.logo);
+  const logoUrl = readableText(
+    record.logoUrl || record.avatarUrl || record.coverUrl || record.logo,
+  );
 
   return {
     clubId,
@@ -149,7 +158,9 @@ function normalizeDetailPostType(value: unknown, hasCover: boolean): PostType {
   const rawType = asString(record.type).toLowerCase();
   const contentType = asString(record.contentType).toLowerCase();
   const metadata = asRecord(record.metadata);
-  const presentationIntent = asString(record.presentationIntent || metadata.presentationIntent).toLowerCase();
+  const presentationIntent = asString(
+    record.presentationIntent || metadata.presentationIntent,
+  ).toLowerCase();
 
   if (contentType.startsWith("merchant_") || presentationIntent === "merchant") {
     return "merchant";
@@ -182,7 +193,9 @@ function normalizeDetailPostType(value: unknown, hasCover: boolean): PostType {
   if (rawType === "club" || contentType === "club" || presentationIntent === "club") {
     return "club";
   }
-  const projectLikeIntent = normalizeProjectLikeIntent(presentationIntent || contentType || rawType);
+  const projectLikeIntent = normalizeProjectLikeIntent(
+    presentationIntent || contentType || rawType,
+  );
   if (projectLikeIntent === "project" || projectLikeIntent === "review") {
     return hasCover ? "image" : "text";
   }
@@ -201,7 +214,9 @@ export function normalizePostDetail(value: unknown, fallbackId: FeedItemId): Pos
   const cover = asString(record.cover);
   const type = normalizeDetailPostType(record, Boolean(cover));
   const club = normalizeClubMetadata(record.club || rawMetadata.club);
-  const visibility = normalizeVisibility(record.visibility || rawMetadata.visibility || rawMetadata.audienceVisibility);
+  const visibility = normalizeVisibility(
+    record.visibility || rawMetadata.visibility || rawMetadata.audienceVisibility,
+  );
 
   // V2 metadata components — prefer when present, fall back to V1 flat fields
   const v2Components = extractV2Components(record);
@@ -300,9 +315,7 @@ export function normalizePostDetail(value: unknown, fallbackId: FeedItemId): Pos
     sourceUrl: asString(record.sourceUrl ?? record.url),
     replies: rawReplies.map((reply, index) => normalizePostReply(reply, tid * 1000 + index + 1)),
     bookmarked: asBoolean(bookmarkedValue),
-    ...(visibility !== "public"
-      ? { visibility }
-      : {}),
+    ...(visibility !== "public" ? { visibility } : {}),
     ...(club ? { club } : {}),
     ...(components?.length ? { components } : {}),
     ...(relations?.length ? { relations } : {}),

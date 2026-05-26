@@ -27,7 +27,9 @@ test.use({
 });
 
 test.describe("@registered @mobile @messages system inbox upvote notification", () => {
-  test("opens system upvote notification without depending on live inbox data", async ({ page }) => {
+  test("opens system upvote notification without depending on live inbox data", async ({
+    page,
+  }) => {
     await page.route("**/api/channel?*", async (route) => {
       await route.fulfill({ json: { items: [], hasMore: false, nextOffset: 0 } });
     });
@@ -91,9 +93,12 @@ test.describe("@registered @mobile @messages system inbox upvote notification", 
     await page.goto("/#/messages");
     await openMessagesTab(page, "系统");
 
-    const upvoteItem = page.locator('[data-testid="notification-item"][data-target-kind="detail"]', {
-      hasText: "有人赞了你的帖子",
-    });
+    const upvoteItem = page.locator(
+      '[data-testid="notification-item"][data-target-kind="detail"]',
+      {
+        hasText: "有人赞了你的帖子",
+      },
+    );
 
     await expect(upvoteItem).toBeVisible();
     await expect(upvoteItem).toContainText("查看详情");

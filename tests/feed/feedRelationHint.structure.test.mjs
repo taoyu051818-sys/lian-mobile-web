@@ -27,7 +27,10 @@ test("Feed relation hint: types the feed relation fields", () => {
 });
 
 test("Feed relation hint: adapter preserves explicit hint and derives fallback from relations", () => {
-  assert.match(feedApiSource, /function normalizeFeedRelationHint\(value: unknown\): FeedItem\["relationHint"\]/);
+  assert.match(
+    feedApiSource,
+    /function normalizeFeedRelationHint\(value: unknown\): FeedItem\["relationHint"\]/,
+  );
   assert.match(feedApiSource, /function deriveFeedRelationHint\(/);
   assert.match(feedApiSource, /if \(relationHint\) return relationHint;/);
   assert.match(feedApiSource, /return normalizeFeedRelationHint\(relations\?\.\[0\]\?\.type\);/);
@@ -39,16 +42,26 @@ test("Feed relation hint: wrapper defines a single typed label map so brand copy
   assert.match(feedBrandSource, /export const FEED_RELATION_HINT_TRADE_OFFER = "相关转让";/);
   assert.match(feedBrandSource, /export const FEED_RELATION_HINT_EVENT_FOLLOWUP = "活动续报";/);
   const labelDecls = feedItemCardSource.match(/const RELATION_HINT_LABELS:/g) || [];
-  assert.equal(labelDecls.length, 1, "FeedItemCard.vue must declare exactly one RELATION_HINT_LABELS map");
+  assert.equal(
+    labelDecls.length,
+    1,
+    "FeedItemCard.vue must declare exactly one RELATION_HINT_LABELS map",
+  );
   assert.match(feedItemCardSource, /const RELATION_HINT_LABELS:/);
   assert.match(feedItemCardSource, /help_event_link: FEED_RELATION_HINT_HELP_EVENT/);
   assert.match(feedItemCardSource, /trade_offer_link: FEED_RELATION_HINT_TRADE_OFFER/);
   assert.match(feedItemCardSource, /event_followup: FEED_RELATION_HINT_EVENT_FOLLOWUP/);
-  assert.match(feedItemCardSource, /const relationHint = item\.relationHint \? RELATION_HINT_LABELS\[item\.relationHint\] : "";/);
+  assert.match(
+    feedItemCardSource,
+    /const relationHint = item\.relationHint \? RELATION_HINT_LABELS\[item\.relationHint\] : "";/,
+  );
 });
 
 test("Feed relation hint: shell renders the hint above the title", () => {
   assert.match(feedShellSource, /relationHint: string;/);
-  assert.match(feedShellSource, /<p v-if="relationHint" class="feed-item-card__relation-hint">\{\{ relationHint \}\}<\/p>/);
+  assert.match(
+    feedShellSource,
+    /<p v-if="relationHint" class="feed-item-card__relation-hint">\{\{ relationHint \}\}<\/p>/,
+  );
   assert.match(feedShellSource, /\.feed-item-card__relation-hint \{/);
 });

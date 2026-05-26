@@ -127,4 +127,3 @@ describe("Club card brand constants", () => {
     expect(feedBrand).toMatch(/other:\s*"其他"/);
   });
 });
-

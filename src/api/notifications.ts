@@ -1,5 +1,5 @@
 import { apiGet } from "./http";
-import { asBoolean, normalizeDisplayActor } from "../platform/api-normalizers";
+import { normalizeDisplayActor } from "../platform/api-normalizers";
 import {
   NOTIF_ERRAND_ORDER_ACCEPTED_BODY,
   NOTIF_ERRAND_ORDER_ACCEPTED_TITLE,

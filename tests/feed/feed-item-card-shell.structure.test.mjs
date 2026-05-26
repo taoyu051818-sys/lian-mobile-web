@@ -104,7 +104,10 @@ test("FeedItemCardShell owns text-card clamp/toggle UI and stops card navigation
   // Expand/collapse stays inside the shell because publish also mounts this leaf.
   // The toggle must stop propagation so activating it does not trigger the wrapper's
   // card-open click/keyboard handlers.
-  assert.match(shellSource, /import\s+\{[^}]*FEED_COLLAPSE[^}]*FEED_EXPAND[^}]*\}\s+from\s+["']\.\.\/\.\.\/config\/brand["']/);
+  assert.match(
+    shellSource,
+    /import\s+\{[^}]*FEED_COLLAPSE[^}]*FEED_EXPAND[^}]*\}\s+from\s+["']\.\.\/\.\.\/config\/brand["']/,
+  );
   assert.match(shellSource, /class="feed-item-card__body-preview"/);
   assert.match(shellSource, /'is-expanded':\s*bodyExpanded/);
   assert.match(shellSource, /class="feed-item-card__body-toggle"/);
@@ -124,8 +127,14 @@ test("FeedItemCard wrapper still owns useCardPointerInteraction and the open emi
 });
 
 test("FeedItemCard routes club items to FeedItemClubCard instead of the generic shell", () => {
-  assert.match(wrapperSource, /import\s+FeedItemClubCard\s+from\s+["']\.\/FeedItemClubCard\.vue["']/);
-  assert.match(wrapperSource, /<FeedItemClubCard\b[\s\S]*v-if="cardDisplayData\.cardTemplate === 'club'"/);
+  assert.match(
+    wrapperSource,
+    /import\s+FeedItemClubCard\s+from\s+["']\.\/FeedItemClubCard\.vue["']/,
+  );
+  assert.match(
+    wrapperSource,
+    /<FeedItemClubCard\b[\s\S]*v-if="cardDisplayData\.cardTemplate === 'club'"/,
+  );
   assert.match(wrapperSource, /@open="handleClubOpen"/);
   assert.match(wrapperSource, /function handleClubOpen\(/);
   assert.match(wrapperSource, /<FeedItemCardShell\b[\s\S]*v-else/);

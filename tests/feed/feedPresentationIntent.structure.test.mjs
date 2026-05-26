@@ -47,13 +47,19 @@ test("Feed presentationIntent: keeps FeedItemCard on normalized template inputs 
     feedItemCardSource,
     /function normalizePresentationIntent\(\s*value: FeedItem\["cardTemplate"\] \| FeedItem\["presentationIntent"\],\s*\): FeedCardVariant \| null/,
   );
-  assert.match(feedItemCardSource, /const FEED_CARD_VARIANTS: ReadonlySet<FeedCardVariant> = new Set\(\[/);
+  assert.match(
+    feedItemCardSource,
+    /const FEED_CARD_VARIANTS: ReadonlySet<FeedCardVariant> = new Set\(\[/,
+  );
   assert.match(feedItemCardSource, /"club",/);
   assert.match(
     feedItemCardSource,
     /const shellCardTemplate: CardTemplate = cardTemplate === "club" \? "text" : cardTemplate;/,
   );
-  assert.match(feedItemCardSource, /<FeedItemClubCard v-if="cardDisplayData\.cardTemplate === 'club'" :item="props\.item" \/>/);
+  assert.match(
+    feedItemCardSource,
+    /<FeedItemClubCard v-if="cardDisplayData\.cardTemplate === 'club'" :item="props\.item" \/>/,
+  );
   assert.doesNotMatch(feedItemCardSource, /const searchText = computed/);
   assert.doesNotMatch(feedItemCardSource, /raw\.includes\(/);
 });

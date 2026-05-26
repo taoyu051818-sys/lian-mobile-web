@@ -196,4 +196,3 @@ const placeTypeText = computed(() => {
   font-weight: 900;
 }
 </style>
-

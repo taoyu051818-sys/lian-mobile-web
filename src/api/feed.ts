@@ -156,7 +156,9 @@ function normalizeClubMetadata(value: unknown): ClubMetadata | undefined {
   const foundedAt = readableText(record.foundedAt || record.createdAt);
   const memberCount = Math.max(0, Math.trunc(asNumber(record.memberCount || record.members, 0)));
   const description = readableText(record.description || record.summary);
-  const logoUrl = readableText(record.logoUrl || record.avatarUrl || record.coverUrl || record.logo);
+  const logoUrl = readableText(
+    record.logoUrl || record.avatarUrl || record.coverUrl || record.logo,
+  );
 
   return {
     clubId,
@@ -170,9 +172,7 @@ function normalizeClubMetadata(value: unknown): ClubMetadata | undefined {
   };
 }
 
-function normalizeFeedRelationTarget(
-  value: unknown,
-): { kind: string; id: string } | undefined {
+function normalizeFeedRelationTarget(value: unknown): { kind: string; id: string } | undefined {
   const record = asRecord(value);
   const kind = asString(record.kind);
   const id = asString(record.id);
@@ -195,7 +195,9 @@ function normalizeFeedPostRelations(value: unknown): FeedItem["relations"] {
         if (targetTid > 0) return { type, targetTid };
       }
 
-      const legacyTargetTid = normalizeFeedItemIdNum(record.targetTid || record.targetId || record.tid);
+      const legacyTargetTid = normalizeFeedItemIdNum(
+        record.targetTid || record.targetId || record.tid,
+      );
       if (legacyTargetTid <= 0) return null;
       return { type, targetTid: legacyTargetTid };
     })

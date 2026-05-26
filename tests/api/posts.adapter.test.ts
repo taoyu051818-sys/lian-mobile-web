@@ -298,7 +298,9 @@ describe("posts adapter normalization", () => {
         tid: 315,
         metadata: {
           relations: [{ type: "event_followup", target: { kind: "post", id: "101" } }],
-          availableActions: [{ type: "request_review", enabled: false, reasonText: "Verify first" }],
+          availableActions: [
+            { type: "request_review", enabled: false, reasonText: "Verify first" },
+          ],
         },
       },
       315,

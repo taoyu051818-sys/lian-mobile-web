@@ -63,7 +63,10 @@ const PLACE_TYPE_LABELS: Record<string, string> = {
 };
 
 function normalizePlaceType(value: string): string {
-  return value.trim().toLowerCase().replace(/[\s-]+/g, "_");
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/[\s-]+/g, "_");
 }
 
 export function placeTypeLabel(primary?: string | null, secondary?: string | null): string {

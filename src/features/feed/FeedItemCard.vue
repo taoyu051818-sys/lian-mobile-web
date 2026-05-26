@@ -30,7 +30,12 @@ import {
   FEED_RELATION_HINT_TRADE_OFFER,
 } from "../../config/brand";
 import { actorAvatarText, actorAvatarUrl, actorDisplayName } from "../../domain/actor";
-import type { FeedItem, FeedItemId, FeedItemShellCardTemplate, FeedPresentationIntent } from "../../types/feed";
+import type {
+  FeedItem,
+  FeedItemId,
+  FeedItemShellCardTemplate,
+  FeedPresentationIntent,
+} from "../../types/feed";
 import FeedItemCardShell from "./FeedItemCardShell.vue";
 import FeedItemClubCard from "./FeedItemClubCard.vue";
 import FeedContextMenu from "./FeedContextMenu.vue";
@@ -43,9 +48,7 @@ type FeedCardVariant = FeedPresentationIntent;
 const MAX_VISIBLE_TITLE_CHARS = 42;
 const MAX_VISIBLE_AUTHOR_CHARS = 10;
 
-const RELATION_HINT_LABELS: Readonly<
-  Record<NonNullable<FeedItem["relationHint"]>, string>
-> = {
+const RELATION_HINT_LABELS: Readonly<Record<NonNullable<FeedItem["relationHint"]>, string>> = {
   help_event_link: FEED_RELATION_HINT_HELP_EVENT,
   trade_offer_link: FEED_RELATION_HINT_TRADE_OFFER,
   event_followup: FEED_RELATION_HINT_EVENT_FOLLOWUP,
@@ -70,10 +73,7 @@ const CARD_TEMPLATES: ReadonlySet<CardTemplate> = new Set([
   "merchant",
   "help",
 ]);
-const FEED_CARD_VARIANTS: ReadonlySet<FeedCardVariant> = new Set([
-  ...CARD_TEMPLATES,
-  "club",
-]);
+const FEED_CARD_VARIANTS: ReadonlySet<FeedCardVariant> = new Set([...CARD_TEMPLATES, "club"]);
 
 const TEMPLATE_MARKS: Readonly<Record<CardTemplate, string>> = {
   image: "◐",

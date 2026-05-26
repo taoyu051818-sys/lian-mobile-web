@@ -1,11 +1,4 @@
-import {
-  devices,
-  expect,
-  test,
-  type APIRequestContext,
-  type Browser,
-  type TestInfo,
-} from "@playwright/test";
+import { devices, expect, test, type APIRequestContext, type Browser } from "@playwright/test";
 import { randomUUID } from "node:crypto";
 
 import { isRoleConfigured, loginAs } from "./fixtures/accounts";
@@ -82,7 +75,12 @@ function buildPublishPayload(imageUrl: string, title: string, body: string) {
   };
 }
 
-async function publishImagePost(api: APIRequestContext, imageUrl: string, title: string, body: string) {
+async function publishImagePost(
+  api: APIRequestContext,
+  imageUrl: string,
+  title: string,
+  body: string,
+) {
   const response = await api.post("/api/ai/post-publish", {
     data: buildPublishPayload(imageUrl, title, body),
   });
@@ -112,16 +110,18 @@ function parseCount(text: string | null | undefined): number {
   return Number(normalized || "0");
 }
 
-async function readDockLikeCount(page: { locator: Function }): Promise<number> {
+async function readDockLikeCount(page: {
+  locator(selector: string): { first(): { innerText(): Promise<string> } };
+}): Promise<number> {
   const text = await page.locator(".post-reply-dock__action-count").first().innerText();
   return parseCount(text);
 }
 
-test.describe.serial("@registered @multi-user @mobile @starter mobile multi-account closures", () => {
-  test("registered author -> campus like -> author sees like count in mobile detail and profile liked remains stable", async (
-    { browser },
-    testInfo,
-  ) => {
+test.describe
+  .serial("@registered @multi-user @mobile @starter mobile multi-account closures", () => {
+  test("registered author -> campus like -> author sees like count in mobile detail and profile liked remains stable", async ({
+    browser,
+  }, testInfo) => {
     test.skip(
       !isRoleConfigured("registered"),
       "registered role not configured — set LIAN_E2E_REGISTERED_USERNAME / LIAN_E2E_REGISTERED_PASSWORD",
@@ -212,10 +212,9 @@ test.describe.serial("@registered @multi-user @mobile @starter mobile multi-acco
     }
   });
 
-  test("registered mobile profile liked/saved collections and anonymous detail access stay stable on an existing public post", async (
-    { browser },
-    testInfo,
-  ) => {
+  test("registered mobile profile liked/saved collections and anonymous detail access stay stable on an existing public post", async ({
+    browser,
+  }, testInfo) => {
     test.skip(
       !isRoleConfigured("registered"),
       "registered role not configured — set LIAN_E2E_REGISTERED_USERNAME / LIAN_E2E_REGISTERED_PASSWORD",
@@ -236,18 +235,23 @@ test.describe.serial("@registered @multi-user @mobile @starter mobile multi-acco
       const likedTab = page.getByRole("tab", { name: "赞过" });
       await likedTab.click();
       await expect(page.locator(".profile-collection__item").first()).toBeVisible();
-      const likedTitle = ((await page.locator(".profile-collection__item h3").first().innerText()) || "").trim();
+      const likedTitle = (
+        (await page.locator(".profile-collection__item h3").first().innerText()) || ""
+      ).trim();
       expect(likedTitle.length).toBeGreaterThan(0);
       await attachStepScreenshot(page, testInfo, "05-profile-liked-mobile");
 
       const savedTab = page.getByRole("tab", { name: "收藏" });
       await savedTab.click();
       await expect(page.locator(".profile-collection__item").first()).toBeVisible();
-      const savedTitle = ((await page.locator(".profile-collection__item h3").first().innerText()) || "").trim();
+      const savedTitle = (
+        (await page.locator(".profile-collection__item h3").first().innerText()) || ""
+      ).trim();
       expect(savedTitle.length).toBeGreaterThan(0);
       await attachStepScreenshot(page, testInfo, "06-profile-saved-mobile");
 
-      const detailTid = (await page.locator(".profile-collection__item").first().getAttribute("data-tid")) || "";
+      const detailTid =
+        (await page.locator(".profile-collection__item").first().getAttribute("data-tid")) || "";
       expect(detailTid).toMatch(/^\d+$/);
 
       await context.close();
@@ -260,16 +264,20 @@ test.describe.serial("@registered @multi-user @mobile @starter mobile multi-acco
       const anonymousPage = await anonymousContext.newPage();
       try {
         await anonymousPage.goto(`${BASE_URL}/#/post/${detailTid}`);
-        await expect(anonymousPage.locator("#post-detail-title")).toContainText(savedTitle || likedTitle);
-        await attachStepScreenshot(anonymousPage, testInfo, "07-anonymous-detail-from-profile-mobile");
+        await expect(anonymousPage.locator("#post-detail-title")).toContainText(
+          savedTitle || likedTitle,
+        );
+        await attachStepScreenshot(
+          anonymousPage,
+          testInfo,
+          "07-anonymous-detail-from-profile-mobile",
+        );
       } finally {
         await anonymousContext.close();
       }
     } finally {
       if (context) await context.close();
-      try {
-        await api.dispose();
-      } catch {}
+      await api.dispose().catch(() => undefined);
     }
   });
 });

@@ -103,7 +103,6 @@ describe("notification routing normalization", () => {
     expect(response.items).toHaveLength(1);
     expect(response.items?.[0]?.target).toEqual({ kind: "detail", tid: 7 });
   });
-
 });
 
 describe("errand-order notification routing (ps#477 / ps#495 fan-out)", () => {

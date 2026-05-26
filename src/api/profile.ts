@@ -143,7 +143,7 @@ export function resolveProfileTabRequest(
   if (tab === "drafts") return { path: "/api/me/drafts", method: "GET" };
   if (tab === "orders") {
     throw new Error(
-      'Profile orders tab is fetched via /api/errands/orders/mine, not fetchProfileTab.',
+      "Profile orders tab is fetched via /api/errands/orders/mine, not fetchProfileTab.",
     );
   }
   return { path: "/api/me/map-contributions", method: "GET" };

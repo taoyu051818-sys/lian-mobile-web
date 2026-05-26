@@ -11,7 +11,9 @@ const blockSource = readFileSync(
 
 describe("PostPlaceSheetBlock", () => {
   it("normalizes raw place types through placeTypeLabel before rendering", () => {
-    expect(blockSource).toMatch(/import\s+\{\s*placeTypeLabel\s*\}\s+from\s+"\.\.\/\.\.\/domain\/place"/);
+    expect(blockSource).toMatch(
+      /import\s+\{\s*placeTypeLabel\s*\}\s+from\s+"\.\.\/\.\.\/domain\/place"/,
+    );
     expect(blockSource).toMatch(/const placeTypeText = computed\(/);
     expect(blockSource).toMatch(/return placeTypeLabel\(primary, secondary\)/);
   });
