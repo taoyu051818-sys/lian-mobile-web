@@ -125,3 +125,27 @@ export const PROFILE_POSTS_CONTENT_FILTER_ALL = "全部";
 export const PROFILE_POSTS_CONTENT_FILTER_MERCHANT = "商家";
 export const PROFILE_POSTS_CONTENT_FILTER_TRADE = "二手";
 export const PROFILE_POSTS_CONTENT_FILTER_HELP = "互助";
+
+/**
+ * PRD V0.3 §2.4 / B3-2 — profile 页"关系视角"分组 section 标题与 relation
+ * type 中文 label。三个 section 把当前用户名下的活动列表按照 relation type
+ * 分桶展示：
+ *   - 我参与的活动: `event_recap` / `event_reward`
+ *   - 我求助过的帖: `help_event_link` / `solution_event`
+ *   - 商家关联: `merchant_errand` / `project_submission`
+ *
+ * mw#996 已经在 PostDetail 内嵌渲染单帖 relations，本组常量是 profile 列表
+ * 视角下的标题／标签，与 detail 侧的 RELATION_TYPE_* 不复用 — detail 侧的
+ * label 是给"相关"区块的内嵌行用的，这里的 label 是给分组 section 的标题
+ * tag 用的，措辞为用户视角（"参与"／"求助"），不是关系视角（"奖励"／"链接"）。
+ */
+export const PROFILE_RELATION_GROUP_SECTION_LABEL = "我的关系帖";
+export const PROFILE_RELATION_GROUP_PARTICIPATED_TITLE = "我参与的活动";
+export const PROFILE_RELATION_GROUP_HELPED_TITLE = "我求助过的帖";
+export const PROFILE_RELATION_GROUP_MERCHANT_TITLE = "商家关联";
+export const PROFILE_RELATION_TYPE_EVENT_RECAP_TAG = "活动回顾";
+export const PROFILE_RELATION_TYPE_EVENT_REWARD_TAG = "活动奖励";
+export const PROFILE_RELATION_TYPE_HELP_EVENT_LINK_TAG = "求助关联活动";
+export const PROFILE_RELATION_TYPE_SOLUTION_EVENT_TAG = "解决方案";
+export const PROFILE_RELATION_TYPE_MERCHANT_ERRAND_TAG = "商家代办";
+export const PROFILE_RELATION_TYPE_PROJECT_SUBMISSION_TAG = "项目投稿";

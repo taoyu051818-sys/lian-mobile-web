@@ -24,6 +24,7 @@ import { AuthPanel } from "../auth";
 import ProfileEditorPanel from "./ProfileEditorPanel.vue";
 import ProfileHeader from "./ProfileHeader.vue";
 import ProfilePostsContentFilter from "./ProfilePostsContentFilter.vue";
+import ProfileRelationSurfacesBlock from "./ProfileRelationSurfacesBlock.vue";
 import ProfileServerChanBlock from "./ProfileServerChanBlock.vue";
 import ProfileSettingsBlock from "./ProfileSettingsBlock.vue";
 import ProfileStatsBlock from "./ProfileStatsBlock.vue";
@@ -226,6 +227,17 @@ onMounted(() => {
         @retry="loadProfileList(activeTab)"
         @open-item="openItem"
       />
+
+      <!--
+        PRD V0.3 §2.4 / B3-2: relation-grouped post sections. Reuses the
+        currently-loaded `profileItems` (whatever tab the user is on) and
+        groups them by V2 relation.type into three product buckets — see
+        `groupPostsByRelationType` for the bucket contract. Renders nothing
+        when no item carries a known relation type, so the existing tab UX
+        is unchanged for users without relation-bearing activity. Anonymous-
+        safe: only post.title / tid / relation type label flows through.
+      -->
+      <ProfileRelationSurfacesBlock :items="profileItems" :current-user-id="user?.id" />
 
       <ProfileSettingsBlock />
 
