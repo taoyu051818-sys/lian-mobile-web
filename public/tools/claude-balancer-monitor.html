@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Claude Balancer Monitor</title>
+    <link rel="stylesheet" href="/tools/claude-balancer-monitor.css">
+  </head>
+  <body>
+    <div class="shell">
+      <header class="topbar">
+        <div>
+          <h1>Claude Balancer Monitor</h1>
+          <p class="subtitle">记录本地 Claude 代理负载时间线，观察三把 key 的滑动窗口压力、剩余额度与推荐并发。</p>
+        </div>
+        <div class="toolbar">
+          <label>
+            状态地址
+            <input id="statusUrlInput" type="url" value="http://127.0.0.1:8787/_status">
+          </label>
+          <label>
+            采样间隔
+            <select id="intervalSelect">
+              <option value="2000">2s</option>
+              <option value="5000" selected>5s</option>
+              <option value="10000">10s</option>
+            </select>
+          </label>
+          <button id="startButton" type="button">开始</button>
+          <button id="pauseButton" type="button">暂停</button>
+          <button id="clearButton" type="button">清空历史</button>
+          <button id="exportButton" type="button">导出 JSON</button>
+        </div>
+      </header>
+
+      <main class="layout">
+        <section class="status-column">
+          <article class="panel status-panel">
+            <div class="panel-head">
+              <h2>当前状态</h2>
+              <span id="connectionBadge" class="badge badge-muted">未开始</span>
+            </div>
+            <div class="metric-grid" id="metricGrid"></div>
+            <div class="meta-grid">
+              <div>
+                <div class="meta-label">最近一次转发</div>
+                <div class="meta-value" id="lastForwardValue">—</div>
+              </div>
+              <div>
+                <div class="meta-label">最近采样</div>
+                <div class="meta-value" id="lastSampleValue">—</div>
+              </div>
+            </div>
+            <div class="warning-block">
+              <div class="meta-label">Warnings</div>
+              <ul id="warningsList" class="warnings-list">
+                <li>暂无</li>
+              </ul>
+            </div>
+            <div class="panel-note">状态卡会显示调度模式、动态 TTL、健康主 key 数量与压力扩散情况。</div>
+            <div class="error-block" id="errorBlock" hidden></div>
+          </article>
+
+          <article class="panel">
+            <div class="panel-head">
+              <h2>当前快照</h2>
+              <span class="panel-note">每把 key 的实时窗口状态（含短窗本地转发计数）</span>
+            </div>
+            <div id="snapshotCards" class="snapshot-grid"></div>
+          </article>
+        </section>
+
+        <section class="chart-column">
+          <article class="panel">
+            <div class="panel-head">
+              <h2>压力变化</h2>
+              <span class="panel-note">pressure = used / limit</span>
+            </div>
+            <div class="chart-wrap">
+              <svg id="pressureChart" class="chart" viewBox="0 0 960 260" role="img" aria-label="Pressure timeline"></svg>
+            </div>
+          </article>
+
+          <article class="panel">
+            <div class="panel-head">
+              <h2>剩余额度变化</h2>
+              <span class="panel-note">remainingCalls over time</span>
+            </div>
+            <div class="chart-wrap">
+              <svg id="remainingChart" class="chart" viewBox="0 0 960 260" role="img" aria-label="Remaining calls timeline"></svg>
+            </div>
+          </article>
+
+          <article class="panel">
+            <div class="panel-head">
+              <h2>推荐并发变化</h2>
+              <span class="panel-note">recommendedParallelism over time</span>
+            </div>
+            <div class="chart-wrap">
+              <svg id="parallelismChart" class="chart" viewBox="0 0 960 220" role="img" aria-label="Recommended parallelism timeline"></svg>
+            </div>
+          </article>
+        </section>
+
+        <aside class="events-column">
+          <article class="panel">
+            <div class="panel-head">
+              <h2>最近采样事件</h2>
+              <span class="panel-note">最新 40 次</span>
+            </div>
+            <div class="events-table-wrap">
+              <table class="events-table">
+                <thead>
+                  <tr>
+                    <th>时间</th>
+                    <th>Chosen</th>
+                    <th>全局 Last Forward</th>
+                    <th>并发</th>
+                    <th>模式</th>
+                    <th>TTL</th>
+                    <th>Max 压力</th>
+                  </tr>
+                </thead>
+                <tbody id="eventsBody"></tbody>
+              </table>
+            </div>
+          </article>
+        </aside>
+      </main>
+    </div>
+
+    <script src="/tools/claude-balancer-monitor.js"></script>
+  </body>
+</html>
