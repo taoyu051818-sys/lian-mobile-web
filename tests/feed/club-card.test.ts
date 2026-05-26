@@ -71,6 +71,12 @@ describe("Club card component", () => {
     expect(component).toMatch(/logoUrl/);
   });
 
+  it("FeedItemClubCard.vue guards against invalid founded dates rendering NaN", () => {
+    const component = readRepoFile("../../src/features/feed/FeedItemClubCard.vue");
+    expect(component).toMatch(/Number\.isFinite\(year\)/);
+    expect(component).not.toMatch(/getFullYear\(\)\.toString\(\)/);
+  });
+
   it("FeedItemClubCard.vue has proper accessibility attributes", () => {
     const component = readRepoFile("../../src/features/feed/FeedItemClubCard.vue");
     expect(component).toMatch(/role="button"/);
@@ -90,6 +96,7 @@ describe("FeedList club card routing", () => {
     expect(feedList).toMatch(/function isClubItem/);
     expect(feedList).toMatch(/contentType === "club"/);
     expect(feedList).toMatch(/presentationIntent === "club"/);
+    expect(feedList).toMatch(/cardTemplate === "club"/);
   });
 
   it("FeedList.vue conditionally renders FeedItemClubCard", () => {

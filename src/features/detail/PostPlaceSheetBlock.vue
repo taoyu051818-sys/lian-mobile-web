@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { computed } from "vue";
 import { InlineError } from "../../ui";
 import {
   LOADING_PLACE,
@@ -13,10 +14,11 @@ import {
   PLACE_SHEET_SAVED_SUFFIX,
 } from "../../config/brand";
 import { actorDisplayName } from "../../domain/actor";
+import { placeTypeLabel } from "../../domain/place";
 import type { PlaceRef, PlaceSheet } from "../../types/place";
 import { formatRelativeTime } from "../../utils/time";
 
-defineProps<{
+const props = defineProps<{
   placeSheetOpen?: boolean;
   structuredPlace?: PlaceRef | null;
   placeSheet?: PlaceSheet | null;
@@ -30,6 +32,13 @@ const emit = defineEmits<{
   openPlaceSheet: [];
   "update:placeSheetOpen": [value: boolean];
 }>();
+
+const placeTypeText = computed(() => {
+  const primary = props.placeSheet?.type;
+  const secondary = props.structuredPlace?.type;
+  if (!primary && !secondary) return "";
+  return placeTypeLabel(primary, secondary);
+});
 </script>
 
 <template>
@@ -53,9 +62,7 @@ const emit = defineEmits<{
     <template v-else>
       <div class="post-place-sheet__meta">
         <span>{{ placeStatusText }}</span>
-        <span v-if="placeSheet?.type || structuredPlace?.type">{{
-          placeSheet?.type || structuredPlace?.type
-        }}</span>
+        <span v-if="placeTypeText">{{ placeTypeText }}</span>
         <span v-if="placeSheet?.updatedAt"
           >{{ PLACE_SHEET_UPDATED_PREFIX }}
           {{ formatRelativeTime(placeSheet.updatedAt) || placeSheet.updatedAt }}</span

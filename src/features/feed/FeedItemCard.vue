@@ -25,18 +25,34 @@ import {
   UNTITLED_CONTENT,
   FEED_TIME_JUST_NOW,
   FEED_CARD_MARK_MERCHANT,
+  FEED_RELATION_HINT_EVENT_FOLLOWUP,
+  FEED_RELATION_HINT_HELP_EVENT,
+  FEED_RELATION_HINT_TRADE_OFFER,
 } from "../../config/brand";
 import { actorAvatarText, actorAvatarUrl, actorDisplayName } from "../../domain/actor";
-import type { FeedItem, FeedItemId, FeedItemShellCardTemplate } from "../../types/feed";
+import type {
+  FeedItem,
+  FeedItemId,
+  FeedItemShellCardTemplate,
+  FeedPresentationIntent,
+} from "../../types/feed";
 import FeedItemCardShell from "./FeedItemCardShell.vue";
+import FeedItemClubCard from "./FeedItemClubCard.vue";
 import FeedContextMenu from "./FeedContextMenu.vue";
 import { useCardPointerInteraction } from "./useCardPointerInteraction";
 import { hapticMedium } from "../../composables/useHapticFeedback";
 
 type CardTemplate = FeedItemShellCardTemplate;
+type FeedCardVariant = FeedPresentationIntent;
 
 const MAX_VISIBLE_TITLE_CHARS = 42;
 const MAX_VISIBLE_AUTHOR_CHARS = 10;
+
+const RELATION_HINT_LABELS: Readonly<Record<NonNullable<FeedItem["relationHint"]>, string>> = {
+  help_event_link: FEED_RELATION_HINT_HELP_EVENT,
+  trade_offer_link: FEED_RELATION_HINT_TRADE_OFFER,
+  event_followup: FEED_RELATION_HINT_EVENT_FOLLOWUP,
+};
 
 const props = defineProps<{ item: FeedItem }>();
 const emit = defineEmits<{
@@ -57,6 +73,7 @@ const CARD_TEMPLATES: ReadonlySet<CardTemplate> = new Set([
   "merchant",
   "help",
 ]);
+const FEED_CARD_VARIANTS: ReadonlySet<FeedCardVariant> = new Set([...CARD_TEMPLATES, "club"]);
 
 const TEMPLATE_MARKS: Readonly<Record<CardTemplate, string>> = {
   image: "◐",
@@ -69,9 +86,9 @@ const TEMPLATE_MARKS: Readonly<Record<CardTemplate, string>> = {
 
 function normalizePresentationIntent(
   value: FeedItem["cardTemplate"] | FeedItem["presentationIntent"],
-): CardTemplate | null {
-  return typeof value === "string" && CARD_TEMPLATES.has(value as CardTemplate)
-    ? (value as CardTemplate)
+): FeedCardVariant | null {
+  return typeof value === "string" && FEED_CARD_VARIANTS.has(value as FeedCardVariant)
+    ? (value as FeedCardVariant)
     : null;
 }
 
@@ -89,12 +106,15 @@ const cardDisplayData = computed(() => {
 
   const normalizedTemplate = normalizePresentationIntent(item.cardTemplate);
   const serverIntent = normalizePresentationIntent(item.presentationIntent);
-  const cardTemplate: CardTemplate =
+  const cardTemplate: FeedCardVariant =
     normalizedTemplate || serverIntent || (coverUrl ? "image" : "text");
+  const shellCardTemplate: CardTemplate = cardTemplate === "club" ? "text" : cardTemplate;
 
   const warnings: string[] = [];
   if (title.length > MAX_VISIBLE_TITLE_CHARS) warnings.push("title-clamped");
   if (authorName.length > MAX_VISIBLE_AUTHOR_CHARS) warnings.push("author-ellipsized");
+
+  const relationHint = item.relationHint ? RELATION_HINT_LABELS[item.relationHint] : "";
 
   return {
     title,
@@ -105,7 +125,9 @@ const cardDisplayData = computed(() => {
     authorAvatarUrl: actorAvatarUrl(actor),
     authorInitial: actorAvatarText(actor, authorName),
     cardTemplate,
-    templateMark: TEMPLATE_MARKS[cardTemplate],
+    shellCardTemplate,
+    templateMark: cardTemplate === "club" ? "" : TEMPLATE_MARKS[shellCardTemplate],
+    relationHint,
     bodyPreview: item.bodyPreview || "",
     visibility: item.visibility || "public",
     cardWarning: warnings.length ? warnings.join(" ") : undefined,
@@ -182,11 +204,24 @@ function handleCustomContextMenu(event: MouseEvent) {
   contextMenuY.value = event.clientY;
   showContextMenu.value = true;
 }
+
+function handleClubOpen(
+  id: FeedItemId,
+  payload?: { item: FeedItem; rect: { top: number; left: number; width: number; height: number } },
+) {
+  emit("open", id, payload);
+}
 </script>
 
 <template>
   <div class="feed-item-card-wrapper">
+    <FeedItemClubCard
+      v-if="cardDisplayData.cardTemplate === 'club'"
+      :item="props.item"
+      @open="handleClubOpen"
+    />
     <FeedItemCardShell
+      v-else
       :title="cardDisplayData.title"
       :cover-url="cardDisplayData.coverUrl"
       :primary-tag="cardDisplayData.primaryTag"
@@ -194,8 +229,9 @@ function handleCustomContextMenu(event: MouseEvent) {
       :author-name="cardDisplayData.authorName"
       :author-avatar-url="cardDisplayData.authorAvatarUrl"
       :author-initial="cardDisplayData.authorInitial"
-      :card-template="cardDisplayData.cardTemplate"
+      :card-template="cardDisplayData.shellCardTemplate"
       :template-mark="cardDisplayData.templateMark"
+      :relation-hint="cardDisplayData.relationHint"
       :body-preview="cardDisplayData.bodyPreview"
       :card-warning="cardDisplayData.cardWarning"
       :tid="props.item.tid"

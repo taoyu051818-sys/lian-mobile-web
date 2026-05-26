@@ -1,4 +1,5 @@
 import { apiGet } from "./http";
+import { normalizeDisplayActor } from "../platform/api-normalizers";
 import {
   NOTIF_ERRAND_ORDER_ACCEPTED_BODY,
   NOTIF_ERRAND_ORDER_ACCEPTED_TITLE,
@@ -38,7 +39,6 @@ import {
   NOTIF_MOD_REPORT_RESOLVED_TITLE,
 } from "../config/brand";
 import type {
-  NotificationActor,
   NotificationItem,
   NotificationKind,
   NotificationResponse,
@@ -59,7 +59,7 @@ interface RawNotificationItem {
   excerpt?: string;
   body?: string;
   text?: string;
-  actor?: NotificationActor;
+  actor?: unknown;
   read?: boolean;
   time?: string;
   timestampISO?: string;
@@ -620,7 +620,7 @@ export function normalizeNotificationItem(raw: RawNotificationItem): Notificatio
     type: type || undefined,
     title: title || undefined,
     excerpt: excerpt || undefined,
-    actor: raw.actor,
+    actor: normalizeDisplayActor(raw.actor),
     read: raw.read ?? true,
     time: firstString(raw.time, data?.time, meta?.time) || undefined,
     timestampISO:

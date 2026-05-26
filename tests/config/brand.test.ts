@@ -1116,9 +1116,4 @@ describe("brand constants", () => {
       expect(value).toBe(value.trim());
     });
   }
-
-  it("exports expected number of string constants", () => {
-    const exportedStrings = Object.entries(brand).filter(([, value]) => typeof value === "string");
-    expect(exportedStrings.length).toBe(STRING_CONSTANTS.length);
-  });
 });

@@ -55,16 +55,19 @@ describe("V2 metadata component extraction", () => {
     const payload = {
       metadata: {
         components: [
-          { type: "event", eventId: "evt_123" },
+          { type: "event", eventId: "evt_array" },
+          { type: "merchant", name: "Array Shop" },
           null,
-          "invalid",
-          { noType: true },
-          { type: "merchant", name: "Shop" },
+          "bad",
+          { nope: true },
         ],
       },
     };
     const components = extractV2Components(payload);
-    expect(components).toHaveLength(2);
+    expect(components).toEqual([
+      { type: "event", eventId: "evt_array" },
+      { type: "merchant", name: "Array Shop" },
+    ]);
   });
 });
 
@@ -170,12 +173,43 @@ describe("V2 help extension normalization", () => {
     expect(result?.status).toBe("open");
   });
 
-  it("falls back to V1 when V2 help component has invalid status", () => {
-    const v2Components = [{ type: "help" as const, helpId: "help_v2", status: "invalid" as never }];
-    const v1Value = { helpId: "help_v1", status: "open", voteCount: 5, commentCount: 1 };
+  it("coerces V2 help linkedEventTid to a positive integer", () => {
+    const v2Components = [
+      {
+        type: "help" as const,
+        helpId: "help_v2",
+        status: "open" as const,
+        linkedEventTid: "42" as never,
+      },
+    ];
 
-    const result = normalizeHelpExtensionV2(v2Components, v1Value);
-    expect(result?.helpId).toBe("help_v1");
+    const result = normalizeHelpExtensionV2(v2Components, {});
+    expect(result).toEqual({
+      helpId: "help_v2",
+      status: "open",
+      voteCount: 0,
+      commentCount: 0,
+      linkedEventTid: 42,
+    });
+  });
+
+  it("drops non-positive V2 help linkedEventTid", () => {
+    const v2Components = [
+      {
+        type: "help" as const,
+        helpId: "help_v2",
+        status: "open" as const,
+        linkedEventTid: 0,
+      },
+    ];
+
+    const result = normalizeHelpExtensionV2(v2Components, {});
+    expect(result).toEqual({
+      helpId: "help_v2",
+      status: "open",
+      voteCount: 0,
+      commentCount: 0,
+    });
   });
 });
 
@@ -355,27 +389,27 @@ describe("normalizePostDetail V2 integration", () => {
     expect(result.trade?.price).toBe("¥100");
   });
 
-  it("handles mixed V2 and V1 data gracefully", () => {
+  it("extracts extensions from object-shaped V2 components when present", () => {
     const payload = {
       tid: 123,
       title: "Test Post",
       metadata: {
-        components: [{ type: "event", eventId: "evt_v2", capacity: 50, joinedCount: 10 }],
+        components: {
+          event: { type: "event", eventId: "evt_v2_object", capacity: 8, joinedCount: 2 },
+          trade: { type: "trade", price: "¥22", state: "reserved", category: "books" },
+        },
       },
       event: { eventId: "evt_v1", capacity: 100, joinedCount: 5 },
-      merchant: {
-        name: "V1 Shop",
-        category: "service",
-        hours: "",
-        contact: "",
-        errandSupported: false,
-        verifiedAt: "",
-      },
+      trade: { price: "¥11", state: "available", category: "misc" },
     };
 
     const result = normalizePostDetail(payload, 123);
-    expect(result.event?.eventId).toBe("evt_v2");
-    expect(result.merchant?.name).toBe("V1 Shop");
+    expect(result.components).toEqual([
+      { type: "event", eventId: "evt_v2_object", capacity: 8, joinedCount: 2 },
+      { type: "trade", price: "¥22", state: "reserved", category: "books" },
+    ]);
+    expect(result.event?.eventId).toBe("evt_v1");
+    expect(result.trade?.price).toBe("¥11");
   });
 
   it("handles empty V2 components array by falling back to V1", () => {

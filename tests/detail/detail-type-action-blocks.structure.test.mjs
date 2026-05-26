@@ -24,7 +24,14 @@ test("normalizePostDetail derives typed-detail fallbacks from type, contentType,
   assert.match(src, /contentType === "trade" \|\| presentationIntent === "trade"/);
   assert.match(src, /rawType === "event"/);
   assert.match(src, /rawType === "activity"/);
+  assert.match(src, /presentationIntent === "activity"/);
   assert.match(src, /rawType === "help"/);
+  assert.match(src, /presentationIntent === "help"/);
+  assert.match(src, /rawType === "place"/);
+  assert.match(src, /contentType === "location"/);
+  assert.match(src, /presentationIntent === "place"/);
+  assert.match(src, /rawType === "club"/);
+  assert.match(src, /presentationIntent === "club"/);
   assert.match(src, /type,\s*title:/s);
 });
 
@@ -47,10 +54,14 @@ test("PostDetailContent mounts typed fallback blocks whenever a typed extension 
     /import PostDetailTypedFallbackBlock from "\.\/PostDetailTypedFallbackBlock\.vue"/,
   );
   assert.match(src, /postType\?:\s*PostType/);
-  assert.match(src, /v-else-if="postType === 'event'"/);
-  assert.match(src, /v-else-if="postType === 'help'"/);
-  assert.match(src, /v-else-if="postType === 'merchant'"/);
-  assert.match(src, /v-else-if="postType === 'trade'"/);
+  assert.match(src, /const showEventFallback = computed\(/);
+  assert.match(src, /const showHelpFallback = computed\(/);
+  assert.match(src, /const showMerchantFallback = computed\(/);
+  assert.match(src, /const showTradeFallback = computed\(/);
+  assert.match(src, /v-else-if="showEventFallback" post-type="event"/);
+  assert.match(src, /v-else-if="showHelpFallback" post-type="help"/);
+  assert.match(src, /v-else-if="showMerchantFallback" post-type="merchant"/);
+  assert.match(src, /v-else-if="showTradeFallback" post-type="trade"/);
 });
 
 test("PostDetailPanel forwards the normalized post.type into PostDetailContent", () => {

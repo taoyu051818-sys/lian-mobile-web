@@ -39,6 +39,8 @@ export interface PostDetail {
   bookmarked: boolean;
   /** Audience visibility level for the post. */
   visibility?: AudienceVisibility;
+  /** Club metadata — present iff contentType === "club". */
+  club?: ClubMetadata;
   /** PRD V0.1 §6.3 — present iff postType === "event". */
   event?: EventPostExtension;
   /** Whether the current viewer has already joined this event. */

@@ -18,13 +18,16 @@ const listSource = fs.readFileSync(
   "utf8",
 );
 
-test("NotificationList emits open-item with tid when notification is clicked", () => {
-  assert.match(listSource, /"open-item":\s*\[tid:\s*number\]/);
-  assert.match(listSource, /emit\("open-item",\s*tid\)/);
+test("NotificationList emits open-item with the full notification item when a clickable notification is activated", () => {
+  assert.match(listSource, /"open-item":\s*\[item:\s*NotificationItem\]/);
+  assert.match(listSource, /emit\("open-item",\s*item\)/);
 });
 
-test("NotificationList guards open-item emit to valid positive tid only", () => {
-  assert.match(listSource, /Number\.isFinite\(tid\)\s*&&\s*tid\s*>\s*0/);
+test("NotificationList gates open-item emit through isClickable target-kind checks", () => {
+  assert.match(listSource, /if \(isClickable\(item\)\) emit\("open-item", item\)/);
+  assert.match(listSource, /item\.target\?\.kind === "detail"/);
+  assert.match(listSource, /item\.target\?\.kind === "verification"/);
+  assert.match(listSource, /item\.target\?\.kind === "errand-order"/);
 });
 
 test("NotificationList adds click and keyboard handlers on notification articles", () => {

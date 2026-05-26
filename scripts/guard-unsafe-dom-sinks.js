@@ -6,6 +6,7 @@ import path from "node:path";
 const ROOT = path.resolve(import.meta.dirname, "..");
 const CODE_EXTENSIONS = new Set([".html", ".js", ".ts", ".vue"]);
 const IGNORE_DIRS = new Set([
+  ".claude",
   ".git",
   "build",
   "coverage",
@@ -13,7 +14,9 @@ const IGNORE_DIRS = new Set([
   "docs",
   "node_modules",
   "runtime-inventory",
+  "test-results",
   "tests",
+  "playwright-report",
 ]);
 const IGNORE_FILES = new Set([
   "scripts/guard-unsafe-dom-sinks.js",

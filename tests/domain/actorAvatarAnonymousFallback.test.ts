@@ -2,7 +2,11 @@ import { describe, expect, it } from "vitest";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { ANONYMOUS_ALIAS_AVATAR_URL, actorAvatarUrl } from "../../src/domain/actor";
+import {
+  ANONYMOUS_ALIAS_AVATAR_URL,
+  actorAvatarUrl,
+  actorDisplayName,
+} from "../../src/domain/actor";
 import { normalizeDisplayActor } from "../../src/platform/api-normalizers";
 
 /**
@@ -76,6 +80,24 @@ describe("actorAvatarUrl alias / anonymous fallback (issue #938)", () => {
     expect(actorAvatarUrl({ displayName: "Real User" })).toBe("");
     expect(actorAvatarUrl(null)).toBe("");
     expect(actorAvatarUrl(undefined)).toBe("");
+  });
+
+  it("does not fall back to username or name for alias actors", () => {
+    expect(
+      actorDisplayName(
+        {
+          aliasId: "masked-author",
+          username: "real-account-name",
+          name: "Real Name",
+        },
+        "匿名用户",
+      ),
+    ).toBe("匿名用户");
+  });
+
+  it("still uses username/name fallbacks for non-alias actors", () => {
+    expect(actorDisplayName({ username: "campus-user" }, "默认用户")).toBe("campus-user");
+    expect(actorDisplayName({ name: "Campus User" }, "默认用户")).toBe("Campus User");
   });
 
   it("preserves aliasId through normalizeDisplayActor so resolver sees it", () => {

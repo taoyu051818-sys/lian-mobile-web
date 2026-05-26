@@ -10,6 +10,9 @@ export const FEED_LIKE = "喜欢";
 export const FEED_UNLIKE = "取消喜欢";
 export const FEED_COLLAPSE = "收起";
 export const FEED_EXPAND = "展开";
+export const FEED_RELATION_HINT_HELP_EVENT = "已关联活动";
+export const FEED_RELATION_HINT_TRADE_OFFER = "相关转让";
+export const FEED_RELATION_HINT_EVENT_FOLLOWUP = "活动续报";
 
 /** 卡片模板视觉记号（FeedItemCard.vue templateMark 字符标） */
 export const FEED_CARD_MARK_MERCHANT = "食";

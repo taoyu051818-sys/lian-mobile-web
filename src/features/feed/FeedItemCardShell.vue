@@ -11,7 +11,7 @@
 // to that <article> automatically. `event.currentTarget` resolves to the <article>
 // element, which is what `useCardPointerInteraction` reads for `getBoundingClientRect`.
 // Publish (step G) can mount this shell without registering any listeners.
-import { computed, nextTick, ref, watch } from "vue";
+import { computed, nextTick, onMounted, ref, watch } from "vue";
 import { FEED_COLLAPSE, FEED_EXPAND } from "../../config/brand";
 import type { AudienceVisibility } from "../../types/audience";
 import FeedItemCardFooter from "./FeedItemCardFooter.vue";
@@ -29,6 +29,7 @@ const props = defineProps<{
   authorInitial: string;
   cardTemplate: CardTemplate;
   templateMark: string;
+  relationHint: string;
   bodyPreview: string;
   cardWarning?: string;
   // Forwarded to FeedItemCardFooter — the footer remains the owner of like behavior
@@ -68,6 +69,10 @@ watch(
     nextTick(checkBodyClamp);
   },
 );
+
+onMounted(() => {
+  nextTick(checkBodyClamp);
+});
 </script>
 
 <template>
@@ -92,6 +97,8 @@ watch(
         primaryTag
       }}</span>
 
+      <p v-if="relationHint" class="feed-item-card__relation-hint">{{ relationHint }}</p>
+
       <h3 :title="title">{{ title }}</h3>
 
       <template v-if="cardTemplate === 'text' && bodyPreview">
@@ -107,6 +114,8 @@ watch(
           class="feed-item-card__body-toggle"
           type="button"
           @click.stop="toggleBody"
+          @keydown.enter.stop
+          @keydown.space.stop
         >
           {{ bodyExpanded ? FEED_COLLAPSE : FEED_EXPAND }}
         </button>
@@ -230,5 +239,13 @@ watch(
   font-size: 12px;
   font-weight: 800;
   cursor: pointer;
+}
+
+.feed-item-card__relation-hint {
+  margin: 0;
+  color: var(--lian-primary-deep);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.3;
 }
 </style>

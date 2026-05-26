@@ -16,7 +16,11 @@ const emit = defineEmits<{
 }>();
 
 function isClubItem(item: FeedItem): boolean {
-  return item.contentType === "club" || item.presentationIntent === "club";
+  return (
+    item.contentType === "club" ||
+    item.presentationIntent === "club" ||
+    item.cardTemplate === "club"
+  );
 }
 
 function estimateCardWeight(item: FeedItem) {

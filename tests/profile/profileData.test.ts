@@ -1,10 +1,12 @@
 import { describe, expect, it } from "vitest";
+import { ref } from "vue";
 
 import {
   normalizeProfileListItem,
   normalizeProfileListResponse,
   resolveProfileTabRequest,
 } from "../../src/api/profile";
+import { useProfileAliasPicker } from "../../src/features/profile/useProfileAliasPicker";
 
 describe("profile activity tab routing", () => {
   it("routes each tab to the live /api/me endpoint", () => {
@@ -22,6 +24,12 @@ describe("profile activity tab routing", () => {
       method: "POST",
       body: JSON.stringify({ tids: [11, 22] }),
     });
+  });
+
+  it("rejects the orders tab so it cannot silently fall through to map contributions", () => {
+    expect(() => resolveProfileTabRequest("orders")).toThrow(
+      /\/api\/errands\/orders\/mine|orders tab is fetched via/i,
+    );
   });
 
   it("forwards the posts content filter as ?presentationIntent= for non-all values", () => {
@@ -70,6 +78,32 @@ describe("profile activity tab routing", () => {
   });
 });
 
+describe("profile alias picker", () => {
+  it("keeps identity tags as a fallback when tags is an empty array", () => {
+    const picker = useProfileAliasPicker({
+      user: ref({
+        tags: [],
+        identityTags: ["校园认证", "商家认证"],
+      }),
+      loadProfile: async () => {},
+    });
+
+    expect(picker.userTags.value).toEqual(["校园认证", "商家认证"]);
+  });
+
+  it("prefers explicit tags when present", () => {
+    const picker = useProfileAliasPicker({
+      user: ref({
+        tags: ["活跃用户", "已实名"],
+        identityTags: ["校园认证"],
+      }),
+      loadProfile: async () => {},
+    });
+
+    expect(picker.userTags.value).toEqual(["活跃用户", "已实名"]);
+  });
+});
+
 describe("profile activity normalization", () => {
   it("preserves topic-backed activity metadata", () => {
     expect(
@@ -81,6 +115,7 @@ describe("profile activity normalization", () => {
         timeLabel: "2026-05-20",
         locationArea: "东区",
         status: "pending",
+        visibility: "campus",
       }),
     ).toEqual({
       tid: 88,
@@ -91,6 +126,7 @@ describe("profile activity normalization", () => {
       timeLabel: "2026-05-20",
       locationArea: "东区",
       status: "pending",
+      visibility: "campus",
     });
   });
 
@@ -110,18 +146,32 @@ describe("profile activity normalization", () => {
     });
   });
 
+  it("drops unknown visibility values instead of inventing a badge", () => {
+    expect(
+      normalizeProfileListItem({
+        tid: 99,
+        title: "异常权限帖子",
+        visibility: "friends-only",
+      }),
+    ).toEqual({
+      tid: 99,
+      id: "99",
+      title: "异常权限帖子",
+    });
+  });
+
   it("normalizes list responses through the item helper", () => {
     expect(
       normalizeProfileListResponse({
         items: [
           { tid: 7, title: "第一条" },
-          { id: "draft-2", title: "第二条", status: "draft" },
+          { id: "draft-2", title: "第二条", status: "draft", visibility: "private" },
         ],
       }),
     ).toEqual({
       items: [
         { tid: 7, id: "7", title: "第一条" },
-        { id: "draft-2", title: "第二条", status: "draft" },
+        { id: "draft-2", title: "第二条", status: "draft", visibility: "private" },
       ],
     });
   });

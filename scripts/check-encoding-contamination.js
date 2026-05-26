@@ -18,6 +18,7 @@ const TEXT_EXTENSIONS = new Set([
 ]);
 const IGNORE_DIRS = new Set([
   ".git",
+  ".claude",
   "node_modules",
   "tmp",
   "temp",
@@ -25,6 +26,8 @@ const IGNORE_DIRS = new Set([
   "dist",
   "build",
   "coverage",
+  "playwright-report",
+  "test-results",
 ]);
 
 // ── Latin-1 / Windows-1252 mojibake detection ──

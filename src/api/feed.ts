@@ -1,9 +1,17 @@
+import type { AudienceVisibility } from "../types/audience";
+import type { ClubCategory, ClubMetadata } from "../types/post";
 import { apiGet } from "./http";
 import { UNTITLED_CONTENT } from "../config/brand";
 import {
   asBoolean,
   asNumber,
+  asRecord,
+  asString,
+  extractV2Components,
+  normalizeDisplayActor,
   normalizeFeedItemId as normalizeFeedItemIdNum,
+  normalizeMetadataComponents,
+  normalizeSourceSignal,
 } from "../platform/api-normalizers";
 import type {
   FeedItem,
@@ -26,6 +34,7 @@ const CARD_TEMPLATES: ReadonlySet<FeedPresentationIntent> = new Set([
   "place",
   "merchant",
   "help",
+  "club",
 ]);
 const CONTENT_TYPE_CARD_TEMPLATES: Readonly<Record<string, FeedPresentationIntent>> = {
   image: "image",
@@ -35,6 +44,9 @@ const CONTENT_TYPE_CARD_TEMPLATES: Readonly<Record<string, FeedPresentationInten
   post: "text",
   article: "text",
   discussion: "text",
+  project: "text",
+  review: "text",
+  submission: "text",
   activity: "activity",
   event: "activity",
   opportunity: "activity",
@@ -48,7 +60,25 @@ const CONTENT_TYPE_CARD_TEMPLATES: Readonly<Record<string, FeedPresentationInten
   help: "help",
   support: "help",
   ask: "help",
+  club: "club",
 };
+
+const KNOWN_VISIBILITIES: ReadonlySet<AudienceVisibility> = new Set([
+  "public",
+  "campus",
+  "school",
+  "private",
+  "linkOnly",
+]);
+const KNOWN_CLUB_CATEGORIES: ReadonlySet<ClubCategory> = new Set([
+  "academic",
+  "sports",
+  "arts",
+  "volunteer",
+  "tech",
+  "culture",
+  "other",
+]);
 
 function readableText(value: unknown): string {
   if (typeof value === "string") return value.trim();
@@ -83,8 +113,122 @@ function normalizeFeedPresentationIntent(value: unknown): FeedPresentationIntent
     : null;
 }
 
+function normalizeFeedRelationHint(value: unknown): FeedItem["relationHint"] {
+  return value === "help_event_link" || value === "trade_offer_link" || value === "event_followup"
+    ? value
+    : undefined;
+}
+
+function deriveFeedRelationHint(
+  relationHint: FeedItem["relationHint"],
+  relations: FeedItem["relations"],
+): FeedItem["relationHint"] {
+  if (relationHint) return relationHint;
+  return normalizeFeedRelationHint(relations?.[0]?.type);
+}
+
 function normalizeFeedContentType(value: unknown): string {
   return readableText(value).toLowerCase();
+}
+
+function normalizeVisibility(value: unknown): AudienceVisibility | undefined {
+  return typeof value === "string" && KNOWN_VISIBILITIES.has(value as AudienceVisibility)
+    ? value === "public"
+      ? undefined
+      : (value as AudienceVisibility)
+    : undefined;
+}
+
+function normalizeClubCategory(value: unknown): ClubCategory {
+  return typeof value === "string" && KNOWN_CLUB_CATEGORIES.has(value as ClubCategory)
+    ? (value as ClubCategory)
+    : "other";
+}
+
+function normalizeClubMetadata(value: unknown): ClubMetadata | undefined {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return undefined;
+  const record = value as Record<string, unknown>;
+  const clubId = readableText(record.clubId || record.id);
+  const name = readableText(record.name || record.title);
+  if (!clubId || !name) return undefined;
+
+  const president = readableText(record.president || record.leader);
+  const foundedAt = readableText(record.foundedAt || record.createdAt);
+  const memberCount = Math.max(0, Math.trunc(asNumber(record.memberCount || record.members, 0)));
+  const description = readableText(record.description || record.summary);
+  const logoUrl = readableText(
+    record.logoUrl || record.avatarUrl || record.coverUrl || record.logo,
+  );
+
+  return {
+    clubId,
+    name,
+    category: normalizeClubCategory(record.category),
+    president,
+    foundedAt,
+    memberCount,
+    ...(description ? { description } : {}),
+    ...(logoUrl ? { logoUrl } : {}),
+  };
+}
+
+function normalizeFeedRelationTarget(value: unknown): { kind: string; id: string } | undefined {
+  const record = asRecord(value);
+  const kind = asString(record.kind);
+  const id = asString(record.id);
+  if (!kind || !id) return undefined;
+  return { kind, id };
+}
+
+function normalizeFeedPostRelations(value: unknown): FeedItem["relations"] {
+  if (!Array.isArray(value)) return undefined;
+  const relations = value
+    .map((entry) => {
+      if (!entry || typeof entry !== "object") return null;
+      const record = entry as Record<string, unknown>;
+      const type = readableText(record.type);
+      if (!type) return null;
+
+      const target = normalizeFeedRelationTarget(record.target);
+      if (target?.kind === "post") {
+        const targetTid = normalizeFeedItemIdNum(target.id);
+        if (targetTid > 0) return { type, targetTid };
+      }
+
+      const legacyTargetTid = normalizeFeedItemIdNum(
+        record.targetTid || record.targetId || record.tid,
+      );
+      if (legacyTargetTid <= 0) return null;
+      return { type, targetTid: legacyTargetTid };
+    })
+    .filter((entry): entry is NonNullable<FeedItem["relations"]>[number] => Boolean(entry));
+  return relations.length ? relations : undefined;
+}
+
+function normalizeFeedAvailableActions(value: unknown): FeedItem["availableActions"] {
+  if (!Array.isArray(value)) return undefined;
+  const actions = value
+    .map((entry) => {
+      if (!entry || typeof entry !== "object") return null;
+      const record = entry as Record<string, unknown>;
+      const type = readableText(record.type);
+      if (!type) return null;
+      const enabled = "enabled" in record ? asBoolean(record.enabled) : undefined;
+      const reason = readableText(record.reason);
+      const reasonText = readableText(record.reasonText);
+      return {
+        type,
+        ...(enabled !== undefined ? { enabled } : {}),
+        ...(reason ? { reason } : {}),
+        ...(reasonText ? { reasonText } : {}),
+      };
+    })
+    .filter((entry): entry is NonNullable<FeedItem["availableActions"]>[number] => Boolean(entry));
+  return actions.length ? actions : undefined;
+}
+
+function normalizeFeedRelations(value: unknown): FeedItem["relations"] {
+  return normalizeFeedPostRelations(value);
 }
 
 export function normalizeFeedCardTemplate(
@@ -126,19 +270,34 @@ export function normalizeFeedItem(value: unknown): FeedItem | null {
   if (!value || typeof value !== "object") return null;
   const record = value as Record<string, unknown>;
   const cover = readableText(record.cover || record.coverUrl || record.image || record.imageUrl);
+  const metadata =
+    record.metadata && typeof record.metadata === "object" && !Array.isArray(record.metadata)
+      ? (record.metadata as Record<string, unknown>)
+      : undefined;
+  const club = normalizeClubMetadata(record.club || metadata?.club);
   const contentType = normalizeFeedContentType(
-    record.contentType || record.category || record.type,
+    record.contentType || record.category || record.type || (club ? "club" : undefined),
+  );
+  const visibility = normalizeVisibility(
+    record.visibility || metadata?.visibility || metadata?.audienceVisibility,
   );
   const { cardTemplate, cardTemplateSource, presentationIntent } = normalizeFeedCardTemplate({
     cover,
     contentType,
-    presentationIntent: record.presentationIntent as
-      | FeedPresentationIntent
-      | string
-      | null
-      | undefined,
+    presentationIntent:
+      normalizeFeedPresentationIntent(record.presentationIntent) ||
+      normalizeFeedPresentationIntent(metadata?.presentationIntent),
     cardTemplate: record.cardTemplate as FeedPresentationIntent | null | undefined,
   });
+  const components = normalizeMetadataComponents(record) ?? extractV2Components(record);
+  const relations = normalizeFeedRelations(record.relations ?? metadata?.relations);
+  const relationHint = deriveFeedRelationHint(
+    normalizeFeedRelationHint(record.relationHint || metadata?.relationHint),
+    relations,
+  );
+  const availableActions = normalizeFeedAvailableActions(
+    record.availableActions ?? metadata?.availableActions,
+  );
 
   return {
     tid: normalizeFeedItemIdNum(record.tid || record.id),
@@ -148,14 +307,8 @@ export function normalizeFeedItem(value: unknown): FeedItem | null {
     ),
     cover,
     primaryTag: readableText(record.primaryTag || record.tag),
-    actor:
-      typeof record.actor === "object" && record.actor
-        ? (record.actor as FeedItem["actor"])
-        : undefined,
-    source:
-      typeof record.source === "object" && record.source
-        ? (record.source as FeedItem["source"])
-        : undefined,
+    actor: normalizeDisplayActor(record.actor || record.user),
+    source: normalizeSourceSignal(record.source),
     timeLabel: readableText(record.timeLabel || record.timeAgo) || "刚刚",
     timestampISO: readableText(record.timestampISO || record.timestamp || record.createdAt),
     likeCount: Math.max(0, asNumber(record.likeCount || record.likes, 0)),
@@ -166,6 +319,12 @@ export function normalizeFeedItem(value: unknown): FeedItem | null {
     presentationIntent,
     cardTemplate,
     cardTemplateSource,
+    ...(relationHint ? { relationHint } : {}),
+    ...(components?.length ? { components } : {}),
+    ...(relations?.length ? { relations } : {}),
+    ...(availableActions?.length ? { availableActions } : {}),
+    ...(club ? { club } : {}),
+    ...(visibility && visibility !== "public" ? { visibility } : {}),
   };
 }
 

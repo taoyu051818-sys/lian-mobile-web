@@ -6,11 +6,11 @@ import { fileURLToPath } from "node:url";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
 const apiSource = fs.readFileSync(path.join(repoRoot, "src/api/channel.ts"), "utf8");
-const typesSource = fs.readFileSync(path.join(repoRoot, "src/types/messages.ts"), "utf8");
-const viewSource = fs.readFileSync(
-  path.join(repoRoot, "src/features/messages/MessagesView.vue"),
+const channelSource = fs.readFileSync(
+  path.join(repoRoot, "src/features/messages/useChannelMessages.ts"),
   "utf8",
 );
+const typesSource = fs.readFileSync(path.join(repoRoot, "src/types/messages.ts"), "utf8");
 
 // --- ChannelReadPayload type ---
 
@@ -53,24 +53,24 @@ test("markChannelMessagesRead posts to /api/channel/read with the correct payloa
 
 // --- nextOffset ?? fix ---
 
-test("MessagesView uses ?? for nextOffset fallback so 0 is preserved", () => {
-  assert.match(viewSource, /response\.nextOffset \?\? channelOffset\.value/);
-  assert.doesNotMatch(viewSource, /response\.nextOffset \|\| channelOffset\.value/);
+test("useChannelMessages uses ?? for nextOffset fallback so 0 is preserved", () => {
+  assert.match(channelSource, /response\.nextOffset \?\? channelOffset\.value/);
+  assert.doesNotMatch(channelSource, /response\.nextOffset \|\| channelOffset\.value/);
 });
 
-// --- mark-read wiring in MessagesView ---
+// --- mark-read wiring in useChannelMessages ---
 
-test("MessagesView imports markChannelMessagesRead", () => {
-  assert.match(viewSource, /markChannelMessagesRead/);
+test("useChannelMessages imports markChannelMessagesRead from api/channel", () => {
+  assert.match(channelSource, /markChannelMessagesRead/);
   assert.match(
-    viewSource,
-    /import \{[^}]*markChannelMessagesRead[^}]*\} from "\.\.\/api\/messages"/,
+    channelSource,
+    /import \{[^}]*markChannelMessagesRead[^}]*\} from "\.\.\/\.\.\/api\/channel"/,
   );
 });
 
-test("MessagesView calls markChannelMessagesRead only on reset loads", () => {
-  assert.match(viewSource, /if \(reset && channelItems\.value\.length\)/);
-  assert.match(viewSource, /markChannelMessagesRead\(ids\)\.catch\(\(\) => \{\}\)/);
+test("useChannelMessages calls markChannelMessagesRead only on reset loads", () => {
+  assert.match(channelSource, /if \(reset && channelItems\.value\.length\)/);
+  assert.match(channelSource, /markChannelMessagesRead\(ids\)\.catch\(\(\) => \{\}\)/);
 });
 
 // --- nextOffset=0 semantics (pure JS logic) ---

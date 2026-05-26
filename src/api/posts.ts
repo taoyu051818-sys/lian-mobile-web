@@ -12,6 +12,7 @@ import {
   normalizeFeedItemId,
   normalizeHelpExtensionV2,
   normalizeMerchantExtensionV2,
+  normalizeMetadataComponents,
   normalizePlaceRef,
   normalizePostAvailableActions,
   normalizePostRelations,
@@ -20,7 +21,14 @@ import {
   normalizeTradeExtensionV2,
 } from "../platform/api-normalizers";
 import type { FeedItemId } from "../types/feed";
-import { normalizePostType, type PostDetail, type PostReply, type PostType } from "../types/post";
+import {
+  normalizePostType,
+  type ClubCategory,
+  type ClubMetadata,
+  type PostDetail,
+  type PostReply,
+  type PostType,
+} from "../types/post";
 import type { MetadataComponentV2, TradePostExtension, TradeState } from "../types/post-extensions";
 import type { AudienceVisibility } from "../types/audience";
 
@@ -31,11 +39,63 @@ const KNOWN_VISIBILITIES: ReadonlySet<AudienceVisibility> = new Set([
   "private",
   "linkOnly",
 ]);
+const KNOWN_CLUB_CATEGORIES: ReadonlySet<ClubCategory> = new Set([
+  "academic",
+  "sports",
+  "arts",
+  "volunteer",
+  "tech",
+  "culture",
+  "other",
+]);
 
 function normalizeVisibility(value: unknown): AudienceVisibility {
   return typeof value === "string" && KNOWN_VISIBILITIES.has(value as AudienceVisibility)
     ? (value as AudienceVisibility)
     : "public";
+}
+
+function readableText(value: unknown): string {
+  if (typeof value === "string") return value.trim();
+  if (typeof value === "number") return String(value);
+  if (value && typeof value === "object") {
+    const record = value as Record<string, unknown>;
+    return readableText(record.label || record.name || record.title || record.id);
+  }
+  return "";
+}
+
+function normalizeClubCategory(value: unknown): ClubCategory {
+  return typeof value === "string" && KNOWN_CLUB_CATEGORIES.has(value as ClubCategory)
+    ? (value as ClubCategory)
+    : "other";
+}
+
+function normalizeClubMetadata(value: unknown): ClubMetadata | undefined {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return undefined;
+  const record = value as Record<string, unknown>;
+  const clubId = readableText(record.clubId || record.id);
+  const name = readableText(record.name || record.title);
+  if (!clubId || !name) return undefined;
+
+  const president = readableText(record.president || record.leader);
+  const foundedAt = readableText(record.foundedAt || record.createdAt);
+  const memberCount = Math.max(0, Math.trunc(asNumber(record.memberCount || record.members, 0)));
+  const description = readableText(record.description || record.summary);
+  const logoUrl = readableText(
+    record.logoUrl || record.avatarUrl || record.coverUrl || record.logo,
+  );
+
+  return {
+    clubId,
+    name,
+    category: normalizeClubCategory(record.category),
+    president,
+    foundedAt,
+    memberCount,
+    ...(description ? { description } : {}),
+    ...(logoUrl ? { logoUrl } : {}),
+  };
 }
 
 export interface PostLikeResponse {
@@ -63,11 +123,11 @@ function normalizePostReply(value: unknown, fallbackId: FeedItemId): PostReply {
   const record = asRecord(value);
 
   return {
-    id: normalizeFeedItemId(record.id, fallbackId),
+    id: normalizeFeedItemId(record.id ?? record.pid, fallbackId),
     content: asString(record.content),
-    actor: normalizeDisplayActor(record.actor),
+    actor: normalizeDisplayActor(record.actor || record.user),
     source: normalizeSourceSignal(record.source),
-    timestampISO: asString(record.timestampISO ?? record.time),
+    timestampISO: asString(record.timestampISO ?? record.createdAt ?? record.time),
   };
 }
 
@@ -87,12 +147,20 @@ function normalizeTradeExtensionFromDetail(value: unknown): TradePostExtension |
   return state === trade.state ? trade : { ...trade, state };
 }
 
+function normalizeProjectLikeIntent(value: unknown): "project" | "review" | "submission" | null {
+  const raw = asString(value).toLowerCase();
+  if (raw === "project" || raw === "review" || raw === "submission") return raw;
+  return null;
+}
+
 function normalizeDetailPostType(value: unknown, hasCover: boolean): PostType {
   const record = asRecord(value);
   const rawType = asString(record.type).toLowerCase();
   const contentType = asString(record.contentType).toLowerCase();
   const metadata = asRecord(record.metadata);
-  const presentationIntent = asString(metadata.presentationIntent).toLowerCase();
+  const presentationIntent = asString(
+    record.presentationIntent || metadata.presentationIntent,
+  ).toLowerCase();
 
   if (contentType.startsWith("merchant_") || presentationIntent === "merchant") {
     return "merchant";
@@ -104,18 +172,40 @@ function normalizeDetailPostType(value: unknown, hasCover: boolean): PostType {
     rawType === "event" ||
     rawType === "activity" ||
     contentType === "event" ||
-    contentType === "activity"
+    contentType === "activity" ||
+    presentationIntent === "event" ||
+    presentationIntent === "activity"
   ) {
     return "event";
   }
-  if (rawType === "help" || contentType === "help") {
+  if (rawType === "help" || contentType === "help" || presentationIntent === "help") {
     return "help";
   }
+  if (
+    rawType === "place" ||
+    contentType === "place" ||
+    contentType === "location" ||
+    contentType === "map" ||
+    presentationIntent === "place"
+  ) {
+    return "place";
+  }
+  if (rawType === "club" || contentType === "club" || presentationIntent === "club") {
+    return "club";
+  }
+  const projectLikeIntent = normalizeProjectLikeIntent(
+    presentationIntent || contentType || rawType,
+  );
+  if (projectLikeIntent === "project" || projectLikeIntent === "review") {
+    return hasCover ? "image" : "text";
+  }
+
   return normalizePostType(record.type, hasCover);
 }
 
 export function normalizePostDetail(value: unknown, fallbackId: FeedItemId): PostDetail {
   const record = asRecord(value);
+  const rawMetadata = asRecord(record.metadata);
   const tid = normalizeFeedItemId(record.tid, fallbackId);
   const rawReplies = Array.isArray(record.replies)
     ? record.replies.filter((reply) => reply && typeof reply === "object")
@@ -123,6 +213,10 @@ export function normalizePostDetail(value: unknown, fallbackId: FeedItemId): Pos
   const bookmarkedValue = "bookmarked" in record ? record.bookmarked : record.saved;
   const cover = asString(record.cover);
   const type = normalizeDetailPostType(record, Boolean(cover));
+  const club = normalizeClubMetadata(record.club || rawMetadata.club);
+  const visibility = normalizeVisibility(
+    record.visibility || rawMetadata.visibility || rawMetadata.audienceVisibility,
+  );
 
   // V2 metadata components — prefer when present, fall back to V1 flat fields
   const v2Components = extractV2Components(record);
@@ -132,20 +226,17 @@ export function normalizePostDetail(value: unknown, fallbackId: FeedItemId): Pos
   // post-detail DTO does NOT echo `metadata` so this typically lands as
   // undefined; when the backend opens the surface, `metadata.components`
   // becomes the source of truth without a frontend release.
-  const rawMetadata = asRecord(record.metadata);
   const metadataVersion = typeof rawMetadata._v === "number" ? rawMetadata._v : undefined;
-  const metadata =
+  const detailMetadata =
     v2Components || metadataVersion !== undefined
       ? {
           ...(metadataVersion !== undefined ? { _v: metadataVersion } : {}),
           ...(v2Components ? { components: v2Components } : {}),
         }
       : undefined;
-  // mw#967 — preserve V2 graph primitives that previously fell on the floor.
-  // `components` mirrors `metadata.components` at the top level; the backend
-  // may emit either the nested `metadata.components` form (today) or a flat
-  // top-level `components` (future), and we normalize both into the same
-  // canonical array shape per the team's array-only-on-wire principle.
+  const normalizedLegacyComponents = normalizeMetadataComponents(record);
+  // Preserve local club/read-side support while also accepting the remote
+  // graph primitives from the post-detail DTO.
   const topLevelComponentsRaw = Array.isArray(record.components) ? record.components : undefined;
   const topLevelComponents: MetadataComponentV2[] | undefined = topLevelComponentsRaw
     ? (topLevelComponentsRaw.filter(
@@ -158,9 +249,13 @@ export function normalizePostDetail(value: unknown, fallbackId: FeedItemId): Pos
       ? topLevelComponents
       : v2Components && v2Components.length
         ? v2Components
-        : undefined;
-  const relations = normalizePostRelations(record.relations);
-  const availableActions = normalizePostAvailableActions(record.availableActions);
+        : normalizedLegacyComponents && normalizedLegacyComponents.length
+          ? normalizedLegacyComponents
+          : undefined;
+  const relations = normalizePostRelations(record.relations ?? rawMetadata.relations);
+  const availableActions = normalizePostAvailableActions(
+    record.availableActions ?? rawMetadata.availableActions,
+  );
   const event = normalizeEventExtensionV2(v2Components, record.event);
   const eventJoined = "eventJoined" in record ? asBoolean(record.eventJoined) : undefined;
   // Issue #703 — backend may ship eventManageable so the detail page does not
@@ -207,7 +302,7 @@ export function normalizePostDetail(value: unknown, fallbackId: FeedItemId): Pos
     title: asString(record.title),
     cover,
     primaryTag: asString(record.primaryTag),
-    actor: normalizeDisplayActor(record.actor),
+    actor: normalizeDisplayActor(record.actor || record.user),
     source: normalizeSourceSignal(record.source),
     place: normalizePlaceRef(record.place),
     timeLabel: asString(record.timeLabel ?? record.time),
@@ -220,9 +315,11 @@ export function normalizePostDetail(value: unknown, fallbackId: FeedItemId): Pos
     sourceUrl: asString(record.sourceUrl ?? record.url),
     replies: rawReplies.map((reply, index) => normalizePostReply(reply, tid * 1000 + index + 1)),
     bookmarked: asBoolean(bookmarkedValue),
-    ...(normalizeVisibility(record.visibility) !== "public"
-      ? { visibility: normalizeVisibility(record.visibility) }
-      : {}),
+    ...(visibility !== "public" ? { visibility } : {}),
+    ...(club ? { club } : {}),
+    ...(components?.length ? { components } : {}),
+    ...(relations?.length ? { relations } : {}),
+    ...(availableActions?.length ? { availableActions } : {}),
     ...(event ? { event } : {}),
     ...(eventJoined !== undefined ? { eventJoined } : {}),
     ...(eventManageable !== undefined ? { eventManageable } : {}),
@@ -239,10 +336,10 @@ export function normalizePostDetail(value: unknown, fallbackId: FeedItemId): Pos
     ...(errandUnavailableReasonText ? { errandUnavailableReasonText } : {}),
     ...(trade ? { trade } : {}),
     ...(tradeManageable !== undefined ? { tradeManageable } : {}),
-    ...(metadata ? { metadata } : {}),
-    ...(components ? { components } : {}),
-    ...(relations ? { relations } : {}),
-    ...(availableActions ? { availableActions } : {}),
+    ...(detailMetadata ? { metadata: detailMetadata } : {}),
+    ...(components?.length ? { components } : {}),
+    ...(relations?.length ? { relations } : {}),
+    ...(availableActions?.length ? { availableActions } : {}),
   };
 }
 

@@ -1,5 +1,6 @@
 import { apiGet, apiSend, apiUpload, LianApiError } from "./http";
 import { normalizePostRelations } from "../platform/api-normalizers";
+import type { AudienceVisibility } from "../types/audience";
 import type { FeedItemId } from "../types/feed";
 import type {
   ProfileActivityStatus,
@@ -60,6 +61,16 @@ function normalizeOptionalTid(value: unknown): FeedItemId | undefined {
   return Number.isFinite(tid) && tid > 0 ? tid : undefined;
 }
 
+function normalizeOptionalVisibility(value: unknown): AudienceVisibility | undefined {
+  return value === "public" ||
+    value === "campus" ||
+    value === "school" ||
+    value === "private" ||
+    value === "linkOnly"
+    ? value
+    : undefined;
+}
+
 export function normalizeProfileListItem(item: unknown): ProfileListItem {
   const candidate = item && typeof item === "object" ? (item as Record<string, unknown>) : {};
   const tid = normalizeOptionalTid(candidate.tid);
@@ -80,6 +91,7 @@ export function normalizeProfileListItem(item: unknown): ProfileListItem {
     timeLabel: normalizeOptionalText(candidate.timeLabel),
     locationArea: normalizeOptionalText(candidate.locationArea),
     status: normalizeProfileActivityStatus(candidate.status),
+    visibility: normalizeOptionalVisibility(candidate.visibility),
     ...(relations ? { relations } : {}),
   };
 }
@@ -129,6 +141,11 @@ export function resolveProfileTabRequest(
   }
   if (tab === "replies") return { path: "/api/me/replies", method: "GET" };
   if (tab === "drafts") return { path: "/api/me/drafts", method: "GET" };
+  if (tab === "orders") {
+    throw new Error(
+      "Profile orders tab is fetched via /api/errands/orders/mine, not fetchProfileTab.",
+    );
+  }
   return { path: "/api/me/map-contributions", method: "GET" };
 }
 

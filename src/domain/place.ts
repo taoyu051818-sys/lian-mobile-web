@@ -62,9 +62,16 @@ const PLACE_TYPE_LABELS: Record<string, string> = {
   market: PLACE_TYPE_SHOP,
 };
 
+function normalizePlaceType(value: string): string {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/[\s-]+/g, "_");
+}
+
 export function placeTypeLabel(primary?: string | null, secondary?: string | null): string {
   const raw = primary?.trim() || secondary?.trim() || "";
   if (!raw) return PLACE_TYPE_FALLBACK;
-  const normalized = raw.toLowerCase();
+  const normalized = normalizePlaceType(raw);
   return PLACE_TYPE_LABELS[normalized] || raw;
 }
