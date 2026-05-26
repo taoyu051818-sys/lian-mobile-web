@@ -75,6 +75,7 @@ test("useChannelMessages replaces pending message with server response on succes
   assert.match(channelSource, /replacePendingWithLatest/);
 });
 
+test("useChannelMessages marks pending message as failed on send error", () => {
   assert.match(channelSource, /deliveryState:\s*"failed"/);
 });
 
