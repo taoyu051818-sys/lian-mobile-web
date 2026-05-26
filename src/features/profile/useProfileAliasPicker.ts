@@ -50,7 +50,9 @@ export function useProfileAliasPicker(options: {
   );
 
   const userTags = computed(() => {
-    const tags = user.value?.tags || user.value?.identityTags || [];
+    const primaryTags = user.value?.tags?.filter(Boolean) || [];
+    const fallbackIdentityTags = user.value?.identityTags?.filter(Boolean) || [];
+    const tags = primaryTags.length ? primaryTags : fallbackIdentityTags;
     return tags.slice(0, 5);
   });
 

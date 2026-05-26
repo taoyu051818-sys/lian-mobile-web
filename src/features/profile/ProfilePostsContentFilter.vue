@@ -52,6 +52,7 @@ function pick(value: ProfilePostsContentFilter) {
       class="profile-posts-content-filter__chip"
       :class="{ 'is-active': modelValue === chip.value }"
       :aria-checked="modelValue === chip.value"
+      :aria-selected="modelValue === chip.value"
       :data-filter-value="chip.value"
       data-testid="profile-posts-content-filter-chip"
       @click="pick(chip.value)"
