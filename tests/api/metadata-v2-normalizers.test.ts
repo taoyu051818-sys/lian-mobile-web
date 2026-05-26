@@ -30,21 +30,41 @@ describe("V2 metadata component extraction", () => {
     expect(extractV2Components({ metadata: { components: "not-array" } })).toBeUndefined();
   });
 
-  it("accepts object-shaped metadata.components from the backend", () => {
-    const payload = {
+  // mw#965 — Wire contract: `metadata.components` MUST be array-shaped on the
+  // API boundary. Backend storage may keep an object map keyed by component
+  // kind (location/event/merchant/...), but the DTO/serializer is responsible
+  // for converting that map into an array before it leaves the server. The
+  // frontend deliberately does NOT detect object shape — keeping array-only
+  // here locks in the contract and keeps normalization on one side of the
+  // boundary instead of two. If a future change tries to "accept both
+  // shapes" on the frontend, this test fails and forces the conversation
+  // back to fixing the backend serializer.
+  it("rejects object-shaped components (backend DTO must serialize to array)", () => {
+    const objectShaped = {
       metadata: {
         components: {
-          event: { type: "event", eventId: "evt_object" },
-          merchant: { type: "merchant", name: "Object Shop" },
-          invalid: { nope: true },
+          event: { type: "event", eventId: "evt_obj" },
+          merchant: { type: "merchant", name: "Obj Shop" },
         },
       },
     };
+    expect(extractV2Components(objectShaped)).toBeUndefined();
+  });
+
+  it("filters out invalid component entries", () => {
+    const payload = {
+      metadata: {
+        components: [
+          { type: "event", eventId: "evt_123" },
+          null,
+          "invalid",
+          { noType: true },
+          { type: "merchant", name: "Shop" },
+        ],
+      },
+    };
     const components = extractV2Components(payload);
-    expect(components).toEqual([
-      { type: "event", eventId: "evt_object" },
-      { type: "merchant", name: "Object Shop" },
-    ]);
+    expect(components).toHaveLength(2);
   });
 });
 

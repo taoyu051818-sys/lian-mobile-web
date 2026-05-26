@@ -12,15 +12,16 @@ import {
   normalizeFeedItemId,
   normalizeHelpExtensionV2,
   normalizeMerchantExtensionV2,
-  normalizeMetadataComponents,
   normalizePlaceRef,
+  normalizePostAvailableActions,
+  normalizePostRelations,
   normalizeSourceSignal,
   normalizeTradeExtension,
   normalizeTradeExtensionV2,
 } from "../platform/api-normalizers";
 import type { FeedItemId } from "../types/feed";
-import { normalizePostType, type ClubCategory, type ClubMetadata, type PostAvailableAction, type PostDetail, type PostRelation, type PostReply, type PostType } from "../types/post";
-import type { TradePostExtension, TradeState } from "../types/post-extensions";
+import { normalizePostType, type ClubCategory, type ClubMetadata, type PostDetail, type PostReply, type PostType } from "../types/post";
+import type { MetadataComponentV2, TradePostExtension, TradeState } from "../types/post-extensions";
 import type { AudienceVisibility } from "../types/audience";
 
 const KNOWN_VISIBILITIES: ReadonlySet<AudienceVisibility> = new Set([
@@ -267,10 +268,39 @@ export function normalizePostDetail(value: unknown, fallbackId: FeedItemId): Pos
 
   // V2 metadata components — prefer when present, fall back to V1 flat fields
   const v2Components = extractV2Components(record);
-  const components = normalizeMetadataComponents(record);
-  const relations = normalizePostRelations(record.relations ?? metadata.relations);
+  // PRD V0.3 §2.1.3 — surface the V2 metadata block on the wire when the
+  // backend echoes it. PostComponentsSlot consumes this for forward-compat
+  // renderers (delivery / groupbuy / channel / ledger). Today the public
+  // post-detail DTO does NOT echo `metadata` so this typically lands as
+  // undefined; when the backend opens the surface, `metadata.components`
+  // becomes the source of truth without a frontend release.
+  const rawMetadata = asRecord(record.metadata);
+  const metadataVersion = typeof rawMetadata._v === "number" ? rawMetadata._v : undefined;
+  const detailMetadata =
+    v2Components || metadataVersion !== undefined
+      ? {
+          ...(metadataVersion !== undefined ? { _v: metadataVersion } : {}),
+          ...(v2Components ? { components: v2Components } : {}),
+        }
+      : undefined;
+  // Preserve local club/read-side support while also accepting the remote
+  // graph primitives from the post-detail DTO.
+  const topLevelComponentsRaw = Array.isArray(record.components) ? record.components : undefined;
+  const topLevelComponents: MetadataComponentV2[] | undefined = topLevelComponentsRaw
+    ? (topLevelComponentsRaw.filter(
+        (c): c is MetadataComponentV2 =>
+          !!c && typeof c === "object" && typeof (c as { type?: unknown }).type === "string",
+      ) as MetadataComponentV2[])
+    : undefined;
+  const components =
+    topLevelComponents && topLevelComponents.length
+      ? topLevelComponents
+      : v2Components && v2Components.length
+        ? v2Components
+        : undefined;
+  const relations = normalizePostRelations(record.relations ?? rawMetadata.relations);
   const availableActions = normalizePostAvailableActions(
-    record.availableActions ?? metadata.availableActions,
+    record.availableActions ?? rawMetadata.availableActions,
   );
   const event = normalizeEventExtensionV2(v2Components, record.event);
   const eventJoined = "eventJoined" in record ? asBoolean(record.eventJoined) : undefined;
@@ -354,6 +384,7 @@ export function normalizePostDetail(value: unknown, fallbackId: FeedItemId): Pos
     ...(errandUnavailableReasonText ? { errandUnavailableReasonText } : {}),
     ...(trade ? { trade } : {}),
     ...(tradeManageable !== undefined ? { tradeManageable } : {}),
+    ...(detailMetadata ? { metadata: detailMetadata } : {}),
   };
 }
 

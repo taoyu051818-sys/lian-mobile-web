@@ -129,6 +129,28 @@ export const HELP_ACTION_UNAVAILABLE = "求助操作暂时不可用，可以稍�
 export const HELP_VOTE_SUCCESS = "已支持，谢谢。";
 export const HELP_UNVOTE_SUCCESS = "已取消支持。";
 
+/**
+ * PRD V0.3 §2.4 — 帖子图谱 relations 渲染。`type` 是后端 source-of-truth，
+ * 前端只做人类可读的标签映射；未知 type 直接展示原始字面量。
+ */
+export const RELATIONS_BLOCK_LABEL = "相关";
+export const RELATION_TARGET_RESOURCE_PREFIX = "资源";
+export const RELATION_TYPE_HELP_EVENT_LINK = "关联活动";
+export const RELATION_TYPE_SOLUTION_EVENT = "解决方案活动";
+export const RELATION_TYPE_EVENT_RECAP = "活动回顾";
+export const RELATION_TYPE_MERCHANT_ERRAND = "代办";
+export const RELATION_TYPE_PROJECT_SUBMISSION = "项目投稿";
+export const RELATION_TYPE_EVENT_REWARD = "活动奖励";
+
+/**
+ * PRD V0.3 §2.4 — 后端授权动作渲染。`type` 同 relations，前端做 fallback
+ * 标签；`enabled === false` 时按钮 disabled，悬浮提示展示 reasonText/reason。
+ */
+export const AVAILABLE_ACTIONS_BLOCK_LABEL = "可用操作";
+export const AVAILABLE_ACTION_MARK_SOLVED = "标记为已解决";
+export const AVAILABLE_ACTION_CLAIM_REWARD = "领取奖励";
+export const AVAILABLE_ACTION_COMPLETE_ERRAND = "完成代办";
+
 /** 求助管理写侧 (PRD V0.1 §6.5 / §11.3) */
 export const HELP_MANAGE_BLOCK_LABEL = "求助管理";
 export const HELP_MANAGE_LINK_EVENT = "关联到活动";

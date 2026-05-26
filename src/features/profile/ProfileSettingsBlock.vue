@@ -100,7 +100,6 @@ onMounted(() => {
             type="checkbox"
             data-testid="profile-settings-notification"
             :checked="settings.settings.value.notificationEnabled"
-            :disabled="settings.saving.value"
             @change="onNotificationToggle"
           />
           <span aria-hidden="true"></span>
@@ -116,7 +115,6 @@ onMounted(() => {
           class="profile-settings-block__select"
           data-testid="profile-settings-visibility"
           :value="settings.settings.value.profileVisibility"
-          :disabled="settings.saving.value"
           @change="onVisibilityChange"
         >
           <option v-for="option in VISIBILITY_OPTIONS" :key="option.value" :value="option.value">
@@ -135,7 +133,6 @@ onMounted(() => {
             type="checkbox"
             data-testid="profile-settings-mentions"
             :checked="settings.settings.value.allowMessageMentions"
-            :disabled="settings.saving.value"
             @change="onMentionsToggle"
           />
           <span aria-hidden="true"></span>
