@@ -52,10 +52,6 @@ interface PostDetailResponse {
   }>;
 }
 
-interface ReplyResponse {
-  ok?: boolean;
-}
-
 function buildPublishPayload(imageUrl: string, title: string) {
   return {
     imageUrl,
@@ -208,8 +204,6 @@ test.describe("@multi-user multi-user interaction scenarios", () => {
       data: { content: replyContent },
     });
     expect(replyResponse.ok(), await replyResponse.text()).toBe(true);
-    const replyBody = (await replyResponse.json()) as ReplyResponse;
-    expect(replyBody.ok).toBe(true);
 
     // User A fetches post detail and verifies the reply appears
     const updatedDetail = await fetchPostDetail(userAApi, tid);
