@@ -1,5 +1,6 @@
 import type { AudienceVisibility } from "./audience";
 import type { FeedItemId } from "./feed";
+import type { PostRelation } from "./post";
 import type { VerificationState, VerificationTag } from "./verification";
 
 export type ProfileTabKey =
@@ -78,6 +79,17 @@ export interface ProfileListItem {
   locationArea?: string;
   status?: ProfileActivityStatus;
   visibility?: AudienceVisibility;
+  /**
+   * PRD V0.3 §2.4 / B3-2 — backend-emitted post graph relations attached to
+   * the activity row. When the profile activity DTO carries `relations[]`,
+   * the profile relation-grouping surface uses it to bucket the post under
+   * the corresponding section ("我参与的活动" / "我求助过的帖" / "商家关联").
+   * Wire shape mirrors `PostDetail.relations` (canonical
+   * `{ type, target: { kind, id }, role? }`) — see
+   * `src/platform/api-normalizers.ts#normalizePostRelations`. Optional: rows
+   * without relations[] simply do not surface in the grouped section.
+   */
+  relations?: PostRelation[];
 }
 
 export interface ProfileListResponse {

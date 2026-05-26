@@ -1,4 +1,5 @@
 import { apiGet, apiSend, apiUpload, LianApiError } from "./http";
+import { normalizePostRelations } from "../platform/api-normalizers";
 import type { AudienceVisibility } from "../types/audience";
 import type { FeedItemId } from "../types/feed";
 import type {
@@ -74,6 +75,12 @@ export function normalizeProfileListItem(item: unknown): ProfileListItem {
   const candidate = item && typeof item === "object" ? (item as Record<string, unknown>) : {};
   const tid = normalizeOptionalTid(candidate.tid);
   const id = normalizeOptionalText(candidate.id) || (tid ? String(tid) : undefined);
+  // PRD V0.3 §2.4 / B3-2 — preserve `relations[]` when the activity DTO ships
+  // it. Wire shape mirrors `PostDetail.relations` (canonical
+  // `{ type, target: { kind, id }, role? }`) — see
+  // `src/platform/api-normalizers.ts#normalizePostRelations`. Optional: rows
+  // without relations[] simply do not surface in the grouped section.
+  const relations = normalizePostRelations(candidate.relations);
   return {
     tid,
     id,
@@ -85,6 +92,7 @@ export function normalizeProfileListItem(item: unknown): ProfileListItem {
     locationArea: normalizeOptionalText(candidate.locationArea),
     status: normalizeProfileActivityStatus(candidate.status),
     visibility: normalizeOptionalVisibility(candidate.visibility),
+    ...(relations ? { relations } : {}),
   };
 }
 

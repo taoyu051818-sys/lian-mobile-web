@@ -14,13 +14,15 @@ import {
   normalizeMerchantExtensionV2,
   normalizeMetadataComponents,
   normalizePlaceRef,
+  normalizePostAvailableActions,
+  normalizePostRelations,
   normalizeSourceSignal,
   normalizeTradeExtension,
   normalizeTradeExtensionV2,
 } from "../platform/api-normalizers";
 import type { FeedItemId } from "../types/feed";
-import { normalizePostType, type ClubCategory, type ClubMetadata, type PostAvailableAction, type PostDetail, type PostRelation, type PostReply, type PostType } from "../types/post";
-import type { TradePostExtension, TradeState } from "../types/post-extensions";
+import { normalizePostType, type ClubCategory, type ClubMetadata, type PostDetail, type PostReply, type PostType } from "../types/post";
+import type { MetadataComponentV2, TradePostExtension, TradeState } from "../types/post-extensions";
 import type { AudienceVisibility } from "../types/audience";
 
 const KNOWN_VISIBILITIES: ReadonlySet<AudienceVisibility> = new Set([
@@ -136,70 +138,6 @@ function normalizeTradeExtensionFromDetail(value: unknown): TradePostExtension |
   return state === trade.state ? trade : { ...trade, state };
 }
 
-function normalizeRelationTarget(value: unknown): PostRelation["target"] | undefined {
-  const record = asRecord(value);
-  const kind = asString(record.kind);
-  const id = asString(record.id);
-  if (!kind || !id) return undefined;
-  return { kind, id };
-}
-
-function normalizePostRelation(value: unknown): PostRelation | null {
-  const record = asRecord(value);
-  const type = asString(record.type);
-  if (!type) return null;
-
-  const target = normalizeRelationTarget(record.target);
-  if (target) {
-    const role = asString(record.role);
-    return {
-      type,
-      target,
-      ...(role ? { role } : {}),
-    };
-  }
-
-  const legacyTargetTid = normalizeFeedItemId(record.targetTid, 0);
-  if (legacyTargetTid <= 0) return null;
-  const role = asString(record.role);
-  return {
-    type,
-    target: { kind: "post", id: String(legacyTargetTid) },
-    ...(role ? { role } : {}),
-  };
-}
-
-function normalizePostRelations(value: unknown): PostRelation[] | undefined {
-  if (!Array.isArray(value)) return undefined;
-  const relations = value
-    .map((entry) => normalizePostRelation(entry))
-    .filter((entry): entry is PostRelation => Boolean(entry));
-  return relations.length ? relations : undefined;
-}
-
-function normalizePostAvailableAction(value: unknown): PostAvailableAction | null {
-  const record = asRecord(value);
-  const type = asString(record.type);
-  if (!type) return null;
-  const enabled = "enabled" in record ? asBoolean(record.enabled) : undefined;
-  const reason = asString(record.reason);
-  const reasonText = asString(record.reasonText);
-  return {
-    type,
-    ...(enabled !== undefined ? { enabled } : {}),
-    ...(reason ? { reason } : {}),
-    ...(reasonText ? { reasonText } : {}),
-  };
-}
-
-function normalizePostAvailableActions(value: unknown): PostAvailableAction[] | undefined {
-  if (!Array.isArray(value)) return undefined;
-  const actions = value
-    .map((entry) => normalizePostAvailableAction(entry))
-    .filter((entry): entry is PostAvailableAction => Boolean(entry));
-  return actions.length ? actions : undefined;
-}
-
 function normalizeProjectLikeIntent(value: unknown): "project" | "review" | "submission" | null {
   const raw = asString(value).toLowerCase();
   if (raw === "project" || raw === "review" || raw === "submission") return raw;
@@ -254,7 +192,7 @@ function normalizeDetailPostType(value: unknown, hasCover: boolean): PostType {
 
 export function normalizePostDetail(value: unknown, fallbackId: FeedItemId): PostDetail {
   const record = asRecord(value);
-  const metadata = asRecord(record.metadata);
+  const detailMetadata = asRecord(record.metadata);
   const tid = normalizeFeedItemId(record.tid, fallbackId);
   const rawReplies = Array.isArray(record.replies)
     ? record.replies.filter((reply) => reply && typeof reply === "object")
@@ -262,15 +200,39 @@ export function normalizePostDetail(value: unknown, fallbackId: FeedItemId): Pos
   const bookmarkedValue = "bookmarked" in record ? record.bookmarked : record.saved;
   const cover = asString(record.cover);
   const type = normalizeDetailPostType(record, Boolean(cover));
-  const club = normalizeClubMetadata(record.club || metadata.club);
-  const visibility = normalizeVisibility(record.visibility || metadata.visibility || metadata.audienceVisibility);
+  const club = normalizeClubMetadata(record.club || detailMetadata.club);
+  const visibility = normalizeVisibility(record.visibility || detailMetadata.visibility || detailMetadata.audienceVisibility);
 
   // V2 metadata components — prefer when present, fall back to V1 flat fields
   const v2Components = extractV2Components(record);
-  const components = normalizeMetadataComponents(record);
-  const relations = normalizePostRelations(record.relations ?? metadata.relations);
+  const rawMetadata = asRecord(record.metadata);
+  const metadataVersion = typeof rawMetadata._v === "number" ? rawMetadata._v : undefined;
+  const metadata =
+    v2Components || metadataVersion !== undefined
+      ? {
+          ...(metadataVersion !== undefined ? { _v: metadataVersion } : {}),
+          ...(v2Components ? { components: v2Components } : {}),
+        }
+      : undefined;
+  const normalizedLegacyComponents = normalizeMetadataComponents(record);
+  const topLevelComponentsRaw = Array.isArray(record.components) ? record.components : undefined;
+  const topLevelComponents: MetadataComponentV2[] | undefined = topLevelComponentsRaw
+    ? (topLevelComponentsRaw.filter(
+        (c): c is MetadataComponentV2 =>
+          !!c && typeof c === "object" && typeof (c as { type?: unknown }).type === "string",
+      ) as MetadataComponentV2[])
+    : undefined;
+  const components =
+    topLevelComponents && topLevelComponents.length
+      ? topLevelComponents
+      : v2Components && v2Components.length
+        ? v2Components
+        : normalizedLegacyComponents && normalizedLegacyComponents.length
+          ? normalizedLegacyComponents
+          : undefined;
+  const relations = normalizePostRelations(record.relations ?? detailMetadata.relations);
   const availableActions = normalizePostAvailableActions(
-    record.availableActions ?? metadata.availableActions,
+    record.availableActions ?? detailMetadata.availableActions,
   );
   const event = normalizeEventExtensionV2(v2Components, record.event);
   const eventJoined = "eventJoined" in record ? asBoolean(record.eventJoined) : undefined;
@@ -354,6 +316,10 @@ export function normalizePostDetail(value: unknown, fallbackId: FeedItemId): Pos
     ...(errandUnavailableReasonText ? { errandUnavailableReasonText } : {}),
     ...(trade ? { trade } : {}),
     ...(tradeManageable !== undefined ? { tradeManageable } : {}),
+    ...(metadata ? { metadata } : {}),
+    ...(components ? { components } : {}),
+    ...(relations ? { relations } : {}),
+    ...(availableActions ? { availableActions } : {}),
   };
 }
 

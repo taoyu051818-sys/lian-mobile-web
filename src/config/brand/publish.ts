@@ -133,13 +133,18 @@ export const PUBLISH_SUGGESTED_COMPONENTS_LABEL = "AI 建议添加";
 export const PUBLISH_SUGGESTED_ACCEPT = "加入";
 export const PUBLISH_SUGGESTED_DISMISS = "忽略";
 export const PUBLISH_SUGGESTED_HINT_PREFIX = "建议添加";
-/** Per-kind 视觉前缀，紧跟 LLM 自带的 reason 文案。Emoji 与 PRD §2.1 / §4.2.3 示例对齐。 */
+/** Per-kind 视觉前缀，紧跟 LLM 自带的 reason 文案。Emoji 与 PRD §2.1 / §4.2.3 示例对齐。
+ * V0.3 stage B2 (paired with ps#624)：升级到 V2 component kinds（10 个）。 */
 export const PUBLISH_SUGGESTED_KIND_ICON_LOCATION = "📍";
-export const PUBLISH_SUGGESTED_KIND_ICON_EVENT_TIME = "⏰";
-export const PUBLISH_SUGGESTED_KIND_ICON_PRICE = "💰";
-export const PUBLISH_SUGGESTED_KIND_ICON_MERCHANT_INFO = "🏪";
-export const PUBLISH_SUGGESTED_KIND_ICON_TRADE_CONDITION = "📦";
-export const PUBLISH_SUGGESTED_KIND_ICON_HELP_TAG = "🤝";
+export const PUBLISH_SUGGESTED_KIND_ICON_TIME = "⏰";
+export const PUBLISH_SUGGESTED_KIND_ICON_MEDIA = "🖼️";
+export const PUBLISH_SUGGESTED_KIND_ICON_QUALITY = "✨";
+export const PUBLISH_SUGGESTED_KIND_ICON_AUDIENCE = "👥";
+export const PUBLISH_SUGGESTED_KIND_ICON_TAGS = "🏷️";
+export const PUBLISH_SUGGESTED_KIND_ICON_EVENT = "📅";
+export const PUBLISH_SUGGESTED_KIND_ICON_MERCHANT = "🏪";
+export const PUBLISH_SUGGESTED_KIND_ICON_TRADE = "📦";
+export const PUBLISH_SUGGESTED_KIND_ICON_HELP = "🤝";
 
 /** 发布事件 (PRD V0.1 §6.3 / §11.2) */
 export const PUBLISH_POST_TYPE_LABEL = "内容类型";

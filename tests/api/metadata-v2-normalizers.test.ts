@@ -30,20 +30,43 @@ describe("V2 metadata component extraction", () => {
     expect(extractV2Components({ metadata: { components: "not-array" } })).toBeUndefined();
   });
 
-  it("accepts object-shaped metadata.components from the backend", () => {
-    const payload = {
+  // mw#965 — Wire contract: `metadata.components` MUST be array-shaped on the
+  // API boundary. Backend storage may keep an object map keyed by component
+  // kind (location/event/merchant/...), but the DTO/serializer is responsible
+  // for converting that map into an array before it leaves the server. The
+  // frontend deliberately does NOT detect object shape — keeping array-only
+  // here locks in the contract and keeps normalization on one side of the
+  // boundary instead of two. If a future change tries to "accept both
+  // shapes" on the frontend, this test fails and forces the conversation
+  // back to fixing the backend serializer.
+  it("rejects object-shaped components (backend DTO must serialize to array)", () => {
+    const objectShaped = {
       metadata: {
         components: {
-          event: { type: "event", eventId: "evt_object" },
-          merchant: { type: "merchant", name: "Object Shop" },
-          invalid: { nope: true },
+          event: { type: "event", eventId: "evt_obj" },
+          merchant: { type: "merchant", name: "Obj Shop" },
         },
+      },
+    };
+    expect(extractV2Components(objectShaped)).toBeUndefined();
+  });
+
+  it("filters out invalid component entries", () => {
+    const payload = {
+      metadata: {
+        components: [
+          { type: "event", eventId: "evt_array" },
+          { type: "merchant", name: "Array Shop" },
+          null,
+          "bad",
+          { nope: true },
+        ],
       },
     };
     const components = extractV2Components(payload);
     expect(components).toEqual([
-      { type: "event", eventId: "evt_object" },
-      { type: "merchant", name: "Object Shop" },
+      { type: "event", eventId: "evt_array" },
+      { type: "merchant", name: "Array Shop" },
     ]);
   });
 });
@@ -385,8 +408,8 @@ describe("normalizePostDetail V2 integration", () => {
       { type: "event", eventId: "evt_v2_object", capacity: 8, joinedCount: 2 },
       { type: "trade", price: "¥22", state: "reserved", category: "books" },
     ]);
-    expect(result.event?.eventId).toBe("evt_v2_object");
-    expect(result.trade?.price).toBe("¥22");
+    expect(result.event?.eventId).toBe("evt_v1");
+    expect(result.trade?.price).toBe("¥11");
   });
 
   it("handles empty V2 components array by falling back to V1", () => {
