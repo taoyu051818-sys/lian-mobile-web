@@ -47,22 +47,12 @@ export default defineConfig({
         // Offline fallback: serve offline.html when navigation fails
         navigateFallback: "/offline.html",
         runtimeCaching: [
-          {
-            // API endpoints: NetworkFirst with 5s timeout fallback to cache
-            urlPattern: /^https?:\/\/[^/]+\/api\//,
-            handler: "NetworkFirst",
-            options: {
-              cacheName: "api-cache",
-              networkTimeoutSeconds: 5,
-              expiration: {
-                maxEntries: 50,
-                maxAgeSeconds: 5 * 60, // 5 minutes
-              },
-              cacheableResponse: {
-                statuses: [0, 200],
-              },
-            },
-          },
+          // Do not runtime-cache API responses here. LIAN API routes are often
+          // user-, session-, or resource-scoped (messages, me/profile, wallet,
+          // errands, notifications, channel, admin, AI, upload, publish), and
+          // optional-auth responses can vary by viewer. Only add a future API
+          // rule as a narrow exact allowlist after the backend contract marks it
+          // anonymous, public, and non-personalized.
           {
             // Google Fonts stylesheets: StaleWhileRevalidate
             urlPattern: /^https:\/\/fonts\.googleapis\.com\//,
@@ -106,8 +96,8 @@ export default defineConfig({
             },
           },
         ],
-        // Never cache session/auth endpoints
-        navigateFallbackDenylist: [/^\/api\/session/, /^\/api\/auth/],
+        // Keep API requests out of navigation fallback handling too.
+        navigateFallbackDenylist: [/^\/api\//],
       },
     }),
   ],

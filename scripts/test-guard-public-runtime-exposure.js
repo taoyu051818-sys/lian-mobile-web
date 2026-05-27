@@ -88,3 +88,22 @@ await runGuardFixture(
   "fail",
   /internal\/debug path/,
 );
+
+await runGuardFixture(
+  "broad API runtime cache fixture",
+  {
+    "vite.config.ts": `export default {
+      workbox: {
+        runtimeCaching: [
+          {
+            urlPattern: /^https?:\\/\\/[^/]+\\/api\\//,
+            handler: "NetworkFirst",
+            options: { cacheName: "api-cache" },
+          },
+        ],
+      },
+    };`,
+  },
+  "fail",
+  /broad API runtime cache|API runtime cache name/,
+);
