@@ -107,7 +107,7 @@ export async function linkHelpToEvent(
 ): Promise<HelpPostExtension> {
   return apiSend<HelpPostExtension>(`/api/help/${encodeURIComponent(helpId)}/link-event`, {
     method: "POST",
-    body: JSON.stringify({ eventTid }),
+    body: JSON.stringify({ eventId: String(eventTid) }),
   });
 }
 

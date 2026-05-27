@@ -254,6 +254,17 @@ describe("Phase 4: normalizeEventExtension (platform/api-normalizers)", () => {
     const numeric = normalizeEventExtension({ eventId: "x", joinedCount: 0, status: 42 });
     expect(numeric?.status).toBeUndefined();
   });
+
+  it("issue #973 — backend 'expired' status is treated as ended via endsAt fallback", () => {
+    const ext = normalizeEventExtension({
+      eventId: "x",
+      joinedCount: 3,
+      status: "expired",
+      endsAt: "2026-06-01T10:00:00Z",
+    });
+    expect(ext?.status).toBeUndefined();
+    expect(derivedEventStatus(ext!, WALL_2026_06_01_11Z)).toBe("completed");
+  });
 });
 
 describe("Phase 4: normalizeEventJoinResult (join/cancel-join response)", () => {
