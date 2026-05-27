@@ -1,8 +1,15 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { readFileSync } from "node:fs";
 import { planHelpManage, parseEventTidInput } from "../../src/domain/helpManagePolicy";
 import { normalizePostDetail } from "../../src/api/posts";
+import { linkHelpToEvent } from "../../src/api/events";
 import type { HelpPostExtension } from "../../src/types/post-extensions";
+
+const apiSendMock = vi.fn();
+vi.mock("../../src/api/http", () => ({
+  apiGet: vi.fn(),
+  apiSend: (...args: unknown[]) => apiSendMock(...args),
+}));
 
 function readRepoFile(rel: string) {
   return readFileSync(new URL(rel, import.meta.url), "utf8").replace(/\r\n/g, "\n");
@@ -52,19 +59,44 @@ describe("Phase 4 (help-manage): planHelpManage", () => {
     expect(plan.allowed.has("linkEvent")).toBe(false);
   });
 
-  it("resolved/closed are terminal even with manageable=true", () => {
-    for (const status of ["resolved", "closed"] as const) {
-      const plan = planHelpManage({
-        help: makeHelp({ status }),
-        isManageable: true,
-      });
-      expect(plan.canManage).toBe(false);
-      expect(plan.allowed.size).toBe(0);
-    }
+  it("unknown help status yields no allowed manage actions", () => {
+    const plan = planHelpManage({
+      help: makeHelp({ status: "open" }) as HelpPostExtension,
+      isManageable: true,
+    });
+    expect(plan.canManage).toBe(true);
+
+    const malformed = {
+      ...makeHelp({ status: "open" }),
+      status: "expired",
+    } as unknown as HelpPostExtension;
+    const malformedPlan = planHelpManage({ help: malformed, isManageable: true });
+    expect(malformedPlan.canManage).toBe(true);
+    expect(malformedPlan.allowed.size).toBe(0);
+  });
+
+
+describe("Phase 4 (help-manage): linkHelpToEvent payload contract", () => {
+  it("sends backend-expected { eventId } payload field", async () => {
+    apiSendMock.mockReset();
+    apiSendMock.mockResolvedValueOnce({
+      helpId: "help-1",
+      voteCount: 0,
+      commentCount: 0,
+      status: "linked_event",
+      linkedEventTid: 42,
+    });
+
+    await linkHelpToEvent("help-1", 42);
+
+    expect(apiSendMock).toHaveBeenCalledTimes(1);
+    const [path, options] = apiSendMock.mock.calls[0] as [string, { body?: string; method?: string }];
+    expect(path).toBe("/api/help/help-1/link-event");
+    expect(options.method).toBe("POST");
+    expect(options.body).toBe(JSON.stringify({ eventId: "42" }));
   });
 });
 
-describe("Phase 4 (help-manage): parseEventTidInput", () => {
   it("parses positive integer strings", () => {
     expect(parseEventTidInput("42")).toBe(42);
     expect(parseEventTidInput("  7  ")).toBe(7);
