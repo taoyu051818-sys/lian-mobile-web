@@ -24,6 +24,15 @@ const forbiddenChecks = [
     pattern:
       /["'`](?:\/(?:debug|internal|admin)(?:\/|["'`?#])|\/tools\/(?:debug|internal|admin|ops|qa|dev)(?:[/.][^"'`?#]*)?["'`?#])/g,
   },
+  {
+    name: "broad API runtime cache",
+    pattern:
+      /urlPattern\s*:\s*(?:\/\^https\?:\\\/\\\/\[\^\/\]\+\\\/api\\\/|\/\^\\\/api\\\/|new\s+RegExp\(\s*["'`]\^?(?:\\\/|\/)api(?:\\\/|\/))/g,
+  },
+  {
+    name: "API runtime cache name",
+    pattern: /cacheName\s*:\s*["'`]api-cache["'`]/g,
+  },
 ];
 
 let passed = 0;
