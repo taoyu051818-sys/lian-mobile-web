@@ -136,10 +136,16 @@ test("isTerminalErrandStatus only blesses the truly-terminal codes", () => {
     /TERMINAL_ERRAND_STATUSES\s*=\s*new Set<ErrandStatus>\(\[(?<body>[\s\S]*?)\]\)/,
   );
   assert.ok(setMatch, "TERMINAL_ERRAND_STATUSES must be defined");
-  for (const code of ["delivered", "cancelled", "refunded"]) {
+  for (const code of ["delivered", "completed", "cancelled", "refunded"]) {
     assert.match(setMatch.groups.body, new RegExp(`"${code}"`));
   }
   assert.doesNotMatch(setMatch.groups.body, /"disputed"/);
+});
+
+test("errand lifecycle vocabulary includes completed and an unknown sentinel", () => {
+  const src = read("src/types/errand.ts");
+  assert.match(src, /"completed"/);
+  assert.match(src, /"unknown"/);
 });
 
 test("api/errands.ts ships the my-orders fetch", () => {

@@ -85,9 +85,11 @@ export const ERRAND_ORDER_STATUS_ASSIGNED = "已分配跑腿";
 export const ERRAND_ORDER_STATUS_PICKED_UP = "已取件";
 export const ERRAND_ORDER_STATUS_DELIVERING = "配送中";
 export const ERRAND_ORDER_STATUS_DELIVERED = "已送达";
+export const ERRAND_ORDER_STATUS_COMPLETED = "已完成";
 export const ERRAND_ORDER_STATUS_CANCELLED = "已取消";
 export const ERRAND_ORDER_STATUS_REFUNDED = "已退款";
 export const ERRAND_ORDER_STATUS_DISPUTED = "申诉中";
+export const ERRAND_ORDER_STATUS_UNKNOWN = "状态更新中";
 
 /** 我的跑腿订单 (profile 入口 / issue #647 follow-up) */
 export const PROFILE_ERRAND_ORDERS_SECTION_LABEL = "我的跑腿订单";
@@ -116,8 +118,8 @@ export const ORDERS_LIST_EMPTY_HINT =
  * 订单详情 timeline / 取消 / V0.2 占位 (issue #609 PR1).
  *
  * - timeline 标签：全部从 ERRAND_ORDER_STATUS_* 已有 key 派生，本节不再重复定义。
- * - 取消 CTA：仅在非终态状态展示；终态包含 delivered / cancelled / refunded（与
- *   `isTerminalErrandStatus` 保持一致）。
+ * - 取消 CTA：仅在非终态状态展示；终态包含 delivered / completed / cancelled /
+ *   refunded（与 `isTerminalErrandStatus` 保持一致）。
  * - runner-location V0.2：BE 路由是 501 NOT_IMPLEMENTED_V0_1，UI 显示静态占位面板，
  *   不发请求；与 PRD §12 deferred 列表对齐。
  */

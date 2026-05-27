@@ -120,6 +120,7 @@ describe("Phase 4/5: event/help/errand contracts", () => {
     expect(source).toMatch(/"paid_locked"/);
     expect(source).toMatch(/"refunded"/);
     expect(source).toMatch(/"disputed"/);
+    expect(source).toMatch(/"completed"/);
   });
 });
 

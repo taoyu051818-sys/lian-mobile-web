@@ -4,7 +4,7 @@
  * runner-location placeholder added by issue #609 PR1).
  *
  * Surfaces every transition the V0.1 backend can write — created, paid_locked,
- * assigned, picked_up, delivering, delivered, plus the cancelled / refunded
+ * assigned, picked_up, delivering, delivered, completed, plus the cancelled / refunded
  * terminals — using `useErrandOrderDetail`. The state machine itself runs
  * runner-side (#648); this view only renders what the backend currently has
  * and exposes:
