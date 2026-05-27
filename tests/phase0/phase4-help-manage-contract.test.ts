@@ -75,27 +75,29 @@ describe("Phase 4 (help-manage): planHelpManage", () => {
     expect(malformedPlan.allowed.size).toBe(0);
   });
 
+  describe("Phase 4 (help-manage): linkHelpToEvent payload contract", () => {
+    it("sends backend-expected { eventId } payload field", async () => {
+      apiSendMock.mockReset();
+      apiSendMock.mockResolvedValueOnce({
+        helpId: "help-1",
+        voteCount: 0,
+        commentCount: 0,
+        status: "linked_event",
+        linkedEventTid: 42,
+      });
 
-describe("Phase 4 (help-manage): linkHelpToEvent payload contract", () => {
-  it("sends backend-expected { eventId } payload field", async () => {
-    apiSendMock.mockReset();
-    apiSendMock.mockResolvedValueOnce({
-      helpId: "help-1",
-      voteCount: 0,
-      commentCount: 0,
-      status: "linked_event",
-      linkedEventTid: 42,
+      await linkHelpToEvent("help-1", 42);
+
+      expect(apiSendMock).toHaveBeenCalledTimes(1);
+      const [path, options] = apiSendMock.mock.calls[0] as [
+        string,
+        { body?: string; method?: string },
+      ];
+      expect(path).toBe("/api/help/help-1/link-event");
+      expect(options.method).toBe("POST");
+      expect(options.body).toBe(JSON.stringify({ eventId: "42" }));
     });
-
-    await linkHelpToEvent("help-1", 42);
-
-    expect(apiSendMock).toHaveBeenCalledTimes(1);
-    const [path, options] = apiSendMock.mock.calls[0] as [string, { body?: string; method?: string }];
-    expect(path).toBe("/api/help/help-1/link-event");
-    expect(options.method).toBe("POST");
-    expect(options.body).toBe(JSON.stringify({ eventId: "42" }));
   });
-});
 
   it("parses positive integer strings", () => {
     expect(parseEventTidInput("42")).toBe(42);
