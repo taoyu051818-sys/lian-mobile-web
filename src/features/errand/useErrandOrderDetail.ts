@@ -8,7 +8,7 @@
  *
  * 1. A manual `refresh(orderId)` the view binds to a refresh button.
  * 2. Lightweight polling for non-terminal statuses. Once the order reaches
- *    a terminal state (delivered / cancelled / refunded), polling stops on
+ *    a terminal state (delivered / completed / cancelled / refunded), polling stops on
  *    its own. Caller is responsible for invoking `start(orderId)` /
  *    `stop()` from the view's lifecycle hooks so we never leak a timer.
  */
@@ -31,7 +31,7 @@ export function useErrandOrderDetail() {
 
   /**
    * Cancel CTA is only meaningful while the order is still in flight.
-   * Anything in `TERMINAL_ERRAND_STATUSES` (delivered / cancelled / refunded)
+   * Anything in `TERMINAL_ERRAND_STATUSES` (delivered / completed / cancelled / refunded)
    * is final and the button must not render. We intentionally do NOT block
    * `disputed` here even though it's mid-flow — disputes can resolve back
    * to delivered or refunded, and the requester can still walk away from

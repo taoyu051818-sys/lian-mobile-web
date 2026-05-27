@@ -17,6 +17,7 @@ import {
   ERRAND_ORDER_MODE_DEDICATED,
   ERRAND_ORDER_STATUS_ASSIGNED,
   ERRAND_ORDER_STATUS_CANCELLED,
+  ERRAND_ORDER_STATUS_COMPLETED,
   ERRAND_ORDER_STATUS_CREATED,
   ERRAND_ORDER_STATUS_DELIVERED,
   ERRAND_ORDER_STATUS_DELIVERING,
@@ -24,8 +25,9 @@ import {
   ERRAND_ORDER_STATUS_PAID_LOCKED,
   ERRAND_ORDER_STATUS_PICKED_UP,
   ERRAND_ORDER_STATUS_REFUNDED,
+  ERRAND_ORDER_STATUS_UNKNOWN,
 } from "../../config/brand";
-import type { ErrandMode, ErrandStatus } from "../../types/post-extensions";
+import type { ErrandMode, ErrandStatus } from "../../types/errand";
 import type { ErrandOrderGate, ErrandOrderGateReason } from "../../types/errand";
 
 export function gateReasonText(gate: ErrandOrderGate | null | undefined): string {
@@ -60,9 +62,11 @@ export const ERRAND_STATUS_LABELS: Record<ErrandStatus, string> = {
   picked_up: ERRAND_ORDER_STATUS_PICKED_UP,
   delivering: ERRAND_ORDER_STATUS_DELIVERING,
   delivered: ERRAND_ORDER_STATUS_DELIVERED,
+  completed: ERRAND_ORDER_STATUS_COMPLETED,
   cancelled: ERRAND_ORDER_STATUS_CANCELLED,
   refunded: ERRAND_ORDER_STATUS_REFUNDED,
   disputed: ERRAND_ORDER_STATUS_DISPUTED,
+  unknown: ERRAND_ORDER_STATUS_UNKNOWN,
 };
 
 export function statusLabel(status: ErrandStatus): string {
@@ -87,7 +91,12 @@ export function modeLabel(mode: ErrandMode): string {
  * `disputed` is intentionally NOT terminal: a dispute can still resolve to
  * delivered or refunded, and the user expects to see that pivot live.
  */
-const TERMINAL_ERRAND_STATUSES = new Set<ErrandStatus>(["delivered", "cancelled", "refunded"]);
+const TERMINAL_ERRAND_STATUSES = new Set<ErrandStatus>([
+  "delivered",
+  "completed",
+  "cancelled",
+  "refunded",
+]);
 
 export function isTerminalErrandStatus(status: ErrandStatus | undefined | null): boolean {
   return !!status && TERMINAL_ERRAND_STATUSES.has(status);

@@ -1,30 +1,69 @@
 /**
- * Errand order (PRD V0.1 §6.4 / §12) — types owned by issue #647.
+ * Errand order (PRD V0.1 §6.4 / §12) — read/write shapes owned by issue #647.
  *
- * The bare lifecycle / order shapes already live in `post-extensions.ts`
- * because the V0.1 wave seeded them as shape-only contracts. We re-export
- * them here so #648 (runner center) and any downstream feature can import
- * everything from a single module — see the issue brief: "#647 owns
- * src/types/errand.ts and src/api/errands.ts; #648 only consumes them".
+ * `post-extensions.ts` still carries the original metadata snapshot, but the
+ * errand API and UI now import their lifecycle types from here so the frontend
+ * can track backend order-status vocabulary without forcing unrelated metadata
+ * consumers to update in lockstep.
  *
- * What this module adds on top of `post-extensions.ts`:
+ * What this module owns:
+ * - Canonical errand order mode / status / order shapes used by the API client.
  * - Draft / request types for the user-side order form.
  * - Gate reason union (PRD §12 — not_logged_in / not_verified /
  *   insufficient_balance / merchant_paused / no_runner_coverage / unknown).
  * - Timeline event shape returned by `GET /api/errands/orders/:id`.
- *
- * The order state machine itself stays out of scope (#648); the timeline
- * event shape is intentionally read-only here.
  */
 
 import type { PostLocation } from "./post";
-export type {
-  ErrandMode,
-  ErrandOrder,
-  ErrandRunnerLocation,
-  ErrandStatus,
-} from "./post-extensions";
-import type { ErrandMode, ErrandOrder, ErrandStatus } from "./post-extensions";
+import type { ErrandMode as PostExtensionErrandMode } from "./post-extensions";
+
+export type ErrandMode = PostExtensionErrandMode;
+
+/**
+ * Current frontend/backend errand lifecycle vocabulary.
+ *
+ * - `completed` is the backend terminal that lands after requester confirmation.
+ * - `refunded` is an active backend-facing state: the codebase already routes
+ *   `errand-order-refunded` notifications and treats it as terminal in UI.
+ * - `disputed` is kept as a reserved non-terminal lifecycle state because the
+ *   frontend already has copy/styling for it, but current code evidence only
+ *   shows UI/contract references, not a live notification type.
+ * - `unknown` is a safe frontend sentinel so new backend statuses are not
+ *   mislabeled as `created`.
+ */
+export type ErrandStatus =
+  | "created"
+  | "paid_locked"
+  | "assigned"
+  | "picked_up"
+  | "delivering"
+  | "delivered"
+  | "completed"
+  | "cancelled"
+  | "refunded"
+  | "disputed"
+  | "unknown";
+
+export interface ErrandRunnerLocation {
+  lat: number;
+  lng: number;
+  updatedAt: string;
+}
+
+export interface ErrandOrder {
+  orderId: string;
+  requesterUserId: string;
+  runnerUserId?: string;
+  merchantPostId?: number;
+  pickupLocation: PostLocation;
+  dropoffLocation: PostLocation;
+  mode: ErrandMode;
+  status: ErrandStatus;
+  feeAmount: number;
+  lockedBalanceAmount: number;
+  etaSeconds?: number;
+  runnerLocation?: ErrandRunnerLocation;
+}
 
 /**
  * Reasons the order CTA may be blocked before submit. Mirrors the merchant

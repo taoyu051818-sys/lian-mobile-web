@@ -9,7 +9,7 @@
  * The wire shapes follow the same conservative-normalization style as
  * `src/api/posts.ts` and `src/api/merchant.ts`: the backend may add fields
  * but never break existing ones, and unknown enum values collapse to a
- * documented sentinel (`unknown` reason / `created` status) rather than
+ * documented sentinel (`unknown` reason / `unknown` status) rather than
  * surfacing as garbage.
  */
 import { apiGet, apiSend, LianApiError } from "./http";
@@ -53,9 +53,11 @@ const ERRAND_STATUSES = new Set<ErrandStatus>([
   "picked_up",
   "delivering",
   "delivered",
+  "completed",
   "cancelled",
   "refunded",
   "disputed",
+  "unknown",
 ]);
 
 const ERRAND_MODES = new Set<ErrandMode>(["dedicated", "meal_peak_batch"]);
@@ -117,7 +119,7 @@ function normalizeErrandOrder(value: unknown): ErrandOrder | null {
   const pickup = normalizePostLocation(record.pickupLocation);
   const dropoff = normalizePostLocation(record.dropoffLocation);
   if (!pickup || !dropoff) return null;
-  const status = asEnum(record.status, ERRAND_STATUSES) || "created";
+  const status = asEnum(record.status, ERRAND_STATUSES) || "unknown";
   const mode = asEnum(record.mode, ERRAND_MODES) || "dedicated";
   const merchantPostIdRaw = asNumber(record.merchantPostId, Number.NaN);
   const merchantPostId = Number.isFinite(merchantPostIdRaw)
@@ -261,7 +263,7 @@ function normalizeErrandOrderSummary(value: unknown): ErrandOrderSummary | null 
   const record = asRecord(value);
   const orderId = asString(record.orderId);
   if (!orderId) return null;
-  const status = asEnum(record.status, ERRAND_STATUSES) || "created";
+  const status = asEnum(record.status, ERRAND_STATUSES) || "unknown";
   const mode = asEnum(record.mode, ERRAND_MODES) || "dedicated";
   const pickup = normalizePostLocation(record.pickupLocation);
   const dropoff = normalizePostLocation(record.dropoffLocation);
