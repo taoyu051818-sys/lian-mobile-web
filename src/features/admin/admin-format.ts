@@ -1,4 +1,7 @@
 import {
+  ADMIN_ACTION_POST_HIDE,
+  ADMIN_ACTION_POST_UNLOCK,
+  ADMIN_ACTION_USER_STATUS_LABEL,
   ADMIN_STATUS_DISMISSED,
   ADMIN_STATUS_FALLBACK,
   ADMIN_STATUS_PENDING,
@@ -12,17 +15,24 @@ const STATUS_LABEL_MAP: Record<string, string> = {
   reviewing: ADMIN_STATUS_REVIEWING,
   resolved: ADMIN_STATUS_RESOLVED,
   dismissed: ADMIN_STATUS_DISMISSED,
-  ignored: ADMIN_STATUS_DISMISSED,
-  handled: ADMIN_STATUS_RESOLVED,
-  hidden: ADMIN_STATUS_RESOLVED,
-  restricted: ADMIN_STATUS_RESOLVED,
-  banned: ADMIN_STATUS_RESOLVED,
-  restored: ADMIN_STATUS_RESOLVED,
-  false_report: ADMIN_STATUS_DISMISSED,
+};
+
+const ACTION_LABEL_MAP: Record<string, string> = {
+  ignore: "忽略举报",
+  hide_post: ADMIN_ACTION_POST_HIDE,
+  restrict_author: `${ADMIN_ACTION_USER_STATUS_LABEL}：限号`,
+  ban_user: `${ADMIN_ACTION_USER_STATUS_LABEL}：封号`,
+  restore_post: ADMIN_ACTION_POST_UNLOCK,
+  mark_false_report: "标记误报",
 };
 
 export function adminStatusLabel(status: AdminReportStatus | string): string {
   return STATUS_LABEL_MAP[status] || ADMIN_STATUS_FALLBACK;
+}
+
+export function adminActionLabel(action: string | null | undefined): string {
+  if (!action) return "";
+  return ACTION_LABEL_MAP[action] || action;
 }
 
 export function formatAdminTime(value: string | null | undefined): string {

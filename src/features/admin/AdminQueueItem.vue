@@ -14,13 +14,14 @@ import {
   ADMIN_REPORT_REPORTER_LABEL,
   ADMIN_REPORT_TARGET_LABEL,
   ADMIN_REPORT_TIME_LABEL,
+  ADMIN_AUDIT_ACTION_LABEL,
   ADMIN_STATUS_DISMISSED,
   ADMIN_STATUS_PENDING,
   ADMIN_STATUS_RESOLVED,
   ADMIN_STATUS_REVIEWING,
 } from "../../config/brand";
 import type { AdminPostAction, AdminReport, AdminReportTransitionStatus } from "../../types/admin";
-import { adminStatusLabel, formatAdminTime } from "./admin-format";
+import { adminActionLabel, adminStatusLabel, formatAdminTime } from "./admin-format";
 
 const props = defineProps<{ report: AdminReport }>();
 
@@ -89,6 +90,10 @@ function handlePostAction(action: AdminPostAction) {
       <div>
         <dt>{{ ADMIN_REPORT_TIME_LABEL }}</dt>
         <dd>{{ formatAdminTime(report.createdAt) }}</dd>
+      </div>
+      <div v-if="report.action">
+        <dt>{{ ADMIN_AUDIT_ACTION_LABEL }}</dt>
+        <dd>{{ adminActionLabel(report.action) }}</dd>
       </div>
     </dl>
 
