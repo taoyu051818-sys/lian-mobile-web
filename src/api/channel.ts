@@ -144,7 +144,7 @@ export async function sendChannelMessage(payload: SendChannelMessagePayload): Pr
 }
 
 export function buildChannelReadPayload(messageIds: Array<string | number>): ChannelReadPayload {
-  return { messageIds, readerId: ensureClientId() };
+  return { eventIds: messageIds, readerId: ensureClientId() };
 }
 
 export async function markChannelMessagesRead(messageIds: Array<string | number>): Promise<void> {
