@@ -85,6 +85,6 @@ export interface SendChannelMessagePayload {
 }
 
 export interface ChannelReadPayload {
-  messageIds: Array<string | number>;
+  eventIds: Array<string | number>;
   readerId: string;
 }

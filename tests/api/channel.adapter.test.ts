@@ -43,9 +43,9 @@ describe("channel read adapter", () => {
     vi.restoreAllMocks();
   });
 
-  it("builds ChannelReadPayload from message ids plus the stable client id", () => {
+  it("builds ChannelReadPayload from channel message ids as backend eventIds", () => {
     expect(buildChannelReadPayload([7, "8"])).toEqual({
-      messageIds: [7, "8"],
+      eventIds: [7, "8"],
       readerId: "reader-123",
     });
   });
@@ -66,7 +66,7 @@ describe("channel read adapter", () => {
     expect(headers.get("x-client-id")).toBe("reader-123");
     expect((init as RequestInit | undefined)?.body).toBe(
       JSON.stringify({
-        messageIds: [101, "102"],
+        eventIds: [101, "102"],
         readerId: "reader-123",
       }),
     );
