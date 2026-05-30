@@ -1,17 +1,14 @@
-export type AdminReportStatus =
-  | "pending"
-  | "reviewing"
-  | "resolved"
-  | "dismissed"
-  | "ignored"
-  | "handled"
-  | "hidden"
-  | "restricted"
-  | "banned"
-  | "restored"
-  | "false_report";
+export type AdminReportStatus = "pending" | "reviewing" | "resolved" | "dismissed";
 
 export type AdminReportTransitionStatus = "pending" | "reviewing" | "resolved" | "dismissed";
+
+export type AdminReportAction =
+  | "ignore"
+  | "hide_post"
+  | "restrict_author"
+  | "ban_user"
+  | "restore_post"
+  | "mark_false_report";
 
 export interface AdminReport {
   reportId: string;
@@ -23,7 +20,7 @@ export interface AdminReport {
   status: AdminReportStatus;
   reviewerId: string | null;
   reviewedAt: string | null;
-  action: string | null;
+  action: AdminReportAction | string | null;
   note: string | null;
   createdAt: string;
   updatedAt: string;
