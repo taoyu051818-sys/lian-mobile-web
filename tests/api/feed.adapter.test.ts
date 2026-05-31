@@ -132,7 +132,9 @@ describe("feed adapter normalization", () => {
       tid: 41,
       cardTemplate: "text",
       cardTemplateSource: "content-type",
-      relationHint: "event_followup",
+      relationHint: {
+        type: "event_followup",
+      },
       components: [{ type: "event", eventId: "evt_feed", joinedCount: 3 }],
       relations: [
         {
@@ -163,10 +165,78 @@ describe("feed adapter normalization", () => {
 
     expect(item).toMatchObject({
       tid: 53,
-      relationHint: "trade_offer_link",
+      relationHint: {
+        type: "trade_offer_link",
+      },
       relations: [{ type: "help_event_link", targetTid: 77 }],
       availableActions: [{ type: "request_review", enabled: false, reason: "needs_identity" }],
     });
+  });
+
+  it("derives a structured relation hint chip from the same known PostRelation atom", () => {
+    const item = normalizeFeedItem({
+      tid: 72,
+      relations: [
+        { type: "custom_relation", target: { kind: "post", id: "99" } },
+        { type: "project_submission", target: { kind: "post", id: "100" } },
+      ],
+    });
+
+    expect(item).toMatchObject({
+      tid: 72,
+      relationHint: {
+        type: "project_submission",
+        targetTid: 100,
+      },
+      relations: [
+        { type: "custom_relation", targetTid: 99 },
+        { type: "project_submission", targetTid: 100 },
+      ],
+    });
+  });
+
+  it("derives relation hints from metadata relations when top-level relations are absent", () => {
+    const item = normalizeFeedItem({
+      tid: 75,
+      metadata: {
+        relations: [
+          { type: "custom_relation", target: { kind: "post", id: "99" } },
+          { type: "merchant_errand", target: { kind: "post", id: "101" } },
+        ],
+      },
+    });
+
+    expect(item).toMatchObject({
+      tid: 75,
+      relationHint: {
+        type: "merchant_errand",
+        targetTid: 101,
+      },
+      relations: [
+        { type: "custom_relation", targetTid: 99 },
+        { type: "merchant_errand", targetTid: 101 },
+      ],
+    });
+  });
+
+  it("omits relation hint when relations are missing and falls back to literal unknown relation types", () => {
+    expect(normalizeFeedItem({ tid: 73 })?.relationHint).toBeUndefined();
+    expect(
+      normalizeFeedItem({
+        tid: 74,
+        relations: [{ type: "custom_relation", target: { kind: "post", id: "99" } }],
+      })?.relationHint,
+    ).toEqual({ type: "custom_relation", targetTid: 99 });
+  });
+
+  it("preserves explicit relation hint fallback when PostRelation atoms are missing", () => {
+    expect(
+      normalizeFeedItem({
+        tid: 76,
+        relationHint: "event_followup",
+        relations: [{ type: "merchant_errand", target: { kind: "user", id: "5" } }],
+      })?.relationHint,
+    ).toEqual({ type: "event_followup" });
   });
 
   it("falls back to metadata presentationIntent when top-level presentationIntent is invalid", () => {

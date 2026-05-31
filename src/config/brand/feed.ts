@@ -13,6 +13,10 @@ export const FEED_EXPAND = "展开";
 export const FEED_RELATION_HINT_HELP_EVENT = "已关联活动";
 export const FEED_RELATION_HINT_TRADE_OFFER = "相关转让";
 export const FEED_RELATION_HINT_EVENT_FOLLOWUP = "活动续报";
+export const FEED_RELATION_HINT_SOLUTION_EVENT = "求助有进展";
+export const FEED_RELATION_HINT_MERCHANT_ERRAND = "商家相关";
+export const FEED_RELATION_HINT_PROJECT_SUBMISSION = "项目投稿";
+export const FEED_RELATION_HINT_EVENT_REWARD = "活动奖励";
 
 /** 卡片模板视觉记号（FeedItemCard.vue templateMark 字符标） */
 export const FEED_CARD_MARK_MERCHANT = "食";

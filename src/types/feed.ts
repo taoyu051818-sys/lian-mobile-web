@@ -37,7 +37,10 @@ export interface FeedRelation {
   targetTid: number;
 }
 
-export type FeedRelationHint = "help_event_link" | "trade_offer_link" | "event_followup";
+export interface FeedRelationHint {
+  type: string;
+  targetTid?: number;
+}
 
 /**
  * Card-template vocabulary the Feed UI knows how to render. `activity` is the

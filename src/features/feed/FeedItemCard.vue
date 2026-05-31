@@ -28,6 +28,10 @@ import {
   FEED_RELATION_HINT_EVENT_FOLLOWUP,
   FEED_RELATION_HINT_HELP_EVENT,
   FEED_RELATION_HINT_TRADE_OFFER,
+  FEED_RELATION_HINT_SOLUTION_EVENT,
+  FEED_RELATION_HINT_MERCHANT_ERRAND,
+  FEED_RELATION_HINT_PROJECT_SUBMISSION,
+  FEED_RELATION_HINT_EVENT_REWARD,
 } from "../../config/brand";
 import { actorAvatarText, actorAvatarUrl, actorDisplayName } from "../../domain/actor";
 import type {
@@ -48,10 +52,14 @@ type FeedCardVariant = FeedPresentationIntent;
 const MAX_VISIBLE_TITLE_CHARS = 42;
 const MAX_VISIBLE_AUTHOR_CHARS = 10;
 
-const RELATION_HINT_LABELS: Readonly<Record<NonNullable<FeedItem["relationHint"]>, string>> = {
+const RELATION_HINT_LABELS: Readonly<Record<string, string>> = {
   help_event_link: FEED_RELATION_HINT_HELP_EVENT,
   trade_offer_link: FEED_RELATION_HINT_TRADE_OFFER,
   event_followup: FEED_RELATION_HINT_EVENT_FOLLOWUP,
+  solution_event: FEED_RELATION_HINT_SOLUTION_EVENT,
+  merchant_errand: FEED_RELATION_HINT_MERCHANT_ERRAND,
+  project_submission: FEED_RELATION_HINT_PROJECT_SUBMISSION,
+  event_reward: FEED_RELATION_HINT_EVENT_REWARD,
 };
 
 const props = defineProps<{ item: FeedItem }>();
@@ -114,7 +122,12 @@ const cardDisplayData = computed(() => {
   if (title.length > MAX_VISIBLE_TITLE_CHARS) warnings.push("title-clamped");
   if (authorName.length > MAX_VISIBLE_AUTHOR_CHARS) warnings.push("author-ellipsized");
 
-  const relationHint = item.relationHint ? RELATION_HINT_LABELS[item.relationHint] : "";
+  const relationHint = item.relationHint
+    ? {
+        label: RELATION_HINT_LABELS[item.relationHint.type] ?? item.relationHint.type,
+        targetTid: item.relationHint.targetTid,
+      }
+    : null;
 
   return {
     title,
@@ -205,6 +218,10 @@ function handleCustomContextMenu(event: MouseEvent) {
   showContextMenu.value = true;
 }
 
+function handleRelationOpen(targetTid: number) {
+  emit("open", targetTid);
+}
+
 function handleClubOpen(
   id: FeedItemId,
   payload?: { item: FeedItem; rect: { top: number; left: number; width: number; height: number } },
@@ -246,6 +263,7 @@ function handleClubOpen(
       @click="openCard"
       @keydown.enter.prevent="openCardFromKeyboard"
       @keydown.space.prevent="openCardFromKeyboard"
+      @open-relation="handleRelationOpen"
     />
 
     <!-- Context menu for long press -->
