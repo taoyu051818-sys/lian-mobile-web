@@ -20,6 +20,12 @@ import {
   MESSAGES_ERROR_TITLE,
   MESSAGES_ERROR_BODY,
   MESSAGES_ERROR_RETRY,
+  RELATION_TYPE_EVENT_RECAP,
+  RELATION_TYPE_EVENT_REWARD,
+  RELATION_TYPE_HELP_EVENT_LINK,
+  RELATION_TYPE_MERCHANT_ERRAND,
+  RELATION_TYPE_PROJECT_SUBMISSION,
+  RELATION_TYPE_SOLUTION_EVENT,
 } from "../../config/brand";
 import { actorDisplayName } from "../../domain/actor";
 import { TrustBadge } from "../../ui";
@@ -59,6 +65,19 @@ const emit = defineEmits<{
   "open-item": [item: NotificationItem];
   "auth-required": [];
 }>();
+
+const RELATION_TYPE_LABEL: Record<string, string> = {
+  help_event_link: RELATION_TYPE_HELP_EVENT_LINK,
+  solution_event: RELATION_TYPE_SOLUTION_EVENT,
+  event_recap: RELATION_TYPE_EVENT_RECAP,
+  merchant_errand: RELATION_TYPE_MERCHANT_ERRAND,
+  project_submission: RELATION_TYPE_PROJECT_SUBMISSION,
+  event_reward: RELATION_TYPE_EVENT_REWARD,
+};
+
+function relationTypeLabel(type: string): string {
+  return RELATION_TYPE_LABEL[type] ?? type;
+}
 
 function isReplyNotification(item: NotificationItem) {
   return (
@@ -174,7 +193,7 @@ function openNotification(item: NotificationItem) {
       <article
         v-for="item in props.items"
         :key="String(item.id || item.tid || item.title)"
-        v-memo="[item.id, item.read, item.title, item.excerpt]"
+        v-memo="[item.id, item.read, item.title, item.excerpt, item.relations]"
         class="messages-view__notification"
         :class="{
           'is-unread': !item.read,
@@ -201,6 +220,22 @@ function openNotification(item: NotificationItem) {
         </header>
         <h3>{{ item.title || NOTIFICATION_DEFAULT_TITLE }}</h3>
         <p v-if="item.excerpt && item.excerpt !== item.title">{{ item.excerpt }}</p>
+        <ul
+          v-if="item.relations?.length"
+          class="messages-view__notification-relations"
+          data-testid="notification-relation-context"
+        >
+          <li
+            v-for="(relation, index) in item.relations"
+            :key="`${relation.type}-${relation.target.kind}-${relation.target.id}-${index}`"
+            class="messages-view__notification-relation"
+            :data-relation-type="relation.type"
+            :data-target-kind="relation.target.kind"
+          >
+            <span>{{ relationTypeLabel(relation.type) }}</span>
+            <span data-testid="notification-relation-target">#{{ relation.target.id }}</span>
+          </li>
+        </ul>
         <p v-if="notificationHint(item)" class="messages-view__notification-hint">
           {{ notificationHint(item) }}
         </p>
@@ -258,6 +293,24 @@ function openNotification(item: NotificationItem) {
 
 .messages-view__notification p {
   margin: 0;
+}
+
+.messages-view__notification-relations {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  padding: 0;
+  margin: 0;
+  list-style: none;
+}
+
+.messages-view__notification-relation {
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+  color: var(--lian-muted);
+  font-size: 12px;
+  font-weight: 700;
 }
 
 .messages-view__notification p,

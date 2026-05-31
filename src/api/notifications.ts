@@ -1,5 +1,5 @@
 import { apiGet } from "./http";
-import { normalizeDisplayActor } from "../platform/api-normalizers";
+import { normalizeDisplayActor, normalizePostRelations } from "../platform/api-normalizers";
 import {
   NOTIF_ERRAND_ORDER_ACCEPTED_BODY,
   NOTIF_ERRAND_ORDER_ACCEPTED_TITLE,
@@ -578,6 +578,7 @@ export function normalizeNotificationItem(raw: RawNotificationItem): Notificatio
   const rawTitle = firstString(raw.title, data?.title, meta?.title, targetRecord?.title);
   const rawExcerpt = firstString(raw.excerpt, raw.body, raw.text, data?.excerpt, meta?.excerpt);
   const type = firstString(raw.type, data?.type, meta?.type, targetRecord?.type);
+  const relations = normalizePostRelations(data?.relations);
 
   // For the three event-lifecycle types we always own the brand strings — the
   // backend (#445) already shapes `title` / `excerpt`, but `raw.title` is not a
@@ -628,6 +629,7 @@ export function normalizeNotificationItem(raw: RawNotificationItem): Notificatio
     kind,
     actionLabel: resolveNotificationActionLabel(kind, target, raw),
     fallbackText: target.kind === "none" ? target.reason : undefined,
+    relations,
     target,
   };
 }

@@ -1,5 +1,6 @@
 import type { DisplayActor, SourceSignal } from "./feed";
 import type { AudienceVisibility } from "./audience";
+import type { PostRelation } from "./post";
 
 export type MessageTabKey = "channel" | "replies" | "system" | "orders";
 
@@ -70,6 +71,7 @@ export interface NotificationItem {
   kind?: NotificationKind;
   actionLabel?: string;
   fallbackText?: string;
+  relations?: PostRelation[];
   target?: NotificationTarget;
 }
 

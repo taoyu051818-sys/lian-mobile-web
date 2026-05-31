@@ -21,6 +21,92 @@ describe("notification routing normalization", () => {
     expect(item.actionLabel).toBe("查看回复详情");
   });
 
+  it("projects normalized relation context when notification data already carries relations", () => {
+    const item = normalizeNotificationItem({
+      id: "event-relation-1",
+      type: "event-completed",
+      tid: 156,
+      data: {
+        eventTitle: "周末桌游夜",
+        relations: [
+          {
+            type: "help_event_link",
+            target: { kind: "post", id: "42" },
+          },
+          {
+            type: "future_relation",
+            target: { kind: "resource", id: "res-9" },
+          },
+        ],
+      },
+    });
+
+    expect(item.relations).toEqual([
+      {
+        type: "help_event_link",
+        target: { kind: "post", id: "42" },
+      },
+      {
+        type: "future_relation",
+        target: { kind: "resource", id: "res-9" },
+      },
+    ]);
+  });
+
+  it("keeps unknown relation types as literal fallback labels", () => {
+    const item = normalizeNotificationItem({
+      id: "unknown-relation-1",
+      type: "event-completed",
+      tid: 156,
+      data: {
+        eventTitle: "周末桌游夜",
+        relations: [
+          {
+            type: "future_relation",
+            target: { kind: "resource", id: "res-9" },
+          },
+        ],
+      },
+    });
+
+    expect(item.relations?.[0]?.type).toBe("future_relation");
+  });
+
+  it("omits relation context when no normalized relation data exists", () => {
+    const item = normalizeNotificationItem({
+      id: "reply-no-relation",
+      type: "new-reply",
+      tid: "88",
+      title: "有人回复了你的帖子",
+      data: {
+        relation: {
+          type: "help_event_link",
+          target: { kind: "post", id: "42" },
+        },
+      },
+    });
+
+    expect(item.relations).toBeUndefined();
+  });
+
+  it("omits relation context when the existing relations atom has no usable entries", () => {
+    const item = normalizeNotificationItem({
+      id: "empty-relation-1",
+      type: "event-completed",
+      tid: 156,
+      data: {
+        eventTitle: "周末桌游夜",
+        relations: [
+          {
+            type: "help_event_link",
+          },
+        ],
+      },
+    });
+
+    expect(item.relations).toBeUndefined();
+  });
+
   it("routes verification notifications to the verification center", () => {
     const item = normalizeNotificationItem({
       id: "verification-1",
