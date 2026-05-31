@@ -29,7 +29,7 @@ const props = defineProps<{
   authorInitial: string;
   cardTemplate: CardTemplate;
   templateMark: string;
-  relationHint: string;
+  relationHint: { label: string; targetTid?: number } | null;
   bodyPreview: string;
   cardWarning?: string;
   // Forwarded to FeedItemCardFooter — the footer remains the owner of like behavior
@@ -39,6 +39,10 @@ const props = defineProps<{
   liked?: boolean;
   likeCount?: number;
   visibility?: AudienceVisibility;
+}>();
+
+const emit = defineEmits<{
+  openRelation: [targetTid: number];
 }>();
 
 const ariaLabel = computed(() => `${props.title}，${props.authorName}`);
@@ -55,6 +59,11 @@ function checkBodyClamp() {
     return;
   }
   needsBodyClamp.value = el.scrollHeight > el.clientHeight + 2;
+}
+
+function openRelationHint() {
+  if (!props.relationHint?.targetTid) return;
+  emit("openRelation", props.relationHint.targetTid);
 }
 
 function toggleBody() {
@@ -97,7 +106,17 @@ onMounted(() => {
         primaryTag
       }}</span>
 
-      <p v-if="relationHint" class="feed-item-card__relation-hint">{{ relationHint }}</p>
+      <button
+        v-if="relationHint"
+        class="feed-item-card__relation-hint"
+        type="button"
+        :disabled="!relationHint.targetTid"
+        @click.stop="openRelationHint"
+        @keydown.enter.stop
+        @keydown.space.stop
+      >
+        {{ relationHint.label }}
+      </button>
 
       <h3 :title="title">{{ title }}</h3>
 
@@ -242,10 +261,20 @@ onMounted(() => {
 }
 
 .feed-item-card__relation-hint {
+  display: inline-flex;
+  justify-self: start;
   margin: 0;
+  padding: 2px 8px;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: rgba(31, 167, 160, 0.1);
   color: var(--lian-primary-deep);
   font-size: 11px;
   font-weight: 700;
   line-height: 1.3;
+}
+
+.feed-item-card__relation-hint:disabled {
+  cursor: default;
 }
 </style>

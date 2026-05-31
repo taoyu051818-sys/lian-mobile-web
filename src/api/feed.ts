@@ -113,18 +113,37 @@ function normalizeFeedPresentationIntent(value: unknown): FeedPresentationIntent
     : null;
 }
 
-function normalizeFeedRelationHint(value: unknown): FeedItem["relationHint"] {
-  return value === "help_event_link" || value === "trade_offer_link" || value === "event_followup"
-    ? value
-    : undefined;
+const FEED_RELATION_HINTS: ReadonlySet<string> = new Set([
+  "help_event_link",
+  "trade_offer_link",
+  "event_followup",
+  "solution_event",
+  "merchant_errand",
+  "project_submission",
+  "event_reward",
+]);
+
+function normalizeFeedRelationHint(value: unknown): string | undefined {
+  return typeof value === "string" && value.trim() ? value.trim() : undefined;
+}
+
+function relationHintFromRelation(
+  relation: NonNullable<FeedItem["relations"]>[number],
+): FeedItem["relationHint"] {
+  const type = normalizeFeedRelationHint(relation.type);
+  return type ? { type, targetTid: relation.targetTid } : undefined;
 }
 
 function deriveFeedRelationHint(
-  relationHint: FeedItem["relationHint"],
+  relationHint: string | undefined,
   relations: FeedItem["relations"],
 ): FeedItem["relationHint"] {
-  if (relationHint) return relationHint;
-  return normalizeFeedRelationHint(relations?.[0]?.type);
+  if (relationHint) return { type: relationHint };
+  const knownRelation = relations
+    ?.map(relationHintFromRelation)
+    .find((hint) => hint && FEED_RELATION_HINTS.has(hint.type));
+  if (knownRelation) return knownRelation;
+  return relations?.map(relationHintFromRelation).find(Boolean);
 }
 
 function normalizeFeedContentType(value: unknown): string {
