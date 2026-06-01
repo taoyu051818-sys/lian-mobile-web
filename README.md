@@ -2,11 +2,34 @@
 
 Frontend/mobile web workspace for LIAN.
 
-This repository owns the Vue 3 + Vite frontend, design tokens, frontend assets, task-board UI, and frontend documentation. The legacy static runtime has been migrated to `taoyu051818-sys/-lian-mobile-web-legacy`. The active backend implementation direction for APIs, runtime data, authentication, uploads, image proxy, Redis state, and NodeBB integration lives in `taoyu051818-sys/lian-nest-server`, but current backend contract truth can still land in `taoyu051818-sys/lian-platform-server` when live routes or merged PRs say so. Recent Profile `/api/me/*` contract work, for example, landed there through merged PRs `#303` and `#304`, and the corresponding frontend consumer lane is tracked in `#534`.
+This repository owns the Vue 3 + Vite frontend, design tokens, frontend assets,
+task-board UI, and frontend documentation. The legacy static runtime has been
+migrated to `taoyu051818-sys/-lian-mobile-web-legacy`. Use GitHub issues and PRs
+as the queue and contract source of truth, starting from the LIAN Control Room at
+`taoyu051818-sys/lian-platform-server#424`.
+
+Current coordination snapshot:
+
+- Control-plane entrypoint: `taoyu051818-sys/lian-platform-server#424` is the
+  Control Room record for cross-repo queue and contract coordination; it is
+  closed as of 2026-05-30, so follow any successor pointers from GitHub if the
+  bus has rolled again.
+- Frontend follow-ups: `taoyu051818-sys/lian-mobile-web#988` remains open for
+  the E2E CI gate, `taoyu051818-sys/lian-mobile-web#998` remains open for
+  profile relation/action rendering, and `taoyu051818-sys/lian-mobile-web#980`
+  is closed.
+- Shipped frontend context: `taoyu051818-sys/lian-mobile-web#1001`,
+  `taoyu051818-sys/lian-mobile-web#1002`, and
+  `taoyu051818-sys/lian-mobile-web#1003` are merged.
+- Shipped backend dependency context: `taoyu051818-sys/lian-platform-server#595`,
+  `taoyu051818-sys/lian-platform-server#599`,
+  `taoyu051818-sys/lian-platform-server#625`, and
+  `taoyu051818-sys/lian-platform-server#627` are closed.
 
 ## Runtime model
 
-The frontend is a Vue 3 + Vite application. `npm start` runs `vite preview` on port 4301. `npm run dev` starts the Vite dev server on port 5173.
+The frontend is a Vue 3 + Vite application. `npm start` runs `vite preview` on
+port 4301. `npm run dev` starts the Vite dev server on port 5173.
 
 ```txt
 Vite preview/dev:  http://127.0.0.1:4301 (preview) / http://127.0.0.1:5173 (dev)
@@ -14,7 +37,9 @@ backend API:       http://127.0.0.1:4200
 image proxy:       http://127.0.0.1:4201
 ```
 
-Start the backend separately from `lian-nest-server` when smoke tests need live `/api/*` responses. Also check `lian-platform-server` whenever a frontend lane depends on the latest merged or in-flight backend contract truth rather than governance history alone.
+Start the backend separately when smoke tests need live `/api/*` responses. Check
+the GitHub control-plane trail from `taoyu051818-sys/lian-platform-server#424`
+first when a frontend lane depends on merged or in-flight backend contract truth.
 
 ## Toolchain baseline
 
