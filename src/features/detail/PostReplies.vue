@@ -60,7 +60,9 @@ function sanitizeReplyHtml(value: string) {
 
 function replyTrustSignal(reply: PostReply) {
   if (reply.source?.visible === false) return null;
-  return reply.source?.label || reply.actor?.identityTag || (reply.source ? TRUST_SIGNAL_UNKNOWN : null);
+  return (
+    reply.source?.label || reply.actor?.identityTag || (reply.source ? TRUST_SIGNAL_UNKNOWN : null)
+  );
 }
 </script>
 
