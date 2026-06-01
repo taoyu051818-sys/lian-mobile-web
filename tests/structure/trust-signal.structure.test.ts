@@ -78,7 +78,7 @@ describe("trust signal structure", () => {
     expect(repliesSource).toMatch(/function replyTrustSignal\(reply: PostReply\)/);
     expect(repliesSource).toMatch(/if \(reply\.source\?\.visible === false\) return null;/);
     expect(repliesSource).toMatch(
-      /return reply\.source\?\.label \|\| reply\.actor\?\.identityTag \|\| \(reply\.source \? TRUST_SIGNAL_UNKNOWN : null\);/,
+      /return \(\s*reply\.source\?\.label \|\| reply\.actor\?\.identityTag \|\| \(reply\.source \? TRUST_SIGNAL_UNKNOWN : null\)\s*\);/,
     );
     expect(repliesSource).toMatch(/<TrustBadge\s+v-if="replyTrustSignal\(reply\)"/);
   });
