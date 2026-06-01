@@ -1,6 +1,6 @@
 import type { AudienceVisibility } from "./audience";
 import type { FeedItemId } from "./feed";
-import type { PostRelation } from "./post";
+import type { PostAvailableAction, PostRelation } from "./post";
 import type { VerificationState, VerificationTag } from "./verification";
 
 export type ProfileTabKey =
@@ -90,6 +90,8 @@ export interface ProfileListItem {
    * without relations[] simply do not surface in the grouped section.
    */
   relations?: PostRelation[];
+  /** Backend-driven action descriptors already normalized from activity DTOs. */
+  availableActions?: PostAvailableAction[];
 }
 
 export interface ProfileListResponse {

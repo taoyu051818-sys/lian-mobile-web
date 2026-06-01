@@ -160,18 +160,103 @@ describe("profile activity normalization", () => {
     });
   });
 
-  it("normalizes list responses through the item helper", () => {
+  it("normalizes relation and action context on activity rows", () => {
+    expect(
+      normalizeProfileListItem({
+        tid: 44,
+        title: "活动复盘",
+        relations: [
+          { type: "event_recap", targetTid: 11 },
+          null,
+          { type: "missing-target" },
+          { target: { kind: "post", id: "22" } },
+          { type: "solution_event", target: { kind: "post", id: 33 }, role: "source" },
+        ],
+        availableActions: [
+          {
+            type: "claim_reward",
+            enabled: false,
+            reason: "not_ready",
+            reasonText: "活动结束后可领取",
+          },
+          { type: "mark_solved" },
+          { enabled: true, reason: "missing_type" },
+          "bad-row",
+        ],
+      }),
+    ).toEqual({
+      tid: 44,
+      id: "44",
+      title: "活动复盘",
+      relations: [
+        { type: "event_recap", target: { kind: "post", id: "11" } },
+        { type: "solution_event", target: { kind: "post", id: "33" }, role: "source" },
+      ],
+      availableActions: [
+        {
+          type: "claim_reward",
+          enabled: false,
+          reason: "not_ready",
+          reasonText: "活动结束后可领取",
+        },
+        { type: "mark_solved" },
+      ],
+    });
+  });
+
+  it("omits empty or fully malformed relation and action arrays", () => {
+    expect(
+      normalizeProfileListItem({
+        tid: 45,
+        title: "无上下文内容",
+        relations: [{ type: "missing-target" }, null],
+        availableActions: [{ enabled: true }, null],
+      }),
+    ).toEqual({
+      tid: 45,
+      id: "45",
+      title: "无上下文内容",
+    });
+  });
+
+  it("omits absent, empty, or non-array relation and action context", () => {
+    for (const context of [
+      {},
+      { relations: null, availableActions: null },
+      { relations: [], availableActions: [] },
+      { relations: { type: "help_event_link" }, availableActions: { type: "claim_reward" } },
+    ]) {
+      expect(
+        normalizeProfileListItem({
+          tid: 46,
+          title: "上下文为空",
+          ...context,
+        }),
+      ).toEqual({
+        tid: 46,
+        id: "46",
+        title: "上下文为空",
+      });
+    }
+  });
+
+  it("normalizes list responses with mixed graph context rows", () => {
     expect(
       normalizeProfileListResponse({
         items: [
-          { tid: 7, title: "第一条" },
-          { id: "draft-2", title: "第二条", status: "draft", visibility: "private" },
+          { tid: 7, title: "第一条", relations: [{ type: "help_event_link", targetTid: 70 }] },
+          { id: "draft-2", title: "第二条", availableActions: [{ type: "complete_errand" }] },
         ],
       }),
     ).toEqual({
       items: [
-        { tid: 7, id: "7", title: "第一条" },
-        { id: "draft-2", title: "第二条", status: "draft", visibility: "private" },
+        {
+          tid: 7,
+          id: "7",
+          title: "第一条",
+          relations: [{ type: "help_event_link", target: { kind: "post", id: "70" } }],
+        },
+        { id: "draft-2", title: "第二条", availableActions: [{ type: "complete_errand" }] },
       ],
     });
   });

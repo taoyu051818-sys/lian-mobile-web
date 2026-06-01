@@ -17,6 +17,9 @@
  */
 import { computed } from "vue";
 import {
+  AVAILABLE_ACTION_CLAIM_REWARD,
+  AVAILABLE_ACTION_COMPLETE_ERRAND,
+  AVAILABLE_ACTION_MARK_SOLVED,
   PROFILE_RELATION_GROUP_HELPED_TITLE,
   PROFILE_RELATION_GROUP_MERCHANT_TITLE,
   PROFILE_RELATION_GROUP_PARTICIPATED_TITLE,
@@ -61,12 +64,23 @@ const TYPE_TAG_LABEL: Record<string, string> = {
   project_submission: PROFILE_RELATION_TYPE_PROJECT_SUBMISSION_TAG,
 };
 
+const ACTION_TYPE_LABEL: Record<string, string> = {
+  mark_solved: AVAILABLE_ACTION_MARK_SOLVED,
+  claim_reward: AVAILABLE_ACTION_CLAIM_REWARD,
+  complete_errand: AVAILABLE_ACTION_COMPLETE_ERRAND,
+};
+
+function uniqueLabels(types: string[], labels: Record<string, string>) {
+  return Array.from(new Set(types.filter(Boolean))).map((type) => labels[type] ?? type);
+}
+
 interface RelationItemView {
   key: string;
   tid: FeedItemId | null;
   title: string;
   // 命中本桶的所有 relation type tag — 一帖可能挂多 relation，都展示。
   tags: string[];
+  actions: string[];
 }
 
 interface RelationSectionView {
@@ -77,12 +91,16 @@ interface RelationSectionView {
 
 function buildItemView(item: ProfileListItem, group: ProfileRelationGroupKey): RelationItemView {
   const accepted = PROFILE_RELATION_GROUP_TYPES[group];
-  const hitTypes = (item.relations || [])
+  const hitTypes = (Array.isArray(item.relations) ? item.relations : [])
     .map((relation) => relation.type)
     .filter((type) => accepted.has(type));
-  // 去重保留顺序，避免一帖同 type 多 relation 重复 tag。
-  const uniqueTypes = Array.from(new Set(hitTypes));
-  const tags = uniqueTypes.map((type) => TYPE_TAG_LABEL[type] ?? type);
+  const tags = uniqueLabels(hitTypes, TYPE_TAG_LABEL);
+  const actions = uniqueLabels(
+    (Array.isArray(item.availableActions) ? item.availableActions : []).map(
+      (action) => action.type,
+    ),
+    ACTION_TYPE_LABEL,
+  );
 
   const tid = typeof item.tid === "number" && item.tid > 0 ? item.tid : null;
   const key = tid !== null ? `${group}-${tid}` : `${group}-${item.id || item.title || "row"}`;
@@ -91,6 +109,7 @@ function buildItemView(item: ProfileListItem, group: ProfileRelationGroupKey): R
     tid,
     title: item.title || UNTITLED_CONTENT,
     tags,
+    actions,
   };
 }
 
@@ -149,6 +168,14 @@ function openItem(tid: FeedItemId | null) {
               data-testid="profile-relation-surfaces-tag"
             >
               {{ tag }}
+            </span>
+            <span
+              v-for="action in entry.actions"
+              :key="action"
+              class="profile-relation-surfaces__action"
+              data-testid="profile-relation-surfaces-action"
+            >
+              {{ action }}
             </span>
           </span>
         </li>
@@ -232,7 +259,8 @@ function openItem(tid: FeedItemId | null) {
   gap: 6px;
 }
 
-.profile-relation-surfaces__tag {
+.profile-relation-surfaces__tag,
+.profile-relation-surfaces__action {
   display: inline-flex;
   align-items: center;
   min-height: 18px;
@@ -243,5 +271,9 @@ function openItem(tid: FeedItemId | null) {
   font-size: 11px;
   font-weight: 800;
   white-space: nowrap;
+}
+.profile-relation-surfaces__action {
+  background: rgba(255, 184, 77, 0.18);
+  color: var(--lian-warning, #a15c00);
 }
 </style>
