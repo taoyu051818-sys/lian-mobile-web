@@ -4,12 +4,14 @@ import {
   POST_DETAIL_AUTHOR_AVATAR,
   POST_DETAIL_SHARE,
 } from "../../config/brand";
+import { TrustBadge } from "../../ui";
 
 defineProps<{
   authorLabel?: string;
   avatarUrl?: string;
   authorInitial?: string;
   hasAuthorIdentity?: boolean;
+  trustSignal?: string | null;
 }>();
 
 const emit = defineEmits<{
@@ -39,6 +41,9 @@ const emit = defineEmits<{
         authorInitial
       }}</span>
       <strong v-if="authorLabel">{{ authorLabel }}</strong>
+      <TrustBadge v-if="trustSignal" tone="confirmed" class="post-detail-topbar__trust-signal">
+        {{ trustSignal }}
+      </TrustBadge>
     </div>
     <div
       v-else
@@ -121,6 +126,10 @@ const emit = defineEmits<{
   max-width: 38vw;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.post-detail-topbar__trust-signal {
+  flex: 0 0 auto;
 }
 
 @media (prefers-reduced-motion: reduce) {

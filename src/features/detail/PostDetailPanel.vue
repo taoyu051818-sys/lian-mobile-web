@@ -12,6 +12,7 @@ import {
   SERVERCHAN_DIALOG_EVENT_TITLE,
   SERVERCHAN_DIALOG_REMINDER_ENABLED,
   SERVERCHAN_DIALOG_REMINDER_FAILED,
+  TRUST_SIGNAL_UNKNOWN,
 } from "../../config/brand";
 import { extractErrorMessage } from "../../utils/extractErrorMessage";
 import type { PostDetail } from "../../types/post";
@@ -56,6 +57,15 @@ useVisualViewport();
 const actionError = ref("");
 const actionMessage = ref("");
 const post = computed(() => props.post);
+
+function resolveDetailTrustSignal() {
+  if (post.value?.source?.visible === false) return null;
+  return (
+    post.value?.source?.label ||
+    post.value?.actor?.identityTag ||
+    (post.value?.source ? TRUST_SIGNAL_UNKNOWN : null)
+  );
+}
 
 function clearMessages() {
   actionError.value = "";
@@ -282,6 +292,7 @@ watch(
         :avatar-url="authorAvatarUrl"
         :author-initial="authorInitial"
         :has-author-identity="hasAuthorIdentity"
+        :trust-signal="resolveDetailTrustSignal()"
         @close="emit('close')"
         @share="handleShare"
       />

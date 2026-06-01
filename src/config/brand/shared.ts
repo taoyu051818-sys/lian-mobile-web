@@ -22,6 +22,11 @@ export const CONTENT_COVER_ALT = "内容封面";
 export const CONTENT_AVATAR_FALLBACK = "内";
 export const TIME_UNKNOWN = "时间未知";
 
+/** 信任与身份信号 */
+export const TRUST_SIGNAL_VERIFIED = "已验证";
+export const TRUST_SIGNAL_IDENTITY_PREFIX = "身份：";
+export const TRUST_SIGNAL_UNKNOWN = "身份待确认";
+
 /** 分享 */
 export const SHARE_LINK_COPIED = "链接已复制";
 
