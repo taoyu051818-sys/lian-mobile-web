@@ -106,20 +106,57 @@ describe("ProfileRelationSurfacesBlock anonymity contract", () => {
   });
 });
 
-describe("ProfileListItem.relations wire-through", () => {
-  it("ProfileListItem carries an optional relations field", async () => {
+describe("ProfileListItem graph context wire-through", () => {
+  it("ProfileListItem carries optional relations and availableActions fields", async () => {
     const src = await read("src/types/profile.ts");
     expect(src).toMatch(
       /export interface ProfileListItem[\s\S]*?relations\?\s*:\s*PostRelation\[\]/,
     );
+    expect(src).toMatch(
+      /export interface ProfileListItem[\s\S]*?availableActions\?\s*:\s*PostAvailableAction\[\]/,
+    );
   });
 
-  it("normalizeProfileListItem preserves relations through normalizePostRelations", async () => {
+  it("normalizeProfileListItem preserves relations and availableActions through canonical normalizers", async () => {
     const src = await read("src/api/profile.ts");
-    expect(src).toMatch(/import \{ normalizePostRelations \}/);
+    expect(src).toMatch(/import \{ normalizePostAvailableActions, normalizePostRelations \}/);
     expect(src).toMatch(
       /export function normalizeProfileListItem[\s\S]*?normalizePostRelations\(candidate\.relations\)/,
     );
+    expect(src).toMatch(
+      /export function normalizeProfileListItem[\s\S]*?normalizePostAvailableActions\(candidate\.availableActions\)/,
+    );
+  });
+});
+
+describe("ProfileCollectionList graph context rendering", () => {
+  it("renders normalized relation and availableAction labels as lightweight chips", async () => {
+    const src = await read("src/features/profile/ProfileCollectionList.vue");
+    expect(src).toMatch(/itemContextLabels\(item\)/);
+    expect(src).toMatch(/Array\.isArray\(item\.relations\)/);
+    expect(src).toMatch(/Array\.isArray\(item\.availableActions\)/);
+    expect(src).toMatch(/data-testid="profile-collection-context"/);
+  });
+
+  it("renders grouped relation surface action labels from existing availableActions data", async () => {
+    const src = await read("src/features/profile/ProfileRelationSurfacesBlock.vue");
+    expect(src).toMatch(/Array\.isArray\(item\.availableActions\)/);
+    expect(src).toMatch(/ACTION_TYPE_LABEL/);
+    expect(src).toMatch(/data-testid="profile-relation-surfaces-action"/);
+  });
+
+  it("keeps context chips in ProfileCollectionList memo dependencies", async () => {
+    const src = await read("src/features/profile/ProfileCollectionList.vue");
+    expect(src).toMatch(/v-memo="\[[\s\S]*?itemStates\[index\]\?\.contextLabels[\s\S]*?\]"/);
+  });
+
+  it("maps known relation and action types through existing brand strings with literal fallback", async () => {
+    const src = await read("src/features/profile/ProfileCollectionList.vue");
+    expect(src).toMatch(/event_recap:\s*PROFILE_RELATION_TYPE_EVENT_RECAP_TAG/);
+    expect(src).toMatch(/help_event_link:\s*PROFILE_RELATION_TYPE_HELP_EVENT_LINK_TAG/);
+    expect(src).toMatch(/claim_reward:\s*AVAILABLE_ACTION_CLAIM_REWARD/);
+    expect(src).toMatch(/complete_errand:\s*AVAILABLE_ACTION_COMPLETE_ERRAND/);
+    expect(src).toMatch(/labels\[type\]\s*\?\?\s*type/);
   });
 });
 

@@ -8,6 +8,15 @@ import {
   CONTENT_COVER_ALT,
   CONTENT_AVATAR_FALLBACK,
   TIME_UNKNOWN,
+  AVAILABLE_ACTION_CLAIM_REWARD,
+  AVAILABLE_ACTION_COMPLETE_ERRAND,
+  AVAILABLE_ACTION_MARK_SOLVED,
+  PROFILE_RELATION_TYPE_EVENT_RECAP_TAG,
+  PROFILE_RELATION_TYPE_EVENT_REWARD_TAG,
+  PROFILE_RELATION_TYPE_HELP_EVENT_LINK_TAG,
+  PROFILE_RELATION_TYPE_MERCHANT_ERRAND_TAG,
+  PROFILE_RELATION_TYPE_PROJECT_SUBMISSION_TAG,
+  PROFILE_RELATION_TYPE_SOLUTION_EVENT_TAG,
 } from "../../config/brand";
 import type { FeedItemId } from "../../types/feed";
 import type { ProfileActivityStatus, ProfileListItem } from "../../types/profile";
@@ -31,6 +40,40 @@ const STATUS_LABELS: Record<ProfileActivityStatus, string> = {
   pending: "待审核",
   hidden: "仅自己可见",
 };
+
+const RELATION_TYPE_LABELS: Record<string, string> = {
+  event_recap: PROFILE_RELATION_TYPE_EVENT_RECAP_TAG,
+  event_reward: PROFILE_RELATION_TYPE_EVENT_REWARD_TAG,
+  help_event_link: PROFILE_RELATION_TYPE_HELP_EVENT_LINK_TAG,
+  solution_event: PROFILE_RELATION_TYPE_SOLUTION_EVENT_TAG,
+  merchant_errand: PROFILE_RELATION_TYPE_MERCHANT_ERRAND_TAG,
+  project_submission: PROFILE_RELATION_TYPE_PROJECT_SUBMISSION_TAG,
+};
+
+const ACTION_TYPE_LABELS: Record<string, string> = {
+  mark_solved: AVAILABLE_ACTION_MARK_SOLVED,
+  claim_reward: AVAILABLE_ACTION_CLAIM_REWARD,
+  complete_errand: AVAILABLE_ACTION_COMPLETE_ERRAND,
+};
+
+function uniqueLabels(types: string[], labels: Record<string, string>) {
+  return Array.from(new Set(types.filter(Boolean))).map((type) => labels[type] ?? type);
+}
+
+function itemContextLabels(item: ProfileListItem) {
+  const relations = Array.isArray(item.relations) ? item.relations : [];
+  const availableActions = Array.isArray(item.availableActions) ? item.availableActions : [];
+  return [
+    ...uniqueLabels(
+      relations.map((relation) => relation.type),
+      RELATION_TYPE_LABELS,
+    ),
+    ...uniqueLabels(
+      availableActions.map((action) => action.type),
+      ACTION_TYPE_LABELS,
+    ),
+  ];
+}
 
 function canOpen(item: ProfileListItem) {
   return typeof item.tid === "number" && item.tid > 0;
@@ -61,6 +104,7 @@ const itemStates = computed(() =>
     dataTid: item.tid != null ? String(item.tid) : "",
     statusLabel: itemStatusLabel(item),
     meta: itemMeta(item),
+    contextLabels: itemContextLabels(item),
     canOpen: canOpen(item),
     visibility: item.visibility,
   })),
@@ -85,7 +129,14 @@ const itemStates = computed(() =>
       <article
         v-for="(item, index) in items"
         :key="itemStates[index]?.key"
-        v-memo="[itemStates[index]?.key, item.title, item.cover, item.status, item.visibility]"
+        v-memo="[
+          itemStates[index]?.key,
+          item.title,
+          item.cover,
+          item.status,
+          item.visibility,
+          itemStates[index]?.contextLabels,
+        ]"
         class="profile-collection__item"
         :class="{ 'is-static': !itemStates[index]?.canOpen }"
         data-testid="profile-liked-item"
@@ -117,6 +168,14 @@ const itemStates = computed(() =>
               :show-icon="true"
               class="profile-collection__visibility"
             />
+            <span
+              v-for="label in itemStates[index]?.contextLabels"
+              :key="label"
+              class="profile-collection__context"
+              data-testid="profile-collection-context"
+            >
+              {{ label }}
+            </span>
           </div>
           <p>{{ itemStates[index]?.meta }}</p>
         </div>
@@ -246,7 +305,8 @@ const itemStates = computed(() =>
   white-space: nowrap;
 }
 
-.profile-collection__visibility {
+.profile-collection__visibility,
+.profile-collection__context {
   display: inline-flex;
   gap: 4px;
   align-items: center;
@@ -258,6 +318,12 @@ const itemStates = computed(() =>
   font-size: 11px;
   font-weight: 700;
   white-space: nowrap;
+}
+
+.profile-collection__context {
+  background: rgba(31, 167, 160, 0.1);
+  color: var(--lian-primary-deep);
+  font-weight: 800;
 }
 
 .profile-collection :deep(.inline-error button) {
