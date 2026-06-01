@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
-import { SafeHtml } from "../../ui";
+import { SafeHtml, TrustBadge } from "../../ui";
 import {
   EMPTY_REPLIES,
   REPLY_SECTION_TITLE,
@@ -9,6 +9,7 @@ import {
   REPLY_SORT_LABEL,
   REPLY_SORT_NEWEST,
   REPLY_SORT_OLDEST,
+  TRUST_SIGNAL_UNKNOWN,
 } from "../../config/brand";
 import { actorDisplayName } from "../../domain/actor";
 import type { PostReply } from "../../types/post";
@@ -56,6 +57,11 @@ function sanitizeReplyHtml(value: string) {
     .replace(/<p[^>]*>\s*#+[^<]+\s*<\/p>/gi, "")
     .trim();
 }
+
+function replyTrustSignal(reply: PostReply) {
+  if (reply.source?.visible === false) return null;
+  return reply.source?.label || reply.actor?.identityTag || (reply.source ? TRUST_SIGNAL_UNKNOWN : null);
+}
 </script>
 
 <template>
@@ -100,7 +106,16 @@ function sanitizeReplyHtml(value: string) {
       class="post-replies__item"
     >
       <div class="post-replies__meta">
-        <strong v-if="actorDisplayName(reply.actor)">{{ actorDisplayName(reply.actor) }}</strong>
+        <div class="post-replies__actor">
+          <strong v-if="actorDisplayName(reply.actor)">{{ actorDisplayName(reply.actor) }}</strong>
+          <TrustBadge
+            v-if="replyTrustSignal(reply)"
+            tone="confirmed"
+            class="post-replies__trust-signal"
+          >
+            {{ replyTrustSignal(reply) }}
+          </TrustBadge>
+        </div>
         <span v-if="formatRelativeTime(reply.timestampISO)">{{
           formatRelativeTime(reply.timestampISO)
         }}</span>
@@ -191,6 +206,19 @@ function sanitizeReplyHtml(value: string) {
   gap: var(--space-2);
   align-items: center;
   justify-content: space-between;
+}
+
+.post-replies__actor {
+  display: inline-flex;
+  min-width: 0;
+  gap: var(--space-1);
+  align-items: center;
+}
+
+.post-replies__trust-signal {
+  min-height: 20px;
+  padding: 0 6px;
+  font-size: 10px;
 }
 
 .post-replies__meta span {

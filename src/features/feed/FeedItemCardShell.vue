@@ -39,6 +39,7 @@ const props = defineProps<{
   liked?: boolean;
   likeCount?: number;
   visibility?: AudienceVisibility;
+  trustSignal: string | null;
 }>();
 
 const emit = defineEmits<{
@@ -149,6 +150,7 @@ onMounted(() => {
         :liked="Boolean(liked)"
         :like-count="Math.max(0, Number(likeCount || 0))"
         :visibility="visibility"
+        :trust-signal="trustSignal"
       />
     </div>
   </article>

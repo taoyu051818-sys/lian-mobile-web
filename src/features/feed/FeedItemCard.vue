@@ -32,6 +32,8 @@ import {
   FEED_RELATION_HINT_MERCHANT_ERRAND,
   FEED_RELATION_HINT_PROJECT_SUBMISSION,
   FEED_RELATION_HINT_EVENT_REWARD,
+  TRUST_SIGNAL_IDENTITY_PREFIX,
+  TRUST_SIGNAL_UNKNOWN,
 } from "../../config/brand";
 import { actorAvatarText, actorAvatarUrl, actorDisplayName } from "../../domain/actor";
 import type {
@@ -100,6 +102,14 @@ function normalizePresentationIntent(
     : null;
 }
 
+function resolveTrustSignal(source: FeedItem["source"], identityTag?: string) {
+  if (source?.visible === false) return null;
+  if (source?.label) return source.label;
+  if (identityTag) return `${TRUST_SIGNAL_IDENTITY_PREFIX}${identityTag}`;
+  if (source) return TRUST_SIGNAL_UNKNOWN;
+  return null;
+}
+
 // Performance: consolidate computed properties to reduce reactivity overhead.
 // Instead of 13 separate computed properties that each trigger their own
 // dependency tracking, derive all card display data in a single pass.
@@ -143,6 +153,7 @@ const cardDisplayData = computed(() => {
     relationHint,
     bodyPreview: item.bodyPreview || "",
     visibility: item.visibility || "public",
+    trustSignal: resolveTrustSignal(item.source, actor.identityTag),
     cardWarning: warnings.length ? warnings.join(" ") : undefined,
   };
 });
@@ -255,6 +266,7 @@ function handleClubOpen(
       :liked="Boolean(props.item.liked)"
       :like-count="Math.max(0, Number(props.item.likeCount || 0))"
       :visibility="cardDisplayData.visibility"
+      :trust-signal="cardDisplayData.trustSignal"
       @pointerdown="handlePointerDown"
       @pointermove="handlePointerMove"
       @pointerup="handlePointerUp"

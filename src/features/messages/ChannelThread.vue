@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { nextTick, onMounted, ref, watch } from "vue";
-import { EmptyState, InlineError, LianButton } from "../../ui";
+import { EmptyState, InlineError, LianButton, TrustBadge } from "../../ui";
 import { actorAvatarText, actorDisplayName } from "../../domain/actor";
 import type { ChannelMessage, ChannelMessageActor } from "../../types/messages";
 import { formatRelativeTime } from "../../utils/time";
@@ -16,6 +16,7 @@ import {
   CHANNEL_READ_COUNT,
   CHANNEL_THREAD_LABEL,
   FEED_TIME_JUST_NOW,
+  TRUST_SIGNAL_VERIFIED,
 } from "../../config/brand";
 
 const EMPTY_CHANNEL_HINT = "发送第一条消息开始聊天";
@@ -89,6 +90,12 @@ function messageMeta(item: ChannelMessage) {
   const actor = messageActor(item);
   return actor.identityTag || CHANNEL_DEFAULT_TAG;
 }
+
+function messageTrustSignal(item: ChannelMessage) {
+  const actor = messageActor(item);
+  if (actor.authoritative) return TRUST_SIGNAL_VERIFIED;
+  return item.source?.label || actor.identityTag || null;
+}
 </script>
 
 <template>
@@ -160,6 +167,13 @@ function messageMeta(item: ChannelMessage) {
           <span v-if="!item.isSelf" class="messages-view__message-author identity-badge__text">
             <strong>{{ messageAuthor(item) }}</strong>
             <small>{{ messageMeta(item) }}</small>
+            <TrustBadge
+              v-if="messageTrustSignal(item)"
+              tone="confirmed"
+              class="messages-view__trust-signal"
+            >
+              {{ messageTrustSignal(item) }}
+            </TrustBadge>
           </span>
           <div class="messages-view__bubble">
             <p>{{ messageText(item) }}</p>
@@ -251,6 +265,12 @@ function messageMeta(item: ChannelMessage) {
 .messages-view__message-author strong,
 .messages-view__message-author small {
   line-height: inherit;
+}
+
+.messages-view__trust-signal {
+  min-height: 20px;
+  padding: 0 6px;
+  font-size: 10px;
 }
 
 .messages-view__bubble {

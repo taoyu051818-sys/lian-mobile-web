@@ -3,7 +3,7 @@ import { computed, ref, watch } from "vue";
 import { togglePostLike } from "../../api/posts";
 import { FEED_LIKE, FEED_UNLIKE } from "../../config/brand";
 import type { AudienceVisibility } from "../../types/audience";
-import { VisibilityBadge } from "../../ui";
+import { TrustBadge, VisibilityBadge } from "../../ui";
 
 const props = defineProps<{
   tid: number;
@@ -14,6 +14,7 @@ const props = defineProps<{
   liked?: boolean;
   likeCount?: number;
   visibility?: AudienceVisibility;
+  trustSignal?: string | null;
 }>();
 
 const emit = defineEmits<{
@@ -84,6 +85,9 @@ async function handleLike() {
       />
       <span v-else class="feed-item-card__avatar-text" aria-hidden="true">{{ authorInitial }}</span>
       <span class="feed-item-card__author-name" :title="authorName">{{ authorName }}</span>
+      <TrustBadge v-if="trustSignal" tone="confirmed" class="feed-item-card__trust-signal">
+        {{ trustSignal }}
+      </TrustBadge>
     </div>
 
     <VisibilityBadge
@@ -163,6 +167,12 @@ async function handleLike() {
   font-weight: 850;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.feed-item-card__trust-signal {
+  min-height: 20px;
+  padding: 0 6px;
+  font-size: 10px;
 }
 
 .feed-item-card__motion-time {
