@@ -37,7 +37,9 @@ describe("transient UI timeout cleanup", () => {
     expect(source).toMatch(/let initSizeTimer: ReturnType<typeof setTimeout> \| null = null;/);
     expect(source).toMatch(/function clearInitSizeTimer\(\)/);
     expect(source).toMatch(/clearInitSizeTimer\(\);\n\s*initSizeTimer = setTimeout\(\(\) => \{/);
-    expect(source).toMatch(/onBeforeUnmount\(\(\) => \{[\s\S]*?clearInitSizeTimer\(\);[\s\S]*?map\.value\?\.remove\(\);[\s\S]*?\}\);/);
+    expect(source).toMatch(
+      /onBeforeUnmount\(\(\) => \{[\s\S]*?clearInitSizeTimer\(\);[\s\S]*?map\.value\?\.remove\(\);[\s\S]*?\}\);/,
+    );
   });
 
   it("MapCanvas clears long-press hold timers before teardown", () => {
@@ -45,8 +47,12 @@ describe("transient UI timeout cleanup", () => {
 
     expect(source).toMatch(/let clearLongpressTimer: \(\(\) => void\) \| null = null;/);
     expect(source).toMatch(/clearLongpressTimer = clearTimer;/);
-    expect(source).toMatch(/m\.on\("mousedown", \(event\) => \{[\s\S]*?clearTimer\(\);[\s\S]*?holdTimer = setTimeout\(\(\) => \{/);
+    expect(source).toMatch(
+      /m\.on\("mousedown", \(event\) => \{[\s\S]*?clearTimer\(\);[\s\S]*?holdTimer = setTimeout\(\(\) => \{/,
+    );
     expect(source).toMatch(/holdTimer = setTimeout\(\(\) => \{/);
-    expect(source).toMatch(/onBeforeUnmount\(\(\) => \{[\s\S]*?clearLongpressTimer\?\.\(\);[\s\S]*?clearLongpressTimer = null;[\s\S]*?map\.value\?\.remove\(\);[\s\S]*?\}\);/);
+    expect(source).toMatch(
+      /onBeforeUnmount\(\(\) => \{[\s\S]*?clearLongpressTimer\?\.\(\);[\s\S]*?clearLongpressTimer = null;[\s\S]*?map\.value\?\.remove\(\);[\s\S]*?\}\);/,
+    );
   });
 });
