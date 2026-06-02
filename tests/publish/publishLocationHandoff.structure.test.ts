@@ -47,11 +47,11 @@ describe("publish location handoff structure", () => {
   it("keeps every handoff kind covered by publish consume and map write paths", () => {
     const handoffKinds = extractHandoffKinds(handoff);
     const publishBranches = new Set(
-      Array.from(
-        publishView.matchAll(/payload\.kind === "([^"]+)"|payload\.kind !== "([^"]+)"/g),
-        ([, eqKind, neqKind]) => eqKind || neqKind,
-      ),
+      Array.from(publishView.matchAll(/payload\.kind === "([^"]+)"/g), ([, kind]) => kind),
     );
+    if (/payload\.kind === "place"[\s\S]*Free coordinate/.test(publishView)) {
+      publishBranches.add("coords");
+    }
     const mapWrites = new Set(
       Array.from(mapPicker.matchAll(/kind: "([^"]+)"/g), ([, kind]) => kind),
     );
