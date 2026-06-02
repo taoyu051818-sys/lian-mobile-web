@@ -5,8 +5,8 @@ import type {
   PlaceRef,
 } from "./place";
 import type { Audience } from "./audience";
-import type { MerchantCategory, TradeState } from "./post-extensions";
-import type { InferredKind } from "./publishSuggestion";
+import type { EventJoinPolicy, MerchantCategory, TradeState } from "./post-extensions";
+import type { InferredKind, SuggestedComponent } from "./publishSuggestion";
 
 export type PublishVisibility = "public" | "campus" | "school" | "private";
 export type PublishLocationSource = "manual" | "skipped" | "map_v2";
@@ -134,10 +134,24 @@ export interface PublishPayload {
   /** PRD §11 trade block. Sent at top level, not inside metadata. */
   trade?: TradePublishInput;
   locationDraft: PublishLocationDraft;
+  event?: {
+    startsAt?: string;
+    endsAt?: string;
+    capacity?: number;
+    rewardSummary?: string;
+    joinPolicy: EventJoinPolicy;
+    participantScope: Audience;
+  };
   riskFlags: Array<{ message?: string }>;
   confidence: number;
   needsHumanReview: boolean;
   aiMode: string;
+  candidates?: {
+    title: string | null;
+    bodyCandidate: string | null;
+    inferredKind: InferredKind | null;
+    suggestedComponents: SuggestedComponent[];
+  };
   aliasId?: string;
 }
 

@@ -34,7 +34,7 @@ import type {
 } from "../../types/publish";
 import type { PublishPostType } from "../../composables/useEventPublishDraft";
 import type { PublishKind } from "./usePublishDraft";
-import type { InferredKind } from "../../types/publishSuggestion";
+import type { InferredKind, SuggestedComponent } from "../../types/publishSuggestion";
 import { inferKind } from "./inferKind";
 
 export function usePublishSubmit(options: {
@@ -71,6 +71,9 @@ export function usePublishSubmit(options: {
    * Wired by `PublishView` from `usePublishDraft.llmInferredKind`.
    */
   llmInferredKind?: Ref<InferredKind | null>;
+  titleCandidate?: Ref<string | null>;
+  bodyCandidate?: Ref<string | null>;
+  suggestedComponents?: Ref<SuggestedComponent[]>;
   merchantPayload?: () => { input: MerchantPublishInput; contentType: MerchantContentType };
   merchantVerified?: Ref<boolean>;
   tradePayload?: () => { input: TradePublishInput; contentType: TradeContentType };
@@ -130,12 +133,48 @@ export function usePublishSubmit(options: {
     const audience = normalizeAudience({
       visibility: options.audienceVisibility?.value || options.visibility.value,
     });
+    const eventDraftContext = buildPublishPayload({
+      imageUrls: options.uploadedImageUrls.value,
+      title: options.title.value,
+      body: options.body.value,
+      tag: options.normalizedTag.value,
+      identityTag: options.normalizedIdentityTag.value,
+      placeName: options.placeName.value,
+      visibility: options.visibility.value,
+      aliasId: options.aliasId.value,
+      locationDraft: options.selectedLocationDraft.value,
+      audience,
+      event: {
+        ...(startsAt ? { startsAt } : {}),
+        ...(endsAt ? { endsAt } : {}),
+        ...(capacity !== undefined ? { capacity } : {}),
+        joinPolicy: options.eventJoinPolicy?.value || "open",
+        participantScope: audience,
+      },
+      candidates: {
+        title: options.titleCandidate?.value ?? null,
+        bodyCandidate: options.bodyCandidate?.value ?? null,
+        inferredKind: options.llmInferredKind?.value ?? null,
+        suggestedComponents: options.suggestedComponents?.value ?? [],
+      },
+      kind: inferKind({
+        publishKind: options.publishKind?.value ?? "regular",
+        hasLocation: Boolean(
+          options.selectedLocationDraft.value || options.placeName.value.trim().length > 0,
+        ),
+        hasImage: options.uploadedImageUrls.value.length > 0,
+        hasBody: options.body.value.trim().length > 0,
+        tag: options.normalizedTag.value,
+        llmInferredKind: options.llmInferredKind?.value ?? null,
+      }),
+    });
     try {
       const response = await createEvent({
         title: options.title.value,
         body: options.body.value,
         participantScope: audience,
         joinPolicy: options.eventJoinPolicy?.value || "open",
+        draftContext: eventDraftContext,
         ...(startsAt ? { startsAt } : {}),
         ...(endsAt ? { endsAt } : {}),
         ...(capacity !== undefined ? { capacity } : {}),

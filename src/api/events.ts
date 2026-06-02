@@ -27,6 +27,7 @@ import type {
 } from "../types/post-extensions";
 import type { Audience } from "../types/audience";
 import type { PostLocation } from "../types/post";
+import type { PublishPayload } from "../types/publish";
 
 // ---------------------------------------------------------------------------
 // Event
@@ -43,6 +44,7 @@ export interface CreateEventInput {
   capacity?: number;
   rewardSummary?: string;
   joinPolicy: EventJoinPolicy;
+  draftContext?: PublishPayload;
 }
 
 export interface CreateEventResponse {

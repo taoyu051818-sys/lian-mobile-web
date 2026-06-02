@@ -13,7 +13,8 @@ import type {
   TradePublishInput,
   UploadImageResponse,
 } from "../types/publish";
-import type { InferredKind } from "../types/publishSuggestion";
+import type { EventJoinPolicy } from "../types/post-extensions";
+import type { InferredKind, SuggestedComponent } from "../types/publishSuggestion";
 import {
   type Audience,
   DEFAULT_AUDIENCE,
@@ -296,6 +297,20 @@ export function buildPublishPayload(input: {
    * passes one in step F+.
    */
   kind?: InferredKind;
+  candidates?: {
+    title: string | null;
+    bodyCandidate: string | null;
+    inferredKind: InferredKind | null;
+    suggestedComponents: SuggestedComponent[];
+  };
+  event?: {
+    startsAt?: string;
+    endsAt?: string;
+    capacity?: number;
+    rewardSummary?: string;
+    joinPolicy: EventJoinPolicy;
+    participantScope: Audience;
+  };
   /**
    * PRD §10 — when present, the post enters the merchant publish path:
    * `metadata.presentationIntent = "merchant"` + top-level `contentType`
@@ -342,10 +357,12 @@ export function buildPublishPayload(input: {
     ...(input.kind ? { kind: input.kind } : {}),
     metadata,
     locationDraft,
+    ...(input.event ? { event: input.event } : {}),
     riskFlags: normalizedLocation.issues.map((issue) => ({ message: issue.message })),
     confidence: locationDraft.confidence,
     needsHumanReview: false,
     aiMode: locationDraft.source === "map_v2" ? "manual-vue-map-v2" : "manual-vue",
+    ...(input.candidates ? { candidates: input.candidates } : {}),
     aliasId: input.aliasId,
     ...(input.merchant
       ? { contentType: input.merchant.contentType, merchant: input.merchant.input }
