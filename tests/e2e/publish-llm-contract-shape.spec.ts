@@ -1,5 +1,8 @@
 import { expect, test, type Route } from "@playwright/test";
 
+import { parseLlmTickResponse } from "../../src/api/aiPreview";
+import { buildPublishPayload } from "../../src/api/publish";
+import { inferKind } from "../../src/features/publish/inferKind";
 import { isRoleConfigured, loginAs } from "./fixtures/accounts";
 
 /**
@@ -28,6 +31,15 @@ const VALID_INFERRED_KINDS = ["image", "text", "event", "merchant", "trade", "he
 
 const VALID_COMPONENT_TYPES = [
   "location",
+  "time",
+  "media",
+  "quality",
+  "audience",
+  "tags",
+  "event",
+  "merchant",
+  "trade",
+  "help",
   "event_time",
   "price",
   "merchant_info",
@@ -353,32 +365,87 @@ test.describe("@publish @llm issue #881 — LLM contract shape validation", () =
   });
 });
 
-test("@publish @llm structural fallback — contract shape validation works without role creds", async () => {
-  // Even without credentials, we can validate the contract shape against
-  // our mock data. This ensures the test file itself is structurally sound
-  // and the contract expectations are correctly encoded.
+test("@publish @llm structural fallback — parser/payload round-trip preserves candidates", async () => {
   const mockResponse = createMockPreviewResponse();
   const degradedResponse = createDegradedMockResponse();
 
-  // Validate successful response shape
-  expect(mockResponse.ok).toBe(true);
-  expect(mockResponse.candidates).toBeDefined();
-  expect(mockResponse.candidates.title).toBe("AI suggested title");
-  expect(mockResponse.candidates.bodyCandidate).toBe(
-    "AI polished body content for the user to review.",
-  );
-  expect(mockResponse.candidates.suggestedComponents).toHaveLength(2);
-  expect(mockResponse.candidates.inferredKind).toBe("image");
-  expect(mockResponse.candidates.modelLatencyMs).toBe(245);
-  expect(mockResponse.candidates.modelName).toBe("mimo-preview-v1");
+  const parsed = parseLlmTickResponse(mockResponse);
+  expect(parsed).toEqual({
+    title: "AI suggested title",
+    bodyCandidate: "AI polished body content for the user to review.",
+    suggestedComponents: [
+      { kind: "location", payload: {}, label: "Adding a location helps others find your post" },
+      { kind: "time", payload: {}, label: "This looks like an event - add a time?" },
+    ],
+    inferredKind: "image",
+    modelLatencyMs: 245,
+    modelName: "mimo-preview-v1",
+  });
 
-  // Validate degraded response shape
-  expect(degradedResponse.ok).toBe(true);
-  expect(degradedResponse.candidates).toBeDefined();
-  expect(degradedResponse.candidates.title).toBeNull();
-  expect(degradedResponse.candidates.bodyCandidate).toBeNull();
-  expect(degradedResponse.candidates.suggestedComponents).toEqual([]);
-  expect(degradedResponse.candidates.inferredKind).toBeNull();
-  expect(degradedResponse.candidates.modelLatencyMs).toBe(0);
-  expect(degradedResponse.candidates.modelName).toBe("fallback");
+  const payload = buildPublishPayload({
+    imageUrls: ["https://img.lian.test/publish-round-trip.jpg"],
+    title: parsed.title ?? "fallback title",
+    body: parsed.bodyCandidate ?? "fallback body",
+    tag: "活动",
+    identityTag: " 校友 ",
+    placeName: "图书馆",
+    visibility: "public",
+    kind: inferKind({
+      publishKind: "regular",
+      hasLocation: true,
+      hasImage: true,
+      hasBody: Boolean(parsed.bodyCandidate?.trim()),
+      tag: "活动",
+      llmInferredKind: parsed.inferredKind,
+    }),
+  });
+  expect(payload).toEqual({
+    imageUrl: "https://img.lian.test/publish-round-trip.jpg",
+    imageUrls: ["https://img.lian.test/publish-round-trip.jpg"],
+    title: "AI suggested title",
+    body: "AI polished body content for the user to review.",
+    tag: "#活动",
+    identityTag: "校友",
+    kind: "image",
+    metadata: {
+      locationArea: "图书馆",
+      visibility: "public",
+      distribution: ["home", "map", "search", "detail"],
+      primaryTag: "#活动",
+      identityTag: "校友",
+    },
+    locationDraft: {
+      source: "manual",
+      locationId: "",
+      locationArea: "图书馆",
+      displayName: "图书馆",
+      lat: null,
+      lng: null,
+      legacyPoint: { x: null, y: null },
+      imagePoint: { x: null, y: null },
+      mapVersion: "manual",
+      coordinateSystem: "none",
+      identityKind: "manual_text",
+      precisionKind: "display_only",
+      confidence: 0.65,
+      skipped: false,
+      note: "",
+      issues: [],
+    },
+    riskFlags: [],
+    confidence: 0.65,
+    needsHumanReview: false,
+    aiMode: "manual-vue",
+    aliasId: undefined,
+  });
+
+  const degraded = parseLlmTickResponse(degradedResponse);
+  expect(degraded).toEqual({
+    title: null,
+    bodyCandidate: null,
+    suggestedComponents: [],
+    inferredKind: null,
+    modelLatencyMs: 0,
+    modelName: "fallback",
+  });
 });
