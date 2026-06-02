@@ -40,7 +40,7 @@ describe("publish location handoff structure", () => {
       /if \(payload\.kind === "place"\) \{[\s\S]*locationOptions\.selectMapLocation\(known\);[\s\S]*draft\.placeName\.value = payload\.name;/,
     );
     expect(publishView).toMatch(
-      /draft\.placeName\.value = payload\.label \|\| draft\.placeName\.value;[\s\S]*locationOptions\.clearMapLocation\(\);[\s\S]*geolocationHint\.value = PUBLISH_LOCATION_GEOLOC_HINT;/,
+      /if \(payload\.kind === "coords"\) \{[\s\S]*draft\.placeName\.value = payload\.label \|\| draft\.placeName\.value;[\s\S]*locationOptions\.clearMapLocation\(\);[\s\S]*geolocationHint\.value = PUBLISH_LOCATION_GEOLOC_HINT;/,
     );
   });
 
@@ -49,9 +49,6 @@ describe("publish location handoff structure", () => {
     const publishBranches = new Set(
       Array.from(publishView.matchAll(/payload\.kind === "([^"]+)"/g), ([, kind]) => kind),
     );
-    if (/payload\.kind === "place"[\s\S]*Free coordinate/.test(publishView)) {
-      publishBranches.add("coords");
-    }
     const mapWrites = new Set(
       Array.from(mapPicker.matchAll(/kind: "([^"]+)"/g), ([, kind]) => kind),
     );

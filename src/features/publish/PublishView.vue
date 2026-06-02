@@ -77,13 +77,15 @@ function applyHandoff(payload: PublishLocationHandoff) {
     geolocationHint.value = "";
     return;
   }
-  // Free coordinate — no place ID. Use the user-provided label when present,
-  // otherwise leave the place name empty so the user can fill it in. The
-  // hint copy nudges them to add a label.
-  draft.placeName.value = payload.label || draft.placeName.value;
-  locationOptions.clearMapLocation();
-  locationOptions.locationPanelOpen.value = true;
-  geolocationHint.value = PUBLISH_LOCATION_GEOLOC_HINT;
+  if (payload.kind === "coords") {
+    // Free coordinate — no place ID. Use the user-provided label when present,
+    // otherwise leave the place name empty so the user can fill it in. The
+    // hint copy nudges them to add a label.
+    draft.placeName.value = payload.label || draft.placeName.value;
+    locationOptions.clearMapLocation();
+    locationOptions.locationPanelOpen.value = true;
+    geolocationHint.value = PUBLISH_LOCATION_GEOLOC_HINT;
+  }
 }
 
 function consumeHandoff() {
