@@ -6,7 +6,10 @@ import { fileURLToPath } from "node:url";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
 const apiSource = fs.readFileSync(path.join(repoRoot, "src/api/channel.ts"), "utf8");
-const notificationsApiSource = fs.readFileSync(path.join(repoRoot, "src/api/notifications.ts"), "utf8");
+const notificationsApiSource = fs.readFileSync(
+  path.join(repoRoot, "src/api/notifications.ts"),
+  "utf8",
+);
 const notificationsSource = fs.readFileSync(
   path.join(repoRoot, "src/features/messages/useNotifications.ts"),
   "utf8",
@@ -100,7 +103,10 @@ test("api/notifications.ts treats missing read flags as already read", () => {
 test("useNotifications marks unread opened notifications locally before safe read POST fallback", () => {
   const localIdx = notificationsSource.indexOf("markNotificationReadLocally(item.id)");
   const postIdx = notificationsSource.indexOf("markNotificationsRead([item.id]).catch(() => {})");
-  assert.match(notificationsSource, /if \(item\.read \|\| item\.id === undefined \|\| item\.id === null\) return/);
+  assert.match(
+    notificationsSource,
+    /if \(item\.read \|\| item\.id === undefined \|\| item\.id === null\) return/,
+  );
   assert.ok(localIdx >= 0, "opened unread notifications should be marked read locally");
   assert.ok(postIdx >= 0, "opened unread notifications should post read state with safe fallback");
   assert.ok(localIdx < postIdx, "local read mark should not wait for the backend POST");

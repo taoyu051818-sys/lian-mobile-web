@@ -21,7 +21,11 @@ function item(id: string, read = false): NotificationItem {
   };
 }
 
-function response(items: NotificationItem[], hasMore = false, nextOffset = items.length): NotificationResponse {
+function response(
+  items: NotificationItem[],
+  hasMore = false,
+  nextOffset = items.length,
+): NotificationResponse {
   return { items, hasMore, nextOffset };
 }
 
@@ -118,7 +122,9 @@ describe("useNotifications", () => {
   });
 
   it("does not fetch more notifications when the current page is complete", async () => {
-    vi.mocked(notificationsApi.fetchNotifications).mockResolvedValue(response([item("n1")], false, 1));
+    vi.mocked(notificationsApi.fetchNotifications).mockResolvedValue(
+      response([item("n1")], false, 1),
+    );
 
     const notifications = useNotifications();
     await notifications.loadNotifications();
@@ -162,7 +168,9 @@ describe("useNotifications", () => {
           resolveReset = resolve;
         }),
       );
-    vi.mocked(notificationsApi.markNotificationsRead).mockRejectedValue(new Error("read endpoint missing"));
+    vi.mocked(notificationsApi.markNotificationsRead).mockRejectedValue(
+      new Error("read endpoint missing"),
+    );
 
     const notifications = useNotifications();
     await notifications.loadNotifications();
@@ -220,7 +228,9 @@ describe("useNotifications", () => {
     const notifications = useNotifications();
     await notifications.loadNotifications();
 
-    expect(() => notifications.openNotification(notifications.notificationItems.value[0])).not.toThrow();
+    expect(() =>
+      notifications.openNotification(notifications.notificationItems.value[0]),
+    ).not.toThrow();
 
     await new Promise((resolve) => queueMicrotask(resolve));
 
@@ -246,7 +256,9 @@ describe("useNotifications", () => {
 
   it("keeps read-on-open failures out of fetch state", async () => {
     vi.mocked(notificationsApi.fetchNotifications).mockResolvedValue(response([item("n1", false)]));
-    vi.mocked(notificationsApi.markNotificationsRead).mockRejectedValue(new LianApiError("expired", 401));
+    vi.mocked(notificationsApi.markNotificationsRead).mockRejectedValue(
+      new LianApiError("expired", 401),
+    );
 
     const notifications = useNotifications();
     await notifications.loadNotifications();

@@ -70,7 +70,7 @@ test("NotificationList renders three discriminated state surfaces with stable te
 });
 
 test("NotificationList keeps pagination reachable when the current filtered tab is empty", () => {
-  const pagedEmptyIdx = listSource.indexOf('!props.items.length && props.hasMore');
+  const pagedEmptyIdx = listSource.indexOf("!props.items.length && props.hasMore");
   const plainEmptyIdx = listSource.indexOf('!props.items.length" class="messages-view__state"');
   assert.ok(pagedEmptyIdx >= 0, "empty filtered notification tabs should still expose load more");
   assert.ok(

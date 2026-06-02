@@ -6,7 +6,10 @@ import { fileURLToPath } from "node:url";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
 const apiSource = fs.readFileSync(path.join(repoRoot, "src/api/channel.ts"), "utf8");
-const notificationsApiSource = fs.readFileSync(path.join(repoRoot, "src/api/notifications.ts"), "utf8");
+const notificationsApiSource = fs.readFileSync(
+  path.join(repoRoot, "src/api/notifications.ts"),
+  "utf8",
+);
 const notificationsSource = fs.readFileSync(
   path.join(repoRoot, "src/features/messages/useNotifications.ts"),
   "utf8",
@@ -74,7 +77,10 @@ test("normalizeNotificationResponse preserves explicit nextOffset=0 and falls ba
 });
 
 test("fetchNotifications requests limit and offset query parameters", () => {
-  assert.match(notificationsApiSource, /export async function fetchNotifications\(offset = 0, limit = 30\)/);
+  assert.match(
+    notificationsApiSource,
+    /export async function fetchNotifications\(offset = 0, limit = 30\)/,
+  );
   assert.match(notificationsApiSource, /params\.set\("limit", String\(limit\)\)/);
   assert.match(notificationsApiSource, /params\.set\("offset", String\(requestedOffset\)\)/);
   assert.match(notificationsApiSource, /`\/api\/messages\?\$\{params\.toString\(\)\}`/);
@@ -83,9 +89,15 @@ test("fetchNotifications requests limit and offset query parameters", () => {
 test("useNotifications tracks hasMore and loads additional pages from the current offset", () => {
   assert.match(notificationsSource, /const notificationHasMore = ref\(false\)/);
   assert.match(notificationsSource, /const notificationOffset = ref\(0\)/);
-  assert.match(notificationsSource, /fetchNotifications\(\s*reset \? 0 : notificationOffset\.value,\s*NOTIFICATION_PAGE_SIZE,\s*\)/);
+  assert.match(
+    notificationsSource,
+    /fetchNotifications\(\s*reset \? 0 : notificationOffset\.value,\s*NOTIFICATION_PAGE_SIZE,\s*\)/,
+  );
   assert.match(notificationsSource, /notificationHasMore\.value = Boolean\(response\.hasMore\)/);
-  assert.match(notificationsSource, /notificationOffset\.value = response\.nextOffset \?\? notificationItems\.value\.length/);
+  assert.match(
+    notificationsSource,
+    /notificationOffset\.value = response\.nextOffset \?\? notificationItems\.value\.length/,
+  );
   assert.match(notificationsSource, /if \(!notificationHasMore\.value\) return/);
   assert.match(notificationsSource, /await loadNotifications\(false\)/);
 });
@@ -94,7 +106,10 @@ test("useNotifications retries the last failed notification request mode", () =>
   assert.match(notificationsSource, /const notificationLastFailedReset = ref\(true\)/);
   assert.match(notificationsSource, /notificationLastFailedReset\.value = reset/);
   assert.match(notificationsSource, /async function retryNotifications\(\)/);
-  assert.match(notificationsSource, /await loadNotifications\(notificationLastFailedReset\.value\)/);
+  assert.match(
+    notificationsSource,
+    /await loadNotifications\(notificationLastFailedReset\.value\)/,
+  );
 });
 
 test("MessagesView routes notification error retry through retryNotifications", () => {
@@ -103,7 +118,10 @@ test("MessagesView routes notification error retry through retryNotifications", 
 });
 
 test("useNotifications preserves local read marks across paginated merges", () => {
-  assert.match(notificationsSource, /applyLocalReadMarks\(response\.items \|\| \[\], locallyReadNotificationIds\)/);
+  assert.match(
+    notificationsSource,
+    /applyLocalReadMarks\(response\.items \|\| \[\], locallyReadNotificationIds\)/,
+  );
   assert.match(notificationsSource, /current\?\.read \? \{ \.\.\.item, read: true \} : item/);
 });
 

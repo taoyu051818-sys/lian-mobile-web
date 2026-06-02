@@ -26,15 +26,15 @@ describe("notification API pagination and read state", () => {
     expect(
       notificationsApi.normalizeNotificationResponse({ items: [], nextOffset: 0 }, 30).nextOffset,
     ).toBe(0);
-    expect(notificationsApi.normalizeNotificationResponse({ items: [{ id: "n1" }] }, 10).nextOffset).toBe(
-      11,
-    );
+    expect(
+      notificationsApi.normalizeNotificationResponse({ items: [{ id: "n1" }] }, 10).nextOffset,
+    ).toBe(11);
   });
 
   it("normalizes backend read indicators without forcing missing values unread", () => {
     expect(
-      notificationsApi.normalizeNotificationResponse({ items: [{ id: "n1", read: true }] }).items?.[0]
-        ?.read,
+      notificationsApi.normalizeNotificationResponse({ items: [{ id: "n1", read: true }] })
+        .items?.[0]?.read,
     ).toBe(true);
     expect(
       notificationsApi.normalizeNotificationResponse({ items: [{ id: "n2" }] }).items?.[0]?.read,
