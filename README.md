@@ -41,6 +41,24 @@ Start the backend separately when smoke tests need live `/api/*` responses. Chec
 the GitHub control-plane trail from `taoyu051818-sys/lian-platform-server#424`
 first when a frontend lane depends on merged or in-flight backend contract truth.
 
+## Locale coverage and RTL scope
+
+The shipped mobile-web UI locale set is defined by `src/locales/resolveLocale.ts`
+and wired through `src/locales/index.ts`.
+
+- Shipped locales: zh-CN, zh-TW, en, ja, ko, ru, vi, id, es, fr, ar, de, it, pt, tr, th, mn, kk
+- Pre-BLCU baseline: zh-CN, zh-TW, en, ja
+- BLCU wave 1: ko, ru, vi, id, es, fr, ar
+- BLCU wave 2: de, it, pt, tr, th, mn, kk
+- RTL locales: ar
+
+BLCU waves 1-2 ship locale files, resolver mappings, runtime switching, and
+message-key parity against `zh-CN` for the registered locales above. RTL scope is
+limited to setting `<html lang>` and `<html dir>` from the active locale; only
+Arabic (`ar`) ships with `dir="rtl"` today. Merchant/errand domain constants that
+still live outside `src/locales/` are not claimed as localized by this coverage
+note.
+
 ## Toolchain baseline
 
 - `.nvmrc` pins the repo Node baseline to `22`.
