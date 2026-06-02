@@ -19,19 +19,29 @@ describe("publish location handoff structure", () => {
 
   it("keeps map picker and current-location writes on the shared handoff envelope", () => {
     expect(handoff).toContain('const STORAGE_KEY = "lian:publish:pendingLocation"');
-    expect(handoff).toMatch(/export type PublishLocationHandoff =\s*\| \{[\s\S]*kind: "place";[\s\S]*placeId: string;[\s\S]*lat: number;[\s\S]*lng: number;[\s\S]*\| \{[\s\S]*kind: "coords";[\s\S]*lat: number;[\s\S]*lng: number;/);
+    expect(handoff).toMatch(
+      /export type PublishLocationHandoff =\s*\| \{[\s\S]*kind: "place";[\s\S]*placeId: string;[\s\S]*lat: number;[\s\S]*lng: number;[\s\S]*\| \{[\s\S]*kind: "coords";[\s\S]*lat: number;[\s\S]*lng: number;/,
+    );
 
     expect(mapPicker).toMatch(/setPendingPublishLocation, type PublishLocationHandoff/);
     expect(mapPicker).toMatch(/function buildHandoff\(\): PublishLocationHandoff \| null/);
     expect(mapPicker).toMatch(/setPendingPublishLocation\(payload\);\s*navigateBack\(\);/);
 
-    expect(publishView).toMatch(/setPendingPublishLocation\(\{ kind: "coords", lat: coords\.lat, lng: coords\.lng \}\);\s*consumeHandoff\(\);/);
+    expect(publishView).toMatch(
+      /setPendingPublishLocation\(\{ kind: "coords", lat: coords\.lat, lng: coords\.lng \}\);\s*consumeHandoff\(\);/,
+    );
   });
 
   it("keeps publish as the single destructive consumer for both place and coords payloads", () => {
-    expect(publishView).toMatch(/const pending = consumePendingPublishLocation\(\);\s*if \(pending\) applyHandoff\(pending\);/);
-    expect(publishView).toMatch(/if \(payload\.kind === "place"\) \{[\s\S]*locationOptions\.selectMapLocation\(known\);[\s\S]*draft\.placeName\.value = payload\.name;/);
-    expect(publishView).toMatch(/draft\.placeName\.value = payload\.label \|\| draft\.placeName\.value;[\s\S]*locationOptions\.clearMapLocation\(\);[\s\S]*geolocationHint\.value = PUBLISH_LOCATION_GEOLOC_HINT;/);
+    expect(publishView).toMatch(
+      /const pending = consumePendingPublishLocation\(\);\s*if \(pending\) applyHandoff\(pending\);/,
+    );
+    expect(publishView).toMatch(
+      /if \(payload\.kind === "place"\) \{[\s\S]*locationOptions\.selectMapLocation\(known\);[\s\S]*draft\.placeName\.value = payload\.name;/,
+    );
+    expect(publishView).toMatch(
+      /draft\.placeName\.value = payload\.label \|\| draft\.placeName\.value;[\s\S]*locationOptions\.clearMapLocation\(\);[\s\S]*geolocationHint\.value = PUBLISH_LOCATION_GEOLOC_HINT;/,
+    );
   });
 
   it("keeps every handoff kind covered by publish consume and map write paths", () => {
@@ -39,7 +49,9 @@ describe("publish location handoff structure", () => {
     const publishBranches = new Set(
       Array.from(publishView.matchAll(/payload\.kind === "([^"]+)"/g), ([, kind]) => kind),
     );
-    const mapWrites = new Set(Array.from(mapPicker.matchAll(/kind: "([^"]+)"/g), ([, kind]) => kind));
+    const mapWrites = new Set(
+      Array.from(mapPicker.matchAll(/kind: "([^"]+)"/g), ([, kind]) => kind),
+    );
 
     expect(publishBranches).toEqual(handoffKinds);
     expect(mapWrites).toEqual(handoffKinds);
