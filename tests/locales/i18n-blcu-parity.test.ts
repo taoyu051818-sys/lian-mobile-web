@@ -1,4 +1,6 @@
 import { describe, it, expect } from "vitest";
+import { readFileSync } from "node:fs";
+import { SUPPORTED_LOCALES, RTL_LOCALES } from "../../src/locales/resolveLocale";
 import zhCN from "../../src/locales/zh-CN";
 import fr from "../../src/locales/fr";
 import ar from "../../src/locales/ar";
@@ -21,6 +23,14 @@ function flattenKeys(obj: Record<string, unknown>, prefix = ""): string[] {
     }
   }
   return keys.sort();
+}
+
+function readReadme(): string {
+  return readFileSync(new URL("../../README.md", import.meta.url), "utf8").replace(/\r\n/g, "\n");
+}
+
+function expectReadmeList(readme: string, title: string, locales: readonly string[]): void {
+  expect(readme).toContain(`${title}: ${locales.join(", ")}`);
 }
 
 describe("BLCU locale parity vs zh-CN", () => {
@@ -69,5 +79,20 @@ describe("BLCU locale parity vs zh-CN", () => {
   it("kk has the same key set as zh-CN", () => {
     const target = flattenKeys(kk as Record<string, unknown>);
     expect(target).toEqual(baseline);
+  });
+});
+
+describe("README i18n coverage note", () => {
+  it("records shipped BLCU wave coverage and RTL scope", () => {
+    const readme = readReadme();
+
+    expectReadmeList(readme, "Shipped locales", SUPPORTED_LOCALES);
+    expectReadmeList(readme, "Pre-BLCU baseline", ["zh-CN", "zh-TW", "en", "ja"]);
+    expectReadmeList(readme, "BLCU wave 1", ["ko", "ru", "vi", "id", "es", "fr", "ar"]);
+    expectReadmeList(readme, "BLCU wave 2", ["de", "it", "pt", "tr", "th", "mn", "kk"]);
+    expectReadmeList(readme, "RTL locales", RTL_LOCALES);
+    expect(readme).toMatch(
+      /RTL scope is\s+limited to setting `<html lang>` and `<html dir>` from the active locale; only\s+Arabic \(`ar`\) ships with `dir="rtl"` today\./,
+    );
   });
 });
