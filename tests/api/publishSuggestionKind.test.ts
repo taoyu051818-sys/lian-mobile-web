@@ -28,6 +28,7 @@ describe("coerceSuggestedComponentKind (V0.3 B2)", () => {
       "merchant",
       "trade",
       "help",
+      "groupbuy",
     ];
     for (const kind of v2) {
       expect(coerceSuggestedComponentKind(kind)).toBe(kind);
@@ -53,11 +54,11 @@ describe("coerceSuggestedComponentKind (V0.3 B2)", () => {
 });
 
 describe("isSuggestedComponentKind (V0.3 B2)", () => {
-  it("accepts only the 10 canonical V2 kinds", () => {
+  it("accepts only the 11 canonical V2 kinds", () => {
     for (const kind of SUGGESTED_COMPONENT_KINDS) {
       expect(isSuggestedComponentKind(kind)).toBe(true);
     }
-    expect(SUGGESTED_COMPONENT_KINDS).toHaveLength(10);
+    expect(SUGGESTED_COMPONENT_KINDS).toHaveLength(11);
   });
 
   it("rejects legacy V1 kinds — V1 is wire-input only, never a UI shape", () => {

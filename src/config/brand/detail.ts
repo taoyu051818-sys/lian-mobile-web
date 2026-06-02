@@ -129,6 +129,20 @@ export const HELP_ACTION_UNAVAILABLE = "求助操作暂时不可用，可以稍�
 export const HELP_VOTE_SUCCESS = "已支持，谢谢。";
 export const HELP_UNVOTE_SUCCESS = "已取消支持。";
 
+export const GROUPBUY_BLOCK_LABEL = "拼单信息";
+export const GROUPBUY_STATE_FORMING = "拼单中";
+export const GROUPBUY_STATE_SUCCESS = "已成团";
+export const GROUPBUY_STATE_FAILED = "未成团";
+export const GROUPBUY_STATE_CLOSED = "已结束";
+export const GROUPBUY_STATE_UNKNOWN_PREFIX = "状态";
+export const GROUPBUY_PARTICIPANT_LABEL = "参与人数";
+export const GROUPBUY_TARGET_UNSET = "待确认";
+export const GROUPBUY_JOINED = "已参与";
+export const GROUPBUY_JOIN_CTA = "我想参与";
+export const GROUPBUY_CHANNEL_LABEL = "频道入口";
+export const GROUPBUY_CHANNEL_PREFIX = "进入频道";
+export const GROUPBUY_SETTLEMENT_HINT = "拼单结算与支付以后端开放为准，当前先在频道里确认细节。";
+
 /**
  * PRD V0.3 §2.4 — 帖子图谱 relations 渲染。`type` 是后端 source-of-truth，
  * 前端只做人类可读的标签映射；未知 type 直接展示原始字面量。
@@ -141,6 +155,8 @@ export const RELATION_TYPE_EVENT_RECAP = "活动回顾";
 export const RELATION_TYPE_MERCHANT_ERRAND = "代办";
 export const RELATION_TYPE_PROJECT_SUBMISSION = "项目投稿";
 export const RELATION_TYPE_EVENT_REWARD = "活动奖励";
+export const RELATION_TYPE_GROUPBUY_JOINED = "参与拼单";
+export const RELATION_TYPE_GROUPBUY_CREATED = "发起拼单";
 
 /**
  * PRD V0.3 §2.4 — 后端授权动作渲染。`type` 同 relations，前端做 fallback

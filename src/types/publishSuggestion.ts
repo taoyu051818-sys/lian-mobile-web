@@ -3,7 +3,7 @@
  *
  * PRD V0.3 stage B2 (paired with ps#624): the AI preview now emits canonical
  * V2 component kinds — `location | time | media | quality | audience | tags |
- * event | merchant | trade | help`. The wire still tolerates the legacy V1
+ * event | merchant | trade | help | groupbuy`. The wire still tolerates the legacy V1
  * type strings (`event_time / price / merchant_info / trade_condition /
  * help_tag`) so an older client/server combo doesn't black-hole the ghost
  * list; `parseSuggestedComponents` in `aiPreview.ts` is the single point of
@@ -30,7 +30,8 @@ export type SuggestedComponentKind =
   | "event"
   | "merchant"
   | "trade"
-  | "help";
+  | "help"
+  | "groupbuy";
 
 /** V1 wire-only kinds we still tolerate on input. Mapped to V2 by the parser. */
 export type LegacySuggestedComponentKind =
@@ -57,6 +58,7 @@ export const SUGGESTED_COMPONENT_KINDS: ReadonlyArray<SuggestedComponentKind> = 
   "merchant",
   "trade",
   "help",
+  "groupbuy",
 ];
 
 /**

@@ -145,6 +145,7 @@ export const PUBLISH_SUGGESTED_KIND_ICON_EVENT = "📅";
 export const PUBLISH_SUGGESTED_KIND_ICON_MERCHANT = "🏪";
 export const PUBLISH_SUGGESTED_KIND_ICON_TRADE = "📦";
 export const PUBLISH_SUGGESTED_KIND_ICON_HELP = "🤝";
+export const PUBLISH_SUGGESTED_KIND_ICON_GROUPBUY = "拼";
 
 /** 发布事件 (PRD V0.1 §6.3 / §11.2) */
 export const PUBLISH_POST_TYPE_LABEL = "内容类型";

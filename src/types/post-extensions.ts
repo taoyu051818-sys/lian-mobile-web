@@ -262,7 +262,8 @@ export type MetadataComponentType =
   | "event"
   | "merchant"
   | "trade"
-  | "help";
+  | "help"
+  | "groupbuy";
 
 /**
  * V2 LocationComponent — structured place/location data.
@@ -334,6 +335,21 @@ export interface HelpComponentV2 {
   linkedEventTid?: number;
 }
 
+export type GroupbuyState = "forming" | "success" | "failed" | "closed" | (string & {});
+
+/**
+ * V2 GroupbuyComponent — group-buy participation metadata.
+ */
+export interface GroupbuyComponentV2 {
+  type: "groupbuy";
+  groupbuyId?: string;
+  state?: GroupbuyState;
+  participantCount?: number;
+  targetCount?: number;
+  channelId?: string;
+  joined?: boolean;
+}
+
 /**
  * Union of all V2 metadata component types.
  */
@@ -343,7 +359,8 @@ export type MetadataComponentV2 =
   | EventComponentV2
   | MerchantComponentV2
   | TradeComponentV2
-  | HelpComponentV2;
+  | HelpComponentV2
+  | GroupbuyComponentV2;
 
 /**
  * V2 metadata block as returned by the backend when `components` is present.
