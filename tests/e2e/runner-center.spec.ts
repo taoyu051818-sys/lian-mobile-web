@@ -40,7 +40,7 @@ async function transition(api: APIRequestContext, orderId: string, action: strin
 }
 
 test.describe("@runner runner center @runner-center", () => {
-  test("@runner runner_verified user can list available orders", async () => {
+  test("@runner runner-tagged user can list available orders", async () => {
     if (!isRoleConfigured("runner")) {
       test.skip(true, "runner role not configured — set LIAN_E2E_RUNNER_USERNAME/PASSWORD");
       return;
@@ -94,7 +94,7 @@ test.describe("@runner runner center @runner-center", () => {
     }
   });
 
-  test("@errand-transition runner_verified user advances accept -> pickup -> deliver", async () => {
+  test("@errand-transition runner-tagged user advances accept -> pickup -> deliver", async () => {
     if (!isRoleConfigured("runner")) {
       test.skip(true, "runner role not configured — set LIAN_E2E_RUNNER_USERNAME/PASSWORD");
       return;

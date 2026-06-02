@@ -5,6 +5,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
+const runnerVerifiedShorthand = "runner" + "_verified";
 
 function read(rel) {
   return fs.readFileSync(path.join(repoRoot, rel), "utf8");
@@ -85,6 +86,35 @@ test("VerificationView renders all 5 verification descriptors", () => {
   ]) {
     assert.match(src, new RegExp(`tag:\\s*"${tag}"`));
   }
+});
+
+test("runner verification surfaces use the backend canonical tag", () => {
+  const typeSrc = read("src/types/verification.ts");
+  const descriptorSrc = read("src/features/verification/verification-format.ts");
+  const runnerFixtureSrc = read("tests/e2e/fixtures/accounts.ts");
+  const runnerCenterSrc = read("src/features/runner/useRunnerCenter.ts");
+  const profileBadgeSrc = read("src/features/profile/ProfileVerificationBadges.vue");
+
+  for (const src of [typeSrc, descriptorSrc, runnerFixtureSrc, runnerCenterSrc, profileBadgeSrc]) {
+    assert.match(src, /"runner"/);
+    assert.doesNotMatch(src, new RegExp(runnerVerifiedShorthand));
+  }
+  assert.match(runnerFixtureSrc, /expectedTags:\s*\["runner"\]/);
+  assert.match(runnerCenterSrc, /flat\.has\("runner"\)/);
+  assert.match(profileBadgeSrc, /data-tag="runner"/);
+});
+
+test("docs name runner verification with the backend canonical tag", () => {
+  const readmeSrc = read("README.md");
+  const prdSrc = read("docs/product/PRD_WAP_SECURITY_AUDIENCE_EVENT_V0.1.md");
+
+  assert.match(readmeSrc, /runner capability uses `runner` as the canonical verification tag/);
+  assert.match(readmeSrc, new RegExp(`Do not introduce \`${runnerVerifiedShorthand}\``));
+  assert.match(prdSrc, /\|\s*`runner`\s*\|\s*跑腿骑手权限\s*\|/);
+  assert.doesNotMatch(
+    prdSrc,
+    new RegExp(`\\|\\s*\`${runnerVerifiedShorthand}\`\\s*\\|\\s*跑腿骑手权限\\s*\\|`),
+  );
 });
 
 test("VerificationView wires the campus-email send + confirm flow", () => {

@@ -163,6 +163,8 @@ failed) so a missing seed never silently passes as green.
 | `event_creator` | `LIAN_E2E_EVENT_CREATOR_USERNAME` | `LIAN_E2E_EVENT_CREATOR_PASSWORD` | `campus_verified`, `realname_verified`               |
 | `org_member`    | `LIAN_E2E_ORG_MEMBER_USERNAME`    | `LIAN_E2E_ORG_MEMBER_PASSWORD`    | `campus_verified`, `org_member`                      |
 
+The runner capability uses `runner` as the canonical verification tag across frontend and backend runner gates. Do not introduce `runner_verified`; treat it as product-language shorthand, not a wire-format tag.
+
 The `event_creator` / `org_member` accounts back the rewarded-event journey
 landed by `lian-platform-server` PR #443 (issue #439). The same backend seeds
 a deterministic rewarded event at tid `156` and surfaces it via
