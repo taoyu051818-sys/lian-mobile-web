@@ -6,6 +6,14 @@ import { fileURLToPath } from "node:url";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
 const apiSource = fs.readFileSync(path.join(repoRoot, "src/api/channel.ts"), "utf8");
+const notificationsApiSource = fs.readFileSync(
+  path.join(repoRoot, "src/api/notifications.ts"),
+  "utf8",
+);
+const notificationsSource = fs.readFileSync(
+  path.join(repoRoot, "src/features/messages/useNotifications.ts"),
+  "utf8",
+);
 const channelSource = fs.readFileSync(
   path.join(repoRoot, "src/features/messages/useChannelMessages.ts"),
   "utf8",
@@ -14,9 +22,9 @@ const typesSource = fs.readFileSync(path.join(repoRoot, "src/types/messages.ts")
 
 // --- ChannelReadPayload type ---
 
-test("types/messages.ts defines ChannelReadPayload with messageIds and readerId", () => {
+test("types/messages.ts defines ChannelReadPayload with eventIds and readerId", () => {
   assert.match(typesSource, /export interface ChannelReadPayload/);
-  assert.match(typesSource, /messageIds: Array<string \| number>/);
+  assert.match(typesSource, /eventIds: Array<string \| number>/);
   assert.match(typesSource, /readerId: string/);
 });
 
@@ -29,8 +37,8 @@ test("api/channel.ts exports buildChannelReadPayload", () => {
   );
 });
 
-test("buildChannelReadPayload returns { messageIds, readerId } shape", () => {
-  assert.match(apiSource, /return \{ messageIds, readerId: ensureClientId\(\) \}/);
+test("buildChannelReadPayload returns { eventIds, readerId } shape", () => {
+  assert.match(apiSource, /return \{ eventIds: messageIds, readerId: ensureClientId\(\) \}/);
 });
 
 // --- markChannelMessagesRead ---
@@ -71,6 +79,37 @@ test("useChannelMessages imports markChannelMessagesRead from api/channel", () =
 test("useChannelMessages calls markChannelMessagesRead only on reset loads", () => {
   assert.match(channelSource, /if \(reset && channelItems\.value\.length\)/);
   assert.match(channelSource, /markChannelMessagesRead\(ids\)\.catch\(\(\) => \{\}\)/);
+});
+
+// --- notification read-on-open wiring ---
+
+test("types/messages.ts defines NotificationReadPayload with eventIds", () => {
+  assert.match(typesSource, /export interface NotificationReadPayload/);
+  assert.match(typesSource, /eventIds: Array<string \| number>/);
+});
+
+test("api/notifications.ts posts notification read state to the messages read endpoint", () => {
+  assert.match(notificationsApiSource, /export function buildNotificationReadPayload/);
+  assert.match(notificationsApiSource, /return \{ eventIds: notificationIds \}/);
+  assert.match(notificationsApiSource, /if \(!notificationIds\.length\) return/);
+  assert.match(notificationsApiSource, /apiSend\("\/api\/messages\/read"/);
+  assert.match(notificationsApiSource, /body: JSON\.stringify\(payload\)/);
+});
+
+test("api/notifications.ts treats missing read flags as already read", () => {
+  assert.match(notificationsApiSource, /read:\s*raw\.read \?\? true/);
+});
+
+test("useNotifications marks unread opened notifications locally before safe read POST fallback", () => {
+  const localIdx = notificationsSource.indexOf("markNotificationReadLocally(item.id)");
+  const postIdx = notificationsSource.indexOf("markNotificationsRead([item.id]).catch(() => {})");
+  assert.match(
+    notificationsSource,
+    /if \(item\.read \|\| item\.id === undefined \|\| item\.id === null\) return/,
+  );
+  assert.ok(localIdx >= 0, "opened unread notifications should be marked read locally");
+  assert.ok(postIdx >= 0, "opened unread notifications should post read state with safe fallback");
+  assert.ok(localIdx < postIdx, "local read mark should not wait for the backend POST");
 });
 
 // --- nextOffset=0 semantics (pure JS logic) ---

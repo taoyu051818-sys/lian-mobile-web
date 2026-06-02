@@ -35,18 +35,25 @@ test("NotificationList adds click and keyboard handlers on notification articles
   assert.match(listSource, /@keydown\.enter="openNotification\(item\)"/);
 });
 
-test("NotificationList marks clickable notifications with role=button and tabindex", () => {
-  assert.match(listSource, /role="button"/);
-  assert.match(listSource, /tabindex/);
+test("NotificationList marks clickable notifications with dynamic role and tabindex", () => {
+  assert.match(listSource, /:role="isClickable\(item\) \? 'button' : undefined"/);
+  assert.match(listSource, /:tabindex="isClickable\(item\) \? 0 : undefined"/);
 });
 
-test("NotificationList applies is-clickable class only when tid is valid", () => {
-  assert.match(listSource, /'is-clickable':\s*Number\(item\.tid\)\s*>\s*0/);
+test("NotificationList applies is-clickable class for supported target kinds", () => {
+  assert.match(listSource, /'is-clickable':\s*isClickable\(item\)/);
 });
 
 test("NotificationList has cursor pointer style for clickable notifications", () => {
   assert.match(listSource, /\.messages-view__notification\.is-clickable/);
   assert.match(listSource, /cursor:\s*pointer/);
+});
+test("NotificationList does not emit open-item for non-clickable fallback notifications", () => {
+  const fallbackClassIdx = listSource.indexOf("'is-fallback': item.target?.kind === 'none'");
+  const emitIdx = listSource.indexOf('if (isClickable(item)) emit("open-item", item)');
+  assert.ok(fallbackClassIdx >= 0, "fallback notifications should render as non-clickable cards");
+  assert.ok(emitIdx >= 0, "open-item emit should stay behind the isClickable guard");
+  assert.match(listSource, /:data-target-kind="item\.target\?\.kind \|\| 'none'"/);
 });
 
 test("MessagesView wires notification detail through useDetailNavigation", () => {

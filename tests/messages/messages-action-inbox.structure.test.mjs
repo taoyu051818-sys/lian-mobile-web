@@ -34,12 +34,9 @@ test("NotificationTarget includes the errand-order deep-link shape", () => {
   assert.match(typesSource, /\{ kind: "errand-order"; orderId: string \}/);
 });
 
-test("MessagesView imports the inbox helper, errand-order route, and new notification tab labels", () => {
+test("MessagesView imports the inbox helper and errand-order route", () => {
   assert.match(viewSource, /from "\.\/messageInbox"/);
   assert.match(viewSource, /useErrandOrderRoute/);
-  assert.match(viewSource, /MESSAGE_TAB_REPLIES/);
-  assert.match(viewSource, /MESSAGE_TAB_SYSTEM/);
-  assert.match(viewSource, /MESSAGE_TAB_ORDERS/);
 });
 
 test("MessagesView filters notifications by inbox tab instead of one shared notifications tab", () => {
@@ -70,6 +67,17 @@ test("NotificationList renders three discriminated state surfaces with stable te
   assert.match(listSource, /data-testid="messages-empty"/);
   assert.match(listSource, /data-testid="messages-error"/);
   assert.match(listSource, /data-testid="messages-auth-required"/);
+});
+
+test("NotificationList keeps pagination reachable when the current filtered tab is empty", () => {
+  const pagedEmptyIdx = listSource.indexOf("!props.items.length && props.hasMore");
+  const plainEmptyIdx = listSource.indexOf('!props.items.length" class="messages-view__state"');
+  assert.ok(pagedEmptyIdx >= 0, "empty filtered notification tabs should still expose load more");
+  assert.ok(
+    pagedEmptyIdx < plainEmptyIdx,
+    "the paged-empty branch must run before the plain empty-state branch",
+  );
+  assert.match(listSource, /@click="emit\('loadMore'\)"/);
 });
 
 test("NotificationList no longer renders the engineering channel readout chrome (#828)", () => {
