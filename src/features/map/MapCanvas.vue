@@ -65,6 +65,8 @@ const stageEl = ref<HTMLElement | null>(null);
 const map = shallowRef<LeafletMapLike | null>(null);
 let baseOverlay: LeafletImageOverlayLike | null = null;
 let zoomControl: LeafletZoomControlLike | null = null;
+let initSizeTimer: ReturnType<typeof setTimeout> | null = null;
+let clearLongpressTimer: (() => void) | null = null;
 
 const visibleLayersComputed = computed(() => props.visibleLayers || {});
 const bounds = computed(() => props.mapData?.bounds || DEFAULT_BOUNDS);
@@ -100,6 +102,13 @@ function detachZoomControl() {
     (zoomControl as { remove(): void }).remove();
   }
   zoomControl = null;
+}
+
+function clearInitSizeTimer() {
+  if (initSizeTimer !== null) {
+    clearTimeout(initSizeTimer);
+    initSizeTimer = null;
+  }
 }
 
 function initMap() {
@@ -160,7 +169,9 @@ function initMap() {
   newMap.on("zoomend resize", renderMap);
   attachLongpressHandlers(newMap);
   map.value = newMap;
-  setTimeout(() => {
+  clearInitSizeTimer();
+  initSizeTimer = setTimeout(() => {
+    initSizeTimer = null;
     map.value?.invalidateSize();
     applyMapIconScale();
   }, 80);
@@ -234,6 +245,7 @@ function attachLongpressHandlers(mapInstance: LeafletMapLike) {
   });
 
   m.on("mousedown", (event) => {
+    clearTimer();
     if (!event.containerPoint) return;
     startPoint = { x: event.containerPoint.x, y: event.containerPoint.y };
     const target = event.latlng;
@@ -255,6 +267,8 @@ function attachLongpressHandlers(mapInstance: LeafletMapLike) {
   // Pan / zoom should never count as a long-press regardless of timer state.
   m.on("dragstart", clearTimer);
   m.on("zoomstart", clearTimer);
+  clearLongpressTimer?.();
+  clearLongpressTimer = clearTimer;
 }
 
 watch(
@@ -272,6 +286,9 @@ watch(
 );
 
 onBeforeUnmount(() => {
+  clearInitSizeTimer();
+  clearLongpressTimer?.();
+  clearLongpressTimer = null;
   detachZoomControl();
   map.value?.remove();
   map.value = null;

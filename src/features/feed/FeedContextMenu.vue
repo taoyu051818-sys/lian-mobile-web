@@ -44,6 +44,14 @@ const emit = defineEmits<{
 const reduced = useReducedMotion();
 const menuRef = ref<HTMLElement | null>(null);
 const isVisible = ref(false);
+let hideTimer: ReturnType<typeof setTimeout> | null = null;
+
+function clearHideTimer() {
+  if (hideTimer !== null) {
+    clearTimeout(hideTimer);
+    hideTimer = null;
+  }
+}
 
 // Lock body scroll when menu is open
 useBodyScrollLock(computed(() => props.visible));
@@ -53,13 +61,17 @@ watch(
   () => props.visible,
   (visible) => {
     if (visible) {
+      clearHideTimer();
       isVisible.value = true;
     } else {
       // Delay hiding for exit animation (skip if reduced motion)
       if (reduced.value) {
+        clearHideTimer();
         isVisible.value = false;
       } else {
-        setTimeout(() => {
+        clearHideTimer();
+        hideTimer = setTimeout(() => {
+          hideTimer = null;
           isVisible.value = false;
         }, 160);
       }
@@ -132,6 +144,7 @@ onMounted(() => {
 });
 
 onBeforeUnmount(() => {
+  clearHideTimer();
   if (typeof window !== "undefined") {
     window.removeEventListener("keydown", handleKeydown);
   }

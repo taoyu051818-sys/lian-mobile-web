@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from "vue";
+import { computed, onBeforeUnmount, ref } from "vue";
 import { InlineError, LianButton } from "../../ui";
 import {
   ADMIN_AUTH_LINK_AUDIENCE_LABEL,
@@ -74,6 +74,14 @@ const formTtlSeconds = ref(86400);
 const formGrantRole = ref("");
 const formGrantVerification = ref<AuthLinkGrantKind | "">("");
 const copyFeedback = ref("");
+let copyFeedbackTimer: ReturnType<typeof setTimeout> | null = null;
+
+function clearCopyFeedbackTimer() {
+  if (copyFeedbackTimer !== null) {
+    clearTimeout(copyFeedbackTimer);
+    copyFeedbackTimer = null;
+  }
+}
 
 const ttlOptions = [
   { value: 3600, label: ADMIN_AUTH_LINK_FORM_TTL_1H },
@@ -147,8 +155,10 @@ async function handleCopyUrl(link: AuthLink) {
   const url = buildAuthLinkUrl(link.token);
   try {
     await navigator.clipboard.writeText(url);
+    clearCopyFeedbackTimer();
     copyFeedback.value = link.token;
-    setTimeout(() => {
+    copyFeedbackTimer = setTimeout(() => {
+      copyFeedbackTimer = null;
       if (copyFeedback.value === link.token) copyFeedback.value = "";
     }, 2000);
     emit("copyUrl", link.token);
@@ -170,6 +180,8 @@ function truncateToken(token: string): string {
   if (token.length <= 12) return token;
   return `${token.slice(0, 8)}...${token.slice(-4)}`;
 }
+
+onBeforeUnmount(clearCopyFeedbackTimer);
 </script>
 
 <template>
