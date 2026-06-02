@@ -77,6 +77,12 @@ export interface NotificationItem {
 
 export interface NotificationResponse {
   items?: NotificationItem[];
+  hasMore?: boolean;
+  nextOffset?: number;
+}
+
+export interface NotificationReadPayload {
+  eventIds: Array<string | number>;
 }
 
 export interface SendChannelMessagePayload {

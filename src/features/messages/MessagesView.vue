@@ -40,8 +40,16 @@ const {
   sendMessage,
   retryMessage: channelRetryMessage,
 } = useChannelMessages();
-const { notificationItems, notificationLoading, notificationFetchState, loadNotifications } =
-  useNotifications();
+const {
+  notificationItems,
+  notificationLoading,
+  notificationFetchState,
+  notificationHasMore,
+  loadNotifications,
+  loadMoreNotifications,
+  retryNotifications,
+  openNotification: markNotificationOpened,
+} = useNotifications();
 const {
   composerContent,
   composerIdentityTag,
@@ -66,6 +74,7 @@ const detail = useDetailNavigation();
 const errandOrderRoute = useErrandOrderRoute();
 
 function openNotification(item: NotificationItem) {
+  markNotificationOpened(item);
   const target = item.target;
   if (!target) return;
   if (target.kind === "detail") {
@@ -214,11 +223,13 @@ onMounted(async () => {
       :items="visibleNotificationItems"
       :loading="notificationLoading"
       :fetch-state="notificationFetchState"
+      :has-more="notificationHasMore"
       :title="activeNotificationSpec?.title"
       :hint="activeNotificationSpec?.hint"
       :empty-title="activeNotificationSpec?.emptyTitle"
       :empty-body="activeNotificationSpec?.emptyBody"
-      @retry="loadNotifications"
+      @retry="retryNotifications"
+      @load-more="loadMoreNotifications"
       @auth-required="setActiveView('profile')"
       @open-item="openNotification"
     />

@@ -92,7 +92,7 @@ test("normalizeChannelMessage computes isSelf only when actor id is authoritativ
 });
 
 test("fetchChannelMessages normalizes items before returning", () => {
-  assert.match(apiMessages, /response\.items\?\.map\(normalizeChannelMessage\)/);
+  assert.match(apiMessages, /rawItems\.map\(normalizeChannelMessage\)/);
 });
 
 // --- useChannelMessages ownership usage ---

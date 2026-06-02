@@ -1,4 +1,4 @@
-import { apiGet } from "./http";
+import { apiGet, apiSend } from "./http";
 import { normalizeDisplayActor, normalizePostRelations } from "../platform/api-normalizers";
 import {
   NOTIF_ERRAND_ORDER_ACCEPTED_BODY,
@@ -41,6 +41,7 @@ import {
 import type {
   NotificationItem,
   NotificationKind,
+  NotificationReadPayload,
   NotificationResponse,
   NotificationTarget,
 } from "../types/messages";
@@ -75,6 +76,8 @@ interface RawNotificationItem {
 interface RawNotificationResponse {
   items?: RawNotificationItem[];
   notifications?: RawNotificationItem[];
+  hasMore?: boolean;
+  nextOffset?: number;
 }
 
 const REPLY_NOTIFICATION_TYPES = ["reply", "post-reply", "new-reply", "new-post", "comment"];
@@ -636,16 +639,39 @@ export function normalizeNotificationItem(raw: RawNotificationItem): Notificatio
 
 export function normalizeNotificationResponse(
   response: RawNotificationResponse | NotificationResponse,
+  requestedOffset = 0,
 ): NotificationResponse {
   const rawItems =
     "notifications" in response ? response.notifications || [] : response.items || [];
   return {
     ...response,
     items: rawItems.map((item) => normalizeNotificationItem(item as RawNotificationItem)),
+    nextOffset: response.nextOffset ?? Math.max(0, requestedOffset) + rawItems.length,
   };
 }
 
-export async function fetchNotifications(): Promise<NotificationResponse> {
-  const response = await apiGet<RawNotificationResponse>("/api/messages");
-  return normalizeNotificationResponse(response);
+export async function fetchNotifications(offset = 0, limit = 30): Promise<NotificationResponse> {
+  const params = new URLSearchParams();
+  const requestedOffset = Math.max(0, offset);
+  params.set("limit", String(limit));
+  params.set("offset", String(requestedOffset));
+  const response = await apiGet<RawNotificationResponse>(`/api/messages?${params.toString()}`);
+  return normalizeNotificationResponse(response, requestedOffset);
+}
+
+export function buildNotificationReadPayload(
+  notificationIds: Array<string | number>,
+): NotificationReadPayload {
+  return { eventIds: notificationIds };
+}
+
+export async function markNotificationsRead(
+  notificationIds: Array<string | number>,
+): Promise<void> {
+  if (!notificationIds.length) return;
+  const payload = buildNotificationReadPayload(notificationIds);
+  await apiSend("/api/messages/read", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
 }

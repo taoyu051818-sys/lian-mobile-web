@@ -6,6 +6,7 @@ import {
   NOTIFICATION_READ,
   NOTIFICATION_UNREAD,
   NOTIFICATION_DEFAULT_TITLE,
+  NOTIFICATION_LOAD_MORE,
   NOTIFICATION_REPLY_LABEL,
   NOTIFICATION_ACTOR_LABEL,
   NOTIFICATION_KIND_REPLY,
@@ -22,8 +23,6 @@ import {
   MESSAGES_ERROR_RETRY,
   RELATION_TYPE_EVENT_RECAP,
   RELATION_TYPE_EVENT_REWARD,
-  RELATION_TYPE_GROUPBUY_CREATED,
-  RELATION_TYPE_GROUPBUY_JOINED,
   RELATION_TYPE_HELP_EVENT_LINK,
   RELATION_TYPE_MERCHANT_ERRAND,
   RELATION_TYPE_PROJECT_SUBMISSION,
@@ -48,6 +47,7 @@ const props = withDefaults(
      *   - "idle": ready, possibly empty.
      */
     fetchState?: NotificationFetchState;
+    hasMore?: boolean;
     title?: string;
     hint?: string;
     emptyTitle?: string;
@@ -55,6 +55,7 @@ const props = withDefaults(
   }>(),
   {
     fetchState: "idle",
+    hasMore: false,
     title: "",
     hint: "",
     emptyTitle: "",
@@ -64,6 +65,7 @@ const props = withDefaults(
 
 const emit = defineEmits<{
   retry: [];
+  loadMore: [];
   "open-item": [item: NotificationItem];
   "auth-required": [];
 }>();
@@ -75,8 +77,6 @@ const RELATION_TYPE_LABEL: Record<string, string> = {
   merchant_errand: RELATION_TYPE_MERCHANT_ERRAND,
   project_submission: RELATION_TYPE_PROJECT_SUBMISSION,
   event_reward: RELATION_TYPE_EVENT_REWARD,
-  groupbuy_joined: RELATION_TYPE_GROUPBUY_JOINED,
-  groupbuy_created: RELATION_TYPE_GROUPBUY_CREATED,
 };
 
 function relationTypeLabel(type: string): string {
@@ -183,12 +183,34 @@ function openNotification(item: NotificationItem) {
       {{ LOADING_NOTIFICATION }}
     </div>
 
+    <div
+      v-else-if="!props.items.length && props.hasMore"
+      class="messages-view__state"
+      data-testid="messages-paged-empty"
+    >
+      <strong v-if="props.emptyTitle">{{ props.emptyTitle }}</strong>
+      <p v-if="props.emptyBody">{{ props.emptyBody }}</p>
+      <LianButton variant="ghost" :loading="props.loading" @click="emit('loadMore')">{{
+        NOTIFICATION_LOAD_MORE
+      }}</LianButton>
+    </div>
+
     <div v-else-if="!props.items.length" class="messages-view__state" data-testid="messages-empty">
       <strong v-if="props.emptyTitle">{{ props.emptyTitle }}</strong>
       <p v-if="props.emptyBody">{{ props.emptyBody }}</p>
     </div>
 
     <div v-else class="messages-view__list" aria-live="polite">
+      <div class="messages-view__load-more">
+        <LianButton
+          v-if="props.hasMore"
+          variant="ghost"
+          :loading="props.loading"
+          @click="emit('loadMore')"
+          >{{ NOTIFICATION_LOAD_MORE }}</LianButton
+        >
+      </div>
+
       <!--
         Performance: v-memo skips re-rendering notification items when their
         key properties haven't changed. Notifications are immutable once
