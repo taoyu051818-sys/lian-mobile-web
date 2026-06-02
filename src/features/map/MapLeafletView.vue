@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, onActivated, onMounted, watch } from "vue";
+import type { FeedItemId } from "../../types/feed";
 import type { MapLocation, MapPost } from "../../types/map";
 import type { PageChromeSpec } from "../../shell/page-model";
 import MapCanvas from "./MapCanvas.vue";
@@ -24,9 +25,15 @@ const { filterActive, toggleFilter, MAP_FILTERS } = useMapChrome();
 
 const { mapData, roadPreview, loading, errorMessage, loadMap } = useMapDataCache();
 
-const { selectedTarget, selectLocation, closePlaceSheet } = useMapSelection(
-  () => mapData.value?.posts || [],
-);
+const {
+  selectedTarget,
+  selectedPlaceSheet,
+  placeSheetLoading,
+  placeSheetError,
+  selectLocation,
+  openPlaceSheet,
+  closePlaceSheet,
+} = useMapSelection(() => mapData.value?.posts || []);
 
 // mw#943 — picker mode is driven by `#/map?picker=1`. The composable owns
 // the URL query read, picker selection state, and the confirm/cancel
@@ -70,7 +77,12 @@ function handlePlaceSelect(place: MapLocation | MapPost) {
     detail.open(Number(place.tid), "card");
   } else {
     selectLocation(place);
+    void openPlaceSheet(place);
   }
+}
+
+function openRecentPost(tid: FeedItemId | string) {
+  detail.open(Number(tid), "card");
 }
 
 function handleLongpress(latlng: { lat: number; lng: number }) {
@@ -125,7 +137,14 @@ onActivated(() => {
         @map-longpress="handleLongpress"
       />
       <MapStatus :loading="loading" :error-message="errorMessage" />
-      <MapPlaceSheet :selected-place="selectedPlace" @close="closePlaceSheet" />
+      <MapPlaceSheet
+        :selected-place="selectedPlace"
+        :place-sheet="selectedPlaceSheet"
+        :place-sheet-loading="placeSheetLoading"
+        :place-sheet-error="placeSheetError"
+        @close="closePlaceSheet"
+        @open-post="openRecentPost"
+      />
       <MapPickerOverlay
         v-if="picker.isPickerMode.value"
         :selection="picker.selection.value"
