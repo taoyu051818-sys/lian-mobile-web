@@ -63,7 +63,9 @@ function resolveDetailTrustSignal() {
   if (post.value?.source?.visible === false) return null;
   return (
     post.value?.source?.label ||
-    (post.value?.actor?.identityTag ? `${TRUST_SIGNAL_IDENTITY_PREFIX}${post.value.actor.identityTag}` : "") ||
+    (post.value?.actor?.identityTag
+      ? `${TRUST_SIGNAL_IDENTITY_PREFIX}${post.value.actor.identityTag}`
+      : "") ||
     (post.value?.source ? TRUST_SIGNAL_UNKNOWN : null)
   );
 }
