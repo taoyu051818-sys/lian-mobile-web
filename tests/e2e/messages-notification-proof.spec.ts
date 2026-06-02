@@ -86,7 +86,7 @@ test.describe("messages notification routing proof @anonymous @messages", () => 
         },
       });
     });
-    await page.route("**/api/messages", async (route) => {
+    await page.route("**/api/messages**", async (route) => {
       await route.fulfill({
         json: {
           items: [
