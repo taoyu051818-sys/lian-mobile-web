@@ -831,6 +831,7 @@ export function usePublishDraft() {
     trade,
     // PRD V0.2 step D — title candidate slot.
     titleCandidate: titleCandidate.titleCandidate,
+    bodyCandidate: candidate.bodyCandidate,
     titleBeforeCandidate: titleCandidate.titleBeforeCandidate,
     titleCandidateApplied: titleCandidate.titleCandidateApplied,
     titleCandidateVisible: titleCandidate.titleCandidateVisible,

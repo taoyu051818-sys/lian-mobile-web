@@ -148,4 +148,17 @@ describe("Phase 4 (publish): wiring greps", () => {
     expect(view).toMatch(/eventDraft\.capacity/);
     expect(view).toMatch(/eventDraft\.joinPolicy/);
   });
+
+  it("usePublishSubmit forwards full draft context to createEvent", () => {
+    expect(submit).toMatch(/const eventDraftContext\s*=\s*buildPublishPayload/);
+    expect(submit).toMatch(/draftContext:\s*eventDraftContext/);
+    expect(submit).toMatch(/candidates:\s*\{/);
+    expect(submit).toMatch(/llmInferredKind:\s*options\.llmInferredKind\?\.value\s*\?\?\s*null/);
+  });
+
+  it("CreateEventInput accepts the AI draft context contract", () => {
+    const events = readRepoFile("../../src/api/events.ts");
+    expect(events).toMatch(/import type \{[^}]*PublishPayload/s);
+    expect(events).toMatch(/draftContext\?:\s*PublishPayload/);
+  });
 });
