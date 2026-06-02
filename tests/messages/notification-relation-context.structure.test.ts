@@ -18,6 +18,8 @@ describe("NotificationList relation target context", () => {
     expect(source).toMatch(/merchant_errand:\s*RELATION_TYPE_MERCHANT_ERRAND/);
     expect(source).toMatch(/project_submission:\s*RELATION_TYPE_PROJECT_SUBMISSION/);
     expect(source).toMatch(/event_reward:\s*RELATION_TYPE_EVENT_REWARD/);
+    expect(source).toMatch(/groupbuy_joined:\s*RELATION_TYPE_GROUPBUY_JOINED/);
+    expect(source).toMatch(/groupbuy_created:\s*RELATION_TYPE_GROUPBUY_CREATED/);
     expect(source).toMatch(/RELATION_TYPE_LABEL\[type\]\s*\?\?\s*type/);
   });
 

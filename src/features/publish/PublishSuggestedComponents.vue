@@ -39,6 +39,7 @@ import {
   PUBLISH_SUGGESTED_HINT_PREFIX,
   PUBLISH_SUGGESTED_KIND_ICON_AUDIENCE,
   PUBLISH_SUGGESTED_KIND_ICON_EVENT,
+  PUBLISH_SUGGESTED_KIND_ICON_GROUPBUY,
   PUBLISH_SUGGESTED_KIND_ICON_HELP,
   PUBLISH_SUGGESTED_KIND_ICON_LOCATION,
   PUBLISH_SUGGESTED_KIND_ICON_MEDIA,
@@ -52,7 +53,7 @@ import { useReducedMotion } from "../../composables/useReducedMotion";
 import type { SuggestedComponent, SuggestedComponentKind } from "../../types/publishSuggestion";
 import { useInjectedSuggestedComponentsActions } from "./usePublishDraft";
 
-// V0.3 stage B2 (paired with ps#624): V2 kinds — 10 of them.
+// V0.3 stage B2 (paired with ps#624): V2 kinds — 11 of them.
 const KIND_ICON: Record<SuggestedComponentKind, string> = {
   location: PUBLISH_SUGGESTED_KIND_ICON_LOCATION,
   time: PUBLISH_SUGGESTED_KIND_ICON_TIME,
@@ -64,6 +65,7 @@ const KIND_ICON: Record<SuggestedComponentKind, string> = {
   merchant: PUBLISH_SUGGESTED_KIND_ICON_MERCHANT,
   trade: PUBLISH_SUGGESTED_KIND_ICON_TRADE,
   help: PUBLISH_SUGGESTED_KIND_ICON_HELP,
+  groupbuy: PUBLISH_SUGGESTED_KIND_ICON_GROUPBUY,
 };
 
 const actions = useInjectedSuggestedComponentsActions();

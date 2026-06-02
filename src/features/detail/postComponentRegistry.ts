@@ -1,5 +1,6 @@
 import type { Component } from "vue";
 import type { MetadataComponentType, MetadataComponentV2 } from "../../types/post-extensions";
+import PostDetailGroupbuyBlock from "./PostDetailGroupbuyBlock.vue";
 
 /**
  * PRD V0.3 §2.1.3 — V2 component renderer registry.
@@ -39,6 +40,7 @@ export interface PostComponentRenderEntry<T extends MetadataComponentV2 = Metada
 }
 
 const registry = new Map<MetadataComponentType, PostComponentRenderEntry>();
+registry.set("groupbuy", { component: PostDetailGroupbuyBlock });
 
 /**
  * Register a renderer for a V2 component type. Last-write-wins so feature

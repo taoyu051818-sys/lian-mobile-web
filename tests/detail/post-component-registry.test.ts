@@ -25,6 +25,7 @@ import {
 } from "../../src/features/detail/postComponentRegistry";
 import type {
   EventComponentV2,
+  GroupbuyComponentV2,
   HelpComponentV2,
   LocationComponentV2,
   MerchantComponentV2,
@@ -110,6 +111,37 @@ describe("postComponentRegistry — selectRenderableComponents dispatch", () => 
     const ordered = selectRenderableComponents([blank, named]);
     expect(ordered.length).toBe(1);
     expect((ordered[0].component as MerchantComponentV2).name).toBe("李安小馆");
+  });
+
+  it("renders a registered group-buy component and skips it when no renderer is registered", () => {
+    const groupbuy: GroupbuyComponentV2 = {
+      type: "groupbuy",
+      groupbuyId: "gb-1",
+      state: "forming",
+      participantCount: 3,
+      targetCount: 5,
+      channelId: "ch-1",
+    };
+
+    expect(selectRenderableComponents([groupbuy])).toEqual([]);
+
+    registerPostComponentRenderer<GroupbuyComponentV2>("groupbuy", { component: StubRenderer });
+    const ordered = selectRenderableComponents([groupbuy]);
+    expect(ordered).toHaveLength(1);
+    expect(ordered[0].component.type).toBe("groupbuy");
+    expect(ordered[0].entry.component).toBe(StubRenderer);
+  });
+
+  it("allows unknown group-buy state values to flow to the renderer", () => {
+    registerPostComponentRenderer<GroupbuyComponentV2>("groupbuy", { component: StubRenderer });
+    const groupbuy: GroupbuyComponentV2 = {
+      type: "groupbuy",
+      groupbuyId: "gb-future",
+      state: "backend_future_state",
+    };
+
+    const ordered = selectRenderableComponents([groupbuy]);
+    expect((ordered[0].component as GroupbuyComponentV2).state).toBe("backend_future_state");
   });
 
   it("ignores malformed entries (null, non-object) without throwing", () => {

@@ -153,6 +153,8 @@ describe("ProfileCollectionList graph context rendering", () => {
   it("maps known relation and action types through existing brand strings with literal fallback", async () => {
     const src = await read("src/features/profile/ProfileCollectionList.vue");
     expect(src).toMatch(/event_recap:\s*PROFILE_RELATION_TYPE_EVENT_RECAP_TAG/);
+    expect(src).toMatch(/groupbuy_joined:\s*PROFILE_RELATION_TYPE_GROUPBUY_JOINED_TAG/);
+    expect(src).toMatch(/groupbuy_created:\s*PROFILE_RELATION_TYPE_GROUPBUY_CREATED_TAG/);
     expect(src).toMatch(/help_event_link:\s*PROFILE_RELATION_TYPE_HELP_EVENT_LINK_TAG/);
     expect(src).toMatch(/claim_reward:\s*AVAILABLE_ACTION_CLAIM_REWARD/);
     expect(src).toMatch(/complete_errand:\s*AVAILABLE_ACTION_COMPLETE_ERRAND/);
@@ -168,12 +170,15 @@ describe("brand strings registered for B3-2", () => {
       "PROFILE_RELATION_GROUP_PARTICIPATED_TITLE",
       "PROFILE_RELATION_GROUP_HELPED_TITLE",
       "PROFILE_RELATION_GROUP_MERCHANT_TITLE",
+      "PROFILE_RELATION_GROUP_GROUPBUY_TITLE",
       "PROFILE_RELATION_TYPE_EVENT_RECAP_TAG",
       "PROFILE_RELATION_TYPE_EVENT_REWARD_TAG",
       "PROFILE_RELATION_TYPE_HELP_EVENT_LINK_TAG",
       "PROFILE_RELATION_TYPE_SOLUTION_EVENT_TAG",
       "PROFILE_RELATION_TYPE_MERCHANT_ERRAND_TAG",
       "PROFILE_RELATION_TYPE_PROJECT_SUBMISSION_TAG",
+      "PROFILE_RELATION_TYPE_GROUPBUY_JOINED_TAG",
+      "PROFILE_RELATION_TYPE_GROUPBUY_CREATED_TAG",
     ]) {
       expect(src).toMatch(new RegExp(`export const ${key}\\b`));
     }

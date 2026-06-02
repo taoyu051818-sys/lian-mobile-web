@@ -25,7 +25,7 @@
  */
 import type { ProfileListItem } from "../../types/profile";
 
-export type ProfileRelationGroupKey = "participated" | "helped" | "merchant";
+export type ProfileRelationGroupKey = "participated" | "helped" | "merchant" | "groupbuy";
 
 /**
  * 桶 → 该桶承载的 V2 relation type 集合。新增 relation type 走这里加，
@@ -35,6 +35,7 @@ export const PROFILE_RELATION_GROUP_TYPES: Record<ProfileRelationGroupKey, Reado
   participated: new Set(["event_recap", "event_reward"]),
   helped: new Set(["help_event_link", "solution_event"]),
   merchant: new Set(["merchant_errand", "project_submission"]),
+  groupbuy: new Set(["groupbuy_joined", "groupbuy_created"]),
 };
 
 /** 桶在 UI 里的展示顺序。SSR / hydration 都按这个顺序遍历，避免抖动。 */
@@ -42,12 +43,14 @@ export const PROFILE_RELATION_GROUP_ORDER: readonly ProfileRelationGroupKey[] = 
   "participated",
   "helped",
   "merchant",
+  "groupbuy",
 ];
 
 export interface ProfileRelationGroupResult {
   participated: ProfileListItem[];
   helped: ProfileListItem[];
   merchant: ProfileListItem[];
+  groupbuy: ProfileListItem[];
 }
 
 function itemKey(item: ProfileListItem): string {
@@ -77,11 +80,13 @@ export function groupPostsByRelationType(
     participated: [],
     helped: [],
     merchant: [],
+    groupbuy: [],
   };
   const seenInBucket: Record<ProfileRelationGroupKey, Set<string>> = {
     participated: new Set(),
     helped: new Set(),
     merchant: new Set(),
+    groupbuy: new Set(),
   };
 
   for (const item of items) {

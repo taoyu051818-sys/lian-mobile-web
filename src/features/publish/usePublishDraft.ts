@@ -400,6 +400,11 @@ export function createSuggestedComponentsActions(
           params.tagInput.value = "求助";
         }
         break;
+      case "groupbuy":
+        if (params.tagInput.value.trim().length === 0) {
+          params.tagInput.value = "拼单";
+        }
+        break;
       case "location":
         // 仅地点 → "place" kind in PRD §2.2, but the publish UI doesn't
         // surface a "place" radio yet (step F territory). The location

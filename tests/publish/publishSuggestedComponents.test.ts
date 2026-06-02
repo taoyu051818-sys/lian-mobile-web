@@ -81,6 +81,11 @@ const HELP_HINT: SuggestedComponent = {
   payload: {},
   label: "需要别人帮忙吗？",
 };
+const GROUPBUY_HINT: SuggestedComponent = {
+  kind: "groupbuy",
+  payload: {},
+  label: "发起拼单吗？补充成团人数和结算说明",
+};
 
 describe("createSuggestedComponentsActions accept (PRD V0.2 step E-main)", () => {
   it("accept(event_time) flips publishKind to event and removes the entry", () => {
@@ -195,6 +200,27 @@ describe("createSuggestedComponentsActions accept (PRD V0.2 step E-main)", () =>
     h.actions.accept(HELP_HINT);
 
     expect(h.tagInput.value).toBe("#夜跑");
+    expect(h.components.value).toEqual([]);
+  });
+
+  it("accept(groupbuy) seeds the group-buy tag without changing the publish panel", () => {
+    const h = makeHarness([GROUPBUY_HINT]);
+
+    h.actions.accept(GROUPBUY_HINT);
+
+    expect(h.tagInput.value).toBe("拼单");
+    expect(h.publishKind.value).toBe("regular");
+    expect(h.components.value).toEqual([]);
+  });
+
+  it("accept(groupbuy) preserves an existing user-typed tag", () => {
+    const h = makeHarness([GROUPBUY_HINT]);
+    h.tagInput.value = "#咖啡";
+
+    h.actions.accept(GROUPBUY_HINT);
+
+    expect(h.tagInput.value).toBe("#咖啡");
+    expect(h.publishKind.value).toBe("regular");
     expect(h.components.value).toEqual([]);
   });
 

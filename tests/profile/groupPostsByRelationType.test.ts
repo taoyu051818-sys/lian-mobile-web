@@ -113,10 +113,22 @@ describe("groupPostsByRelationType", () => {
     expect(result.merchant).toHaveLength(0);
   });
 
+  it("buckets groupbuy_joined and groupbuy_created into groupbuy", () => {
+    const result = groupPostsByRelationType([
+      row(13, [{ type: "groupbuy_joined" }]),
+      row(14, [{ type: "groupbuy_created" }]),
+    ]);
+
+    expect(result.groupbuy.map((item) => item.tid)).toEqual([13, 14]);
+    expect(result.participated).toHaveLength(0);
+    expect(result.helped).toHaveLength(0);
+    expect(result.merchant).toHaveLength(0);
+  });
+
   it("handles an empty input list", () => {
     const result = groupPostsByRelationType([]);
 
-    expect(result).toEqual({ participated: [], helped: [], merchant: [] });
+    expect(result).toEqual({ participated: [], helped: [], merchant: [], groupbuy: [] });
   });
 
   it("dedupes when the same tid appears twice within the bucket-source list", () => {
@@ -140,8 +152,8 @@ describe("groupPostsByRelationType", () => {
     );
   });
 
-  it("the six required relation types each map to exactly one bucket", () => {
-    // Lock the PRD V0.3 §2.4 enum — these six are the surfaces this PR ships.
+  it("the eight required relation types each map to exactly one bucket", () => {
+    // Lock the PRD V0.3 §2.4 enum plus the issue #993 group-buy additions.
     const required = [
       "event_recap",
       "event_reward",
@@ -149,6 +161,8 @@ describe("groupPostsByRelationType", () => {
       "solution_event",
       "merchant_errand",
       "project_submission",
+      "groupbuy_joined",
+      "groupbuy_created",
     ];
     for (const type of required) {
       const matches = PROFILE_RELATION_GROUP_ORDER.filter((group) =>
