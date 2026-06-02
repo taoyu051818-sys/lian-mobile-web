@@ -16,6 +16,8 @@ import {
   CHANNEL_READ_COUNT,
   CHANNEL_THREAD_LABEL,
   FEED_TIME_JUST_NOW,
+  TRUST_SIGNAL_IDENTITY_PREFIX,
+  TRUST_SIGNAL_UNKNOWN,
   TRUST_SIGNAL_VERIFIED,
 } from "../../config/brand";
 
@@ -93,8 +95,13 @@ function messageMeta(item: ChannelMessage) {
 
 function messageTrustSignal(item: ChannelMessage) {
   const actor = messageActor(item);
+  if (item.source?.visible === false) return null;
   if (actor.authoritative) return TRUST_SIGNAL_VERIFIED;
-  return item.source?.label || actor.identityTag || null;
+  return (
+    item.source?.label ||
+    (actor.identityTag ? `${TRUST_SIGNAL_IDENTITY_PREFIX}${actor.identityTag}` : "") ||
+    (item.source ? TRUST_SIGNAL_UNKNOWN : null)
+  );
 }
 </script>
 
