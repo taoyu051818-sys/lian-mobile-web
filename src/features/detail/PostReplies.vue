@@ -9,6 +9,7 @@ import {
   REPLY_SORT_LABEL,
   REPLY_SORT_NEWEST,
   REPLY_SORT_OLDEST,
+  TRUST_SIGNAL_IDENTITY_PREFIX,
   TRUST_SIGNAL_UNKNOWN,
 } from "../../config/brand";
 import { actorDisplayName } from "../../domain/actor";
@@ -61,7 +62,9 @@ function sanitizeReplyHtml(value: string) {
 function replyTrustSignal(reply: PostReply) {
   if (reply.source?.visible === false) return null;
   return (
-    reply.source?.label || reply.actor?.identityTag || (reply.source ? TRUST_SIGNAL_UNKNOWN : null)
+    reply.source?.label ||
+    (reply.actor?.identityTag ? `${TRUST_SIGNAL_IDENTITY_PREFIX}${reply.actor.identityTag}` : "") ||
+    (reply.source ? TRUST_SIGNAL_UNKNOWN : null)
   );
 }
 </script>

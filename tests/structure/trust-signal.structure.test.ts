@@ -69,16 +69,18 @@ describe("trust signal structure", () => {
     expect(detailPanelSource).toMatch(
       /if \(post\.value\?\.source\?\.visible === false\) return null;/,
     );
+    expect(detailPanelSource).toMatch(/TRUST_SIGNAL_IDENTITY_PREFIX/);
     expect(detailPanelSource).toMatch(
-      /post\.value\?\.source\?\.label \|\|\s+post\.value\?\.actor\?\.identityTag \|\|\s+\(post\.value\?\.source \? TRUST_SIGNAL_UNKNOWN : null\)/,
+      /post\.value\?\.source\?\.label \|\|\s+\(post\.value\?\.actor\?\.identityTag\s+\? `\$\{TRUST_SIGNAL_IDENTITY_PREFIX\}\$\{post\.value\.actor\.identityTag\}`\s+: ""\) \|\|\s+\(post\.value\?\.source \? TRUST_SIGNAL_UNKNOWN : null\)/,
     );
     expect(detailPanelSource).toMatch(/:trust-signal="resolveDetailTrustSignal\(\)"/);
     expect(detailTopbarSource).toMatch(/trustSignal\?: string \| null;/);
     expect(detailTopbarSource).toMatch(/<TrustBadge\s+v-if="trustSignal"/);
     expect(repliesSource).toMatch(/function replyTrustSignal\(reply: PostReply\)/);
     expect(repliesSource).toMatch(/if \(reply\.source\?\.visible === false\) return null;/);
+    expect(repliesSource).toMatch(/TRUST_SIGNAL_IDENTITY_PREFIX/);
     expect(repliesSource).toMatch(
-      /return \(\s*reply\.source\?\.label \|\| reply\.actor\?\.identityTag \|\| \(reply\.source \? TRUST_SIGNAL_UNKNOWN : null\)\s*\);/,
+      /return \(\s*reply\.source\?\.label \|\|\s+\(reply\.actor\?\.identityTag \? `\$\{TRUST_SIGNAL_IDENTITY_PREFIX\}\$\{reply\.actor\.identityTag\}` : ""\) \|\|\s+\(reply\.source \? TRUST_SIGNAL_UNKNOWN : null\)\s*\);/,
     );
     expect(repliesSource).toMatch(/<TrustBadge\s+v-if="replyTrustSignal\(reply\)"/);
   });
@@ -91,8 +93,10 @@ describe("trust signal structure", () => {
     expect(channelThreadSource).toMatch(
       /if \(actor\.authoritative\) return TRUST_SIGNAL_VERIFIED;/,
     );
+    expect(channelThreadSource).toMatch(/TRUST_SIGNAL_IDENTITY_PREFIX/);
+    expect(channelThreadSource).toMatch(/if \(item\.source\?\.visible === false\) return null;/);
     expect(channelThreadSource).toMatch(
-      /return item\.source\?\.label \|\| actor\.identityTag \|\| null;/,
+      /return \(\s*item\.source\?\.label \|\|\s+\(actor\.identityTag \? `\$\{TRUST_SIGNAL_IDENTITY_PREFIX\}\$\{actor\.identityTag\}` : ""\) \|\|\s+\(item\.source \? TRUST_SIGNAL_UNKNOWN : null\)\s*\);/,
     );
     expect(channelThreadSource).toMatch(/<TrustBadge\s+v-if="messageTrustSignal\(item\)"/);
   });
