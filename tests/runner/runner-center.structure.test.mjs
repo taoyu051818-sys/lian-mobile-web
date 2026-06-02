@@ -84,7 +84,7 @@ test("runner state machine declares all four progress actions", () => {
   }
 });
 
-// --- gate: ProfileView entry visible only to runner_verified ----------------
+// --- gate: ProfileView entry visible only to canonical runner tag -----------
 
 test("ProfileView gates the runner entry on runner verification", () => {
   const src = read("src/features/profile/ProfileView.vue");

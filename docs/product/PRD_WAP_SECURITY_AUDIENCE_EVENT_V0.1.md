@@ -188,7 +188,7 @@ CSP 适合作为浏览器端纵深防御，尤其用于限制 inline script、�
 | `realname_verified` | 实名认证                    |
 | `org_member`        | 某组织成员                  |
 | `merchant_verified` | 商家/餐饮/交易发布权限      |
-| `runner_verified`   | 跑腿骑手权限                |
+| `runner`            | 跑腿骑手权限                |
 | `admin`             | 管理员                      |
 | `moderator`         | 内容/社区管理员             |
 
