@@ -27,41 +27,47 @@ export function useMapSelection(_getPosts: () => MapPost[]) {
   const placeSheetLoading = ref(false);
   const placeSheetError = ref("");
   const openPlaceId = ref("");
+  let placeRequestToken = 0;
 
   function selectLocation(item: MapLocation) {
     selectedTarget.value = { kind: "location", item };
     selectedPlaceSheet.value = null;
     placeSheetError.value = "";
+    placeSheetLoading.value = false;
     openPlaceId.value = "";
+    placeRequestToken += 1;
   }
 
   async function openPlaceSheet(location: MapLocation) {
     const placeId = placeIdForLocation(location);
     if (!placeId) return;
+    const requestToken = (placeRequestToken += 1);
     openPlaceId.value = placeId;
     selectedPlaceSheet.value = null;
     placeSheetError.value = "";
     placeSheetLoading.value = true;
     try {
       const sheet = await fetchPlaceSheet(placeId);
-      if (openPlaceId.value === placeId) {
+      if (openPlaceId.value === placeId && placeRequestToken === requestToken) {
         selectedPlaceSheet.value = sheet;
       }
     } catch (error) {
-      if (openPlaceId.value === placeId) {
-        placeSheetError.value = extractErrorMessage(error, ERROR_LOAD_PLACE);
+      if (openPlaceId.value === placeId && placeRequestToken === requestToken) {
+        placeSheetError.value = extractErrorMessage(error, ERROR_LOAD_PLACE) || ERROR_LOAD_PLACE;
       }
     } finally {
-      if (openPlaceId.value === placeId) {
+      if (openPlaceId.value === placeId && placeRequestToken === requestToken) {
         placeSheetLoading.value = false;
       }
     }
   }
 
   function closePlaceSheet() {
+    placeRequestToken += 1;
     openPlaceId.value = "";
     selectedPlaceSheet.value = null;
     placeSheetError.value = "";
+    placeSheetLoading.value = false;
   }
 
   return {
