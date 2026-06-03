@@ -43,6 +43,19 @@ describe("useMessageComposer composerActorName fallback", () => {
     expect(composer.composerActorName.value).not.toContain("real-name-alice");
   });
 
+  it("falls back to the anonymity-safe label when the active alias name is missing", () => {
+    const composer = makeComposer();
+    const user = {
+      username: "real-name-alice",
+      activeAliasId: "a1",
+      aliases: [{ id: "a1" }],
+    } as ProfileUser;
+    composer.currentUser.value = user;
+
+    expect(composer.composerActorName.value).toBe(DEFAULT_USER_LABEL);
+    expect(composer.composerActorName.value).not.toContain("real-name-alice");
+  });
+
   it("does not leak username when activeAliasId points at an unnamed alias amongst many", () => {
     const composer = makeComposer();
     const user: ProfileUser = {

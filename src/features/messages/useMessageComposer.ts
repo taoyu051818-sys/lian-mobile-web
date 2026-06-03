@@ -8,6 +8,7 @@ import {
   USER_AVATAR_FALLBACK,
 } from "../../config/brand";
 import { extractErrorMessage } from "../../utils/extractErrorMessage";
+import { actorDisplayName } from "../../domain/actor";
 import type { ProfileUser } from "../../types/profile";
 import type { AudienceVisibility } from "../../types/audience";
 
@@ -42,7 +43,13 @@ export function useMessageComposer(options: {
   const composerActorName = computed(() => {
     const alias = activeAlias.value;
     if (alias) {
-      return alias.name || DEFAULT_USER_LABEL;
+      return actorDisplayName(
+        {
+          aliasId: alias.id,
+          displayName: alias.name,
+        },
+        DEFAULT_USER_LABEL,
+      );
     }
     return currentUser.value?.username || DEFAULT_USER_LABEL;
   });
