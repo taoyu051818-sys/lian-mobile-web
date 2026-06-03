@@ -29,6 +29,13 @@ function readReadme(): string {
   return readFileSync(new URL("../../README.md", import.meta.url), "utf8").replace(/\r\n/g, "\n");
 }
 
+function readCoverageNote(): string {
+  return readFileSync(
+    new URL("../../docs/architecture/blcu-locale-coverage.md", import.meta.url),
+    "utf8",
+  ).replace(/\r\n/g, "\n");
+}
+
 function expectReadmeList(readme: string, title: string, locales: readonly string[]): void {
   expect(readme).toContain(`${title}: ${locales.join(", ")}`);
 }
@@ -92,6 +99,23 @@ describe("README i18n coverage note", () => {
     expectReadmeList(readme, "BLCU wave 2", ["de", "it", "pt", "tr", "th", "mn", "kk"]);
     expectReadmeList(readme, "RTL locales", RTL_LOCALES);
     expect(readme).toMatch(
+      /RTL scope is\s+limited to setting `<html lang>` and `<html dir>` from the active locale; only\s+Arabic \(`ar`\) ships with `dir="rtl"` today\./,
+    );
+  });
+});
+
+describe("BLCU locale coverage architecture note", () => {
+  it("records shipped BLCU wave coverage and RTL scope", () => {
+    const note = readCoverageNote();
+
+    expectReadmeList(note, "Shipped locales", SUPPORTED_LOCALES);
+    expectReadmeList(note, "Pre-BLCU baseline", ["zh-CN", "zh-TW", "en", "ja"]);
+    expectReadmeList(note, "BLCU wave 1", ["ko", "ru", "vi", "id", "es", "fr", "ar"]);
+    expectReadmeList(note, "BLCU wave 2", ["de", "it", "pt", "tr", "th", "mn", "kk"]);
+    expectReadmeList(note, "RTL locales", RTL_LOCALES);
+    expect(note).toContain("PR #955");
+    expect(note).toContain("PR #961");
+    expect(note).toMatch(
       /RTL scope is\s+limited to setting `<html lang>` and `<html dir>` from the active locale; only\s+Arabic \(`ar`\) ships with `dir="rtl"` today\./,
     );
   });
