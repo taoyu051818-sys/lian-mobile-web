@@ -44,7 +44,9 @@ first when a frontend lane depends on merged or in-flight backend contract truth
 ## Locale coverage and RTL scope
 
 The shipped mobile-web UI locale set is defined by `src/locales/resolveLocale.ts`
-and wired through `src/locales/index.ts`.
+and wired through `src/locales/index.ts`. See
+`docs/architecture/blcu-locale-coverage.md` for the durable BLCU wave lineage and
+RTL boundary note.
 
 - Shipped locales: zh-CN, zh-TW, en, ja, ko, ru, vi, id, es, fr, ar, de, it, pt, tr, th, mn, kk
 - Pre-BLCU baseline: zh-CN, zh-TW, en, ja
