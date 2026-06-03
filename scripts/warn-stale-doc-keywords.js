@@ -1,7 +1,8 @@
 /**
  * warn-stale-doc-keywords.js
  *
- * WARNING-ONLY guard: scans all .md files under docs/ for stale keywords.
+ * WARNING-ONLY guard: scans markdown docs for stale keywords and queue snapshot
+ * maintenance reminders.
  * Prints a WARNING with the file path and matched keyword for each hit.
  * Always exits 0 (never fails the build).
  */
@@ -14,6 +15,13 @@ const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..")
 const docsDir = path.join(rootDir, "docs");
 
 const STALE_KEYWORDS = ["superseded", "historical", "frozen", "not yet implemented", "draft"];
+const QUEUE_SNAPSHOT_FILE = "README.md";
+const QUEUE_SNAPSHOT_HEADING = "Core Product Model V1 queue snapshot";
+const REQUIRED_QUEUE_SNAPSHOT_MARKERS = [
+  "Snapshot source: GitHub issue truth checked on",
+  "Phase order source: `taoyu051818-sys/lian-mobile-web#995`",
+  "closed children are context, not active queue items",
+];
 
 async function walkMdFiles(dir) {
   const results = [];
@@ -35,7 +43,7 @@ async function walkMdFiles(dir) {
 }
 
 async function main() {
-  const mdFiles = await walkMdFiles(docsDir);
+  const mdFiles = [path.join(rootDir, QUEUE_SNAPSHOT_FILE), ...(await walkMdFiles(docsDir))];
 
   if (mdFiles.length === 0) {
     console.log("warn-stale-doc-keywords: No .md files found in docs/.");
@@ -69,6 +77,28 @@ async function main() {
     console.log("warn-stale-doc-keywords: No stale keywords found in docs/.");
   } else {
     console.warn(`warn-stale-doc-keywords: ${warningCount} stale keyword occurrence(s) found.`);
+  }
+
+  const readmePath = path.join(rootDir, QUEUE_SNAPSHOT_FILE);
+  try {
+    const readme = await fs.readFile(readmePath, "utf8");
+    const missingMarkers = [QUEUE_SNAPSHOT_HEADING, ...REQUIRED_QUEUE_SNAPSHOT_MARKERS].filter(
+      (marker) => !readme.includes(marker),
+    );
+
+    if (missingMarkers.length === 0) {
+      console.log("warn-stale-doc-keywords: Core Product Model V1 queue snapshot present.");
+    } else {
+      for (const marker of missingMarkers) {
+        console.warn(
+          `[WARNING] warn-stale-doc-keywords: "${QUEUE_SNAPSHOT_FILE}" is missing queue snapshot marker: "${marker}"`,
+        );
+      }
+    }
+  } catch {
+    console.warn(
+      `[WARNING] warn-stale-doc-keywords: "${QUEUE_SNAPSHOT_FILE}" could not be read for queue snapshot check.`,
+    );
   }
 
   // Always exit 0 — warning only
