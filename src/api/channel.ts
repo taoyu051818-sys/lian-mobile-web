@@ -1,9 +1,10 @@
 import { apiGet, apiSend } from "./http";
 import { DEFAULT_USER_LABEL } from "../config/brand";
 import { ensureClientId } from "../platform/clientIdentity";
-import type { AudienceVisibility } from "../types/audience";
+import { normalizeAudience, type AudienceVisibility } from "../types/audience";
 import type {
   ChannelMessage,
+  ChannelMessageVisibility,
   ChannelReadPayload,
   ChannelResponse,
   SendChannelMessagePayload,
@@ -27,6 +28,51 @@ export function resolveChannelMessagePlainText(
   );
 }
 
+const KNOWN_CHANNEL_VISIBILITIES: ReadonlySet<AudienceVisibility> = new Set([
+  "public",
+  "campus",
+  "school",
+  "private",
+  "linkOnly",
+]);
+
+export function isChannelVisibility(value: unknown): value is AudienceVisibility {
+  return typeof value === "string" && KNOWN_CHANNEL_VISIBILITIES.has(value as AudienceVisibility);
+}
+
+function normalizeKnownChannelVisibility(value: unknown): AudienceVisibility | undefined {
+  return isChannelVisibility(value) ? value : undefined;
+}
+
+function normalizeChannelAudience(value: unknown) {
+  if (!value || typeof value !== "object") return undefined;
+  const record = value as Record<string, unknown>;
+  const hasVisibility = isChannelVisibility(record.visibility);
+  const hasArrayFields = [record.schoolIds, record.orgIds, record.roleIds, record.userIds].every(
+    (field) => field === undefined || Array.isArray(field),
+  );
+  const hasValidLinkOnly = record.linkOnly === undefined || typeof record.linkOnly === "boolean";
+  return hasVisibility && hasArrayFields && hasValidLinkOnly ? normalizeAudience(value) : undefined;
+}
+
+function normalizeChannelMessageVisibility(
+  raw: ChannelMessage,
+): ChannelMessageVisibility | undefined {
+  const topLevelVisibility = normalizeKnownChannelVisibility(raw.visibility);
+  const audience = raw.audience;
+  if (!audience || typeof audience !== "object") return topLevelVisibility;
+  const record = audience as unknown as Record<string, unknown>;
+  const audienceVisibility = normalizeKnownChannelVisibility(record.visibility);
+  if (!audienceVisibility) return topLevelVisibility;
+  const hasArrayFields = [record.schoolIds, record.orgIds, record.roleIds, record.userIds].every(
+    (field) => field === undefined || Array.isArray(field),
+  );
+  const hasValidLinkOnly = record.linkOnly === undefined || typeof record.linkOnly === "boolean";
+  return hasArrayFields && hasValidLinkOnly
+    ? (topLevelVisibility ?? audienceVisibility)
+    : topLevelVisibility;
+}
+
 export function normalizeChannelMessage(raw: ChannelMessage): ChannelMessage {
   const clientId = ensureClientId();
   const actor = raw.actor
@@ -36,10 +82,14 @@ export function normalizeChannelMessage(raw: ChannelMessage): ChannelMessage {
       }
     : undefined;
   const plainText = resolveChannelMessagePlainText(raw);
+  const audience = normalizeChannelAudience(raw.audience);
+  const visibility = normalizeChannelMessageVisibility(raw);
   return {
     ...raw,
     actor,
     plainText,
+    visibility,
+    audience,
     deliveryState: raw.deliveryState || "sent",
     isSelf: raw.isSelf ?? (actor?.authoritative ? actor.id === clientId : false),
   };

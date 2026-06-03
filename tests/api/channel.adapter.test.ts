@@ -1,6 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { buildChannelReadPayload, markChannelMessagesRead } from "../../src/api/channel";
+import {
+  buildChannelReadPayload,
+  markChannelMessagesRead,
+  normalizeChannelMessage,
+} from "../../src/api/channel";
 
 function createStorageMock(seed: Record<string, string> = {}) {
   const store = new Map(Object.entries(seed));
@@ -17,6 +21,107 @@ function createStorageMock(seed: Record<string, string> = {}) {
     }),
   } as unknown as Storage;
 }
+
+describe("channel message adapter", () => {
+  it("preserves supported backend visibility and audience fields", () => {
+    const message = normalizeChannelMessage({
+      id: "visible-1",
+      content: "School-only channel note",
+      visibility: "school",
+      audience: {
+        visibility: "school",
+        schoolIds: ["bfsu"],
+        orgIds: [],
+        roleIds: [],
+        userIds: [],
+        linkOnly: false,
+      },
+    });
+
+    expect(message.visibility).toBe("school");
+    expect(message.audience).toEqual({
+      visibility: "school",
+      schoolIds: ["bfsu"],
+      orgIds: [],
+      roleIds: [],
+      userIds: [],
+      linkOnly: false,
+    });
+  });
+
+  it("derives message visibility from normalized audience when top-level visibility is absent", () => {
+    const message = normalizeChannelMessage({
+      id: "audience-only-1",
+      content: "Campus audience channel note",
+      audience: {
+        visibility: "campus",
+        schoolIds: [],
+        orgIds: [],
+        roleIds: [],
+        userIds: [],
+        linkOnly: false,
+      },
+    });
+
+    expect(message.visibility).toBe("campus");
+    expect(message.audience?.visibility).toBe("campus");
+  });
+
+  it("leaves ordinary messages without visibility unchanged", () => {
+    const message = normalizeChannelMessage({
+      id: "ordinary-1",
+      content: "Ordinary channel note",
+    });
+
+    expect(message.visibility).toBeUndefined();
+    expect(message.audience).toBeUndefined();
+  });
+
+  it("drops unsupported top-level visibility instead of showing a cue", () => {
+    const message = normalizeChannelMessage({
+      id: "future-visibility-1",
+      content: "Future visibility channel note",
+      visibility: "cohort",
+    } as never);
+
+    expect(message.visibility).toBeUndefined();
+    expect(message.audience).toBeUndefined();
+  });
+
+  it("drops unsupported audience visibility instead of showing a cue", () => {
+    const message = normalizeChannelMessage({
+      id: "future-audience-1",
+      content: "Future audience channel note",
+      audience: { visibility: "cohort", schoolIds: [] },
+    } as never);
+
+    expect(message.visibility).toBeUndefined();
+    expect(message.audience).toBeUndefined();
+  });
+
+  it("drops malformed audience linkOnly fields instead of showing a cue", () => {
+    const message = normalizeChannelMessage({
+      id: "malformed-link-1",
+      content: "Malformed link-only channel note",
+      audience: { visibility: "linkOnly", linkOnly: "yes" },
+    } as never);
+
+    expect(message.visibility).toBeUndefined();
+    expect(message.audience).toBeUndefined();
+  });
+
+  it("drops malformed audience fields without suppressing top-level fallback", () => {
+    const message = normalizeChannelMessage({
+      id: "malformed-1",
+      content: "Malformed channel note",
+      visibility: "private",
+      audience: { visibility: "school", schoolIds: "bfsu" },
+    } as never);
+
+    expect(message.visibility).toBe("private");
+    expect(message.audience).toBeUndefined();
+  });
+});
 
 describe("channel read adapter", () => {
   const g = globalThis as typeof globalThis & {
