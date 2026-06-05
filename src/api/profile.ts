@@ -1,9 +1,6 @@
 import { apiGet, apiSend, apiUpload, LianApiError } from "./http";
-import {
-  extractV2Components,
-  normalizePostAvailableActions,
-  normalizePostRelations,
-} from "../platform/api-normalizers";
+import { normalizePostAvailableActions, normalizePostRelations } from "../platform/api-normalizers";
+import { extractV2Components } from "../platform/api-normalizers";
 import type { AudienceVisibility } from "../types/audience";
 import type { FeedItemId } from "../types/feed";
 import type {
@@ -85,11 +82,12 @@ export function normalizeProfileListItem(item: unknown): ProfileListItem {
       : undefined;
   const tid = normalizeOptionalTid(candidate.tid);
   const id = normalizeOptionalText(candidate.id) || (tid ? String(tid) : undefined);
-  const relations = normalizePostRelations(candidate.relations ?? metadata?.relations);
+  if (candidate.relations === undefined) candidate.relations = metadata?.relations;
+  if (candidate.availableActions === undefined)
+    candidate.availableActions = metadata?.availableActions;
+  const relations = normalizePostRelations(candidate.relations);
   const components = extractV2Components(candidate);
-  const availableActions = normalizePostAvailableActions(
-    candidate.availableActions ?? metadata?.availableActions,
-  );
+  const availableActions = normalizePostAvailableActions(candidate.availableActions);
   const title = normalizeOptionalText(candidate.title);
   const cover = normalizeOptionalText(candidate.cover);
   const timestampISO = normalizeOptionalText(candidate.timestampISO);
