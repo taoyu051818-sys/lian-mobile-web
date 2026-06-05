@@ -22,10 +22,11 @@ function isAliasActor(actor?: DisplayActor | null): boolean {
 
 export function actorDisplayName(actor?: DisplayActor | null, fallback = ""): string {
   if (isAliasActor(actor)) {
+    const displayName = actor?.displayName?.trim();
     // Alias-attributed actors must not fall back to username/name because those
     // fields can carry the poster's real-account identity on mixed backend
     // payloads. Only an explicit alias displayName is safe to render.
-    return actor?.displayName || fallback || "";
+    return displayName || fallback || "";
   }
   return actor?.displayName || actor?.username || actor?.name || fallback || "";
 }
