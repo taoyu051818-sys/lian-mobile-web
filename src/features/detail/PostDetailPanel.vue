@@ -177,11 +177,7 @@ const {
 });
 const replyIdentityLabel = REPLY_IDENTITY_LABEL;
 
-const {
-  campusVerified,
-  isAuthenticated,
-  refresh: refreshViewerAuth,
-} = useViewerErrandPermission();
+const { campusVerified, isAuthenticated, refresh: refreshViewerAuth } = useViewerErrandPermission();
 const viewerCanOrderErrand = computed(() => campusVerified.value);
 
 const {

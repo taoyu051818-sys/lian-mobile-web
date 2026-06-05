@@ -238,7 +238,9 @@ describe("PostDetailPanel — detail action auth gate", () => {
   it("uses the auth probe result instead of post presence for detail actions (#968)", () => {
     expect(panel).not.toMatch(/Boolean\(post\.value\)/);
     expect(panel).not.toMatch(/const isAuthenticated = computed/);
-    expect(panel).toMatch(/campusVerified,[\s\S]*isAuthenticated,[\s\S]*refresh: refreshViewerAuth/);
+    expect(panel).toMatch(
+      /campusVerified,[\s\S]*isAuthenticated,[\s\S]*refresh: refreshViewerAuth/,
+    );
     expect(panel).toMatch(/isAuthenticated,\n  onMessage: showActionMessage/);
   });
 
