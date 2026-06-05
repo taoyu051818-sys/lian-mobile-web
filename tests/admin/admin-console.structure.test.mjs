@@ -49,7 +49,10 @@ test("api/admin attaches Bearer headers only through the explicit ops-token help
   assert.match(src, /function\s+withAuthHeader\(token/);
   assert.match(src, /if\s*\(token\)\s*headers\.set\("authorization",\s*`Bearer\s*\$\{token\}`\)/);
   const wrappedSites = src.match(/withAuthHeader\(token/g) || [];
-  assert.ok(wrappedSites.length >= 8, "admin ops endpoints must keep the explicit Bearer fallback path");
+  assert.ok(
+    wrappedSites.length >= 8,
+    "admin ops endpoints must keep the explicit Bearer fallback path",
+  );
 });
 
 test("api/admin exposes report, user action, audit, and verification operations", () => {
@@ -151,10 +154,7 @@ test("useAdminToken clears the fallback token from sessionStorage and never loca
 });
 
 test("shared admin token key is never stored in localStorage", () => {
-  for (const rel of [
-    "src/features/admin/useAdminToken.ts",
-    "public/tools/map-v2-editor.js",
-  ]) {
+  for (const rel of ["src/features/admin/useAdminToken.ts", "public/tools/map-v2-editor.js"]) {
     const src = read(rel);
     assert.doesNotMatch(src, /localStorage[\s\S]{0,120}lian\.adminToken/);
     assert.doesNotMatch(src, /lian\.adminToken[\s\S]{0,120}localStorage/);
@@ -266,7 +266,10 @@ test("ProfileView clears fallback admin access on logout or auth change", () => 
   const src = read("src/features/profile/ProfileView.vue");
   assert.match(src, /clearAdminAccessState/);
   assert.match(src, /function\s+enterGuestState\s*\([^)]*\)\s*\{[\s\S]*?clearAdminAccessState\(\)/);
-  assert.match(src, /async function\s+handleAuthenticated\s*\([^)]*\)\s*\{[\s\S]*?clearAdminAccessState\(\)/);
+  assert.match(
+    src,
+    /async function\s+handleAuthenticated\s*\([^)]*\)\s*\{[\s\S]*?clearAdminAccessState\(\)/,
+  );
 });
 
 test("AdminView mounts verification queue as a first-class admin tab", () => {
