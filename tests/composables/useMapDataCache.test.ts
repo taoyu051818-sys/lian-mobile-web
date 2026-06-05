@@ -84,6 +84,92 @@ describe("useMapDataCache", () => {
     expect(cache.mapData.value).toEqual(items);
   });
 
+  it("reloads when viewport or type filter params change", async () => {
+    const items1 = { locations: [{ id: "1" }] };
+    const items2 = { posts: [{ tid: 2 }] };
+    const firstQuery = {
+      bounds: { south: 18.37, west: 109.98, north: 18.42, east: 110.05 },
+      zoom: 16,
+      types: ["locations"],
+    };
+    const nextQuery = {
+      bounds: { south: 18.38, west: 109.99, north: 18.43, east: 110.06 },
+      zoom: 17,
+      types: ["posts"],
+    };
+    mockFetchItems.mockResolvedValueOnce(items1 as any).mockResolvedValueOnce(items2 as any);
+    mockFetchPreview.mockResolvedValue(null as any);
+
+    const cache = await freshCache();
+    await cache.loadMap(firstQuery);
+    await cache.loadMap({ ...firstQuery });
+    expect(mockFetchItems).toHaveBeenCalledTimes(1);
+
+    await cache.loadMap(nextQuery);
+    expect(mockFetchItems).toHaveBeenCalledTimes(2);
+    expect(mockFetchItems).toHaveBeenNthCalledWith(1, firstQuery);
+    expect(mockFetchItems).toHaveBeenNthCalledWith(2, nextQuery);
+    expect(cache.mapData.value).toEqual(items2);
+  });
+
+  it("reloads when only type filter params change", async () => {
+    const items1 = { locations: [{ id: "1" }], posts: [] };
+    const items2 = { locations: [], posts: [{ tid: 2 }] };
+    const bounds = { south: 18.37, west: 109.98, north: 18.42, east: 110.05 };
+    const firstQuery = { bounds, zoom: 16, types: ["locations"] };
+    const nextQuery = { bounds, zoom: 16, types: ["merchants", "relations"] };
+    mockFetchItems.mockResolvedValueOnce(items1 as any).mockResolvedValueOnce(items2 as any);
+    mockFetchPreview.mockResolvedValue(null as any);
+
+    const cache = await freshCache();
+    await cache.loadMap(firstQuery);
+    await cache.loadMap(nextQuery);
+
+    expect(mockFetchItems).toHaveBeenCalledTimes(2);
+    expect(mockFetchItems).toHaveBeenNthCalledWith(1, firstQuery);
+    expect(mockFetchItems).toHaveBeenNthCalledWith(2, nextQuery);
+    expect(cache.mapData.value).toEqual(items2);
+  });
+
+  it("normalizes type order when caching map query params", async () => {
+    const items = { locations: [{ id: "1" }], posts: [{ tid: 2 }] };
+    const bounds = { south: 18.37, west: 109.98, north: 18.42, east: 110.05 };
+    mockFetchItems.mockResolvedValue(items as any);
+    mockFetchPreview.mockResolvedValue(null as any);
+
+    const cache = await freshCache();
+    await cache.loadMap({ bounds, zoom: 16, types: ["posts", "locations"] });
+    await cache.loadMap({ bounds, zoom: 16, types: ["locations", "posts"] });
+
+    expect(mockFetchItems).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps the latest viewport response when map loads finish out of order", async () => {
+    const firstItems = { locations: [{ id: "old" }] };
+    const latestItems = { locations: [{ id: "new" }] };
+    const bounds = { south: 18.37, west: 109.98, north: 18.42, east: 110.05 };
+    const firstQuery = { bounds, zoom: 16, types: ["locations"] };
+    const latestQuery = { bounds: { ...bounds, east: 110.06 }, zoom: 17, types: ["locations"] };
+    let resolveFirst!: (value: unknown) => void;
+    let resolveLatest!: (value: unknown) => void;
+    mockFetchItems
+      .mockReturnValueOnce(new Promise((resolve) => (resolveFirst = resolve)) as any)
+      .mockReturnValueOnce(new Promise((resolve) => (resolveLatest = resolve)) as any);
+    mockFetchPreview.mockResolvedValue(null as any);
+
+    const cache = await freshCache();
+    const firstLoad = cache.loadMap(firstQuery);
+    const latestLoad = cache.loadMap(latestQuery);
+
+    resolveLatest(latestItems);
+    await latestLoad;
+    expect(cache.mapData.value).toEqual(latestItems);
+
+    resolveFirst(firstItems);
+    await firstLoad;
+    expect(cache.mapData.value).toEqual(latestItems);
+  });
+
   it("forceRefresh bypasses cache", async () => {
     const items1 = { locations: [{ id: "1" }] };
     const items2 = { locations: [{ id: "2" }] };

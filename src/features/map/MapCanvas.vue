@@ -9,6 +9,7 @@ import {
   isLeafletAvailable,
   tryGetLeaflet,
 } from "../../platform/leaflet";
+import type { MapViewportQuery } from "../../types/map";
 import type {
   MapBounds,
   MapLocation,
@@ -45,6 +46,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   "load-error": [message: string];
   "place-select": [place: MapLocation | MapPost];
+  "viewport-change": [viewport: MapViewportQuery];
   /**
    * Long-press / contextmenu on the underlying tile layer (mw#943).
    *
@@ -86,6 +88,19 @@ function mapBounds(): [number, number][] {
     [bounds.value.south, bounds.value.west],
     [bounds.value.north, bounds.value.east],
   ];
+}
+
+function emitViewportChange(mapInstance: LeafletMapLike) {
+  const nextBounds = mapInstance.getBounds();
+  emit("viewport-change", {
+    bounds: {
+      south: nextBounds.getSouth(),
+      west: nextBounds.getWest(),
+      north: nextBounds.getNorth(),
+      east: nextBounds.getEast(),
+    },
+    zoom: mapInstance.getZoom(),
+  });
 }
 
 function attachZoomControl(mapInstance: LeafletMapLike) {
@@ -167,6 +182,7 @@ function initMap() {
   bindMapIconScale(newMap);
   attachZoomControl(newMap);
   newMap.on("zoomend resize", renderMap);
+  newMap.on("moveend zoomend", () => emitViewportChange(newMap));
   attachLongpressHandlers(newMap);
   map.value = newMap;
   clearInitSizeTimer();
@@ -174,6 +190,7 @@ function initMap() {
     initSizeTimer = null;
     map.value?.invalidateSize();
     applyMapIconScale();
+    if (map.value) emitViewportChange(map.value);
   }, 80);
   renderMap();
 }
