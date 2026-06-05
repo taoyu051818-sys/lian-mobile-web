@@ -1,22 +1,23 @@
 <script setup lang="ts">
-import type { AudienceVisibility } from "../types/audience";
 import { FEED_VISIBILITY_LABELS, FEED_VISIBILITY_ICONS } from "../config/brand";
 import type { LianIconName } from "./icons/paths";
 import LianIcon from "./icons/LianIcon.vue";
 
 const props = defineProps<{
-  visibility?: AudienceVisibility;
+  visibility?: string;
   showIcon?: boolean;
 }>();
 
-function visibilityLabel(v?: AudienceVisibility): string | null {
-  if (!v || v === "public") return null;
-  return FEED_VISIBILITY_LABELS[v] || null;
+function visibilityLabel(v?: string): string | null {
+  const value = v?.trim();
+  if (!value || value === "public") return null;
+  return FEED_VISIBILITY_LABELS[value] || null;
 }
 
-function visibilityIcon(v?: AudienceVisibility): LianIconName | null {
-  if (!v || v === "public") return null;
-  return (FEED_VISIBILITY_ICONS[v] as LianIconName) || null;
+function visibilityIcon(v?: string): LianIconName | null {
+  const value = v?.trim();
+  if (!value || value === "public") return null;
+  return (FEED_VISIBILITY_ICONS[value] as LianIconName) || null;
 }
 </script>
 

@@ -2,6 +2,7 @@ import { nextTick, onBeforeUnmount, onMounted, ref } from "vue";
 import {
   buildPendingChannelMessage,
   fetchChannelMessages,
+  isChannelVisibility,
   markChannelMessagesRead,
   mergeChannelMessagesChronologically,
   sendChannelMessage,
@@ -196,7 +197,7 @@ export function useChannelMessages() {
         content: pending.content || "",
         identityTag: identityTag || "",
         clientNonce: pending.clientNonce,
-        visibility: pending.visibility || "public",
+        visibility: isChannelVisibility(pending.visibility) ? pending.visibility : "public",
       });
       await replacePendingWithLatest(pendingId);
     } catch {

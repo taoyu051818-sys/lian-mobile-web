@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { nextTick, onMounted, ref, watch } from "vue";
 import { EmptyState, InlineError, LianButton, TrustBadge } from "../../ui";
+import VisibilityBadge from "../../ui/VisibilityBadge.vue";
 import { actorAvatarText, actorDisplayName } from "../../domain/actor";
 import type { ChannelMessage, ChannelMessageActor } from "../../types/messages";
 import { formatRelativeTime } from "../../utils/time";
@@ -156,7 +157,7 @@ function messageTrustSignal(item: ChannelMessage) {
       <article
         v-for="item in items"
         :key="String(item.id)"
-        v-memo="[item.id, item.deliveryState, item.content, item.isSelf]"
+        v-memo="[item.id, item.deliveryState, item.content, item.isSelf, item.visibility]"
         class="messages-view__message"
         data-testid="channel-message-item"
         :class="{
@@ -185,6 +186,7 @@ function messageTrustSignal(item: ChannelMessage) {
           <div class="messages-view__bubble">
             <p>{{ messageText(item) }}</p>
             <footer>
+              <VisibilityBadge :visibility="item.visibility" />
               <span>{{
                 formatRelativeTime(item.timestampISO || item.time) || FEED_TIME_JUST_NOW
               }}</span>
