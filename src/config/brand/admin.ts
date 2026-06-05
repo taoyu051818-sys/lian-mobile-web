@@ -5,8 +5,9 @@ export const ADMIN_EXIT_LABEL = "退出管理";
 export const ADMIN_BACK_TO_PROFILE = "返回我的";
 
 /** Token 闸门 */
-export const ADMIN_TOKEN_GATE_TITLE = "管理员令牌";
-export const ADMIN_TOKEN_GATE_HINT = "粘贴运维方提供的 ADMIN_TOKEN，进入审核台。";
+export const ADMIN_TOKEN_GATE_TITLE = "运维令牌备用入口";
+export const ADMIN_TOKEN_GATE_HINT =
+  "优先使用已登录管理员会话；仅在会话不可用时粘贴运维方提供的 ADMIN_TOKEN。";
 export const ADMIN_TOKEN_PLACEHOLDER = "ADMIN_TOKEN";
 export const ADMIN_TOKEN_SUBMIT = "进入";
 export const ADMIN_TOKEN_INVALID = "令牌无效，请重新粘贴。";
