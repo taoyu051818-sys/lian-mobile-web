@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import {
   ADMIN_AUTH_LINK_TAB_LABEL,
   ADMIN_AVATAR_TEXT,
@@ -52,10 +52,11 @@ const statusFilter = ref<AdminReportStatus | "">("pending");
 const verificationStatusFilter = ref<AdminVerificationStatus | "">("pending");
 const verificationNotes = ref<Record<string, string>>({});
 
-const consoleEnabled = computed(() => Boolean(token.value) || sessionAdmin.value);
+const consoleEnabled = computed(() => sessionAdmin.value || Boolean(token.value));
 
 const console = useAdminConsole({
   token,
+  sessionAdmin,
   onTokenInvalid: () => {
     if (sessionAdmin.value) {
       clearSessionAdmin();
@@ -102,11 +103,15 @@ const pageChrome = computed<PageChromeSpec>(() => {
   };
 });
 
+function clearAdminAccess() {
+  clearToken();
+  clearSessionAdmin();
+}
+
 function handleChromeButtonClick(buttonId: string) {
   if (buttonId === "admin:close") emit("close");
   else if (buttonId === "admin:exit") {
-    clearToken();
-    clearSessionAdmin();
+    clearAdminAccess();
     emit("close");
   }
 }
@@ -177,16 +182,16 @@ function handleVerificationNoteUpdate(verificationId: string, value: string) {
 }
 
 async function probeAdminSession() {
-  if (token.value) return;
   probing.value = true;
   try {
     const response = await fetchAdminMe();
     if (isAdminMeRoleEligible(response)) {
       setSessionAdmin(true);
+      clearToken();
       void console.loadReports(statusFilter.value);
-    } else {
-      clearSessionAdmin();
+      return true;
     }
+    clearSessionAdmin();
   } catch (error) {
     clearSessionAdmin();
     if (error instanceof LianApiError && error.status !== 401 && error.status !== 403) {
@@ -195,17 +200,19 @@ async function probeAdminSession() {
   } finally {
     probing.value = false;
   }
+  return false;
 }
 
 watch(pageChrome, (spec) => emit("chrome", spec), { deep: true, immediate: false });
 
-onMounted(() => {
+onMounted(async () => {
   emit("chrome", pageChrome.value);
-  if (token.value) {
-    void console.loadReports(statusFilter.value);
-  } else {
-    void probeAdminSession();
-  }
+  if (await probeAdminSession()) return;
+  if (token.value) void console.loadReports(statusFilter.value);
+});
+
+onBeforeUnmount(() => {
+  clearAdminAccess();
 });
 </script>
 

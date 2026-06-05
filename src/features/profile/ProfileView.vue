@@ -36,6 +36,7 @@ import { useProfileTabs } from "./useProfileTabs";
 import { useProfileChrome } from "./useProfileChrome";
 import { useProfileAliasPicker } from "./useProfileAliasPicker";
 import { useActiveView } from "../../app/useActiveView";
+import { clearAdminAccessState } from "../admin/useAdminToken";
 import { buildProfileUnlockCards, hasActiveVerificationTag } from "./profileUnlocks";
 
 const emit = defineEmits<{
@@ -103,6 +104,7 @@ const { displayName, avatarText, pageChrome } = useProfileChrome({
 });
 
 function enterGuestState() {
+  clearAdminAccessState();
   user.value = null;
   profileItems.value = [];
   editorOpen.value = false;
@@ -148,6 +150,7 @@ async function logout() {
 }
 
 async function handleAuthenticated(authenticatedUser: ProfileUser | null) {
+  clearAdminAccessState();
   if (authenticatedUser) {
     user.value = authenticatedUser;
   }

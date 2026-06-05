@@ -40,10 +40,18 @@ import type {
 
 interface UseAdminConsoleOptions {
   token: { value: string };
+  sessionAdmin: { value: boolean };
   onTokenInvalid: () => void;
 }
 
-export function useAdminConsole({ token, onTokenInvalid }: UseAdminConsoleOptions) {
+export function useAdminConsole({ token, sessionAdmin, onTokenInvalid }: UseAdminConsoleOptions) {
+  function hasAdminAccess() {
+    return sessionAdmin.value || Boolean(token.value);
+  }
+
+  function currentToken() {
+    return sessionAdmin.value ? "" : token.value;
+  }
   const reports = ref<AdminReport[]>([]);
   const reportsLoading = ref(false);
   const reportsError = ref("");
@@ -88,11 +96,11 @@ export function useAdminConsole({ token, onTokenInvalid }: UseAdminConsoleOption
   }
 
   async function loadReports(status: AdminReportStatus | "" = "") {
-    if (!token.value) return;
+    if (!hasAdminAccess()) return;
     reportsLoading.value = true;
     reportsError.value = "";
     try {
-      const data = await fetchAdminReports(token.value, { status, limit: 100 });
+      const data = await fetchAdminReports(currentToken(), { status, limit: 100 });
       reports.value = data.items;
       reportsTotal.value = data.total;
     } catch (error) {
@@ -104,11 +112,11 @@ export function useAdminConsole({ token, onTokenInvalid }: UseAdminConsoleOption
   }
 
   async function loadAuditLog() {
-    if (!token.value) return;
+    if (!hasAdminAccess()) return;
     auditLoading.value = true;
     auditError.value = "";
     try {
-      const data = await fetchAdminAuditLog(token.value, { limit: 100 });
+      const data = await fetchAdminAuditLog(currentToken(), { limit: 100 });
       auditEvents.value = data.items;
     } catch (error) {
       if (handleAuthError(error)) return;
@@ -119,14 +127,14 @@ export function useAdminConsole({ token, onTokenInvalid }: UseAdminConsoleOption
   }
 
   async function loadVerificationRequests(status: AdminVerificationStatus | "" = "pending") {
-    if (!token.value) return;
+    if (!hasAdminAccess()) return;
     verificationStatusFilter.value = status;
     verificationLoading.value = true;
     verificationError.value = "";
     verificationRevealError.value = "";
     revealedVerificationDetails.value = {};
     try {
-      const data = await fetchAdminVerificationRequests(token.value, { status, limit: 100 });
+      const data = await fetchAdminVerificationRequests(currentToken(), { status, limit: 100 });
       verificationRequests.value = data.items;
       verificationTotal.value = data.total;
     } catch (error) {
@@ -145,10 +153,10 @@ export function useAdminConsole({ token, onTokenInvalid }: UseAdminConsoleOption
       note?: string | null;
     },
   ) {
-    if (!token.value) return false;
+    if (!hasAdminAccess()) return false;
     clearMessages();
     try {
-      const updated = await patchAdminReport(token.value, reportId, payload);
+      const updated = await patchAdminReport(currentToken(), reportId, payload);
       const idx = reports.value.findIndex((r) => r.reportId === updated.reportId);
       if (idx >= 0) reports.value[idx] = updated;
       actionMessage.value = "操作已生效。";
@@ -161,10 +169,10 @@ export function useAdminConsole({ token, onTokenInvalid }: UseAdminConsoleOption
   }
 
   async function applyPostAction(tid: number, action: AdminPostAction) {
-    if (!token.value) return false;
+    if (!hasAdminAccess()) return false;
     clearMessages();
     try {
-      await postAdminPostAction(token.value, tid, action);
+      await postAdminPostAction(currentToken(), tid, action);
       actionMessage.value = "操作已生效。";
       return true;
     } catch (error) {
@@ -178,10 +186,10 @@ export function useAdminConsole({ token, onTokenInvalid }: UseAdminConsoleOption
     userIdOrEmail: string,
     payload: { status: AdminUserStatus; reason?: string },
   ) {
-    if (!token.value) return false;
+    if (!hasAdminAccess()) return false;
     clearMessages();
     try {
-      await patchAdminUserStatus(token.value, userIdOrEmail, payload);
+      await patchAdminUserStatus(currentToken(), userIdOrEmail, payload);
       actionMessage.value = "操作已生效。";
       return true;
     } catch (error) {
@@ -195,10 +203,10 @@ export function useAdminConsole({ token, onTokenInvalid }: UseAdminConsoleOption
     request: AdminVerificationRequest,
     payload: { status: AdminVerificationDecisionStatus; reviewerNote?: string | null },
   ) {
-    if (!token.value) return false;
+    if (!hasAdminAccess()) return false;
     clearMessages();
     try {
-      await patchAdminVerificationRequest(token.value, request, payload);
+      await patchAdminVerificationRequest(currentToken(), request, payload);
       await loadVerificationRequests(verificationStatusFilter.value);
       actionMessage.value = "认证审核结果已提交。";
       return true;
@@ -210,11 +218,11 @@ export function useAdminConsole({ token, onTokenInvalid }: UseAdminConsoleOption
   }
 
   async function revealVerificationRequest(request: AdminVerificationRequest) {
-    if (!token.value || request.verificationType !== "realname") return null;
+    if (!hasAdminAccess() || request.verificationType !== "realname") return null;
     verificationRevealError.value = "";
     revealingVerificationId.value = request.verificationId;
     try {
-      const detail = await fetchAdminVerificationDetail(token.value, request, { reveal: true });
+      const detail = await fetchAdminVerificationDetail(currentToken(), request, { reveal: true });
       revealedVerificationDetails.value = {
         ...revealedVerificationDetails.value,
         [request.verificationId]: detail,
@@ -234,11 +242,11 @@ export function useAdminConsole({ token, onTokenInvalid }: UseAdminConsoleOption
   }
 
   async function loadAuthLinks() {
-    if (!token.value) return;
+    if (!hasAdminAccess()) return;
     authLinksLoading.value = true;
     authLinksError.value = "";
     try {
-      const data = await fetchAdminAuthLinks(token.value);
+      const data = await fetchAdminAuthLinks(currentToken());
       authLinks.value = data.items;
     } catch (error) {
       if (handleAuthError(error)) return;
@@ -249,12 +257,12 @@ export function useAdminConsole({ token, onTokenInvalid }: UseAdminConsoleOption
   }
 
   async function createAuthLink(payload: AuthLinkCreatePayload) {
-    if (!token.value) return null;
+    if (!hasAdminAccess()) return null;
     clearMessages();
     authLinkCreating.value = true;
     authLinkCreateError.value = "";
     try {
-      const link = await createAdminAuthLink(token.value, payload);
+      const link = await createAdminAuthLink(currentToken(), payload);
       await loadAuthLinks();
       actionMessage.value = "邀请链接已创建。";
       return link;
@@ -268,10 +276,10 @@ export function useAdminConsole({ token, onTokenInvalid }: UseAdminConsoleOption
   }
 
   async function revokeAuthLink(linkToken: string) {
-    if (!token.value) return false;
+    if (!hasAdminAccess()) return false;
     clearMessages();
     try {
-      await revokeAdminAuthLink(token.value, linkToken);
+      await revokeAdminAuthLink(currentToken(), linkToken);
       await loadAuthLinks();
       actionMessage.value = "邀请链接已撤销。";
       return true;

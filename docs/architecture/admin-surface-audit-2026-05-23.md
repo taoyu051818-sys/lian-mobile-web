@@ -216,7 +216,7 @@ Same `limit: 100`, no offset.
 
 - API client: `src/api/admin.ts` (`fetchAdminMe`, `isAdminMeRoleEligible`)
 - AdminView gate: `src/features/admin/AdminView.vue` (`probeAdminSession`)
-- Dual-auth side: `src/features/admin/useAdminToken.ts` (sessionStorage Bearer)
+- Dual-auth side: `src/features/admin/useAdminToken.ts` (sessionStorage-only Bearer fallback)
 - Event-manage probe in detail: `src/composables/usePostDetailExtensions.ts`
   (`probeEventManageable`)
 
@@ -318,10 +318,15 @@ endpoint would simplify.
 - **PostDetail event-manage probe.** Re-issues `/api/admin/me` per
   event-post detail load when backend didn't pre-stamp `eventManageable`.
   This is the second admin probe per session for the same viewer.
-- **`useAdminToken`** writes a Bearer to `sessionStorage` and sends it on
-  every admin call via `withAuthHeader`. The cookie-session path coexists in
-  `AdminView` but only the Bearer is sent on every list/transition. Two auth
-  paths, two state machines.
+- **`useAdminToken`** writes the fallback Bearer only to `sessionStorage`, never
+  `localStorage`, and sends it on admin calls via `withAuthHeader` only when
+  cookie-session admin probing is unavailable. `AdminView` probes `/api/admin/me`
+  before using the stored fallback token, clears the fallback token when a
+  session-admin probe succeeds, and clears both admin auth-mode refs when leaving
+  the admin surface or when profile logout/authentication changes. The fallback
+  gate copy labels ADMIN_TOKEN as an ops-only backup path, not the preferred
+  login path. Legacy public admin tooling must not persist the shared
+  `lian.adminToken` key in `localStorage`.
 
 ## Recommendations for ps#511 aggregate contract
 

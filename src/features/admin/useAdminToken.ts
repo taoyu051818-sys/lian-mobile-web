@@ -23,9 +23,16 @@ function writeStorage(value: string): void {
   }
 }
 
+export function clearAdminAccessState() {
+  tokenRef.value = "";
+  sessionAdminRef.value = false;
+  writeStorage("");
+}
+
 export function useAdminToken() {
   function setToken(value: string) {
     const trimmed = value.trim();
+    sessionAdminRef.value = false;
     tokenRef.value = trimmed;
     writeStorage(trimmed);
   }
@@ -37,6 +44,7 @@ export function useAdminToken() {
 
   function setSessionAdmin(value: boolean) {
     sessionAdminRef.value = Boolean(value);
+    if (sessionAdminRef.value) clearToken();
   }
 
   function clearSessionAdmin() {

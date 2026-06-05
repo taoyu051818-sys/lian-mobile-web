@@ -44,16 +44,12 @@ test("useActiveView accepts secret views (admin) outside appViews array", () => 
 
 // --- API contract: every admin call must inject Authorization: Bearer <token> ---
 
-test("api/admin attaches Bearer header on every request", () => {
+test("api/admin attaches Bearer headers only through the explicit ops-token helper", () => {
   const src = read("src/api/admin.ts");
-  assert.match(src, /authorization/i);
-  assert.match(src, /Bearer\s*\$\{token\}/);
-  const callSites = src.match(/apiGet<|apiSend</g) || [];
+  assert.match(src, /function\s+withAuthHeader\(token/);
+  assert.match(src, /if\s*\(token\)\s*headers\.set\("authorization",\s*`Bearer\s*\$\{token\}`\)/);
   const wrappedSites = src.match(/withAuthHeader\(token/g) || [];
-  assert.ok(
-    wrappedSites.length >= callSites.length,
-    `expected every apiGet/apiSend to be wrapped by withAuthHeader (found ${callSites.length} calls vs ${wrappedSites.length} wrappers)`,
-  );
+  assert.ok(wrappedSites.length >= 8, "admin ops endpoints must keep the explicit Bearer fallback path");
 });
 
 test("api/admin exposes report, user action, audit, and verification operations", () => {
@@ -141,6 +137,28 @@ test("useAdminToken persists in sessionStorage under a namespaced key", () => {
   const src = read("src/features/admin/useAdminToken.ts");
   assert.match(src, /sessionStorage/);
   assert.match(src, /"lian\.adminToken"/);
+  assert.doesNotMatch(src, /localStorage/);
+});
+
+test("useAdminToken clears the fallback token from sessionStorage and never localStorage", () => {
+  const src = read("src/features/admin/useAdminToken.ts");
+  const clearMatch = src.match(/function\s+clearToken\s*\([^)]*\)\s*\{(?<body>[\s\S]*?)\n\s*\}/);
+  assert.ok(clearMatch?.groups?.body, "clearToken body must be locatable");
+  assert.match(clearMatch.groups.body, /writeStorage\(""\)/);
+  assert.doesNotMatch(clearMatch.groups.body, /localStorage/);
+  assert.match(src, /sessionStorage\.removeItem\(STORAGE_KEY\)/);
+  assert.doesNotMatch(src, /localStorage/);
+});
+
+test("shared admin token key is never stored in localStorage", () => {
+  for (const rel of [
+    "src/features/admin/useAdminToken.ts",
+    "public/tools/map-v2-editor.js",
+  ]) {
+    const src = read(rel);
+    assert.doesNotMatch(src, /localStorage[\s\S]{0,120}lian\.adminToken/);
+    assert.doesNotMatch(src, /lian\.adminToken[\s\S]{0,120}localStorage/);
+  }
 });
 
 test("useAdminToken exposes a sessionAdmin flag separate from the ops token", () => {
@@ -148,6 +166,7 @@ test("useAdminToken exposes a sessionAdmin flag separate from the ops token", ()
   assert.match(src, /sessionAdmin/);
   assert.match(src, /setSessionAdmin/);
   assert.match(src, /clearSessionAdmin/);
+  assert.match(src, /sessionAdminRef\.value\s*=\s*false[\s\S]*?writeStorage\(trimmed\)/);
   const setterMatch = src.match(
     /function\s+setSessionAdmin\s*\([^)]*\)\s*\{(?<body>[\s\S]*?)\n\s*\}/,
   );
@@ -195,14 +214,36 @@ test("AdminView shows the token gate while no admin session is established", () 
   assert.match(src, /v-else-if="!consoleEnabled"/);
 });
 
-test("AdminView probes /api/admin/me on entry and skips the token form on success", () => {
+test("AdminView probes /api/admin/me on entry before using the ops token fallback", () => {
   const src = read("src/features/admin/AdminView.vue");
   assert.match(src, /fetchAdminMe/);
   assert.match(src, /isAdminMeRoleEligible/);
   assert.match(src, /sessionAdmin/);
   assert.match(src, /consoleEnabled/);
-  assert.match(src, /Boolean\(token\.value\)\s*\|\|\s*sessionAdmin\.value/);
+  assert.match(src, /sessionAdmin\.value\s*\|\|\s*Boolean\(token\.value\)/);
   assert.match(src, /probeAdminSession/);
+  assert.doesNotMatch(src, /if\s*\(token\.value\)\s*return/);
+  assert.match(src, /await\s+probeAdminSession\(\)/);
+});
+
+test("api/admin probes session-admin without attaching a Bearer header", () => {
+  const src = read("src/api/admin.ts");
+  const match = src.match(/export async function fetchAdminMe[\s\S]*?\n\}/);
+  assert.ok(match, "fetchAdminMe body must be locatable");
+  assert.doesNotMatch(match[0], /withAuthHeader|authorization|Bearer/);
+});
+
+test("AdminView clears the ops token when session-admin mode is available", () => {
+  const src = read("src/features/admin/AdminView.vue");
+  assert.match(src, /setSessionAdmin\(true\)[\s\S]*?clearToken\(\)/);
+});
+
+test("AdminView clears both admin auth modes when leaving the admin surface", () => {
+  const src = read("src/features/admin/AdminView.vue");
+  assert.match(src, /onBeforeUnmount/);
+  assert.match(src, /clearAdminAccess/);
+  assert.match(src, /clearToken\(\)/);
+  assert.match(src, /clearSessionAdmin\(\)/);
 });
 
 test("api/admin exposes a session probe and a role-eligibility helper", () => {
@@ -221,31 +262,43 @@ test("AdminView exit button clears both the token and the session-admin flag", (
   assert.match(src, /clearSessionAdmin\(\)/);
 });
 
+test("ProfileView clears fallback admin access on logout or auth change", () => {
+  const src = read("src/features/profile/ProfileView.vue");
+  assert.match(src, /clearAdminAccessState/);
+  assert.match(src, /function\s+enterGuestState\s*\([^)]*\)\s*\{[\s\S]*?clearAdminAccessState\(\)/);
+  assert.match(src, /async function\s+handleAuthenticated\s*\([^)]*\)\s*\{[\s\S]*?clearAdminAccessState\(\)/);
+});
+
 test("AdminView mounts verification queue as a first-class admin tab", () => {
-  const src = read("src/features/admin/AdminView.vue");
-  assert.match(src, /"verifications"/);
-  assert.match(src, /loadVerificationRequests/);
-  assert.match(src, /认证审核/);
-  assert.match(src, /实名认证敏感字段仅在显式查看时通过后端审计路径读取/);
+  const viewSrc = read("src/features/admin/AdminView.vue");
+  const brandSrc = read("src/config/brand/admin.ts");
+  const blockSrc = read("src/features/admin/AdminVerificationBlock.vue");
+  assert.match(viewSrc, /"verifications"/);
+  assert.match(viewSrc, /loadVerificationRequests/);
+  assert.match(brandSrc, /ADMIN_VERIFICATION_TAB_LABEL\s*=\s*"认证审核"/);
+  assert.match(blockSrc, /ADMIN_VERIFICATION_REALNAME_MASKED_HINT/);
 });
 
 test("AdminView keeps verification decisions bounded to pending requests", () => {
-  const src = read("src/features/admin/AdminView.vue");
-  assert.match(src, /canReviewRequest/);
-  assert.match(src, /handleVerificationReview\(request, 'approved'\)/);
-  assert.match(src, /handleVerificationReview\(request, 'rejected'\)/);
-  assert.match(src, /handleVerificationReveal/);
+  const helperSrc = read("src/features/admin/admin-verification.ts");
+  const blockSrc = read("src/features/admin/AdminVerificationBlock.vue");
+  assert.match(helperSrc, /canReviewRequest/);
+  assert.match(helperSrc, /request\.status\s*===\s*"pending"/);
+  assert.match(blockSrc, /emit\('review', request, 'approved'\)/);
+  assert.match(blockSrc, /emit\('review', request, 'rejected'\)/);
+  assert.match(blockSrc, /emit\('reveal', request\)/);
 });
 
 test("AdminView renders verification-review empty guidance for each status bucket", () => {
-  const src = read("src/features/admin/AdminView.vue");
-  assert.match(src, /const verificationEmptyState = computed/);
-  assert.match(src, /case "pending"/);
-  assert.match(src, /case "approved"/);
-  assert.match(src, /case "rejected"/);
-  assert.match(src, /data-testid="admin-verification-empty"/);
-  assert.match(src, /verificationEmptyState\.title/);
-  assert.match(src, /verificationEmptyState\.body/);
+  const helperSrc = read("src/features/admin/admin-verification.ts");
+  const blockSrc = read("src/features/admin/AdminVerificationBlock.vue");
+  assert.match(helperSrc, /getVerificationEmptyState/);
+  assert.match(helperSrc, /case "pending"/);
+  assert.match(helperSrc, /case "approved"/);
+  assert.match(helperSrc, /case "rejected"/);
+  assert.match(blockSrc, /data-testid="admin-verification-empty"/);
+  assert.match(blockSrc, /emptyState\.title/);
+  assert.match(blockSrc, /emptyState\.body/);
 });
 
 // --- brand registration ---

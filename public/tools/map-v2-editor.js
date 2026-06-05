@@ -568,7 +568,7 @@
   }
 
   function getToken() {
-    return $("#adminToken")?.value?.trim() || localStorage.getItem("lian.adminToken") || "";
+    return $("#adminToken")?.value?.trim() || "";
   }
 
   async function api(path, options = {}) {
@@ -1373,8 +1373,7 @@
 
   async function saveData() {
     try {
-      const token = $("#adminToken").value.trim() || localStorage.getItem("lian.adminToken") || "";
-      if (token) localStorage.setItem("lian.adminToken", token);
+      const token = $("#adminToken").value.trim();
       const locations = JSON.parse($("#locationsJson").value || "{}");
       const layers = JSON.parse($("#layersJson").value || "{}");
       await api("/api/admin/map-v2", {
@@ -2347,10 +2346,6 @@
     }
   });
 
-  const tokenInput = $("#adminToken");
-  if (!tokenInput.value) {
-    tokenInput.value = localStorage.getItem("lian.adminToken") || "";
-  }
   initMap();
   loadData().catch((error) => setStatus(error.message, true));
 
