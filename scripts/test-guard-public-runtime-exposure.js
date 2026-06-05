@@ -28,12 +28,12 @@ async function createFixtureRepo(files) {
   return repoDir;
 }
 
-async function runGuardFixture(name, files, expectedStatus, expectedNeedle) {
+async function runGuardFixture(name, files, expectedStatus, expectedNeedle, targets = []) {
   const repoDir = await createFixtureRepo(files);
   try {
     const result = await execFileAsync(
       process.execPath,
-      ["scripts/guard-public-runtime-exposure.js"],
+      ["scripts/guard-public-runtime-exposure.js", ...targets],
       {
         cwd: repoDir,
       },
@@ -106,4 +106,154 @@ await runGuardFixture(
   },
   "fail",
   /broad API runtime cache|API runtime cache name/,
+);
+
+await runGuardFixture(
+  "secret-like runtime token fixture",
+  {
+    "src/main.ts": `window.__LIAN_CONFIG__ = {
+      NODEBB_API_TOKEN: "nodebb-live-token-value",
+      publicLabel: "ok",
+    };`,
+  },
+  "fail",
+  /secret-like runtime exposure/,
+);
+
+await runGuardFixture(
+  "provider secret identifier fixture",
+  {
+    "src/App.vue": `<script setup>
+const runtimeConfig = {
+  CLOUDINARY_URL: "cloudinary-public-url-value",
+  ADMIN_TOKEN: "admin-public-token-value",
+  SERVERCHAN: "serverchan-public-value",
+  sendKey: "serverchan-send-key-value",
+};
+</script>`,
+  },
+  "fail",
+  /secret-like runtime exposure/,
+);
+
+await runGuardFixture(
+  "generic secret assignment fixture",
+  {
+    "public/config.js": `window.publicConfig = {
+      apiKey: "public-api-key-value",
+      password: "public-password-value",
+    };`,
+  },
+  "fail",
+  /secret-like runtime exposure/,
+);
+
+await runGuardFixture(
+  "public env secret identifier fixture",
+  {
+    "src/main.ts": `const tokenSource = import.meta.env.VITE_MIMO_API_KEY;
+window.__LIAN_CONFIG__ = { tokenSource };`,
+  },
+  "fail",
+  /secret-like runtime exposure/,
+);
+
+await runGuardFixture(
+  "documentation placeholder fixture",
+  {
+    "docs/runtime-config.md": `Use placeholders such as NODEBB_API_TOKEN="replace-me" and apiKey="example" in local notes.`,
+  },
+  "pass",
+  /Result: \d+ passed, 0 failed/,
+  ["docs"],
+);
+
+await runGuardFixture(
+  "documentation real-looking secret fixture",
+  {
+    "docs/runtime-config.md": `Do not publish NODEBB_API_TOKEN="nodebb-live-token-value" in documentation.`,
+  },
+  "fail",
+  /secret-like runtime exposure/,
+  ["docs"],
+);
+
+await runGuardFixture(
+  "built asset secret fixture",
+  {
+    "dist/assets/index.js": `const config = { MIMO_API_KEY: "mimo-public-key-value" };`,
+  },
+  "fail",
+  /secret-like runtime exposure/,
+);
+
+await runGuardFixture(
+  "built asset sourcemap secret fixture",
+  {
+    "dist/assets/index.js.map": JSON.stringify({
+      version: 3,
+      sourcesContent: ['const config = { NODEBB_API_TOKEN: "nodebb-public-token-value" };'],
+    }),
+  },
+  "fail",
+  /secret-like runtime exposure/,
+);
+
+await runGuardFixture(
+  "built asset private key block fixture",
+  {
+    "dist/assets/index.js": `const privateKey = "-----BEGIN PRIVATE KEY-----\\npublic-private-key-value\\n-----END PRIVATE KEY-----";`,
+  },
+  "fail",
+  /secret-like runtime exposure/,
+);
+
+await runGuardFixture(
+  "built asset client secret fixture",
+  {
+    "dist/assets/app.css": `:root { --CLIENT_SECRET: "client-public-secret-value"; }`,
+  },
+  "fail",
+  /secret-like runtime exposure/,
+);
+
+await runGuardFixture(
+  "ignored public tools secret fixture",
+  {
+    "index.html": '<!doctype html><html><body><div id="vue-root"></div></body></html>',
+    "src/main.ts": "console.log('ok');",
+    "public/tools/admin.js": `const ADMIN_TOKEN = "debug-tool-token-value";`,
+  },
+  "pass",
+  /Result: \d+ passed, 0 failed/,
+);
+
+await runGuardFixture(
+  "vite config secret fixture",
+  {
+    "index.html": '<!doctype html><html><body><div id="vue-root"></div></body></html>',
+    "src/main.ts": "console.log('ok');",
+    "vite.config.ts": `export default { define: { ADMIN_TOKEN: "vite-public-token-value" } };`,
+  },
+  "fail",
+  /secret-like runtime exposure/,
+);
+
+await runGuardFixture(
+  "public subdirectory target secret fixture",
+  {
+    "public/subdir/config.js": `window.runtimeConfig = { apiKey: "subdir-public-key-value" };`,
+  },
+  "fail",
+  /secret-like runtime exposure/,
+  ["public/subdir"],
+);
+
+await runGuardFixture(
+  "bearer token assignment fixture",
+  {
+    "src/main.ts": `const BEARER_TOKEN = "bearer-public-token-value";`,
+  },
+  "fail",
+  /secret-like runtime exposure/,
 );
