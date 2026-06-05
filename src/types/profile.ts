@@ -1,6 +1,7 @@
 import type { AudienceVisibility } from "./audience";
 import type { FeedItemId } from "./feed";
 import type { PostAvailableAction, PostRelation } from "./post";
+import type { MetadataComponentV2 } from "./post-extensions";
 import type { VerificationState, VerificationTag } from "./verification";
 
 export type ProfileTabKey =
@@ -79,6 +80,7 @@ export interface ProfileListItem {
   locationArea?: string;
   status?: ProfileActivityStatus;
   visibility?: AudienceVisibility;
+  components?: MetadataComponentV2[];
   /**
    * PRD V0.3 §2.4 / B3-2 — backend-emitted post graph relations attached to
    * the activity row. When the profile activity DTO carries `relations[]`,

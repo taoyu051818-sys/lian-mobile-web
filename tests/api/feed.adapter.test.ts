@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { normalizeFeedCardTemplate, normalizeFeedItem } from "../../src/api/feed";
+import { backendFeedGraphFixture } from "../fixtures/backend-contract-graph";
 
 describe("feed adapter normalization", () => {
   it("maps club content type to the dedicated club card template", () => {
@@ -150,6 +151,24 @@ describe("feed adapter normalization", () => {
           reasonText: "Need verified identity",
         },
       ],
+    });
+  });
+
+  it("preserves backend contract fixture graph primitives on feed items", () => {
+    const item = normalizeFeedItem(backendFeedGraphFixture);
+
+    expect(item).toMatchObject({
+      tid: 97203,
+      title: "Backend graph feed item",
+      visibility: "campus",
+      presentationIntent: "text",
+      components: backendFeedGraphFixture.metadata.components,
+      relations: [
+        { type: "project_submission", targetTid: 97204 },
+        { type: "merchant_errand", targetTid: 97205 },
+      ],
+      relationHint: { type: "project_submission", targetTid: 97204 },
+      availableActions: backendFeedGraphFixture.metadata.availableActions,
     });
   });
 

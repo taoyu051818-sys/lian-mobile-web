@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { backendPostDetailGraphFixture } from "../fixtures/backend-contract-graph";
 import {
   normalizePostDetail,
   normalizePostLikeResponse,
@@ -239,6 +240,55 @@ describe("posts adapter normalization", () => {
       { type: "open_submission", enabled: true },
       { type: "request_review", reason: "needs_identity", reasonText: "Verify first" },
     ]);
+  });
+
+  it("preserves backend contract fixture metadata components, relations, and actions", () => {
+    const detail = normalizePostDetail(
+      backendPostDetailGraphFixture,
+      backendPostDetailGraphFixture.tid,
+    );
+
+    expect(detail.metadata).toEqual({
+      _v: 2,
+      components: backendPostDetailGraphFixture.metadata.components,
+    });
+    expect(detail.components).toEqual(backendPostDetailGraphFixture.metadata.components);
+    expect(detail.event).toEqual({
+      eventId: "evt_contract_972",
+      location: "North Campus Hall",
+      capacity: 40,
+      joinedCount: 12,
+      rewardSummary: "10 points",
+      status: "open",
+    });
+    expect(detail.help).toEqual({
+      helpId: "help_contract_972",
+      status: "linked_event",
+      voteCount: 7,
+      commentCount: 2,
+      linkedEventTid: 97201,
+    });
+    expect(detail.merchant).toEqual({
+      name: "Contract Cafe",
+      category: "food",
+      hours: "09:00-18:00",
+      contact: "campus-cafe@example.test",
+      errandSupported: true,
+      verifiedAt: "2026-06-01T08:00:00.000Z",
+    });
+    expect(detail.trade).toEqual({
+      price: "¥25",
+      state: "reserved",
+      category: "textbooks",
+      verifiedAt: "2026-06-01T09:00:00.000Z",
+    });
+    expect(detail.relations).toEqual([
+      { type: "help_event_link", target: { kind: "post", id: "97202" }, role: "source" },
+      { type: "event_reward", target: { kind: "user", id: "u_972" }, role: "recipient" },
+    ]);
+    expect(detail.availableActions).toEqual(
+      backendPostDetailGraphFixture.metadata.availableActions,
+    );
   });
 
   it("coerces V2 help linkedEventTid on post detail and drops non-positive values", () => {

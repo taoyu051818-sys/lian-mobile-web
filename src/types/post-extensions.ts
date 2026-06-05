@@ -350,12 +350,40 @@ export interface GroupbuyComponentV2 {
   joined?: boolean;
 }
 
+export interface MediaComponentV2 {
+  type: "media";
+  imageUrls?: string[];
+  coverUrl?: string;
+}
+
+export interface QualityComponentV2 {
+  type: "quality";
+  score?: number;
+  labels?: string[];
+}
+
+export interface AudienceComponentV2 {
+  type: "audience";
+  visibility?: string;
+  schoolId?: string;
+  campusId?: string;
+}
+
+export interface TagsComponentV2 {
+  type: "tags";
+  tags?: string[];
+}
+
 /**
  * Union of all V2 metadata component types.
  */
 export type MetadataComponentV2 =
   | LocationComponentV2
   | TimeComponentV2
+  | MediaComponentV2
+  | QualityComponentV2
+  | AudienceComponentV2
+  | TagsComponentV2
   | EventComponentV2
   | MerchantComponentV2
   | TradeComponentV2

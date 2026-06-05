@@ -1,5 +1,6 @@
 import { apiGet, apiSend, apiUpload, LianApiError } from "./http";
 import { normalizePostAvailableActions, normalizePostRelations } from "../platform/api-normalizers";
+import { extractV2Components } from "../platform/api-normalizers";
 import type { AudienceVisibility } from "../types/audience";
 import type { FeedItemId } from "../types/feed";
 import type {
@@ -73,9 +74,19 @@ function normalizeOptionalVisibility(value: unknown): AudienceVisibility | undef
 
 export function normalizeProfileListItem(item: unknown): ProfileListItem {
   const candidate = item && typeof item === "object" ? (item as Record<string, unknown>) : {};
+  const metadata =
+    candidate.metadata &&
+    typeof candidate.metadata === "object" &&
+    !Array.isArray(candidate.metadata)
+      ? (candidate.metadata as Record<string, unknown>)
+      : undefined;
   const tid = normalizeOptionalTid(candidate.tid);
   const id = normalizeOptionalText(candidate.id) || (tid ? String(tid) : undefined);
+  if (candidate.relations === undefined) candidate.relations = metadata?.relations;
+  if (candidate.availableActions === undefined)
+    candidate.availableActions = metadata?.availableActions;
   const relations = normalizePostRelations(candidate.relations);
+  const components = extractV2Components(candidate);
   const availableActions = normalizePostAvailableActions(candidate.availableActions);
   const title = normalizeOptionalText(candidate.title);
   const cover = normalizeOptionalText(candidate.cover);
@@ -96,6 +107,7 @@ export function normalizeProfileListItem(item: unknown): ProfileListItem {
     ...(locationArea ? { locationArea } : {}),
     ...(status ? { status } : {}),
     ...(visibility ? { visibility } : {}),
+    ...(components ? { components } : {}),
     ...(relations ? { relations } : {}),
     ...(availableActions ? { availableActions } : {}),
   };

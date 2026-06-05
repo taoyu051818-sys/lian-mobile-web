@@ -7,6 +7,7 @@ import {
   normalizeTradeExtensionV2,
 } from "../../src/platform/api-normalizers";
 import { normalizePostDetail } from "../../src/api/posts";
+import { backendMetadataComponentsContractFixture } from "../fixtures/backend-contract-graph";
 
 describe("V2 metadata component extraction", () => {
   it("extracts components array from metadata.components", () => {
@@ -49,6 +50,26 @@ describe("V2 metadata component extraction", () => {
       },
     };
     expect(extractV2Components(objectShaped)).toBeUndefined();
+  });
+
+  it("preserves all backend V2 component atoms from the contract fixture", () => {
+    const components = extractV2Components({
+      metadata: { components: backendMetadataComponentsContractFixture },
+    });
+
+    expect(components).toEqual(backendMetadataComponentsContractFixture);
+    expect(components?.map((component) => component.type)).toEqual([
+      "event",
+      "help",
+      "merchant",
+      "trade",
+      "location",
+      "time",
+      "media",
+      "quality",
+      "audience",
+      "tags",
+    ]);
   });
 
   it("filters out invalid component entries", () => {
