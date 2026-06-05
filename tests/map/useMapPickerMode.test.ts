@@ -37,6 +37,7 @@ interface FakeWindow {
   addEventListener: (event: string, handler: () => void) => void;
   removeEventListener: (event: string, handler: () => void) => void;
   dispatchHashChange: () => void;
+  dispatchPopState: () => void;
 }
 
 let fakeWindow: FakeWindow;
@@ -65,6 +66,9 @@ beforeEach(() => {
     },
     dispatchHashChange: () => {
       listeners.hashchange?.forEach((h) => h());
+    },
+    dispatchPopState: () => {
+      listeners.popstate?.forEach((h) => h());
     },
   };
   vi.stubGlobal("window", fakeWindow);
@@ -110,6 +114,20 @@ describe("useMapPickerMode — picker flag", () => {
     expect(picker.isPickerMode.value).toBe(false);
     hash = "#/map?picker=1";
     fakeWindow.dispatchHashChange();
+    expect(picker.isPickerMode.value).toBe(true);
+  });
+
+  it("reacts to popstate events so picker mode survives browser navigation", () => {
+    let hash = "#/map?picker=1";
+    const picker = useMapPickerMode({ hashSource: () => hash });
+    expect(picker.isPickerMode.value).toBe(true);
+
+    hash = "#/map";
+    fakeWindow.dispatchPopState();
+    expect(picker.isPickerMode.value).toBe(false);
+
+    hash = "#/map?picker=1";
+    fakeWindow.dispatchPopState();
     expect(picker.isPickerMode.value).toBe(true);
   });
 });

@@ -8,6 +8,12 @@ export interface MapBounds {
   east: number;
 }
 
+export interface MapViewportQuery {
+  bounds: MapBounds;
+  zoom: number;
+  types?: string[];
+}
+
 export interface MapPoint {
   lat: number;
   lng: number;

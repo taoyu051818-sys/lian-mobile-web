@@ -33,6 +33,12 @@ export interface LeafletMapOptions {
 
 export interface LeafletMapLike {
   getZoom(): number;
+  getBounds(): {
+    getSouth(): number;
+    getWest(): number;
+    getNorth(): number;
+    getEast(): number;
+  };
   getMaxZoom(): number;
   getPane(name: string): HTMLElement | null;
   invalidateSize(): void;

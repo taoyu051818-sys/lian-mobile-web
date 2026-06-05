@@ -1,8 +1,27 @@
 import { apiGet, LianApiError } from "./http";
-import type { MapRoadNetworkPreview, MapV2ItemsResponse } from "../types/map";
+import type { MapRoadNetworkPreview, MapV2ItemsResponse, MapViewportQuery } from "../types/map";
 
-export async function fetchMapV2Items(): Promise<MapV2ItemsResponse> {
-  return apiGet<MapV2ItemsResponse>("/api/map/v2/items");
+export type { MapViewportQuery } from "../types/map";
+
+function appendNumberParam(params: URLSearchParams, key: string, value: number) {
+  if (Number.isFinite(value)) params.set(key, String(value));
+}
+
+function buildMapV2ItemsPath(query?: MapViewportQuery): string {
+  if (!query) return "/api/map/v2/items";
+  const params = new URLSearchParams();
+  appendNumberParam(params, "south", query.bounds.south);
+  appendNumberParam(params, "west", query.bounds.west);
+  appendNumberParam(params, "north", query.bounds.north);
+  appendNumberParam(params, "east", query.bounds.east);
+  appendNumberParam(params, "zoom", query.zoom);
+  if (query.types) params.set("types", query.types.join(","));
+  const search = params.toString();
+  return search ? `/api/map/v2/items?${search}` : "/api/map/v2/items";
+}
+
+export async function fetchMapV2Items(query?: MapViewportQuery): Promise<MapV2ItemsResponse> {
+  return apiGet<MapV2ItemsResponse>(buildMapV2ItemsPath(query));
 }
 
 export async function fetchRoadNetworkPreview(): Promise<MapRoadNetworkPreview | null> {
