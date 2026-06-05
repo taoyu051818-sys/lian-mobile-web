@@ -7,6 +7,7 @@ import {
   resolveProfileTabRequest,
 } from "../../src/api/profile";
 import { useProfileAliasPicker } from "../../src/features/profile/useProfileAliasPicker";
+import { backendProfileGraphFixture } from "../fixtures/backend-contract-graph";
 
 describe("profile activity tab routing", () => {
   it("routes each tab to the live /api/me endpoint", () => {
@@ -238,6 +239,20 @@ describe("profile activity normalization", () => {
         title: "上下文为空",
       });
     }
+  });
+
+  it("preserves backend contract fixture graph context on profile activity rows", () => {
+    expect(normalizeProfileListItem(backendProfileGraphFixture)).toEqual({
+      tid: 97206,
+      id: "97206",
+      title: "Backend graph profile row",
+      components: backendProfileGraphFixture.metadata.components,
+      relations: [
+        { type: "trade_offer_link", target: { kind: "post", id: "97207" }, role: "offer" },
+        { type: "custom_user_relation", target: { kind: "user", id: "u_972" } },
+      ],
+      availableActions: backendProfileGraphFixture.metadata.availableActions,
+    });
   });
 
   it("normalizes list responses with mixed graph context rows", () => {

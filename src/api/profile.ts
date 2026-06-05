@@ -1,5 +1,9 @@
 import { apiGet, apiSend, apiUpload, LianApiError } from "./http";
-import { normalizePostAvailableActions, normalizePostRelations } from "../platform/api-normalizers";
+import {
+  extractV2Components,
+  normalizePostAvailableActions,
+  normalizePostRelations,
+} from "../platform/api-normalizers";
 import type { AudienceVisibility } from "../types/audience";
 import type { FeedItemId } from "../types/feed";
 import type {
@@ -73,10 +77,19 @@ function normalizeOptionalVisibility(value: unknown): AudienceVisibility | undef
 
 export function normalizeProfileListItem(item: unknown): ProfileListItem {
   const candidate = item && typeof item === "object" ? (item as Record<string, unknown>) : {};
+  const metadata =
+    candidate.metadata &&
+    typeof candidate.metadata === "object" &&
+    !Array.isArray(candidate.metadata)
+      ? (candidate.metadata as Record<string, unknown>)
+      : undefined;
   const tid = normalizeOptionalTid(candidate.tid);
   const id = normalizeOptionalText(candidate.id) || (tid ? String(tid) : undefined);
-  const relations = normalizePostRelations(candidate.relations);
-  const availableActions = normalizePostAvailableActions(candidate.availableActions);
+  const relations = normalizePostRelations(candidate.relations ?? metadata?.relations);
+  const components = extractV2Components(candidate);
+  const availableActions = normalizePostAvailableActions(
+    candidate.availableActions ?? metadata?.availableActions,
+  );
   const title = normalizeOptionalText(candidate.title);
   const cover = normalizeOptionalText(candidate.cover);
   const timestampISO = normalizeOptionalText(candidate.timestampISO);
@@ -96,6 +109,7 @@ export function normalizeProfileListItem(item: unknown): ProfileListItem {
     ...(locationArea ? { locationArea } : {}),
     ...(status ? { status } : {}),
     ...(visibility ? { visibility } : {}),
+    ...(components ? { components } : {}),
     ...(relations ? { relations } : {}),
     ...(availableActions ? { availableActions } : {}),
   };
