@@ -22,6 +22,7 @@ on:
   pull_request:
     branches:
       - main
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -80,9 +81,11 @@ jobs:
           npx playwright test \
             tests/e2e/account-fixture.spec.ts \
             tests/e2e/post-detail-cold-start.spec.ts \
+            tests/e2e/journey.spec.ts \
             tests/e2e/messages-notification-proof.spec.ts \
             tests/e2e/runner-center.spec.ts \
             -g "anonymous browse|@account-fixture|@detail|@messages|@runner" \
+            --grep-invert "@errand-transition" \
             --reporter=list
 
       - name: Upload Playwright artifacts on failure
