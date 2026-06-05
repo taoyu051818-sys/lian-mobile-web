@@ -282,6 +282,8 @@ Production startup owns only the last step. It must never repair missing prerequ
 Before deploying a new frontend release:
 
 - [ ] CI passed (`npm run verify`)
+- [ ] `E2E PR Gate` passed for PR-bound releases
+- [ ] Full `E2E Journey` is green from the latest scheduled run or a manual run for every journey group touched by a release that changes user flows, role permissions, publish/order state, messaging, profile/detail pages, or runtime API contracts
 - [ ] Release manifest generated with git SHA, build time, Node/npm versions, and asset list
 - [ ] Previous release ID recorded as rollback target
 - [ ] Runtime config verified for the target environment
