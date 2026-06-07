@@ -241,7 +241,7 @@ describe("PostDetailPanel — detail action auth gate", () => {
     expect(panel).toMatch(
       /campusVerified,[\s\S]*isAuthenticated,[\s\S]*refresh: refreshViewerAuth/,
     );
-    expect(panel).toMatch(/isAuthenticated,\n  onMessage: showActionMessage/);
+    expect(panel).toMatch(/isAuthenticated,\n[ ]{2}onMessage: showActionMessage/);
   });
 
   it("the shared auth probe keeps a loaded public detail anonymous when /auth/me has no user", async () => {
@@ -270,7 +270,7 @@ describe("PostDetailPanel — detail action auth gate", () => {
   });
 
   it("refreshes the auth probe when the loaded detail post changes", () => {
-    const watcher = panel.match(/watch\(\n  post,[\s\S]*?\n\);/);
+    const watcher = panel.match(/watch\(\n[ ]{2}post,[\s\S]*?\n\);/);
     expect(watcher?.[0]).toContain("void refreshViewerAuth();");
   });
 });
