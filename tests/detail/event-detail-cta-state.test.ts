@@ -11,8 +11,15 @@
  * (`event-completion-ui.test.ts`, `event-reward-summary.test.ts`).
  */
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { readFileSync } from "node:fs";
+
+vi.mock("../../src/api/profile", () => ({
+  fetchAuthMe: vi.fn(),
+}));
+
+import * as profileApi from "../../src/api/profile";
+import { useViewerErrandPermission } from "../../src/features/detail/useViewerErrandPermission";
 
 import {
   resolveDetailCtaPresentation,
@@ -221,5 +228,49 @@ describe("PostDetailEventBlock — primary CTA wires through DetailCtaButton (mw
   it("keeps the dedicated reason hint line so layout does not shift", () => {
     expect(view).toMatch(/post-detail-event-block__hint/);
     expect(view).toMatch(/showPrimaryReason/);
+  });
+});
+
+describe("PostDetailPanel — detail action auth gate", () => {
+  const panel = readRepoFile("../../src/features/detail/PostDetailPanel.vue");
+  const mockAuthMe = vi.mocked(profileApi.fetchAuthMe);
+
+  it("uses the auth probe result instead of post presence for detail actions (#968)", () => {
+    expect(panel).not.toMatch(/Boolean\(post\.value\)/);
+    expect(panel).not.toMatch(/const isAuthenticated = computed/);
+    expect(panel).toMatch(
+      /campusVerified,[\s\S]*isAuthenticated,[\s\S]*refresh: refreshViewerAuth/,
+    );
+    expect(panel).toMatch(/isAuthenticated,\n[ ]{2}onMessage: showActionMessage/);
+  });
+
+  it("the shared auth probe keeps a loaded public detail anonymous when /auth/me has no user", async () => {
+    mockAuthMe.mockResolvedValueOnce(null);
+
+    const authProbe = useViewerErrandPermission();
+    await authProbe.refresh();
+
+    expect(authProbe.probed.value).toBe(true);
+    expect(authProbe.isAuthenticated.value).toBe(false);
+    expect(authProbe.campusVerified.value).toBe(false);
+  });
+
+  it("the shared auth probe exposes signed-in state separately from campus verification", async () => {
+    mockAuthMe.mockResolvedValueOnce({
+      id: "u-1",
+      username: "tester",
+      verificationState: {},
+    });
+
+    const authProbe = useViewerErrandPermission();
+    await authProbe.refresh();
+
+    expect(authProbe.isAuthenticated.value).toBe(true);
+    expect(authProbe.campusVerified.value).toBe(false);
+  });
+
+  it("refreshes the auth probe when the loaded detail post changes", () => {
+    const watcher = panel.match(/watch\(\n[ ]{2}post,[\s\S]*?\n\);/);
+    expect(watcher?.[0]).toContain("void refreshViewerAuth();");
   });
 });
