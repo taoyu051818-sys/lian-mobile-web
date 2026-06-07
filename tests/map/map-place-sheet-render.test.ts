@@ -66,4 +66,13 @@ describe("MapPlaceSheet runtime DTO rendering", () => {
     expect(emptyHtml).toContain("本地点名");
     expect(emptyHtml).toContain(PLACE_SHEET_SETTLING);
   });
+
+  it("renders a readable fallback for unknown selected-place types before the DTO arrives", async () => {
+    const html = await renderSheet({
+      selectedPlace: { ...selectedPlace, type: "quiet-zone", placeId: undefined },
+      placeSheet: null,
+    });
+
+    expect(html).toContain("quiet-zone");
+  });
 });
