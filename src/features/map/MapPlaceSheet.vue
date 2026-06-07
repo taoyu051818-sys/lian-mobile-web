@@ -31,7 +31,7 @@ defineEmits<{
   openPost: [tid: FeedItemId | string];
 }>();
 
-const placeTypeText = computed(() => placeTypeLabel(props.placeSheet?.type));
+const placeTypeText = computed(() => placeTypeLabel(props.placeSheet?.type, props.selectedPlace?.type));
 const placeStatusText = computed(() => placeStatusLabel(props.placeSheet?.status));
 
 function placeName(place: MapLocation | MapPost): string {
@@ -58,10 +58,10 @@ function placeName(place: MapLocation | MapPost): string {
         <p v-if="placeSheetLoading" class="map-place-sheet__state">{{ LOADING_PLACE }}</p>
         <p v-else-if="placeSheetError" class="map-place-sheet__error">{{ placeSheetError }}</p>
         <template v-else>
-          <div v-if="placeSheet" class="map-place-sheet__meta">
-            <span>{{ placeStatusText }}</span>
+          <div v-if="placeSheet || placeTypeText" class="map-place-sheet__meta">
+            <span v-if="placeSheet">{{ placeStatusText }}</span>
             <span v-if="placeTypeText">{{ placeTypeText }}</span>
-            <span v-if="placeSheet.updatedAt"
+            <span v-if="placeSheet?.updatedAt"
               >{{ PLACE_SHEET_UPDATED_PREFIX }}
               {{ formatRelativeTime(placeSheet.updatedAt) || placeSheet.updatedAt }}</span
             >
