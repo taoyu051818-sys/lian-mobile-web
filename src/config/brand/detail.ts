@@ -166,6 +166,8 @@ export const AVAILABLE_ACTIONS_BLOCK_LABEL = "可用操作";
 export const AVAILABLE_ACTION_MARK_SOLVED = "标记为已解决";
 export const AVAILABLE_ACTION_CLAIM_REWARD = "领取奖励";
 export const AVAILABLE_ACTION_COMPLETE_ERRAND = "完成代办";
+export const AVAILABLE_ACTION_TRADE_RESERVE = "预约交易";
+export const AVAILABLE_ACTION_MESSAGE_AUTHOR = "联系发布者";
 
 /** 求助管理写侧 (PRD V0.1 §6.5 / §11.3) */
 export const HELP_MANAGE_BLOCK_LABEL = "求助管理";
