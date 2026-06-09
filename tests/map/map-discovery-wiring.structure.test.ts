@@ -45,6 +45,7 @@ describe("map discovery wiring", () => {
     const brand = readRepoFile("../../src/config/brand/map.ts");
     expect(brand).toContain('MAP_DISCOVERY_TITLE = "附近发现"');
     expect(brand).toContain('MAP_DISCOVERY_FILTERS_META = "地点 · 动态 · 商家 · 关系"');
+    expect(brand).toContain('MAP_DISCOVERY_EMPTY_FILTERS_META = "未选择类型"');
     expect(brand).toContain('MAP_FILTER_POSTS = "动态"');
     expect(brand).toContain('MAP_FILTER_MERCHANTS = "商家"');
     expect(brand).toContain('MAP_FILTER_RELATIONS = "关系"');

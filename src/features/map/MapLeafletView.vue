@@ -13,11 +13,7 @@ import { useMapDataCache } from "./useMapDataCache";
 import { useMapPickerMode } from "./useMapPickerMode";
 import { useMapSelection } from "./useMapSelection";
 import { useDetailNavigation } from "../../app/detail-navigation";
-import {
-  MAP_ARIA_LABEL,
-  MAP_DISCOVERY_FILTERS_META,
-  MAP_DISCOVERY_TITLE,
-} from "../../config/brand";
+import { MAP_ARIA_LABEL, MAP_DISCOVERY_TITLE } from "../../config/brand";
 import { DEFAULT_MAP_VIEWPORT_POLICY } from "../../types/map-policy";
 
 defineOptions({ name: "MapLeafletView" });
@@ -26,7 +22,7 @@ const emit = defineEmits<{
   chrome: [spec: PageChromeSpec];
 }>();
 
-const { filterActive, activeTypes, toggleFilter, MAP_FILTERS } = useMapChrome();
+const { filterActive, activeTypes, activeFilterMeta, toggleFilter, MAP_FILTERS } = useMapChrome();
 const viewport = ref<MapViewportQuery | null>(null);
 
 const { mapData, roadPreview, loading, errorMessage, loadMap } = useMapDataCache();
@@ -61,13 +57,6 @@ const visibleLayers = computed(() => ({
   locations: filterActive.value.locations,
   posts: filterActive.value.posts,
 }));
-
-const activeFilterMeta = computed(() => {
-  const labels = MAP_FILTERS.filter((filter) => filterActive.value[filter.id]).map(
-    (filter) => filter.label,
-  );
-  return labels.length ? labels.join(" · ") : MAP_DISCOVERY_FILTERS_META;
-});
 
 const mapQuery = computed<MapViewportQuery | null>(() => {
   if (!viewport.value) return null;
