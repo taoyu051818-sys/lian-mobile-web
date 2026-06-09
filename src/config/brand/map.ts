@@ -4,6 +4,7 @@ export const MAP_ARIA_LABEL = "校园地图";
 /** 地图筛选 */
 export const MAP_DISCOVERY_TITLE = "附近发现";
 export const MAP_DISCOVERY_FILTERS_META = "地点 · 动态 · 商家 · 关系";
+export const MAP_DISCOVERY_EMPTY_FILTERS_META = "未选择类型";
 export const MAP_FILTER_LOCATIONS = "地点";
 export const MAP_FILTER_POSTS = "动态";
 export const MAP_FILTER_MERCHANTS = "商家";
