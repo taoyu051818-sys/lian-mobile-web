@@ -11,16 +11,17 @@ as the queue and contract source of truth, starting from the LIAN Control Room a
 Current coordination snapshot:
 
 - Control-plane entrypoint: `taoyu051818-sys/lian-platform-server#424` is the
-  Control Room record for cross-repo queue and contract coordination; it is
+  Control Room issue for cross-repo queue and contract coordination; it is
   closed as of 2026-05-30, so follow any successor pointers from GitHub if the
   bus has rolled again.
-- Frontend follow-ups: `taoyu051818-sys/lian-mobile-web#988` remains open for
-  the E2E CI gate, while `taoyu051818-sys/lian-mobile-web#998` and
-  `taoyu051818-sys/lian-mobile-web#980` are closed.
+- Frontend follow-ups: `taoyu051818-sys/lian-mobile-web#980`,
+  `taoyu051818-sys/lian-mobile-web#988`, and
+  `taoyu051818-sys/lian-mobile-web#998` are closed; treat them as shipped
+  context rather than active queue items.
 - Shipped frontend context: `taoyu051818-sys/lian-mobile-web#1001`,
   `taoyu051818-sys/lian-mobile-web#1002`, and
   `taoyu051818-sys/lian-mobile-web#1003` are merged.
-- Shipped backend dependency context: `taoyu051818-sys/lian-platform-server#595`,
+- Shipped backend dependency issues: `taoyu051818-sys/lian-platform-server#595`,
   `taoyu051818-sys/lian-platform-server#599`,
   `taoyu051818-sys/lian-platform-server#625`, and
   `taoyu051818-sys/lian-platform-server#627` are closed.
