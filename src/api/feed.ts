@@ -121,6 +121,8 @@ const FEED_RELATION_HINTS: ReadonlySet<string> = new Set([
   "merchant_errand",
   "project_submission",
   "event_reward",
+  "groupbuy_joined",
+  "groupbuy_created",
 ]);
 
 function normalizeFeedRelationHint(value: unknown): string | undefined {

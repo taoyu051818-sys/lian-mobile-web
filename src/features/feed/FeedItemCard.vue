@@ -32,6 +32,8 @@ import {
   FEED_RELATION_HINT_MERCHANT_ERRAND,
   FEED_RELATION_HINT_PROJECT_SUBMISSION,
   FEED_RELATION_HINT_EVENT_REWARD,
+  FEED_RELATION_HINT_GROUPBUY_JOINED,
+  FEED_RELATION_HINT_GROUPBUY_CREATED,
   TRUST_SIGNAL_IDENTITY_PREFIX,
   TRUST_SIGNAL_UNKNOWN,
 } from "../../config/brand";
@@ -62,6 +64,8 @@ const RELATION_HINT_LABELS: Readonly<Record<string, string>> = {
   merchant_errand: FEED_RELATION_HINT_MERCHANT_ERRAND,
   project_submission: FEED_RELATION_HINT_PROJECT_SUBMISSION,
   event_reward: FEED_RELATION_HINT_EVENT_REWARD,
+  groupbuy_joined: FEED_RELATION_HINT_GROUPBUY_JOINED,
+  groupbuy_created: FEED_RELATION_HINT_GROUPBUY_CREATED,
 };
 
 const props = defineProps<{ item: FeedItem }>();
@@ -229,10 +233,6 @@ function handleCustomContextMenu(event: MouseEvent) {
   showContextMenu.value = true;
 }
 
-function handleRelationOpen(targetTid: number) {
-  emit("open", targetTid);
-}
-
 function handleClubOpen(
   id: FeedItemId,
   payload?: { item: FeedItem; rect: { top: number; left: number; width: number; height: number } },
@@ -275,7 +275,6 @@ function handleClubOpen(
       @click="openCard"
       @keydown.enter.prevent="openCardFromKeyboard"
       @keydown.space.prevent="openCardFromKeyboard"
-      @open-relation="handleRelationOpen"
     />
 
     <!-- Context menu for long press -->
