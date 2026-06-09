@@ -158,6 +158,8 @@ describe("ProfileCollectionList graph context rendering", () => {
     expect(src).toMatch(/help_event_link:\s*PROFILE_RELATION_TYPE_HELP_EVENT_LINK_TAG/);
     expect(src).toMatch(/claim_reward:\s*AVAILABLE_ACTION_CLAIM_REWARD/);
     expect(src).toMatch(/complete_errand:\s*AVAILABLE_ACTION_COMPLETE_ERRAND/);
+    expect(src).toMatch(/trade_reserve:\s*AVAILABLE_ACTION_TRADE_RESERVE/);
+    expect(src).toMatch(/message_author:\s*AVAILABLE_ACTION_MESSAGE_AUTHOR/);
     expect(src).toMatch(/labels\[type\]\s*\?\?\s*type/);
   });
 });
