@@ -31,7 +31,9 @@ defineEmits<{
   openPost: [tid: FeedItemId | string];
 }>();
 
-const placeTypeText = computed(() => placeTypeLabel(props.placeSheet?.type, props.selectedPlace?.type));
+const placeTypeText = computed(() =>
+  placeTypeLabel(props.placeSheet?.type, props.selectedPlace?.type),
+);
 const placeStatusText = computed(() => placeStatusLabel(props.placeSheet?.status));
 
 function placeName(place: MapLocation | MapPost): string {
