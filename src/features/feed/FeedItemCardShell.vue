@@ -42,10 +42,6 @@ const props = defineProps<{
   trustSignal: string | null;
 }>();
 
-const emit = defineEmits<{
-  openRelation: [targetTid: number];
-}>();
-
 const ariaLabel = computed(() => `${props.title}，${props.authorName}`);
 
 // Body expand/collapse is purely visual — kept internal so no app state escapes.
@@ -60,11 +56,6 @@ function checkBodyClamp() {
     return;
   }
   needsBodyClamp.value = el.scrollHeight > el.clientHeight + 2;
-}
-
-function openRelationHint() {
-  if (!props.relationHint?.targetTid) return;
-  emit("openRelation", props.relationHint.targetTid);
 }
 
 function toggleBody() {
@@ -107,17 +98,9 @@ onMounted(() => {
         primaryTag
       }}</span>
 
-      <button
-        v-if="relationHint"
-        class="feed-item-card__relation-hint"
-        type="button"
-        :disabled="!relationHint.targetTid"
-        @click.stop="openRelationHint"
-        @keydown.enter.stop
-        @keydown.space.stop
-      >
+      <span v-if="relationHint" class="feed-item-card__relation-hint">
         {{ relationHint.label }}
-      </button>
+      </span>
 
       <h3 :title="title">{{ title }}</h3>
 
@@ -274,9 +257,5 @@ onMounted(() => {
   font-size: 11px;
   font-weight: 700;
   line-height: 1.3;
-}
-
-.feed-item-card__relation-hint:disabled {
-  cursor: default;
 }
 </style>

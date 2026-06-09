@@ -17,6 +17,8 @@ export const FEED_RELATION_HINT_SOLUTION_EVENT = "求助有进展";
 export const FEED_RELATION_HINT_MERCHANT_ERRAND = "商家相关";
 export const FEED_RELATION_HINT_PROJECT_SUBMISSION = "项目投稿";
 export const FEED_RELATION_HINT_EVENT_REWARD = "活动奖励";
+export const FEED_RELATION_HINT_GROUPBUY_JOINED = "参与拼单";
+export const FEED_RELATION_HINT_GROUPBUY_CREATED = "发起拼单";
 
 /** 卡片模板视觉记号（FeedItemCard.vue templateMark 字符标） */
 export const FEED_CARD_MARK_MERCHANT = "食";
