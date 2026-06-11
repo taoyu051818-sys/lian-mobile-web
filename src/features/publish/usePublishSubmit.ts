@@ -46,6 +46,7 @@ function createPublishActionablePostPreview(input: {
   identityTag: string;
   imageUrls: string[];
   locationArea: string;
+  event?: { startsAt?: string; joinPolicy?: EventJoinPolicy };
   merchant?: { input: MerchantPublishInput; contentType: MerchantContentType };
   trade?: { input: TradePublishInput; contentType: TradeContentType };
 }): PublishActionablePostPreview {
@@ -57,6 +58,9 @@ function createPublishActionablePostPreview(input: {
     input.locationArea ? `地点：${input.locationArea}` : "",
     input.tag ? `标签：${input.tag}` : "",
     input.identityTag ? `身份：${input.identityTag}` : "",
+    input.event?.startsAt || input.event?.joinPolicy
+      ? `活动：${[input.event.startsAt, input.event.joinPolicy].filter(Boolean).join(" · ")}`
+      : "",
     input.merchant?.input.name ? `商家：${input.merchant.input.name}` : "",
     input.trade?.input.price || input.trade?.input.category
       ? `交易：${input.trade.input.price || input.trade.input.category}`
@@ -90,7 +94,7 @@ export function usePublishSubmit(options: {
   publishing: Ref<boolean>;
   errorMessage: Ref<string>;
   successMessage: Ref<string>;
-  actionablePreview: Ref<PublishActionablePostPreview | null>;
+  actionablePreview?: Ref<PublishActionablePostPreview | null>;
   lastTid: Ref<string | number | null>;
   normalizedTag: Ref<string>;
   normalizedIdentityTag: Ref<string>;
@@ -228,12 +232,15 @@ export function usePublishSubmit(options: {
         identityTag: options.normalizedIdentityTag.value,
         imageUrls: options.uploadedImageUrls.value,
         locationArea: options.locationPreviewLabel.value,
+        event: { startsAt, joinPolicy: options.eventJoinPolicy?.value || "open" },
       });
       options.lastTid.value = response.tid || null;
       options.successMessage.value = PUBLISH_EVENT_SUCCESS;
       hapticSuccess();
       options.resetForm();
-      options.actionablePreview.value = submittedActionablePreview;
+      if (options.actionablePreview) {
+        options.actionablePreview.value = submittedActionablePreview;
+      }
     } catch (error) {
       const message = resolveWriteActionErrorMessage("publish", error);
       options.errorMessage.value = isWriteActionGenericFallback("publish", message)
@@ -251,7 +258,9 @@ export function usePublishSubmit(options: {
       validateTradeFields();
     options.errorMessage.value = validation;
     options.successMessage.value = "";
-    options.actionablePreview.value = null;
+    if (options.actionablePreview) {
+      options.actionablePreview.value = null;
+    }
     options.lastTid.value = null;
     if (validation || options.publishing.value) return;
 
@@ -328,7 +337,9 @@ export function usePublishSubmit(options: {
           : PUBLISH_SUCCESS;
       hapticSuccess();
       options.resetForm();
-      options.actionablePreview.value = submittedActionablePreview;
+      if (options.actionablePreview) {
+        options.actionablePreview.value = submittedActionablePreview;
+      }
     } catch (error) {
       options.errorMessage.value = resolveWriteActionErrorMessage("publish", error);
       hapticError();

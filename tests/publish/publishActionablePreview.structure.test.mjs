@@ -74,15 +74,15 @@ test("publish success threads front-end-only actionable post structure into prev
   assert.match(typeSrc, /export interface PublishActionablePostPreview/);
   assert.doesNotMatch(typeSrc, /actionablePost\??: PublishActionablePostPreview/);
   assert.doesNotMatch(apiSrc, /actionablePost:/);
-  assert.match(submitSrc, /actionablePreview: Ref<PublishActionablePostPreview \| null>/);
+  assert.match(submitSrc, /actionablePreview\?: Ref<PublishActionablePostPreview \| null>/);
   assert.match(submitSrc, /function createPublishActionablePostPreview/);
   assert.match(
     submitSrc,
-    /const submittedActionablePreview = createPublishActionablePostPreview\([\s\S]*?kind: "event"[\s\S]*?options\.resetForm\(\);\n\s*options\.actionablePreview\.value = submittedActionablePreview/,
+    /const submittedActionablePreview = createPublishActionablePostPreview\([\s\S]*?kind: "event"[\s\S]*?options\.resetForm\(\);\n\s*if \(options\.actionablePreview\) \{\n\s*options\.actionablePreview\.value = submittedActionablePreview/,
   );
   assert.match(
     submitSrc,
-    /const submittedActionablePreview = createPublishActionablePostPreview\([\s\S]*?kind,[\s\S]*?locationArea: payload\.metadata\.locationArea \|\| ""[\s\S]*?options\.resetForm\(\);\n\s*options\.actionablePreview\.value = submittedActionablePreview/,
+    /const submittedActionablePreview = createPublishActionablePostPreview\([\s\S]*?kind,[\s\S]*?locationArea: payload\.metadata\.locationArea \|\| ""[\s\S]*?options\.resetForm\(\);\n\s*if \(options\.actionablePreview\) \{\n\s*options\.actionablePreview\.value = submittedActionablePreview/,
   );
   assert.match(
     viewSrc,
