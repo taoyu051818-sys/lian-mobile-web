@@ -62,8 +62,16 @@ describe("usePublishSubmit event draft context", () => {
       titleCandidate: ref("AI coffee meetup"),
       bodyCandidate: ref("AI-polished launch notes"),
       suggestedComponents: ref([
-        { kind: "time", payload: {}, label: "加活动时间" },
-        { kind: "location", payload: {}, label: "确认地点" },
+        {
+          kind: "event",
+          payload: { startsAt: "2026-06-12T09:00", participantScope: { visibility: "campus" } },
+          label: "补充活动结构",
+        },
+        {
+          kind: "time",
+          payload: { startsAt: "2026-06-12T09:00", endsAt: "2026-06-12T10:00" },
+          label: "加活动时间",
+        },
       ]),
       ...overrides,
     };
@@ -118,8 +126,19 @@ describe("usePublishSubmit event draft context", () => {
           bodyCandidate: "AI-polished launch notes",
           inferredKind: "event",
           suggestedComponents: [
-            { kind: "time", payload: {}, label: "加活动时间" },
-            { kind: "location", payload: {}, label: "确认地点" },
+            {
+              kind: "event",
+              payload: {
+                startsAt: "2026-06-12T09:00",
+                participantScope: { visibility: "campus" },
+              },
+              label: "补充活动结构",
+            },
+            {
+              kind: "time",
+              payload: { startsAt: "2026-06-12T09:00", endsAt: "2026-06-12T10:00" },
+              label: "加活动时间",
+            },
           ],
         },
       },
