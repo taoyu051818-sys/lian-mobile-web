@@ -78,13 +78,9 @@ test("Feed relation hint: wrapper defines a single typed label map so brand copy
 test("Feed relation hint: shell renders a lightweight chip above the title", () => {
   assert.match(feedShellSource, /relationHint: \{ label: string; targetTid\?: number \} \| null;/);
   assert.match(feedShellSource, /graphCue: string;/);
-  assert.match(feedShellSource, /const emit = defineEmits<\{/);
-  assert.match(feedShellSource, /openRelation: \[targetTid: number\];/);
-  assert.match(feedShellSource, /function openRelationHint\(\)/);
-  assert.match(feedShellSource, /emit\("openRelation", props\.relationHint\.targetTid\);/);
   assert.match(
     feedShellSource,
-    /<button\s+v-if="relationHint"\s+class="feed-item-card__relation-hint"\s+type="button"\s+:disabled="!relationHint\.targetTid"\s+@click\.stop="openRelationHint"\s+@keydown\.enter\.stop\s+@keydown\.space\.stop\s+>\s+\{\{ relationHint\.label \}\}\s+<\/button>/,
+    /<button\s+v-if="relationHint"\s+class="feed-item-card__relation-hint"\s+type="button"\s+disabled\s+@click\.stop\s+@keydown\.enter\.stop\s+@keydown\.space\.stop\s+>\s+\{\{ relationHint\.label \}\}\s+<\/button>/,
   );
   assert.match(feedShellSource, /\.feed-item-card__relation-hint \{/);
   assert.match(feedShellSource, /display: inline-flex;/);

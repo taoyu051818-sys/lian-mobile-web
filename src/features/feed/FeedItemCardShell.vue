@@ -19,10 +19,6 @@ import FeedItemCardMedia from "./FeedItemCardMedia.vue";
 
 type CardTemplate = "image" | "text" | "activity" | "place" | "merchant" | "help";
 
-const emit = defineEmits<{
-  openRelation: [targetTid: number];
-}>();
-
 const props = defineProps<{
   title: string;
   coverUrl: string;
@@ -68,11 +64,6 @@ function toggleBody() {
   if (!bodyExpanded.value) nextTick(checkBodyClamp);
 }
 
-function openRelationHint() {
-  if (!props.relationHint?.targetTid) return;
-  emit("openRelation", props.relationHint.targetTid);
-}
-
 watch(
   () => props.tid,
   () => {
@@ -114,8 +105,8 @@ onMounted(() => {
         v-if="relationHint"
         class="feed-item-card__relation-hint"
         type="button"
-        :disabled="!relationHint.targetTid"
-        @click.stop="openRelationHint"
+        disabled
+        @click.stop
         @keydown.enter.stop
         @keydown.space.stop
       >
