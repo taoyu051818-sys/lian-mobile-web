@@ -246,6 +246,12 @@ export function usePublishSubmit(options: {
         aliasId: options.aliasId.value,
         locationDraft: options.selectedLocationDraft.value,
         kind,
+        candidates: {
+          title: options.titleCandidate?.value ?? null,
+          bodyCandidate: options.bodyCandidate?.value ?? null,
+          inferredKind: options.llmInferredKind?.value ?? null,
+          suggestedComponents: options.suggestedComponents?.value ?? [],
+        },
         ...(merchant ? { merchant } : {}),
         ...(trade ? { trade } : {}),
       });

@@ -15,6 +15,27 @@ describe("createEvent draft context payload", () => {
     apiSendMock.mockResolvedValue({ eventId: "event-1", tid: 971 });
   });
 
+  it("omits draftContext when caller has no reviewed draft context", async () => {
+    await createEvent({
+      title: "Coffee meetup",
+      body: "Discuss launch notes",
+      participantScope: { visibility: "campus" },
+      joinPolicy: "open",
+    });
+
+    expect(apiSendMock).toHaveBeenCalledTimes(1);
+    const [, options] = apiSendMock.mock.calls[0] as [string, { method?: string; body?: string }];
+    const body = JSON.parse(options.body || "{}");
+
+    expect(body).toEqual({
+      title: "Coffee meetup",
+      body: "Discuss launch notes",
+      participantScope: { visibility: "campus" },
+      joinPolicy: "open",
+    });
+    expect(body).not.toHaveProperty("draftContext");
+  });
+
   it("serializes full draftContext in the event publish request body", async () => {
     const draftContext = buildPublishPayload({
       imageUrls: ["https://example.test/event.jpg"],
@@ -36,7 +57,21 @@ describe("createEvent draft context payload", () => {
         title: "AI coffee meetup",
         bodyCandidate: "AI-polished launch notes",
         inferredKind: "event",
-        suggestedComponents: [{ kind: "time", payload: {}, label: "加活动时间" }],
+        suggestedComponents: [
+          {
+            kind: "event",
+            payload: {
+              startsAt: "2026-06-12T09:00",
+              participantScope: { visibility: "campus" },
+            },
+            label: "补充活动结构",
+          },
+          {
+            kind: "time",
+            payload: { startsAt: "2026-06-12T09:00", endsAt: "2026-06-12T10:00" },
+            label: "加活动时间",
+          },
+        ],
       },
     });
 
@@ -69,7 +104,21 @@ describe("createEvent draft context payload", () => {
       title: "AI coffee meetup",
       bodyCandidate: "AI-polished launch notes",
       inferredKind: "event",
-      suggestedComponents: [{ kind: "time", payload: {}, label: "加活动时间" }],
+      suggestedComponents: [
+        {
+          kind: "event",
+          payload: {
+            startsAt: "2026-06-12T09:00",
+            participantScope: { visibility: "campus" },
+          },
+          label: "补充活动结构",
+        },
+        {
+          kind: "time",
+          payload: { startsAt: "2026-06-12T09:00", endsAt: "2026-06-12T10:00" },
+          label: "加活动时间",
+        },
+      ],
     });
   });
 });
