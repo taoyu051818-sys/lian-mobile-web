@@ -16,9 +16,14 @@ export const FEED_RELATION_HINT_EVENT_FOLLOWUP = "活动续报";
 export const FEED_RELATION_HINT_SOLUTION_EVENT = "求助有进展";
 export const FEED_RELATION_HINT_MERCHANT_ERRAND = "商家相关";
 export const FEED_RELATION_HINT_PROJECT_SUBMISSION = "项目投稿";
+export const FEED_RELATION_HINT_PROJECT_REVIEW = "项目评审";
+export const FEED_RELATION_HINT_SUBMISSION_REVIEW = "投稿评审";
 export const FEED_RELATION_HINT_EVENT_REWARD = "活动奖励";
 export const FEED_RELATION_HINT_GROUPBUY_JOINED = "参与拼单";
 export const FEED_RELATION_HINT_GROUPBUY_CREATED = "发起拼单";
+export const FEED_GRAPH_CUE_PROJECT = "项目";
+export const FEED_GRAPH_CUE_REVIEW = "评审";
+export const FEED_GRAPH_CUE_SUBMISSION = "投稿";
 
 /** 卡片模板视觉记号（FeedItemCard.vue templateMark 字符标） */
 export const FEED_CARD_MARK_MERCHANT = "食";

@@ -21,9 +21,13 @@ import { fileURLToPath } from "node:url";
 
 import {
   AVAILABLE_ACTIONS_BLOCK_LABEL,
+  AVAILABLE_ACTION_APPROVE_SUBMISSION,
   AVAILABLE_ACTION_CLAIM_REWARD,
   AVAILABLE_ACTION_COMPLETE_ERRAND,
   AVAILABLE_ACTION_MARK_SOLVED,
+  AVAILABLE_ACTION_OPEN_SUBMISSION,
+  AVAILABLE_ACTION_REQUEST_REVIEW,
+  AVAILABLE_ACTION_SUBMIT_REVISION,
 } from "../../src/config/brand";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -39,6 +43,10 @@ describe("B3-1 actions brand strings exist and are Chinese-first", () => {
     ["AVAILABLE_ACTION_MARK_SOLVED", AVAILABLE_ACTION_MARK_SOLVED],
     ["AVAILABLE_ACTION_CLAIM_REWARD", AVAILABLE_ACTION_CLAIM_REWARD],
     ["AVAILABLE_ACTION_COMPLETE_ERRAND", AVAILABLE_ACTION_COMPLETE_ERRAND],
+    ["AVAILABLE_ACTION_OPEN_SUBMISSION", AVAILABLE_ACTION_OPEN_SUBMISSION],
+    ["AVAILABLE_ACTION_REQUEST_REVIEW", AVAILABLE_ACTION_REQUEST_REVIEW],
+    ["AVAILABLE_ACTION_SUBMIT_REVISION", AVAILABLE_ACTION_SUBMIT_REVISION],
+    ["AVAILABLE_ACTION_APPROVE_SUBMISSION", AVAILABLE_ACTION_APPROVE_SUBMISSION],
   ])("%s is a non-empty Chinese-first string", (_name, value) => {
     expect(value).toBeTruthy();
     expect(value.length).toBeGreaterThan(0);
@@ -67,13 +75,14 @@ describe("PostDetailActionsBlock — surfaces availableActions atom", () => {
 });
 
 describe("PostDetailActionsBlock — type label mapping", () => {
-  it("declares the seeded mapper for the initial 3 known action types", () => {
-    // The set is intentionally small and not authoritative — backend owns the
-    // enum. Adding a known type is a brand + table change, not a renderer
-    // change.
+  it("declares the seeded mapper for known action types including project/review/submission", () => {
     expect(source).toMatch(/mark_solved:\s*AVAILABLE_ACTION_MARK_SOLVED/);
     expect(source).toMatch(/claim_reward:\s*AVAILABLE_ACTION_CLAIM_REWARD/);
     expect(source).toMatch(/complete_errand:\s*AVAILABLE_ACTION_COMPLETE_ERRAND/);
+    expect(source).toMatch(/open_submission:\s*AVAILABLE_ACTION_OPEN_SUBMISSION/);
+    expect(source).toMatch(/request_review:\s*AVAILABLE_ACTION_REQUEST_REVIEW/);
+    expect(source).toMatch(/submit_revision:\s*AVAILABLE_ACTION_SUBMIT_REVISION/);
+    expect(source).toMatch(/approve_submission:\s*AVAILABLE_ACTION_APPROVE_SUBMISSION/);
   });
 
   it("falls back to the literal `type` for unknown actions", () => {

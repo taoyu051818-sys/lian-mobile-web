@@ -82,6 +82,7 @@ test("FeedItemCardShell exposes the display props enumerated in PRD step A", () 
     "cardTemplate",
     "templateMark",
     "relationHint",
+    "graphCue",
     "bodyPreview",
     "cardWarning",
   ]) {

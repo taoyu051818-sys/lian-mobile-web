@@ -694,6 +694,43 @@ describe("posts adapter — V2 graph primitive preservation (mw#967)", () => {
     ]);
   });
 
+  it("preserves project/review/submission graph primitives without widening PostType", () => {
+    const detail = normalizePostDetail(
+      {
+        tid: 330,
+        title: "Project review surface",
+        contentType: "project",
+        metadata: {
+          presentationIntent: "review",
+          _v: 2,
+          components: [{ type: "quality", status: "pending_review", workflow: "review" }],
+          relations: [
+            { type: "project_review", target: { kind: "post", id: "331" }, role: "source" },
+            { type: "review_submission", target: { kind: "post", id: "332" }, role: "target" },
+          ],
+          availableActions: [
+            { type: "request_review", enabled: true },
+            { type: "submit_revision", enabled: false, reasonText: "评审中暂不可修改" },
+          ],
+        },
+      },
+      330,
+    );
+
+    expect(detail.type).toBe("text");
+    expect(detail.components).toEqual([
+      { type: "quality", status: "pending_review", workflow: "review" },
+    ]);
+    expect(detail.relations).toEqual([
+      { type: "project_review", target: { kind: "post", id: "331" }, role: "source" },
+      { type: "review_submission", target: { kind: "post", id: "332" }, role: "target" },
+    ]);
+    expect(detail.availableActions).toEqual([
+      { type: "request_review", enabled: true },
+      { type: "submit_revision", enabled: false, reasonText: "评审中暂不可修改" },
+    ]);
+  });
+
   it("regression: V1 fixture still produces the same fallback for event/help/merchant/trade", () => {
     // Build a V1-only payload (no metadata.components, no top-level components,
     // no relations, no availableActions) and assert the legacy extension

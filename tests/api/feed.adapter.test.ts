@@ -197,21 +197,42 @@ describe("feed adapter normalization", () => {
       tid: 72,
       relations: [
         { type: "custom_relation", target: { kind: "post", id: "99" } },
-        { type: "project_submission", target: { kind: "post", id: "100" } },
+        { type: "project_review", target: { kind: "post", id: "100" } },
       ],
     });
 
     expect(item).toMatchObject({
       tid: 72,
       relationHint: {
-        type: "project_submission",
+        type: "project_review",
         targetTid: 100,
       },
       relations: [
         { type: "custom_relation", targetTid: 99 },
-        { type: "project_submission", targetTid: 100 },
+        { type: "project_review", targetTid: 100 },
       ],
     });
+  });
+
+  it("derives a non-navigating graph hint from known non-post graph relations", () => {
+    const item = normalizeFeedItem({
+      tid: 79,
+      relations: [
+        { type: "project_submission", target: { kind: "project", id: "project-991" } },
+      ],
+    });
+
+    expect(item).toMatchObject({
+      tid: 79,
+      relationHint: {
+        type: "project_submission",
+      },
+      relations: [
+        { type: "project_submission" },
+      ],
+    });
+    expect(item?.relationHint?.targetTid).toBeUndefined();
+    expect(item?.relations?.[0]?.targetTid).toBeUndefined();
   });
 
   it("derives relation hints from metadata relations when top-level relations are absent", () => {

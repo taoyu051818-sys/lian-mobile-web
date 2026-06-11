@@ -120,6 +120,9 @@ const FEED_RELATION_HINTS: ReadonlySet<string> = new Set([
   "solution_event",
   "merchant_errand",
   "project_submission",
+  "project_review",
+  "review_submission",
+  "submission_review",
   "event_reward",
   "groupbuy_joined",
   "groupbuy_created",
@@ -215,6 +218,7 @@ function normalizeFeedPostRelations(value: unknown): FeedItem["relations"] {
         const targetTid = normalizeFeedItemIdNum(target.id);
         if (targetTid > 0) return { type, targetTid };
       }
+      if (target && target.kind !== "post") return { type };
 
       const legacyTargetTid = normalizeFeedItemIdNum(
         record.targetTid || record.targetId || record.tid,

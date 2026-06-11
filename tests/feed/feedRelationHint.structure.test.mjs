@@ -49,6 +49,8 @@ test("Feed relation hint: wrapper defines a single typed label map so brand copy
   assert.match(feedBrandSource, /export const FEED_RELATION_HINT_SOLUTION_EVENT = "求助有进展";/);
   assert.match(feedBrandSource, /export const FEED_RELATION_HINT_MERCHANT_ERRAND = "商家相关";/);
   assert.match(feedBrandSource, /export const FEED_RELATION_HINT_PROJECT_SUBMISSION = "项目投稿";/);
+  assert.match(feedBrandSource, /export const FEED_RELATION_HINT_PROJECT_REVIEW = "项目评审";/);
+  assert.match(feedBrandSource, /export const FEED_RELATION_HINT_SUBMISSION_REVIEW = "投稿评审";/);
   assert.match(feedBrandSource, /export const FEED_RELATION_HINT_EVENT_REWARD = "活动奖励";/);
   const labelDecls = feedItemCardSource.match(/const RELATION_HINT_LABELS:/g) || [];
   assert.equal(
@@ -63,6 +65,9 @@ test("Feed relation hint: wrapper defines a single typed label map so brand copy
   assert.match(feedItemCardSource, /solution_event: FEED_RELATION_HINT_SOLUTION_EVENT/);
   assert.match(feedItemCardSource, /merchant_errand: FEED_RELATION_HINT_MERCHANT_ERRAND/);
   assert.match(feedItemCardSource, /project_submission: FEED_RELATION_HINT_PROJECT_SUBMISSION/);
+  assert.match(feedItemCardSource, /project_review: FEED_RELATION_HINT_PROJECT_REVIEW/);
+  assert.match(feedItemCardSource, /review_submission: FEED_RELATION_HINT_SUBMISSION_REVIEW/);
+  assert.match(feedItemCardSource, /submission_review: FEED_RELATION_HINT_SUBMISSION_REVIEW/);
   assert.match(feedItemCardSource, /event_reward: FEED_RELATION_HINT_EVENT_REWARD/);
   assert.match(
     feedItemCardSource,
@@ -72,6 +77,7 @@ test("Feed relation hint: wrapper defines a single typed label map so brand copy
 
 test("Feed relation hint: shell renders a lightweight chip above the title", () => {
   assert.match(feedShellSource, /relationHint: \{ label: string; targetTid\?: number \} \| null;/);
+  assert.match(feedShellSource, /graphCue: string;/);
   assert.match(feedShellSource, /const emit = defineEmits<\{/);
   assert.match(feedShellSource, /openRelation: \[targetTid: number\];/);
   assert.match(feedShellSource, /function openRelationHint\(\)/);
@@ -85,4 +91,32 @@ test("Feed relation hint: shell renders a lightweight chip above the title", () 
   assert.match(feedShellSource, /justify-self: start;/);
   assert.match(feedShellSource, /border-radius: var\(--radius-pill\);/);
   assert.match(feedShellSource, /\.feed-item-card__relation-hint:disabled \{/);
+});
+
+test("Feed graph cue: wrapper derives calm project/review/submission labels from graph primitives", () => {
+  assert.match(feedBrandSource, /export const FEED_GRAPH_CUE_PROJECT = "项目";/);
+  assert.match(feedBrandSource, /export const FEED_GRAPH_CUE_REVIEW = "评审";/);
+  assert.match(feedBrandSource, /export const FEED_GRAPH_CUE_SUBMISSION = "投稿";/);
+  assert.match(feedItemCardSource, /function graphCueFromItem\(item: FeedItem\): string/);
+  assert.match(
+    feedItemCardSource,
+    /const raw = \[item\.contentType, item\.presentationIntent, item\.cardTemplate\]/,
+  );
+  assert.doesNotMatch(
+    feedItemCardSource,
+    /const raw = \[[^\]]*item\.primaryTag/s,
+    "graph cues must not be inferred from ordinary free-text tags",
+  );
+  assert.match(feedItemCardSource, /raw\.includes\("submission"\)/);
+  assert.match(feedItemCardSource, /raw\.includes\("review"\)/);
+  assert.match(feedItemCardSource, /raw\.includes\("project"\)/);
+  assert.match(feedItemCardSource, /item\.relations\?\.map\(\(relation\) => relation\.type\)/);
+  assert.match(feedItemCardSource, /item\.relationHint\?\.type/);
+  assert.match(feedItemCardSource, /item\.availableActions\?\.map\(\(action\) => action\.type\)/);
+  assert.match(feedItemCardSource, /item\.components\?\.flatMap\(\(component\) => \[/);
+  assert.match(feedItemCardSource, /component\.type/);
+  assert.match(feedItemCardSource, /component\.status/);
+  assert.match(feedItemCardSource, /component\.workflow/);
+  assert.match(feedShellSource, /<span v-if="graphCue" class="feed-item-card__graph-cue">\{\{ graphCue \}\}<\/span>/);
+  assert.match(feedShellSource, /\.feed-item-card__graph-cue \{/);
 });

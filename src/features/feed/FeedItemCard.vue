@@ -31,9 +31,14 @@ import {
   FEED_RELATION_HINT_SOLUTION_EVENT,
   FEED_RELATION_HINT_MERCHANT_ERRAND,
   FEED_RELATION_HINT_PROJECT_SUBMISSION,
+  FEED_RELATION_HINT_PROJECT_REVIEW,
+  FEED_RELATION_HINT_SUBMISSION_REVIEW,
   FEED_RELATION_HINT_EVENT_REWARD,
   FEED_RELATION_HINT_GROUPBUY_JOINED,
   FEED_RELATION_HINT_GROUPBUY_CREATED,
+  FEED_GRAPH_CUE_PROJECT,
+  FEED_GRAPH_CUE_REVIEW,
+  FEED_GRAPH_CUE_SUBMISSION,
   TRUST_SIGNAL_IDENTITY_PREFIX,
   TRUST_SIGNAL_UNKNOWN,
 } from "../../config/brand";
@@ -63,6 +68,9 @@ const RELATION_HINT_LABELS: Readonly<Record<string, string>> = {
   solution_event: FEED_RELATION_HINT_SOLUTION_EVENT,
   merchant_errand: FEED_RELATION_HINT_MERCHANT_ERRAND,
   project_submission: FEED_RELATION_HINT_PROJECT_SUBMISSION,
+  project_review: FEED_RELATION_HINT_PROJECT_REVIEW,
+  review_submission: FEED_RELATION_HINT_SUBMISSION_REVIEW,
+  submission_review: FEED_RELATION_HINT_SUBMISSION_REVIEW,
   event_reward: FEED_RELATION_HINT_EVENT_REWARD,
   groupbuy_joined: FEED_RELATION_HINT_GROUPBUY_JOINED,
   groupbuy_created: FEED_RELATION_HINT_GROUPBUY_CREATED,
@@ -97,6 +105,32 @@ const TEMPLATE_MARKS: Readonly<Record<CardTemplate, string>> = {
   merchant: FEED_CARD_MARK_MERCHANT,
   help: "＋",
 };
+
+function graphCueFromItem(item: FeedItem): string {
+  const raw = [item.contentType, item.presentationIntent, item.cardTemplate]
+    .filter((value): value is string => typeof value === "string")
+    .join(" ")
+    .toLowerCase();
+  if (raw.includes("submission")) return FEED_GRAPH_CUE_SUBMISSION;
+  if (raw.includes("review")) return FEED_GRAPH_CUE_REVIEW;
+  if (raw.includes("project")) return FEED_GRAPH_CUE_PROJECT;
+  const graphTypes = [
+    item.relationHint?.type,
+    ...(item.relations?.map((relation) => relation.type) ?? []),
+    ...(item.availableActions?.map((action) => action.type) ?? []),
+    ...(item.components?.flatMap((component) => [
+      component.type,
+      "status" in component ? component.status : undefined,
+      "workflow" in component ? component.workflow : undefined,
+    ].filter((value): value is string => typeof value === "string")) ?? []),
+  ]
+    .join(" ")
+    .toLowerCase();
+  if (/submission/.test(graphTypes)) return FEED_GRAPH_CUE_SUBMISSION;
+  if (/review/.test(graphTypes)) return FEED_GRAPH_CUE_REVIEW;
+  if (/project/.test(graphTypes)) return FEED_GRAPH_CUE_PROJECT;
+  return "";
+}
 
 function normalizePresentationIntent(
   value: FeedItem["cardTemplate"] | FeedItem["presentationIntent"],
@@ -155,6 +189,7 @@ const cardDisplayData = computed(() => {
     shellCardTemplate,
     templateMark: cardTemplate === "club" ? "" : TEMPLATE_MARKS[shellCardTemplate],
     relationHint,
+    graphCue: graphCueFromItem(item),
     bodyPreview: item.bodyPreview || "",
     visibility: item.visibility || "public",
     trustSignal: resolveTrustSignal(item.source, actor.identityTag),
@@ -260,6 +295,7 @@ function handleClubOpen(
       :card-template="cardDisplayData.shellCardTemplate"
       :template-mark="cardDisplayData.templateMark"
       :relation-hint="cardDisplayData.relationHint"
+      :graph-cue="cardDisplayData.graphCue"
       :body-preview="cardDisplayData.bodyPreview"
       :card-warning="cardDisplayData.cardWarning"
       :tid="props.item.tid"
