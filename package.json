@@ -34,6 +34,7 @@
     "ops:guard": "node scripts/guard-runtime-inventory.js",
     "test": "node scripts/smoke-vue-frontend.js http://127.0.0.1:4301",
     "test:e2e": "playwright test",
+    "test:phase-order": "vitest run tests/phase0/phase-order-contract.test.ts",
     "test:unit": "vitest run",
     "test:runtime-exposure-guard": "node scripts/test-guard-public-runtime-exposure.js",
     "verify:static": "npm run check && npm run ops:guard && npm run build",
