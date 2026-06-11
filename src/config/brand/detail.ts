@@ -154,6 +154,8 @@ export const RELATION_TYPE_SOLUTION_EVENT = "解决方案活动";
 export const RELATION_TYPE_EVENT_RECAP = "活动回顾";
 export const RELATION_TYPE_MERCHANT_ERRAND = "代办";
 export const RELATION_TYPE_PROJECT_SUBMISSION = "项目投稿";
+export const RELATION_TYPE_PROJECT_REVIEW = "项目评审";
+export const RELATION_TYPE_SUBMISSION_REVIEW = "投稿评审";
 export const RELATION_TYPE_EVENT_REWARD = "活动奖励";
 export const RELATION_TYPE_GROUPBUY_JOINED = "参与拼单";
 export const RELATION_TYPE_GROUPBUY_CREATED = "发起拼单";
@@ -168,6 +170,10 @@ export const AVAILABLE_ACTION_CLAIM_REWARD = "领取奖励";
 export const AVAILABLE_ACTION_COMPLETE_ERRAND = "完成代办";
 export const AVAILABLE_ACTION_TRADE_RESERVE = "预约交易";
 export const AVAILABLE_ACTION_MESSAGE_AUTHOR = "联系发布者";
+export const AVAILABLE_ACTION_OPEN_SUBMISSION = "查看投稿";
+export const AVAILABLE_ACTION_REQUEST_REVIEW = "请求评审";
+export const AVAILABLE_ACTION_SUBMIT_REVISION = "提交修改";
+export const AVAILABLE_ACTION_APPROVE_SUBMISSION = "通过投稿";
 
 /** 求助管理写侧 (PRD V0.1 §6.5 / §11.3) */
 export const HELP_MANAGE_BLOCK_LABEL = "求助管理";

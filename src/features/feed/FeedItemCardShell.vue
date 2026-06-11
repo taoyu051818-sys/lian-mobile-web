@@ -30,6 +30,7 @@ const props = defineProps<{
   cardTemplate: CardTemplate;
   templateMark: string;
   relationHint: { label: string; targetTid?: number } | null;
+  graphCue: string;
   bodyPreview: string;
   cardWarning?: string;
   // Forwarded to FeedItemCardFooter — the footer remains the owner of like behavior
@@ -94,13 +95,23 @@ onMounted(() => {
     />
 
     <div class="feed-item-card__body">
+      <span v-if="graphCue" class="feed-item-card__graph-cue">{{ graphCue }}</span>
+
       <span v-if="cardTemplate === 'text' && primaryTag" class="feed-item-card__inline-tag">{{
         primaryTag
       }}</span>
 
-      <span v-if="relationHint" class="feed-item-card__relation-hint">
+      <button
+        v-if="relationHint"
+        class="feed-item-card__relation-hint"
+        type="button"
+        disabled
+        @click.stop
+        @keydown.enter.stop
+        @keydown.space.stop
+      >
         {{ relationHint.label }}
-      </span>
+      </button>
 
       <h3 :title="title">{{ title }}</h3>
 
@@ -245,6 +256,18 @@ onMounted(() => {
   cursor: pointer;
 }
 
+.feed-item-card__graph-cue {
+  display: inline-flex;
+  justify-self: start;
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+  background: rgba(40, 88, 165, 0.1);
+  color: var(--lian-accent, #2858a5);
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1.3;
+}
+
 .feed-item-card__relation-hint {
   display: inline-flex;
   justify-self: start;
@@ -257,5 +280,11 @@ onMounted(() => {
   font-size: 11px;
   font-weight: 700;
   line-height: 1.3;
+  cursor: pointer;
+}
+
+.feed-item-card__relation-hint:disabled {
+  cursor: default;
+  opacity: 0.78;
 }
 </style>

@@ -34,7 +34,7 @@ export interface SourceSignal {
 
 export interface FeedRelation {
   type: string;
-  targetTid: number;
+  targetTid?: number;
 }
 
 export interface FeedRelationHint {

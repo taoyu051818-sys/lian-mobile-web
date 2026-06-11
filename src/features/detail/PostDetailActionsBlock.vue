@@ -17,9 +17,13 @@
 import { computed } from "vue";
 import {
   AVAILABLE_ACTIONS_BLOCK_LABEL,
+  AVAILABLE_ACTION_APPROVE_SUBMISSION,
   AVAILABLE_ACTION_CLAIM_REWARD,
   AVAILABLE_ACTION_COMPLETE_ERRAND,
   AVAILABLE_ACTION_MARK_SOLVED,
+  AVAILABLE_ACTION_OPEN_SUBMISSION,
+  AVAILABLE_ACTION_REQUEST_REVIEW,
+  AVAILABLE_ACTION_SUBMIT_REVISION,
 } from "../../config/brand";
 import type { PostAvailableAction } from "../../types/post";
 
@@ -37,6 +41,10 @@ const ACTION_TYPE_LABEL: Record<string, string> = {
   mark_solved: AVAILABLE_ACTION_MARK_SOLVED,
   claim_reward: AVAILABLE_ACTION_CLAIM_REWARD,
   complete_errand: AVAILABLE_ACTION_COMPLETE_ERRAND,
+  open_submission: AVAILABLE_ACTION_OPEN_SUBMISSION,
+  request_review: AVAILABLE_ACTION_REQUEST_REVIEW,
+  submit_revision: AVAILABLE_ACTION_SUBMIT_REVISION,
+  approve_submission: AVAILABLE_ACTION_APPROVE_SUBMISSION,
 };
 
 function actionTypeLabel(type: string): string {

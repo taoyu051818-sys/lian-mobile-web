@@ -31,8 +31,10 @@ import {
   RELATION_TYPE_EVENT_REWARD,
   RELATION_TYPE_HELP_EVENT_LINK,
   RELATION_TYPE_MERCHANT_ERRAND,
+  RELATION_TYPE_PROJECT_REVIEW,
   RELATION_TYPE_PROJECT_SUBMISSION,
   RELATION_TYPE_SOLUTION_EVENT,
+  RELATION_TYPE_SUBMISSION_REVIEW,
 } from "../../src/config/brand";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -51,6 +53,8 @@ describe("B3-1 brand strings exist and are Chinese-first", () => {
     ["RELATION_TYPE_EVENT_RECAP", RELATION_TYPE_EVENT_RECAP],
     ["RELATION_TYPE_MERCHANT_ERRAND", RELATION_TYPE_MERCHANT_ERRAND],
     ["RELATION_TYPE_PROJECT_SUBMISSION", RELATION_TYPE_PROJECT_SUBMISSION],
+    ["RELATION_TYPE_PROJECT_REVIEW", RELATION_TYPE_PROJECT_REVIEW],
+    ["RELATION_TYPE_SUBMISSION_REVIEW", RELATION_TYPE_SUBMISSION_REVIEW],
     ["RELATION_TYPE_EVENT_REWARD", RELATION_TYPE_EVENT_REWARD],
   ])("%s is a non-empty Chinese-first string", (_name, value) => {
     expect(value).toBeTruthy();
@@ -83,12 +87,15 @@ describe("PostDetailRelationsBlock — surfaces the relations atom from PostDeta
 });
 
 describe("PostDetailRelationsBlock — type label mapping", () => {
-  it("declares the seeded mapper covering all 6 mw#966 known types", () => {
+  it("declares the seeded mapper covering all known graph relation types", () => {
     expect(source).toMatch(/help_event_link:\s*RELATION_TYPE_HELP_EVENT_LINK/);
     expect(source).toMatch(/solution_event:\s*RELATION_TYPE_SOLUTION_EVENT/);
     expect(source).toMatch(/event_recap:\s*RELATION_TYPE_EVENT_RECAP/);
     expect(source).toMatch(/merchant_errand:\s*RELATION_TYPE_MERCHANT_ERRAND/);
     expect(source).toMatch(/project_submission:\s*RELATION_TYPE_PROJECT_SUBMISSION/);
+    expect(source).toMatch(/project_review:\s*RELATION_TYPE_PROJECT_REVIEW/);
+    expect(source).toMatch(/review_submission:\s*RELATION_TYPE_SUBMISSION_REVIEW/);
+    expect(source).toMatch(/submission_review:\s*RELATION_TYPE_SUBMISSION_REVIEW/);
     expect(source).toMatch(/event_reward:\s*RELATION_TYPE_EVENT_REWARD/);
   });
 

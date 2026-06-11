@@ -30,8 +30,10 @@ import {
   RELATION_TYPE_EVENT_REWARD,
   RELATION_TYPE_HELP_EVENT_LINK,
   RELATION_TYPE_MERCHANT_ERRAND,
+  RELATION_TYPE_PROJECT_REVIEW,
   RELATION_TYPE_PROJECT_SUBMISSION,
   RELATION_TYPE_SOLUTION_EVENT,
+  RELATION_TYPE_SUBMISSION_REVIEW,
 } from "../../config/brand";
 import type { PostRelation } from "../../types/post";
 import { useDetailNavigation } from "../../app/detail-navigation";
@@ -49,6 +51,9 @@ const RELATION_TYPE_LABEL: Record<string, string> = {
   event_recap: RELATION_TYPE_EVENT_RECAP,
   merchant_errand: RELATION_TYPE_MERCHANT_ERRAND,
   project_submission: RELATION_TYPE_PROJECT_SUBMISSION,
+  project_review: RELATION_TYPE_PROJECT_REVIEW,
+  review_submission: RELATION_TYPE_SUBMISSION_REVIEW,
+  submission_review: RELATION_TYPE_SUBMISSION_REVIEW,
   event_reward: RELATION_TYPE_EVENT_REWARD,
 };
 
