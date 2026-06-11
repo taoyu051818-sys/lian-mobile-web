@@ -5,7 +5,7 @@ import { DEFAULT_USER_LABEL } from "../../src/config/brand";
 import type { ProfileUser } from "../../src/types/profile";
 
 /**
- * Bounded slice for #952. The composer surface in messages must never expose
+ * Bounded slice for #949. The composer surface in messages must never expose
  * the real `username` while the user is acting through an alias — even when
  * the alias has no `name` set. The test owns just that fallback behavior so
  * the privacy regression cannot silently come back.
@@ -56,13 +56,13 @@ describe("useMessageComposer composerActorName fallback", () => {
     expect(composer.composerActorName.value).not.toContain("real-name-alice");
   });
 
-  it("falls back to the anonymity-safe label when the active alias name is missing", () => {
+  it("falls back to the anonymity-safe label when the active alias name is undefined", () => {
     const composer = makeComposer();
     const user = {
       username: "real-name-alice",
       activeAliasId: "a1",
-      aliases: [{ id: "a1" }],
-    } as ProfileUser;
+      aliases: [{ id: "a1", name: undefined }],
+    } as unknown as ProfileUser;
     composer.currentUser.value = user;
 
     expect(composer.composerActorName.value).toBe(DEFAULT_USER_LABEL);

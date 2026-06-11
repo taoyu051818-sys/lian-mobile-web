@@ -95,6 +95,32 @@ describe("actorAvatarUrl alias / anonymous fallback (issue #938)", () => {
     ).toBe("匿名用户");
   });
 
+  it("uses the anonymity fallback for empty alias display names even when real identity fields exist", () => {
+    expect(
+      actorDisplayName(
+        {
+          aliasId: "masked-author",
+          displayName: "",
+          username: "real-account-name",
+          name: "Real Name",
+        },
+        "匿名用户",
+      ),
+    ).toBe("匿名用户");
+
+    expect(
+      actorDisplayName(
+        {
+          aliasId: "masked-author",
+          displayName: "   ",
+          username: "real-account-name",
+          name: "Real Name",
+        },
+        "匿名用户",
+      ),
+    ).toBe("匿名用户");
+  });
+
   it("still uses username/name fallbacks for non-alias actors", () => {
     expect(actorDisplayName({ username: "campus-user" }, "默认用户")).toBe("campus-user");
     expect(actorDisplayName({ name: "Campus User" }, "默认用户")).toBe("Campus User");

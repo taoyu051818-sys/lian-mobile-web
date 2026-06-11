@@ -38,7 +38,7 @@ export function useMessageComposer(options: {
   });
   // When an alias is active the composer is in alias/anonymous mode — empty
   // alias.name must NOT fall back to username, which would leak the real
-  // account identity onto an anonymity-sensitive surface (#952). Username is
+  // account identity onto an anonymity-sensitive surface (#949). Username is
   // only an acceptable display when there is no alias at all (real identity).
   const composerActorName = computed(() => {
     const alias = activeAlias.value;
