@@ -16,6 +16,7 @@ import {
 import { buildMapPickerHash } from "../../app/deepLink";
 import { GlassPanel } from "../../ui";
 import PublishActionBar from "./PublishActionBar.vue";
+import PublishActionablePreview from "./PublishActionablePreview.vue";
 import PublishComposer from "./PublishComposer.vue";
 import PublishLocationControls from "./PublishLocationControls.vue";
 import PublishMetaControls from "./PublishMetaControls.vue";
@@ -35,6 +36,7 @@ import { clearPublishDraft } from "./publishDraftSession";
 import { usePublishDraftSession } from "./usePublishDraftSession";
 import PublishResetConfirm from "./PublishResetConfirm.vue";
 import { usePublishSubmit } from "./usePublishSubmit";
+import type { PublishActionablePostPreview } from "../../types/publish";
 import { useEventPublishDraft } from "../../composables/useEventPublishDraft";
 import { useActiveView } from "../../app/useActiveView";
 
@@ -46,6 +48,7 @@ const RESET_CONFIRM_MESSAGE = [PUBLISH_CLEAR_CONFIRM, PUBLISH_IMAGE_RESELECT].jo
 
 const draft = usePublishDraft();
 const eventDraft = useEventPublishDraft();
+const actionablePreview = ref<PublishActionablePostPreview | null>(null);
 const locationOptions = usePublishLocationOptions(draft.placeName);
 const resetConfirmationVisible = ref(false);
 const { setActiveView } = useActiveView();
@@ -196,6 +199,7 @@ const { draftNotice, hasUnsavedDraft, currentScope } = usePublishDraftSession({
 
 function clearPublishState() {
   draft.resetForm(locationOptions.clearLocationState);
+  actionablePreview.value = null;
   eventDraft.reset();
   clearPublishDraft(currentScope.value);
   draftNotice.value = "";
@@ -215,6 +219,7 @@ const { postDetailUrl, submitPublish } = usePublishSubmit({
   publishing: draft.publishing,
   errorMessage: draft.errorMessage,
   successMessage: draft.successMessage,
+  actionablePreview,
   lastTid: draft.lastTid,
   normalizedTag: draft.normalizedTag,
   normalizedIdentityTag: draft.normalizedIdentityTag,
@@ -476,6 +481,25 @@ onUnmounted(() => {
           @update:tag-input="draft.tagInput.value = $event"
           @update:identity-tag="draft.identityTag.value = $event"
           @update:visibility="draft.visibility.value = $event"
+        />
+
+        <PublishActionablePreview
+          :title="draft.title.value"
+          :body="draft.body.value"
+          :kind="draft.publishKind.value"
+          :suggested-components="draft.suggestedComponents.value"
+          :location-label="locationOptions.locationPreviewLabel.value"
+          :normalized-tag="draft.normalizedTag.value"
+          :normalized-identity-tag="draft.normalizedIdentityTag.value"
+          :event-starts-at="eventDraft.startsAt.value"
+          :event-join-policy="eventDraft.joinPolicy.value"
+          :llm-inferred-kind="draft.llmInferredKind.value"
+          :uploaded-image-count="draft.uploadedImageUrls.value.length"
+          :merchant-name="draft.merchant.name.value"
+          :merchant-category="draft.merchant.category.value"
+          :trade-price="draft.trade.price.value"
+          :trade-category="draft.trade.category.value"
+          :actionable-post="actionablePreview"
         />
 
         <PublishResetConfirm

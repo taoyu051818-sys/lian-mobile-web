@@ -37,6 +37,7 @@ describe("usePublishSubmit event draft context", () => {
       publishing: ref(false),
       errorMessage: ref(""),
       successMessage: ref(""),
+      actionablePreview: ref(null),
       lastTid: ref(null),
       normalizedTag: ref("#coffee"),
       normalizedIdentityTag: ref("organizer"),
@@ -142,6 +143,26 @@ describe("usePublishSubmit event draft context", () => {
           ],
         },
       },
+    });
+  });
+
+  it("surfaces event fields in the actionable preview after publish", async () => {
+    const actionablePreview = ref(null);
+
+    await submitHarness({ actionablePreview })();
+
+    expect(actionablePreview.value).toEqual({
+      kind: "event",
+      action: "报名",
+      structure: [
+        "标题",
+        "正文",
+        "图片 x1",
+        "地点：Library",
+        "标签：#coffee",
+        "身份：organizer",
+        "活动：2026-06-12T09:00 · approval_required",
+      ],
     });
   });
 
