@@ -83,11 +83,17 @@ test("PublishView mounts type-specific panels gated on publishKind, in switch-or
   const merchantIdx = src.search(/<PublishMerchantControls/);
   const tradeIdx = src.search(/<PublishTradeControls/);
   const composerIdx = src.search(/<PublishComposer/);
+  const locationIdx = src.search(/<PublishLocationControls/);
+  const metaIdx = src.search(/<PublishMetaControls/);
+  const previewIdx = src.search(/<PublishActionablePreview/);
 
   assert.ok(eventIdx > -1, "PublishEventControls must be mounted");
   assert.ok(merchantIdx > -1, "PublishMerchantControls must be mounted");
   assert.ok(tradeIdx > -1, "PublishTradeControls must be mounted");
   assert.ok(composerIdx > -1, "PublishComposer must be mounted");
+  assert.ok(locationIdx > -1, "PublishLocationControls must be mounted");
+  assert.ok(metaIdx > -1, "PublishMetaControls must be mounted");
+  assert.ok(previewIdx > -1, "PublishActionablePreview must be mounted");
 
   assert.ok(
     eventIdx < merchantIdx,
@@ -100,6 +106,18 @@ test("PublishView mounts type-specific panels gated on publishKind, in switch-or
   assert.ok(
     tradeIdx < composerIdx,
     "type-specific panels must come before the composer (primary input)",
+  );
+  assert.ok(
+    composerIdx < locationIdx,
+    "composer must come before location controls (existing form order)",
+  );
+  assert.ok(
+    locationIdx < metaIdx,
+    "location controls must come before meta controls (existing form order)",
+  );
+  assert.ok(
+    metaIdx < previewIdx,
+    "actionable preview must summarize composer, location, and meta state before publishing",
   );
 });
 

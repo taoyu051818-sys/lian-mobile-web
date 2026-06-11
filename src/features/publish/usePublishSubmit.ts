@@ -27,6 +27,7 @@ import type { EventJoinPolicy } from "../../types/post-extensions";
 import type {
   MerchantContentType,
   MerchantPublishInput,
+  PublishActionablePostPreview,
   PublishLocationDraft,
   PublishVisibility,
   TradeContentType,
@@ -36,6 +37,45 @@ import type { PublishPostType } from "../../composables/useEventPublishDraft";
 import type { PublishKind } from "./usePublishDraft";
 import type { InferredKind, SuggestedComponent } from "../../types/publishSuggestion";
 import { inferKind } from "./inferKind";
+
+function createPublishActionablePostPreview(input: {
+  kind?: InferredKind;
+  title: string;
+  body: string;
+  tag: string;
+  identityTag: string;
+  imageUrls: string[];
+  locationArea: string;
+  merchant?: { input: MerchantPublishInput; contentType: MerchantContentType };
+  trade?: { input: TradePublishInput; contentType: TradeContentType };
+}): PublishActionablePostPreview {
+  const kind = input.kind || "text";
+  const structure = [
+    input.title.trim() ? "标题" : "",
+    input.body.trim() ? "正文" : "",
+    input.imageUrls.length ? `图片 x${input.imageUrls.length}` : "",
+    input.locationArea ? `地点：${input.locationArea}` : "",
+    input.tag ? `标签：${input.tag}` : "",
+    input.identityTag ? `身份：${input.identityTag}` : "",
+    input.merchant?.input.name ? `商家：${input.merchant.input.name}` : "",
+    input.trade?.input.price || input.trade?.input.category
+      ? `交易：${input.trade.input.price || input.trade.input.category}`
+      : "",
+  ].filter(Boolean);
+  const action =
+    kind === "event"
+      ? "报名"
+      : kind === "merchant"
+        ? "联系商家"
+        : kind === "trade"
+          ? "发起交易"
+          : kind === "help"
+            ? "提供帮助"
+            : kind === "place"
+              ? "查看地点"
+              : "查看详情";
+  return { kind, action, structure };
+}
 
 export function usePublishSubmit(options: {
   title: Ref<string>;
@@ -50,6 +90,7 @@ export function usePublishSubmit(options: {
   publishing: Ref<boolean>;
   errorMessage: Ref<string>;
   successMessage: Ref<string>;
+  actionablePreview: Ref<PublishActionablePostPreview | null>;
   lastTid: Ref<string | number | null>;
   normalizedTag: Ref<string>;
   normalizedIdentityTag: Ref<string>;
@@ -179,10 +220,20 @@ export function usePublishSubmit(options: {
         ...(endsAt ? { endsAt } : {}),
         ...(capacity !== undefined ? { capacity } : {}),
       });
+      const submittedActionablePreview = createPublishActionablePostPreview({
+        kind: "event",
+        title: options.title.value,
+        body: options.body.value,
+        tag: options.normalizedTag.value,
+        identityTag: options.normalizedIdentityTag.value,
+        imageUrls: options.uploadedImageUrls.value,
+        locationArea: options.locationPreviewLabel.value,
+      });
       options.lastTid.value = response.tid || null;
       options.successMessage.value = PUBLISH_EVENT_SUCCESS;
       hapticSuccess();
       options.resetForm();
+      options.actionablePreview.value = submittedActionablePreview;
     } catch (error) {
       const message = resolveWriteActionErrorMessage("publish", error);
       options.errorMessage.value = isWriteActionGenericFallback("publish", message)
@@ -200,6 +251,7 @@ export function usePublishSubmit(options: {
       validateTradeFields();
     options.errorMessage.value = validation;
     options.successMessage.value = "";
+    options.actionablePreview.value = null;
     options.lastTid.value = null;
     if (validation || options.publishing.value) return;
 
@@ -209,12 +261,13 @@ export function usePublishSubmit(options: {
         await submitEvent();
         return;
       }
+      const submittedPublishKind = options.publishKind?.value ?? "regular";
       const merchant =
-        options.publishKind?.value === "merchant" && options.merchantPayload
+        submittedPublishKind === "merchant" && options.merchantPayload
           ? options.merchantPayload()
           : undefined;
       const trade =
-        options.publishKind?.value === "trade" && options.tradePayload
+        submittedPublishKind === "trade" && options.tradePayload
           ? options.tradePayload()
           : undefined;
       const publishedLocationLabel = options.locationPreviewLabel.value;
@@ -223,7 +276,7 @@ export function usePublishSubmit(options: {
       // a kind for the post; backend still branches on the value rather
       // than re-inferring server-side.
       const kind = inferKind({
-        publishKind: options.publishKind?.value ?? "regular",
+        publishKind: submittedPublishKind,
         hasLocation: Boolean(
           options.selectedLocationDraft.value || options.placeName.value.trim().length > 0,
         ),
@@ -256,6 +309,17 @@ export function usePublishSubmit(options: {
         ...(trade ? { trade } : {}),
       });
       const response = await publishPost(payload);
+      const submittedActionablePreview = createPublishActionablePostPreview({
+        kind,
+        title: options.title.value,
+        body: options.body.value,
+        tag: payload.tag,
+        identityTag: payload.identityTag,
+        imageUrls: payload.imageUrls,
+        locationArea: payload.metadata.locationArea || "",
+        ...(merchant ? { merchant } : {}),
+        ...(trade ? { trade } : {}),
+      });
       options.lastTid.value = response.tid || null;
       const boundPlaceName = placeNameFromResponse(response) || publishedLocationLabel;
       options.successMessage.value =
@@ -264,6 +328,7 @@ export function usePublishSubmit(options: {
           : PUBLISH_SUCCESS;
       hapticSuccess();
       options.resetForm();
+      options.actionablePreview.value = submittedActionablePreview;
     } catch (error) {
       options.errorMessage.value = resolveWriteActionErrorMessage("publish", error);
       hapticError();

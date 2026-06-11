@@ -85,6 +85,12 @@ export interface NormalizePublishLocationDraftResult {
   issues: PublishLocationIssue[];
 }
 
+export interface PublishActionablePostPreview {
+  kind: InferredKind;
+  action: string;
+  structure: string[];
+}
+
 export interface PublishPayload {
   imageUrl: string;
   imageUrls: string[];

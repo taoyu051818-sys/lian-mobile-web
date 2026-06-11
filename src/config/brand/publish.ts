@@ -79,6 +79,20 @@ export const PUBLISH_IMAGE_PREVIEW_LABEL = "图片预览";
 export const PUBLISH_IMAGE_PREVIEW_ALT = "待发布图片";
 export const PUBLISH_IMAGE_REMOVE_LABEL = "移除图片";
 
+/** 发布结构化预览 */
+export const PUBLISH_ACTIONABLE_PREVIEW_TITLE = "发布结构预览";
+export const PUBLISH_ACTIONABLE_PREVIEW_KIND = "类型";
+export const PUBLISH_ACTIONABLE_PREVIEW_WIRE_KIND = "发布为";
+export const PUBLISH_ACTIONABLE_PREVIEW_LOCATION = "地点";
+export const PUBLISH_ACTIONABLE_PREVIEW_EVENT = "活动";
+export const PUBLISH_ACTIONABLE_PREVIEW_MERCHANT = "商家";
+export const PUBLISH_ACTIONABLE_PREVIEW_TRADE = "交易";
+export const PUBLISH_ACTIONABLE_PREVIEW_COMPONENTS = "待补充";
+export const PUBLISH_ACTIONABLE_PREVIEW_ACTION = "行动";
+export const PUBLISH_ACTIONABLE_PREVIEW_PUBLISHED = "将发布为";
+export const PUBLISH_ACTIONABLE_PREVIEW_UNSTRUCTURED =
+  "当前只会发布为自由文本，补充地点、标签或建议组件后会生成结构化帖子。";
+
 /** 发布确认与恢复 */
 export const PUBLISH_CLEAR_CONFIRM = "当前发布内容还没有提交，确认清空吗？";
 export const PUBLISH_IMAGE_RESELECT = "已选择的图片需要重新添加。";
