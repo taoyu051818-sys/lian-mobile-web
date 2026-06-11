@@ -217,9 +217,7 @@ describe("feed adapter normalization", () => {
   it("derives a non-navigating graph hint from known non-post graph relations", () => {
     const item = normalizeFeedItem({
       tid: 79,
-      relations: [
-        { type: "project_submission", target: { kind: "project", id: "project-991" } },
-      ],
+      relations: [{ type: "project_submission", target: { kind: "project", id: "project-991" } }],
     });
 
     expect(item).toMatchObject({
@@ -227,9 +225,7 @@ describe("feed adapter normalization", () => {
       relationHint: {
         type: "project_submission",
       },
-      relations: [
-        { type: "project_submission" },
-      ],
+      relations: [{ type: "project_submission" }],
     });
     expect(item?.relationHint?.targetTid).toBeUndefined();
     expect(item?.relations?.[0]?.targetTid).toBeUndefined();

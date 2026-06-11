@@ -118,11 +118,13 @@ function graphCueFromItem(item: FeedItem): string {
     item.relationHint?.type,
     ...(item.relations?.map((relation) => relation.type) ?? []),
     ...(item.availableActions?.map((action) => action.type) ?? []),
-    ...(item.components?.flatMap((component) => [
-      component.type,
-      "status" in component ? component.status : undefined,
-      "workflow" in component ? component.workflow : undefined,
-    ].filter((value): value is string => typeof value === "string")) ?? []),
+    ...(item.components?.flatMap((component) =>
+      [
+        component.type,
+        "status" in component ? component.status : undefined,
+        "workflow" in component ? component.workflow : undefined,
+      ].filter((value): value is string => typeof value === "string"),
+    ) ?? []),
   ]
     .join(" ")
     .toLowerCase();

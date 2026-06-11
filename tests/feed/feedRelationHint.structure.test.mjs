@@ -113,10 +113,13 @@ test("Feed graph cue: wrapper derives calm project/review/submission labels from
   assert.match(feedItemCardSource, /item\.relations\?\.map\(\(relation\) => relation\.type\)/);
   assert.match(feedItemCardSource, /item\.relationHint\?\.type/);
   assert.match(feedItemCardSource, /item\.availableActions\?\.map\(\(action\) => action\.type\)/);
-  assert.match(feedItemCardSource, /item\.components\?\.flatMap\(\(component\) => \[/);
+  assert.match(feedItemCardSource, /item\.components\?\.flatMap\(\(component\) =>\s*\[/);
   assert.match(feedItemCardSource, /component\.type/);
   assert.match(feedItemCardSource, /component\.status/);
   assert.match(feedItemCardSource, /component\.workflow/);
-  assert.match(feedShellSource, /<span v-if="graphCue" class="feed-item-card__graph-cue">\{\{ graphCue \}\}<\/span>/);
+  assert.match(
+    feedShellSource,
+    /<span v-if="graphCue" class="feed-item-card__graph-cue">\{\{ graphCue \}\}<\/span>/,
+  );
   assert.match(feedShellSource, /\.feed-item-card__graph-cue \{/);
 });
