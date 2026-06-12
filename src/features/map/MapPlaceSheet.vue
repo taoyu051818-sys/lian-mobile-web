@@ -1,25 +1,41 @@
 <script setup lang="ts">
-import { computed } from "vue";
 import {
-  PLACE_SHEET_LABEL,
   CLOSE_BUTTON_LABEL,
   LOADING_PLACE,
-  PLACE_SHEET_SETTLING,
-  PLACE_SHEET_STATS_LABEL,
-  PLACE_SHEET_UPDATED_PREFIX,
+  PLACE_SHEET_LABEL,
   PLACE_SHEET_POST_COUNT_SUFFIX,
   PLACE_SHEET_CORRECTION_SUFFIX,
   PLACE_SHEET_SAVED_SUFFIX,
+  PLACE_SHEET_SETTLING,
+  PLACE_STATUS_AI_ORGANIZED,
+  PLACE_STATUS_CONFIRMED,
+  PLACE_STATUS_DISPUTED,
+  PLACE_STATUS_EXPIRED,
+  PLACE_STATUS_OFFICIAL,
+  PLACE_STATUS_PENDING,
+  PLACE_TYPE_BUILDING,
+  PLACE_TYPE_CANTEEN,
+  PLACE_TYPE_DORMITORY,
+  PLACE_TYPE_FALLBACK,
+  PLACE_TYPE_GARDEN,
+  PLACE_TYPE_LAB,
+  PLACE_TYPE_LIBRARY,
+  PLACE_TYPE_OFFICE,
+  PLACE_TYPE_SHOP,
+  PLACE_TYPE_SPORTS,
+  PLACE_TYPE_TRANSIT,
 } from "../../config/brand";
-import { actorDisplayName } from "../../domain/actor";
-import { placeStatusLabel, placeTypeLabel } from "../../domain/place";
 import type { FeedItemId } from "../../types/feed";
 import type { MapLocation, MapPost } from "../../types/map";
-import type { PlaceSheet } from "../../types/place";
+import type { PlaceSheet, PlaceStatus } from "../../types/place";
 import LianIcon from "../../ui/icons/LianIcon.vue";
-import { formatRelativeTime } from "../../utils/time";
 
-const props = defineProps<{
+const {
+  selectedPlace,
+  placeSheet,
+  placeSheetLoading = false,
+  placeSheetError = "",
+} = defineProps<{
   selectedPlace: MapLocation | MapPost | null;
   placeSheet?: PlaceSheet | null;
   placeSheetLoading?: boolean;
@@ -31,13 +47,44 @@ defineEmits<{
   openPost: [tid: FeedItemId | string];
 }>();
 
-const placeTypeText = computed(() =>
-  placeTypeLabel(props.placeSheet?.type, props.selectedPlace?.type),
-);
-const placeStatusText = computed(() => placeStatusLabel(props.placeSheet?.status));
+const statusLabels: Record<PlaceStatus, string> = {
+  confirmed: PLACE_STATUS_CONFIRMED,
+  pending: PLACE_STATUS_PENDING,
+  disputed: PLACE_STATUS_DISPUTED,
+  expired: PLACE_STATUS_EXPIRED,
+  "ai-organized": PLACE_STATUS_AI_ORGANIZED,
+  official: PLACE_STATUS_OFFICIAL,
+};
+
+const typeLabels: Record<string, string> = {
+  canteen: PLACE_TYPE_CANTEEN,
+  dining: PLACE_TYPE_CANTEEN,
+  library: PLACE_TYPE_LIBRARY,
+  building: PLACE_TYPE_BUILDING,
+  dormitory: PLACE_TYPE_DORMITORY,
+  transit: PLACE_TYPE_TRANSIT,
+  sports: PLACE_TYPE_SPORTS,
+  lab: PLACE_TYPE_LAB,
+  office: PLACE_TYPE_OFFICE,
+  garden: PLACE_TYPE_GARDEN,
+  shop: PLACE_TYPE_SHOP,
+};
 
 function placeName(place: MapLocation | MapPost): string {
   return "name" in place ? place.name : place.title || place.locationArea || "";
+}
+
+function sheetTitle(selectedPlace: MapLocation | MapPost): string {
+  return placeSheet?.name || placeName(selectedPlace);
+}
+
+function statusLabel(status: PlaceStatus): string {
+  return statusLabels[status] || PLACE_STATUS_PENDING;
+}
+
+function typeLabel(type?: string): string {
+  if (!type) return PLACE_TYPE_FALLBACK;
+  return typeLabels[type] || type;
 }
 </script>
 
@@ -45,9 +92,7 @@ function placeName(place: MapLocation | MapPost): string {
   <Transition name="sheet-slide">
     <div v-if="selectedPlace" class="map-place-sheet" role="dialog" :aria-label="PLACE_SHEET_LABEL">
       <div class="map-place-sheet__header">
-        <span class="map-place-sheet__title">{{
-          placeSheet?.name || placeName(selectedPlace)
-        }}</span>
+        <span class="map-place-sheet__title">{{ sheetTitle(selectedPlace) }}</span>
         <button
           class="map-place-sheet__close"
           :aria-label="CLOSE_BUTTON_LABEL"
@@ -58,64 +103,52 @@ function placeName(place: MapLocation | MapPost): string {
       </div>
       <div class="map-place-sheet__body">
         <p v-if="placeSheetLoading" class="map-place-sheet__state">{{ LOADING_PLACE }}</p>
-        <p v-else-if="placeSheetError" class="map-place-sheet__error">{{ placeSheetError }}</p>
-        <template v-else>
-          <div v-if="placeSheet || placeTypeText" class="map-place-sheet__meta">
-            <span v-if="placeSheet">{{ placeStatusText }}</span>
-            <span v-if="placeTypeText">{{ placeTypeText }}</span>
-            <span v-if="placeSheet?.updatedAt"
-              >{{ PLACE_SHEET_UPDATED_PREFIX }}
-              {{ formatRelativeTime(placeSheet.updatedAt) || placeSheet.updatedAt }}</span
-            >
+        <p v-else-if="placeSheetError" class="map-place-sheet__state map-place-sheet__state--error">
+          {{ placeSheetError }}
+        </p>
+        <template v-else-if="placeSheet">
+          <div class="map-place-sheet__meta">
+            <span>{{ statusLabel(placeSheet.status) }}</span>
+            <span>{{ typeLabel(placeSheet.type) }}</span>
           </div>
           <p v-if="placeSheet?.summary?.text" class="map-place-sheet__summary">
             {{ placeSheet.summary.text }}
           </p>
-          <p v-else class="map-place-sheet__empty">{{ PLACE_SHEET_SETTLING }}</p>
-          <div
-            v-if="placeSheet?.stats"
-            class="map-place-sheet__stats"
-            :aria-label="PLACE_SHEET_STATS_LABEL"
+          <div v-if="placeSheet?.stats" class="map-place-sheet__stats">
+            <span v-if="placeSheet.stats.postCount !== undefined">
+              {{ placeSheet.stats.postCount }} {{ PLACE_SHEET_POST_COUNT_SUFFIX }}
+            </span>
+            <span v-if="placeSheet.stats.correctionCount !== undefined">
+              {{ placeSheet.stats.correctionCount }} {{ PLACE_SHEET_CORRECTION_SUFFIX }}
+            </span>
+            <span v-if="placeSheet.stats.savedCount !== undefined">
+              {{ placeSheet.stats.savedCount }} {{ PLACE_SHEET_SAVED_SUFFIX }}
+            </span>
+          </div>
+          <div v-if="placeSheet?.recentPosts?.length" class="map-place-sheet__recent">
+            <button
+              v-for="recent in placeSheet.recentPosts"
+              :key="recent.tid"
+              class="map-place-sheet__recent-item"
+              type="button"
+              @click="$emit('openPost', recent.tid)"
+            >
+              <span class="map-place-sheet__recent-title">{{ recent.title || recent.tid }}</span>
+              <span v-if="recent.excerpt" class="map-place-sheet__recent-excerpt">
+                {{ recent.excerpt }}
+              </span>
+            </button>
+          </div>
+          <p
+            v-if="
+              !placeSheet?.summary?.text && !placeSheet?.stats && !placeSheet?.recentPosts?.length
+            "
+            class="map-place-sheet__state"
           >
-            <span v-if="placeSheet.stats.postCount != null"
-              >{{ placeSheet.stats.postCount }} {{ PLACE_SHEET_POST_COUNT_SUFFIX }}</span
-            >
-            <span v-if="placeSheet.stats.correctionCount != null"
-              >{{ placeSheet.stats.correctionCount }} {{ PLACE_SHEET_CORRECTION_SUFFIX }}</span
-            >
-            <span v-if="placeSheet.stats.savedCount != null"
-              >{{ placeSheet.stats.savedCount }} {{ PLACE_SHEET_SAVED_SUFFIX }}</span
-            >
-          </div>
-          <div v-if="placeSheet?.recentPosts?.length" class="map-place-sheet__posts">
-            <article v-for="recent in placeSheet.recentPosts.slice(0, 3)" :key="String(recent.tid)">
-              <button type="button" @click="$emit('openPost', recent.tid)">
-                <strong v-if="recent.title">{{ recent.title }}</strong>
-                <p v-if="recent.excerpt">{{ recent.excerpt }}</p>
-                <small
-                  v-if="
-                    actorDisplayName(recent.actor) || formatRelativeTime(recent.timestampISO || '')
-                  "
-                >
-                  <span v-if="actorDisplayName(recent.actor)">{{
-                    actorDisplayName(recent.actor)
-                  }}</span>
-                  <span
-                    v-if="
-                      actorDisplayName(recent.actor) &&
-                      formatRelativeTime(recent.timestampISO || '')
-                    "
-                  >
-                    ·
-                  </span>
-                  <span v-if="formatRelativeTime(recent.timestampISO || '')">{{
-                    formatRelativeTime(recent.timestampISO || "")
-                  }}</span>
-                </small>
-              </button>
-            </article>
-          </div>
+            {{ PLACE_SHEET_SETTLING }}
+          </p>
         </template>
+        <p v-else class="map-place-sheet__state">{{ PLACE_SHEET_SETTLING }}</p>
       </div>
     </div>
   </Transition>
@@ -181,18 +214,18 @@ function placeName(place: MapLocation | MapPost): string {
 
 .map-place-sheet__body {
   display: grid;
-  gap: var(--space-2);
+  gap: var(--space-3);
   padding: 0 var(--space-4) var(--space-4);
 }
 
 .map-place-sheet__state,
-.map-place-sheet__error,
-.map-place-sheet__empty {
+.map-place-sheet__summary {
+  margin: 0;
   color: var(--lian-muted);
-  text-align: center;
+  line-height: 1.5;
 }
 
-.map-place-sheet__error {
+.map-place-sheet__state--error {
   color: var(--lian-danger, #b42318);
 }
 
@@ -200,43 +233,42 @@ function placeName(place: MapLocation | MapPost): string {
 .map-place-sheet__stats {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-1);
+  gap: var(--space-2);
   color: var(--lian-muted);
   font-size: 12px;
-  font-weight: 850;
 }
 
 .map-place-sheet__meta span,
 .map-place-sheet__stats span {
-  padding: 4px 8px;
-  border-radius: var(--radius-chip);
-  background: rgba(255, 255, 255, 0.62);
+  border-radius: var(--radius-pill, 999px);
+  background: rgba(0, 0, 0, 0.05);
+  padding: 3px 8px;
 }
 
-.map-place-sheet__posts :deep(button) {
+.map-place-sheet__recent {
   display: grid;
-  gap: var(--space-1);
+  gap: var(--space-2);
+}
+
+.map-place-sheet__recent-item {
+  display: grid;
+  gap: 2px;
   width: 100%;
   border: 0;
-  background: transparent;
-  color: inherit;
-  font: inherit;
+  border-radius: var(--radius-md, 12px);
+  background: rgba(0, 0, 0, 0.04);
+  padding: var(--space-2) var(--space-3);
+  color: var(--lian-ink);
   text-align: start;
   cursor: pointer;
 }
 
-.map-place-sheet__summary,
-.map-place-sheet__posts :deep(p),
-.map-place-sheet__posts :deep(small) {
-  color: var(--lian-muted);
-  line-height: 1.6;
+.map-place-sheet__recent-title {
+  font-weight: 600;
 }
 
-.map-place-sheet__posts :deep(article) {
-  display: grid;
-  gap: var(--space-1);
-  padding: var(--space-2);
-  border-radius: var(--radius-card);
-  background: rgba(255, 255, 255, 0.48);
+.map-place-sheet__recent-excerpt {
+  color: var(--lian-muted);
+  font-size: 12px;
 }
 </style>

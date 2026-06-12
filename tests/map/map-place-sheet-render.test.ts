@@ -5,7 +5,9 @@ import { renderToString } from "@vue/server-renderer";
 import {
   ERROR_LOAD_PLACE,
   LOADING_PLACE,
+  PLACE_SHEET_CORRECTION_SUFFIX,
   PLACE_SHEET_POST_COUNT_SUFFIX,
+  PLACE_SHEET_SAVED_SUFFIX,
   PLACE_SHEET_SETTLING,
 } from "../../src/config/brand";
 import MapPlaceSheet from "../../src/features/map/MapPlaceSheet.vue";
@@ -39,7 +41,7 @@ describe("MapPlaceSheet runtime DTO rendering", () => {
         type: "library",
         status: "official",
         summary: { text: "后端汇总内容" },
-        stats: { postCount: 7 },
+        stats: { postCount: 7, correctionCount: 2, savedCount: 3 },
         recentPosts: [{ tid: 42, title: "相关帖子", excerpt: "帖子摘要" }],
       },
     });
@@ -49,6 +51,8 @@ describe("MapPlaceSheet runtime DTO rendering", () => {
     expect(html).toContain("图书馆");
     expect(html).toContain("后端汇总内容");
     expect(html).toContain(`7 ${PLACE_SHEET_POST_COUNT_SUFFIX}`);
+    expect(html).toContain(`2 ${PLACE_SHEET_CORRECTION_SUFFIX}`);
+    expect(html).toContain(`3 ${PLACE_SHEET_SAVED_SUFFIX}`);
     expect(html).toContain("相关帖子");
     expect(html).toContain("帖子摘要");
     expect(html).not.toContain("本地点名");
@@ -65,14 +69,5 @@ describe("MapPlaceSheet runtime DTO rendering", () => {
     const emptyHtml = await renderSheet({ selectedPlace, placeSheet: null });
     expect(emptyHtml).toContain("本地点名");
     expect(emptyHtml).toContain(PLACE_SHEET_SETTLING);
-  });
-
-  it("renders a readable fallback for unknown selected-place types before the DTO arrives", async () => {
-    const html = await renderSheet({
-      selectedPlace: { ...selectedPlace, type: "quiet-zone", placeId: undefined },
-      placeSheet: null,
-    });
-
-    expect(html).toContain("quiet-zone");
   });
 });

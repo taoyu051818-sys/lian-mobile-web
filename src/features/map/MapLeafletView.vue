@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { computed, onActivated, onMounted, ref, watch } from "vue";
-import type { MapViewportQuery } from "../../types/map";
-import type { FeedItemId } from "../../types/feed";
-import type { MapLocation, MapPost } from "../../types/map";
+import { useDetailNavigation } from "../../app/detail-navigation";
+import { MAP_ARIA_LABEL, MAP_DISCOVERY_TITLE } from "../../config/brand";
 import type { PageChromeSpec } from "../../shell/page-model";
+import type { FeedItemId } from "../../types/feed";
+import type { MapLocation, MapPost, MapViewportQuery } from "../../types/map";
+import { DEFAULT_MAP_VIEWPORT_POLICY } from "../../types/map-policy";
 import MapCanvas from "./MapCanvas.vue";
 import MapPickerOverlay from "./MapPickerOverlay.vue";
 import MapPlaceSheet from "./MapPlaceSheet.vue";
@@ -12,9 +14,6 @@ import { useMapChrome } from "./useMapChrome";
 import { useMapDataCache } from "./useMapDataCache";
 import { useMapPickerMode } from "./useMapPickerMode";
 import { useMapSelection } from "./useMapSelection";
-import { useDetailNavigation } from "../../app/detail-navigation";
-import { MAP_ARIA_LABEL, MAP_DISCOVERY_TITLE } from "../../config/brand";
-import { DEFAULT_MAP_VIEWPORT_POLICY } from "../../types/map-policy";
 
 defineOptions({ name: "MapLeafletView" });
 

@@ -13,14 +13,16 @@ const rawPlaceSheet = {
   source: { provider: " map ", label: " backend ", visible: "true" },
   summary: {
     text: "  后端汇总的地点简介  ",
+    sources_count: "5",
     sourceCount: "4",
-    aiGenerated: "yes",
-    confidenceLabel: " high ",
+    ai_generated: "yes",
+    confidence_label: " high ",
   },
   stats: {
+    posts_count: "8",
     postCount: "7",
-    correctionCount: 0,
-    savedCount: "3",
+    corrections_count: 0,
+    saves_count: "3",
   },
   recentPosts: [
     {
@@ -50,12 +52,12 @@ describe("normalizePlaceSheet", () => {
       source: { provider: "map", label: "backend", visible: true },
       summary: {
         text: "后端汇总的地点简介",
-        sourceCount: 4,
+        sourceCount: 5,
         aiGenerated: true,
         confidenceLabel: "high",
       },
       stats: {
-        postCount: 7,
+        postCount: 8,
         correctionCount: 0,
         savedCount: 3,
       },
