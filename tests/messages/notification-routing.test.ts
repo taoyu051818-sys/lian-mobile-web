@@ -21,24 +21,28 @@ describe("notification routing normalization", () => {
     expect(item.actionLabel).toBe("查看回复详情");
   });
 
-  it("projects normalized relation context when notification data already carries relations", () => {
+  it("projects normalized relation context from notification data, meta, or envelope", () => {
     const item = normalizeNotificationItem({
       id: "event-relation-1",
       type: "event-completed",
       tid: 156,
       data: {
         eventTitle: "周末桌游夜",
+      },
+      meta: {
         relations: [
           {
             type: "help_event_link",
             target: { kind: "post", id: "42" },
           },
-          {
-            type: "future_relation",
-            target: { kind: "resource", id: "res-9" },
-          },
         ],
       },
+      relations: [
+        {
+          type: "future_relation",
+          target: { kind: "resource", id: "res-9" },
+        },
+      ],
     });
 
     expect(item.relations).toEqual([
@@ -46,9 +50,41 @@ describe("notification routing normalization", () => {
         type: "help_event_link",
         target: { kind: "post", id: "42" },
       },
+    ]);
+  });
+
+  it("projects normalized available action context from notification data, meta, or envelope", () => {
+    const item = normalizeNotificationItem({
+      id: "event-action-1",
+      type: "event-reward-settled",
+      tid: 156,
+      data: {
+        eventTitle: "周末桌游夜",
+      },
+      meta: {
+        availableActions: [
+          {
+            type: "claim_reward",
+            enabled: false,
+            reason: "already_claimed",
+            reasonText: "已领取",
+          },
+        ],
+      },
+      availableActions: [
+        {
+          type: "future_action",
+          enabled: true,
+        },
+      ],
+    });
+
+    expect(item.availableActions).toEqual([
       {
-        type: "future_relation",
-        target: { kind: "resource", id: "res-9" },
+        type: "claim_reward",
+        enabled: false,
+        reason: "already_claimed",
+        reasonText: "已领取",
       },
     ]);
   });

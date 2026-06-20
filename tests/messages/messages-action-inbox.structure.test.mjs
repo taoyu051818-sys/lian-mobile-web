@@ -95,6 +95,18 @@ test("NotificationList treats errand-order targets as clickable", () => {
   assert.match(listSource, /item\.target\?\.kind === "errand-order"/);
 });
 
+test("NotificationList renders normalized relations and availableActions as lightweight context chips", () => {
+  assert.match(listSource, /item\.relations\?\.length/);
+  assert.match(listSource, /data-testid="notification-relation-context"/);
+  assert.match(listSource, /item\.availableActions\?\.length/);
+  assert.match(listSource, /data-testid="notification-action-context"/);
+  assert.match(listSource, /ACTION_TYPE_LABEL\[type\]\s*\?\?\s*type/);
+  assert.match(listSource, /AVAILABLE_ACTION_CLAIM_REWARD/);
+  assert.match(listSource, /AVAILABLE_ACTION_COMPLETE_ERRAND/);
+  assert.match(listSource, /AVAILABLE_ACTION_TRADE_RESERVE/);
+  assert.match(listSource, /AVAILABLE_ACTION_MESSAGE_AUTHOR/);
+});
+
 test("messageInbox no longer carries stale gapLinks now that the verification + event channels are connected", () => {
   assert.doesNotMatch(inboxSource, /认证结果通知 #700/);
   assert.doesNotMatch(inboxSource, /活动状态通知 #706/);
