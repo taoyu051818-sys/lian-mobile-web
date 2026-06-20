@@ -54,8 +54,8 @@ const stateLabel = computed(
 );
 const targetLabel = computed(() => props.component.targetCount ?? GROUPBUY_TARGET_UNSET);
 const participantLabel = computed(() => props.component.participantCount ?? 0);
-const viewerStatusValue = computed(() =>
-  props.component.viewerStatus || (props.component.joined ? "joined" : "not_joined"),
+const viewerStatusValue = computed(
+  () => props.component.viewerStatus || (props.component.joined ? "joined" : "not_joined"),
 );
 const viewerStatusLabel = computed(
   () => VIEWER_STATUS_LABEL[viewerStatusValue.value] ?? viewerStatusValue.value,
