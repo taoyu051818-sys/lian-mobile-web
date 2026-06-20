@@ -24,6 +24,9 @@ export const FEED_RELATION_HINT_GROUPBUY_CREATED = "发起拼单";
 export const FEED_GRAPH_CUE_PROJECT = "项目";
 export const FEED_GRAPH_CUE_REVIEW = "评审";
 export const FEED_GRAPH_CUE_SUBMISSION = "投稿";
+export const FEED_INTENT_SIGNAL_TRADE = "二手交易";
+export const FEED_INTENT_SIGNAL_PROJECT = "项目";
+export const FEED_INTENT_SIGNAL_REVIEW = "评价";
 
 /** 卡片模板视觉记号（FeedItemCard.vue templateMark 字符标） */
 export const FEED_CARD_MARK_MERCHANT = "食";

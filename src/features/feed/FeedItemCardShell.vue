@@ -17,7 +17,16 @@ import type { AudienceVisibility } from "../../types/audience";
 import FeedItemCardFooter from "./FeedItemCardFooter.vue";
 import FeedItemCardMedia from "./FeedItemCardMedia.vue";
 
-type CardTemplate = "image" | "text" | "activity" | "place" | "merchant" | "help";
+type CardTemplate =
+  | "image"
+  | "text"
+  | "activity"
+  | "place"
+  | "merchant"
+  | "trade"
+  | "project"
+  | "review"
+  | "help";
 
 const props = defineProps<{
   title: string;
@@ -31,6 +40,7 @@ const props = defineProps<{
   templateMark: string;
   relationHint: { label: string; targetTid?: number } | null;
   graphCue: string;
+  intentSignal: { label: string; stateLabel?: string } | null;
   bodyPreview: string;
   cardWarning?: string;
   // Forwarded to FeedItemCardFooter — the footer remains the owner of like behavior
@@ -112,6 +122,11 @@ onMounted(() => {
       >
         {{ relationHint.label }}
       </button>
+
+      <div v-if="intentSignal" class="feed-item-card__intent-signal">
+        <span>{{ intentSignal.label }}</span>
+        <span v-if="intentSignal.stateLabel">{{ intentSignal.stateLabel }}</span>
+      </div>
 
       <h3 :title="title">{{ title }}</h3>
 
@@ -206,6 +221,14 @@ onMounted(() => {
     var(--lian-card-strong);
 }
 
+.feed-item-card--trade,
+.feed-item-card--project,
+.feed-item-card--review {
+  background:
+    radial-gradient(circle at top left, rgba(31, 41, 55, 0.06), transparent 42%),
+    var(--lian-card-strong);
+}
+
 .feed-item-card__body {
   display: grid;
   gap: var(--space-2);
@@ -268,7 +291,8 @@ onMounted(() => {
   line-height: 1.3;
 }
 
-.feed-item-card__relation-hint {
+.feed-item-card__relation-hint,
+.feed-item-card__intent-signal {
   display: inline-flex;
   justify-self: start;
   margin: 0;
@@ -286,5 +310,17 @@ onMounted(() => {
 .feed-item-card__relation-hint:disabled {
   cursor: default;
   opacity: 0.78;
+}
+
+.feed-item-card__intent-signal {
+  gap: 4px;
+  background: rgba(31, 41, 55, 0.06);
+  color: var(--lian-ink-soft);
+}
+
+.feed-item-card__intent-signal span + span::before {
+  content: "·";
+  margin-right: 4px;
+  color: var(--lian-muted);
 }
 </style>

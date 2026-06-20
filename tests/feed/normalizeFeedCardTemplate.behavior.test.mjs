@@ -4,7 +4,18 @@ import assert from "node:assert/strict";
 // Pure normalization helpers extracted from src/api/feed.ts for behavioral testing.
 // These mirror the production logic so node --test can exercise them without TS compilation.
 
-const CARD_TEMPLATES = new Set(["image", "text", "activity", "place", "merchant", "help", "club"]);
+const CARD_TEMPLATES = new Set([
+  "image",
+  "text",
+  "activity",
+  "place",
+  "merchant",
+  "trade",
+  "project",
+  "review",
+  "help",
+  "club",
+]);
 
 const CONTENT_TYPE_CARD_TEMPLATES = {
   image: "image",
@@ -14,8 +25,8 @@ const CONTENT_TYPE_CARD_TEMPLATES = {
   post: "text",
   article: "text",
   discussion: "text",
-  project: "text",
-  review: "text",
+  project: "project",
+  review: "review",
   submission: "text",
   activity: "activity",
   event: "activity",
@@ -26,11 +37,25 @@ const CONTENT_TYPE_CARD_TEMPLATES = {
   merchant: "merchant",
   shop: "merchant",
   food: "merchant",
-  trade: "merchant",
+  trade: "trade",
   help: "help",
   support: "help",
   ask: "help",
   club: "club",
+};
+
+const INTENT_SIGNAL_LABELS = {
+  trade: "二手交易",
+  project: "项目",
+  review: "评价",
+};
+const INTENT_SIGNAL_TYPES = new Set(["trade", "project", "review"]);
+const TRADE_STATE_LABELS = {
+  available: "在售",
+  reserved: "已预订",
+  sold: "已出售",
+  cancelled: "已取消",
+  hidden: "已隐藏",
 };
 
 function readableText(value) {
@@ -42,8 +67,13 @@ function readableText(value) {
   return "";
 }
 
+function normalizeFeedPresentationTemplate(value) {
+  const intent = normalizeFeedPresentationIntent(value);
+  return intent && CARD_TEMPLATES.has(intent) ? intent : null;
+}
+
 function normalizeFeedPresentationIntent(value) {
-  return typeof value === "string" && CARD_TEMPLATES.has(value) ? value : null;
+  return typeof value === "string" && value.trim() ? value.trim() : null;
 }
 
 function normalizeFeedContentType(value) {
@@ -95,14 +125,16 @@ function normalizeCount(value) {
 }
 
 function normalizeFeedCardTemplate(item) {
-  const normalizedServerTemplate =
-    normalizeFeedPresentationIntent(item.cardTemplate) ||
-    normalizeFeedPresentationIntent(item.presentationIntent);
-  if (normalizedServerTemplate) {
+  const normalizedServerTemplate = normalizeFeedPresentationTemplate(item.cardTemplate);
+  const normalizedServerIntent = normalizeFeedPresentationIntent(item.presentationIntent);
+  if (normalizedServerTemplate || normalizedServerIntent) {
     return {
-      cardTemplate: normalizedServerTemplate,
+      cardTemplate:
+        normalizedServerTemplate ||
+        normalizeFeedPresentationTemplate(normalizedServerIntent) ||
+        "text",
       cardTemplateSource: "server",
-      presentationIntent: normalizedServerTemplate,
+      presentationIntent: normalizedServerIntent,
     };
   }
 
@@ -130,11 +162,16 @@ function normalizeFeedItem(value) {
   const contentType = normalizeFeedContentType(
     record.contentType || record.category || record.type,
   );
+  const metadata =
+    record.metadata && typeof record.metadata === "object" ? record.metadata : undefined;
+  const presentationIntentInput =
+    normalizeFeedPresentationIntent(record.presentationIntent) ||
+    normalizeFeedPresentationIntent(metadata?.presentationIntent);
   const { cardTemplate, cardTemplateSource, presentationIntent } = normalizeFeedCardTemplate({
     cover,
     contentType,
-    presentationIntent: record.presentationIntent,
-    cardTemplate: record.cardTemplate,
+    presentationIntent: presentationIntentInput,
+    cardTemplate: normalizeFeedPresentationTemplate(record.cardTemplate),
   });
 
   return {
@@ -157,13 +194,101 @@ function normalizeFeedItem(value) {
     presentationIntent,
     cardTemplate,
     cardTemplateSource,
-    relations: normalizeFeedRelations(record.relations),
+    relations: normalizeFeedRelations(record.relations ?? metadata?.relations),
   };
+}
+
+function resolveTradeStateLabel(components) {
+  const trade = components?.find((component) => component.type === "trade");
+  return trade?.state ? TRADE_STATE_LABELS[trade.state] : undefined;
+}
+
+function buildIntentSignal(intent, components) {
+  const stateLabel = intent === "trade" ? resolveTradeStateLabel(components) : undefined;
+  return {
+    label: INTENT_SIGNAL_LABELS[intent] ?? intent,
+    ...(stateLabel ? { stateLabel } : {}),
+  };
+}
+
+function resolveIntentSignal(item) {
+  const explicitIntent =
+    typeof item.presentationIntent === "string" ? item.presentationIntent.trim() : "";
+  const contentIntent = typeof item.contentType === "string" ? item.contentType.trim() : "";
+  const knownExplicitIntent = INTENT_SIGNAL_TYPES.has(explicitIntent);
+  const knownContentIntent = INTENT_SIGNAL_TYPES.has(contentIntent);
+  if (knownExplicitIntent) {
+    return buildIntentSignal(explicitIntent, item.components);
+  }
+  if (explicitIntent && !CARD_TEMPLATES.has(explicitIntent)) {
+    return { label: explicitIntent };
+  }
+  if (knownContentIntent) {
+    return buildIntentSignal(contentIntent, item.components);
+  }
+  return null;
 }
 
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
+
+describe("FeedItemCard intent signal resolution", () => {
+  it("returns Chinese-first labels for known trade/project/review intents", () => {
+    assert.deepEqual(
+      resolveIntentSignal({
+        presentationIntent: "trade",
+        components: [{ type: "trade", state: "sold" }],
+      }),
+      { label: "二手交易", stateLabel: "已出售" },
+    );
+    assert.deepEqual(resolveIntentSignal({ presentationIntent: "project" }), { label: "项目" });
+    assert.deepEqual(resolveIntentSignal({ presentationIntent: "review" }), { label: "评价" });
+  });
+
+  it("falls back to known contentType when presentationIntent is absent", () => {
+    assert.deepEqual(
+      resolveIntentSignal({
+        contentType: "trade",
+        components: [{ type: "trade", state: "available" }],
+      }),
+      { label: "二手交易", stateLabel: "在售" },
+    );
+    assert.deepEqual(resolveIntentSignal({ contentType: "project" }), { label: "项目" });
+    assert.deepEqual(resolveIntentSignal({ contentType: "review" }), { label: "评价" });
+  });
+
+  it("keeps unknown trade states from adding a state sub-label", () => {
+    assert.deepEqual(
+      resolveIntentSignal({
+        presentationIntent: "trade",
+        components: [{ type: "trade", state: "future-state" }],
+      }),
+      { label: "二手交易" },
+    );
+  });
+
+  it("does not add intent signal data for ordinary feed cards", () => {
+    assert.equal(resolveIntentSignal({ contentType: "post", presentationIntent: null }), null);
+    assert.equal(
+      resolveIntentSignal({ contentType: "merchant", presentationIntent: "merchant" }),
+      null,
+    );
+  });
+
+  it("keeps unknown explicit presentation intents readable", () => {
+    assert.deepEqual(
+      resolveIntentSignal({ contentType: "post", presentationIntent: "future-intent" }),
+      {
+        label: "future-intent",
+      },
+    );
+  });
+
+  it("ignores unknown contentType values when there is no explicit intent", () => {
+    assert.equal(resolveIntentSignal({ contentType: "future-intent" }), null);
+  });
+});
 
 describe("normalizeFeedCardTemplate: server cardTemplate/presentationIntent priority", () => {
   it("prefers cardTemplate over presentationIntent when both are valid", () => {
@@ -175,7 +300,7 @@ describe("normalizeFeedCardTemplate: server cardTemplate/presentationIntent prio
     });
     assert.equal(result.cardTemplate, "merchant");
     assert.equal(result.cardTemplateSource, "server");
-    assert.equal(result.presentationIntent, "merchant");
+    assert.equal(result.presentationIntent, "text");
   });
 
   it("falls back to presentationIntent when cardTemplate is invalid", () => {
@@ -210,6 +335,29 @@ describe("normalizeFeedCardTemplate: server cardTemplate/presentationIntent prio
     assert.equal(result.cardTemplate, "help");
     assert.equal(result.cardTemplateSource, "server");
   });
+  it("server-declared first-class intents render as their matching templates", () => {
+    for (const intent of ["trade", "project", "review"]) {
+      const result = normalizeFeedCardTemplate({
+        cover: "https://img.example.com/a.jpg",
+        contentType: "post",
+        presentationIntent: intent,
+      });
+      assert.equal(result.cardTemplate, intent);
+      assert.equal(result.cardTemplateSource, "server");
+      assert.equal(result.presentationIntent, intent);
+    }
+  });
+
+  it("keeps unknown presentationIntent readable while rendering the calm text template", () => {
+    const result = normalizeFeedCardTemplate({
+      cover: "https://img.example.com/a.jpg",
+      contentType: "photo",
+      presentationIntent: "future-intent",
+    });
+    assert.equal(result.cardTemplate, "text");
+    assert.equal(result.cardTemplateSource, "server");
+    assert.equal(result.presentationIntent, "future-intent");
+  });
 });
 
 describe("normalizeFeedCardTemplate: known contentType mapping", () => {
@@ -221,8 +369,8 @@ describe("normalizeFeedCardTemplate: known contentType mapping", () => {
     ["post", "text"],
     ["article", "text"],
     ["discussion", "text"],
-    ["project", "text"],
-    ["review", "text"],
+    ["project", "project"],
+    ["review", "review"],
     ["submission", "text"],
     ["activity", "activity"],
     ["event", "activity"],
@@ -233,7 +381,7 @@ describe("normalizeFeedCardTemplate: known contentType mapping", () => {
     ["merchant", "merchant"],
     ["shop", "merchant"],
     ["food", "merchant"],
-    ["trade", "merchant"],
+    ["trade", "trade"],
     ["help", "help"],
     ["support", "help"],
     ["ask", "help"],
@@ -464,7 +612,7 @@ describe("normalizeFeedItem: edge cases", () => {
     });
     assert.equal(item.cardTemplate, "merchant");
     assert.equal(item.cardTemplateSource, "server");
-    assert.equal(item.presentationIntent, "merchant");
+    assert.equal(item.presentationIntent, null);
   });
 
   it("normalizes card template from contentType when no server field", () => {
@@ -647,6 +795,83 @@ describe("normalizeFeedItem: edge cases", () => {
     assert.equal(item.primaryTag, "");
     assert.equal(item.title, "未命名内容");
     assert.equal(item.locationArea, "校园");
+  });
+
+  it("maps first-class intents from contentType without a server field", () => {
+    for (const intent of ["trade", "project", "review"]) {
+      const item = normalizeFeedItem({ id: 1, contentType: intent });
+      assert.equal(item.cardTemplate, intent);
+      assert.equal(item.cardTemplateSource, "content-type");
+      assert.equal(item.presentationIntent, null);
+    }
+  });
+
+  it("does not add intent presentation data for ordinary feed cards", () => {
+    const item = normalizeFeedItem({ id: 1, contentType: "post" });
+    assert.equal(item.cardTemplate, "text");
+    assert.equal(item.cardTemplateSource, "content-type");
+    assert.equal(item.presentationIntent, null);
+  });
+
+  it("preserves unknown server intents while using the text template fallback", () => {
+    const item = normalizeFeedItem({
+      id: 1,
+      contentType: "post",
+      presentationIntent: "future-intent",
+    });
+    assert.equal(item.cardTemplate, "text");
+    assert.equal(item.cardTemplateSource, "server");
+    assert.equal(item.presentationIntent, "future-intent");
+  });
+
+  it("preserves unknown top-level presentationIntent before metadata fallbacks", () => {
+    const item = normalizeFeedItem({
+      id: 1,
+      contentType: "project",
+      presentationIntent: "future-intent",
+      metadata: { presentationIntent: "help" },
+    });
+    assert.equal(item.cardTemplate, "text");
+    assert.equal(item.cardTemplateSource, "server");
+    assert.equal(item.presentationIntent, "future-intent");
+  });
+
+  it("falls back to metadata presentationIntent when top-level presentationIntent is absent", () => {
+    const item = normalizeFeedItem({
+      id: 1,
+      contentType: "project",
+      metadata: { presentationIntent: "help" },
+    });
+    assert.equal(item.cardTemplate, "help");
+    assert.equal(item.cardTemplateSource, "server");
+    assert.equal(item.presentationIntent, "help");
+  });
+
+  it("does not expose identity fields from metadata or relation payloads", () => {
+    const item = normalizeFeedItem({
+      id: 1,
+      title: "项目招募",
+      contentType: "project",
+      metadata: {
+        author: { id: "u-secret", displayName: "不应出现" },
+        requesterUserId: "u-requester",
+        joinerIds: ["u-a", "u-b"],
+        relations: [
+          {
+            type: "project_submission",
+            targetTid: 33,
+            actor: { displayName: "关系作者" },
+            settledBy: "u-settled",
+          },
+        ],
+      },
+    });
+    assert.equal(item.actor, undefined);
+    assert.deepEqual(item.relations, [{ type: "project_submission", targetTid: 33 }]);
+    assert.equal(JSON.stringify(item).includes("u-secret"), false);
+    assert.equal(JSON.stringify(item).includes("不应出现"), false);
+    assert.equal(JSON.stringify(item).includes("u-requester"), false);
+    assert.equal(JSON.stringify(item).includes("u-settled"), false);
   });
 
   it("normalizes relations with known and unknown types, drops invalid entries", () => {

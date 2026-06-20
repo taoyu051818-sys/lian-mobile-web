@@ -18,29 +18,24 @@ describe("feed adapter normalization", () => {
     });
   });
 
-  it("maps project/review/submission content types to text cards", () => {
-    expect(
-      normalizeFeedCardTemplate({
-        cover: "",
-        contentType: "project",
+  it("maps trade/project/review content types to first-class card templates", () => {
+    for (const contentType of ["trade", "project", "review"] as const) {
+      expect(
+        normalizeFeedCardTemplate({
+          cover: "",
+          contentType,
+          presentationIntent: null,
+          cardTemplate: undefined,
+        }),
+      ).toEqual({
+        cardTemplate: contentType,
+        cardTemplateSource: "content-type",
         presentationIntent: null,
-        cardTemplate: undefined,
-      }),
-    ).toEqual({
-      cardTemplate: "text",
-      cardTemplateSource: "content-type",
-      presentationIntent: null,
-    });
+      });
+    }
+  });
 
-    expect(
-      normalizeFeedCardTemplate({
-        cover: "",
-        contentType: "review",
-        presentationIntent: null,
-        cardTemplate: undefined,
-      }).cardTemplate,
-    ).toBe("text");
-
+  it("keeps submission content type as an ordinary text card", () => {
     expect(
       normalizeFeedCardTemplate({
         cover: "",
@@ -49,6 +44,36 @@ describe("feed adapter normalization", () => {
         cardTemplate: undefined,
       }).cardTemplate,
     ).toBe("text");
+  });
+
+  it("preserves unknown presentation intents while falling back to a text card", () => {
+    expect(
+      normalizeFeedCardTemplate({
+        cover: "https://img.example.com/a.jpg",
+        contentType: "photo",
+        presentationIntent: "future-intent",
+        cardTemplate: undefined,
+      }),
+    ).toEqual({
+      cardTemplate: "text",
+      cardTemplateSource: "server",
+      presentationIntent: "future-intent",
+    });
+  });
+
+  it("preserves unknown top-level presentation intents before metadata fallbacks", () => {
+    const item = normalizeFeedItem({
+      id: 1,
+      contentType: "project",
+      presentationIntent: "future-intent",
+      metadata: { presentationIntent: "help" },
+    });
+
+    expect(item).toMatchObject({
+      cardTemplate: "text",
+      cardTemplateSource: "server",
+      presentationIntent: "future-intent",
+    });
   });
 
   it("normalizes nested actor/source records on feed items like post detail does", () => {
@@ -131,7 +156,7 @@ describe("feed adapter normalization", () => {
 
     expect(item).toMatchObject({
       tid: 41,
-      cardTemplate: "text",
+      cardTemplate: "project",
       cardTemplateSource: "content-type",
       relationHint: {
         type: "event_followup",
@@ -275,11 +300,10 @@ describe("feed adapter normalization", () => {
     ).toEqual({ type: "event_followup" });
   });
 
-  it("falls back to metadata presentationIntent when top-level presentationIntent is invalid", () => {
+  it("falls back to metadata presentationIntent when top-level presentationIntent is absent", () => {
     const item = normalizeFeedItem({
       tid: 54,
       contentType: "project",
-      presentationIntent: "unknown-card",
       metadata: { presentationIntent: "help" },
     });
 

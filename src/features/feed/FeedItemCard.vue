@@ -25,6 +25,9 @@ import {
   UNTITLED_CONTENT,
   FEED_TIME_JUST_NOW,
   FEED_CARD_MARK_MERCHANT,
+  FEED_INTENT_SIGNAL_TRADE,
+  FEED_INTENT_SIGNAL_PROJECT,
+  FEED_INTENT_SIGNAL_REVIEW,
   FEED_RELATION_HINT_EVENT_FOLLOWUP,
   FEED_RELATION_HINT_HELP_EVENT,
   FEED_RELATION_HINT_TRADE_OFFER,
@@ -49,11 +52,19 @@ import type {
   FeedItemShellCardTemplate,
   FeedPresentationIntent,
 } from "../../types/feed";
+import type { MetadataComponentV2, TradeState } from "../../types/post-extensions";
 import FeedItemCardShell from "./FeedItemCardShell.vue";
 import FeedItemClubCard from "./FeedItemClubCard.vue";
 import FeedContextMenu from "./FeedContextMenu.vue";
 import { useCardPointerInteraction } from "./useCardPointerInteraction";
 import { hapticMedium } from "../../composables/useHapticFeedback";
+import {
+  TRADE_STATE_AVAILABLE,
+  TRADE_STATE_RESERVED,
+  TRADE_STATE_SOLD,
+  TRADE_STATE_CANCELLED,
+  TRADE_STATE_HIDDEN,
+} from "../../config/brand/trade";
 
 type CardTemplate = FeedItemShellCardTemplate;
 type FeedCardVariant = FeedPresentationIntent;
@@ -93,6 +104,9 @@ const CARD_TEMPLATES: ReadonlySet<CardTemplate> = new Set([
   "activity",
   "place",
   "merchant",
+  "trade",
+  "project",
+  "review",
   "help",
 ]);
 const FEED_CARD_VARIANTS: ReadonlySet<FeedCardVariant> = new Set([...CARD_TEMPLATES, "club"]);
@@ -103,6 +117,9 @@ const TEMPLATE_MARKS: Readonly<Record<CardTemplate, string>> = {
   activity: "◦",
   place: "⌖",
   merchant: FEED_CARD_MARK_MERCHANT,
+  trade: "二",
+  project: "项",
+  review: "评",
   help: "＋",
 };
 
@@ -134,6 +151,21 @@ function graphCueFromItem(item: FeedItem): string {
   return "";
 }
 
+const INTENT_SIGNAL_LABELS: Readonly<Record<string, string>> = {
+  trade: FEED_INTENT_SIGNAL_TRADE,
+  project: FEED_INTENT_SIGNAL_PROJECT,
+  review: FEED_INTENT_SIGNAL_REVIEW,
+};
+const INTENT_SIGNAL_TYPES: ReadonlySet<string> = new Set(["trade", "project", "review"]);
+
+const TRADE_STATE_LABELS: Readonly<Record<TradeState, string>> = {
+  available: TRADE_STATE_AVAILABLE,
+  reserved: TRADE_STATE_RESERVED,
+  sold: TRADE_STATE_SOLD,
+  cancelled: TRADE_STATE_CANCELLED,
+  hidden: TRADE_STATE_HIDDEN,
+};
+
 function normalizePresentationIntent(
   value: FeedItem["cardTemplate"] | FeedItem["presentationIntent"],
 ): FeedCardVariant | null {
@@ -142,11 +174,47 @@ function normalizePresentationIntent(
     : null;
 }
 
+function toShellCardTemplate(cardTemplate: FeedCardVariant): CardTemplate {
+  return CARD_TEMPLATES.has(cardTemplate as CardTemplate) ? (cardTemplate as CardTemplate) : "text";
+}
+
 function resolveTrustSignal(source: FeedItem["source"], identityTag?: string) {
   if (source?.visible === false) return null;
   if (source?.label) return source.label;
   if (identityTag) return `${TRUST_SIGNAL_IDENTITY_PREFIX}${identityTag}`;
   if (source) return TRUST_SIGNAL_UNKNOWN;
+  return null;
+}
+
+function resolveTradeStateLabel(components: MetadataComponentV2[] | undefined): string | undefined {
+  const trade = components?.find((component) => component.type === "trade");
+  if (!trade?.state) return undefined;
+  return TRADE_STATE_LABELS[trade.state];
+}
+
+function buildIntentSignal(intent: string, components: MetadataComponentV2[] | undefined) {
+  const stateLabel = intent === "trade" ? resolveTradeStateLabel(components) : undefined;
+  return {
+    label: INTENT_SIGNAL_LABELS[intent] ?? intent,
+    ...(stateLabel ? { stateLabel } : {}),
+  };
+}
+
+function resolveIntentSignal(item: FeedItem): { label: string; stateLabel?: string } | null {
+  const explicitIntent =
+    typeof item.presentationIntent === "string" ? item.presentationIntent.trim() : "";
+  const contentIntent = typeof item.contentType === "string" ? item.contentType.trim() : "";
+  const knownExplicitIntent = INTENT_SIGNAL_TYPES.has(explicitIntent);
+  const knownContentIntent = INTENT_SIGNAL_TYPES.has(contentIntent);
+  if (knownExplicitIntent) {
+    return buildIntentSignal(explicitIntent, item.components);
+  }
+  if (explicitIntent && !FEED_CARD_VARIANTS.has(explicitIntent as FeedCardVariant)) {
+    return { label: explicitIntent };
+  }
+  if (knownContentIntent) {
+    return buildIntentSignal(contentIntent, item.components);
+  }
   return null;
 }
 
@@ -166,7 +234,7 @@ const cardDisplayData = computed(() => {
   const serverIntent = normalizePresentationIntent(item.presentationIntent);
   const cardTemplate: FeedCardVariant =
     normalizedTemplate || serverIntent || (coverUrl ? "image" : "text");
-  const shellCardTemplate: CardTemplate = cardTemplate === "club" ? "text" : cardTemplate;
+  const shellCardTemplate = toShellCardTemplate(cardTemplate);
 
   const warnings: string[] = [];
   if (title.length > MAX_VISIBLE_TITLE_CHARS) warnings.push("title-clamped");
@@ -192,6 +260,7 @@ const cardDisplayData = computed(() => {
     templateMark: cardTemplate === "club" ? "" : TEMPLATE_MARKS[shellCardTemplate],
     relationHint,
     graphCue: graphCueFromItem(item),
+    intentSignal: resolveIntentSignal(item),
     bodyPreview: item.bodyPreview || "",
     visibility: item.visibility || "public",
     trustSignal: resolveTrustSignal(item.source, actor.identityTag),
@@ -298,6 +367,7 @@ function handleClubOpen(
       :template-mark="cardDisplayData.templateMark"
       :relation-hint="cardDisplayData.relationHint"
       :graph-cue="cardDisplayData.graphCue"
+      :intent-signal="cardDisplayData.intentSignal"
       :body-preview="cardDisplayData.bodyPreview"
       :card-warning="cardDisplayData.cardWarning"
       :tid="props.item.tid"
