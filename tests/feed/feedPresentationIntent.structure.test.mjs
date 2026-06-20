@@ -11,6 +11,10 @@ const feedItemCardSource = fs.readFileSync(
   path.join(repoRoot, "src/features/feed/FeedItemCard.vue"),
   "utf8",
 );
+const feedItemCardMediaSource = fs.readFileSync(
+  path.join(repoRoot, "src/features/feed/FeedItemCardMedia.vue"),
+  "utf8",
+);
 const feedBrandSource = fs.readFileSync(path.join(repoRoot, "src/config/brand/feed.ts"), "utf8");
 
 test("Feed presentationIntent: types the normalized card template fields", () => {
@@ -35,7 +39,11 @@ test("Feed presentationIntent: normalizes card templates in the feed adapter bef
   assert.match(feedApiSource, /export function normalizeFeedCardTemplate\(/);
   assert.match(
     feedApiSource,
-    /const normalizedServerTemplate = normalizeFeedPresentationTemplate\(item\.cardTemplate\);[\s\S]*const normalizedServerIntent = normalizeFeedPresentationIntent\(item\.presentationIntent\);/,
+    /const rawPresentationIntent = normalizeRawPresentationIntent\(item\.presentationIntent\);[\s\S]*const normalizedServerTemplate = normalizeFeedPresentationIntent\(item\.cardTemplate\);/,
+  );
+  assert.match(
+    feedApiSource,
+    /const knownIntent = normalizeFeedPresentationIntent\(rawPresentationIntent\);/,
   );
   assert.match(feedApiSource, /cardTemplateSource: "content-type"/);
   assert.match(feedApiSource, /cardTemplate: item\.cover \? "image" : "text"/);
@@ -109,6 +117,10 @@ test("Feed presentationIntent: keeps FeedItemCard on normalized template inputs 
   assert.match(feedItemCardSource, /stateLabel \? \{ stateLabel \} : \{\}/);
   assert.match(feedItemCardSource, /intentSignal: resolveIntentSignal\(item\)/);
   assert.match(feedItemCardSource, /:intent-signal="cardDisplayData\.intentSignal"/);
+  assert.match(
+    feedItemCardMediaSource,
+    /feed-item-card--trade \.feed-item-card__cover,[\s\S]*feed-item-card--project \.feed-item-card__cover,[\s\S]*feed-item-card--review \.feed-item-card__cover/,
+  );
   assert.doesNotMatch(
     feedItemCardSource,
     /authorUserId|settledBy|joinerIds|requesterUserId|runnerUserId/,
