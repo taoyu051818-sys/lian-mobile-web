@@ -18,6 +18,13 @@ describe("map discovery wiring", () => {
     expect(view).toMatch(/loadMap\(mapQuery\.value/);
   });
 
+  it("keeps resize and zoom from directly rebuilding every map layer", () => {
+    expect(canvas).toMatch(/let scheduledRenderFrame: number \| null = null/);
+    expect(canvas).toMatch(/function scheduleRenderMap\(\)/);
+    expect(canvas).toMatch(/newMap\.on\("zoomend resize", scheduleRenderMap\)/);
+    expect(canvas).not.toMatch(/newMap\.on\("zoomend resize", renderMap\)/);
+  });
+
   it("sends active type filters to Map V2 while still using filters as visible layer chrome", () => {
     expect(view).toMatch(/activeTypes/);
     expect(view).toMatch(/types: activeTypes\.value/);
