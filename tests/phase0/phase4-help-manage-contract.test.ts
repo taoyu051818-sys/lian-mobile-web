@@ -2,7 +2,7 @@ import { describe, it, expect, vi } from "vitest";
 import { readFileSync } from "node:fs";
 import { planHelpManage, parseEventTidInput } from "../../src/domain/helpManagePolicy";
 import { normalizePostDetail } from "../../src/api/posts";
-import { linkHelpToEvent } from "../../src/api/events";
+import { linkHelpToEvent, resolveHelp } from "../../src/api/events";
 import type { HelpPostExtension } from "../../src/types/post-extensions";
 
 const apiSendMock = vi.fn();
@@ -38,16 +38,16 @@ describe("Phase 4 (help-manage): planHelpManage", () => {
     expect(plan.allowed.size).toBe(0);
   });
 
-  it("open + manageable allows linkEvent + resolve + close, no unlink", () => {
+  it("open + manageable allows linkEvent + resolve, no close or unlink", () => {
     const plan = planHelpManage({ help: makeHelp(), isManageable: true });
     expect(plan.canManage).toBe(true);
     expect(plan.allowed.has("linkEvent")).toBe(true);
     expect(plan.allowed.has("resolve")).toBe(true);
-    expect(plan.allowed.has("close")).toBe(true);
+    expect((plan.allowed as ReadonlySet<string>).has("close")).toBe(false);
     expect(plan.allowed.has("unlinkEvent")).toBe(false);
   });
 
-  it("linked_event + manageable swaps linkEvent for unlinkEvent", () => {
+  it("linked_event + manageable swaps linkEvent for unlinkEvent without close", () => {
     const plan = planHelpManage({
       help: makeHelp({ status: "linked_event", linkedEventTid: 42 }),
       isManageable: true,
@@ -55,7 +55,7 @@ describe("Phase 4 (help-manage): planHelpManage", () => {
     expect(plan.canManage).toBe(true);
     expect(plan.allowed.has("unlinkEvent")).toBe(true);
     expect(plan.allowed.has("resolve")).toBe(true);
-    expect(plan.allowed.has("close")).toBe(true);
+    expect((plan.allowed as ReadonlySet<string>).has("close")).toBe(false);
     expect(plan.allowed.has("linkEvent")).toBe(false);
   });
 
@@ -75,7 +75,7 @@ describe("Phase 4 (help-manage): planHelpManage", () => {
     expect(malformedPlan.allowed.size).toBe(0);
   });
 
-  describe("Phase 4 (help-manage): linkHelpToEvent payload contract", () => {
+  describe("Phase 4 (help-manage): link/resolve payload contract", () => {
     it("sends backend-expected { eventId } payload field", async () => {
       apiSendMock.mockReset();
       apiSendMock.mockResolvedValueOnce({
@@ -96,6 +96,27 @@ describe("Phase 4 (help-manage): planHelpManage", () => {
       expect(path).toBe("/api/help/help-1/link-event");
       expect(options.method).toBe("POST");
       expect(options.body).toBe(JSON.stringify({ eventId: "42" }));
+    });
+
+    it("resolveHelp calls the resolve route without requesting arbitrary status transitions", async () => {
+      apiSendMock.mockReset();
+      apiSendMock.mockResolvedValueOnce({
+        helpId: "help-1",
+        voteCount: 0,
+        commentCount: 0,
+        status: "resolved",
+      });
+
+      await resolveHelp("help-1");
+
+      expect(apiSendMock).toHaveBeenCalledTimes(1);
+      const [path, options] = apiSendMock.mock.calls[0] as [
+        string,
+        { body?: string; method?: string },
+      ];
+      expect(path).toBe("/api/help/help-1/resolve");
+      expect(options.method).toBe("POST");
+      expect(options.body).toBeUndefined();
     });
   });
 
@@ -164,19 +185,19 @@ describe("Phase 4 (help-manage): composable + view wiring", () => {
     expect(composable).not.toMatch(/管理操作暂时不可用/);
   });
 
-  it("useHelpManage exposes link / unlink / resolve / close entry points", () => {
+  it("useHelpManage exposes link / unlink / resolve entry points only", () => {
     expect(composable).toMatch(/linkEvent/);
     expect(composable).toMatch(/unlinkEvent/);
     expect(composable).toMatch(/markResolved/);
-    expect(composable).toMatch(/markClosed/);
+    expect(composable).not.toMatch(/markClosed/);
   });
 
-  it("PostDetailHelpManageBlock sources every label from brand constants", () => {
+  it("PostDetailHelpManageBlock sources supported labels from brand constants", () => {
     expect(view).toMatch(/HELP_MANAGE_BLOCK_LABEL/);
     expect(view).toMatch(/HELP_MANAGE_LINK_EVENT/);
     expect(view).toMatch(/HELP_MANAGE_RESOLVE/);
-    expect(view).toMatch(/HELP_MANAGE_CLOSE/);
     expect(view).toMatch(/HELP_MANAGE_PENDING/);
+    expect(view).not.toMatch(/HELP_MANAGE_CLOSE/);
     expect(view).not.toMatch(/求助管理/);
     expect(view).not.toMatch(/'标记为已解决'/);
   });
@@ -186,11 +207,11 @@ describe("Phase 4 (help-manage): composable + view wiring", () => {
     expect(panel).toMatch(/usePostDetailExtensions/);
     expect(panel).toMatch(/handleHelpManageLinkEvent/);
     expect(panel).toMatch(/handleHelpManageResolve/);
-    expect(panel).toMatch(/handleHelpManageClose/);
+    expect(panel).not.toMatch(/handleHelpManageClose/);
     expect(extensions).toMatch(/useHelpManage/);
     expect(extensions).toMatch(/helpManageable/);
     expect(extensions).toMatch(/HELP_MANAGE_LINK_SUCCESS/);
     expect(extensions).toMatch(/HELP_MANAGE_RESOLVE_SUCCESS/);
-    expect(extensions).toMatch(/HELP_MANAGE_CLOSE_SUCCESS/);
+    expect(extensions).not.toMatch(/HELP_MANAGE_CLOSE_SUCCESS/);
   });
 });

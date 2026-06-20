@@ -12,7 +12,7 @@
 
 import type { HelpPostExtension } from "../types/post-extensions";
 
-export type HelpManageAction = "linkEvent" | "unlinkEvent" | "resolve" | "close";
+export type HelpManageAction = "linkEvent" | "unlinkEvent" | "resolve";
 
 export interface HelpManagePlan {
   /** True iff a `helpManageable` viewer can take any action right now. */
@@ -40,11 +40,9 @@ export function planHelpManage(input: HelpManageInput): HelpManagePlan {
   if (help.status === "open") {
     allowed.add("linkEvent");
     allowed.add("resolve");
-    allowed.add("close");
   } else if (help.status === "linked_event") {
     allowed.add("unlinkEvent");
     allowed.add("resolve");
-    allowed.add("close");
   }
   return { canManage: true, allowed };
 }

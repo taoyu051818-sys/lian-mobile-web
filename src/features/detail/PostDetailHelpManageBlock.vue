@@ -2,8 +2,8 @@
 /**
  * Help manage block (PRD V0.1 §6.5 / §11.3).
  *
- * Manager-side actions for help posts: link to an event, mark resolved, mark
- * closed. The parent keeps deciding whether the block belongs on-screen; this
+ * Manager-side actions for help posts: link to an event and mark resolved.
+ * The parent keeps deciding whether the block belongs on-screen; this
  * component only applies the final action-surface visibility it was given.
  *
  * Status transitions follow `planHelpManage()` — the view never reasons
@@ -19,7 +19,6 @@
 import { computed, ref } from "vue";
 import {
   HELP_MANAGE_BLOCK_LABEL,
-  HELP_MANAGE_CLOSE,
   HELP_MANAGE_LINK_EVENT,
   HELP_MANAGE_LINK_EVENT_HINT,
   HELP_MANAGE_LINK_EVENT_INVALID,
@@ -38,17 +37,15 @@ const props = defineProps<{
   showLinkEvent?: boolean;
   showUnlinkEvent?: boolean;
   showResolve?: boolean;
-  showClose?: boolean;
 }>();
 
 const emit = defineEmits<{
   linkEvent: [eventTid: number];
   unlinkEvent: [];
   resolve: [];
-  close: [];
 }>();
 
-type ManageActionId = "link" | "unlink" | "resolve" | "close";
+type ManageActionId = "link" | "unlink" | "resolve";
 
 const linkInput = ref("");
 const localError = ref("");
@@ -61,10 +58,7 @@ const allowed = computed(() => props.plan.allowed);
 const canLink = computed(() => props.showLinkEvent ?? allowed.value.has("linkEvent"));
 const canUnlink = computed(() => props.showUnlinkEvent ?? allowed.value.has("unlinkEvent"));
 const canResolve = computed(() => props.showResolve ?? allowed.value.has("resolve"));
-const canClose = computed(() => props.showClose ?? allowed.value.has("close"));
-const hasVisibleActions = computed(
-  () => canLink.value || canUnlink.value || canResolve.value || canClose.value,
-);
+const hasVisibleActions = computed(() => canLink.value || canUnlink.value || canResolve.value);
 
 const ctaState = (id: ManageActionId) =>
   selectHelpManageCtaState({
@@ -76,12 +70,10 @@ const ctaState = (id: ManageActionId) =>
 const linkState = computed(() => ctaState("link"));
 const unlinkState = computed(() => ctaState("unlink"));
 const resolveState = computed(() => ctaState("resolve"));
-const closeState = computed(() => ctaState("close"));
 
 const linkLabel = computed(() => (props.busy ? HELP_MANAGE_PENDING : HELP_MANAGE_LINK_EVENT));
 const unlinkLabel = computed(() => (props.busy ? HELP_MANAGE_PENDING : HELP_MANAGE_LINK_EVENT));
 const resolveLabel = computed(() => (props.busy ? HELP_MANAGE_PENDING : HELP_MANAGE_RESOLVE));
-const closeLabel = computed(() => (props.busy ? HELP_MANAGE_PENDING : HELP_MANAGE_CLOSE));
 
 function submitLink() {
   if (!canLink.value || props.busy) return;
@@ -106,12 +98,6 @@ function handleResolve() {
   if (!canResolve.value || props.busy) return;
   activeAction.value = "resolve";
   emit("resolve");
-}
-
-function handleClose() {
-  if (!canClose.value || props.busy) return;
-  activeAction.value = "close";
-  emit("close");
 }
 </script>
 
@@ -171,13 +157,6 @@ function handleClose() {
         :state="resolveState"
         test-id="detail-cta-help-resolve"
         @click="handleResolve"
-      />
-      <DetailCtaButton
-        v-if="canClose"
-        :label="closeLabel"
-        :state="closeState"
-        test-id="detail-cta-help-close"
-        @click="handleClose"
       />
     </div>
 

@@ -2,7 +2,7 @@
  * Help manage composable (PRD V0.1 §6.5 / §11.3).
  *
  * Wires `planHelpManage` to live state and exposes one entry point per
- * action — link / unlink event, mark resolved, mark closed. On 401/404/5xx it
+ * action — link / unlink event, mark resolved. On 401/404/5xx it
  * surfaces a brand string via `actionError` and leaves help state untouched —
  * the view never throws. Mirrors `useEventActions` / `useHelpVote` so the
  * three flows share shape.
@@ -63,13 +63,7 @@ export function useHelpManage(options: UseHelpManageOptions) {
   async function markResolved(successMessage?: string): Promise<void> {
     const help = options.help.value;
     if (!help || !plan.value.allowed.has("resolve")) return;
-    await runAction(() => resolveHelp(help.helpId, "resolved"), successMessage);
-  }
-
-  async function markClosed(successMessage?: string): Promise<void> {
-    const help = options.help.value;
-    if (!help || !plan.value.allowed.has("close")) return;
-    await runAction(() => resolveHelp(help.helpId, "closed"), successMessage);
+    await runAction(() => resolveHelp(help.helpId), successMessage);
   }
 
   return {
@@ -79,6 +73,5 @@ export function useHelpManage(options: UseHelpManageOptions) {
     linkEvent,
     unlinkEvent,
     markResolved,
-    markClosed,
   };
 }

@@ -23,7 +23,6 @@ import type {
   EventJoinResult,
   EventPostExtension,
   HelpPostExtension,
-  HelpStatus,
 } from "../types/post-extensions";
 import type { Audience } from "../types/audience";
 import type { PostLocation } from "../types/post";
@@ -119,10 +118,9 @@ export async function unlinkHelpFromEvent(helpId: string): Promise<HelpPostExten
   });
 }
 
-export async function resolveHelp(helpId: string, status: HelpStatus): Promise<HelpPostExtension> {
+export async function resolveHelp(helpId: string): Promise<HelpPostExtension> {
   return apiSend<HelpPostExtension>(`/api/help/${encodeURIComponent(helpId)}/resolve`, {
     method: "POST",
-    body: JSON.stringify({ status }),
   });
 }
 

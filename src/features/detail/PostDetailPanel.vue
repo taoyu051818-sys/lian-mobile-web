@@ -214,7 +214,6 @@ const {
   handleHelpManageLinkEvent,
   handleHelpManageUnlinkEvent,
   handleHelpManageResolve,
-  handleHelpManageClose,
   serverChanOptIn,
 } = usePostDetailExtensions({
   post,
@@ -370,7 +369,6 @@ watch(
             @help-manage-link-event="handleHelpManageLinkEvent"
             @help-manage-unlink-event="handleHelpManageUnlinkEvent"
             @help-manage-resolve="handleHelpManageResolve"
-            @help-manage-close="handleHelpManageClose"
             @available-action-invoked="handleAvailableActionInvoked"
             @update:report-category="reportCategory = $event"
             @update:report-reason="reportReason = $event"

@@ -186,15 +186,9 @@ const showHelpManageUnlinkEvent = computed(
 const showHelpManageResolve = computed(
   () => Boolean(props.helpManagePlan) && isPostActionAvailable("help-resolve", actionContext.value),
 );
-const showHelpManageClose = computed(
-  () => Boolean(props.helpManagePlan) && isPostActionAvailable("help-close", actionContext.value),
-);
 const showHelpManageBlock = computed(
   () =>
-    showHelpManageLinkEvent.value ||
-    showHelpManageUnlinkEvent.value ||
-    showHelpManageResolve.value ||
-    showHelpManageClose.value,
+    showHelpManageLinkEvent.value || showHelpManageUnlinkEvent.value || showHelpManageResolve.value,
 );
 
 const showMerchantBlock = computed(() => selectionFor("merchant") === "render");
@@ -220,7 +214,6 @@ const emit = defineEmits<{
   helpManageLinkEvent: [eventTid: number];
   helpManageUnlinkEvent: [];
   helpManageResolve: [];
-  helpManageClose: [];
   /** PRD V0.3 §2.4 / B3-1 — relayed up so a follow-up PR can wire RPC handlers. */
   availableActionInvoked: [type: string];
   "update:reportCategory": [value: string];
@@ -278,11 +271,9 @@ const emit = defineEmits<{
       :show-link-event="showHelpManageLinkEvent"
       :show-unlink-event="showHelpManageUnlinkEvent"
       :show-resolve="showHelpManageResolve"
-      :show-close="showHelpManageClose"
       @link-event="emit('helpManageLinkEvent', $event)"
       @unlink-event="emit('helpManageUnlinkEvent')"
       @resolve="emit('helpManageResolve')"
-      @close="emit('helpManageClose')"
     />
 
     <PostDetailMerchantBlock
