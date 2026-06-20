@@ -68,6 +68,7 @@ const map = shallowRef<LeafletMapLike | null>(null);
 let baseOverlay: LeafletImageOverlayLike | null = null;
 let zoomControl: LeafletZoomControlLike | null = null;
 let initSizeTimer: ReturnType<typeof setTimeout> | null = null;
+let scheduledRenderFrame: number | null = null;
 let clearLongpressTimer: (() => void) | null = null;
 
 const visibleLayersComputed = computed(() => props.visibleLayers || {});
@@ -126,6 +127,22 @@ function clearInitSizeTimer() {
   }
 }
 
+function clearScheduledRenderFrame() {
+  if (scheduledRenderFrame !== null) {
+    cancelAnimationFrame(scheduledRenderFrame);
+    scheduledRenderFrame = null;
+  }
+}
+
+function scheduleRenderMap() {
+  if (scheduledRenderFrame !== null) return;
+  scheduledRenderFrame = requestAnimationFrame(() => {
+    scheduledRenderFrame = null;
+    renderMap();
+    applyMapIconScale();
+  });
+}
+
 function initMap() {
   const L = tryGetLeaflet();
   if (!stageEl.value || !L) return;
@@ -181,7 +198,7 @@ function initMap() {
   });
   bindMapIconScale(newMap);
   attachZoomControl(newMap);
-  newMap.on("zoomend resize", renderMap);
+  newMap.on("zoomend resize", scheduleRenderMap);
   newMap.on("moveend zoomend", () => emitViewportChange(newMap));
   attachLongpressHandlers(newMap);
   map.value = newMap;
@@ -304,6 +321,7 @@ watch(
 
 onBeforeUnmount(() => {
   clearInitSizeTimer();
+  clearScheduledRenderFrame();
   clearLongpressTimer?.();
   clearLongpressTimer = null;
   detachZoomControl();
