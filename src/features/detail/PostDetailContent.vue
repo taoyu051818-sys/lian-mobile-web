@@ -188,9 +188,7 @@ const showHelpManageResolve = computed(
 );
 const showHelpManageBlock = computed(
   () =>
-    showHelpManageLinkEvent.value ||
-    showHelpManageUnlinkEvent.value ||
-    showHelpManageResolve.value,
+    showHelpManageLinkEvent.value || showHelpManageUnlinkEvent.value || showHelpManageResolve.value,
 );
 
 const showMerchantBlock = computed(() => selectionFor("merchant") === "render");
