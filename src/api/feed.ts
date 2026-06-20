@@ -33,6 +33,9 @@ const CARD_TEMPLATES: ReadonlySet<FeedPresentationIntent> = new Set([
   "activity",
   "place",
   "merchant",
+  "trade",
+  "project",
+  "review",
   "help",
   "club",
 ]);
@@ -44,8 +47,8 @@ const CONTENT_TYPE_CARD_TEMPLATES: Readonly<Record<string, FeedPresentationInten
   post: "text",
   article: "text",
   discussion: "text",
-  project: "text",
-  review: "text",
+  project: "project",
+  review: "review",
   submission: "text",
   activity: "activity",
   event: "activity",
@@ -56,7 +59,7 @@ const CONTENT_TYPE_CARD_TEMPLATES: Readonly<Record<string, FeedPresentationInten
   merchant: "merchant",
   shop: "merchant",
   food: "merchant",
-  trade: "merchant",
+  trade: "trade",
   help: "help",
   support: "help",
   ask: "help",
@@ -111,6 +114,10 @@ function normalizeFeedPresentationIntent(value: unknown): FeedPresentationIntent
   return typeof value === "string" && CARD_TEMPLATES.has(value as FeedPresentationIntent)
     ? (value as FeedPresentationIntent)
     : null;
+}
+
+function normalizeRawPresentationIntent(value: unknown): string | null {
+  return typeof value === "string" && value.trim() ? value.trim() : null;
 }
 
 const FEED_RELATION_HINTS: ReadonlySet<string> = new Set([
@@ -261,16 +268,23 @@ export function normalizeFeedCardTemplate(
 ): {
   cardTemplate: FeedPresentationIntent;
   cardTemplateSource: FeedItemCardTemplateSource;
-  presentationIntent: FeedPresentationIntent | null;
+  presentationIntent: string | null;
 } {
-  const normalizedServerTemplate =
-    normalizeFeedPresentationIntent(item.cardTemplate) ||
-    normalizeFeedPresentationIntent(item.presentationIntent);
+  const rawPresentationIntent = normalizeRawPresentationIntent(item.presentationIntent);
+  const normalizedServerTemplate = normalizeFeedPresentationIntent(item.cardTemplate);
   if (normalizedServerTemplate) {
     return {
       cardTemplate: normalizedServerTemplate,
       cardTemplateSource: "server",
       presentationIntent: normalizedServerTemplate,
+    };
+  }
+  if (rawPresentationIntent) {
+    const knownIntent = normalizeFeedPresentationIntent(rawPresentationIntent);
+    return {
+      cardTemplate: knownIntent || "text",
+      cardTemplateSource: "server",
+      presentationIntent: rawPresentationIntent,
     };
   }
 
@@ -310,8 +324,8 @@ export function normalizeFeedItem(value: unknown): FeedItem | null {
     cover,
     contentType,
     presentationIntent:
-      normalizeFeedPresentationIntent(record.presentationIntent) ||
-      normalizeFeedPresentationIntent(metadata?.presentationIntent),
+      normalizeRawPresentationIntent(record.presentationIntent) ||
+      normalizeRawPresentationIntent(metadata?.presentationIntent),
     cardTemplate: record.cardTemplate as FeedPresentationIntent | null | undefined,
   });
   const components = normalizeMetadataComponents(record) ?? extractV2Components(record);

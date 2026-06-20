@@ -83,6 +83,7 @@ test("FeedItemCardShell exposes the display props enumerated in PRD step A", () 
     "templateMark",
     "relationHint",
     "graphCue",
+    "intentSignal",
     "bodyPreview",
     "cardWarning",
   ]) {
@@ -119,6 +120,21 @@ test("FeedItemCardShell owns text-card clamp/toggle UI and stops card navigation
   assert.match(shellSource, /-webkit-line-clamp:\s*4/);
 });
 
+test("FeedItemCardShell accepts trade/project/review as calm first-class shell templates", () => {
+  assert.match(shellSource, /\| "trade"[\s\S]*\| "project"[\s\S]*\| "review"/);
+  assert.match(shellSource, /feed-item-card--trade/);
+  assert.match(shellSource, /feed-item-card--project/);
+  assert.match(shellSource, /feed-item-card--review/);
+});
+
+test("FeedItemCardShell renders an optional non-interactive intent signal chip", () => {
+  assert.match(shellSource, /intentSignal: \{ label: string; stateLabel\?: string \} \| null/);
+  assert.match(shellSource, /v-if="intentSignal"/);
+  assert.match(shellSource, /class="feed-item-card__intent-signal"/);
+  assert.match(shellSource, /\{\{\s*intentSignal\.label\s*\}\}/);
+  assert.match(shellSource, /v-if="intentSignal\.stateLabel"/);
+  assert.match(shellSource, /\{\{\s*intentSignal\.stateLabel\s*\}\}/);
+});
 test("FeedItemCard wrapper still owns useCardPointerInteraction and the open emit", () => {
   // The wrapper is what translates raw DOM events into `emit("open", ...)` for
   // FeedView. Step A must not move that responsibility into the shell.

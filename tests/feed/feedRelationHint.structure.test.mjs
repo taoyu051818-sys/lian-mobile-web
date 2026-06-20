@@ -82,7 +82,10 @@ test("Feed relation hint: shell renders a lightweight chip above the title", () 
     feedShellSource,
     /<button\s+v-if="relationHint"\s+class="feed-item-card__relation-hint"\s+type="button"\s+disabled\s+@click\.stop\s+@keydown\.enter\.stop\s+@keydown\.space\.stop\s+>\s+\{\{ relationHint\.label \}\}\s+<\/button>/,
   );
-  assert.match(feedShellSource, /\.feed-item-card__relation-hint \{/);
+  assert.match(
+    feedShellSource,
+    /\.feed-item-card__relation-hint(?:,\s*\.feed-item-card__intent-signal)? \{/,
+  );
   assert.match(feedShellSource, /display: inline-flex;/);
   assert.match(feedShellSource, /justify-self: start;/);
   assert.match(feedShellSource, /border-radius: var\(--radius-pill\);/);

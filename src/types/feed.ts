@@ -44,9 +44,8 @@ export interface FeedRelationHint {
 
 /**
  * Card-template vocabulary the Feed UI knows how to render. `activity` is the
- * presentation label for `event` PostType (PRD V0.1 §3.2). `trade` reuses the
- * `merchant` template at the UI level until it gets its own visual variant.
- * `club` renders a dedicated club card with organization metadata.
+ * presentation label for `event` PostType (PRD V0.1 §3.2). `club` renders a
+ * dedicated club card with organization metadata.
  */
 export type FeedPresentationIntent =
   | "image"
@@ -54,6 +53,9 @@ export type FeedPresentationIntent =
   | "activity"
   | "place"
   | "merchant"
+  | "trade"
+  | "project"
+  | "review"
   | "help"
   | "club";
 
@@ -67,6 +69,9 @@ export type FeedItemShellCardTemplate =
   | "activity"
   | "place"
   | "merchant"
+  | "trade"
+  | "project"
+  | "review"
   | "help";
 export type FeedItemCardTemplateSource = "server" | "content-type" | "cover-fallback";
 
