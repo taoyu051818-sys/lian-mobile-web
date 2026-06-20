@@ -336,6 +336,8 @@ export interface HelpComponentV2 {
 }
 
 export type GroupbuyState = "forming" | "success" | "failed" | "closed" | (string & {});
+export type GroupbuyViewerStatus = "joined" | "not_joined" | "creator" | (string & {});
+export type GroupbuyPaymentStatus = "unpaid" | "pending" | "paid" | "refunded" | (string & {});
 
 /**
  * V2 GroupbuyComponent — group-buy participation metadata.
@@ -348,6 +350,8 @@ export interface GroupbuyComponentV2 {
   targetCount?: number;
   channelId?: string;
   joined?: boolean;
+  viewerStatus?: GroupbuyViewerStatus;
+  paymentStatus?: GroupbuyPaymentStatus;
 }
 
 export interface MediaComponentV2 {
