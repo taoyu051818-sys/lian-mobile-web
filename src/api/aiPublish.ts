@@ -11,8 +11,10 @@
  */
 
 import { apiSend, LianApiError } from "./http";
+import { parseLlmTickResponse, type PublishLlmTickResponse } from "./aiPreview";
 import type { Audience } from "../types/audience";
 import { normalizeAudience } from "../types/audience";
+import type { InferredKind, SuggestedComponent } from "../types/publishSuggestion";
 
 // ---------------------------------------------------------------------------
 // Shapes
@@ -39,6 +41,9 @@ export interface AiPreviewSuggestions {
   confidence: number;
   /** True when the backend wants a human to vet the post before publish. */
   needsHumanReview: boolean;
+  candidates: PublishLlmTickResponse;
+  suggestedComponents: SuggestedComponent[];
+  inferredKind: InferredKind | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -66,6 +71,15 @@ function asConfidence(value: unknown): number {
   return Math.max(0, Math.min(1, value));
 }
 
+const EMPTY_CANDIDATES: PublishLlmTickResponse = Object.freeze({
+  title: null,
+  bodyCandidate: null,
+  suggestedComponents: [],
+  inferredKind: null,
+  modelLatencyMs: 0,
+  modelName: "",
+}) as PublishLlmTickResponse;
+
 /**
  * Coerce an arbitrary backend response into the typed `AiPreviewSuggestions`
  * shape. Tolerant by design — the UI must keep rendering even if a key is
@@ -74,16 +88,22 @@ function asConfidence(value: unknown): number {
 export function parseAiPreviewSuggestions(value: unknown): AiPreviewSuggestions {
   const record =
     (value && typeof value === "object" ? (value as Record<string, unknown>) : {}) || {};
+  const candidates = parseLlmTickResponse(record);
   // Backend may use either `audience` or `suggestedAudience`.
   const rawAudience = record.audience ?? record.suggestedAudience;
+  const title = asString(record.title ?? record.suggestedTitle) || candidates.title || "";
+  const body = asString(record.body ?? record.suggestedBody) || candidates.bodyCandidate || "";
   return {
-    title: asString(record.title ?? record.suggestedTitle),
-    body: asString(record.body ?? record.suggestedBody),
+    title,
+    body,
     tag: asString(record.tag ?? record.primaryTag ?? record.suggestedTag),
     audience: rawAudience ? normalizeAudience(rawAudience) : null,
     riskFlags: asStringArray(record.riskFlags ?? record.warnings),
     confidence: asConfidence(record.confidence),
     needsHumanReview: Boolean(record.needsHumanReview),
+    candidates,
+    suggestedComponents: candidates.suggestedComponents,
+    inferredKind: candidates.inferredKind,
   };
 }
 
@@ -99,6 +119,9 @@ const EMPTY_SUGGESTIONS: AiPreviewSuggestions = Object.freeze({
   riskFlags: [],
   confidence: 0,
   needsHumanReview: false,
+  candidates: EMPTY_CANDIDATES,
+  suggestedComponents: [],
+  inferredKind: null,
 }) as AiPreviewSuggestions;
 
 /**
