@@ -193,12 +193,7 @@ describe("postActionRegistry — help actions", () => {
     const viewerNo = makeViewer();
     const viewerYes = makeViewer({ canManageHelp: true });
 
-    for (const id of [
-      "help-link-event",
-      "help-unlink-event",
-      "help-resolve",
-      "help-close",
-    ] as const) {
+    for (const id of ["help-link-event", "help-unlink-event", "help-resolve"] as const) {
       expect(
         isPostActionAvailable(id, ctx({ type: "help", help: makeHelp(), viewer: viewerNo })),
       ).toBe(false);
@@ -212,7 +207,6 @@ describe("postActionRegistry — help actions", () => {
     expect(isPostActionAvailable("help-link-event", open)).toBe(true);
     expect(isPostActionAvailable("help-unlink-event", open)).toBe(false);
     expect(isPostActionAvailable("help-resolve", open)).toBe(true);
-    expect(isPostActionAvailable("help-close", open)).toBe(true);
 
     const linked = ctx({
       type: "help",
@@ -222,7 +216,6 @@ describe("postActionRegistry — help actions", () => {
     expect(isPostActionAvailable("help-link-event", linked)).toBe(false);
     expect(isPostActionAvailable("help-unlink-event", linked)).toBe(true);
     expect(isPostActionAvailable("help-resolve", linked)).toBe(true);
-    expect(isPostActionAvailable("help-close", linked)).toBe(true);
 
     for (const status of ["resolved", "closed"] as HelpStatus[]) {
       const terminal = ctx({
@@ -230,12 +223,7 @@ describe("postActionRegistry — help actions", () => {
         help: makeHelp({ status }),
         viewer: viewerYes,
       });
-      for (const id of [
-        "help-link-event",
-        "help-unlink-event",
-        "help-resolve",
-        "help-close",
-      ] as const) {
+      for (const id of ["help-link-event", "help-unlink-event", "help-resolve"] as const) {
         expect(isPostActionAvailable(id, terminal)).toBe(false);
       }
     }
@@ -340,7 +328,6 @@ describe("postActionRegistry — fallback behavior", () => {
       "event-complete",
       "help-act",
       "help-resolve",
-      "help-close",
       "merchant-errand",
       "trade-set-reserved",
       "trade-set-sold",
@@ -387,7 +374,6 @@ describe("postActionRegistry — availablePostActions", () => {
       "help-open-linked-event",
       "help-unlink-event",
       "help-resolve",
-      "help-close",
     ]);
   });
 
