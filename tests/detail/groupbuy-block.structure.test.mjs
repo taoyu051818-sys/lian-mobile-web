@@ -22,10 +22,24 @@ test("GroupbuyComponentV2 extends the V2 component contract", () => {
     "targetCount",
     "channelId",
     "joined",
+    "viewerStatus",
+    "paymentStatus",
   ]) {
     assert.match(src, new RegExp(`${field}\\?:`));
   }
+  assert.match(src, /export type GroupbuyViewerStatus\s*=/);
+  assert.match(src, /export type GroupbuyPaymentStatus\s*=/);
   assert.match(src, /\| GroupbuyComponentV2/);
+});
+
+test("PostDetailGroupbuyBlock renders viewer participation, payment, and status details", () => {
+  const src = read("src/features/detail/PostDetailGroupbuyBlock.vue");
+  assert.match(src, /GROUPBUY_VIEWER_STATUS_LABEL/);
+  assert.match(src, /GROUPBUY_PAYMENT_STATUS_LABEL/);
+  assert.match(src, /data-testid="post-detail-groupbuy-viewer-status"/);
+  assert.match(src, /data-testid="post-detail-groupbuy-payment-status"/);
+  assert.match(src, /viewerStatusLabel/);
+  assert.match(src, /paymentStatusLabel/);
 });
 
 test("PostDetailGroupbuyBlock renders participation, channel entry, and unknown state fallback", () => {

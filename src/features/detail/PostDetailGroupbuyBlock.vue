@@ -7,6 +7,11 @@ import {
   GROUPBUY_JOIN_CTA,
   GROUPBUY_JOINED,
   GROUPBUY_PARTICIPANT_LABEL,
+  GROUPBUY_PAYMENT_STATUS_LABEL,
+  GROUPBUY_PAYMENT_STATUS_PAID,
+  GROUPBUY_PAYMENT_STATUS_PENDING,
+  GROUPBUY_PAYMENT_STATUS_REFUNDED,
+  GROUPBUY_PAYMENT_STATUS_UNPAID,
   GROUPBUY_SETTLEMENT_HINT,
   GROUPBUY_STATE_CLOSED,
   GROUPBUY_STATE_FAILED,
@@ -14,6 +19,10 @@ import {
   GROUPBUY_STATE_SUCCESS,
   GROUPBUY_STATE_UNKNOWN_PREFIX,
   GROUPBUY_TARGET_UNSET,
+  GROUPBUY_VIEWER_STATUS_CREATOR,
+  GROUPBUY_VIEWER_STATUS_JOINED,
+  GROUPBUY_VIEWER_STATUS_LABEL,
+  GROUPBUY_VIEWER_STATUS_NOT_JOINED,
 } from "../../config/brand";
 import type { GroupbuyComponentV2 } from "../../types/post-extensions";
 
@@ -27,6 +36,17 @@ const STATE_LABEL: Record<string, string> = {
   failed: GROUPBUY_STATE_FAILED,
   closed: GROUPBUY_STATE_CLOSED,
 };
+const VIEWER_STATUS_LABEL: Record<string, string> = {
+  joined: GROUPBUY_VIEWER_STATUS_JOINED,
+  not_joined: GROUPBUY_VIEWER_STATUS_NOT_JOINED,
+  creator: GROUPBUY_VIEWER_STATUS_CREATOR,
+};
+const PAYMENT_STATUS_LABEL: Record<string, string> = {
+  unpaid: GROUPBUY_PAYMENT_STATUS_UNPAID,
+  pending: GROUPBUY_PAYMENT_STATUS_PENDING,
+  paid: GROUPBUY_PAYMENT_STATUS_PAID,
+  refunded: GROUPBUY_PAYMENT_STATUS_REFUNDED,
+};
 
 const stateValue = computed(() => props.component.state || "forming");
 const stateLabel = computed(
@@ -34,8 +54,20 @@ const stateLabel = computed(
 );
 const targetLabel = computed(() => props.component.targetCount ?? GROUPBUY_TARGET_UNSET);
 const participantLabel = computed(() => props.component.participantCount ?? 0);
+const viewerStatusValue = computed(() =>
+  props.component.viewerStatus || (props.component.joined ? "joined" : "not_joined"),
+);
+const viewerStatusLabel = computed(
+  () => VIEWER_STATUS_LABEL[viewerStatusValue.value] ?? viewerStatusValue.value,
+);
+const paymentStatusLabel = computed(() => {
+  if (!props.component.paymentStatus) return "";
+  return PAYMENT_STATUS_LABEL[props.component.paymentStatus] ?? props.component.paymentStatus;
+});
 const participationLabel = computed(() =>
-  props.component.joined ? GROUPBUY_JOINED : GROUPBUY_JOIN_CTA,
+  viewerStatusValue.value === "joined" || viewerStatusValue.value === "creator"
+    ? GROUPBUY_JOINED
+    : GROUPBUY_JOIN_CTA,
 );
 const channelLabel = computed(() => {
   if (!props.component.channelId) return "";
@@ -62,6 +94,14 @@ const channelLabel = computed(() => {
         <dd data-testid="post-detail-groupbuy-participants">
           {{ participantLabel }} / {{ targetLabel }}
         </dd>
+      </div>
+      <div class="post-detail-groupbuy-block__row">
+        <dt>{{ GROUPBUY_VIEWER_STATUS_LABEL }}</dt>
+        <dd data-testid="post-detail-groupbuy-viewer-status">{{ viewerStatusLabel }}</dd>
+      </div>
+      <div v-if="paymentStatusLabel" class="post-detail-groupbuy-block__row">
+        <dt>{{ GROUPBUY_PAYMENT_STATUS_LABEL }}</dt>
+        <dd data-testid="post-detail-groupbuy-payment-status">{{ paymentStatusLabel }}</dd>
       </div>
       <div v-if="channelLabel" class="post-detail-groupbuy-block__row">
         <dt>{{ GROUPBUY_CHANNEL_LABEL }}</dt>
