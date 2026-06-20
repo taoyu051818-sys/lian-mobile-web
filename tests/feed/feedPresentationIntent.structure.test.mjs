@@ -41,7 +41,10 @@ test("Feed presentationIntent: normalizes card templates in the feed adapter bef
     feedApiSource,
     /const rawPresentationIntent = normalizeRawPresentationIntent\(item\.presentationIntent\);[\s\S]*const normalizedServerTemplate = normalizeFeedPresentationIntent\(item\.cardTemplate\);/,
   );
-  assert.match(feedApiSource, /const knownIntent = normalizeFeedPresentationIntent\(rawPresentationIntent\);/);
+  assert.match(
+    feedApiSource,
+    /const knownIntent = normalizeFeedPresentationIntent\(rawPresentationIntent\);/,
+  );
   assert.match(feedApiSource, /cardTemplateSource: "content-type"/);
   assert.match(feedApiSource, /cardTemplate: item\.cover \? "image" : "text"/);
   assert.match(feedApiSource, /items: Array\.isArray\(data\.items\)/);
