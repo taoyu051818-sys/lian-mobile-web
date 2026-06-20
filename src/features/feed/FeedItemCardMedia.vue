@@ -64,7 +64,10 @@ function handleImageError() {
 
 .feed-item-card--activity .feed-item-card__cover,
 .feed-item-card--merchant .feed-item-card__cover,
-.feed-item-card--place .feed-item-card__cover {
+.feed-item-card--place .feed-item-card__cover,
+.feed-item-card--trade .feed-item-card__cover,
+.feed-item-card--project .feed-item-card__cover,
+.feed-item-card--review .feed-item-card__cover {
   aspect-ratio: 0.92;
 }
 
