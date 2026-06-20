@@ -5,6 +5,7 @@ import {
   PUBLISH_ACTIONABLE_PREVIEW_COMPONENTS,
   PUBLISH_ACTIONABLE_PREVIEW_KIND,
   PUBLISH_ACTIONABLE_PREVIEW_PUBLISHED,
+  PUBLISH_ACTIONABLE_PREVIEW_STRUCTURED_FIELD,
   PUBLISH_ACTIONABLE_PREVIEW_WIRE_KIND,
   PUBLISH_ACTIONABLE_PREVIEW_LOCATION,
   PUBLISH_ACTIONABLE_PREVIEW_EVENT,
@@ -174,6 +175,13 @@ const shouldRender = computed(
       <li data-testid="publish-preview-action">
         <strong>{{ PUBLISH_ACTIONABLE_PREVIEW_ACTION }}</strong>
         <span>{{ actionablePost.action }}</span>
+      </li>
+      <li
+        v-for="component in actionablePost.components"
+        :key="`${component.kind}::${component.label}`"
+      >
+        <strong>{{ PUBLISH_ACTIONABLE_PREVIEW_STRUCTURED_FIELD }}</strong>
+        <span>{{ component.label || component.kind }}</span>
       </li>
       <li v-for="item in actionablePost.structure" :key="item">
         <span>{{ item }}</span>

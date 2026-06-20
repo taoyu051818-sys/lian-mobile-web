@@ -6,7 +6,7 @@ import type {
 } from "./place";
 import type { Audience } from "./audience";
 import type { EventJoinPolicy, MerchantCategory, TradeState } from "./post-extensions";
-import type { InferredKind, SuggestedComponent } from "./publishSuggestion";
+import type { InferredKind, SuggestedComponent, SuggestedComponentKind } from "./publishSuggestion";
 
 export type PublishVisibility = "public" | "campus" | "school" | "private";
 export type PublishLocationSource = "manual" | "skipped" | "map_v2";
@@ -89,6 +89,7 @@ export interface PublishActionablePostPreview {
   kind: InferredKind;
   action: string;
   structure: string[];
+  components: Array<{ kind: SuggestedComponentKind; label: string }>;
 }
 
 export interface PublishPayload {
