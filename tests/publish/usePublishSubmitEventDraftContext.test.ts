@@ -154,6 +154,16 @@ describe("usePublishSubmit event draft context", () => {
     expect(actionablePreview.value).toEqual({
       kind: "event",
       action: "报名",
+      components: [
+        {
+          kind: "event",
+          label: "补充活动结构",
+        },
+        {
+          kind: "time",
+          label: "加活动时间",
+        },
+      ],
       structure: [
         "标题",
         "正文",
