@@ -46,6 +46,7 @@ function createPublishActionablePostPreview(input: {
   identityTag: string;
   imageUrls: string[];
   locationArea: string;
+  components: SuggestedComponent[];
   event?: { startsAt?: string; joinPolicy?: EventJoinPolicy };
   merchant?: { input: MerchantPublishInput; contentType: MerchantContentType };
   trade?: { input: TradePublishInput; contentType: TradeContentType };
@@ -78,7 +79,15 @@ function createPublishActionablePostPreview(input: {
             : kind === "place"
               ? "查看地点"
               : "查看详情";
-  return { kind, action, structure };
+  return {
+    kind,
+    action,
+    structure,
+    components: input.components.map((component) => ({
+      kind: component.kind,
+      label: component.label,
+    })),
+  };
 }
 
 export function usePublishSubmit(options: {
@@ -232,6 +241,7 @@ export function usePublishSubmit(options: {
         identityTag: options.normalizedIdentityTag.value,
         imageUrls: options.uploadedImageUrls.value,
         locationArea: options.locationPreviewLabel.value,
+        components: options.suggestedComponents?.value ?? [],
         event: { startsAt, joinPolicy: options.eventJoinPolicy?.value || "open" },
       });
       options.lastTid.value = response.tid || null;
@@ -326,6 +336,7 @@ export function usePublishSubmit(options: {
         identityTag: payload.identityTag,
         imageUrls: payload.imageUrls,
         locationArea: payload.metadata.locationArea || "",
+        components: options.suggestedComponents?.value ?? [],
         ...(merchant ? { merchant } : {}),
         ...(trade ? { trade } : {}),
       });

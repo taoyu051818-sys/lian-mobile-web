@@ -72,10 +72,17 @@ test("publish success threads front-end-only actionable post structure into prev
   const brandSrc = read("src/config/brand/publish.ts");
 
   assert.match(typeSrc, /export interface PublishActionablePostPreview/);
+  assert.match(typeSrc, /components: Array<\{ kind: SuggestedComponentKind; label: string \}>/);
   assert.doesNotMatch(typeSrc, /actionablePost\??: PublishActionablePostPreview/);
   assert.doesNotMatch(apiSrc, /actionablePost:/);
   assert.match(submitSrc, /actionablePreview\?: Ref<PublishActionablePostPreview \| null>/);
   assert.match(submitSrc, /function createPublishActionablePostPreview/);
+  assert.match(submitSrc, /components: SuggestedComponent\[\]/);
+  assert.match(submitSrc, /components: input\.components\.map\(\(component\) => \(\{/);
+  assert.match(
+    submitSrc,
+    /suggestedComponents: options\.suggestedComponents\?\.value \?\? \[\],[\s\S]*?components: options\.suggestedComponents\?\.value \?\? \[\]/,
+  );
   assert.match(
     submitSrc,
     /const submittedActionablePreview = createPublishActionablePostPreview\([\s\S]*?kind: "event"[\s\S]*?options\.resetForm\(\);\n\s*if \(options\.actionablePreview\) \{\n\s*options\.actionablePreview\.value = submittedActionablePreview/,
