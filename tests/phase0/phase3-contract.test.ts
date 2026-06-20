@@ -48,6 +48,39 @@ describe("Phase 3: AI publish client (PRD V0.1 §3 / §7.4)", () => {
     expect(result.needsHumanReview).toBe(false);
   });
 
+  it("parseAiPreviewSuggestions preserves preview candidates while keeping stable draft names", () => {
+    const result = parseAiPreviewSuggestions({
+      ok: true,
+      candidates: {
+        title: "  候选标题  ",
+        bodyCandidate: "  候选正文  ",
+        suggestedComponents: [
+          { type: "event_time", reason: "补充活动时间" },
+          { kind: "merchant_info", label: "补充商家资料" },
+        ],
+        inferredKind: "event",
+        modelLatencyMs: 42,
+        modelName: "preview-contract-test",
+      },
+    });
+
+    expect(result.title).toBe("候选标题");
+    expect(result.body).toBe("候选正文");
+    expect(result.candidates).toEqual({
+      title: "候选标题",
+      bodyCandidate: "候选正文",
+      suggestedComponents: [
+        { kind: "time", payload: {}, label: "补充活动时间" },
+        { kind: "merchant", payload: {}, label: "补充商家资料" },
+      ],
+      inferredKind: "event",
+      modelLatencyMs: 42,
+      modelName: "preview-contract-test",
+    });
+    expect(result.suggestedComponents).toEqual(result.candidates.suggestedComponents);
+    expect(result.inferredKind).toBe("event");
+  });
+
   it("parseAiPreviewSuggestions filters non-string riskFlags", () => {
     const result = parseAiPreviewSuggestions({
       riskFlags: ["  warn1 ", 123, null, "warn2"],
