@@ -29,6 +29,15 @@ import {
   RELATION_TYPE_MERCHANT_ERRAND,
   RELATION_TYPE_PROJECT_SUBMISSION,
   RELATION_TYPE_SOLUTION_EVENT,
+  AVAILABLE_ACTION_CLAIM_REWARD,
+  AVAILABLE_ACTION_COMPLETE_ERRAND,
+  AVAILABLE_ACTION_TRADE_RESERVE,
+  AVAILABLE_ACTION_MESSAGE_AUTHOR,
+  AVAILABLE_ACTION_MARK_SOLVED,
+  AVAILABLE_ACTION_OPEN_SUBMISSION,
+  AVAILABLE_ACTION_REQUEST_REVIEW,
+  AVAILABLE_ACTION_SUBMIT_REVISION,
+  AVAILABLE_ACTION_APPROVE_SUBMISSION,
 } from "../../config/brand";
 import { actorDisplayName } from "../../domain/actor";
 import { TrustBadge } from "../../ui";
@@ -82,6 +91,22 @@ const RELATION_TYPE_LABEL: Record<string, string> = {
   groupbuy_joined: RELATION_TYPE_GROUPBUY_JOINED,
   groupbuy_created: RELATION_TYPE_GROUPBUY_CREATED,
 };
+
+const ACTION_TYPE_LABEL: Record<string, string> = {
+  mark_solved: AVAILABLE_ACTION_MARK_SOLVED,
+  claim_reward: AVAILABLE_ACTION_CLAIM_REWARD,
+  complete_errand: AVAILABLE_ACTION_COMPLETE_ERRAND,
+  trade_reserve: AVAILABLE_ACTION_TRADE_RESERVE,
+  message_author: AVAILABLE_ACTION_MESSAGE_AUTHOR,
+  open_submission: AVAILABLE_ACTION_OPEN_SUBMISSION,
+  request_review: AVAILABLE_ACTION_REQUEST_REVIEW,
+  submit_revision: AVAILABLE_ACTION_SUBMIT_REVISION,
+  approve_submission: AVAILABLE_ACTION_APPROVE_SUBMISSION,
+};
+
+function actionTypeLabel(type: string): string {
+  return ACTION_TYPE_LABEL[type] ?? type;
+}
 
 function relationTypeLabel(type: string): string {
   return RELATION_TYPE_LABEL[type] ?? type;
@@ -223,7 +248,14 @@ function openNotification(item: NotificationItem) {
       <article
         v-for="item in props.items"
         :key="String(item.id || item.tid || item.title)"
-        v-memo="[item.id, item.read, item.title, item.excerpt, item.relations]"
+        v-memo="[
+          item.id,
+          item.read,
+          item.title,
+          item.excerpt,
+          item.relations,
+          item.availableActions,
+        ]"
         class="messages-view__notification"
         :class="{
           'is-unread': !item.read,
@@ -252,18 +284,34 @@ function openNotification(item: NotificationItem) {
         <p v-if="item.excerpt && item.excerpt !== item.title">{{ item.excerpt }}</p>
         <ul
           v-if="item.relations?.length"
-          class="messages-view__notification-relations"
+          class="messages-view__notification-context"
           data-testid="notification-relation-context"
         >
           <li
             v-for="(relation, index) in item.relations"
             :key="`${relation.type}-${relation.target.kind}-${relation.target.id}-${index}`"
-            class="messages-view__notification-relation"
+            class="messages-view__notification-context-chip"
             :data-relation-type="relation.type"
             :data-target-kind="relation.target.kind"
           >
             <span>{{ relationTypeLabel(relation.type) }}</span>
             <span data-testid="notification-relation-target">#{{ relation.target.id }}</span>
+          </li>
+        </ul>
+        <ul
+          v-if="item.availableActions?.length"
+          class="messages-view__notification-context"
+          data-testid="notification-action-context"
+        >
+          <li
+            v-for="(action, index) in item.availableActions"
+            :key="`${action.type}-${index}`"
+            class="messages-view__notification-context-chip"
+            :data-action-type="action.type"
+            :data-action-enabled="action.enabled !== false"
+            :title="action.enabled === false ? action.reasonText || action.reason || '' : ''"
+          >
+            {{ actionTypeLabel(action.type) }}
           </li>
         </ul>
         <p v-if="notificationHint(item)" class="messages-view__notification-hint">
@@ -325,7 +373,7 @@ function openNotification(item: NotificationItem) {
   margin: 0;
 }
 
-.messages-view__notification-relations {
+.messages-view__notification-context {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-2);
@@ -334,7 +382,7 @@ function openNotification(item: NotificationItem) {
   list-style: none;
 }
 
-.messages-view__notification-relation {
+.messages-view__notification-context-chip {
   display: inline-flex;
   gap: 4px;
   align-items: center;

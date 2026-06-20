@@ -1,6 +1,6 @@
 import type { DisplayActor, SourceSignal } from "./feed";
 import type { Audience, AudienceVisibility } from "./audience";
-import type { PostRelation } from "./post";
+import type { PostAvailableAction, PostRelation } from "./post";
 
 export type ChannelMessageVisibility = AudienceVisibility | (string & {});
 
@@ -74,6 +74,7 @@ export interface NotificationItem {
   actionLabel?: string;
   fallbackText?: string;
   relations?: PostRelation[];
+  availableActions?: PostAvailableAction[];
   target?: NotificationTarget;
 }
 
