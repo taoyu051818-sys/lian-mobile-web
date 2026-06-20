@@ -33,7 +33,6 @@ export type PostActionId =
   | "help-link-event"
   | "help-unlink-event"
   | "help-resolve"
-  | "help-close"
   | "merchant-errand"
   | "trade-set-available"
   | "trade-set-reserved"
@@ -136,11 +135,6 @@ const REGISTRY: readonly ActionDefinition[] = [
   },
   {
     id: "help-resolve",
-    isAvailable: (ctx) =>
-      ctx.viewer.canManageHelp && isHelpExtensionUsable(ctx.help) && isHelpActive(ctx.help),
-  },
-  {
-    id: "help-close",
     isAvailable: (ctx) =>
       ctx.viewer.canManageHelp && isHelpExtensionUsable(ctx.help) && isHelpActive(ctx.help),
   },

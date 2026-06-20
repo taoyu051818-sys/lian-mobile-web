@@ -21,7 +21,6 @@ import {
   EVENT_CANCEL_SUCCESS,
   EVENT_COMPLETE_SUCCESS,
   EVENT_JOIN_SUCCESS,
-  HELP_MANAGE_CLOSE_SUCCESS,
   HELP_MANAGE_LINK_SUCCESS,
   HELP_MANAGE_RESOLVE_SUCCESS,
   HELP_UNVOTE_SUCCESS,
@@ -165,9 +164,6 @@ export function usePostDetailExtensions(options: UsePostDetailExtensionsOptions)
   function handleHelpManageResolve() {
     void helpManage.markResolved(HELP_MANAGE_RESOLVE_SUCCESS);
   }
-  function handleHelpManageClose() {
-    void helpManage.markClosed(HELP_MANAGE_CLOSE_SUCCESS);
-  }
 
   async function probeEventManageable(currentPost: PostDetail | null) {
     currentUserId.value = "";
@@ -227,7 +223,6 @@ export function usePostDetailExtensions(options: UsePostDetailExtensionsOptions)
     handleHelpManageLinkEvent,
     handleHelpManageUnlinkEvent,
     handleHelpManageResolve,
-    handleHelpManageClose,
 
     serverChanOptIn,
   };
