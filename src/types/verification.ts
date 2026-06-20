@@ -1,9 +1,18 @@
-export type VerificationTag =
-  | "campus_verified"
-  | "org_member"
-  | "realname_verified"
-  | "merchant_verified"
-  | "runner";
+export const VERIFICATION_TAG_CAMPUS = "campus_verified";
+export const VERIFICATION_TAG_ORG = "org_member";
+export const VERIFICATION_TAG_REALNAME = "realname_verified";
+export const VERIFICATION_TAG_MERCHANT = "merchant_verified";
+export const VERIFICATION_TAG_RUNNER = "runner";
+
+export const VERIFICATION_TAGS = [
+  VERIFICATION_TAG_CAMPUS,
+  VERIFICATION_TAG_ORG,
+  VERIFICATION_TAG_REALNAME,
+  VERIFICATION_TAG_MERCHANT,
+  VERIFICATION_TAG_RUNNER,
+] as const;
+
+export type VerificationTag = (typeof VERIFICATION_TAGS)[number];
 
 export interface VerificationRecord {
   tag: VerificationTag;

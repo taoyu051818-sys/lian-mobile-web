@@ -78,13 +78,13 @@ test("ProfileView does NOT gate the verification entry on VITE_ADMIN_VISIBLE", (
 test("VerificationView renders all 5 verification descriptors", () => {
   const src = read("src/features/verification/verification-format.ts");
   for (const tag of [
-    "campus_verified",
-    "org_member",
-    "realname_verified",
-    "merchant_verified",
-    "runner",
+    "VERIFICATION_TAG_CAMPUS",
+    "VERIFICATION_TAG_ORG",
+    "VERIFICATION_TAG_REALNAME",
+    "VERIFICATION_TAG_MERCHANT",
+    "VERIFICATION_TAG_RUNNER",
   ]) {
-    assert.match(src, new RegExp(`tag:\\s*"${tag}"`));
+    assert.match(src, new RegExp(`tag:\\s*${tag}`));
   }
 });
 
@@ -95,7 +95,12 @@ test("runner verification surfaces use the backend canonical tag", () => {
   const runnerCenterSrc = read("src/features/runner/useRunnerCenter.ts");
   const profileBadgeSrc = read("src/features/profile/ProfileVerificationBadges.vue");
 
-  for (const src of [typeSrc, descriptorSrc, runnerFixtureSrc, runnerCenterSrc, profileBadgeSrc]) {
+  assert.match(typeSrc, /export const VERIFICATION_TAG_RUNNER\s*=\s*"runner"/);
+  assert.match(typeSrc, /export const VERIFICATION_TAGS\s*=\s*\[/);
+  assert.doesNotMatch(typeSrc, new RegExp(runnerVerifiedShorthand));
+  assert.match(descriptorSrc, /VERIFICATION_TAG_RUNNER/);
+
+  for (const src of [runnerFixtureSrc, runnerCenterSrc, profileBadgeSrc]) {
     assert.match(src, /"runner"/);
     assert.doesNotMatch(src, new RegExp(runnerVerifiedShorthand));
   }
