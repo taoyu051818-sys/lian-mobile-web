@@ -45,13 +45,13 @@ const LABEL_TO_CATEGORY_KEY: Record<string, string> = {
 
 async function openMessagesTab(page: Page, label: string) {
   const key = LABEL_TO_CATEGORY_KEY[label] ?? label;
-  const chip = page.locator(`[data-filter-value="${key}"]`);
-  if ((await chip.count()) === 0) {
-    await page.locator('[data-testid="filter-state-toggle"]').click();
+  const chip = page.locator(`[data-filter-value="${key}"]:visible`);
+  if (!(await chip.isVisible())) {
+    await page.locator('[data-testid="filter-state-toggle"]:visible').click();
   }
   await expect(chip).toBeVisible();
-  // force: skip stability check during the 300ms slide-in transition
-  await chip.click({ force: true });
+  await chip.click();
+  await expect(chip).toHaveAttribute("aria-pressed", "true");
 }
 
 async function stubChannelEmpty(page: Page) {
@@ -101,7 +101,7 @@ test.describe("messages product inbox @anonymous @messages", () => {
         },
       });
     });
-    await page.route("**/api/messages", async (route) => {
+    await page.route("**/api/messages**", async (route) => {
       await route.fulfill({ json: { items: [] } });
     });
 
@@ -143,7 +143,7 @@ test.describe("messages product inbox @anonymous @messages", () => {
     });
 
     let messagesHits = 0;
-    await page.route("**/api/messages", async (route) => {
+    await page.route("**/api/messages**", async (route) => {
       messagesHits += 1;
       if (messagesHits === 1) {
         await route.fulfill({
@@ -202,7 +202,7 @@ test.describe("messages product inbox @anonymous @messages", () => {
         },
       });
     });
-    await page.route("**/api/messages", async (route) => {
+    await page.route("**/api/messages**", async (route) => {
       await route.fulfill({
         status: 401,
         contentType: "application/json",
@@ -242,7 +242,7 @@ test.describe("messages product inbox @anonymous @messages", () => {
         },
       });
     });
-    await page.route("**/api/messages", async (route) => {
+    await page.route("**/api/messages**", async (route) => {
       await route.fulfill({ json: { items: [] } });
     });
 
