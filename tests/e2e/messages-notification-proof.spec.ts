@@ -10,13 +10,13 @@ const LABEL_TO_CATEGORY_KEY: Record<string, string> = {
 
 async function openMessagesTab(page: Page, label: string) {
   const key = LABEL_TO_CATEGORY_KEY[label] ?? label;
-  const chip = page.locator(`[data-filter-value="${key}"]`);
-  if ((await chip.count()) === 0) {
-    await page.locator('[data-testid="filter-state-toggle"]').click();
+  const chip = page.locator(`[data-filter-value="${key}"]:visible`);
+  if (!(await chip.isVisible())) {
+    await page.locator('[data-testid="filter-state-toggle"]:visible').click();
   }
   await expect(chip).toBeVisible();
-  // force: skip stability check during the 300ms slide-in transition
-  await chip.click({ force: true });
+  await chip.click();
+  await expect(chip).toHaveAttribute("aria-pressed", "true");
 }
 
 // Synthetic notification → detail target. Earlier revisions of this spec
