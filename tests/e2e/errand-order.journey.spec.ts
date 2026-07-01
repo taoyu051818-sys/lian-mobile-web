@@ -1,5 +1,4 @@
-import test from "node:test";
-import assert from "node:assert/strict";
+import { test, expect } from "@playwright/test";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -31,10 +30,10 @@ function read(rel) {
 
 test("journey: merchant detail CTA opens the errand-order secret view", () => {
   const block = read("src/features/detail/PostDetailMerchantBlock.vue");
-  assert.match(block, /data-testid="post-detail-merchant-errand-cta"/);
-  assert.match(block, /useErrandOrderRoute/);
-  assert.match(block, /enterForMerchant/);
-  assert.match(block, /setActiveView\("errand-order"\)/);
+  expect(block).toMatch(/test-id="post-detail-merchant-errand-cta"/);
+  expect(block).toMatch(/useErrandOrderRoute/);
+  expect(block).toMatch(/enterForMerchant/);
+  expect(block).toMatch(/setActiveView\("errand-order"\)/);
 });
 
 test("journey: errand-order is reachable as a secret view", () => {
@@ -44,20 +43,20 @@ test("journey: errand-order is reachable as a secret view", () => {
   // lazy-load table off the same name, so a regression in either side
   // breaks the journey.
   const viewTypes = read("src/app/view-types.ts");
-  assert.match(viewTypes, /"errand-order"/);
-  assert.match(viewTypes, /"errand-order":\s*"content"/);
+  expect(viewTypes).toMatch(/"errand-order"/);
+  expect(viewTypes).toMatch(/"errand-order":\s*"content"/);
   const host = read("src/app/AppViewHost.vue");
-  assert.match(host, /"errand-order":\s*asyncView/);
+  expect(host).toMatch(/"errand-order":\s*asyncView/);
 });
 
 // Step 2: gate evaluator combines server eligibility + auth + wallet.
 
 test("journey: gate composable pulls auth/me + wallet + eligibility together", () => {
   const draft = read("src/features/errand/useErrandOrderDraft.ts");
-  assert.match(draft, /Promise\.all/);
-  assert.match(draft, /fetchAuthMe/);
-  assert.match(draft, /fetchProfileWallet/);
-  assert.match(draft, /fetchErrandOrderEligibility/);
+  expect(draft).toMatch(/Promise\.all/);
+  expect(draft).toMatch(/fetchAuthMe/);
+  expect(draft).toMatch(/fetchProfileWallet/);
+  expect(draft).toMatch(/fetchErrandOrderEligibility/);
 });
 
 test("journey: each gate reason has a localized fallback string", () => {
@@ -70,7 +69,7 @@ test("journey: each gate reason has a localized fallback string", () => {
     "no_runner_coverage",
     "unknown",
   ]) {
-    assert.match(format, new RegExp(`case "${reason}"`));
+    expect(format).toMatch(new RegExp(`case "${reason}"`));
   }
 });
 
@@ -78,35 +77,35 @@ test("journey: each gate reason has a localized fallback string", () => {
 
 test("journey: form submit creates an order and enters timeline mode", () => {
   const view = read("src/features/errand/ErrandOrderView.vue");
-  assert.match(view, /handleSubmit/);
-  assert.match(view, /enterForOrder/);
+  expect(view).toMatch(/handleSubmit/);
+  expect(view).toMatch(/enterForOrder/);
 
   const draft = read("src/features/errand/useErrandOrderDraft.ts");
-  assert.match(draft, /createErrandOrder/);
+  expect(draft).toMatch(/createErrandOrder/);
   // Failure case must fold into the gate so the same blocked-state UI shows.
-  assert.match(draft, /gate\.value\s*=\s*\{/);
+  expect(draft).toMatch(/gate\.value\s*=\s*\{/);
 });
 
 // Step 4: timeline view renders the order detail.
 
 test("journey: timeline view loads the order detail on mount", () => {
   const view = read("src/features/errand/ErrandOrderTimelineView.vue");
-  assert.match(view, /onMounted/);
-  assert.match(view, /useErrandOrderDetail/);
-  assert.match(view, /data-testid="errand-order-timeline-list"/);
+  expect(view).toMatch(/onMounted/);
+  expect(view).toMatch(/useErrandOrderDetail/);
+  expect(view).toMatch(/data-testid="errand-order-timeline-list"/);
 });
 
 test("journey: same view key flips between form and timeline branches", () => {
   const view = read("src/features/errand/ErrandOrderView.vue");
   // The route singleton supplies the orderId; the view branches on it.
-  assert.match(view, /isTimelineMode/);
-  assert.match(view, /route\.orderId\.value/);
+  expect(view).toMatch(/isTimelineMode/);
+  expect(view).toMatch(/route\.orderId\.value/);
 });
 
 // Step 5: API contract — we collapse unknown gate codes; we don't trust the wire.
 
 test("journey: api normalizer hardens the gate against unknown codes", () => {
   const api = read("src/api/errands.ts");
-  assert.match(api, /export function normalizeErrandOrderGate/);
-  assert.match(api, /GATE_REASON_CODES\.has/);
+  expect(api).toMatch(/export function normalizeErrandOrderGate/);
+  expect(api).toMatch(/GATE_REASON_CODES\.has/);
 });
