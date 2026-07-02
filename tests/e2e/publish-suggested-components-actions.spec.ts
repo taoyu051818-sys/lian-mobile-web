@@ -66,9 +66,42 @@ import { isRoleConfigured, loginAs, type RoleId } from "./fixtures/accounts";
 // Local helpers (private to this spec — see sibling-agent contract above).
 // ---------------------------------------------------------------------------
 
+type WireGhostType =
+  | "location"
+  | "time"
+  | "media"
+  | "quality"
+  | "audience"
+  | "tags"
+  | "event"
+  | "merchant"
+  | "trade"
+  | "help"
+  | "groupbuy"
+  | "event_time"
+  | "price"
+  | "merchant_info"
+  | "trade_condition"
+  | "help_tag";
+
+type UiGhostKind =
+  | "location"
+  | "time"
+  | "media"
+  | "quality"
+  | "audience"
+  | "tags"
+  | "event"
+  | "merchant"
+  | "trade"
+  | "help"
+  | "groupbuy";
+
 interface GhostFixture {
-  /** Server wire-shape `type`. The frontend parser renames to `kind`. */
-  type: "location" | "event_time" | "price" | "merchant_info" | "trade_condition" | "help_tag";
+  /** Server wire-shape `type`. The frontend parser renames legacy values to canonical UI `kind`. */
+  type: WireGhostType;
+  /** Expected rendered `data-kind` after the frontend parser normalizes the wire value. */
+  kind: UiGhostKind;
   /** Server `reason`; surfaces as the ghost's `label` and the accept aria-label suffix. */
   reason: string;
 }
@@ -153,7 +186,7 @@ async function seedDraftAndAwaitGhosts(page: Page, expectedKinds: readonly strin
   }
 }
 
-function ghostItem(page: Page, kind: GhostFixture["type"]) {
+function ghostItem(page: Page, kind: UiGhostKind) {
   return page.locator(`[data-testid="publish-suggested-item"][data-kind="${kind}"]`).first();
 }
 
@@ -183,23 +216,23 @@ function ghostActionsForRole(role: RoleId) {
       const page = await context.newPage();
       try {
         const ghosts: GhostFixture[] = [
-          { type: "location", reason: "加个地点" },
-          { type: "event_time", reason: "这是活动吗？加个时间" },
-          { type: "price", reason: "加个价格" },
-          { type: "merchant_info", reason: "看起来像商家信息" },
-          { type: "trade_condition", reason: "加个二手物品状态" },
-          { type: "help_tag", reason: "需要别人帮忙吗？" },
+          { type: "location", kind: "location", reason: "加个地点" },
+          { type: "event_time", kind: "time", reason: "这是活动吗？加个时间" },
+          { type: "price", kind: "trade", reason: "加个价格" },
+          { type: "merchant_info", kind: "merchant", reason: "看起来像商家信息" },
+          { type: "help_tag", kind: "help", reason: "需要别人帮忙吗？" },
+          { type: "groupbuy", kind: "groupbuy", reason: "发起拼单吗？" },
         ];
         await stubPreviewWithGhosts(context, ghosts);
 
         await openPublish(page);
         await seedDraftAndAwaitGhosts(
           page,
-          ghosts.map((g) => g.type),
+          ghosts.map((g) => g.kind),
         );
 
         for (const ghost of ghosts) {
-          const item = ghostItem(page, ghost.type);
+          const item = ghostItem(page, ghost.kind);
           await expect(item).toBeVisible();
           // Accept button: aria-label = "建议添加 <reason>" (PRD §4.2.3 a11y).
           const accept = item.locator('[data-testid="publish-suggested-accept"]');
@@ -229,27 +262,25 @@ function ghostActionsForRole(role: RoleId) {
       const page = await context.newPage();
       try {
         const ghosts: GhostFixture[] = [
-          { type: "location", reason: "加个地点" },
-          { type: "event_time", reason: "这是活动吗？加个时间" },
-          { type: "help_tag", reason: "需要别人帮忙吗？" },
+          { type: "location", kind: "location", reason: "加个地点" },
+          { type: "event_time", kind: "time", reason: "这是活动吗？加个时间" },
+          { type: "help_tag", kind: "help", reason: "需要别人帮忙吗？" },
         ];
         await stubPreviewWithGhosts(context, ghosts);
 
         await openPublish(page);
         await seedDraftAndAwaitGhosts(
           page,
-          ghosts.map((g) => g.type),
+          ghosts.map((g) => g.kind),
         );
 
-        await ghostItem(page, "event_time")
-          .locator('[data-testid="publish-suggested-dismiss"]')
-          .click();
+        await ghostItem(page, "time").locator('[data-testid="publish-suggested-dismiss"]').click();
 
         // Wait for the dismissed entry to leave the DOM, then sibling
         // ghosts must still be there.
-        await expect(ghostItem(page, "event_time")).toHaveCount(0);
+        await expect(ghostItem(page, "time")).toHaveCount(0);
         await expect(ghostItem(page, "location")).toBeVisible();
-        await expect(ghostItem(page, "help_tag")).toBeVisible();
+        await expect(ghostItem(page, "help")).toBeVisible();
       } finally {
         await context.close();
         await api.dispose();
@@ -271,22 +302,20 @@ function ghostActionsForRole(role: RoleId) {
       const page = await context.newPage();
       try {
         await stubPreviewWithGhosts(context, [
-          { type: "event_time", reason: "这是活动吗？加个时间" },
-          { type: "location", reason: "加个地点" },
+          { type: "event_time", kind: "time", reason: "这是活动吗？加个时间" },
+          { type: "location", kind: "location", reason: "加个地点" },
         ]);
         await openPublish(page);
-        await seedDraftAndAwaitGhosts(page, ["event_time", "location"]);
+        await seedDraftAndAwaitGhosts(page, ["time", "location"]);
 
-        await ghostItem(page, "event_time")
-          .locator('[data-testid="publish-suggested-accept"]')
-          .click();
+        await ghostItem(page, "time").locator('[data-testid="publish-suggested-accept"]').click();
 
         // publishKind === "event" → PublishEventControls v-if mounts.
         await expect(page.locator('[data-testid="publish-event-panel"]')).toBeVisible({
           timeout: 5_000,
         });
         // Accepted ghost is removed; the unrelated `location` ghost stays.
-        await expect(ghostItem(page, "event_time")).toHaveCount(0);
+        await expect(ghostItem(page, "time")).toHaveCount(0);
         await expect(ghostItem(page, "location")).toBeVisible();
       } finally {
         await context.close();
@@ -308,15 +337,15 @@ function ghostActionsForRole(role: RoleId) {
       const context = await browser.newContext({ storageState: await api.storageState() });
       const page = await context.newPage();
       try {
-        await stubPreviewWithGhosts(context, [{ type: "help_tag", reason: "需要别人帮忙吗？" }]);
+        await stubPreviewWithGhosts(context, [
+          { type: "help_tag", kind: "help", reason: "需要别人帮忙吗？" },
+        ]);
         await openPublish(page);
-        await seedDraftAndAwaitGhosts(page, ["help_tag"]);
+        await seedDraftAndAwaitGhosts(page, ["help"]);
 
         // Accept once with a blank tagInput → tag panel input becomes "求助".
-        await ghostItem(page, "help_tag")
-          .locator('[data-testid="publish-suggested-accept"]')
-          .click();
-        await expect(ghostItem(page, "help_tag")).toHaveCount(0);
+        await ghostItem(page, "help").locator('[data-testid="publish-suggested-accept"]').click();
+        await expect(ghostItem(page, "help")).toHaveCount(0);
 
         // Open the tag panel and read the input to confirm "求助" landed.
         // The panel uses a v-if mount; it opens via the toolbar "标签" button.
@@ -344,7 +373,9 @@ function ghostActionsForRole(role: RoleId) {
       const context = await browser.newContext({ storageState: await api.storageState() });
       const page = await context.newPage();
       try {
-        await stubPreviewWithGhosts(context, [{ type: "location", reason: "加个地点" }]);
+        await stubPreviewWithGhosts(context, [
+          { type: "location", kind: "location", reason: "加个地点" },
+        ]);
         await openPublish(page);
         await seedDraftAndAwaitGhosts(page, ["location"]);
 
@@ -394,12 +425,12 @@ test.describe("@registered publish §4.2.3 — accept(price) structural confirm 
     const context = await browser.newContext({ storageState: await api.storageState() });
     const page = await context.newPage();
     try {
-      await stubPreviewWithGhosts(context, [{ type: "price", reason: "加个价格" }]);
+      await stubPreviewWithGhosts(context, [{ type: "price", kind: "trade", reason: "加个价格" }]);
       await openPublish(page);
-      await seedDraftAndAwaitGhosts(page, ["price"]);
+      await seedDraftAndAwaitGhosts(page, ["trade"]);
 
-      await ghostItem(page, "price").locator('[data-testid="publish-suggested-accept"]').click();
-      await expect(ghostItem(page, "price")).toHaveCount(0);
+      await ghostItem(page, "trade").locator('[data-testid="publish-suggested-accept"]').click();
+      await expect(ghostItem(page, "trade")).toHaveCount(0);
     } finally {
       await context.close();
       await api.dispose();
@@ -431,19 +462,19 @@ test.describe.serial("@merchant publish §4.2.3 — verified-merchant accept(mer
       // /api/auth/me so the panel's on-mount refresh sees it even if the
       // seeded merchant role drifts on nat100.
       await stubAuthMe(context, user, ["merchant_verified", "realname_verified"]);
-      await stubPreviewWithGhosts(context, [{ type: "merchant_info", reason: "看起来像商家信息" }]);
+      await stubPreviewWithGhosts(context, [
+        { type: "merchant_info", kind: "merchant", reason: "看起来像商家信息" },
+      ]);
       await openPublish(page);
-      await seedDraftAndAwaitGhosts(page, ["merchant_info"]);
+      await seedDraftAndAwaitGhosts(page, ["merchant"]);
 
-      await ghostItem(page, "merchant_info")
-        .locator('[data-testid="publish-suggested-accept"]')
-        .click();
+      await ghostItem(page, "merchant").locator('[data-testid="publish-suggested-accept"]').click();
 
       // Merchant form mounts when publishKind === "merchant".
       await expect(page.locator('[data-testid="publish-merchant-form"]')).toBeVisible({
         timeout: 5_000,
       });
-      await expect(ghostItem(page, "merchant_info")).toHaveCount(0);
+      await expect(ghostItem(page, "merchant")).toHaveCount(0);
     } finally {
       await context.close();
       await api.dispose();
@@ -473,14 +504,12 @@ test.describe.serial("@campus publish §4.2.3 — verified-campus accept(trade_c
     try {
       await stubAuthMe(context, user, ["campus_verified"]);
       await stubPreviewWithGhosts(context, [
-        { type: "trade_condition", reason: "加个二手物品状态" },
+        { type: "trade_condition", kind: "trade", reason: "加个二手物品状态" },
       ]);
       await openPublish(page);
-      await seedDraftAndAwaitGhosts(page, ["trade_condition"]);
+      await seedDraftAndAwaitGhosts(page, ["trade"]);
 
-      await ghostItem(page, "trade_condition")
-        .locator('[data-testid="publish-suggested-accept"]')
-        .click();
+      await ghostItem(page, "trade").locator('[data-testid="publish-suggested-accept"]').click();
 
       // Trade form mounts when publishKind === "trade". The gate panel
       // (`publish-trade-gate`) renders for unverified users; the form
@@ -488,7 +517,7 @@ test.describe.serial("@campus publish §4.2.3 — verified-campus accept(trade_c
       await expect(page.locator('[data-testid="publish-trade-form"]')).toBeVisible({
         timeout: 5_000,
       });
-      await expect(ghostItem(page, "trade_condition")).toHaveCount(0);
+      await expect(ghostItem(page, "trade")).toHaveCount(0);
     } finally {
       await context.close();
       await api.dispose();
