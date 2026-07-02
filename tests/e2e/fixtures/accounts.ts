@@ -7,6 +7,7 @@ import {
   type BrowserContext,
 } from "@playwright/test";
 
+import { retryTransientApiRequest } from "./retry";
 import type { VerificationTag } from "../../../src/types/verification";
 
 export type RoleId =
@@ -183,9 +184,11 @@ export async function loginAs(role: RoleId, baseURL = DEFAULT_BASE_URL): Promise
   }
 
   const api = await request.newContext({ baseURL });
-  const response = await api.post("/api/auth/login", {
-    data: { login: creds.username, password: creds.password },
-  });
+  const response = await retryTransientApiRequest(() =>
+    api.post("/api/auth/login", {
+      data: { login: creds.username, password: creds.password },
+    }),
+  );
   expect(response.ok(), await response.text()).toBe(true);
   const body = (await response.json()) as LoginResponse;
   expect(body.user, `login as ${role} returned no user record`).toBeTruthy();

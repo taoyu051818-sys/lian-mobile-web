@@ -21,6 +21,8 @@
 
 import { request } from "@playwright/test";
 
+import { retryTransientApiRequest } from "./retry";
+
 const DEFAULT_BASE_URL = process.env.APP_BASE_URL ?? "https://lian.nat100.top";
 
 export interface ErrandJourneyLocation {
@@ -124,7 +126,7 @@ export async function fetchErrandJourneyFixture(
   const ownsContext = !options.api;
   const api = options.api ?? (await request.newContext({ baseURL }));
   try {
-    const response = await api.get("/api/fixtures");
+    const response = await retryTransientApiRequest(() => api.get("/api/fixtures"));
     if (!response.ok()) return null;
     let body: FixturesEnvelope;
     try {
