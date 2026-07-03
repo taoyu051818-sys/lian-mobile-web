@@ -173,7 +173,7 @@ test.describe("@registered publish §4.1 — LLM trigger matrix", () => {
       // submit button calls `/api/ai/post-publish` (stubbed above); the
       // preview hook is unaffected.
       const beforeSubmit = hits.length;
-      await page.getByRole("button", { name: PUBLISH_SUBMIT }).click();
+      await page.getByTestId("publish-card").getByRole("button", { name: PUBLISH_SUBMIT }).click();
       // Give the submit click time to fire, and any spurious preview
       // request time to land. 600ms is below the debounce so a stray
       // re-typed character between focus changes also wouldn't fire.

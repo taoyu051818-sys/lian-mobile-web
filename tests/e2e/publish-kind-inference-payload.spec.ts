@@ -176,7 +176,7 @@ async function typeTitleAndBody(page: Page, title: string, body: string) {
 }
 
 async function clickSubmit(page: Page) {
-  await page.getByRole("button", { name: PUBLISH_SUBMIT }).click();
+  await page.getByTestId("publish-card").getByRole("button", { name: PUBLISH_SUBMIT }).click();
 }
 
 // ---------------------------------------------------------------------------
