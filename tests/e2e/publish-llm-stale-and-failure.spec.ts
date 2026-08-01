@@ -238,7 +238,7 @@ test.describe("@registered publish §4.1 — stale drop + silent failure", () =>
       // Manual submit still succeeds against the separate publish
       // endpoint. The captured request body must carry what the user
       // typed — i.e. the failure didn't clobber the publish payload.
-      await page.getByRole("button", { name: PUBLISH_SUBMIT }).click();
+      await page.getByTestId("publish-card").getByRole("button", { name: PUBLISH_SUBMIT }).click();
       const result = await submitted;
       expect(result.body).toBe(TYPED_BODY);
     } finally {

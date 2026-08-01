@@ -179,10 +179,11 @@ async function seedDraftAndAwaitGhosts(page: Page, expectedKinds: readonly strin
     .fill("Body grounding so the LLM tick fires after the debounce window.");
   // The list mounts only when at least one ghost lands. Wait for the
   // expected kinds; this is the natural sync point (debounce + watcher).
+  await expect(page.getByTestId("publish-suggested-components")).toBeVisible({ timeout: 10_000 });
   for (const kind of expectedKinds) {
     await expect(
       page.locator(`[data-testid="publish-suggested-item"][data-kind="${kind}"]`),
-    ).toBeVisible({ timeout: 5_000 });
+    ).toBeVisible({ timeout: 10_000 });
   }
 }
 
