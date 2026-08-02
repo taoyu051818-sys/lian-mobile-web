@@ -1,59 +1,20 @@
-name: E2E Journey
+name: Production Canary
 
 on:
   workflow_dispatch:
-    inputs:
-      journey_group:
-        description: "Which journey slice to run (default: all). Maps to a Playwright --grep tag."
-        required: false
-        default: "all"
-        type: choice
-        options:
-          - all
-          - account-fixture
-          - event-fixture
-          - anonymous
-          - registered
-          - campus
-          - merchant
-          - messages
-          - runner
-          - errand-transition
-          - admin
-          - detail
   schedule:
     - cron: "17 18 * * *"
 
+permissions:
+  contents: read
+
 jobs:
-  nat100-journey-dispatch:
-    if: github.event_name == 'workflow_dispatch'
+  production-canary:
+    name: Production canary (read-only)
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 10
     env:
-      APP_BASE_URL: https://lian.nat100.top
-      # Legacy single-account env retained for the existing journey.spec.ts.
-      LIAN_E2E_USERNAME: ${{ secrets.LIAN_E2E_USERNAME }}
-      LIAN_E2E_PASSWORD: ${{ secrets.LIAN_E2E_PASSWORD }}
-      # Multi-account matrix (#644). Roles are skipped when their secrets are
-      # absent — see tests/e2e/fixtures/accounts.ts for the env name contract.
-      LIAN_E2E_REGISTERED_USERNAME: ${{ secrets.LIAN_E2E_REGISTERED_USERNAME }}
-      LIAN_E2E_REGISTERED_PASSWORD: ${{ secrets.LIAN_E2E_REGISTERED_PASSWORD }}
-      LIAN_E2E_CAMPUS_USERNAME: ${{ secrets.LIAN_E2E_CAMPUS_USERNAME }}
-      LIAN_E2E_CAMPUS_PASSWORD: ${{ secrets.LIAN_E2E_CAMPUS_PASSWORD }}
-      LIAN_E2E_MERCHANT_USERNAME: ${{ secrets.LIAN_E2E_MERCHANT_USERNAME }}
-      LIAN_E2E_MERCHANT_PASSWORD: ${{ secrets.LIAN_E2E_MERCHANT_PASSWORD }}
-      LIAN_E2E_RUNNER_USERNAME: ${{ secrets.LIAN_E2E_RUNNER_USERNAME }}
-      LIAN_E2E_RUNNER_PASSWORD: ${{ secrets.LIAN_E2E_RUNNER_PASSWORD }}
-      LIAN_E2E_ADMIN_USERNAME: ${{ secrets.LIAN_E2E_ADMIN_USERNAME }}
-      LIAN_E2E_ADMIN_PASSWORD: ${{ secrets.LIAN_E2E_ADMIN_PASSWORD }}
-      LIAN_E2E_EVENT_CREATOR_USERNAME: ${{ secrets.LIAN_E2E_EVENT_CREATOR_USERNAME }}
-      LIAN_E2E_EVENT_CREATOR_PASSWORD: ${{ secrets.LIAN_E2E_EVENT_CREATOR_PASSWORD }}
-      LIAN_E2E_ORG_MEMBER_USERNAME: ${{ secrets.LIAN_E2E_ORG_MEMBER_USERNAME }}
-      LIAN_E2E_ORG_MEMBER_PASSWORD: ${{ secrets.LIAN_E2E_ORG_MEMBER_PASSWORD }}
-      LIAN_E2E_SEEDED_EVENT_ID: ${{ secrets.LIAN_E2E_SEEDED_EVENT_ID }}
-      # Picked up by playwright.config.ts to filter via --grep when set.
-      LIAN_E2E_JOURNEY_GROUP: ${{ inputs.journey_group || 'all' }}
-
+      APP_BASE_URL: ${{ vars.LIAN_PRODUCTION_BASE_URL || 'https://lian.nat100.top' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -70,86 +31,14 @@ jobs:
       - name: Install Playwright browser
         run: npx playwright install --with-deps chromium
 
-      - name: Run journey test
-        run: npm run test:e2e
+      - name: Run read-only production canary
+        run: npx playwright test tests/e2e/production-canary.spec.ts --retries=0 --reporter=list
 
-      - name: Upload Playwright artifacts
+      - name: Upload Playwright artifacts on failure
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: playwright-journey-artifacts-dispatch
-          path: |
-            playwright-report/
-            test-results/
-          if-no-files-found: ignore
-
-  nat100-journey-scheduled:
-    if: github.event_name == 'schedule'
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    strategy:
-      fail-fast: false
-      matrix:
-        journey_group:
-          - account-fixture
-          - event-fixture
-          - anonymous
-          - registered
-          - campus
-          - merchant
-          - runner
-          - errand-transition
-          - admin
-          - detail
-    env:
-      APP_BASE_URL: https://lian.nat100.top
-      # Legacy single-account env retained for the existing journey.spec.ts.
-      LIAN_E2E_USERNAME: ${{ secrets.LIAN_E2E_USERNAME }}
-      LIAN_E2E_PASSWORD: ${{ secrets.LIAN_E2E_PASSWORD }}
-      # Multi-account matrix (#644). Roles are skipped when their secrets are
-      # absent — see tests/e2e/fixtures/accounts.ts for the env name contract.
-      LIAN_E2E_REGISTERED_USERNAME: ${{ secrets.LIAN_E2E_REGISTERED_USERNAME }}
-      LIAN_E2E_REGISTERED_PASSWORD: ${{ secrets.LIAN_E2E_REGISTERED_PASSWORD }}
-      LIAN_E2E_CAMPUS_USERNAME: ${{ secrets.LIAN_E2E_CAMPUS_USERNAME }}
-      LIAN_E2E_CAMPUS_PASSWORD: ${{ secrets.LIAN_E2E_CAMPUS_PASSWORD }}
-      LIAN_E2E_MERCHANT_USERNAME: ${{ secrets.LIAN_E2E_MERCHANT_USERNAME }}
-      LIAN_E2E_MERCHANT_PASSWORD: ${{ secrets.LIAN_E2E_MERCHANT_PASSWORD }}
-      LIAN_E2E_RUNNER_USERNAME: ${{ secrets.LIAN_E2E_RUNNER_USERNAME }}
-      LIAN_E2E_RUNNER_PASSWORD: ${{ secrets.LIAN_E2E_RUNNER_PASSWORD }}
-      LIAN_E2E_ADMIN_USERNAME: ${{ secrets.LIAN_E2E_ADMIN_USERNAME }}
-      LIAN_E2E_ADMIN_PASSWORD: ${{ secrets.LIAN_E2E_ADMIN_PASSWORD }}
-      LIAN_E2E_EVENT_CREATOR_USERNAME: ${{ secrets.LIAN_E2E_EVENT_CREATOR_USERNAME }}
-      LIAN_E2E_EVENT_CREATOR_PASSWORD: ${{ secrets.LIAN_E2E_EVENT_CREATOR_PASSWORD }}
-      LIAN_E2E_ORG_MEMBER_USERNAME: ${{ secrets.LIAN_E2E_ORG_MEMBER_USERNAME }}
-      LIAN_E2E_ORG_MEMBER_PASSWORD: ${{ secrets.LIAN_E2E_ORG_MEMBER_PASSWORD }}
-      LIAN_E2E_SEEDED_EVENT_ID: ${{ secrets.LIAN_E2E_SEEDED_EVENT_ID }}
-      # Nightly fans out by grep tag so one flaky slice does not hide the rest.
-      LIAN_E2E_JOURNEY_GROUP: ${{ matrix.journey_group }}
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version-file: .nvmrc
-          cache: npm
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Install Playwright browser
-        run: npx playwright install --with-deps chromium
-
-      - name: Run scheduled journey slice (${{ matrix.journey_group }})
-        run: npm run test:e2e
-
-      - name: Upload Playwright artifacts
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: playwright-journey-artifacts-${{ matrix.journey_group }}
+          name: production-canary-artifacts
           path: |
             playwright-report/
             test-results/
