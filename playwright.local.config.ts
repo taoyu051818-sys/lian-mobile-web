@@ -14,7 +14,7 @@ const port = parsedBaseURL.port || "80";
 
 export default defineConfig({
   testDir: "tests/e2e/local",
-  testMatch: "core-journeys.spec.ts",
+  testMatch: "*-journeys.spec.ts",
   timeout: 30_000,
   expect: { timeout: 5_000 },
   fullyParallel: false,
@@ -41,6 +41,9 @@ export default defineConfig({
     },
   },
   projects: [
-    { name: "chromium-local", use: { ...devices["Desktop Chrome"], channel: "chrome" } },
+    {
+      name: "chromium-local",
+      use: { ...devices["Desktop Chrome"], ...(process.env.CI ? {} : { channel: "chrome" }) },
+    },
   ],
 });
