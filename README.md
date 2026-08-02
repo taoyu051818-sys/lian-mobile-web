@@ -5,44 +5,9 @@ Frontend/mobile web workspace for LIAN.
 This repository owns the Vue 3 + Vite frontend, design tokens, frontend assets,
 task-board UI, and frontend documentation. The legacy static runtime has been
 migrated to `taoyu051818-sys/-lian-mobile-web-legacy`. Use GitHub issues and PRs
-as the queue and contract source of truth, starting from the LIAN Control Room at
-`taoyu051818-sys/lian-platform-server#424`.
+as the queue and contract source of truth.
 
-Current coordination snapshot:
-
-- Control-plane entrypoint: `taoyu051818-sys/lian-platform-server#424` is the
-  Control Room issue for cross-repo queue and contract coordination; it is
-  closed as of 2026-05-30, so follow any successor pointers from GitHub if the
-  bus has rolled again.
-- Frontend follow-ups: `taoyu051818-sys/lian-mobile-web#980`,
-  `taoyu051818-sys/lian-mobile-web#988`, and
-  `taoyu051818-sys/lian-mobile-web#998` are closed; treat them as shipped
-  context rather than active queue items.
-- Shipped frontend context: `taoyu051818-sys/lian-mobile-web#1001`,
-  `taoyu051818-sys/lian-mobile-web#1002`, and
-  `taoyu051818-sys/lian-mobile-web#1003` are merged.
-- Shipped backend dependency issues: `taoyu051818-sys/lian-platform-server#595`,
-  `taoyu051818-sys/lian-platform-server#599`,
-  `taoyu051818-sys/lian-platform-server#625`, and
-  `taoyu051818-sys/lian-platform-server#627` are closed.
-
-Core Product Model V1 queue snapshot:
-
-- Snapshot source: GitHub issue truth checked on 2026-06-03 for
-  `taoyu051818-sys/lian-mobile-web#990` and phase-order issue
-  `taoyu051818-sys/lian-mobile-web#995`.
-- Phase order source: `taoyu051818-sys/lian-mobile-web#995`; keep Phase 1 before
-  Phase 2, then Phase 3, then Phase 4 unless that issue changes.
-- Phase 1 — Semantic layer: open frontend children `#964`, `#972`; closed or
-  merged frontend children `#966`, `#967`, `#912`, `#965`, `#986`, `#981`.
-- Phase 2 — Identity and actionable publishing: open frontend children `#970`,
-  `#971`, `#991`, `#992`; closed frontend children `#611`, `#610`, `#710`,
-  `#994`.
-- Phase 3 — Collaboration channels and local discovery: open frontend children
-  `#963`, `#976`; closed frontend children `#979`, `#977`, `#948`.
-- Phase 4 — Collective action and settlement: open frontend child `#993`.
-- Refresh this block from GitHub before using any listed child issue as live
-  scope; closed children are context, not active queue items.
+Read [`docs/CURRENT_STATUS.md`](docs/CURRENT_STATUS.md) before starting work. The dated coordination and phase snapshot formerly kept here is archived at [`docs/archive/status-snapshot-2026-06.md`](docs/archive/status-snapshot-2026-06.md).
 
 ## Runtime model
 
@@ -56,8 +21,8 @@ image proxy:       http://127.0.0.1:4201
 ```
 
 Start the backend separately when smoke tests need live `/api/*` responses. Check
-the GitHub control-plane trail from `taoyu051818-sys/lian-platform-server#424`
-first when a frontend lane depends on merged or in-flight backend contract truth.
+`docs/CURRENT_STATUS.md`, open GitHub issues, and merged backend changes when a
+frontend lane depends on backend contract truth.
 
 ## Locale coverage and RTL scope
 
