@@ -1,8 +1,8 @@
 /**
  * warn-stale-doc-keywords.js
  *
- * WARNING-ONLY guard: scans markdown docs for stale keywords and queue snapshot
- * maintenance reminders.
+ * WARNING-ONLY guard: scans markdown docs for stale keywords and verifies the
+ * stable current-status entrypoint.
  * Prints a WARNING with the file path and matched keyword for each hit.
  * Always exits 0 (never fails the build).
  */
@@ -15,12 +15,13 @@ const rootDir = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..")
 const docsDir = path.join(rootDir, "docs");
 
 const STALE_KEYWORDS = ["superseded", "historical", "frozen", "not yet implemented", "draft"];
-const QUEUE_SNAPSHOT_FILE = "README.md";
-const QUEUE_SNAPSHOT_HEADING = "Core Product Model V1 queue snapshot";
-const REQUIRED_QUEUE_SNAPSHOT_MARKERS = [
-  "Snapshot source: GitHub issue truth checked on",
-  "Phase order source: `taoyu051818-sys/lian-mobile-web#995`",
-  "closed children are context, not active queue items",
+const CURRENT_STATUS_FILE = "docs/CURRENT_STATUS.md";
+const REQUIRED_CURRENT_STATUS_MARKERS = [
+  "Last verified:",
+  "Active control issue:",
+  "Open release blockers:",
+  "Current production release:",
+  "No active execution queue.",
 ];
 
 async function walkMdFiles(dir) {
@@ -43,7 +44,7 @@ async function walkMdFiles(dir) {
 }
 
 async function main() {
-  const mdFiles = [path.join(rootDir, QUEUE_SNAPSHOT_FILE), ...(await walkMdFiles(docsDir))];
+  const mdFiles = [path.join(rootDir, "README.md"), ...(await walkMdFiles(docsDir))];
 
   if (mdFiles.length === 0) {
     console.log("warn-stale-doc-keywords: No .md files found in docs/.");
@@ -79,25 +80,25 @@ async function main() {
     console.warn(`warn-stale-doc-keywords: ${warningCount} stale keyword occurrence(s) found.`);
   }
 
-  const readmePath = path.join(rootDir, QUEUE_SNAPSHOT_FILE);
+  const currentStatusPath = path.join(rootDir, CURRENT_STATUS_FILE);
   try {
-    const readme = await fs.readFile(readmePath, "utf8");
-    const missingMarkers = [QUEUE_SNAPSHOT_HEADING, ...REQUIRED_QUEUE_SNAPSHOT_MARKERS].filter(
-      (marker) => !readme.includes(marker),
+    const currentStatus = await fs.readFile(currentStatusPath, "utf8");
+    const missingMarkers = REQUIRED_CURRENT_STATUS_MARKERS.filter(
+      (marker) => !currentStatus.includes(marker),
     );
 
     if (missingMarkers.length === 0) {
-      console.log("warn-stale-doc-keywords: Core Product Model V1 queue snapshot present.");
+      console.log("warn-stale-doc-keywords: Current status markers present.");
     } else {
       for (const marker of missingMarkers) {
         console.warn(
-          `[WARNING] warn-stale-doc-keywords: "${QUEUE_SNAPSHOT_FILE}" is missing queue snapshot marker: "${marker}"`,
+          `[WARNING] warn-stale-doc-keywords: "${CURRENT_STATUS_FILE}" is missing current status marker: "${marker}"`,
         );
       }
     }
   } catch {
     console.warn(
-      `[WARNING] warn-stale-doc-keywords: "${QUEUE_SNAPSHOT_FILE}" could not be read for queue snapshot check.`,
+      `[WARNING] warn-stale-doc-keywords: "${CURRENT_STATUS_FILE}" could not be read for current status check.`,
     );
   }
 
