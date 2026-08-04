@@ -54,7 +54,7 @@ test("api/runner exposes available, active, and four state-transition endpoints"
     src,
     /\/api\/errands\/orders\/\$\{encodeURIComponent\(orderId\)\}\/\$\{backendAction\}/,
   );
-  assert.match(src, /action === "at_shop" \? "pickup" : action/);
+  assert.match(src, /action === "at_shop" \? "at-shop" : action/);
   for (const fn of [
     "fetchAvailableRunnerOrders",
     "fetchActiveRunnerOrders",

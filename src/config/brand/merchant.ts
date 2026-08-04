@@ -82,6 +82,7 @@ export const ERRAND_ORDER_DETAIL_AUTO_REFRESH_HINT = "进行中订单每 12 秒�
 export const ERRAND_ORDER_STATUS_CREATED = "已下单";
 export const ERRAND_ORDER_STATUS_PAID_LOCKED = "已扣款锁定";
 export const ERRAND_ORDER_STATUS_ASSIGNED = "已分配跑腿";
+export const ERRAND_ORDER_STATUS_AT_SHOP = "已到店";
 export const ERRAND_ORDER_STATUS_PICKED_UP = "已取件";
 export const ERRAND_ORDER_STATUS_DELIVERING = "配送中";
 export const ERRAND_ORDER_STATUS_DELIVERED = "已送达";

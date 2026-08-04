@@ -31,6 +31,7 @@ export const RUNNER_LIST_RELOAD = "重试";
 export const RUNNER_FIELD_PICKUP = "取货地点";
 export const RUNNER_FIELD_DROPOFF = "送达地点";
 export const RUNNER_FIELD_REWARD = "酬劳";
+export const RUNNER_POINTS_SUFFIX = "积分";
 export const RUNNER_FIELD_DELIVER_BY = "期望送达";
 export const RUNNER_FIELD_DISTANCE = "距离";
 export const RUNNER_FIELD_NOTE = "备注";

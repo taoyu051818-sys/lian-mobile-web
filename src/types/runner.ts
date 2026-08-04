@@ -41,8 +41,12 @@ export interface RunnerOrder {
   summary?: string;
   pickup?: RunnerOrderLocation;
   dropoff?: RunnerOrderLocation;
-  /** Earnings the runner will receive on delivery, in fen. */
-  rewardFen?: number;
+  /** Service fee charged to the requester, in points. */
+  feePoints?: number;
+  /** Earnings the runner will receive on delivery, in points. */
+  rewardPoints?: number;
+  /** Total requester balance locked for this order, in points. */
+  totalLockedPoints?: number;
   distanceMeters?: number;
   /** ISO timestamp the order was created / became available. */
   createdAt?: string;

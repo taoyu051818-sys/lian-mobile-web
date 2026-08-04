@@ -38,7 +38,7 @@ defineProps<{
     </div>
     <div class="errand-order-meta__row">
       <dt>{{ ERRAND_ORDER_FEE_LABEL }}</dt>
-      <dd>{{ order.feeAmount }} {{ ERRAND_ORDER_POINTS_SUFFIX }}</dd>
+      <dd>{{ order.feePoints }} {{ ERRAND_ORDER_POINTS_SUFFIX }}</dd>
     </div>
     <div v-if="notes" class="errand-order-meta__row" data-testid="errand-order-meta-notes">
       <dt>{{ ERRAND_ORDER_DETAIL_NOTES_LABEL }}</dt>
