@@ -66,15 +66,18 @@ function parseRetryAfterSeconds(value: string | null): number | null {
 
 function extractApiError(data: unknown, status: number) {
   const record = asRecord(data);
+  const statusRecord = asRecord(record.status);
+  const topLevelCode = typeof record.code === "string" ? record.code.trim() : "";
+  const nestedCode = typeof statusRecord.code === "string" ? statusRecord.code.trim() : "";
+  const code = topLevelCode || nestedCode;
+
   if (typeof record.error === "string" && record.error.trim()) {
-    return { message: record.error.trim(), code: "" };
+    return { message: record.error.trim(), code };
   }
   if (typeof record.message === "string" && record.message.trim()) {
-    return { message: record.message.trim(), code: "" };
+    return { message: record.message.trim(), code };
   }
 
-  const statusRecord = asRecord(record.status);
-  const code = typeof statusRecord.code === "string" ? statusRecord.code : "";
   if (typeof statusRecord.message === "string" && statusRecord.message.trim()) {
     return { message: statusRecord.message.trim(), code };
   }

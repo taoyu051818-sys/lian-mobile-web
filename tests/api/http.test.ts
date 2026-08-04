@@ -86,4 +86,89 @@ describe("safe diagnostics telemetry", () => {
       },
     });
   });
+
+  it.each([
+    {
+      envelope: {
+        error: "top-level error",
+        message: "top-level message",
+        code: "TOP_LEVEL_CODE",
+        status: { code: "NESTED_CODE", message: "nested message" },
+      },
+      expectedMessage: "top-level error",
+    },
+    {
+      envelope: {
+        message: "top-level message",
+        code: "TOP_LEVEL_CODE",
+        status: { code: "NESTED_CODE", message: "nested message" },
+      },
+      expectedMessage: "top-level message",
+    },
+  ])(
+    "preserves top-level message and code before nested status fields",
+    async ({ envelope, expectedMessage }) => {
+      g.fetch = vi.fn().mockResolvedValue(
+        new Response(JSON.stringify(envelope), {
+          status: 400,
+          headers: { "content-type": "application/json" },
+        }),
+      );
+
+      await expect(apiGet("/api/test/error-envelope")).rejects.toMatchObject({
+        code: "TOP_LEVEL_CODE",
+        message: expectedMessage,
+        name: "LianApiError",
+        status: 400,
+      });
+    },
+  );
+
+  it("falls back to nested status code when a top-level code is absent", async () => {
+    g.fetch = vi.fn().mockResolvedValue(
+      new Response(
+        JSON.stringify({
+          error: "top-level error",
+          status: { code: "NESTED_CODE", message: "nested message" },
+        }),
+        { status: 422, headers: { "content-type": "application/json" } },
+      ),
+    );
+
+    await expect(apiGet("/api/test/error-envelope")).rejects.toMatchObject({
+      code: "NESTED_CODE",
+      message: "top-level error",
+      status: 422,
+    });
+  });
+
+  it("keeps an empty code when the JSON envelope does not provide one", async () => {
+    g.fetch = vi.fn().mockResolvedValue(
+      new Response(JSON.stringify({ error: "request rejected" }), {
+        status: 400,
+        headers: { "content-type": "application/json" },
+      }),
+    );
+
+    await expect(apiGet("/api/test/error-envelope")).rejects.toMatchObject({
+      code: "",
+      message: "request rejected",
+      status: 400,
+    });
+  });
+
+  it("uses the generic fallback for a non-JSON response", async () => {
+    g.fetch = vi.fn().mockResolvedValue(
+      new Response("bad gateway", {
+        status: 502,
+        headers: { "content-type": "text/plain" },
+      }),
+    );
+
+    await expect(apiGet("/api/test/error-envelope")).rejects.toMatchObject({
+      code: "",
+      message: "请求失败（状态码 502）",
+      status: 502,
+    });
+  });
 });
