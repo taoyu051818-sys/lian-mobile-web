@@ -10,9 +10,10 @@
  * future event detail page; keep callers tolerant of 404s.
  */
 
-import { apiGet, apiSend } from "./http";
+import { apiGet, apiSend, LianApiError } from "./http";
 import {
   normalizeEventCompleteResult,
+  normalizeEventExtension,
   normalizeEventJoinResult,
 } from "../platform/api-normalizers";
 import type {
@@ -59,7 +60,12 @@ export async function createEvent(input: CreateEventInput): Promise<CreateEventR
 }
 
 export async function fetchEvent(eventId: string): Promise<EventPostExtension> {
-  return apiGet<EventPostExtension>(`/api/events/${encodeURIComponent(eventId)}`);
+  const data = await apiGet<unknown>(`/api/events/${encodeURIComponent(eventId)}`);
+  const event = normalizeEventExtension(data);
+  if (!event) {
+    throw new LianApiError("活动详情响应缺少有效 eventId", 200, "MALFORMED_RESPONSE");
+  }
+  return event;
 }
 
 export async function joinEvent(eventId: string): Promise<EventJoinResult> {
