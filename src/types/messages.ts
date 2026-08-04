@@ -84,10 +84,6 @@ export interface NotificationResponse {
   nextOffset?: number;
 }
 
-export interface NotificationReadPayload {
-  eventIds: Array<string | number>;
-}
-
 export interface SendChannelMessagePayload {
   content: string;
   identityTag?: string;
