@@ -34,7 +34,8 @@ import {
 } from "../../config/brand";
 import type { MerchantErrandUnavailableReason } from "../../types/merchant";
 import type { MerchantCategory, MerchantPostExtension } from "../../types/post-extensions";
-import { errandReasonText, useErrandHelpCta } from "../merchant";
+import { errandReasonText } from "../merchant/merchant-format";
+import { useErrandHelpCta } from "../merchant/useErrandHelpCta";
 import DetailCtaButton from "./DetailCtaButton.vue";
 // Import directly from the route module instead of `../errand` so the detail
 // chunk doesn't statically pull the heavy ErrandOrder*View SFCs from the

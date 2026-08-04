@@ -170,6 +170,21 @@ export default defineConfig({
         chunkFileNames: "assets/[hash].js",
         entryFileNames: "assets/[hash].js",
         assetFileNames: "assets/[hash][extname]",
+        // Vue and vue-i18n are stable runtime dependencies shared by the app
+        // shell and lazy views. Isolating them keeps the cold-start app chunk
+        // below the warning threshold and lets browsers retain vendor code
+        // when feature code changes.
+        manualChunks(id) {
+          const normalizedId = id.replaceAll("\\", "/");
+          if (!normalizedId.includes("/node_modules/")) return undefined;
+          if (normalizedId.includes("/vue-i18n/") || normalizedId.includes("/@intlify/")) {
+            return "i18n-runtime";
+          }
+          if (normalizedId.includes("/vue/") || normalizedId.includes("/@vue/")) {
+            return "vue-runtime";
+          }
+          return undefined;
+        },
       },
     },
   },

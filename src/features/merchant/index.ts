@@ -4,9 +4,5 @@ export { useMerchantCenter } from "./useMerchantCenter";
 export { useIsMerchantVerified } from "./useIsMerchantVerified";
 export { useErrandHelpCta } from "./useErrandHelpCta";
 export type { ErrandHelpCtaInput, ErrandHelpCtaModel } from "./useErrandHelpCta";
-export {
-  MERCHANT_CATEGORY_LABELS,
-  categoryLabel,
-  errandReasonText,
-  formatVerifiedAt,
-} from "./merchant-format";
+export { errandReasonText } from "./merchant-format";
+export { MERCHANT_CATEGORY_LABELS, categoryLabel, formatVerifiedAt } from "./merchant-format";
