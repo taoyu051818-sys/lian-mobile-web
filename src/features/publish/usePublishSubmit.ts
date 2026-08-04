@@ -3,6 +3,8 @@ import {
   PUBLISH_LOCATION_UNBOUND,
   PUBLISH_SUCCESS,
   PUBLISH_SUCCESS_BOUND,
+  PUBLISH_SUCCESS_METADATA_PENDING,
+  PUBLISH_SUCCESS_METADATA_RETRY,
   PUBLISH_EVENT_SUCCESS,
   PUBLISH_EVENT_UNAVAILABLE,
   PUBLISH_EVENT_INVALID_TIME,
@@ -29,6 +31,7 @@ import type {
   MerchantPublishInput,
   PublishActionablePostPreview,
   PublishLocationDraft,
+  PublishPayload,
   PublishVisibility,
   TradeContentType,
   TradePublishInput,
@@ -37,6 +40,16 @@ import type { PublishPostType } from "../../composables/useEventPublishDraft";
 import type { PublishKind } from "./usePublishDraft";
 import type { InferredKind, SuggestedComponent } from "../../types/publishSuggestion";
 import { inferKind } from "./inferKind";
+
+export function createPublishIdempotencyKey(): string {
+  try {
+    const key = globalThis.crypto?.randomUUID?.();
+    if (key) return key;
+  } catch {
+    // Some embedded browsers expose crypto but reject access to randomUUID.
+  }
+  return `publish-${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
+}
 
 function createPublishActionablePostPreview(input: {
   kind?: InferredKind;
@@ -132,7 +145,12 @@ export function usePublishSubmit(options: {
   merchantVerified?: Ref<boolean>;
   tradePayload?: () => { input: TradePublishInput; contentType: TradeContentType };
   tradeVerified?: Ref<boolean>;
+  /** Deterministic override for behavior tests; production uses a random UUID. */
+  createIdempotencyKey?: () => string;
 }) {
+  let activeAiPublishIdempotencyKey = "";
+  let activeAiPublishPayloadSnapshot: PublishPayload | null = null;
+  let activeAiPublishHasPartialResult = false;
   const postDetailUrl = computed(() => {
     const tid = options.lastTid.value;
     if (!tid) return "";
@@ -141,6 +159,49 @@ export function usePublishSubmit(options: {
 
   function placeNameFromResponse(response: { place?: { name?: string } | null }): string {
     return response.place?.name || "";
+  }
+
+  function publishPayloadMatchesActiveAttempt(payload: PublishPayload): boolean {
+    return (
+      activeAiPublishPayloadSnapshot !== null &&
+      JSON.stringify(activeAiPublishPayloadSnapshot) === JSON.stringify(payload)
+    );
+  }
+
+  function snapshotPublishPayload(payload: PublishPayload): PublishPayload {
+    return JSON.parse(JSON.stringify(payload)) as PublishPayload;
+  }
+
+  function idempotencyKeyForPayload(payload: PublishPayload): {
+    idempotencyKey: string;
+    startedNewAttempt: boolean;
+  } {
+    const startedNewAttempt =
+      activeAiPublishPayloadSnapshot !== null && !publishPayloadMatchesActiveAttempt(payload);
+    if (startedNewAttempt) {
+      resetPublishAttempt();
+    }
+    if (!activeAiPublishIdempotencyKey) {
+      activeAiPublishIdempotencyKey = (
+        options.createIdempotencyKey || createPublishIdempotencyKey
+      )();
+      activeAiPublishPayloadSnapshot = snapshotPublishPayload(payload);
+    }
+    return { idempotencyKey: activeAiPublishIdempotencyKey, startedNewAttempt };
+  }
+
+  function resetPublishAttempt() {
+    activeAiPublishIdempotencyKey = "";
+    activeAiPublishPayloadSnapshot = null;
+    activeAiPublishHasPartialResult = false;
+  }
+
+  function clearPublishResult() {
+    options.successMessage.value = "";
+    if (options.actionablePreview) {
+      options.actionablePreview.value = null;
+    }
+    options.lastTid.value = null;
   }
 
   function validateEventFields(): string {
@@ -267,16 +328,18 @@ export function usePublishSubmit(options: {
       validateMerchantFields() ||
       validateTradeFields();
     options.errorMessage.value = validation;
-    options.successMessage.value = "";
-    if (options.actionablePreview) {
-      options.actionablePreview.value = null;
+    if (!activeAiPublishHasPartialResult) {
+      clearPublishResult();
     }
-    options.lastTid.value = null;
     if (validation || options.publishing.value) return;
 
     options.publishing.value = true;
     try {
       if (options.postType?.value === "event") {
+        if (activeAiPublishHasPartialResult) {
+          resetPublishAttempt();
+          clearPublishResult();
+        }
         await submitEvent();
         return;
       }
@@ -307,7 +370,7 @@ export function usePublishSubmit(options: {
         // remains unchanged.
         llmInferredKind: options.llmInferredKind?.value ?? null,
       });
-      const payload = buildPublishPayload({
+      const publishPayload = buildPublishPayload({
         imageUrls: options.uploadedImageUrls.value,
         title: options.title.value,
         body: options.body.value,
@@ -327,6 +390,14 @@ export function usePublishSubmit(options: {
         ...(merchant ? { merchant } : {}),
         ...(trade ? { trade } : {}),
       });
+      const { idempotencyKey, startedNewAttempt } = idempotencyKeyForPayload(publishPayload);
+      if (startedNewAttempt) {
+        clearPublishResult();
+      }
+      const payload = {
+        ...publishPayload,
+        idempotencyKey,
+      };
       const response = await publishPost(payload);
       const submittedActionablePreview = createPublishActionablePostPreview({
         kind,
@@ -342,12 +413,23 @@ export function usePublishSubmit(options: {
       });
       options.lastTid.value = response.tid || null;
       const boundPlaceName = placeNameFromResponse(response) || publishedLocationLabel;
-      options.successMessage.value =
-        boundPlaceName && boundPlaceName !== PUBLISH_LOCATION_UNBOUND
+      const metadataPending =
+        response.partial === true || response.status === "published_metadata_pending";
+      const metadataRetryAvailable = metadataPending && response.recoverable === true;
+      options.successMessage.value = metadataPending
+        ? metadataRetryAvailable
+          ? PUBLISH_SUCCESS_METADATA_RETRY
+          : PUBLISH_SUCCESS_METADATA_PENDING
+        : boundPlaceName && boundPlaceName !== PUBLISH_LOCATION_UNBOUND
           ? PUBLISH_SUCCESS_BOUND.replace("{n}", boundPlaceName)
           : PUBLISH_SUCCESS;
       hapticSuccess();
-      options.resetForm();
+      if (metadataRetryAvailable) {
+        activeAiPublishHasPartialResult = true;
+      } else {
+        resetPublishAttempt();
+        options.resetForm();
+      }
       if (options.actionablePreview) {
         options.actionablePreview.value = submittedActionablePreview;
       }
@@ -359,5 +441,5 @@ export function usePublishSubmit(options: {
     }
   }
 
-  return { postDetailUrl, submitPublish };
+  return { postDetailUrl, resetPublishAttempt, submitPublish };
 }

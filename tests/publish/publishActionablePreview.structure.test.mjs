@@ -89,7 +89,7 @@ test("publish success threads front-end-only actionable post structure into prev
   );
   assert.match(
     submitSrc,
-    /const submittedActionablePreview = createPublishActionablePostPreview\([\s\S]*?kind,[\s\S]*?locationArea: payload\.metadata\.locationArea \|\| ""[\s\S]*?options\.resetForm\(\);\n\s*if \(options\.actionablePreview\) \{\n\s*options\.actionablePreview\.value = submittedActionablePreview/,
+    /const submittedActionablePreview = createPublishActionablePostPreview\([\s\S]*?kind,[\s\S]*?locationArea: payload\.metadata\.locationArea \|\| ""[\s\S]*?if \(metadataRetryAvailable\) \{[\s\S]*?\} else \{[\s\S]*?options\.resetForm\(\);\n\s*\}\n\s*if \(options\.actionablePreview\) \{\n\s*options\.actionablePreview\.value = submittedActionablePreview/,
   );
   assert.match(
     viewSrc,

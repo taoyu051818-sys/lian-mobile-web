@@ -198,6 +198,7 @@ const { draftNotice, hasUnsavedDraft, currentScope } = usePublishDraftSession({
 });
 
 function clearPublishState() {
+  resetPublishAttempt();
   draft.resetForm(locationOptions.clearLocationState);
   actionablePreview.value = null;
   eventDraft.reset();
@@ -206,7 +207,7 @@ function clearPublishState() {
   resetConfirmationVisible.value = false;
 }
 
-const { postDetailUrl, submitPublish } = usePublishSubmit({
+const { postDetailUrl, resetPublishAttempt, submitPublish } = usePublishSubmit({
   title: draft.title,
   body: draft.body,
   tagInput: draft.tagInput,
