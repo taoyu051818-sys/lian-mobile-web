@@ -1,15 +1,14 @@
 /**
  * Apple-style gesture E2E tests.
  *
- * Verifies the gesture composables and their integration:
+ * Verifies the active gesture implementations and their integration:
  * - Pull-to-refresh on FeedView
  * - Long press context menu on feed cards
  * - Reduced motion support for all gestures
  *
  * Implementation references:
- *   - src/composables/useSwipeGesture.ts
  *   - src/composables/usePullToRefresh.ts
- *   - src/composables/useLongPress.ts
+ *   - src/features/feed/useCardPointerInteraction.ts
  *   - src/features/feed/FeedView.vue
  *   - src/features/feed/FeedItemCard.vue
  *   - src/features/feed/FeedContextMenu.vue

@@ -4,11 +4,18 @@
 // once at the App level and Teleports to <body> so it cannot collide with
 // AppShell layout, ShellChrome transitions, or any single page's mount
 // lifecycle. See issue #636.
-import { onBeforeUnmount, watch } from "vue";
+import { defineAsyncComponent, onBeforeUnmount, watch } from "vue";
 import { useDetailNavigation } from "./detail-navigation";
 import { useFloatingChromeState } from "../shell/floatingChromeState";
-import { PostDetailPanel } from "../features/detail";
 import { POST_DETAIL_DIALOG_LABEL } from "../config/brand";
+
+// The detail surface stays resident so it can own the navigation FSM, but its
+// sizeable rendering tree is only needed after a post is opened. Keeping the
+// async boundary inside the existing v-if avoids downloading that tree during
+// the feed's cold start without changing the overlay's single-owner contract.
+const PostDetailPanel = defineAsyncComponent(
+  () => import("../features/detail/PostDetailPanel.vue"),
+);
 
 const detail = useDetailNavigation();
 const { setDetailPhase } = useFloatingChromeState();
