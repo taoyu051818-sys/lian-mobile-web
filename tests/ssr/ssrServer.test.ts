@@ -68,7 +68,7 @@ describe("ssr http service", () => {
     }
   });
 
-  it("GET /post/:tid renders 200 HTML containing OG meta when ps responds", async () => {
+  it("GET /post/:tid with query renders 200 HTML containing canonical OG meta", async () => {
     psHandler = (req, res) => {
       if (!req.url?.startsWith("/api/posts/115/share-card")) {
         res.statusCode = 404;
@@ -100,13 +100,17 @@ describe("ssr http service", () => {
     const port = (ssr.address() as AddressInfo).port;
 
     try {
-      const response = await fetch(`http://127.0.0.1:${port}/post/115`);
+      const response = await fetch(
+        `http://127.0.0.1:${port}/post/115?utm_source=share&campaign=%E6%A0%A1%E5%9B%AD`,
+      );
       expect(response.status).toBe(200);
       expect(response.headers.get("content-type")).toContain("text/html");
       const body = await response.text();
       expect(body).toContain("og:image");
       expect(body).toContain("https://cdn.example/coffee.jpg");
       expect(body).toContain("<title>校园咖啡今日特惠</title>");
+      expect(body).toContain('<link rel="canonical" href="https://lian.example/post/115">');
+      expect(body).not.toContain("utm_source");
       expect(body).toContain('"/#/post/115"');
     } finally {
       await stopServer(ssr);

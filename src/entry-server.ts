@@ -42,6 +42,7 @@ const DEFAULT_IMAGE_HEIGHT = 630;
 
 const POST_ROUTE = /^\/post\/(\d+)$/;
 const PROFILE_ROUTE = /^\/u\/[^/]+$/;
+const SSR_URL_BASE = "http://lian.ssr.invalid";
 
 export interface RenderResult {
   html: string;
@@ -80,16 +81,30 @@ export class SsrUpstreamError extends Error {
 }
 
 /**
+ * Extract the route-bearing part of an incoming origin-form or absolute URL.
+ * Query and hash data never participate in route selection. Keep WHATWG URL's
+ * encoded pathname as-is so percent-encoded separators cannot change segments.
+ */
+export function resolveSsrPathname(url: string): string {
+  try {
+    return new URL(url, SSR_URL_BASE).pathname;
+  } catch {
+    return "/";
+  }
+}
+
+/**
  * Resolve the route to a renderer. Phase 1.2 ships three classes:
  * post detail (live ps fetch), profile stub (no fetch — phase 1.5),
  * homepage / fallback (no fetch).
  */
 export async function render(url: string): Promise<RenderResult> {
-  const postMatch = POST_ROUTE.exec(url);
+  const pathname = resolveSsrPathname(url);
+  const postMatch = POST_ROUTE.exec(pathname);
   if (postMatch) {
     return renderPostRoute(Number(postMatch[1]));
   }
-  if (PROFILE_ROUTE.test(url)) {
+  if (PROFILE_ROUTE.test(pathname)) {
     return renderProfileStub();
   }
   return renderHomepageShell();
