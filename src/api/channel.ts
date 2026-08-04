@@ -136,11 +136,16 @@ export function normalizeChannelResponse(
   };
 }
 
-export async function fetchChannelMessages(offset = 0, limit = 30): Promise<ChannelResponse> {
+export async function fetchChannelMessages(
+  offset = 0,
+  limit = 30,
+  visibility?: AudienceVisibility,
+): Promise<ChannelResponse> {
   const params = new URLSearchParams();
   const requestedOffset = Math.max(0, offset);
   params.set("limit", String(limit));
   params.set("offset", String(requestedOffset));
+  if (visibility) params.set("visibility", visibility);
   const response = await apiGet<ChannelResponse>(`/api/channel?${params.toString()}`);
   return normalizeChannelResponse(response, requestedOffset);
 }
