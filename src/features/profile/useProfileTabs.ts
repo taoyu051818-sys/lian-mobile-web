@@ -43,6 +43,7 @@ export function useProfileTabs(options: {
   // "posts"; switching to other tabs leaves the value untouched so a return
   // to posts restores the previous chip selection.
   const postsContentFilter = ref<ProfilePostsContentFilter>("all");
+  let requestGeneration = 0;
 
   const tabs: Array<{ key: ProfileTabKey; label: string; empty: string }> = [
     { key: "history", label: PROFILE_TAB_HISTORY, empty: EMPTY_HISTORY },
@@ -99,6 +100,7 @@ export function useProfileTabs(options: {
   }
 
   async function loadProfileList(tab: ProfileTabKey) {
+    const generation = ++requestGeneration;
     activeTab.value = tab;
     // Errand orders tab is rendered by ProfileErrandOrdersBlock, which has
     // its own fetch (fetchMyErrandOrders / `useMyErrandOrders`). Short-
@@ -120,8 +122,10 @@ export function useProfileTabs(options: {
         tab === "history" ? readHistoryIds() : [],
         tab === "posts" ? postsContentFilter.value : "all",
       );
+      if (generation !== requestGeneration) return;
       profileItems.value = response.items || [];
     } catch (error) {
+      if (generation !== requestGeneration) return;
       if (isMissingSessionError(error)) {
         enterGuestState();
       } else {
@@ -132,7 +136,9 @@ export function useProfileTabs(options: {
         profileItems.value = [];
       }
     } finally {
-      listLoading.value = false;
+      // Only the latest request owns the shared loading state. An older
+      // response may finish first, but it must not hide the current spinner.
+      if (generation === requestGeneration) listLoading.value = false;
     }
   }
 
@@ -149,8 +155,10 @@ export function useProfileTabs(options: {
   }
 
   function resetList() {
+    requestGeneration += 1;
     profileItems.value = [];
     listError.value = "";
+    listLoading.value = false;
   }
 
   return {
