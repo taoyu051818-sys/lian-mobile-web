@@ -69,11 +69,12 @@ test("useChannelMessages merges paginated results through the shared chronologic
 
 // --- notification pagination ---
 
-test("normalizeNotificationResponse preserves explicit nextOffset=0 and falls back from requested offset", () => {
+test("normalizeNotificationResponse preserves explicit nextOffset and advances nested LIAN pages by lianCount", () => {
   assert.match(
     notificationsApiSource,
-    /nextOffset:\s*response\.nextOffset \?\? Math\.max\(0,\s*requestedOffset\) \+ rawItems\.length/,
+    /response\.nextOffset \?\?[\s\S]*paginationOffset \+ lianCount/,
   );
+  assert.match(notificationsApiSource, /response\.hasMore \?\? pagination\?\.lianHasMore/);
 });
 
 test("fetchNotifications requests limit and offset query parameters", () => {
@@ -91,12 +92,16 @@ test("useNotifications tracks hasMore and loads additional pages from the curren
   assert.match(notificationsSource, /const notificationOffset = ref\(0\)/);
   assert.match(
     notificationsSource,
-    /fetchNotifications\(\s*reset \? 0 : notificationOffset\.value,\s*NOTIFICATION_PAGE_SIZE,\s*\)/,
+    /const requestedOffset = reset \? 0 : notificationOffset\.value/,
+  );
+  assert.match(
+    notificationsSource,
+    /fetchNotifications\(requestedOffset, NOTIFICATION_PAGE_SIZE\)/,
   );
   assert.match(notificationsSource, /notificationHasMore\.value = Boolean\(response\.hasMore\)/);
   assert.match(
     notificationsSource,
-    /notificationOffset\.value = response\.nextOffset \?\? notificationItems\.value\.length/,
+    /notificationOffset\.value = response\.nextOffset \?\? requestedOffset \+ nextItems\.length/,
   );
   assert.match(notificationsSource, /if \(!notificationHasMore\.value\) return/);
   assert.match(notificationsSource, /await loadNotifications\(false\)/);
@@ -123,6 +128,12 @@ test("useNotifications preserves local read marks across paginated merges", () =
     /applyLocalReadMarks\(response\.items \|\| \[\], locallyReadNotificationIds\)/,
   );
   assert.match(notificationsSource, /current\?\.read \? \{ \.\.\.item, read: true \} : item/);
+});
+
+test("useNotifications fingerprints id-less repeated rows instead of appending them forever", () => {
+  assert.match(notificationsSource, /function notificationMergeKey\(item: NotificationItem\)/);
+  assert.match(notificationsSource, /merged\.set\(notificationMergeKey\(item\), item\)/);
+  assert.match(notificationsSource, /return `fallback:\$\{JSON\.stringify\(/);
 });
 
 test("pure JS: explicit nextOffset=0 is preserved", () => {

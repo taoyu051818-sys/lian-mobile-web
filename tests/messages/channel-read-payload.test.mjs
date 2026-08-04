@@ -83,33 +83,34 @@ test("useChannelMessages calls markChannelMessagesRead only on reset loads", () 
 
 // --- notification read-on-open wiring ---
 
-test("types/messages.ts defines NotificationReadPayload with eventIds", () => {
-  assert.match(typesSource, /export interface NotificationReadPayload/);
-  assert.match(typesSource, /eventIds: Array<string \| number>/);
-});
-
-test("api/notifications.ts posts notification read state to the messages read endpoint", () => {
-  assert.match(notificationsApiSource, /export function buildNotificationReadPayload/);
-  assert.match(notificationsApiSource, /return \{ eventIds: notificationIds \}/);
+test("api/notifications.ts posts notification read state to the existing per-id endpoint", () => {
   assert.match(notificationsApiSource, /if \(!notificationIds\.length\) return/);
-  assert.match(notificationsApiSource, /apiSend\("\/api\/messages\/read"/);
-  assert.match(notificationsApiSource, /body: JSON\.stringify\(payload\)/);
+  assert.match(notificationsApiSource, /`\/api\/notifications\/\$\{normalizedId\}\/read`/);
+  assert.match(notificationsApiSource, /apiSend\(notificationReadPath\(notificationId\)/);
+  assert.doesNotMatch(notificationsApiSource, /apiSend\("\/api\/messages\/read"/);
 });
 
 test("api/notifications.ts treats missing read flags as already read", () => {
   assert.match(notificationsApiSource, /read:\s*raw\.read \?\? true/);
 });
 
-test("useNotifications marks unread opened notifications locally before safe read POST fallback", () => {
+test("useNotifications marks unread notifications locally and explicitly rolls back a failed POST", () => {
   const localIdx = notificationsSource.indexOf("markNotificationReadLocally(item.id)");
-  const postIdx = notificationsSource.indexOf("markNotificationsRead([item.id]).catch(() => {})");
+  const postIdx = notificationsSource.indexOf(
+    "markNotificationsRead([item.id]).catch((error) => {",
+  );
+  const rollbackIdx = notificationsSource.indexOf(
+    "locallyReadNotificationIds.delete(String(item.id))",
+  );
   assert.match(
     notificationsSource,
     /if \(item\.read \|\| item\.id === undefined \|\| item\.id === null\) return/,
   );
   assert.ok(localIdx >= 0, "opened unread notifications should be marked read locally");
-  assert.ok(postIdx >= 0, "opened unread notifications should post read state with safe fallback");
+  assert.ok(postIdx >= 0, "opened unread notifications should post read state");
+  assert.ok(rollbackIdx >= 0, "failed read mutations should roll back the local read mark");
   assert.ok(localIdx < postIdx, "local read mark should not wait for the backend POST");
+  assert.ok(postIdx < rollbackIdx, "rollback should run from the POST failure handler");
 });
 
 // --- nextOffset=0 semantics (pure JS logic) ---

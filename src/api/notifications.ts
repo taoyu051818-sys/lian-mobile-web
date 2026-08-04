@@ -45,7 +45,6 @@ import {
 import type {
   NotificationItem,
   NotificationKind,
-  NotificationReadPayload,
   NotificationResponse,
   NotificationTarget,
 } from "../types/messages";
@@ -84,6 +83,12 @@ interface RawNotificationResponse {
   notifications?: RawNotificationItem[];
   hasMore?: boolean;
   nextOffset?: number;
+  pagination?: {
+    limit?: number;
+    offset?: number;
+    lianCount?: number;
+    lianHasMore?: boolean;
+  };
 }
 
 const REPLY_NOTIFICATION_TYPES = ["reply", "post-reply", "new-reply", "new-post", "comment"];
@@ -653,10 +658,24 @@ export function normalizeNotificationResponse(
 ): NotificationResponse {
   const rawItems =
     "notifications" in response ? response.notifications || [] : response.items || [];
+  const pagination = "pagination" in response ? response.pagination : undefined;
+  const normalizedRequestedOffset = Math.max(0, requestedOffset);
+  const paginationOffset =
+    typeof pagination?.offset === "number" && Number.isFinite(pagination.offset)
+      ? Math.max(0, Math.trunc(pagination.offset))
+      : normalizedRequestedOffset;
+  const lianCount =
+    typeof pagination?.lianCount === "number" && Number.isFinite(pagination.lianCount)
+      ? Math.max(0, Math.trunc(pagination.lianCount))
+      : rawItems.length;
+  const hasMore = response.hasMore ?? pagination?.lianHasMore;
   return {
     ...response,
     items: rawItems.map((item) => normalizeNotificationItem(item as RawNotificationItem)),
-    nextOffset: response.nextOffset ?? Math.max(0, requestedOffset) + rawItems.length,
+    ...(hasMore === undefined ? {} : { hasMore }),
+    nextOffset:
+      response.nextOffset ??
+      (pagination ? paginationOffset + lianCount : normalizedRequestedOffset + rawItems.length),
   };
 }
 
@@ -669,19 +688,20 @@ export async function fetchNotifications(offset = 0, limit = 30): Promise<Notifi
   return normalizeNotificationResponse(response, requestedOffset);
 }
 
-export function buildNotificationReadPayload(
-  notificationIds: Array<string | number>,
-): NotificationReadPayload {
-  return { eventIds: notificationIds };
+function notificationReadPath(notificationId: string | number): string {
+  const normalizedId = String(notificationId);
+  if (!/^[A-Za-z0-9:._-]+$/.test(normalizedId)) {
+    throw new Error("通知缺少可用于更新已读状态的 ID。");
+  }
+  return `/api/notifications/${normalizedId}/read`;
 }
 
 export async function markNotificationsRead(
   notificationIds: Array<string | number>,
 ): Promise<void> {
   if (!notificationIds.length) return;
-  const payload = buildNotificationReadPayload(notificationIds);
-  await apiSend("/api/messages/read", {
-    method: "POST",
-    body: JSON.stringify(payload),
-  });
+  const uniqueIds = [...new Map(notificationIds.map((id) => [String(id), id])).values()];
+  for (const notificationId of uniqueIds) {
+    await apiSend(notificationReadPath(notificationId), { method: "POST" });
+  }
 }

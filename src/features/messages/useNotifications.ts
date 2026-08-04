@@ -28,21 +28,36 @@ export function mergeNotificationItems(
   existing: NotificationItem[],
   incoming: NotificationItem[],
 ): NotificationItem[] {
-  const merged = new Map<string | number, NotificationItem>();
+  const merged = new Map<string, NotificationItem>();
   for (const item of existing) {
-    if (item.id === undefined || item.id === null) continue;
-    merged.set(item.id, item);
+    merged.set(notificationMergeKey(item), item);
   }
-  const itemsWithoutIds = existing.filter((item) => item.id === undefined || item.id === null);
   for (const item of incoming) {
-    if (item.id === undefined || item.id === null) {
-      itemsWithoutIds.push(item);
-      continue;
-    }
-    const current = merged.get(item.id);
-    merged.set(item.id, current?.read ? { ...item, read: true } : item);
+    const key = notificationMergeKey(item);
+    const current = merged.get(key);
+    merged.set(key, current?.read ? { ...item, read: true } : item);
   }
-  return [...merged.values(), ...itemsWithoutIds];
+  return [...merged.values()];
+}
+
+function notificationMergeKey(item: NotificationItem): string {
+  if (item.id !== undefined && item.id !== null && String(item.id)) {
+    return `id:${String(item.id)}`;
+  }
+  // NodeBB notifications are appended to every LIAN page and some legacy
+  // rows do not carry ids. A stable content fingerprint prevents an exact
+  // repeat from accumulating while still keeping rows with distinct targets.
+  return `fallback:${JSON.stringify([
+    item.type,
+    item.kind,
+    item.tid,
+    item.title,
+    item.excerpt,
+    item.timestampISO,
+    item.time,
+    item.actor?.id,
+    item.target,
+  ])}`;
 }
 
 function applyLocalReadMarks(
@@ -77,16 +92,14 @@ export function useNotifications() {
     }
 
     try {
-      const response = await fetchNotifications(
-        reset ? 0 : notificationOffset.value,
-        NOTIFICATION_PAGE_SIZE,
-      );
+      const requestedOffset = reset ? 0 : notificationOffset.value;
+      const response = await fetchNotifications(requestedOffset, NOTIFICATION_PAGE_SIZE);
       const nextItems = applyLocalReadMarks(response.items || [], locallyReadNotificationIds);
       notificationItems.value = reset
-        ? nextItems
+        ? mergeNotificationItems([], nextItems)
         : mergeNotificationItems(notificationItems.value, nextItems);
       notificationHasMore.value = Boolean(response.hasMore);
-      notificationOffset.value = response.nextOffset ?? notificationItems.value.length;
+      notificationOffset.value = response.nextOffset ?? requestedOffset + nextItems.length;
     } catch (error) {
       notificationLastFailedReset.value = reset;
       // Fail-loud (#828): preserve the diagnostic in console.error so the
@@ -120,7 +133,19 @@ export function useNotifications() {
   function openNotification(item: NotificationItem) {
     if (item.read || item.id === undefined || item.id === null) return;
     markNotificationReadLocally(item.id);
-    void markNotificationsRead([item.id]).catch(() => {});
+    void markNotificationsRead([item.id]).catch((error) => {
+      // Keep the optimistic update only when the backend accepts it. Rolling
+      // back makes the row retryable instead of hiding a failed mutation until
+      // the next full refresh.
+      locallyReadNotificationIds.delete(String(item.id));
+      notificationItems.value = notificationItems.value.map((entry) =>
+        String(entry.id) === String(item.id) ? { ...entry, read: false } : entry,
+      );
+      // Read failures are independent from inbox-fetch state, but must remain
+      // observable for diagnostics.
+      // eslint-disable-next-line no-console -- explicit mark-read failure handling
+      console.error("notification mark-read failed", error);
+    });
   }
 
   return {
