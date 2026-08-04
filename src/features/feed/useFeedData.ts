@@ -17,6 +17,7 @@ export function useFeedData(options: { detailOpen: () => boolean; closeDetail: (
   const loadingMore = ref(false);
   const errorMessage = ref("");
   const selectedVisibilities = ref<Set<AudienceVisibility>>(new Set());
+  let requestGeneration = 0;
 
   const isEmpty = computed(() => !loading.value && !errorMessage.value && items.value.length === 0);
   const canAutoLoadMore = computed(
@@ -24,12 +25,16 @@ export function useFeedData(options: { detailOpen: () => boolean; closeDetail: (
   );
 
   async function loadFeed(reset = false) {
-    if (loading.value || loadingMore.value) return;
+    // A reset represents a new tab/filter context, so it must be allowed to
+    // supersede an in-flight request. Pagination remains single-flight.
+    if (!reset && (loading.value || loadingMore.value)) return;
     if (!reset && !hasMore.value) return;
 
+    const generation = ++requestGeneration;
     errorMessage.value = "";
     if (reset) {
       loading.value = true;
+      loadingMore.value = false;
       page.value = 1;
       hasMore.value = true;
     } else {
@@ -48,17 +53,23 @@ export function useFeedData(options: { detailOpen: () => boolean; closeDetail: (
         visibility: visibilityArray,
       });
 
+      if (generation !== requestGeneration) return;
       tabs.value = response.tabs.length ? response.tabs : DEFAULT_TABS;
       const nextItems = response.items || [];
       items.value = reset ? nextItems : [...items.value, ...nextItems];
       hasMore.value = Boolean(response.hasMore);
       page.value = response.nextPage || (reset ? 2 : page.value + 1);
     } catch (error) {
+      if (generation !== requestGeneration) return;
       errorMessage.value = error instanceof Error ? error.message : ERROR_LOAD_GENERIC;
       if (reset) items.value = [];
     } finally {
-      loading.value = false;
-      loadingMore.value = false;
+      // A superseded request must not clear the loading flag owned by the
+      // latest request; otherwise the list flashes stale content mid-load.
+      if (generation === requestGeneration) {
+        if (reset) loading.value = false;
+        else loadingMore.value = false;
+      }
     }
   }
 
