@@ -60,6 +60,9 @@ export const PUBLISH_IMAGE_READY = "已准备";
 export const PUBLISH_IMAGE_COUNT_SUFFIX = "张";
 export const PUBLISH_SUCCESS = "发布成功，稍后可以在首页看到。";
 export const PUBLISH_SUCCESS_BOUND = "发布成功，已绑定到「{n}」。";
+export const PUBLISH_SUCCESS_METADATA_PENDING = "帖子已发布，部分详情尚未同步，可先查看帖子。";
+export const PUBLISH_SUCCESS_METADATA_RETRY =
+  "帖子已发布，部分详情尚未同步；可再次点击发布补全，或先查看帖子。";
 export const PUBLISH_VIEW_POST = "查看帖子";
 
 /** 发布 composer UI */

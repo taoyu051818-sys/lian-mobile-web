@@ -93,6 +93,12 @@ export interface PublishActionablePostPreview {
 }
 
 export interface PublishPayload {
+  /**
+   * Random key scoped to one logical AI publish attempt. The caller keeps it
+   * stable across ambiguous network retries and replaces it only after that
+   * attempt finishes or is explicitly abandoned.
+   */
+  idempotencyKey?: string;
   imageUrl: string;
   imageUrls: string[];
   title: string;
@@ -163,7 +169,13 @@ export interface PublishPayload {
 }
 
 export interface PublishResponse {
+  ok?: boolean;
+  status?: "published" | "published_metadata_pending";
   tid?: string | number;
+  url?: string;
+  partial?: boolean;
+  recoverable?: boolean;
+  recordId?: string;
   place?: PlaceRef;
 }
 
