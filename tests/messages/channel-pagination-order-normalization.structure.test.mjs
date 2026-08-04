@@ -67,6 +67,20 @@ test("useChannelMessages merges paginated results through the shared chronologic
   );
 });
 
+test("MessagesView reloads the channel when the visibility filter changes", () => {
+  assert.match(viewSource, /setChannelVisibilityFilter/);
+  assert.match(
+    viewSource,
+    /setChannelVisibilityFilter\(visibility === "all" \? undefined : visibility\)/,
+  );
+  assert.doesNotMatch(viewSource, /TODO: Trigger channel reload with visibility filter/);
+});
+
+test("channel loads guard response commits with the current request generation", () => {
+  assert.match(channelSource, /channelLoadGeneration/);
+  assert.match(channelSource, /isCurrentChannelLoad\(generation, visibility\)/);
+});
+
 // --- notification pagination ---
 
 test("normalizeNotificationResponse preserves explicit nextOffset=0 and falls back from requested offset", () => {

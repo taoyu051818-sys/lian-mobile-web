@@ -37,6 +37,7 @@ const {
   channelError,
   channelHasMore,
   loadChannel,
+  setChannelVisibilityFilter,
   sendMessage,
   retryMessage: channelRetryMessage,
 } = useChannelMessages();
@@ -149,8 +150,9 @@ function handleFilterStateChange(state: FilterState) {
 
 /** Handle visibility selection changes */
 function handleVisibilityChange(visibility: AudienceVisibility | "all") {
+  if (visibility === selectedVisibility.value) return;
   selectedVisibility.value = visibility;
-  // TODO: Trigger channel reload with visibility filter when API supports it
+  void setChannelVisibilityFilter(visibility === "all" ? undefined : visibility);
 }
 
 /** Handle category/tab selection changes */

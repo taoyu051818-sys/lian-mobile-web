@@ -16,6 +16,7 @@ import type { AudienceVisibility } from "../../types/audience";
 const SCROLL_BOTTOM_THRESHOLD = 120;
 const REPLACE_RETRY_LIMIT = 2;
 const REPLACE_RETRY_DELAY_MS = 1200;
+const CHANNEL_PAGE_SIZE = 30;
 
 export function useChannelMessages() {
   const channelItems = ref<ChannelMessage[]>([]);
@@ -23,7 +24,13 @@ export function useChannelMessages() {
   const channelError = ref("");
   const channelHasMore = ref(false);
   const channelOffset = ref(0);
+  const channelVisibilityFilter = ref<AudienceVisibility>();
   const isNearBottom = ref(true);
+  let channelLoadGeneration = 0;
+
+  function isCurrentChannelLoad(generation: number, visibility?: AudienceVisibility) {
+    return generation === channelLoadGeneration && visibility === channelVisibilityFilter.value;
+  }
 
   function messageText(item: ChannelMessage) {
     return item.plainText || item.content || MESSAGE_EMPTY_CONTENT;
@@ -48,8 +55,19 @@ export function useChannelMessages() {
     channelItems.value = updated;
   }
 
-  async function loadChannel(reset = true) {
-    if (channelLoading.value) return;
+  async function loadChannel(reset = true, visibility = channelVisibilityFilter.value) {
+    if (!reset && channelLoading.value) return;
+
+    const generation = reset ? ++channelLoadGeneration : channelLoadGeneration;
+    const requestedOffset = reset ? 0 : channelOffset.value;
+
+    if (reset) {
+      channelVisibilityFilter.value = visibility;
+      channelItems.value = [];
+      channelOffset.value = 0;
+      channelHasMore.value = false;
+    }
+
     channelLoading.value = true;
     channelError.value = "";
 
@@ -60,13 +78,10 @@ export function useChannelMessages() {
       prevScrollTop = window.scrollY;
     }
 
-    if (reset) {
-      channelItems.value = [];
-      channelOffset.value = 0;
-    }
-
     try {
-      const response = await fetchChannelMessages(reset ? 0 : channelOffset.value, 30);
+      const response = await fetchChannelMessages(requestedOffset, CHANNEL_PAGE_SIZE, visibility);
+      if (!isCurrentChannelLoad(generation, visibility)) return;
+
       const nextItems = response.items || [];
       channelItems.value = reset
         ? nextItems
@@ -76,6 +91,7 @@ export function useChannelMessages() {
 
       if (!reset) {
         await nextTick();
+        if (!isCurrentChannelLoad(generation, visibility)) return;
         const delta = document.documentElement.scrollHeight - prevScrollHeight;
         if (delta > 0) {
           window.scrollTo(0, prevScrollTop + delta);
@@ -86,18 +102,33 @@ export function useChannelMessages() {
         const ids = channelItems.value.map((item) => item.id);
         markChannelMessagesRead(ids).catch(() => {});
         await scrollToBottom();
+        if (!isCurrentChannelLoad(generation, visibility)) return;
       }
       checkNearBottom();
     } catch (error) {
+      if (!isCurrentChannelLoad(generation, visibility)) return;
       channelError.value = extractErrorMessage(error, ERROR_LOAD_CHANNEL);
     } finally {
-      channelLoading.value = false;
+      if (isCurrentChannelLoad(generation, visibility)) {
+        channelLoading.value = false;
+      }
     }
   }
 
+  async function setChannelVisibilityFilter(visibility?: AudienceVisibility) {
+    if (visibility === channelVisibilityFilter.value) return;
+    await loadChannel(true, visibility);
+  }
+
   async function replacePendingWithLatest(pendingId: string, retriesLeft = REPLACE_RETRY_LIMIT) {
+    if (!channelItems.value.some((item) => String(item.id) === pendingId)) return;
+
+    const generation = channelLoadGeneration;
+    const visibility = channelVisibilityFilter.value;
     try {
-      const response = await fetchChannelMessages(0, 30);
+      const response = await fetchChannelMessages(0, CHANNEL_PAGE_SIZE, visibility);
+      if (!isCurrentChannelLoad(generation, visibility)) return;
+
       const latestItems = response.items || [];
       const pendingItem = channelItems.value.find((item) => String(item.id) === pendingId);
       const pendingContent = pendingItem?.content || "";
@@ -136,6 +167,7 @@ export function useChannelMessages() {
         });
       } else if (retriesLeft > 0) {
         await new Promise((r) => setTimeout(r, REPLACE_RETRY_DELAY_MS));
+        if (!isCurrentChannelLoad(generation, visibility)) return;
         await replacePendingWithLatest(pendingId, retriesLeft - 1);
         return;
       } else {
@@ -144,6 +176,7 @@ export function useChannelMessages() {
 
       if (isNearBottom.value) await scrollToBottom();
     } catch {
+      if (!isCurrentChannelLoad(generation, visibility)) return;
       resolvePendingState(pendingId, "failed");
     }
   }
@@ -223,9 +256,11 @@ export function useChannelMessages() {
     channelLoading,
     channelError,
     channelHasMore,
+    channelVisibilityFilter,
     isNearBottom,
     messageText,
     loadChannel,
+    setChannelVisibilityFilter,
     replacePendingWithLatest,
     resolvePendingState,
     sendMessage,
