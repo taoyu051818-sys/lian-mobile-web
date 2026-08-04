@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { render } from "../../src/entry-server";
+import { render, resolveSsrPathname } from "../../src/entry-server";
 
 /**
  * Phase 1.2 of docs/architecture/SSR_PWA_RFC_2026_05_23.md.
@@ -96,6 +96,22 @@ describe("entry-server.render", () => {
       const [calledUrl, init] = fetchMock.mock.calls[0];
       expect(String(calledUrl)).toBe("http://internal.test:9999/api/posts/123/share-card");
       expect(init?.signal).toBeDefined();
+    });
+
+    it("ignores query parameters for route selection and fallback canonical URL", async () => {
+      const fetchMock = vi
+        .fn<typeof fetch>()
+        .mockImplementation(async () => jsonResponse(withCard({ url: "" })));
+      vi.stubGlobal("fetch", fetchMock);
+
+      const clean = await render("/post/123");
+      const tracked = await render("/post/123?utm_source=share&campaign=%E6%A0%A1%E5%9B%AD");
+
+      expect(tracked).toEqual(clean);
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+      expect(tracked.head).toContain('<link rel="canonical" href="/post/123">');
+      expect(tracked.head).toContain('<meta property="og:url" content="/post/123">');
+      expect(tracked.head).not.toContain("utm_source");
     });
 
     it("defaults to 127.0.0.1:3000 when LIAN_PS_INTERNAL_URL is unset", async () => {
@@ -235,6 +251,22 @@ describe("entry-server.render", () => {
       expect(html).toContain("location.replace");
       expect(fetchMock).not.toHaveBeenCalled();
     });
+
+    it("keeps profile query and encoded username routing equivalent to the clean route", async () => {
+      const fetchMock = vi.fn<typeof fetch>();
+      vi.stubGlobal("fetch", fetchMock);
+
+      const clean = await render("/u/alice");
+      const withQuery = await render("/u/alice?tab=posts&utm_source=share");
+      const encoded = await render("/u/%E5%B0%8F%E6%9D%8E?tab=posts");
+
+      expect(resolveSsrPathname("/u/%E5%B0%8F%E6%9D%8E?tab=posts")).toBe("/u/%E5%B0%8F%E6%9D%8E");
+      expect(withQuery).toEqual(clean);
+      expect(encoded).toEqual(clean);
+      expect(withQuery.head).toContain('<link rel="canonical" href="/">');
+      expect(withQuery.head).not.toContain("utm_source");
+      expect(fetchMock).not.toHaveBeenCalled();
+    });
   });
 
   describe("unknown route", () => {
@@ -245,6 +277,21 @@ describe("entry-server.render", () => {
       const { head } = await render("/unknown/path");
 
       expect(head).toContain("LIAN");
+      expect(fetchMock).not.toHaveBeenCalled();
+    });
+
+    it("keeps encoded post ids encoded and safely falls back for malformed URLs", async () => {
+      const fetchMock = vi.fn<typeof fetch>();
+      vi.stubGlobal("fetch", fetchMock);
+
+      expect(resolveSsrPathname("/post/%31%32%33?utm_source=x")).toBe("/post/%31%32%33");
+      expect(resolveSsrPathname("http://[")).toBe("/");
+
+      const encoded = await render("/post/%31%32%33?utm_source=x");
+      const malformed = await render("http://[");
+
+      expect(encoded).toEqual(malformed);
+      expect(encoded.head).toContain('<link rel="canonical" href="/">');
       expect(fetchMock).not.toHaveBeenCalled();
     });
   });
