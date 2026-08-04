@@ -2,6 +2,7 @@ import { defineConfig } from "vite";
 import vue from "@vitejs/plugin-vue";
 import { VitePWA } from "vite-plugin-pwa";
 import { fileURLToPath, URL } from "node:url";
+import type { RouteMatchCallback } from "workbox-core/types";
 
 function parseEnvUrl(raw: string | undefined, label: string): string {
   const value = (raw ?? "").trim().replace(/\/+$/, "");
@@ -15,6 +16,16 @@ const backendBaseUrl = parseEnvUrl(process.env.LIAN_BACKEND_BASE_URL, "LIAN_BACK
   || "http://127.0.0.1:4200";
 const imageProxyBaseUrl = parseEnvUrl(process.env.LIAN_IMAGE_PROXY_BASE_URL, "LIAN_IMAGE_PROXY_BASE_URL")
   || "http://127.0.0.1:4201";
+
+export const pwaNavigationRouteMatch: RouteMatchCallback = ({ request, url, sameOrigin }) =>
+  request.mode === "navigate"
+  && sameOrigin
+  && url.pathname !== "/api"
+  && !url.pathname.startsWith("/api/");
+
+export const pwaImageRouteMatch: RouteMatchCallback = ({ request, url, sameOrigin }) =>
+  request.destination === "image"
+  && (sameOrigin || url.hostname.toLowerCase() === "res.cloudinary.com");
 
 export default defineConfig({
   plugins: [
@@ -44,9 +55,30 @@ export default defineConfig({
           "**/lian-academy*.png",
           "**/*书院*.png",
         ],
-        // Offline fallback: serve offline.html when navigation fails
-        navigateFallback: "/offline.html",
+        // vite-plugin-pwa defaults this to index.html. Disable that generated
+        // NavigationRoute so the NetworkFirst route below handles navigations.
+        navigateFallback: null,
         runtimeCaching: [
+          {
+            // Prefer the live app for navigations. A previously cached page is
+            // used when available; otherwise Workbox reaches the precached
+            // offline page only after both network and runtime cache miss.
+            urlPattern: pwaNavigationRouteMatch,
+            handler: "NetworkFirst",
+            options: {
+              cacheName: "navigation-cache",
+              cacheableResponse: {
+                statuses: [200],
+              },
+              expiration: {
+                maxEntries: 30,
+                maxAgeSeconds: 24 * 60 * 60, // 1 day
+              },
+              precacheFallback: {
+                fallbackURL: "/offline.html",
+              },
+            },
+          },
           // Do not runtime-cache API responses here. LIAN API routes are often
           // user-, session-, or resource-scoped (messages, me/profile, wallet,
           // errands, notifications, channel, admin, AI, upload, publish), and
@@ -81,8 +113,10 @@ export default defineConfig({
             },
           },
           {
-            // Images (local and CDN): CacheFirst with 30-day TTL
-            urlPattern: /\.(?:png|jpg|jpeg|svg|gif|webp)$/i,
+            // Same-origin images and explicitly allowed CDN images. Matching by
+            // request destination also covers transformed CDN URLs without a
+            // file extension.
+            urlPattern: pwaImageRouteMatch,
             handler: "CacheFirst",
             options: {
               cacheName: "image-cache",
@@ -96,8 +130,6 @@ export default defineConfig({
             },
           },
         ],
-        // Keep API requests out of navigation fallback handling too.
-        navigateFallbackDenylist: [/^\/api\//],
       },
     }),
   ],
