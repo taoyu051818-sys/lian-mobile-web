@@ -50,6 +50,7 @@ const ERRAND_STATUSES = new Set<ErrandStatus>([
   "created",
   "paid_locked",
   "assigned",
+  "at_shop",
   "picked_up",
   "delivering",
   "delivered",
@@ -139,8 +140,9 @@ function normalizeErrandOrder(value: unknown): ErrandOrder | null {
     dropoffLocation: dropoff,
     mode,
     status,
-    feeAmount: asNonNegInt(record.feeAmount),
-    lockedBalanceAmount: asNonNegInt(record.lockedBalanceAmount),
+    feePoints: asNonNegInt(record.feePoints ?? record.feeAmount),
+    rewardPoints: asNonNegInt(record.rewardPoints ?? record.rewardAmount),
+    totalLockedPoints: asNonNegInt(record.totalLockedPoints ?? record.lockedBalanceAmount),
     ...(etaSeconds !== undefined ? { etaSeconds } : {}),
     ...(runnerLocation ? { runnerLocation } : {}),
   };
@@ -163,9 +165,14 @@ function normalizeTimelineEvent(value: unknown): ErrandOrderTimelineEvent | null
 
 export function normalizeErrandOrderDetail(value: unknown): ErrandOrderDetail | null {
   const record = asRecord(value);
-  const order = normalizeErrandOrder(record.order ?? record);
+  const orderRecord = asRecord(record.order ?? record);
+  const order = normalizeErrandOrder(orderRecord);
   if (!order) return null;
-  const rawTimeline = Array.isArray(record.timeline) ? record.timeline : [];
+  const rawTimeline = Array.isArray(record.timeline)
+    ? record.timeline
+    : Array.isArray(orderRecord.timeline)
+      ? orderRecord.timeline
+      : [];
   const timeline = rawTimeline
     .map((entry) => normalizeTimelineEvent(entry))
     .filter((entry): entry is ErrandOrderTimelineEvent => entry !== null);
@@ -175,15 +182,16 @@ export function normalizeErrandOrderDetail(value: unknown): ErrandOrderDetail | 
   if (!timeline.length) {
     timeline.push({
       status: order.status,
-      at: asString(record.createdAt),
+      at: asString(record.createdAt) || asString(orderRecord.createdAt),
       actor: "system",
     });
   }
   return {
     order,
     timeline,
-    notes: asString(record.notes),
-    createdAt: asString(record.createdAt) || timeline[0]?.at || "",
+    notes: asString(record.notes) || asString(orderRecord.notes),
+    createdAt:
+      asString(record.createdAt) || asString(orderRecord.createdAt) || timeline[0]?.at || "",
   };
 }
 
@@ -191,7 +199,7 @@ export function normalizeErrandOrderCreateResponse(value: unknown): ErrandOrderC
   const record = asRecord(value);
   const ok = asBoolean(record.ok);
   if (ok) {
-    const detail = normalizeErrandOrderDetail(record.order ?? record);
+    const detail = normalizeErrandOrderDetail(record);
     return detail ? { ok: true, order: detail } : { ok: true };
   }
   const rawReason = asString(record.reason);
@@ -271,7 +279,7 @@ function normalizeErrandOrderSummary(value: unknown): ErrandOrderSummary | null 
     orderId,
     status,
     mode,
-    feeAmount: asNonNegInt(record.feeAmount),
+    feePoints: asNonNegInt(record.feePoints ?? record.feeAmount),
     pickupLabel: pickup?.label || asString(record.pickupLabel),
     dropoffLabel: dropoff?.label || asString(record.dropoffLabel),
     createdAt: asString(record.createdAt),

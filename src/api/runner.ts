@@ -9,6 +9,7 @@ type BackendRunnerOrder = Partial<RunnerOrder> & {
   dropoffLocation?: { label?: string; address?: string; lat?: number; lng?: number };
   feeAmount?: number;
   rewardAmount?: number;
+  lockedBalanceAmount?: number;
   createdAt?: string;
   notes?: string;
 };
@@ -22,9 +23,26 @@ type BackendRunnerOrderList = {
 function normalizeRunnerStatus(value: unknown): RunnerOrder["status"] {
   if (value === "paid_locked" || value === "created") return "available";
   if (value === "assigned") return "accepted";
+  if (value === "at_shop") return "at_shop";
+  // V0.1 pickup auto-advances the backend to `delivering`. The runner UI has
+  // no separate in-transit action, so keep presenting it as the deliverable
+  // `picked_up` state.
   if (value === "delivering") return "picked_up";
   if (value === "picked_up" || value === "delivered" || value === "cancelled") return value;
   return "available";
+}
+
+function normalizeOptionalPoints(...values: unknown[]): number | undefined {
+  for (const value of values) {
+    const amount =
+      typeof value === "number"
+        ? value
+        : typeof value === "string" && value.trim()
+          ? Number(value)
+          : Number.NaN;
+    if (Number.isFinite(amount) && amount >= 0) return Math.trunc(amount);
+  }
+  return undefined;
 }
 
 function normalizeRunnerOrder(value: BackendRunnerOrder): RunnerOrder | null {
@@ -38,7 +56,12 @@ function normalizeRunnerOrder(value: BackendRunnerOrder): RunnerOrder | null {
     summary: source.summary,
     pickup: source.pickup || source.pickupLocation,
     dropoff: source.dropoff || source.dropoffLocation,
-    rewardFen: source.rewardFen ?? source.rewardAmount,
+    feePoints: normalizeOptionalPoints(source.feePoints, source.feeAmount),
+    rewardPoints: normalizeOptionalPoints(source.rewardPoints, source.rewardAmount),
+    totalLockedPoints: normalizeOptionalPoints(
+      source.totalLockedPoints,
+      source.lockedBalanceAmount,
+    ),
     createdAt: source.createdAt,
     note: source.note || source.notes,
   };
@@ -72,7 +95,7 @@ async function transitionRunnerOrder(
   orderId: string,
   action: RunnerTransitionAction,
 ): Promise<RunnerOrder> {
-  const backendAction = action === "at_shop" ? "pickup" : action;
+  const backendAction = action === "at_shop" ? "at-shop" : action;
   const data = await apiSend<BackendRunnerOrder>(
     `/api/errands/orders/${encodeURIComponent(orderId)}/${backendAction}`,
     { method: "POST" },

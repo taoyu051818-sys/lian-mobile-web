@@ -35,6 +35,7 @@ export type ErrandStatus =
   | "created"
   | "paid_locked"
   | "assigned"
+  | "at_shop"
   | "picked_up"
   | "delivering"
   | "delivered"
@@ -59,8 +60,12 @@ export interface ErrandOrder {
   dropoffLocation: PostLocation;
   mode: ErrandMode;
   status: ErrandStatus;
-  feeAmount: number;
-  lockedBalanceAmount: number;
+  /** Service fee charged to the requester, in points. */
+  feePoints: number;
+  /** Reward paid to the runner, in points. */
+  rewardPoints: number;
+  /** Total requester balance locked for this order, in points. */
+  totalLockedPoints: number;
   etaSeconds?: number;
   runnerLocation?: ErrandRunnerLocation;
 }
@@ -180,7 +185,7 @@ export interface ErrandOrderSummary {
   orderId: string;
   status: ErrandStatus;
   mode: ErrandMode;
-  feeAmount: number;
+  feePoints: number;
   pickupLabel: string;
   dropoffLabel: string;
   createdAt: string;

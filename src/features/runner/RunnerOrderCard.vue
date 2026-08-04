@@ -13,6 +13,7 @@ import {
   RUNNER_FIELD_NOTE,
   RUNNER_FIELD_PICKUP,
   RUNNER_FIELD_REWARD,
+  RUNNER_POINTS_SUFFIX,
   RUNNER_STATUS_ACCEPTED,
   RUNNER_STATUS_AT_SHOP,
   RUNNER_STATUS_AVAILABLE,
@@ -47,10 +48,9 @@ const statusLabel = computed(() => STATUS_LABELS[props.order.status] ?? props.or
 const isPending = computed(() => Boolean(props.pendingAction));
 
 const rewardLabel = computed(() => {
-  const fen = props.order.rewardFen;
-  if (typeof fen !== "number" || !Number.isFinite(fen)) return "";
-  const yuan = fen / 100;
-  return `¥${yuan.toFixed(yuan % 1 === 0 ? 0 : 2)}`;
+  const points = props.order.rewardPoints;
+  if (typeof points !== "number" || !Number.isFinite(points)) return "";
+  return `${Math.max(0, Math.trunc(points))} ${RUNNER_POINTS_SUFFIX}`;
 });
 
 const distanceLabel = computed(() => {
