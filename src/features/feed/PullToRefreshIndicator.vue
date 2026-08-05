@@ -2,7 +2,7 @@
 /**
  * Apple-style pull-to-refresh indicator.
  *
- * Displays a circular progress indicator that fills as the user pulls down.
+ * Displays a compact tonal refresh capsule that fills as the user pulls down.
  * Shows a spinner during refresh. Respects reduced motion preference.
  *
  * Usage:
@@ -33,7 +33,7 @@ const props = defineProps<{
 const reduced = useReducedMotion();
 
 const indicatorStyle = computed(() => ({
-  transform: `translateY(${props.pullDistance - 60}px)`,
+  "--pull-refresh-y": `${props.pullDistance - 20}px`,
   opacity: Math.min(props.progress, 1),
   transition:
     props.pullDistance > 0
@@ -146,13 +146,27 @@ const statusText = computed(() => {
   top: 0;
   left: 50%;
   z-index: 10;
-  display: flex;
-  flex-direction: column;
+  display: inline-flex;
   gap: var(--space-2, 8px);
   align-items: center;
-  padding: var(--space-3, 12px);
-  transform: translateX(-50%);
+  box-sizing: border-box;
+  min-height: 44px;
+  padding: 5px var(--space-3, 12px) 5px 6px;
+  border: 1px solid rgba(31, 167, 160, 0.18);
+  border-radius: var(--radius-chip, 999px);
+  background: var(--lian-primary-soft, #e4f7f5);
+  box-shadow: var(--shadow-card, 0 2px 8px rgba(0, 0, 0, 0.06));
+  color: var(--lian-primary-deep, #087b78);
+  transform: translate(-50%, var(--pull-refresh-y, -20px));
   pointer-events: none;
+  backdrop-filter: blur(var(--glass-blur-light, 12px)) saturate(var(--glass-saturate, 1.28));
+  -webkit-backdrop-filter: blur(var(--glass-blur-light, 12px)) saturate(var(--glass-saturate, 1.28));
+}
+
+.pull-refresh-indicator.can-refresh,
+.pull-refresh-indicator.is-refreshing {
+  border-color: rgba(31, 167, 160, 0.28);
+  background: rgba(31, 167, 160, 0.16);
 }
 
 .pull-refresh-indicator__circle {
@@ -160,14 +174,16 @@ const statusText = computed(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 44px;
-  height: 44px;
+  width: 32px;
+  height: 32px;
 }
 
 .pull-refresh-indicator__progress,
 .pull-refresh-indicator__spinner {
   position: absolute;
   inset: 0;
+  width: 100%;
+  height: 100%;
 }
 
 .pull-refresh-indicator__track {
@@ -175,7 +191,7 @@ const statusText = computed(() => {
 }
 
 .pull-refresh-indicator__fill {
-  stroke: var(--lian-primary, #1fa7a0);
+  stroke: var(--lian-primary-deep, #087b78);
   transform: rotate(-90deg);
   transform-origin: center;
   transition: stroke-dashoffset var(--motion-micro, 120ms) var(--motion-ease-standard, ease);
@@ -186,7 +202,7 @@ const statusText = computed(() => {
 }
 
 .pull-refresh-indicator__spinner-track {
-  stroke: var(--lian-primary, #1fa7a0);
+  stroke: var(--lian-primary-deep, #087b78);
   stroke-dasharray: 60 113;
   animation: pull-refresh-spin 1s linear infinite;
 }
@@ -198,7 +214,9 @@ const statusText = computed(() => {
 
 .pull-refresh-indicator__arrow {
   position: absolute;
-  color: var(--lian-primary, #1fa7a0);
+  width: 16px;
+  height: 16px;
+  color: currentColor;
   transition: transform var(--motion-fast, 160ms) var(--motion-ease-standard, ease);
 }
 
@@ -211,9 +229,9 @@ const statusText = computed(() => {
 }
 
 .pull-refresh-indicator__text {
-  color: var(--lian-muted, #6b7280);
+  color: currentColor;
   font-size: 12px;
-  font-weight: 500;
+  font-weight: 800;
   white-space: nowrap;
 }
 

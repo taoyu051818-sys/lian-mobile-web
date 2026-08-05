@@ -116,6 +116,28 @@ test.describe("@gesture pull-to-refresh", () => {
     await context.close();
   });
 
+  test("pull-to-refresh indicator stays horizontally centered in the feed", async ({ browser }) => {
+    const context = await browser.newContext({
+      viewport: { width: 390, height: 844 },
+    });
+    const page = await context.newPage();
+    await installFeedStubs(page);
+
+    await goToFeed(page);
+    await expect(page.locator(".feed-item-card").first()).toBeVisible();
+
+    const indicatorBox = await page.locator(".pull-refresh-indicator").boundingBox();
+    const feedBox = await page.locator(".feed-view").boundingBox();
+    expect(indicatorBox).not.toBeNull();
+    expect(feedBox).not.toBeNull();
+
+    const indicatorCenter = indicatorBox!.x + indicatorBox!.width / 2;
+    const feedCenter = feedBox!.x + feedBox!.width / 2;
+    expect(Math.abs(indicatorCenter - feedCenter)).toBeLessThanOrEqual(1);
+
+    await context.close();
+  });
+
   test("pull-to-refresh respects reduced motion preference", async ({ browser }) => {
     const context = await browser.newContext({
       reducedMotion: "reduce",
