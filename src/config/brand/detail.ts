@@ -21,10 +21,6 @@ export const REPLY_SORT_LABEL = "回复排序";
 export const REPLY_SORT_NEWEST = "最新";
 export const REPLY_SORT_OLDEST = "最早";
 
-/** 详情弹层 UI */
-export const DETAIL_SHEET_LABEL = "详情弹层";
-export const DETAIL_SHEET_TITLE = "详情";
-
 /** 举报 UI */
 export const REPORT_SECTION_LABEL = "举报原因";
 export const REPORT_REASON_LABEL = "举报原因";

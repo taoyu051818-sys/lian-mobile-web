@@ -15,7 +15,10 @@ test("App wires AppShell tab changes through active view state", () => {
   assert.match(src, /const tabs = appViews\.map\(\(view\) => \(\{/);
   assert.match(src, /<AppShell[\s\S]*@view-change="handleViewChange"/);
   assert.match(src, /:layout-mode="getShellLayoutMode\(activeViewKey\)"/);
-  assert.match(src, /<AppViewHost :active-view-key="activeViewKey" @chrome="onChrome" \/>/);
+  assert.match(
+    src,
+    /<AppViewHost[\s\S]*?:active-view-key="activeViewKey"[\s\S]*?@chrome="onChrome"[\s\S]*?@close="setActiveView\('profile'\)"[\s\S]*?\/>/,
+  );
 });
 
 test("AppShell applies page chrome spec via useShellChrome", () => {
@@ -41,14 +44,12 @@ test("ShellChrome keeps detail teleport targets stable outside animated transiti
   );
 });
 
-test("DetailSheet owns overlay close behavior through body teleport, backdrop close, and Escape cleanup", () => {
-  const src = read("src/shell/DetailSheet.vue");
+test("DetailSurface owns the active detail overlay", () => {
+  const src = read("src/app/DetailSurface.vue");
   assert.match(src, /<Teleport to="body">/);
-  assert.match(src, /v-if="state\.open"/);
+  assert.match(src, /v-if="detail\.detailOpen\.value"/);
   assert.match(src, /role="dialog"/);
   assert.match(src, /aria-modal="true"/);
-  assert.match(src, /class="detail-sheet__backdrop" @click="handleClose"/);
-  assert.match(src, /event\.key === "Escape" && state\.open/);
-  assert.match(src, /document\.removeEventListener\("keydown", handleKeydown\)/);
-  assert.match(src, /<slot :kind="state\.kind" :payload="state\.payload" \/>/);
+  assert.match(src, /@click\.self="detail\.close\('user-tap'\)"/);
+  assert.match(src, /<PostDetailPanel/);
 });

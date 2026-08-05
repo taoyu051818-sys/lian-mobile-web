@@ -10,7 +10,7 @@ import { readFileSync } from "node:fs";
  *
  * Scope:
  * - Token names exist in `:root` of src/styles/lian-tokens.css.
- * - The 3 base components (LianButton, Sheet, ToastHost) reference at least
+ * - The active base components (LianButton and ToastHost) reference at least
  *   one of the new ease tokens or the shorthand, so the vocabulary is
  *   actually wired into product surfaces (not just declared).
  * - Existing `--motion-ease-standard` is preserved (no value drift).
@@ -78,12 +78,6 @@ describe("motion vocab is wired into base components (not just declared)", () =>
     expect(src).toMatch(/transform\s+var\(--motion-micro\)/);
   });
 
-  it("Sheet.vue uses --motion-ease-decelerate for enter/leave panel motion", () => {
-    const src = readRepoFile("../../src/ui/Sheet.vue");
-    expect(src).toContain("--motion-ease-decelerate");
-    expect(src).toMatch(/lian-sheet-(enter|leave)-active/);
-  });
-
   it("ToastHost.vue uses --motion-ease-overshoot on enter and decelerate on leave", () => {
     const src = readRepoFile("../../src/ui/feedback/ToastHost.vue");
     expect(src).toContain("--motion-ease-overshoot");
@@ -93,10 +87,8 @@ describe("motion vocab is wired into base components (not just declared)", () =>
   });
 
   it("base components honour prefers-reduced-motion (transition: none guard)", () => {
-    for (const rel of ["../../src/ui/Sheet.vue", "../../src/ui/feedback/ToastHost.vue"]) {
-      const src = readRepoFile(rel);
-      expect(src, `${rel} reduced-motion guard`).toMatch(/prefers-reduced-motion:\s*reduce/);
-      expect(src, `${rel} reduced-motion transition:none`).toMatch(/transition:\s*none/);
-    }
+    const src = readRepoFile("../../src/ui/feedback/ToastHost.vue");
+    expect(src).toMatch(/prefers-reduced-motion:\s*reduce/);
+    expect(src).toMatch(/transition:\s*none/);
   });
 });

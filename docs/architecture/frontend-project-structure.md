@@ -100,12 +100,12 @@ App.vue
 |   |       |-- PublishView.vue
 |   |       |-- MessagesView.vue
 |   |       `-- ProfileView.vue
-|   |-- ShellChrome.vue [bottom region]
-|   `-- DetailSheet.vue
+|   `-- ShellChrome.vue [bottom region]
+|-- DetailSurface.vue [app-level post detail overlay]
 `-- ToastHost.vue
 ```
 
-That means the older shorthand of treating the shell as `TopBar` / `AppViewHost` / `BottomTabBar` is no longer the current architecture description. Those names may still appear in older issues or migration-era notes, but the current shell split is `AppShell` / `ShellChrome` / `ContentFrame`, with shared overlay infrastructure in `DetailSheet`.
+That means the older shorthand of treating the shell as `TopBar` / `AppViewHost` / `BottomTabBar` is no longer the current architecture description. Those names may still appear in older issues or migration-era notes, but the current shell split is `AppShell` / `ShellChrome` / `ContentFrame`; app-level `DetailSurface` separately owns the post-detail overlay.
 
 `src/App.vue` now mounts `AppShell`, passes the active view key, current layout mode, and tab definitions into the shell, and renders `ToastHost` alongside it. `src/app/AppViewHost.vue` remains the active-view switcher, but it now sits inside shell-owned framing rather than standing in for the whole shell model.
 
@@ -149,8 +149,7 @@ Current responsibilities:
 - compose the app shell
 - render persistent top and bottom shell chrome
 - own content framing and layout mode behavior
-- provide shared detail-sheet infrastructure
-- expose typed shell/detail state helpers
+- expose typed shell state helpers
 
 Representative files:
 
@@ -158,15 +157,12 @@ Representative files:
 src/shell/AppShell.vue
 src/shell/ShellChrome.vue
 src/shell/ContentFrame.vue
-src/shell/DetailSheet.vue
 src/shell/useShellChrome.ts
-src/shell/useDetailSheet.ts
 src/shell/shell-chrome-types.ts
-src/shell/detail-sheet-types.ts
 src/shell/index.ts
 ```
 
-Rule of thumb: shell owns persistent app chrome, framing, and shared overlay infrastructure; pages own feature content and page-local interaction behavior.
+Rule of thumb: shell owns persistent app chrome and framing; `src/app/DetailSurface.vue` owns the post-detail overlay; pages own feature content and page-local interaction behavior.
 
 ### `src/features/`
 

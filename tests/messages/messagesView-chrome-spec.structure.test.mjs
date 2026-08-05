@@ -9,10 +9,6 @@ const viewSource = fs.readFileSync(
   path.join(repoRoot, "src/features/messages/MessagesView.vue"),
   "utf8",
 );
-const tabsSource = fs.readFileSync(
-  path.join(repoRoot, "src/features/messages/MessagesTabs.vue"),
-  "utf8",
-);
 const composerSource = fs.readFileSync(
   path.join(repoRoot, "src/features/messages/ChannelComposer.vue"),
   "utf8",
@@ -28,9 +24,10 @@ test("MessagesView uses declarative pageChrome computed instead of floating chro
   assert.doesNotMatch(viewSource, /useFloatingChromeController/);
 });
 
-test("MessagesView declares tab spec with onTabSelect handler", () => {
-  assert.match(viewSource, /onTabSelect/);
-  assert.match(viewSource, /ariaLabel:\s*MESSAGE_TAB_LABEL/);
+test("MessagesView delegates top filtering to ChannelFilterBar", () => {
+  assert.match(viewSource, /slot:\s*"channel-filter"/);
+  assert.match(viewSource, /<ChannelFilterBar/);
+  assert.doesNotMatch(viewSource, /onTabSelect/);
 });
 
 test("MessagesView keeps the bottom shell chrome visible across all tabs so the bottom nav stays tappable", () => {
@@ -49,12 +46,6 @@ test("MessagesView does not use floating chrome CSS attributes", () => {
 
 test("MessagesView positions ChannelComposer with chrome-composer class", () => {
   assert.match(viewSource, /\.messages-view__chrome-composer/);
-});
-
-test("MessagesTabs tab buttons use floating chrome button pattern", () => {
-  assert.match(tabsSource, /flex:\s*0\s+0\s+auto/);
-  assert.match(tabsSource, /white-space:\s*nowrap/);
-  assert.match(tabsSource, /border:\s*0/);
 });
 
 test("ChannelComposer root does not duplicate glass visual styles from parent chrome", () => {

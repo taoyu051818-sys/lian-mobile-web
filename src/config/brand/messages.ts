@@ -1,9 +1,6 @@
 /** 消息占位 */
 export const MESSAGE_EMPTY_CONTENT = "这条消息暂时没有内容。";
 
-/** 消息 tab */
-export const MESSAGE_TAB_LABEL = "消息分类";
-
 /** 消息视图 UI */
 export const MESSAGE_SECTION_LABEL = "消息";
 export const MESSAGE_TAB_CHANNEL = "频道";
