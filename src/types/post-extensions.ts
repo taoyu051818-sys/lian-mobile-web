@@ -1,13 +1,11 @@
 /**
- * Event / Help / Merchant / Trade / Errand domain types (PRD V0.1 §6).
+ * Event / Help / Merchant / Trade domain types (PRD V0.1 §6).
  *
- * V0.1 ships shapes only — no UI yet. The point is to give the API/storage
- * layers a canonical TypeScript contract so downstream features (feed cards,
- * detail page, admin moderation) can be written against a stable vocabulary.
+ * These shapes give the API/storage layers a canonical TypeScript contract so
+ * downstream features can share a stable metadata vocabulary.
  */
 
 import type { Audience } from "./audience";
-import type { PostLocation } from "./post";
 
 // ---------------------------------------------------------------------------
 // Event (PRD V0.1 §6.3)
@@ -190,44 +188,6 @@ export interface TradePostExtension {
   category: string;
   /** ISO timestamp of the active `campus_verified` grant at publish time. */
   verifiedAt: string;
-}
-
-// ---------------------------------------------------------------------------
-// Errand (PRD V0.1 §6.4)
-// ---------------------------------------------------------------------------
-
-export type ErrandMode = "dedicated" | "meal_peak_batch";
-
-export type ErrandStatus =
-  | "created"
-  | "paid_locked"
-  | "assigned"
-  | "picked_up"
-  | "delivering"
-  | "delivered"
-  | "cancelled"
-  | "refunded"
-  | "disputed";
-
-export interface ErrandRunnerLocation {
-  lat: number;
-  lng: number;
-  updatedAt: string;
-}
-
-export interface ErrandOrder {
-  orderId: string;
-  requesterUserId: string;
-  runnerUserId?: string;
-  merchantPostId?: number;
-  pickupLocation: PostLocation;
-  dropoffLocation: PostLocation;
-  mode: ErrandMode;
-  status: ErrandStatus;
-  feeAmount: number;
-  lockedBalanceAmount: number;
-  etaSeconds?: number;
-  runnerLocation?: ErrandRunnerLocation;
 }
 
 // ---------------------------------------------------------------------------

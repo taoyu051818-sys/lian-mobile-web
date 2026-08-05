@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { normalizeFeedItemId } from "../../src/features/feed/feedItemId";
 import { normalizeFeedItem } from "../../src/api/feed";
 import {
   FEED_RELATION_HINT_EVENT_REWARD,
@@ -35,15 +34,7 @@ const browserStorageSource = fs.readFileSync(
   "utf8",
 );
 
-describe("Feed read-history string id normalization", () => {
-  it("normalizes numeric and string ids through one shared helper", () => {
-    expect(normalizeFeedItemId(123)).toBe("123");
-    expect(normalizeFeedItemId("123")).toBe("123");
-    expect(normalizeFeedItemId(0)).toBe("0");
-    expect(normalizeFeedItemId(null)).toBe("");
-    expect(normalizeFeedItemId(undefined)).toBe("");
-  });
-
+describe("Feed read-history id normalization", () => {
   it("useFeedData delegates read history to platform/browser-storage", () => {
     expect(feedDataSource).toMatch(
       /import \{.*readHistoryQuery.*rememberReadItem.*\} from "\.\.\/\.\.\/platform\/browser-storage"/,

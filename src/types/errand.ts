@@ -1,11 +1,6 @@
 /**
  * Errand order (PRD V0.1 §6.4 / §12) — read/write shapes owned by issue #647.
  *
- * `post-extensions.ts` still carries the original metadata snapshot, but the
- * errand API and UI now import their lifecycle types from here so the frontend
- * can track backend order-status vocabulary without forcing unrelated metadata
- * consumers to update in lockstep.
- *
  * What this module owns:
  * - Canonical errand order mode / status / order shapes used by the API client.
  * - Draft / request types for the user-side order form.
@@ -15,9 +10,8 @@
  */
 
 import type { PostLocation } from "./post";
-import type { ErrandMode as PostExtensionErrandMode } from "./post-extensions";
 
-export type ErrandMode = PostExtensionErrandMode;
+export type ErrandMode = "dedicated" | "meal_peak_batch";
 
 /**
  * Current frontend/backend errand lifecycle vocabulary.

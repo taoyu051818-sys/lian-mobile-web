@@ -17,8 +17,8 @@ import {
   ERRAND_ORDER_VALIDATE_MERCHANT,
   ERRAND_ORDER_VALIDATE_PICKUP,
 } from "../../config/brand";
-import type { ErrandMode } from "../../types/post-extensions";
 import type {
+  ErrandMode,
   ErrandOrderDraft,
   ErrandOrderGate,
   ErrandOrderGateReason,

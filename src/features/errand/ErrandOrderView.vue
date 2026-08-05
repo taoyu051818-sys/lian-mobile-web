@@ -46,7 +46,7 @@ import {
   SERVERCHAN_DIALOG_REMINDER_ENABLED,
   SERVERCHAN_DIALOG_REMINDER_FAILED,
 } from "../../config/brand";
-import type { ErrandMode } from "../../types/post-extensions";
+import type { ErrandMode } from "../../types/errand";
 import ErrandOrderGate from "./ErrandOrderGate.vue";
 import ErrandOrderTimelineView from "./ErrandOrderTimelineView.vue";
 import { useErrandOrderDraft } from "./useErrandOrderDraft";

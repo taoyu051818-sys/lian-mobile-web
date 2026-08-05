@@ -7,12 +7,9 @@
  * is the single authority for the Vue surface.
  */
 
-export { CLIENT_ID_KEY, ensureClientId } from "./clientIdentity";
-
 import type { FeedItemId } from "../types/feed";
 
 export const READ_HISTORY_KEY = "lian.readHistory";
-export const HOME_UPDATE_PROBE_PREFIX = "lian.homeUpdateProbe";
 
 export interface ReadHistoryEntry {
   tid: FeedItemId;
