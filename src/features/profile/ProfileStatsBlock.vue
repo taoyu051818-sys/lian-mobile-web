@@ -13,6 +13,7 @@ import {
 } from "../../config/brand";
 import { fetchProfileStats } from "../../api/profile";
 import type { ProfileStats } from "../../types/profile";
+import { InlineError } from "../../ui";
 import ProfileRewardsBlock from "./ProfileRewardsBlock.vue";
 
 const stats = ref<ProfileStats | null>(null);
@@ -49,15 +50,15 @@ defineExpose({ reload: loadStats });
       <h2>{{ PROFILE_STATS_SECTION_LABEL }}</h2>
     </header>
 
-    <p
+    <InlineError
       v-if="errorMessage"
-      class="profile-stats-block__error"
-      role="alert"
+      :action-label="PROFILE_STATS_RELOAD"
+      :action-loading="loading"
       data-testid="profile-stats-error"
+      @action="loadStats"
     >
       {{ errorMessage }}
-      <button type="button" @click="loadStats">{{ PROFILE_STATS_RELOAD }}</button>
-    </p>
+    </InlineError>
 
     <dl
       v-else-if="stats"
@@ -111,30 +112,6 @@ defineExpose({ reload: loadStats });
   font-size: 14px;
   font-weight: 900;
   letter-spacing: 0.02em;
-}
-
-.profile-stats-block__error {
-  margin: 0;
-  padding: var(--space-2) var(--space-3);
-  border: 1px solid rgba(255, 159, 67, 0.32);
-  border-radius: var(--radius-3);
-  background: rgba(255, 159, 67, 0.1);
-  color: var(--lian-ink);
-  font-size: 13px;
-  font-weight: 700;
-}
-
-.profile-stats-block__error button {
-  min-height: 28px;
-  margin-left: var(--space-2);
-  padding: 0 var(--space-2);
-  border: 0;
-  border-radius: var(--radius-chip);
-  background: rgba(255, 255, 255, 0.74);
-  color: currentColor;
-  font: inherit;
-  font-weight: 900;
-  cursor: pointer;
 }
 
 .profile-stats-block__grid {

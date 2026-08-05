@@ -121,9 +121,13 @@ const itemStates = computed(() =>
 
 <template>
   <div class="profile-collection">
-    <InlineError v-if="error">
+    <InlineError
+      v-if="error"
+      :action-label="CHANNEL_RELOAD"
+      :action-loading="loading"
+      @action="emit('retry')"
+    >
       {{ error }}
-      <button type="button" @click="emit('retry')">{{ CHANNEL_RELOAD }}</button>
     </InlineError>
 
     <div v-if="loading" class="profile-collection__state" role="status">{{ LOADING_LIST }}</div>
@@ -332,15 +336,5 @@ const itemStates = computed(() =>
   background: rgba(31, 167, 160, 0.1);
   color: var(--lian-primary-deep);
   font-weight: 800;
-}
-
-.profile-collection :deep(.inline-error button) {
-  min-height: 32px;
-  margin-left: var(--space-2);
-  border: 0;
-  border-radius: var(--radius-chip);
-  background: rgba(255, 255, 255, 0.72);
-  color: currentColor;
-  font-weight: 900;
 }
 </style>

@@ -124,9 +124,13 @@ const emit = defineEmits<{
       />
     </label>
 
-    <InlineError v-if="mapLocationError">
+    <InlineError
+      v-if="mapLocationError"
+      :action-label="CHANNEL_RELOAD"
+      :action-loading="mapLocationLoading"
+      @action="emit('loadMapLocations')"
+    >
       {{ mapLocationError }}
-      <button type="button" @click="emit('loadMapLocations')">{{ CHANNEL_RELOAD }}</button>
     </InlineError>
 
     <div v-if="mapLocationLoading" class="publish-location__mini-state" role="status">
@@ -307,15 +311,5 @@ const emit = defineEmits<{
   place-items: center;
   color: var(--lian-muted);
   text-align: center;
-}
-
-.inline-error button {
-  min-height: 32px;
-  margin-left: var(--space-2);
-  border: 0;
-  border-radius: var(--radius-chip);
-  background: rgba(255, 255, 255, 0.72);
-  color: currentColor;
-  font-weight: 900;
 }
 </style>

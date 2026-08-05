@@ -165,9 +165,13 @@ onMounted(() => {
 
 <template>
   <section class="profile-view" :aria-label="PROFILE_SECTION_LABEL">
-    <InlineError v-if="errorMessage">
+    <InlineError
+      v-if="errorMessage"
+      :action-label="PROFILE_RELOAD"
+      :action-loading="loading"
+      @action="loadProfile"
+    >
       {{ errorMessage }}
-      <button type="button" @click="loadProfile">{{ PROFILE_RELOAD }}</button>
     </InlineError>
 
     <div v-if="loading" class="profile-view__state" role="status">{{ LOADING_PROFILE }}</div>
@@ -477,16 +481,6 @@ onMounted(() => {
 .profile-view__admin-link:focus-visible {
   opacity: 1;
   text-decoration: underline;
-}
-
-.inline-error button {
-  min-height: 32px;
-  margin-left: var(--space-2);
-  border: 0;
-  border-radius: var(--radius-chip);
-  background: rgba(255, 255, 255, 0.72);
-  color: currentColor;
-  font-weight: 900;
 }
 
 @media (max-width: 640px) {
