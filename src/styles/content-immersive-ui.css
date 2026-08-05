@@ -53,11 +53,6 @@
   gap: var(--space-4);
 }
 
-.feed-view__masonry,
-.feed-view__masonry-column {
-  gap: var(--space-3);
-}
-
 .feed-view__state {
   border: 1px solid var(--lian-line);
   border-radius: var(--radius-content-card);

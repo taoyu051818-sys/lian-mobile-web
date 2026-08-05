@@ -17,7 +17,6 @@
  * Vibration patterns are tuned to feel similar to iOS UIFeedbackGenerator:
  *   - light:   UIImpactFeedbackGenerator.style.light   (~10ms)
  *   - medium:  UIImpactFeedbackGenerator.style.medium  (~20ms)
- *   - heavy:   UIImpactFeedbackGenerator.style.heavy   (~30ms)
  *   - success: UINotificationFeedbackGenerator.success (double tap pattern)
  *   - error:   UINotificationFeedbackGenerator.error   (triple tap pattern)
  *
@@ -77,15 +76,6 @@ export function hapticMedium(): void {
 }
 
 /**
- * Heavy haptic feedback — use for destructive actions (delete, discard).
- *
- * Approximates UIImpactFeedbackGenerator.style.heavy.
- */
-export function hapticHeavy(): void {
-  vibrate(30);
-}
-
-/**
  * Success haptic feedback — use for completed actions (publish, save).
  *
  * Approximates UINotificationFeedbackGenerator.notificationOccurred(.success).
@@ -103,48 +93,4 @@ export function hapticSuccess(): void {
  */
 export function hapticError(): void {
   vibrate([10, 30, 10, 30, 10]);
-}
-
-/**
- * Composable interface for haptic feedback.
- *
- * Usage:
- * ```ts
- * const haptic = useHapticFeedback();
- *
- * function handleClick() {
- *   haptic.light();
- *   // ... do something
- * }
- *
- * function handleToggle() {
- *   haptic.medium();
- *   // ... toggle state
- * }
- *
- * async function handleSubmit() {
- *   try {
- *     await submitForm();
- *     haptic.success();
- *   } catch {
- *     haptic.error();
- *   }
- * }
- * ```
- */
-export function useHapticFeedback() {
-  return {
-    /** Light tap — button clicks, list item taps */
-    light: hapticLight,
-    /** Medium tap — toggle switches, selection changes */
-    medium: hapticMedium,
-    /** Heavy tap — destructive actions (delete, discard) */
-    heavy: hapticHeavy,
-    /** Success pattern — completed actions (publish, save) */
-    success: hapticSuccess,
-    /** Error pattern — failed actions, validation errors */
-    error: hapticError,
-    /** Check if haptic feedback is available on this device */
-    isSupported: canVibrate,
-  };
 }

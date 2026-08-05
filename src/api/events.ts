@@ -1,5 +1,5 @@
 /**
- * Event / Help / Errand API client stubs (PRD V0.1 §11.2, §11.3, §11.4).
+ * Event / Help API client stubs (PRD V0.1 §11.2, §11.3).
  *
  * Every function below is intentionally thin — it just shapes a request and
  * returns the parsed response. Business logic and authorization live in the
@@ -17,9 +17,6 @@ import {
   normalizeEventJoinResult,
 } from "../platform/api-normalizers";
 import type {
-  ErrandMode,
-  ErrandOrder,
-  ErrandRunnerLocation,
   EventJoinPolicy,
   EventJoinResult,
   EventPostExtension,
@@ -127,35 +124,5 @@ export async function unlinkHelpFromEvent(helpId: string): Promise<HelpPostExten
 export async function resolveHelp(helpId: string): Promise<HelpPostExtension> {
   return apiSend<HelpPostExtension>(`/api/help/${encodeURIComponent(helpId)}/resolve`, {
     method: "POST",
-  });
-}
-
-// ---------------------------------------------------------------------------
-// Errand (PRD V0.1 §6.4 — V0.1 ships only the contract)
-// ---------------------------------------------------------------------------
-
-export interface CreateErrandOrderInput {
-  merchantPostId?: number;
-  pickupLocation: PostLocation;
-  dropoffLocation: PostLocation;
-  mode: ErrandMode;
-  feeAmount: number;
-}
-
-export async function createErrandOrder(input: CreateErrandOrderInput): Promise<ErrandOrder> {
-  return apiSend<ErrandOrder>("/api/errands/orders", {
-    method: "POST",
-    body: JSON.stringify(input),
-  });
-}
-
-export async function fetchErrandOrder(orderId: string): Promise<ErrandOrder> {
-  return apiGet<ErrandOrder>(`/api/errands/orders/${encodeURIComponent(orderId)}`);
-}
-
-export async function reportRunnerLocation(location: ErrandRunnerLocation): Promise<{ ok: true }> {
-  return apiSend<{ ok: true }>("/api/errands/runner/location", {
-    method: "POST",
-    body: JSON.stringify(location),
   });
 }

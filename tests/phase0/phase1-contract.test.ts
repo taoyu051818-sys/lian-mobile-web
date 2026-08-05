@@ -92,29 +92,33 @@ describe("Phase 2: map viewport policy", () => {
 });
 
 describe("Phase 4/5: event/help/errand contracts", () => {
-  it("post-extensions.ts declares the eight extension shapes", () => {
+  it("post-extensions.ts declares the active post metadata shapes", () => {
     const source = readRepoFile("../../src/types/post-extensions.ts");
     expect(source).toMatch(/export interface EventPostExtension/);
     expect(source).toMatch(/export interface HelpPostExtension/);
     expect(source).toMatch(/export interface MerchantPostExtension/);
-    expect(source).toMatch(/export interface ErrandOrder/);
+    expect(source).toMatch(/export interface TradePostExtension/);
     expect(source).toMatch(/HelpStatus/);
-    expect(source).toMatch(/ErrandStatus/);
     expect(source).toMatch(/InteractionKind/);
   });
 
-  it("api/events.ts wires PRD §11.2/§11.3/§11.4 routes", () => {
+  it("api/events.ts wires PRD §11.2/§11.3 routes", () => {
     const source = readRepoFile("../../src/api/events.ts");
     expect(source).toMatch(/\/api\/events/);
     expect(source).toMatch(/\/cancel-join/);
     expect(source).toMatch(/\/api\/help\//);
     expect(source).toMatch(/\/link-event/);
-    expect(source).toMatch(/\/api\/errands\/orders/);
-    expect(source).toMatch(/\/api\/errands\/runner\/location/);
+  });
+
+  it("api/errands.ts owns the active errand order routes", () => {
+    const source = readRepoFile("../../src/api/errands.ts");
+    expect(source).toMatch(/\/api\/errands\/orders\/eligibility/);
+    expect(source).toMatch(/apiSend<unknown>\("\/api\/errands\/orders"/);
+    expect(source).toMatch(/\/api\/errands\/orders\/\$\{encodeURIComponent\(orderId\)\}/);
   });
 
   it("ErrandOrder mode/status enums match the PRD vocabulary", () => {
-    const source = readRepoFile("../../src/types/post-extensions.ts");
+    const source = readRepoFile("../../src/types/errand.ts");
     expect(source).toMatch(/"dedicated"\s*\|\s*"meal_peak_batch"/);
     expect(source).toMatch(/"created"/);
     expect(source).toMatch(/"paid_locked"/);

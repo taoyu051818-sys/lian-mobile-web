@@ -94,68 +94,10 @@ svg {
   padding-bottom: var(--space-8);
 }
 
-.vue-shell__hero {
-  display: grid;
-  gap: var(--space-4);
-}
-
-.vue-shell__eyebrow {
-  margin: 0 0 var(--space-2);
-  color: var(--lian-primary-deep);
-  font-size: 12px;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
 .vue-shell h1 {
   margin: 0;
   font-size: clamp(28px, 8vw, 44px);
   line-height: 1.05;
-}
-
-.vue-shell__summary {
-  margin: 0;
-  color: var(--lian-muted);
-  font-size: 15px;
-  line-height: 1.6;
-}
-
-.vue-shell__section {
-  display: grid;
-  gap: var(--space-3);
-}
-
-.vue-shell__section h2 {
-  margin: 0;
-  font-size: 18px;
-}
-
-.vue-shell__row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
-  align-items: center;
-}
-
-.vue-shell__sample-card {
-  display: grid;
-  gap: var(--space-3);
-}
-
-.vue-shell__sample-title {
-  margin: 0;
-  font-size: 18px;
-  line-height: 1.35;
-}
-
-.vue-shell__sample-meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
-  align-items: center;
-  color: var(--lian-muted);
-  font-size: 12px;
 }
 
 @media (min-width: 720px) {

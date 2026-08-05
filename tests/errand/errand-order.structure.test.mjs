@@ -59,9 +59,9 @@ test("errand types module owns the request/draft/gate/timeline shapes", () => {
   assert.match(src, /export interface ErrandOrderTimelineEvent/);
   assert.match(src, /export interface ErrandOrderDetail/);
   assert.match(src, /export interface ErrandOrderCreateResponse/);
-  // Re-exports the lifecycle shapes from post-extensions so #648 can import
-  // everything from one place.
-  assert.match(src, /export type \{[\s\S]*ErrandOrder[\s\S]*\}\s*from\s*"\.\/post-extensions"/);
+  assert.match(src, /export type ErrandMode/);
+  assert.match(src, /export type ErrandStatus/);
+  assert.match(src, /export interface ErrandOrder/);
 });
 
 test("ErrandOrderGateReason union covers the documented codes", () => {
@@ -365,24 +365,26 @@ test("ErrandOrderGate exposes the four gate CTAs", () => {
   assert.match(src, /goWallet/);
 });
 
-test("ErrandOrderTimelineView lists timeline events + pickup/dropoff", () => {
-  const src = read("src/features/errand/ErrandOrderTimelineView.vue");
-  assert.match(src, /data-testid="errand-order-timeline-view"/);
-  assert.match(src, /data-testid="errand-order-timeline-list"/);
-  assert.match(src, /data-testid="errand-order-timeline-entry"/);
-  assert.match(src, /data-testid="errand-order-timeline-pickup"/);
-  assert.match(src, /data-testid="errand-order-timeline-dropoff"/);
+test("ErrandOrderTimelineView composes timeline events with pickup/dropoff metadata", () => {
+  const timeline = read("src/features/errand/ErrandOrderTimelineView.vue");
+  const meta = read("src/features/errand/ErrandOrderMeta.vue");
+  assert.match(timeline, /data-testid="errand-order-timeline-view"/);
+  assert.match(timeline, /data-testid="errand-order-timeline-list"/);
+  assert.match(timeline, /data-testid="errand-order-timeline-entry"/);
+  assert.match(timeline, /<ErrandOrderMeta/);
+  assert.match(meta, /data-testid="errand-order-meta-pickup"/);
+  assert.match(meta, /data-testid="errand-order-meta-dropoff"/);
   // Error branch must offer a manual retry — without it polling+initial
   // fetch failures leave the user stuck on an alert with nothing to do
   // (review A4).
-  assert.match(src, /data-testid="errand-order-timeline-retry"/);
+  assert.match(timeline, /data-testid="errand-order-timeline-retry"/);
 });
 
 // --- merchant detail wiring (CTA dispatch) ---
 
 test("PostDetailMerchantBlock dispatches the errand CTA into the route singleton", () => {
   const src = read("src/features/detail/PostDetailMerchantBlock.vue");
-  assert.match(src, /data-testid="post-detail-merchant-errand-cta"/);
+  assert.match(src, /test-id="post-detail-merchant-errand-cta"/);
   assert.match(src, /useErrandOrderRoute/);
   assert.match(src, /useDetailNavigation/);
   assert.match(src, /detail\.close\("view-change"\)/);
