@@ -297,9 +297,13 @@ watch(
         {{ LOADING_DETAIL }}
       </div>
 
-      <InlineError v-else-if="error">
+      <InlineError
+        v-else-if="error"
+        :action-label="DETAIL_RELOAD"
+        :action-loading="loading"
+        @action="emit('retry')"
+      >
         {{ error }}
-        <button type="button" @click="emit('retry')">{{ DETAIL_RELOAD }}</button>
       </InlineError>
 
       <template v-else-if="post">
@@ -450,15 +454,5 @@ watch(
 .post-detail-panel__state {
   color: var(--lian-muted);
   text-align: center;
-}
-
-.inline-error button {
-  min-height: 32px;
-  margin-left: var(--space-2);
-  border: 0;
-  border-radius: var(--radius-chip);
-  background: rgba(255, 255, 255, 0.72);
-  color: currentColor;
-  font-weight: 900;
 }
 </style>

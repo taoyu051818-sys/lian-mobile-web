@@ -15,6 +15,7 @@ import {
   PROFILE_SETTINGS_RELOAD,
 } from "../../config/brand";
 import type { ProfileVisibility } from "../../types/profile";
+import { InlineError } from "../../ui";
 import { useProfileSettings } from "./settings-state";
 
 interface VisibilityOption {
@@ -69,21 +70,18 @@ onMounted(() => {
       </span>
     </header>
 
-    <p
+    <InlineError
       v-if="settings.errorMessage.value"
-      class="profile-settings-block__error"
-      role="alert"
+      :action-label="
+        settings.errorPhase.value === 'load' && !settings.settings.value
+          ? PROFILE_SETTINGS_RELOAD
+          : ''
+      "
       data-testid="profile-settings-error"
+      @action="settings.retry()"
     >
       {{ settings.errorMessage.value }}
-      <button
-        v-if="settings.errorPhase.value === 'load' && !settings.settings.value"
-        type="button"
-        @click="settings.retry()"
-      >
-        {{ PROFILE_SETTINGS_RELOAD }}
-      </button>
-    </p>
+    </InlineError>
 
     <dl
       v-if="settings.isReady.value && settings.settings.value"
@@ -171,30 +169,6 @@ onMounted(() => {
   color: var(--lian-muted);
   font-size: 12px;
   font-weight: 700;
-}
-
-.profile-settings-block__error {
-  margin: 0;
-  padding: var(--space-2) var(--space-3);
-  border: 1px solid rgba(255, 159, 67, 0.32);
-  border-radius: var(--radius-3);
-  background: rgba(255, 159, 67, 0.1);
-  color: var(--lian-ink);
-  font-size: 13px;
-  font-weight: 700;
-}
-
-.profile-settings-block__error button {
-  min-height: 28px;
-  margin-left: var(--space-2);
-  padding: 0 var(--space-2);
-  border: 0;
-  border-radius: var(--radius-chip);
-  background: rgba(255, 255, 255, 0.74);
-  color: currentColor;
-  font: inherit;
-  font-weight: 900;
-  cursor: pointer;
 }
 
 .profile-settings-block__list {

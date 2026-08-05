@@ -55,9 +55,13 @@ const placeTypeText = computed(() => {
       </button>
     </div>
     <p v-if="placeSheetLoading" class="post-place-sheet__state">{{ LOADING_PLACE }}</p>
-    <InlineError v-else-if="placeSheetError">
+    <InlineError
+      v-else-if="placeSheetError"
+      :action-label="PLACE_SHEET_RETRY"
+      :action-loading="placeSheetLoading"
+      @action="emit('openPlaceSheet')"
+    >
       {{ placeSheetError }}
-      <button type="button" @click="emit('openPlaceSheet')">{{ PLACE_SHEET_RETRY }}</button>
     </InlineError>
     <template v-else>
       <div class="post-place-sheet__meta">
@@ -180,19 +184,5 @@ const placeTypeText = computed(() => {
   padding: var(--space-2);
   border-radius: var(--radius-3);
   background: rgba(255, 255, 255, 0.46);
-}
-
-.post-place-sheet :deep(.inline-error) {
-  color: var(--lian-muted);
-}
-
-.post-place-sheet :deep(.inline-error button) {
-  min-height: 32px;
-  margin-left: var(--space-2);
-  border: 0;
-  border-radius: var(--radius-chip);
-  background: rgba(255, 255, 255, 0.72);
-  color: currentColor;
-  font-weight: 900;
 }
 </style>

@@ -140,9 +140,13 @@ const filterBarMounted = computed(() => !detail.detailOpen.value && shellVisible
       />
     </Teleport>
 
-    <InlineError v-if="feedData.errorMessage.value">
+    <InlineError
+      v-if="feedData.errorMessage.value"
+      :action-label="CHANNEL_RELOAD"
+      :action-loading="feedData.loading.value"
+      @action="feedData.loadFeed(true)"
+    >
       {{ feedData.errorMessage.value }}
-      <button type="button" @click="feedData.loadFeed(true)">{{ CHANNEL_RELOAD }}</button>
     </InlineError>
 
     <div v-if="feedData.loading.value" class="feed-view__state" role="status">
@@ -216,15 +220,5 @@ const filterBarMounted = computed(() => !detail.detailOpen.value && shellVisible
 
 .feed-view__detail {
   min-height: calc(100vh - var(--space-6));
-}
-
-.inline-error button {
-  min-height: 32px;
-  margin-left: var(--space-2);
-  border: 0;
-  border-radius: var(--radius-chip);
-  background: rgba(255, 255, 255, 0.72);
-  color: currentColor;
-  font-weight: 900;
 }
 </style>

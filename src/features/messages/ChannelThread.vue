@@ -108,9 +108,13 @@ function messageTrustSignal(item: ChannelMessage) {
 
 <template>
   <section class="messages-view__pane" :aria-label="CHANNEL_THREAD_LABEL">
-    <InlineError v-if="error">
+    <InlineError
+      v-if="error"
+      :action-label="CHANNEL_RELOAD"
+      :action-loading="loading"
+      @action="emit('retry')"
+    >
       {{ error }}
-      <button type="button" @click="emit('retry')">{{ CHANNEL_RELOAD }}</button>
     </InlineError>
 
     <div class="messages-view__load-more">
@@ -423,16 +427,6 @@ function messageTrustSignal(item: ChannelMessage) {
   gap: var(--space-2);
   align-items: center;
   justify-content: flex-start;
-}
-
-.inline-error button {
-  min-height: 32px;
-  margin-left: var(--space-2);
-  border: 0;
-  border-radius: var(--radius-chip);
-  background: rgba(255, 255, 255, 0.72);
-  color: currentColor;
-  font-weight: 900;
 }
 
 .messages-view__message.is-loading {
