@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from "vue";
+import { LianButton } from "../ui";
 import { useShellChrome } from "./useShellChrome";
 import { useFloatingChromeState } from "./floatingChromeState";
 import {
@@ -200,18 +201,17 @@ function handleFilterToggle(filterId: string) {
             </button>
           </nav>
           <div v-if="buttons.length" class="shell-chrome__buttons">
-            <button
+            <LianButton
               v-for="btn in buttons"
               :key="btn.id"
-              class="lian-button"
-              :class="[`lian-button--${btn.variant ?? 'ghost'}`]"
+              :variant="btn.variant ?? 'ghost'"
+              size="md"
               :disabled="btn.disabled || !isVisible"
-              type="button"
               :aria-label="btn.label"
               @click="handleButtonClick(btn)"
             >
               {{ btn.label }}
-            </button>
+            </LianButton>
           </div>
         </div>
       </template>
