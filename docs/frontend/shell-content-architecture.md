@@ -56,8 +56,8 @@ App.vue                              ← thin bootstrap and app mount
     │   └── BottomTabBar.vue         ← shell-owned global navigation
     └── ToastHost.vue                ← app-level feedback host
 
-DetailSheet.vue                      ← shell-level overlay infrastructure
-    └── page-specific detail content (adoption still partial)
+DetailSurface.vue                    ← app-level post detail overlay
+    └── PostDetailPanel.vue          ← feature-owned detail content
 ```
 
 ### Important current reading of this tree
@@ -65,7 +65,7 @@ DetailSheet.vue                      ← shell-level overlay infrastructure
 - `ShellChrome` owns the DOM for shell chrome regions.
 - Pages describe shell chrome intent through typed shell state when they need shell chrome.
 - Pages still own page-local controls that are part of feature content rather than app chrome.
-- `DetailSheet` exists as shell infrastructure, but not every detail flow has migrated onto it yet.
+- `DetailSurface` owns the single app-level post detail overlay; feature-specific overlays remain feature-owned.
 
 ## 4. What Is Shipped Now
 
@@ -73,18 +73,18 @@ DetailSheet.vue                      ← shell-level overlay infrastructure
 
 The original foundation and page chrome migration work is merged:
 
-| Area                                             | PR / issue lane | Status                                       |
-| ------------------------------------------------ | --------------- | -------------------------------------------- |
-| ShellChrome foundation                           | #292 / #275     | merged                                       |
-| BottomTabBar through shell bottom region         | #326 / #276     | merged                                       |
-| Feed top tabs into shell top region              | #335 / #277     | merged                                       |
-| ContentFrame                                     | #330 / #307     | merged                                       |
-| DetailSheet foundation                           | #334 / #308     | merged                                       |
-| AppShell extraction                              | #332 / #309     | merged                                       |
-| Profile shell chrome integration                 | #333 / #321     | merged                                       |
-| Publish shell chrome migration (historical step) | #336 / #318     | merged historically, later corrected by #353 |
-| Map shell chrome integration                     | #337 / #320     | merged                                       |
-| Messages shell chrome integration                | #338 / #319     | merged                                       |
+| Area                                             | PR / issue lane | Status                                                       |
+| ------------------------------------------------ | --------------- | ------------------------------------------------------------ |
+| ShellChrome foundation                           | #292 / #275     | merged                                                       |
+| BottomTabBar through shell bottom region         | #326 / #276     | merged                                                       |
+| Feed top tabs into shell top region              | #335 / #277     | merged                                                       |
+| ContentFrame                                     | #330 / #307     | merged                                                       |
+| DetailSheet foundation                           | #334 / #308     | merged historically, superseded by app-level `DetailSurface` |
+| AppShell extraction                              | #332 / #309     | merged                                                       |
+| Profile shell chrome integration                 | #333 / #321     | merged                                                       |
+| Publish shell chrome migration (historical step) | #336 / #318     | merged historically, later corrected by #353                 |
+| Map shell chrome integration                     | #337 / #320     | merged                                                       |
+| Messages shell chrome integration                | #338 / #319     | merged                                                       |
 
 ### Post-#338 corrections that matter for current truth
 
@@ -106,7 +106,7 @@ The original foundation and page chrome migration work is merged:
 | Layout mode and content frame              | `ContentFrame.vue`               | Owns safe-area/layout framing for page surfaces.                                                          |
 | Page business logic and page content       | page components                  | Data loading, feature workflows, and view-specific content remain page-owned.                             |
 | Page-local action UI                       | page components                  | Example: publish clear/submit actions now live inside `PublishView` again.                                |
-| Shared overlay infrastructure              | `DetailSheet.vue`                | Shell owns the overlay container contract.                                                                |
+| Post detail overlay                        | `src/app/DetailSurface.vue`      | App layer owns the single post-detail overlay container.                                                  |
 | Detail content                             | page/detail components           | Pages still own the actual feature-specific detail bodies.                                                |
 | Toast/feedback host                        | shell/app layer                  | Shared app feedback infrastructure.                                                                       |
 | View-local selection/composer/detail state | page-local composables and views | Example: map selection remains in map-local code; messaging bubble layout remains in messages-local code. |
@@ -188,7 +188,6 @@ This refresh should not imply that every shell-adjacent migration is finished. T
 
 | Area                                              | Why it is still follow-up                                                                                                                      |
 | ------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| DetailSheet adoption by all views                 | The shell-level overlay infrastructure exists, but not every detail flow is using it yet.                                                      |
 | Some page-local cleanup after the shell migration | Views still have local interaction/state cleanup work that should stay in page-owned lanes rather than being misdescribed as shell completion. |
 | Broader docs freshness outside this file          | Other docs may still describe older migration-era states or outdated follow-up lists.                                                          |
 
@@ -212,14 +211,13 @@ src/
     shell-chrome-types.ts        ← typed shell region contracts
     shell-chrome.css             ← shell-owned chrome styling
     ContentFrame.vue             ← layout mode + safe-area frame
-    DetailSheet.vue              ← shell overlay infrastructure
-    useDetailSheet.ts            ← shell detail-sheet state
     index.ts                     ← shell barrel
   ui/
     layout/
       PageSurface.vue            ← generic page-surface wrapper
   app/
     AppViewHost.vue              ← active page switcher (maps view keys to feature components)
+    DetailSurface.vue            ← app-level post detail overlay
   features/
     feed/
       FeedView.vue               ← feed content + feed-owned behavior, shell tab intent
@@ -244,13 +242,13 @@ The main thing to notice here is that the shell folder contains shell infrastruc
 
 The Apple Music comparison is still useful, but only at the structural level.
 
-| Concept                       | Apple Music-style analogy            | LIAN equivalent                |
-| ----------------------------- | ------------------------------------ | ------------------------------ |
-| Stable app shell              | tab/navigation controller layer      | `AppShell`                     |
-| Persistent global chrome      | app-owned nav/tab chrome             | `ShellChrome` + `BottomTabBar` |
-| Content frame                 | app-owned content area               | `ContentFrame`                 |
-| Feature surface               | individual view controller content   | page components                |
-| Shared overlay infrastructure | app-owned modal/sheet infrastructure | `DetailSheet`                  |
+| Concept                  | Apple Music-style analogy            | LIAN equivalent                |
+| ------------------------ | ------------------------------------ | ------------------------------ |
+| Stable app shell         | tab/navigation controller layer      | `AppShell`                     |
+| Persistent global chrome | app-owned nav/tab chrome             | `ShellChrome` + `BottomTabBar` |
+| Content frame            | app-owned content area               | `ContentFrame`                 |
+| Feature surface          | individual view controller content   | page components                |
+| Post detail overlay      | app-owned modal/sheet infrastructure | `DetailSurface`                |
 
 What LIAN does **not** copy is the literal Apple Music UI. The borrowed idea is the separation between app-owned infrastructure and view-owned content.
 

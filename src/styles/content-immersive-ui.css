@@ -19,8 +19,6 @@
 
 .shell-chrome__tabs,
 .bottom-tab-bar,
-.top-bar,
-.lian-sheet__panel,
 .lian-toast {
   border-color: rgba(255, 255, 255, 0.62);
   background: var(--lian-surface-floating);

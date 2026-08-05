@@ -10,12 +10,8 @@ function readTokens() {
   return fs.readFileSync(path.join(repoRoot, "src/styles/lian-tokens.css"), "utf8");
 }
 
-function readSheet() {
-  return fs.readFileSync(path.join(repoRoot, "src/ui/Sheet.vue"), "utf8");
-}
-
-function readDetailSheet() {
-  return fs.readFileSync(path.join(repoRoot, "src/shell/DetailSheet.vue"), "utf8");
+function readDetailSurface() {
+  return fs.readFileSync(path.join(repoRoot, "src/app/DetailSurface.vue"), "utf8");
 }
 
 function readToastHost() {
@@ -26,8 +22,8 @@ function readPrimitivesCss() {
   return fs.readFileSync(path.join(repoRoot, "src/ui/primitives.css"), "utf8");
 }
 
-function readDetailSheetCss() {
-  return fs.readFileSync(path.join(repoRoot, "src/shell/detail-sheet.css"), "utf8");
+function readFeedContextMenu() {
+  return fs.readFileSync(path.join(repoRoot, "src/features/feed/FeedContextMenu.vue"), "utf8");
 }
 
 // --- z-index token scale ---
@@ -52,87 +48,35 @@ test("--floating-bar-z aliases --z-chrome for backward compat", () => {
   assert.match(readTokens(), /--floating-bar-z:\s*var\(--z-chrome\)/);
 });
 
-test("z-index tokens are ordered chrome < detail-sheet < sheet < toast", () => {
+test("z-index tokens are ordered chrome < detail dock < context overlays < toast", () => {
   const tokens = readTokens();
   const chrome = tokens.match(/--z-chrome:\s*(\d+)/)?.[1];
   const detail = tokens.match(/--z-detail-sheet:\s*(\d+)/)?.[1];
   const sheet = tokens.match(/--z-sheet:\s*(\d+)/)?.[1];
   const toast = tokens.match(/--z-toast:\s*(\d+)/)?.[1];
-  assert.ok(Number(chrome) < Number(detail), "chrome < detail-sheet");
-  assert.ok(Number(detail) < Number(sheet), "detail-sheet < sheet");
-  assert.ok(Number(sheet) < Number(toast), "sheet < toast");
+  assert.ok(Number(chrome) < Number(detail), "chrome < detail dock");
+  assert.ok(Number(detail) < Number(sheet), "detail dock < context overlays");
+  assert.ok(Number(sheet) < Number(toast), "context overlays < toast");
 });
 
-// --- Sheet.vue contract ---
+// --- DetailSurface.vue contract ---
 
-test("Sheet uses Teleport to body", () => {
-  assert.match(readSheet(), /<Teleport\s+to="body">/);
+test("DetailSurface uses Teleport to body", () => {
+  assert.match(readDetailSurface(), /<Teleport\s+to="body">/);
 });
 
-test("Sheet uses role=dialog", () => {
-  assert.match(readSheet(), /role="dialog"/);
+test("DetailSurface uses role=dialog", () => {
+  assert.match(readDetailSurface(), /role="dialog"/);
 });
 
-test("Sheet uses aria-modal=true", () => {
-  assert.match(readSheet(), /aria-modal="true"/);
+test("DetailSurface uses aria-modal=true", () => {
+  assert.match(readDetailSurface(), /aria-modal="true"/);
 });
 
-test("Sheet handles Escape key", () => {
-  assert.match(readSheet(), /Escape/);
-});
-
-test("Sheet locks body scroll when open", () => {
-  const src = readSheet();
-  assert.match(src, /overflow.*hidden/);
-});
-
-test("Sheet cleans up scroll lock and keydown on unmount", () => {
-  const src = readSheet();
-  assert.match(src, /onBeforeUnmount/);
-  assert.match(src, /unlockScroll/);
-  assert.match(src, /removeEventListener.*keydown/);
-});
-
-test("Sheet returns focus to trigger element on close", () => {
-  const src = readSheet();
-  assert.match(src, /triggerEl/);
-  assert.match(src, /triggerEl\?\.focus\(\)/);
-});
-
-// --- DetailSheet.vue contract ---
-
-test("DetailSheet uses Teleport to body", () => {
-  assert.match(readDetailSheet(), /<Teleport\s+to="body">/);
-});
-
-test("DetailSheet uses role=dialog", () => {
-  assert.match(readDetailSheet(), /role="dialog"/);
-});
-
-test("DetailSheet uses aria-modal=true", () => {
-  assert.match(readDetailSheet(), /aria-modal="true"/);
-});
-
-test("DetailSheet handles Escape key", () => {
-  assert.match(readDetailSheet(), /Escape/);
-});
-
-test("DetailSheet locks body scroll when open", () => {
-  const src = readDetailSheet();
-  assert.match(src, /overflow.*hidden/);
-});
-
-test("DetailSheet cleans up scroll lock and keydown on unmount", () => {
-  const src = readDetailSheet();
-  assert.match(src, /onBeforeUnmount/);
-  assert.match(src, /unlockScroll/);
-  assert.match(src, /removeEventListener.*keydown/);
-});
-
-test("DetailSheet returns focus to trigger element on close", () => {
-  const src = readDetailSheet();
-  assert.match(src, /triggerEl/);
-  assert.match(src, /triggerEl\?\.focus\(\)/);
+test("DetailSurface freezes host scrolling while open", () => {
+  const src = readDetailSurface();
+  assert.match(src, /setHostFrozen\(open\)/);
+  assert.match(src, /:global\(body\.detail-surface-open\)[\s\S]*overflow:\s*hidden/);
 });
 
 // --- ToastHost.vue contract ---
@@ -147,34 +91,30 @@ test("ToastHost has aria-live polite", () => {
 
 // --- CSS token usage ---
 
-test("primitives.css Sheet uses --z-sheet token", () => {
-  assert.match(readPrimitivesCss(), /\.lian-sheet\s*\{[\s\S]*?z-index:\s*var\(--z-sheet\)/);
+test("FeedContextMenu uses --z-sheet token", () => {
+  assert.match(readFeedContextMenu(), /z-index:\s*var\(--z-sheet,\s*100\)/);
 });
 
 test("primitives.css toast-host uses --z-toast token", () => {
   assert.match(readPrimitivesCss(), /\.toast-host\s*\{[\s\S]*?z-index:\s*var\(--z-toast\)/);
 });
 
-test("detail-sheet.css uses --z-detail-sheet token", () => {
-  assert.match(readDetailSheetCss(), /z-index:\s*var\(--z-detail-sheet\)/);
+test("DetailSurface dock uses --z-detail-sheet token", () => {
+  assert.match(readDetailSurface(), /z-index:\s*var\(--z-detail-sheet\)/);
 });
 
 // --- Layer ordering invariant ---
 
 test("overlay layers maintain correct stacking order", () => {
-  // chrome (70) < detail-sheet (90) < sheet (100) < toast (200)
+  // chrome (70) < detail dock (90) < context overlays (100) < toast (200)
   // Verify no hardcoded z-index values override the token order in shared CSS
   const primitives = readPrimitivesCss();
-  const detailCss = readDetailSheetCss();
+  const contextMenu = readFeedContextMenu();
 
-  // Sheet should not have a hardcoded z-index (must use token)
-  const sheetBlock = primitives.slice(primitives.indexOf(".lian-sheet {"));
-  assert.doesNotMatch(sheetBlock, /z-index:\s*\d+;/);
+  // Context overlays should not have a hardcoded z-index (must use token)
+  assert.doesNotMatch(contextMenu, /z-index:\s*\d+;/);
 
   // Toast should not have a hardcoded z-index (must use token)
   const toastBlock = primitives.slice(primitives.indexOf(".toast-host {"));
   assert.doesNotMatch(toastBlock, /z-index:\s*\d+;/);
-
-  // Detail sheet should not have a hardcoded z-index (must use token)
-  assert.doesNotMatch(detailCss, /z-index:\s*\d+;/);
 });

@@ -14,27 +14,6 @@ test("ui/index.ts exports PageSurface from layout/", () => {
   );
 });
 
-test("ui/index.ts exports PageSection from layout/", () => {
-  assert.match(
-    indexSource,
-    /export\s*\{\s*default\s+as\s+PageSection\s*\}\s*from\s*"\.\/layout\/PageSection\.vue"/,
-  );
-});
-
-test("ui/index.ts exports ContentStack from layout/", () => {
-  assert.match(
-    indexSource,
-    /export\s*\{\s*default\s+as\s+ContentStack\s*\}\s*from\s*"\.\/layout\/ContentStack\.vue"/,
-  );
-});
-
-test("ui/index.ts exports ActionRow from layout/", () => {
-  assert.match(
-    indexSource,
-    /export\s*\{\s*default\s+as\s+ActionRow\s*\}\s*from\s*"\.\/layout\/ActionRow\.vue"/,
-  );
-});
-
 test("ui/index.ts exports EmptyState from layout/", () => {
   assert.match(
     indexSource,

@@ -77,7 +77,7 @@
   --floating-bar-radius: var(--radius-sheet);
   --floating-bar-button-height: 40px;
   /* Overlay z-index scale (issue #135).
-     Ordered: chrome < detail-sheet < sheet < toast.
+     Ordered: chrome < detail dock < context overlays < toast.
      Map overlays use a separate high range (700+) and are out of scope. */
   --z-chrome: 70;
   --z-detail-sheet: 90;
