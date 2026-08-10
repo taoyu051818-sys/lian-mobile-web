@@ -8,15 +8,15 @@ Open release blockers: None recorded as open GitHub issues.
 
 Current production release: Not recorded in this repository.
 
-**Active execution queue:**
-
-- F2b Publish AI attempt boundary on
-  `codex/audit-f2b-publish-ai-attempt-boundary`.
-- Scope is local frontend code and tests only. No push, deployment, production
-  mutation, or online environment check is authorized.
+**No active execution queue.**
 
 Local audit baseline:
 
+- F2b Publish AI attempt boundary accepted locally on
+  `codex/audit-f2b-publish-ai-attempt-boundary`; implementation commit
+  `391d17a`.
+- F2b validation passed: 156 Vitest files / 3,978 tests, 65 Node structure
+  files / 817 tests, build, smoke, and full `npm run verify`.
 - F2a detail request generation accepted locally on
   `codex/audit-f2a-detail-request-generation`; implementation commit `1653237`.
 - F2a validation passed: 155 Vitest files / 3,961 tests, 65 Node structure

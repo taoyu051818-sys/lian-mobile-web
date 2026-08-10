@@ -75,20 +75,20 @@ frequency, image/location trigger behavior, persistence, or backend behavior.
 
 ## Acceptance criteria
 
-- [ ] Clearing a draft while either AI request is pending prevents every old
+- [x] Clearing a draft while either AI request is pending prevents every old
       success, error, candidate, component, inferred-kind, and risk write.
-- [ ] Clearing and immediately recreating identical content still rejects the
+- [x] Clearing and immediately recreating identical content still rejects the
       earlier draft's response.
-- [ ] Changing only image URLs or location while an editor request is pending
+- [x] Changing only image URLs or location while an editor request is pending
       rejects the old response.
-- [ ] Reset clears all transient AI state and re-arms the image path's first
+- [x] Reset clears all transient AI state and re-arms the image path's first
       empty-to-non-empty trigger for the next draft.
-- [ ] Scope disposal prevents delayed writes.
-- [ ] Fresh same-attempt responses, explicit refresh, existing debounce, and
+- [x] Scope disposal prevents delayed writes.
+- [x] Fresh same-attempt responses, explicit refresh, existing debounce, and
       latest-request-wins behavior remain intact.
-- [ ] Images and location still do not automatically trigger the editor LLM.
-- [ ] Focused tests, build, and full `npm run verify` pass.
-- [ ] Only allowed files are changed.
+- [x] Images and location still do not automatically trigger the editor LLM.
+- [x] Focused tests, build, and full `npm run verify` pass.
+- [x] Only allowed files are changed.
 
 ## Validation commands
 
