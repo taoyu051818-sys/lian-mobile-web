@@ -13,6 +13,10 @@ const wrapperSource = fs.readFileSync(
   path.join(repoRoot, "src/features/feed/FeedItemCard.vue"),
   "utf8",
 );
+const contextActionsSource = fs.readFileSync(
+  path.join(repoRoot, "src/features/feed/useFeedCardContextActions.ts"),
+  "utf8",
+);
 const wrapperTemplateMatch = wrapperSource.match(/<template>([\s\S]*?)<\/template>/);
 assert.ok(wrapperTemplateMatch, "FeedItemCard must have one template block");
 const wrapperTemplateSource = wrapperTemplateMatch[1];
@@ -46,6 +50,22 @@ function functionBody(source, name) {
     if (depth === 0) return source.slice(bodyStart + 1, index);
   }
   assert.fail(`unterminated ${name} function body`);
+}
+
+function interfaceBody(source, name) {
+  const signature = new RegExp(
+    `export\\s+interface\\s+${escapeRegExp(name)}(?:\\s+extends[^\\{]+)?\\s*\\{`,
+  );
+  const signatureMatch = signature.exec(source);
+  assert.ok(signatureMatch, `expected exported interface ${name}`);
+  const bodyStart = source.indexOf("{", signatureMatch.index);
+  let depth = 0;
+  for (let index = bodyStart; index < source.length; index += 1) {
+    if (source[index] === "{") depth += 1;
+    if (source[index] === "}") depth -= 1;
+    if (depth === 0) return source.slice(bodyStart + 1, index);
+  }
+  assert.fail(`unterminated interface ${name}`);
 }
 
 // Step A of PRD_POST_CREATION_REVOLUTION_V0.2:
@@ -232,6 +252,84 @@ test("FeedItemCard wires its real item owner and open transition into context ac
       "the pointer's first callback must reach the production emitOpen transition",
     );
   }
+});
+
+test("FeedItemCard relies on the context-action production defaults", () => {
+  const actionOwnerCall = wrapperSource.match(
+    /const\s+[A-Za-z_$][\w$]*\s*=\s*useFeedCardContextActions\(\{([\s\S]*?)\}\);/,
+  );
+  assert.ok(actionOwnerCall, "FeedItemCard must retain one production context-action owner");
+  const actionOptions = actionOwnerCall[1];
+
+  assert.doesNotMatch(
+    actionOptions,
+    /\b(?:settlements|dependencies)\b/,
+    "the production card must use the action composable's default settlement port and dependencies",
+  );
+
+  const imports = [...wrapperSource.matchAll(/import\s+([\s\S]*?)\s+from\s+["']([^"']+)["'];?/g)];
+  for (const [, bindings, modulePath] of imports) {
+    assert.doesNotMatch(
+      modulePath,
+      /(?:^|\/)reactions(?:\/|$)|postReactionSettlements/,
+      "FeedItemCard must not construct or import the reaction settlement channel",
+    );
+    assert.doesNotMatch(
+      bindings,
+      /\b(?:postReactionSettlements|createPostReactionSettlementChannel|PostReactionSettlementPort)\b/,
+      "FeedItemCard must not wire settlement channel symbols into its action owner",
+    );
+  }
+});
+
+test("context actions expose and resolve the production settlement port", () => {
+  const optionsBody = interfaceBody(contextActionsSource, "UseFeedCardContextActionsOptions");
+  assert.match(
+    optionsBody,
+    /\bsettlements\?\s*:\s*PostReactionSettlementPort\s*;/,
+    "the public options type must expose an optional typed settlement port",
+  );
+
+  const reactionImportBindings = [
+    ...contextActionsSource.matchAll(
+      /^\s*import\s+([^;]+?)\s+from\s+["']\.\.\/reactions["']\s*;/gm,
+    ),
+  ].map((match) => match[1]);
+  assert.ok(
+    reactionImportBindings.length > 0,
+    "context actions must import the production reactions port",
+  );
+
+  const reactionNamedImports = reactionImportBindings.flatMap((bindings) => {
+    const namedBlock = bindings.match(/\{([\s\S]*?)\}/);
+    if (!namedBlock) return [];
+    const statementIsTypeOnly = /^\s*type\b/.test(bindings);
+    return namedBlock[1]
+      .split(",")
+      .map((entry) => entry.trim())
+      .filter(Boolean)
+      .map((entry) => ({ entry, statementIsTypeOnly }));
+  });
+  assert.ok(
+    reactionNamedImports.some(
+      ({ entry, statementIsTypeOnly }) =>
+        (statementIsTypeOnly && entry === "PostReactionSettlementPort") ||
+        (!statementIsTypeOnly && entry === "type PostReactionSettlementPort"),
+    ),
+    "PostReactionSettlementPort must be a named type import from ../reactions",
+  );
+
+  const singletonImport = reactionNamedImports
+    .filter(({ statementIsTypeOnly }) => !statementIsTypeOnly)
+    .map(({ entry }) => entry.match(/^postReactionSettlements(?:\s+as\s+([A-Za-z_$][\w$]*))?$/))
+    .find(Boolean);
+  assert.ok(singletonImport, "the named production singleton must come from ../reactions");
+  const singletonLocalName = singletonImport[1] ?? "postReactionSettlements";
+  assert.match(
+    contextActionsSource,
+    new RegExp(`options\\.settlements\\s*\\?\\?\\s*${escapeRegExp(singletonLocalName)}\\b`),
+    "an injected port must take precedence over the named production singleton",
+  );
 });
 
 test("FeedItemCard connects menu actions and per-action presentation state to the production owner", () => {
