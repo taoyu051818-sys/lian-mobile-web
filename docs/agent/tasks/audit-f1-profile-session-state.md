@@ -43,6 +43,7 @@ the current session loads them.
 - `tests/profile/useServerChanPreferences.test.ts`
 - `tests/profile/useServerChanOptIn.test.ts`
 - `tests/profile/profile-view-structure.test.ts`
+- `tests/structure/core-product-model-queue-snapshot.test.mjs`
 - `scripts/check-test-inventory.mjs`
 - `docs/CURRENT_STATUS.md`
 - `docs/agent/tasks/audit-f1-profile-session-state.md`
@@ -78,6 +79,8 @@ None. Existing API payloads and endpoints remain unchanged.
 - [ ] A result from an earlier generation cannot overwrite current state or
       current busy flags.
 - [ ] `ProfileView.enterGuestState()` invokes all three reset boundaries.
+- [ ] The canonical status contract accepts exactly one of active or inactive
+      execution queue markers.
 - [ ] Normal load, bind, unbind, toggle, and opt-in flows remain green.
 - [ ] Focused tests, `npm run check`, build, and full `npm run verify` pass.
 - [ ] Only allowed files are changed.
