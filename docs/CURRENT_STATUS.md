@@ -2,13 +2,18 @@
 
 Last verified: 2026-08-10
 
-Active control issue: [#1085](https://github.com/taoyu051818-sys/lian-mobile-web/issues/1085).
+Active control issue: [#1086](https://github.com/taoyu051818-sys/lian-mobile-web/issues/1086).
 
 Open release blockers: None recorded as open GitHub issues.
 
 Current production release: Not recorded in this repository.
 
-**No active execution queue.**
+**Active execution queue:** F2a detail navigation monotonic request generation.
+
+- Task: `docs/agent/tasks/detail-navigation-monotonic-request-generation.md`.
+- Branch: `codex/audit-f2a-detail-request-generation`.
+- Scope: local reducer/tests/docs only; no API, DOM, backend, production,
+  deployment, or persisted-data change.
 
 Local audit baseline:
 
