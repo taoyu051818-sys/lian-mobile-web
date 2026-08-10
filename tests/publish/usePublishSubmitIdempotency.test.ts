@@ -10,7 +10,7 @@ import {
   createPublishIdempotencyKey,
   usePublishSubmit,
 } from "../../src/features/publish/usePublishSubmit";
-import type { PublishVisibility } from "../../src/types/publish";
+import type { PublishActionablePostPreview, PublishVisibility } from "../../src/types/publish";
 
 vi.mock("../../src/api/publish", async () => {
   const actual =
@@ -26,6 +26,20 @@ vi.mock("../../src/composables/useHapticFeedback", () => ({
   hapticError: vi.fn(),
 }));
 
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  let reject!: (reason?: unknown) => void;
+  const promise = new Promise<T>((resolvePromise, rejectPromise) => {
+    resolve = resolvePromise;
+    reject = rejectPromise;
+  });
+  return { promise, resolve, reject };
+}
+
+async function flushAsync() {
+  for (let index = 0; index < 8; index += 1) await Promise.resolve();
+}
+
 function createHarness(keys = ["publish-key-1", "publish-key-2"]) {
   let nextKey = 0;
   const createIdempotencyKey = vi.fn(() => keys[nextKey++] ?? `publish-key-${nextKey}`);
@@ -36,6 +50,13 @@ function createHarness(keys = ["publish-key-1", "publish-key-2"]) {
   const lastTid = ref<string | number | null>(null);
   const title = ref("A title");
   const visibility = ref<PublishVisibility>("public");
+  const uploadedImageUrls = ref<string[]>([]);
+  const selectedFileCount = ref(0);
+  const localPreviewUrls = ref<string[]>([]);
+  const uploading = ref(false);
+  const publishing = ref(false);
+  const actionablePreview = ref<PublishActionablePostPreview | null>(null);
+  const validate = vi.fn(() => "");
   const submit = usePublishSubmit({
     title,
     body,
@@ -44,30 +65,43 @@ function createHarness(keys = ["publish-key-1", "publish-key-2"]) {
     placeName: ref(""),
     visibility,
     aliasId: ref(undefined),
-    uploadedImageUrls: ref([]),
-    uploading: ref(false),
-    publishing: ref(false),
+    uploadedImageUrls,
+    uploading,
+    publishing,
     errorMessage,
     successMessage,
+    actionablePreview,
     lastTid,
     normalizedTag: ref("#campus"),
     normalizedIdentityTag: ref(""),
     selectedLocationDraft: ref(null),
     locationPreviewLabel: ref("未绑定地点"),
-    validate: () => "",
+    validate,
     resetForm,
     createIdempotencyKey,
+    draftOwnership: () => ({
+      title: title.value,
+      body: body.value,
+      visibility: visibility.value,
+      selectedFileCount: selectedFileCount.value,
+      localPreviewUrls: localPreviewUrls.value,
+      uploadedImageUrls: uploadedImageUrls.value,
+      uploading: uploading.value,
+    }),
   });
 
   return {
     ...submit,
+    actionablePreview,
     body,
     createIdempotencyKey,
     errorMessage,
     lastTid,
+    publishing,
     resetForm,
     successMessage,
     title,
+    validate,
     visibility,
   };
 }
@@ -108,6 +142,35 @@ describe("AI publish idempotency lifecycle", () => {
     expect(createPublishIdempotencyKey()).toBe(
       `publish-${(123_456_789).toString(36)}-${(0.5).toString(36).slice(2)}`,
     );
+  });
+
+  it("treats a duplicate submit while publishing as a true no-op", async () => {
+    const harness = createHarness();
+    const existingPreview: PublishActionablePostPreview = {
+      kind: "text",
+      action: "existing action",
+      structure: ["existing structure"],
+      components: [],
+    };
+    harness.publishing.value = true;
+    harness.errorMessage.value = "existing error";
+    harness.successMessage.value = "existing success";
+    harness.lastTid.value = 700;
+    harness.actionablePreview.value = existingPreview;
+    harness.validate.mockReturnValue("new validation must not run");
+
+    await harness.submitPublish();
+
+    expect(harness.validate).not.toHaveBeenCalled();
+    expect(harness.errorMessage.value).toBe("existing error");
+    expect(harness.successMessage.value).toBe("existing success");
+    expect(harness.lastTid.value).toBe(700);
+    expect(harness.actionablePreview.value).toStrictEqual(existingPreview);
+    expect(harness.createIdempotencyKey).not.toHaveBeenCalled();
+    expect(publishPost).not.toHaveBeenCalled();
+    expect(hapticSuccess).not.toHaveBeenCalled();
+    expect(hapticError).not.toHaveBeenCalled();
+    expect(harness.publishing.value).toBe(true);
   });
 
   it("reuses one random key when the user retries after an ambiguous network failure", async () => {
@@ -259,5 +322,45 @@ describe("AI publish idempotency lifecycle", () => {
     });
     expect(harness.lastTid.value).toBe(206);
     expect(harness.resetForm).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps changed-payload B busy and ignores a duplicate while B is deferred", async () => {
+    const responseB = deferred<Awaited<ReturnType<typeof publishPost>>>();
+    vi.mocked(publishPost)
+      .mockResolvedValueOnce({
+        ok: true,
+        status: "published_metadata_pending",
+        tid: 207,
+        partial: true,
+        recoverable: true,
+      })
+      .mockImplementationOnce(() => responseB.promise);
+    const harness = createHarness();
+
+    await harness.submitPublish();
+    harness.body.value = "B body";
+    const runB = harness.submitPublish();
+    await flushAsync();
+
+    expect(sentKeys()).toEqual(["publish-key-1", "publish-key-2"]);
+    expect(harness.publishing.value).toBe(true);
+    expect(harness.lastTid.value).toBeNull();
+    expect(harness.successMessage.value).toBe("");
+
+    harness.validate.mockClear();
+    await harness.submitPublish();
+    expect(harness.validate).not.toHaveBeenCalled();
+    expect(publishPost).toHaveBeenCalledTimes(2);
+    expect(sentKeys()).toEqual(["publish-key-1", "publish-key-2"]);
+    expect(harness.publishing.value).toBe(true);
+    expect(hapticSuccess).toHaveBeenCalledTimes(1);
+
+    responseB.resolve({ ok: true, status: "published", tid: 208 });
+    await runB;
+    await flushAsync();
+
+    expect(harness.lastTid.value).toBe(208);
+    expect(harness.resetForm).toHaveBeenCalledTimes(1);
+    expect(harness.publishing.value).toBe(false);
   });
 });

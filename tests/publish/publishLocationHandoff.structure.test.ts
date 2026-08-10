@@ -189,6 +189,9 @@ describe("publish location handoff structure", () => {
     expect(scopeResetBody).toContain("draft.lastTid.value = null;");
     expect(scopeResetBody).toContain("resetConfirmationVisible.value = false;");
     expect(scopeResetBody).toContain("resetPublishAttemptForScopeTransition();");
+    expect(scopeResetBody.indexOf("resetPublishAttemptForScopeTransition();")).toBeLessThan(
+      scopeResetBody.indexOf("draft.resetForm(locationOptions.clearLocationState);"),
+    );
     expect(publishView).toContain("resetPublishAttemptForScopeTransition = resetPublishAttempt;");
     expect(publishView).toContain("resetTransientState: resetPublishTransientState,");
     expect(publishView).toMatch(/watch\(restoreGeneration, consumeHandoffIfActive/);

@@ -21,7 +21,7 @@ import {
   resolveWriteActionErrorMessage,
 } from "../../utils/writeActionErrors";
 import { buildPublishPayload, publishPost } from "../../api/publish";
-import { createEvent } from "../../api/events";
+import { createEvent, type CreateEventInput } from "../../api/events";
 import { parseCapacityInput, validateEventPublishForm } from "../../domain/eventPublishPolicy";
 import { normalizeAudience } from "../../types/audience";
 import { hapticSuccess, hapticError } from "../../composables/useHapticFeedback";
@@ -103,6 +103,79 @@ function createPublishActionablePostPreview(input: {
   };
 }
 
+function cloneJsonValue<T>(value: T): T {
+  if (value === undefined) return value;
+  return JSON.parse(JSON.stringify(value)) as T;
+}
+
+function freezeJsonValue<T>(value: T): T {
+  if (!value || typeof value !== "object" || Object.isFrozen(value)) return value;
+  for (const nested of Object.values(value as Record<string, unknown>)) {
+    freezeJsonValue(nested);
+  }
+  return Object.freeze(value);
+}
+
+function cloneAndFreezeJson<T>(value: T): T {
+  return freezeJsonValue(cloneJsonValue(value));
+}
+
+interface CapturedPublishDraft {
+  title: string;
+  body: string;
+  tagInput: string;
+  identityTag: string;
+  normalizedTag: string;
+  normalizedIdentityTag: string;
+  placeName: string;
+  visibility: PublishVisibility;
+  aliasId?: string;
+  uploadedImageUrls: string[];
+  uploading: boolean;
+  selectedLocationDraft: PublishLocationDraft | null;
+  locationPreviewLabel: string;
+  postType: PublishPostType;
+  eventStartAt: string;
+  eventEndAt: string;
+  eventCapacity: string;
+  eventJoinPolicy: EventJoinPolicy;
+  audienceVisibility: PublishVisibility;
+  publishKind: PublishKind;
+  llmInferredKind: InferredKind | null;
+  titleCandidate: string | null;
+  bodyCandidate: string | null;
+  suggestedComponents: SuggestedComponent[];
+  merchant?: { input: MerchantPublishInput; contentType: MerchantContentType };
+  trade?: { input: TradePublishInput; contentType: TradeContentType };
+  draftOwnership: unknown;
+}
+
+interface PostSubmitSnapshot {
+  route: "post";
+  fingerprint: string;
+  request: PublishPayload;
+  preview: PublishActionablePostPreview;
+  locationFallback: string;
+  draftOwnership: unknown;
+}
+
+interface EventSubmitSnapshot {
+  route: "event";
+  fingerprint: string;
+  request: CreateEventInput;
+  preview: PublishActionablePostPreview;
+  locationFallback: string;
+  draftOwnership: unknown;
+}
+
+type SubmitSnapshot = PostSubmitSnapshot | EventSubmitSnapshot;
+
+interface ActiveSubmitRequest {
+  generation: number;
+  ticket: number;
+  snapshot: SubmitSnapshot;
+}
+
 export function usePublishSubmit(options: {
   title: Ref<string>;
   body: Ref<string>;
@@ -147,10 +220,15 @@ export function usePublishSubmit(options: {
   tradeVerified?: Ref<boolean>;
   /** Deterministic override for behavior tests; production uses a random UUID. */
   createIdempotencyKey?: () => string;
+  /** Exact JSON-safe projection of the raw form state cleared by resetForm. */
+  draftOwnership?: () => unknown;
 }) {
   let activeAiPublishIdempotencyKey = "";
   let activeAiPublishPayloadSnapshot: PublishPayload | null = null;
   let activeAiPublishHasPartialResult = false;
+  let responseGeneration = 0;
+  let nextSubmitTicket = 0;
+  let activeSubmitRequest: ActiveSubmitRequest | null = null;
   const postDetailUrl = computed(() => {
     const tid = options.lastTid.value;
     if (!tid) return "";
@@ -168,32 +246,38 @@ export function usePublishSubmit(options: {
     );
   }
 
-  function snapshotPublishPayload(payload: PublishPayload): PublishPayload {
-    return JSON.parse(JSON.stringify(payload)) as PublishPayload;
-  }
-
-  function idempotencyKeyForPayload(payload: PublishPayload): {
-    idempotencyKey: string;
-    startedNewAttempt: boolean;
-  } {
-    const startedNewAttempt =
-      activeAiPublishPayloadSnapshot !== null && !publishPayloadMatchesActiveAttempt(payload);
-    if (startedNewAttempt) {
-      resetPublishAttempt();
-    }
-    if (!activeAiPublishIdempotencyKey) {
-      activeAiPublishIdempotencyKey = (
-        options.createIdempotencyKey || createPublishIdempotencyKey
-      )();
-      activeAiPublishPayloadSnapshot = snapshotPublishPayload(payload);
-    }
-    return { idempotencyKey: activeAiPublishIdempotencyKey, startedNewAttempt };
-  }
-
-  function resetPublishAttempt() {
+  function clearLogicalPublishAttempt() {
     activeAiPublishIdempotencyKey = "";
     activeAiPublishPayloadSnapshot = null;
     activeAiPublishHasPartialResult = false;
+  }
+
+  function resetPublishAttempt() {
+    clearLogicalPublishAttempt();
+    responseGeneration += 1;
+    activeSubmitRequest = null;
+    options.publishing.value = false;
+  }
+
+  function beginSubmitRequest(snapshot: SubmitSnapshot): ActiveSubmitRequest {
+    const request: ActiveSubmitRequest = {
+      generation: responseGeneration,
+      ticket: (nextSubmitTicket += 1),
+      snapshot,
+    };
+    activeSubmitRequest = request;
+    options.publishing.value = true;
+    return request;
+  }
+
+  function ownsSubmitRequest(request: ActiveSubmitRequest): boolean {
+    return activeSubmitRequest === request && request.generation === responseGeneration;
+  }
+
+  function finishSubmitRequest(request: ActiveSubmitRequest) {
+    if (!ownsSubmitRequest(request)) return;
+    activeSubmitRequest = null;
+    options.publishing.value = false;
   }
 
   function clearPublishResult() {
@@ -240,88 +324,294 @@ export function usePublishSubmit(options: {
     return "";
   }
 
-  async function submitEvent() {
-    const cap = parseCapacityInput(options.eventCapacity?.value || "");
-    const capacity = cap.ok ? cap.capacity : undefined;
-    const startsAt = (options.eventStartAt?.value || "").trim();
-    const endsAt = (options.eventEndAt?.value || "").trim();
-    const audience = normalizeAudience({
-      visibility: options.audienceVisibility?.value || options.visibility.value,
-    });
-    const eventDraftContext = buildPublishPayload({
-      imageUrls: options.uploadedImageUrls.value,
+  function captureDraft(): CapturedPublishDraft {
+    const publishKind = options.publishKind?.value ?? "regular";
+    const uploadedImageUrls = cloneJsonValue(options.uploadedImageUrls.value);
+    const selectedLocationDraft = cloneJsonValue(options.selectedLocationDraft.value);
+    const suggestedComponents = cloneJsonValue(options.suggestedComponents?.value ?? []);
+    const merchant =
+      publishKind === "merchant" && options.merchantPayload
+        ? cloneJsonValue(options.merchantPayload())
+        : undefined;
+    const trade =
+      publishKind === "trade" && options.tradePayload
+        ? cloneJsonValue(options.tradePayload())
+        : undefined;
+    const fallbackOwnership = {
       title: options.title.value,
       body: options.body.value,
-      tag: options.normalizedTag.value,
-      identityTag: options.normalizedIdentityTag.value,
+      tagInput: options.tagInput.value,
+      identityTag: options.identityTag.value,
       placeName: options.placeName.value,
       visibility: options.visibility.value,
       aliasId: options.aliasId.value,
-      locationDraft: options.selectedLocationDraft.value,
+      uploadedImageUrls,
+      uploading: options.uploading.value,
+      selectedLocationDraft,
+      locationPreviewLabel: options.locationPreviewLabel.value,
+      postType: options.postType?.value ?? "post",
+      eventStartAt: options.eventStartAt?.value ?? "",
+      eventEndAt: options.eventEndAt?.value ?? "",
+      eventCapacity: options.eventCapacity?.value ?? "",
+      eventJoinPolicy: options.eventJoinPolicy?.value ?? "open",
+      audienceVisibility: options.audienceVisibility?.value ?? options.visibility.value,
+      publishKind,
+      llmInferredKind: options.llmInferredKind?.value ?? null,
+      titleCandidate: options.titleCandidate?.value ?? null,
+      bodyCandidate: options.bodyCandidate?.value ?? null,
+      suggestedComponents,
+      merchant,
+      trade,
+    };
+
+    return cloneAndFreezeJson({
+      title: options.title.value,
+      body: options.body.value,
+      tagInput: options.tagInput.value,
+      identityTag: options.identityTag.value,
+      normalizedTag: options.normalizedTag.value,
+      normalizedIdentityTag: options.normalizedIdentityTag.value,
+      placeName: options.placeName.value,
+      visibility: options.visibility.value,
+      aliasId: options.aliasId.value,
+      uploadedImageUrls,
+      uploading: options.uploading.value,
+      selectedLocationDraft,
+      locationPreviewLabel: options.locationPreviewLabel.value,
+      postType: options.postType?.value ?? "post",
+      eventStartAt: options.eventStartAt?.value ?? "",
+      eventEndAt: options.eventEndAt?.value ?? "",
+      eventCapacity: options.eventCapacity?.value ?? "",
+      eventJoinPolicy: options.eventJoinPolicy?.value ?? "open",
+      audienceVisibility: options.audienceVisibility?.value ?? options.visibility.value,
+      publishKind,
+      llmInferredKind: options.llmInferredKind?.value ?? null,
+      titleCandidate: options.titleCandidate?.value ?? null,
+      bodyCandidate: options.bodyCandidate?.value ?? null,
+      suggestedComponents,
+      merchant,
+      trade,
+      draftOwnership: options.draftOwnership?.() ?? fallbackOwnership,
+    });
+  }
+
+  function fingerprintFor(input: {
+    route: "post" | "event";
+    request: PublishPayload | CreateEventInput;
+    locationFallback: string;
+    draftOwnership: unknown;
+  }): string {
+    return JSON.stringify({
+      route: input.route,
+      request: input.request,
+      locationFallback: input.locationFallback,
+      draftOwnership: input.draftOwnership,
+    });
+  }
+
+  function capturePostSnapshotBase(draft = captureDraft()): PostSubmitSnapshot {
+    const kind = inferKind({
+      publishKind: draft.publishKind,
+      hasLocation: Boolean(draft.selectedLocationDraft || draft.placeName.trim().length > 0),
+      hasImage: draft.uploadedImageUrls.length > 0,
+      hasBody: draft.body.trim().length > 0,
+      tag: draft.normalizedTag,
+      llmInferredKind: draft.llmInferredKind,
+    });
+    const request = cloneAndFreezeJson(
+      buildPublishPayload({
+        imageUrls: draft.uploadedImageUrls,
+        title: draft.title,
+        body: draft.body,
+        tag: draft.normalizedTag,
+        identityTag: draft.normalizedIdentityTag,
+        placeName: draft.placeName,
+        visibility: draft.visibility,
+        aliasId: draft.aliasId,
+        locationDraft: draft.selectedLocationDraft,
+        kind,
+        candidates: {
+          title: draft.titleCandidate,
+          bodyCandidate: draft.bodyCandidate,
+          inferredKind: draft.llmInferredKind,
+          suggestedComponents: draft.suggestedComponents,
+        },
+        ...(draft.merchant ? { merchant: draft.merchant } : {}),
+        ...(draft.trade ? { trade: draft.trade } : {}),
+      }),
+    );
+    const preview = cloneAndFreezeJson(
+      createPublishActionablePostPreview({
+        kind,
+        title: draft.title,
+        body: draft.body,
+        tag: request.tag,
+        identityTag: request.identityTag,
+        imageUrls: request.imageUrls,
+        locationArea: request.metadata.locationArea || "",
+        components: draft.suggestedComponents,
+        ...(draft.merchant ? { merchant: draft.merchant } : {}),
+        ...(draft.trade ? { trade: draft.trade } : {}),
+      }),
+    );
+    const locationFallback = draft.locationPreviewLabel;
+    return {
+      route: "post",
+      fingerprint: fingerprintFor({
+        route: "post",
+        request,
+        locationFallback,
+        draftOwnership: draft.draftOwnership,
+      }),
+      request,
+      preview,
+      locationFallback,
+      draftOwnership: draft.draftOwnership,
+    };
+  }
+
+  function captureEventSnapshot(draft = captureDraft()): EventSubmitSnapshot {
+    const cap = parseCapacityInput(draft.eventCapacity);
+    const capacity = cap.ok ? cap.capacity : undefined;
+    const startsAt = draft.eventStartAt.trim();
+    const endsAt = draft.eventEndAt.trim();
+    const audience = normalizeAudience({
+      visibility: draft.audienceVisibility,
+    });
+    const eventDraftContext = buildPublishPayload({
+      imageUrls: draft.uploadedImageUrls,
+      title: draft.title,
+      body: draft.body,
+      tag: draft.normalizedTag,
+      identityTag: draft.normalizedIdentityTag,
+      placeName: draft.placeName,
+      visibility: draft.visibility,
+      aliasId: draft.aliasId,
+      locationDraft: draft.selectedLocationDraft,
       audience,
       event: {
         ...(startsAt ? { startsAt } : {}),
         ...(endsAt ? { endsAt } : {}),
         ...(capacity !== undefined ? { capacity } : {}),
-        joinPolicy: options.eventJoinPolicy?.value || "open",
+        joinPolicy: draft.eventJoinPolicy,
         participantScope: audience,
       },
       candidates: {
-        title: options.titleCandidate?.value ?? null,
-        bodyCandidate: options.bodyCandidate?.value ?? null,
-        inferredKind: options.llmInferredKind?.value ?? null,
-        suggestedComponents: options.suggestedComponents?.value ?? [],
+        title: draft.titleCandidate,
+        bodyCandidate: draft.bodyCandidate,
+        inferredKind: draft.llmInferredKind,
+        suggestedComponents: draft.suggestedComponents,
       },
       kind: inferKind({
-        publishKind: options.publishKind?.value ?? "regular",
-        hasLocation: Boolean(
-          options.selectedLocationDraft.value || options.placeName.value.trim().length > 0,
-        ),
-        hasImage: options.uploadedImageUrls.value.length > 0,
-        hasBody: options.body.value.trim().length > 0,
-        tag: options.normalizedTag.value,
-        llmInferredKind: options.llmInferredKind?.value ?? null,
+        publishKind: draft.publishKind,
+        hasLocation: Boolean(draft.selectedLocationDraft || draft.placeName.trim().length > 0),
+        hasImage: draft.uploadedImageUrls.length > 0,
+        hasBody: draft.body.trim().length > 0,
+        tag: draft.normalizedTag,
+        llmInferredKind: draft.llmInferredKind,
       }),
     });
-    try {
-      const response = await createEvent({
-        title: options.title.value,
-        body: options.body.value,
-        participantScope: audience,
-        joinPolicy: options.eventJoinPolicy?.value || "open",
-        draftContext: eventDraftContext,
-        ...(startsAt ? { startsAt } : {}),
-        ...(endsAt ? { endsAt } : {}),
-        ...(capacity !== undefined ? { capacity } : {}),
-      });
-      const submittedActionablePreview = createPublishActionablePostPreview({
+    const request = cloneAndFreezeJson<CreateEventInput>({
+      title: draft.title,
+      body: draft.body,
+      participantScope: audience,
+      joinPolicy: draft.eventJoinPolicy,
+      draftContext: eventDraftContext,
+      ...(startsAt ? { startsAt } : {}),
+      ...(endsAt ? { endsAt } : {}),
+      ...(capacity !== undefined ? { capacity } : {}),
+    });
+    const submittedActionablePreview = cloneAndFreezeJson(
+      createPublishActionablePostPreview({
         kind: "event",
-        title: options.title.value,
-        body: options.body.value,
-        tag: options.normalizedTag.value,
-        identityTag: options.normalizedIdentityTag.value,
-        imageUrls: options.uploadedImageUrls.value,
-        locationArea: options.locationPreviewLabel.value,
-        components: options.suggestedComponents?.value ?? [],
-        event: { startsAt, joinPolicy: options.eventJoinPolicy?.value || "open" },
-      });
+        title: draft.title,
+        body: draft.body,
+        tag: draft.normalizedTag,
+        identityTag: draft.normalizedIdentityTag,
+        imageUrls: draft.uploadedImageUrls,
+        locationArea: draft.locationPreviewLabel,
+        components: draft.suggestedComponents,
+        event: { startsAt, joinPolicy: draft.eventJoinPolicy },
+      }),
+    );
+    const locationFallback = draft.locationPreviewLabel;
+    return {
+      route: "event",
+      fingerprint: fingerprintFor({
+        route: "event",
+        request,
+        locationFallback,
+        draftOwnership: draft.draftOwnership,
+      }),
+      request,
+      preview: submittedActionablePreview,
+      locationFallback,
+      draftOwnership: draft.draftOwnership,
+    };
+  }
+
+  function captureCurrentFingerprint(): string {
+    const draft = captureDraft();
+    return draft.postType === "event"
+      ? captureEventSnapshot(draft).fingerprint
+      : capturePostSnapshotBase(draft).fingerprint;
+  }
+
+  function currentDraftMatches(request: ActiveSubmitRequest): boolean {
+    try {
+      return captureCurrentFingerprint() === request.snapshot.fingerprint;
+    } catch {
+      return false;
+    }
+  }
+
+  function idempotencyKeyForPayload(payload: PublishPayload): {
+    idempotencyKey: string;
+    startedNewAttempt: boolean;
+  } {
+    const startedNewAttempt =
+      activeAiPublishPayloadSnapshot !== null && !publishPayloadMatchesActiveAttempt(payload);
+    if (startedNewAttempt) {
+      clearLogicalPublishAttempt();
+    }
+    if (!activeAiPublishIdempotencyKey) {
+      activeAiPublishIdempotencyKey = (
+        options.createIdempotencyKey || createPublishIdempotencyKey
+      )();
+      activeAiPublishPayloadSnapshot = cloneAndFreezeJson(payload);
+    }
+    return { idempotencyKey: activeAiPublishIdempotencyKey, startedNewAttempt };
+  }
+
+  async function submitEvent() {
+    const snapshot = captureEventSnapshot();
+    const submittedActionablePreview = snapshot.preview;
+    const request = beginSubmitRequest(snapshot);
+    try {
+      const response = await createEvent(snapshot.request);
+      if (!ownsSubmitRequest(request)) return;
+      const unchanged = currentDraftMatches(request);
       options.lastTid.value = response.tid || null;
       options.successMessage.value = PUBLISH_EVENT_SUCCESS;
       hapticSuccess();
-      options.resetForm();
+      if (unchanged) options.resetForm();
       if (options.actionablePreview) {
         options.actionablePreview.value = submittedActionablePreview;
       }
     } catch (error) {
+      if (!ownsSubmitRequest(request)) return;
       const message = resolveWriteActionErrorMessage("publish", error);
       options.errorMessage.value = isWriteActionGenericFallback("publish", message)
         ? PUBLISH_EVENT_UNAVAILABLE
         : message;
       hapticError();
+    } finally {
+      finishSubmitRequest(request);
     }
   }
 
   async function submitPublish() {
+    if (options.publishing.value || activeSubmitRequest) return;
     const validation =
       options.validate() ||
       validateEventFields() ||
@@ -333,86 +623,28 @@ export function usePublishSubmit(options: {
     }
     if (validation || options.publishing.value) return;
 
-    options.publishing.value = true;
+    if (options.postType?.value === "event") {
+      if (activeAiPublishHasPartialResult) clearPublishResult();
+      clearLogicalPublishAttempt();
+      await submitEvent();
+      return;
+    }
+
+    const baseSnapshot = capturePostSnapshotBase();
+    const { idempotencyKey, startedNewAttempt } = idempotencyKeyForPayload(baseSnapshot.request);
+    if (startedNewAttempt) clearPublishResult();
+    const snapshot: PostSubmitSnapshot = {
+      ...baseSnapshot,
+      request: cloneAndFreezeJson({ ...baseSnapshot.request, idempotencyKey }),
+    };
+    const submittedActionablePreview = snapshot.preview;
+    const request = beginSubmitRequest(snapshot);
     try {
-      if (options.postType?.value === "event") {
-        if (activeAiPublishHasPartialResult) {
-          resetPublishAttempt();
-          clearPublishResult();
-        }
-        await submitEvent();
-        return;
-      }
-      const submittedPublishKind = options.publishKind?.value ?? "regular";
-      const merchant =
-        submittedPublishKind === "merchant" && options.merchantPayload
-          ? options.merchantPayload()
-          : undefined;
-      const trade =
-        submittedPublishKind === "trade" && options.tradePayload
-          ? options.tradePayload()
-          : undefined;
-      const publishedLocationLabel = options.locationPreviewLabel.value;
-      // PRD V0.2 step F (§2.2) — derive the wire `kind` tag from the draft
-      // snapshot. The 4-radio is gone, so this is the only path that picks
-      // a kind for the post; backend still branches on the value rather
-      // than re-inferring server-side.
-      const kind = inferKind({
-        publishKind: submittedPublishKind,
-        hasLocation: Boolean(
-          options.selectedLocationDraft.value || options.placeName.value.trim().length > 0,
-        ),
-        hasImage: options.uploadedImageUrls.value.length > 0,
-        hasBody: options.body.value.trim().length > 0,
-        tag: options.normalizedTag.value,
-        // PRD §4.3 — feed the LLM `inferredKind` hint into the chain.
-        // Optional ref; when unwired or null the deterministic chain
-        // remains unchanged.
-        llmInferredKind: options.llmInferredKind?.value ?? null,
-      });
-      const publishPayload = buildPublishPayload({
-        imageUrls: options.uploadedImageUrls.value,
-        title: options.title.value,
-        body: options.body.value,
-        tag: options.normalizedTag.value,
-        identityTag: options.normalizedIdentityTag.value,
-        placeName: options.placeName.value,
-        visibility: options.visibility.value,
-        aliasId: options.aliasId.value,
-        locationDraft: options.selectedLocationDraft.value,
-        kind,
-        candidates: {
-          title: options.titleCandidate?.value ?? null,
-          bodyCandidate: options.bodyCandidate?.value ?? null,
-          inferredKind: options.llmInferredKind?.value ?? null,
-          suggestedComponents: options.suggestedComponents?.value ?? [],
-        },
-        ...(merchant ? { merchant } : {}),
-        ...(trade ? { trade } : {}),
-      });
-      const { idempotencyKey, startedNewAttempt } = idempotencyKeyForPayload(publishPayload);
-      if (startedNewAttempt) {
-        clearPublishResult();
-      }
-      const payload = {
-        ...publishPayload,
-        idempotencyKey,
-      };
-      const response = await publishPost(payload);
-      const submittedActionablePreview = createPublishActionablePostPreview({
-        kind,
-        title: options.title.value,
-        body: options.body.value,
-        tag: payload.tag,
-        identityTag: payload.identityTag,
-        imageUrls: payload.imageUrls,
-        locationArea: payload.metadata.locationArea || "",
-        components: options.suggestedComponents?.value ?? [],
-        ...(merchant ? { merchant } : {}),
-        ...(trade ? { trade } : {}),
-      });
+      const response = await publishPost(snapshot.request);
+      if (!ownsSubmitRequest(request)) return;
+      const unchanged = currentDraftMatches(request);
       options.lastTid.value = response.tid || null;
-      const boundPlaceName = placeNameFromResponse(response) || publishedLocationLabel;
+      const boundPlaceName = placeNameFromResponse(response) || snapshot.locationFallback;
       const metadataPending =
         response.partial === true || response.status === "published_metadata_pending";
       const metadataRetryAvailable = metadataPending && response.recoverable === true;
@@ -427,17 +659,18 @@ export function usePublishSubmit(options: {
       if (metadataRetryAvailable) {
         activeAiPublishHasPartialResult = true;
       } else {
-        resetPublishAttempt();
-        options.resetForm();
+        clearLogicalPublishAttempt();
+        if (unchanged) options.resetForm();
       }
       if (options.actionablePreview) {
         options.actionablePreview.value = submittedActionablePreview;
       }
     } catch (error) {
+      if (!ownsSubmitRequest(request)) return;
       options.errorMessage.value = resolveWriteActionErrorMessage("publish", error);
       hapticError();
     } finally {
-      options.publishing.value = false;
+      finishSubmitRequest(request);
     }
   }
 

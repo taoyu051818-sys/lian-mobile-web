@@ -48,6 +48,81 @@ test("PublishView renders an actionable post structure preview from the publish 
   );
 });
 
+test("PublishView fingerprints every raw reset-owned publish field", () => {
+  const src = read("src/features/publish/PublishView.vue");
+  const submitWiring = sectionBetween(
+    src,
+    "usePublishSubmit({",
+    "resetPublishAttemptForScopeTransition =",
+  );
+
+  assert.match(submitWiring, /draftOwnership:\s*\(\)\s*=>\s*\(\{/);
+  assert.match(submitWiring, /selectedFileCount:\s*draft\.selectedFiles\.value\.length/);
+  assert.match(submitWiring, /localPreviewUrls:\s*draft\.localPreviewUrls\.value/);
+  assert.match(submitWiring, /uploadedImageUrls:\s*draft\.uploadedImageUrls\.value/);
+  assert.match(submitWiring, /uploading:\s*draft\.uploading\.value/);
+  for (const projection of [
+    // Raw text and meta state. Normalized wire equality is deliberately insufficient.
+    "draft.title.value",
+    "draft.body.value",
+    "draft.tagInput.value",
+    "draft.identityTag.value",
+    "draft.placeName.value",
+    "draft.visibility.value",
+    "draft.tagPanelOpen.value",
+    "draft.visibilityPanelOpen.value",
+    "draft.publishKind.value",
+    // F2f-owned selection and upload lifecycle.
+    "draft.selectedFiles.value.length",
+    "draft.localPreviewUrls.value",
+    "draft.uploadedImageUrls.value",
+    "draft.uploading.value",
+    // F2d location search, binding, selection, and panel lifecycle.
+    "locationOptions.locationSearch.value",
+    "locationOptions.mapPickerBinding.value",
+    "locationOptions.selectedMapLocation.value",
+    "locationOptions.selectedLocationDraft.value",
+    "locationOptions.locationPanelOpen.value",
+    // Event, Merchant, and Trade inputs cleared by the form reset.
+    "eventDraft.postType.value",
+    "eventDraft.startsAt.value",
+    "eventDraft.endsAt.value",
+    "eventDraft.capacity.value",
+    "eventDraft.joinPolicy.value",
+    "draft.merchant.name.value",
+    "draft.merchant.category.value",
+    "draft.merchant.hours.value",
+    "draft.merchant.contact.value",
+    "draft.merchant.errandSupported.value",
+    "draft.trade.price.value",
+    "draft.trade.state.value",
+    "draft.trade.category.value",
+    // F2b AI candidates cleared with the owning draft.
+    "draft.llmInferredKind.value",
+    "draft.titleCandidate.value",
+    "draft.bodyCandidate.value",
+    "draft.suggestedComponents.value",
+  ]) {
+    assert.ok(submitWiring.includes(projection), `draft ownership should include ${projection}`);
+  }
+});
+
+test("manual form reset externally abandons the request before clearing draft state", () => {
+  const src = read("src/features/publish/PublishView.vue");
+  const clearState = sectionBetween(src, "function clearPublishState()", "const { postDetailUrl");
+  const abandonIdx = clearState.indexOf("resetPublishAttempt();");
+  const resetIdx = clearState.indexOf("draft.resetForm(");
+  assert.ok(abandonIdx > -1, "manual clear should abandon the physical request owner");
+  assert.ok(resetIdx > abandonIdx, "request abandon must happen before draft reset");
+
+  const confirmReset = sectionBetween(
+    src,
+    "function confirmResetForm()",
+    "async function handleFiles",
+  );
+  assert.match(confirmReset, /clearPublishState\(\);/);
+});
+
 test("PublishActionablePreview summarizes draft signals with Chinese labels", () => {
   const previewSrc = read("src/features/publish/PublishActionablePreview.vue");
   const brandSrc = read("src/config/brand/publish.ts");
@@ -90,15 +165,27 @@ test("publish success threads front-end-only actionable post structure into prev
     "async function submitEvent()",
     "async function submitPublish()",
   );
+  const postCapture = sectionBetween(
+    submitSrc,
+    "function capturePostSnapshotBase",
+    "function captureEventSnapshot",
+  );
+  const eventCapture = sectionBetween(
+    submitSrc,
+    "function captureEventSnapshot",
+    "function captureCurrentFingerprint",
+  );
   const submitPublish = submitSrc.slice(submitSrc.indexOf("async function submitPublish()"));
 
   assert.match(
-    submitPublish,
-    /suggestedComponents: options\.suggestedComponents\?\.value \?\? \[\],[\s\S]*?components: options\.suggestedComponents\?\.value \?\? \[\]/,
+    postCapture,
+    /suggestedComponents: draft\.suggestedComponents,[\s\S]*?components: draft\.suggestedComponents/,
   );
-  assert.match(eventSubmit, /createPublishActionablePostPreview\(\{[\s\S]*?kind:\s*"event"/);
-  assert.match(submitPublish, /createPublishActionablePostPreview\(\{[\s\S]*?kind,/);
-  assert.match(submitPublish, /locationArea:\s*payload\.metadata\.locationArea \|\| ""/);
+  assert.match(eventCapture, /createPublishActionablePostPreview\(\{[\s\S]*?kind:\s*"event"/);
+  assert.match(postCapture, /createPublishActionablePostPreview\(\{[\s\S]*?kind,/);
+  assert.match(postCapture, /locationArea:\s*request\.metadata\.locationArea \|\| ""/);
+  assert.match(eventSubmit, /const submittedActionablePreview = snapshot\.preview/);
+  assert.match(submitPublish, /const submittedActionablePreview = snapshot\.preview/);
 
   for (const [label, section] of [
     ["event", eventSubmit],
