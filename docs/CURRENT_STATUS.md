@@ -2,24 +2,32 @@
 
 Last verified: 2026-08-10
 
-Latest control issue: [#1090](https://github.com/taoyu051818-sys/lian-mobile-web/issues/1090)
-(F2e task contract recorded locally; implementation not yet started).
+Active control issue: [#1090](https://github.com/taoyu051818-sys/lian-mobile-web/issues/1090)
+(F2e is accepted locally; the issue remains open until an authorized operator
+publishes or integrates the branch).
 
 Open release blockers: None recorded as open GitHub issues.
 
 Current production release: Not recorded in this repository.
 
-**Active audit queue:**
+**Active execution queue:**
 
-- F2e Publish draft account-scope re-entry: normal in-app login/logout was
-  confirmed to unmount Publish, so A → B → A is not a currently reachable
-  normal-UI incident. The composable contract still fails that transition and
-  is approved for bounded defensive hardening under #1090.
+- F2e Publish draft account-scope re-entry is accepted locally. It closes the
+  synchronous draft-scope re-entry defect without claiming that mounted auth
+  refresh or account-bound asynchronous requests are safe.
+- Next audit slice: design and test the Publish image-upload ownership/order
+  boundary before any mounted identity-refresh path is enabled.
 - Scope is local frontend code and tests only. No push, deployment, production
   mutation, or online environment check is authorized.
 
 Local audit baseline:
 
+- F2e Publish draft account-scope re-entry accepted locally on
+  `codex/audit-f2e-publish-draft-scope-reentry`; implementation commit
+  `d93721e`.
+- F2e validation passed: 158 Vitest files / 4,031 tests, 65 Node structure
+  files / 817 tests, build, sanitizer, 3 loopback smoke checks, and full
+  `npm run verify`. Two independent reviewers recorded `ACCEPT`.
 - F2d Publish structured location handoff accepted locally on
   `codex/audit-f2d-publish-structured-location`; implementation commit
   `1418bf6`.
