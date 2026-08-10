@@ -205,11 +205,18 @@ describe("Phase 3: usePublishAiDraft composable", () => {
     expect(composable).toMatch(/async function refresh/);
     expect(composable).toMatch(/return\s*\{[^}]*refresh\s*[},]/);
   });
+
+  it("accepts an injected fetcher and invalidates work on attempt change or scope disposal", () => {
+    expect(composable).toMatch(/fetcher/);
+    expect(composable).toMatch(/attemptGeneration/);
+    expect(composable).toMatch(/onScopeDispose/);
+  });
 });
 
 describe("Phase 3: publish flow wires AI policy + post-upload location panel", () => {
   const draft = readRepoFile("../../src/features/publish/usePublishDraft.ts");
   const ai = readRepoFile("../../src/features/publish/usePublishAi.ts");
+  const composer = readRepoFile("../../src/features/publish/PublishComposer.vue");
   const view = readRepoFile("../../src/features/publish/PublishView.vue");
 
   it("publish flow delegates suggestion application to planAiSuggestionPatch", () => {
@@ -228,6 +235,34 @@ describe("Phase 3: publish flow wires AI policy + post-upload location panel", (
     expect(draft).toMatch(/aiLoading/);
     expect(draft).toMatch(/aiRiskFlags/);
     expect(draft).toMatch(/aiRefresh/);
+  });
+
+  it("shares one attempt-generation ref across both publish AI paths", () => {
+    expect(draft).toMatch(/PublishAiAttemptContext/);
+    expect(draft).toMatch(/provide\(PublishAiAttemptContextKey/);
+    expect(ai).toMatch(/attemptGeneration/);
+    expect(composer).toMatch(/useInjectedPublishAiAttemptContext/);
+    expect(composer).toMatch(/imageUrls:/);
+    expect(composer).toMatch(/locationLabel:/);
+    expect(composer).toMatch(/attemptGeneration:/);
+  });
+
+  it("resetForm clears every transient AI sink and advances the attempt", () => {
+    const resetAttempt = draft.slice(
+      draft.indexOf("function resetAiAttempt()"),
+      draft.indexOf("function resetForm("),
+    );
+    const resetForm = draft.slice(
+      draft.indexOf("function resetForm("),
+      draft.indexOf("onBeforeUnmount", draft.indexOf("function resetForm(")),
+    );
+
+    expect(resetAttempt).toMatch(/candidate\.setBodyCandidate\(null\)/);
+    expect(resetAttempt).toMatch(/titleCandidate\.setTitleCandidate\(null\)/);
+    expect(resetAttempt).toMatch(/suggestedComponents\.value\s*=\s*\[\]/);
+    expect(resetAttempt).toMatch(/llmInferredKind\.value\s*=\s*null/);
+    expect(resetAttempt).toMatch(/aiAttemptGeneration\.value\s*\+=\s*1/);
+    expect(resetForm).toMatch(/resetAiAttempt\(\)/);
   });
 
   it("usePublishDraft surfaces notifyFirstUploadComplete on its public surface", () => {

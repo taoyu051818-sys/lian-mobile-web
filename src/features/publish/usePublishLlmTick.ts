@@ -66,6 +66,8 @@ export interface UsePublishLlmTickOptions {
   imageUrls?: Ref<ReadonlyArray<string>>;
   /** Optional pre-bound location label, threaded into the LLM hint. */
   locationLabel?: Ref<string>;
+  /** Shared publish-attempt generation. Form reset advances this ref. */
+  attemptGeneration: Ref<number>;
   /** Apply the title candidate. Pass-through to the title state machine. */
   setTitleCandidate: (value: string | null) => void;
   /** Apply the body candidate. Pass-through to the body state machine. */
@@ -119,10 +121,16 @@ export function usePublishLlmTick(options: UsePublishLlmTickOptions): UsePublish
     return true;
   }
 
+  function sameImages(left: ReadonlyArray<string>, right: ReadonlyArray<string>): boolean {
+    return left.length === right.length && left.every((value, index) => value === right[index]);
+  }
+
   async function fire() {
     const titleAtSend = options.title.value;
     const bodyAtSend = options.body.value;
     const imageUrlsAtSend = options.imageUrls ? Array.from(options.imageUrls.value) : [];
+    const locationAtSend = options.locationLabel?.value ?? "";
+    const generationAtSend = options.attemptGeneration.value;
     if (snapshotInputsAreEmpty(titleAtSend, bodyAtSend, imageUrlsAtSend.length)) {
       // Nothing to ground on; skip the round trip rather than waste tokens
       // on the model "what would you draft from nothing?".
@@ -135,7 +143,7 @@ export function usePublishLlmTick(options: UsePublishLlmTickOptions): UsePublish
         title: titleAtSend,
         body: bodyAtSend,
         imageUrls: imageUrlsAtSend,
-        locationLabel: options.locationLabel?.value ?? "",
+        locationLabel: locationAtSend,
       });
     } catch {
       // Silent fail — see file-level comment. Refs and candidate state are
@@ -149,8 +157,11 @@ export function usePublishLlmTick(options: UsePublishLlmTickOptions): UsePublish
     //      sees now. createBodyCandidate's invalidation guard would also
     //      catch a stale set, but better to never call it.
     if (ticket !== inflight) return;
+    if (generationAtSend !== options.attemptGeneration.value) return;
     if (options.title.value !== titleAtSend) return;
     if (options.body.value !== bodyAtSend) return;
+    if (!sameImages(imageUrlsAtSend, options.imageUrls?.value ?? [])) return;
+    if (locationAtSend !== (options.locationLabel?.value ?? "")) return;
 
     if (response.title !== null) options.setTitleCandidate(response.title);
     if (response.bodyCandidate !== null) options.setBodyCandidate(response.bodyCandidate);
@@ -172,7 +183,7 @@ export function usePublishLlmTick(options: UsePublishLlmTickOptions): UsePublish
   // default "pre" flush a burst of keystrokes within one render frame would
   // collapse into a single watcher invocation, which still reschedules
   // correctly but feels less surgical when reading the code.
-  watch(
+  const stopInputWatch = watch(
     [options.title, options.body],
     () => {
       cancel();
@@ -184,7 +195,18 @@ export function usePublishLlmTick(options: UsePublishLlmTickOptions): UsePublish
     { flush: "sync" },
   );
 
+  const stopAttemptWatch = watch(
+    options.attemptGeneration,
+    () => {
+      cancel();
+      inflight += 1;
+    },
+    { flush: "sync" },
+  );
+
   onScopeDispose(() => {
+    stopInputWatch();
+    stopAttemptWatch();
     cancel();
     // Bump inflight so any in-flight response is considered stale and won't
     // touch refs after the host component unmounts.

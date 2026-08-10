@@ -44,6 +44,25 @@ import type { InferredKind, SuggestedComponent } from "../../types/publishSugges
 // PublishView so the submit/createEvent contract is unchanged.
 export type PublishKind = "regular" | "event" | "merchant" | "trade";
 
+export interface PublishAiAttemptContext {
+  attemptGeneration: Ref<number>;
+  imageUrls: Ref<string[]>;
+  locationLabel: Ref<string>;
+}
+
+export const PublishAiAttemptContextKey: InjectionKey<PublishAiAttemptContext> =
+  Symbol("PublishAiAttemptContext");
+
+export function useInjectedPublishAiAttemptContext(): PublishAiAttemptContext {
+  const context = inject(PublishAiAttemptContextKey, null);
+  if (!context) {
+    throw new Error(
+      "usePublishDraft must be installed (provided) before consuming PublishAiAttemptContextKey",
+    );
+  }
+  return context;
+}
+
 /**
  * Body candidate slot (PRD V0.2 step B).
  *
@@ -536,6 +555,7 @@ export function usePublishDraft() {
   const selectedFiles = ref<File[]>([]);
   const localPreviewUrls = ref<string[]>([]);
   const uploadedImageUrls = ref<string[]>([]);
+  const aiAttemptGeneration = ref(0);
   const uploading = ref(false);
   const publishing = ref(false);
   const errorMessage = ref("");
@@ -579,6 +599,7 @@ export function usePublishDraft() {
     body,
     tagInput,
     placeName,
+    attemptGeneration: aiAttemptGeneration,
     visibility,
     isAllowed: (value) => audience.isAllowed(value),
   });
@@ -747,6 +768,11 @@ export function usePublishDraft() {
   // call writes to it; PublishView's `usePublishSubmit` reads it. Provided
   // here so neither side has to prop-drill the ref through the composer.
   provide(PublishLlmInferredKindKey, llmInferredKind);
+  provide(PublishAiAttemptContextKey, {
+    attemptGeneration: aiAttemptGeneration,
+    imageUrls: uploadedImageUrls,
+    locationLabel: placeName,
+  });
   // PRD V0.2 step E-main — accept / dismiss actions for the ghost UI. The
   // factory takes refs (publishKind / tagInput / verification flags) so the
   // mutations land back on the same draft the rest of PublishView reads.
@@ -759,11 +785,17 @@ export function usePublishDraft() {
   });
   provide(PublishSuggestedComponentsActionsKey, suggestedComponentsActions);
 
+  function resetAiAttempt() {
+    candidate.setBodyCandidate(null);
+    titleCandidate.setTitleCandidate(null);
+    suggestedComponents.value = [];
+    llmInferredKind.value = null;
+    aiAttemptGeneration.value += 1;
+  }
+
   function resetForm(clearLocation: () => void) {
     title.value = "";
     body.value = "";
-    candidate.setBodyCandidate(null);
-    titleCandidate.setTitleCandidate(null);
     tagInput.value = "";
     identity.identityTag.value = "";
     placeName.value = "";
@@ -777,6 +809,7 @@ export function usePublishDraft() {
     trade.reset();
     clearLocation();
     revokePreviewUrls();
+    resetAiAttempt();
   }
 
   onBeforeUnmount(() => {
