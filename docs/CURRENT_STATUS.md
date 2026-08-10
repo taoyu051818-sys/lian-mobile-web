@@ -3,7 +3,7 @@
 Last verified: 2026-08-10
 
 Active control issue: [#1090](https://github.com/taoyu051818-sys/lian-mobile-web/issues/1090)
-(F2h is active locally under a local-only task contract; network and
+(F2h is accepted locally under a local-only task contract; network and
 production access remain paused, so no F2h issue was created online).
 
 Open release blockers: None recorded as open GitHub issues.
@@ -12,12 +12,13 @@ Current production release: Not recorded in this repository.
 
 **Active execution queue:**
 
-- F2h normal publish-success actionable-result rendering is active locally
+- F2h normal publish-success actionable-result rendering is accepted locally
   under `docs/agent/tasks/publish-success-actionable-result-render.md`.
 - F2g immutable Publish submit snapshot and response ownership is accepted
   locally under `docs/agent/tasks/publish-submit-snapshot-ownership.md`.
-- F2h is limited to the preview render boundary, user-facing stored-kind label,
-  offline tests, and documentation. It does not change F2g submit/reset logic.
+- The next bounded audit moves to the Feed page/module. Event creation
+  idempotency remains a coordinated frontend/backend follow-up, not an F2h
+  change.
 - F2g does not claim Event idempotency, mounted auth refresh, true network
   cancellation, or server-side side-effect reversal are complete.
 - Scope is local frontend code and tests only. No push, deployment, production
@@ -25,6 +26,12 @@ Current production release: Not recorded in this repository.
 
 Local audit baseline:
 
+- F2h Publish success actionable-result rendering accepted locally on
+  `codex/audit-f2h-publish-success-preview`; implementation commit `e5e2c65`.
+- F2h validation passed: 161 Vitest files / 4,078 tests, 65 Node structure
+  files / 820 tests, build, sanitizer, 3 loopback smoke checks, and full
+  `npm run verify`. Three independent reviewers recorded `ACCEPT` with no
+  blocking finding.
 - F2g Publish submit snapshot/response ownership accepted locally on
   `codex/audit-f2g-publish-submit-snapshot`; implementation commit `ea0c29e`.
 - F2g validation passed: 160 Vitest files / 4,067 tests, 65 Node structure

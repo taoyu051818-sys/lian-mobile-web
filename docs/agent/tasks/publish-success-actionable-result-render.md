@@ -7,6 +7,7 @@
 - Upstream source reviewed: `main@d0ee0e9802149e5d99bd2c5064d6770adb1c041d`.
 - Local prerequisite: F2g acceptance `e76418d` with implementation `ea0c29e`.
 - Working branch: `codex/audit-f2h-publish-success-preview`.
+- Locally accepted on 2026-08-10; implementation commit `e5e2c65`.
 - The root `README.md`, `package.json`, current status, F2g task/handoff,
   Publish preview component, publish-result type, brand strings, submit/reset
   flow, and current structure tests were checked from the local accepted
@@ -143,15 +144,15 @@ browser, web server, backend, or network request.
 
 ## Acceptance criteria
 
-- [ ] The old implementation fails the published-only server-render test
+- [x] The old implementation fails the published-only server-render test
       because its outer predicate hides the stored result.
-- [ ] The minimal implementation passes every render-mode and kind-label case.
-- [ ] Existing F2g submit/result ownership tests remain unchanged and green.
-- [ ] Vitest inventory is exactly 161; Node structure inventory remains 65.
-- [ ] Typecheck, build, sanitizer, smoke, focused tests, and full
+- [x] The minimal implementation passes every render-mode and kind-label case.
+- [x] Existing F2g submit/result ownership tests remain unchanged and green.
+- [x] Vitest inventory is exactly 161; Node structure inventory remains 65.
+- [x] Typecheck, build, sanitizer, smoke, focused tests, and full
       `npm run verify` pass.
-- [ ] Independent review records acceptance and no blocking finding remains.
-- [ ] Only allowed files change; no network, production, push, merge, or
+- [x] Independent review records acceptance and no blocking finding remains.
+- [x] Only allowed files change; no network, production, push, merge, or
       deployment action occurs.
 
 ## Data, compatibility, and migration
