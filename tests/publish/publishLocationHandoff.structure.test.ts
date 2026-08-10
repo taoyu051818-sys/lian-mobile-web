@@ -53,6 +53,14 @@ describe("publish location handoff structure", () => {
     expect(appViewHost).toMatch(
       /window\.removeEventListener\("hashchange", releasePublishLeaseOnMapExit\);[\s\S]*?window\.removeEventListener\("popstate", releasePublishLeaseOnMapExit\);/,
     );
+    expect(appViewHost).toMatch(/import \{ registerBeforeNavigate \} from "\.\/view-hash";/);
+    expect(appViewHost).toMatch(
+      /function releasePublishLeaseOnInAppMapNavigation\(target: AppViewKey\) \{[\s\S]*?props\.activeViewKey !== "map"[\s\S]*?target !== "map"[\s\S]*?parseDeepLinkQuery\(window\.location\.hash\)\.picker !== "1"[\s\S]*?publishPickerLease\.value = false;[\s\S]*?\}/,
+    );
+    expect(appViewHost).toMatch(
+      /unregisterBeforeNavigate = registerBeforeNavigate\(releasePublishLeaseOnInAppMapNavigation\);/,
+    );
+    expect(appViewHost).toMatch(/unregisterBeforeNavigate\?\.\(\);/);
   });
 
   it("opens the lease before navigation and restores handoff/chrome on activation", () => {

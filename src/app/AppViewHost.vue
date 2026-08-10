@@ -13,6 +13,7 @@ import type { AppViewKey } from "./view-types";
 import type { PageChromeSpec } from "../shell/page-model";
 import { FeedView } from "../features/feed";
 import { parseDeepLink, parseDeepLinkQuery } from "./deepLink";
+import { registerBeforeNavigate } from "./view-hash";
 import ViewAsyncError from "./ViewAsyncError.vue";
 import ViewLoadingFallback from "./ViewLoadingFallback.vue";
 
@@ -51,6 +52,7 @@ const emit = defineEmits<{
 }>();
 
 const publishPickerLease = ref(false);
+let unregisterBeforeNavigate: (() => void) | null = null;
 const shouldKeepPublishAlive = computed(
   () => props.activeViewKey === "publish" || publishPickerLease.value,
 );
@@ -80,13 +82,34 @@ function releasePublishLeaseOnMapExit() {
   }
 }
 
+// In-app tab navigation uses history.pushState, which intentionally emits
+// neither hashchange nor popstate. The before-navigate hook closes the one
+// same-view gap: picker -> the regular Map tab while activeViewKey stays map.
+// Other target views remain owned by the prop watcher so Publish cannot be
+// pruned before the parent applies a return to the active Publish view.
+function releasePublishLeaseOnInAppMapNavigation(target: AppViewKey) {
+  if (
+    !publishPickerLease.value ||
+    props.activeViewKey !== "map" ||
+    target !== "map" ||
+    typeof window === "undefined" ||
+    parseDeepLinkQuery(window.location.hash).picker !== "1"
+  ) {
+    return;
+  }
+  publishPickerLease.value = false;
+}
+
 onMounted(() => {
   if (typeof window === "undefined") return;
+  unregisterBeforeNavigate = registerBeforeNavigate(releasePublishLeaseOnInAppMapNavigation);
   window.addEventListener("hashchange", releasePublishLeaseOnMapExit);
   window.addEventListener("popstate", releasePublishLeaseOnMapExit);
 });
 
 onUnmounted(() => {
+  unregisterBeforeNavigate?.();
+  unregisterBeforeNavigate = null;
   if (typeof window === "undefined") return;
   window.removeEventListener("hashchange", releasePublishLeaseOnMapExit);
   window.removeEventListener("popstate", releasePublishLeaseOnMapExit);

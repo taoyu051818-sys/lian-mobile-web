@@ -131,6 +131,21 @@ test.describe("@registered publish location picker entry", () => {
       await expect(bodyInput).toHaveValue("Picker continuity body");
       await expect(imagePreview).toHaveCount(1);
       await expect(page.locator('[data-testid="publish-draft-notice"]')).toHaveCount(0);
+
+      // Re-enter the picker, then select the already-active Map tab. That
+      // path uses history.pushState (no hashchange/popstate), so it is the
+      // same-view lease-release edge. A later Publish visit must restore the
+      // serializable draft but not the previous component's File/object URL.
+      await pickOnMapBtn.click();
+      await expect.poll(() => page.url()).toContain("#/map?picker=1");
+      await page.locator('.bottom-tab-bar__item[aria-current="page"]').click();
+      await expect.poll(() => new URL(page.url()).hash).toBe("#/map");
+      await page.locator(".bottom-tab-bar__item").filter({ hasText: "发布" }).click();
+      await expect(page.locator(".publish-view")).toBeVisible();
+      await expect(imagePreview).toHaveCount(0);
+      await expect(page.locator('[data-testid="publish-draft-notice"]')).toContainText(
+        "图片需要重新选择",
+      );
     } finally {
       await context.close();
       await api.dispose();
