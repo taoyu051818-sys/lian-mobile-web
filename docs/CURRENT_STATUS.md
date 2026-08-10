@@ -12,18 +12,19 @@ Current production release: Not recorded in this repository.
 
 **Active execution queue:**
 
-- F3b account-scoped Feed/Profile read history is planned locally under
-  `docs/agent/tasks/feed-read-history-account-scope.md`. Its scope includes
-  explicit guest/account/unavailable ownership plus Profile logout-late and
-  401 account-change request boundaries; no implementation has started yet.
+- F3b account-scoped Feed/Profile read history is accepted locally under
+  `docs/agent/tasks/feed-read-history-account-scope.md`; implementation commit
+  `05a0fe8`. Guest/account history is isolated, old unowned history is ignored
+  but preserved, and late Feed/Profile account transitions are generation
+  guarded.
 - F3a stable Feed item-identity merge is accepted locally under
   `docs/agent/tasks/feed-stable-item-identity-merge.md`; implementation commit
   `70cc4e3`. Its runtime scope is limited to client-side duplicate-`tid`
   projection.
 - The Feed read-only audit also recorded follow-up batches for cursor
-  pagination, account-scoped read history, Feed/Detail reaction
-  reconciliation, auto-load recovery, request intents, page restoration, and
-  truthful context-menu actions. They are not part of F3a.
+  pagination, Feed/Detail reaction reconciliation, auto-load recovery, request
+  intents, page restoration, and truthful context-menu actions. They are not
+  part of F3a/F3b.
 - F2h normal publish-success actionable-result rendering is accepted locally
   under `docs/agent/tasks/publish-success-actionable-result-render.md`.
 - F2g immutable Publish submit snapshot and response ownership is accepted
@@ -38,6 +39,12 @@ Current production release: Not recorded in this repository.
 
 Local audit baseline:
 
+- F3b account-scoped Feed/Profile read history accepted locally on
+  `codex/audit-f3b-read-history-scope`; implementation commit `05a0fe8`.
+- F3b validation passed: 164 Vitest files / 4,112 tests, 65 Node structure
+  files / 820 tests, build, sanitizer, 3 loopback smoke checks, and full
+  `npm run verify`. Three independent reviewers recorded no blocking finding
+  after Feed logical-completion, missing-ID, and keyed Profile-subtree fixes.
 - F3a stable Feed item-identity merge accepted locally on
   `codex/audit-f3a-feed-actions`; implementation commit `70cc4e3`.
 - F3a validation passed: 162 Vitest files / 4,084 tests, 65 Node structure

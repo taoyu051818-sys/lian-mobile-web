@@ -7,7 +7,7 @@
 - Upstream source reviewed: `main@d0ee0e9802149e5d99bd2c5064d6770adb1c041d`.
 - Local prerequisite: F3a acceptance `2bb52f6` with implementation `70cc4e3`.
 - Working branch: `codex/audit-f3b-read-history-scope`.
-- Status: test-first contract revision; runtime implementation has not started.
+- Status: locally accepted; implementation commit `05a0fe8`.
 - The root rules, current status, browser-storage helpers, Feed initialization,
   Profile identity/session/list lifecycle, auth/profile API contracts, and
   current read-history tests were checked from the local accepted baseline.
@@ -309,19 +309,19 @@ network request is required.
 
 ## Acceptance criteria
 
-- [ ] Old storage tests fail account/guest separation and legacy-ignore cases.
-- [ ] Old Feed code fails identity-first initialization and unavailable-owner
+- [x] Old storage tests fail account/guest separation and legacy-ignore cases.
+- [x] Old Feed code fails identity-first initialization and unavailable-owner
       cases.
-- [ ] Old Profile code fails logout-late and A-to-B 401 retry cases.
-- [ ] Final focused matrix passes with tests importing real production helpers
+- [x] Old Profile code fails logout-late and A-to-B 401 retry cases.
+- [x] Final focused matrix passes with tests importing real production helpers
       and composables rather than copied implementations.
-- [ ] Existing Feed request-generation, F3a identity, Profile tab/filter, and
+- [x] Existing Feed request-generation, F3a identity, Profile tab/filter, and
       F1a session-reset tests remain green.
-- [ ] Vitest inventory is exactly 164; Node structure inventory remains 65.
-- [ ] Typecheck, build, sanitizer, smoke, focused tests, and full
+- [x] Vitest inventory is exactly 164; Node structure inventory remains 65.
+- [x] Typecheck, build, sanitizer, smoke, focused tests, and full
       `npm run verify` pass.
-- [ ] Independent review records acceptance and no blocking finding remains.
-- [ ] Only allowed files change; no network, production, push, merge, or
+- [x] Independent review records acceptance and no blocking finding remains.
+- [x] Only allowed files change; no network, production, push, merge, or
       deployment action occurs.
 
 ## Risks
