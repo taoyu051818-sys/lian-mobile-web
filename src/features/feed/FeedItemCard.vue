@@ -19,7 +19,7 @@
  *   @param {FeedItem} payload.item - The full feed item object
  *   @param {Object} payload.rect - Bounding rectangle for transition animations
  */
-import { computed, ref } from "vue";
+import { computed, toRef } from "vue";
 import {
   DEFAULT_USER_LABEL,
   UNTITLED_CONTENT,
@@ -57,7 +57,7 @@ import FeedItemCardShell from "./FeedItemCardShell.vue";
 import FeedItemClubCard from "./FeedItemClubCard.vue";
 import FeedContextMenu from "./FeedContextMenu.vue";
 import { useCardPointerInteraction } from "./useCardPointerInteraction";
-import { hapticMedium } from "../../composables/useHapticFeedback";
+import { useFeedCardContextActions } from "./useFeedCardContextActions";
 import {
   TRADE_STATE_AVAILABLE,
   TRADE_STATE_RESERVED,
@@ -68,6 +68,10 @@ import {
 
 type CardTemplate = FeedItemShellCardTemplate;
 type FeedCardVariant = FeedPresentationIntent;
+type FeedCardOpenPayload = {
+  item: FeedItem;
+  rect: { top: number; left: number; width: number; height: number };
+};
 
 const MAX_VISIBLE_TITLE_CHARS = 42;
 const MAX_VISIBLE_AUTHOR_CHARS = 10;
@@ -89,13 +93,7 @@ const RELATION_HINT_LABELS: Readonly<Record<string, string>> = {
 
 const props = defineProps<{ item: FeedItem }>();
 const emit = defineEmits<{
-  open: [
-    id: FeedItemId,
-    payload?: {
-      item: FeedItem;
-      rect: { top: number; left: number; width: number; height: number };
-    },
-  ];
+  open: [id: FeedItemId, payload?: FeedCardOpenPayload];
 }>();
 
 const CARD_TEMPLATES: ReadonlySet<CardTemplate> = new Set([
@@ -268,16 +266,13 @@ const cardDisplayData = computed(() => {
   };
 });
 
-// Context menu state for long press
-const showContextMenu = ref(false);
-const contextMenuX = ref(0);
-const contextMenuY = ref(0);
-const isBookmarked = ref(false); // TODO: integrate with actual bookmark state
+function emitOpen(id: FeedItemId, payload?: FeedCardOpenPayload) {
+  emit("open", id, payload);
+}
 
-function emitOpen(target: HTMLElement | null) {
+function openCurrentItem(target: HTMLElement | null) {
   const bounds = target?.getBoundingClientRect();
-  emit(
-    "open",
+  emitOpen(
     props.item.tid,
     bounds
       ? {
@@ -293,6 +288,12 @@ function emitOpen(target: HTMLElement | null) {
   );
 }
 
+const contextActions = useFeedCardContextActions({
+  item: toRef(props, "item"),
+  title: () => cardDisplayData.value.title,
+  emitOpen,
+});
+
 const {
   handlePointerDown,
   handlePointerMove,
@@ -301,49 +302,13 @@ const {
   handleContextMenu,
   openCard,
   openCardFromKeyboard,
-} = useCardPointerInteraction(emitOpen);
+} = useCardPointerInteraction(openCurrentItem, {
+  ownerToken: () => props.item,
+  openContextMenu: contextActions.openMenu,
+});
 
-function handleShare() {
-  if (typeof navigator !== "undefined" && navigator.share) {
-    navigator
-      .share({
-        title: cardDisplayData.value.title,
-        url: `${window.location.origin}/#/post/${props.item.tid}`,
-      })
-      .catch(() => {
-        // User cancelled or share failed
-      });
-  }
-}
-
-function handleBookmark() {
-  // TODO: Integrate with actual bookmark API
-  isBookmarked.value = !isBookmarked.value;
-  hapticMedium();
-}
-
-function handleReport() {
-  // TODO: Navigate to report flow
-  // For now, just close the menu
-}
-
-function closeContextMenu() {
-  showContextMenu.value = false;
-}
-
-// Override context menu to show our custom menu
-function handleCustomContextMenu(event: MouseEvent) {
-  handleContextMenu(event);
-  contextMenuX.value = event.clientX;
-  contextMenuY.value = event.clientY;
-  showContextMenu.value = true;
-}
-
-function handleClubOpen(
-  id: FeedItemId,
-  payload?: { item: FeedItem; rect: { top: number; left: number; width: number; height: number } },
-) {
-  emit("open", id, payload);
+function handleClubOpen(id: FeedItemId, payload?: FeedCardOpenPayload) {
+  emitOpen(id, payload);
 }
 </script>
 
@@ -379,7 +344,7 @@ function handleClubOpen(
       @pointermove="handlePointerMove"
       @pointerup="handlePointerUp"
       @pointercancel="handlePointerCancel"
-      @contextmenu="handleCustomContextMenu"
+      @contextmenu="handleContextMenu"
       @click="openCard"
       @keydown.enter.prevent="openCardFromKeyboard"
       @keydown.space.prevent="openCardFromKeyboard"
@@ -387,14 +352,17 @@ function handleClubOpen(
 
     <!-- Context menu for long press -->
     <FeedContextMenu
-      :visible="showContextMenu"
-      :x="contextMenuX"
-      :y="contextMenuY"
-      :bookmarked="isBookmarked"
-      @share="handleShare"
-      @bookmark="handleBookmark"
-      @report="handleReport"
-      @close="closeContextMenu"
+      :visible="contextActions.visible.value"
+      :x="contextActions.x.value"
+      :y="contextActions.y.value"
+      :bookmarked="contextActions.bookmarked.value"
+      :bookmark-busy="contextActions.bookmarkBusy.value"
+      :share-busy="contextActions.shareBusy.value"
+      :request-pending="contextActions.requestPending.value"
+      @share="contextActions.handleShare"
+      @bookmark="contextActions.handleBookmark"
+      @report="contextActions.handleReport"
+      @close="contextActions.closeMenu"
     />
   </div>
 </template>

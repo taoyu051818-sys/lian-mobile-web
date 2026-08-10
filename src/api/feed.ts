@@ -352,6 +352,7 @@ export function normalizeFeedItem(value: unknown): FeedItem | null {
     timestampISO: readableText(record.timestampISO || record.timestamp || record.createdAt),
     likeCount: Math.max(0, asNumber(record.likeCount || record.likes, 0)),
     liked: asBoolean(record.liked),
+    bookmarked: asBoolean(record.bookmarked ?? record.saved),
     locationArea:
       readableText(record.locationArea || record.placeLabel || record.location) || "校园",
     contentType,

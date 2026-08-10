@@ -68,6 +68,7 @@ class TestElement {
   readonly tagName: string;
   readonly parentElement: TestElement | null;
   readonly cardControl: boolean;
+  readonly children: TestElement[] = [];
 
   constructor(tagName = "div", parentElement: TestElement | null = null, cardControl = false) {
     this.tagName = tagName.toLowerCase();
@@ -90,6 +91,14 @@ class TestElement {
       if (matches(current)) return current;
       current = current.parentElement;
     }
+    return null;
+  }
+
+  getAttributeNames(): string[] {
+    return [];
+  }
+
+  getAttribute(_name: string): string | null {
     return null;
   }
 }
@@ -315,6 +324,87 @@ describe("useCardPointerInteraction context ownership", () => {
     expect(openMenu).not.toHaveBeenCalled();
   });
 
+  it("#2 keeps a released short click while rejecting its queued context menu", () => {
+    const owner = ref<object>({ id: "A" });
+    const card = new TestHTMLElement();
+    const openCard = vi.fn();
+    const openMenu = vi.fn();
+    const interaction = usePointerInteraction(openCard, {
+      ownerToken: () => owner.value,
+      openContextMenu: openMenu,
+    });
+    const pointer = pointerEvent(card, card, { pointerId: 4 });
+
+    interaction.handlePointerDown(pointer);
+    vi.advanceTimersByTime(100);
+    interaction.handlePointerUp(pointer);
+    expect(vi.getTimerCount()).toBe(0);
+
+    const queuedContext = mouseEvent(card, card);
+    interaction.handleContextMenu(queuedContext);
+    expect(queuedContext.preventDefault).toHaveBeenCalledTimes(1);
+    expect(openMenu).not.toHaveBeenCalled();
+
+    interaction.openCard(mouseEvent(card, card));
+    expect(openCard).toHaveBeenCalledTimes(1);
+  });
+
+  it("#2 suppresses a released A click after its owner changes to B", () => {
+    const owner = ref<object>({ id: "A" });
+    const card = new TestHTMLElement();
+    const openCard = vi.fn();
+    const interaction = usePointerInteraction(openCard, {
+      ownerToken: () => owner.value,
+      openContextMenu: vi.fn(),
+    });
+    const pointer = pointerEvent(card, card, { pointerId: 5 });
+
+    interaction.handlePointerDown(pointer);
+    vi.advanceTimersByTime(100);
+    interaction.handlePointerUp(pointer);
+    owner.value = { id: "B" };
+    interaction.openCard(mouseEvent(card, card));
+    expect(openCard).not.toHaveBeenCalled();
+  });
+
+  it.each(["move", "cancel", "longpress"] as const)(
+    "#2 lets a fresh physical intent recover after %s without a trailing click",
+    (ending) => {
+      const card = new TestHTMLElement();
+      const openCard = vi.fn();
+      const openMenu = vi.fn();
+      const interaction = usePointerInteraction(openCard, {
+        ownerToken: () => card,
+        openContextMenu: openMenu,
+      });
+      const firstPointer = pointerEvent(card, card, {
+        pointerId: 6,
+        clientX: 10,
+        clientY: 10,
+      });
+
+      interaction.handlePointerDown(firstPointer);
+      if (ending === "move") {
+        interaction.handlePointerMove(
+          pointerEvent(card, card, { pointerId: 6, clientX: 30, clientY: 30 }),
+        );
+      } else if (ending === "cancel") {
+        interaction.handlePointerCancel(firstPointer);
+      } else {
+        vi.advanceTimersByTime(360);
+        expect(openMenu).toHaveBeenCalledTimes(1);
+      }
+
+      const nextPointer = pointerEvent(card, card, { pointerId: 7 });
+      interaction.handlePointerDown(nextPointer);
+      vi.advanceTimersByTime(20);
+      interaction.handlePointerUp(nextPointer);
+      interaction.openCard(mouseEvent(card, card));
+
+      expect(openCard).toHaveBeenCalledTimes(1);
+    },
+  );
+
   it("#2 ignores move, up, and cancel events owned by another pointer", () => {
     const card = new TestHTMLElement();
     const openCard = vi.fn();
@@ -492,6 +582,11 @@ describe("useCardPointerInteraction context ownership", () => {
     vi.advanceTimersByTime(500);
     expect(openMenu).not.toHaveBeenCalled();
 
+    const staleContext = mouseEvent(card, card);
+    interaction.handleContextMenu(staleContext);
+    expect(staleContext.preventDefault).toHaveBeenCalledTimes(1);
+    expect(openMenu).not.toHaveBeenCalled();
+
     interaction.openCard(mouseEvent(card, card));
     expect(openCard).not.toHaveBeenCalled();
 
@@ -500,6 +595,36 @@ describe("useCardPointerInteraction context ownership", () => {
     interaction.handlePointerUp(pointerEvent(card, card, { pointerId: 2 }));
     interaction.openCard(mouseEvent(card, card));
     expect(openCard).toHaveBeenCalledTimes(1);
+  });
+
+  it("#5 rejects A context against a fresh B candidate without cancelling B's timer", () => {
+    const owner = ref<object>({ id: "A" });
+    const card = new TestHTMLElement();
+    const openMenu = vi.fn();
+    const interaction = usePointerInteraction(vi.fn(), {
+      ownerToken: () => owner.value,
+      openContextMenu: openMenu,
+    });
+
+    interaction.handlePointerDown(pointerEvent(card, card, { pointerId: 1 }));
+    owner.value = { id: "B" };
+    interaction.handlePointerDown(pointerEvent(card, card, { pointerId: 2 }));
+    vi.advanceTimersByTime(100);
+
+    const staleContext = mouseEvent(card, card);
+    interaction.handleContextMenu(staleContext);
+    expect(staleContext.preventDefault).toHaveBeenCalledTimes(1);
+    expect(openMenu).not.toHaveBeenCalled();
+    expect(vi.getTimerCount()).toBe(1);
+
+    vi.advanceTimersByTime(260);
+    expect(openMenu).toHaveBeenCalledTimes(1);
+    expect(openMenu).toHaveBeenLastCalledWith({
+      x: 40,
+      y: 60,
+      target: card,
+      ownerToken: owner.value,
+    });
   });
 
   it("#6 preserves the one-argument Club interaction contract", () => {

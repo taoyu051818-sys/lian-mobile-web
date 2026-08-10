@@ -1,109 +1,279 @@
-import { onBeforeUnmount, ref } from "vue";
+import { onBeforeUnmount, watch } from "vue";
 
 const CARD_CLICK_MAX_DURATION_MS = 360;
 const CARD_CLICK_MOVE_TOLERANCE_PX = 8;
+const CARD_CONTROL_SELECTOR = "button, a, input, textarea, select, [data-card-control]";
 
-function isControlTarget(target: EventTarget | null) {
-  return (
-    target instanceof HTMLElement &&
-    Boolean(target.closest("button, a, input, textarea, select, [data-card-control]"))
-  );
+export interface CardContextMenuRequest {
+  x: number;
+  y: number;
+  target: HTMLElement | null;
+  ownerToken: unknown;
 }
 
-export function useCardPointerInteraction(emitOpen: (target: HTMLElement | null) => void) {
-  const pointerDownAt = ref(0);
-  const pointerDownX = ref(0);
-  const pointerDownY = ref(0);
-  const pointerMoved = ref(false);
-  const pointerWasLongPress = ref(false);
-  const pointerCandidateId = ref<number | null>(null);
-  let longPressTimer = 0;
+interface CardContextMenuOptions {
+  ownerToken?: () => unknown;
+  openContextMenu?: (request: CardContextMenuRequest) => void;
+}
 
-  function clearLongPressTimer() {
-    if (!longPressTimer || typeof window === "undefined") return;
-    window.clearTimeout(longPressTimer);
-    longPressTimer = 0;
+interface PointerCandidate {
+  pointerId: number;
+  startedAt: number;
+  x: number;
+  y: number;
+  target: HTMLElement | null;
+  ownerToken: unknown;
+  moved: boolean;
+  acceptedLongPress: boolean;
+}
+
+function isElement(value: EventTarget | null): value is Element {
+  return typeof Element !== "undefined" && value instanceof Element;
+}
+
+function isHtmlElement(value: EventTarget | null): value is HTMLElement {
+  return typeof HTMLElement !== "undefined" && value instanceof HTMLElement;
+}
+
+function isControlTarget(target: EventTarget | null): boolean {
+  return isElement(target) && Boolean(target.closest(CARD_CONTROL_SELECTOR));
+}
+
+function monotonicNow(): number {
+  return typeof performance !== "undefined" ? performance.now() : Date.now();
+}
+
+export function useCardPointerInteraction(
+  emitOpen: (target: HTMLElement | null) => void,
+  contextMenu: CardContextMenuOptions = {},
+) {
+  let candidate: PointerCandidate | null = null;
+  let suppressNextClick = false;
+  let hasPendingClick = false;
+  let pendingClickOwnerToken: unknown;
+  let ignoreContextMenuUntilNextIntent = false;
+  let longPressTimer: number | null = null;
+  let timerGeneration = 0;
+  let disposed = false;
+
+  function clearLongPressTimer(): void {
+    timerGeneration += 1;
+    if (longPressTimer === null) return;
+    if (typeof window !== "undefined") window.clearTimeout(longPressTimer);
+    longPressTimer = null;
   }
 
-  function startLongPressTimer(pointerId: number) {
+  function currentOwnerToken(): unknown {
+    return contextMenu.ownerToken?.();
+  }
+
+  function candidateStillOwns(candidateSnapshot: PointerCandidate): boolean {
+    return (
+      !disposed &&
+      candidate === candidateSnapshot &&
+      (!contextMenu.ownerToken || currentOwnerToken() === candidateSnapshot.ownerToken)
+    );
+  }
+
+  function acceptLongPress(candidateSnapshot: PointerCandidate): void {
+    if (
+      candidateSnapshot.moved ||
+      candidateSnapshot.acceptedLongPress ||
+      !candidateStillOwns(candidateSnapshot)
+    ) {
+      return;
+    }
+
+    clearLongPressTimer();
+    candidateSnapshot.acceptedLongPress = true;
+    suppressNextClick = true;
+    contextMenu.openContextMenu?.({
+      x: candidateSnapshot.x,
+      y: candidateSnapshot.y,
+      target: candidateSnapshot.target,
+      ownerToken: candidateSnapshot.ownerToken,
+    });
+  }
+
+  function startLongPressTimer(candidateSnapshot: PointerCandidate): void {
     clearLongPressTimer();
     if (typeof window === "undefined") return;
+    const generation = ++timerGeneration;
     longPressTimer = window.setTimeout(() => {
-      if (pointerCandidateId.value === pointerId) {
-        pointerWasLongPress.value = true;
-      }
-      longPressTimer = 0;
+      if (generation !== timerGeneration) return;
+      longPressTimer = null;
+      acceptLongPress(candidateSnapshot);
     }, CARD_CLICK_MAX_DURATION_MS);
   }
 
-  function resetPointerIntent() {
+  function discardCandidate(options: { suppressClick: boolean }): void {
     clearLongPressTimer();
-    pointerCandidateId.value = null;
-    pointerDownAt.value = 0;
-    pointerDownX.value = 0;
-    pointerDownY.value = 0;
-    pointerMoved.value = false;
-    pointerWasLongPress.value = false;
+    candidate = null;
+    if (options.suppressClick) suppressNextClick = true;
   }
 
-  function handlePointerDown(event: PointerEvent) {
-    if (isControlTarget(event.target)) return;
-    if (event.pointerType === "mouse" && event.button !== 0) return;
-    pointerCandidateId.value = event.pointerId;
-    pointerDownAt.value = performance.now();
-    pointerDownX.value = event.clientX;
-    pointerDownY.value = event.clientY;
-    pointerMoved.value = false;
-    pointerWasLongPress.value = false;
-    startLongPressTimer(event.pointerId);
+  function resetPointerIntent(): void {
+    clearLongPressTimer();
+    candidate = null;
+    suppressNextClick = false;
+    hasPendingClick = false;
+    pendingClickOwnerToken = undefined;
+    ignoreContextMenuUntilNextIntent = false;
   }
 
-  function handlePointerMove(event: PointerEvent) {
-    if (pointerCandidateId.value !== event.pointerId) return;
-    const deltaX = Math.abs(event.clientX - pointerDownX.value);
-    const deltaY = Math.abs(event.clientY - pointerDownY.value);
-    if (deltaX > CARD_CLICK_MOVE_TOLERANCE_PX || deltaY > CARD_CLICK_MOVE_TOLERANCE_PX) {
-      pointerMoved.value = true;
-      clearLongPressTimer();
+  function handlePointerDown(event: PointerEvent): void {
+    if (disposed || isControlTarget(event.target)) return;
+    if (event.isPrimary === false || event.button !== 0) return;
+
+    clearLongPressTimer();
+    // A fresh primary down starts a new physical intent. Any click-suppression
+    // latch left by a completed move/cancel/long-press sequence belongs to the
+    // prior intent and must not consume this one. Owner changes still suppress
+    // the old trailing click until another primary intent actually begins.
+    suppressNextClick = false;
+    hasPendingClick = false;
+    pendingClickOwnerToken = undefined;
+    ignoreContextMenuUntilNextIntent = false;
+    const ownerToken = currentOwnerToken();
+    const candidateSnapshot: PointerCandidate = {
+      pointerId: event.pointerId,
+      startedAt: monotonicNow(),
+      x: event.clientX,
+      y: event.clientY,
+      target: isHtmlElement(event.currentTarget) ? event.currentTarget : null,
+      ownerToken,
+      moved: false,
+      acceptedLongPress: false,
+    };
+    candidate = candidateSnapshot;
+    startLongPressTimer(candidateSnapshot);
+  }
+
+  function handlePointerMove(event: PointerEvent): void {
+    const candidateSnapshot = candidate;
+    if (!candidateSnapshot || candidateSnapshot.pointerId !== event.pointerId) return;
+    const deltaX = Math.abs(event.clientX - candidateSnapshot.x);
+    const deltaY = Math.abs(event.clientY - candidateSnapshot.y);
+    if (deltaX <= CARD_CLICK_MOVE_TOLERANCE_PX && deltaY <= CARD_CLICK_MOVE_TOLERANCE_PX) {
+      return;
     }
-  }
 
-  function handlePointerUp(event: PointerEvent) {
-    if (pointerCandidateId.value !== event.pointerId) return;
+    candidateSnapshot.moved = true;
     clearLongPressTimer();
-    pointerWasLongPress.value =
-      performance.now() - pointerDownAt.value > CARD_CLICK_MAX_DURATION_MS;
+    suppressNextClick = true;
   }
 
-  function handlePointerCancel(event: PointerEvent) {
-    if (pointerCandidateId.value === event.pointerId) resetPointerIntent();
-  }
+  function handlePointerUp(event: PointerEvent): void {
+    const candidateSnapshot = candidate;
+    if (!candidateSnapshot || candidateSnapshot.pointerId !== event.pointerId) return;
 
-  function handleContextMenu(event: MouseEvent) {
-    if (isControlTarget(event.target)) return;
-    pointerWasLongPress.value = true;
+    if (candidateSnapshot.moved) {
+      clearLongPressTimer();
+      suppressNextClick = true;
+      return;
+    }
+    if (candidateSnapshot.acceptedLongPress) {
+      clearLongPressTimer();
+      suppressNextClick = true;
+      return;
+    }
+
+    const elapsed = monotonicNow() - candidateSnapshot.startedAt;
+    if (elapsed >= CARD_CLICK_MAX_DURATION_MS) {
+      acceptLongPress(candidateSnapshot);
+      return;
+    }
     clearLongPressTimer();
+    candidate = null;
+    hasPendingClick = true;
+    pendingClickOwnerToken = candidateSnapshot.ownerToken;
+    ignoreContextMenuUntilNextIntent = true;
+  }
+
+  function handlePointerCancel(event: PointerEvent): void {
+    if (!candidate || candidate.pointerId !== event.pointerId) return;
+    discardCandidate({ suppressClick: true });
+  }
+
+  function handleContextMenu(event: MouseEvent): void {
+    if (disposed || isControlTarget(event.target)) return;
+
+    const candidateSnapshot = candidate;
     event.preventDefault();
+    if (suppressNextClick || ignoreContextMenuUntilNextIntent) return;
+    if (candidateSnapshot && !candidateStillOwns(candidateSnapshot)) {
+      discardCandidate({ suppressClick: true });
+      return;
+    }
+
+    if (candidateSnapshot) {
+      if (
+        !candidateSnapshot.moved &&
+        monotonicNow() - candidateSnapshot.startedAt >= CARD_CLICK_MAX_DURATION_MS
+      ) {
+        acceptLongPress(candidateSnapshot);
+      }
+      return;
+    }
+
+    contextMenu.openContextMenu?.({
+      x: event.clientX,
+      y: event.clientY,
+      target: isHtmlElement(event.currentTarget) ? event.currentTarget : null,
+      ownerToken: currentOwnerToken(),
+    });
   }
 
-  function openCard(event?: MouseEvent) {
-    if (isControlTarget(event?.target || null)) return;
-    const shouldSuppress = pointerMoved.value || pointerWasLongPress.value;
-    const target = event?.currentTarget instanceof HTMLElement ? event.currentTarget : null;
+  function openCard(event?: MouseEvent): void {
+    if (disposed || isControlTarget(event?.target ?? null)) return;
+
+    const candidateSnapshot = candidate;
+    const ownerToken = currentOwnerToken();
+    const ownerChanged = Boolean(
+      candidateSnapshot && contextMenu.ownerToken && ownerToken !== candidateSnapshot.ownerToken,
+    );
+    const pendingClickOwnerChanged = Boolean(
+      hasPendingClick && contextMenu.ownerToken && ownerToken !== pendingClickOwnerToken,
+    );
+    const shouldSuppress = Boolean(
+      suppressNextClick ||
+      ownerChanged ||
+      pendingClickOwnerChanged ||
+      candidateSnapshot?.moved ||
+      candidateSnapshot?.acceptedLongPress,
+    );
+    const currentTarget = event?.currentTarget ?? null;
+    const target = isHtmlElement(currentTarget) ? currentTarget : null;
     resetPointerIntent();
-    if (shouldSuppress) return;
+    if (!shouldSuppress) emitOpen(target);
+  }
+
+  function openCardFromKeyboard(event: KeyboardEvent): void {
+    if (disposed || isControlTarget(event.target)) return;
+    const target = isHtmlElement(event.currentTarget) ? event.currentTarget : null;
+    resetPointerIntent();
     emitOpen(target);
   }
 
-  function openCardFromKeyboard(event: KeyboardEvent) {
-    if (isControlTarget(event.target)) return;
-    const target = event.currentTarget instanceof HTMLElement ? event.currentTarget : null;
-    resetPointerIntent();
-    emitOpen(target);
-  }
+  const stopOwnerWatch = contextMenu.ownerToken
+    ? watch(
+        contextMenu.ownerToken,
+        () => {
+          if (candidate) discardCandidate({ suppressClick: true });
+          else if (hasPendingClick) suppressNextClick = true;
+        },
+        { flush: "sync" },
+      )
+    : () => undefined;
 
   onBeforeUnmount(() => {
+    disposed = true;
+    stopOwnerWatch();
     clearLongPressTimer();
+    candidate = null;
+    hasPendingClick = false;
+    pendingClickOwnerToken = undefined;
+    ignoreContextMenuUntilNextIntent = false;
   });
 
   return {
