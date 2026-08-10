@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from "vue";
+import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import type { PageChromeSpec } from "../../shell/page-model";
 import type { FeedItemId } from "../../types/feed";
 import type { AudienceVisibility } from "../../types/audience";
@@ -85,7 +85,11 @@ onMounted(() => {
   if (!detail.detailOpen.value) {
     chrome.setSlot("top", "feed-filter");
   }
-  void feedData.loadFeed(true);
+  void feedData.initialize();
+});
+
+onUnmounted(() => {
+  feedData.dispose();
 });
 
 function openItem(id: FeedItemId) {

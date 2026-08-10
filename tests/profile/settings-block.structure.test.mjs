@@ -175,7 +175,9 @@ test("ProfileView mounts ProfileSettingsBlock only in the authenticated profile"
   const src = read("src/features/profile/ProfileView.vue");
   assert.match(src, /import ProfileSettingsBlock/);
   assert.match(src, /<ProfileSettingsBlock \/>/);
-  const authenticatedIdx = src.indexOf('<template v-else-if="user">');
+  const authenticatedIdx = src.indexOf(
+    '<div v-else-if="user" :key="accountViewKey" class="profile-view__authenticated">',
+  );
   const settingsIdx = src.indexOf("<ProfileSettingsBlock");
   const guestIdx = src.indexOf('<section v-else class="profile-view__guest">');
   assert.ok(authenticatedIdx > -1 && settingsIdx > -1 && guestIdx > -1);

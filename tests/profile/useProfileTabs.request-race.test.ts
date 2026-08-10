@@ -304,6 +304,48 @@ describe("useProfileTabs read-history ownership", () => {
     ]);
   });
 
+  it("treats two users without stable ids as an account boundary", async () => {
+    const operations: string[] = [];
+    let liveUser: ProfileUser | null = { username: "missing-id A" };
+    const user = customRef<ProfileUser | null>((track, trigger) => ({
+      get() {
+        track();
+        return liveUser;
+      },
+      set(value) {
+        liveUser = value;
+        operations.push(`user:${value?.username ?? "guest"}`);
+        trigger();
+      },
+    }));
+    fetchProfileTabMock
+      .mockRejectedValueOnce(MISSING_SESSION)
+      .mockImplementationOnce(async (_tab, tids) => {
+        operations.push(`retry:${tids.join(",")}`);
+        return response(303, "unowned B history");
+      });
+    const profile = useProfileTabs({
+      user,
+      enterGuestState: vi.fn(),
+      isMissingSessionError: (error) => error === MISSING_SESSION,
+      refreshCurrentSession: vi.fn(async () => ({ username: "missing-id B" })),
+      resetAccountPresentation: () => operations.push("external-reset"),
+    });
+    profile.profileItems.value = [{ tid: 101, title: "unowned A history" }];
+    watch(
+      profile.profileItems,
+      (items) => {
+        if (items.length === 0) operations.push("list-reset");
+      },
+      { flush: "sync" },
+    );
+
+    await profile.loadProfileList("history");
+
+    expect(operations).toEqual(["list-reset", "external-reset", "user:missing-id B", "retry:"]);
+    expect(profile.profileItems.value).toEqual([{ tid: 303, title: "unowned B history" }]);
+  });
+
   it("drops a refresh candidate after the owning list generation is invalidated", async () => {
     const refreshCandidate = deferred<ProfileUser | null>();
     const refreshStarted = deferred<void>();

@@ -17,12 +17,9 @@ export function useProfileSession() {
 
   async function refreshCurrentSession() {
     try {
-      const refreshedUser = await fetchAuthMe();
-      if (!refreshedUser) return false;
-      user.value = refreshedUser;
-      return true;
+      return await fetchAuthMe();
     } catch {
-      return false;
+      return null;
     }
   }
 

@@ -251,4 +251,38 @@ describe("useFeedData read-history ownership", () => {
       }),
     );
   });
+
+  it("settles every resolving intent only after the latest physical request settles", async () => {
+    const auth = deferred<ProfileUser | null>();
+    const latestResponse = deferred<FeedResponse>();
+    fetchAuthMeMock.mockReturnValueOnce(auth.promise);
+    fetchFeedMock.mockReturnValueOnce(latestResponse.promise);
+    const feed = makeHarness();
+    let initializationSettled = false;
+    let directLoadSettled = false;
+
+    const initialization = feed.initialize().then(() => {
+      initializationSettled = true;
+    });
+    const directLoad = feed.loadFeed(true).then(() => {
+      directLoadSettled = true;
+    });
+    feed.switchTab("featured");
+    feed.setSelectedVisibilities(new Set(["school"]));
+
+    auth.resolve({ id: "user-a" });
+    await vi.waitFor(() => expect(fetchFeedMock).toHaveBeenCalledTimes(1));
+    await Promise.resolve();
+
+    expect(initializationSettled).toBe(false);
+    expect(directLoadSettled).toBe(false);
+    expect(feed.loading.value).toBe(true);
+
+    latestResponse.resolve(EMPTY_FEED_RESPONSE);
+    await Promise.all([initialization, directLoad]);
+
+    expect(initializationSettled).toBe(true);
+    expect(directLoadSettled).toBe(true);
+    expect(feed.loading.value).toBe(false);
+  });
 });

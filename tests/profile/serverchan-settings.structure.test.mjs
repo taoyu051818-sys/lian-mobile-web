@@ -250,7 +250,9 @@ test("ProfileServerChanBlock requires two-step confirm before unbind (destructiv
 test("ProfileView mounts ProfileServerChanBlock only in the authenticated profile", () => {
   const src = read("src/features/profile/ProfileView.vue");
   assert.match(src, /import ProfileServerChanBlock/);
-  const authenticatedIdx = src.indexOf('<template v-else-if="user">');
+  const authenticatedIdx = src.indexOf(
+    '<div v-else-if="user" :key="accountViewKey" class="profile-view__authenticated">',
+  );
   const serverchanIdx = src.indexOf("<ProfileServerChanBlock");
   const guestIdx = src.indexOf('<section v-else class="profile-view__guest">');
   assert.ok(authenticatedIdx > -1 && serverchanIdx > -1 && guestIdx > -1);

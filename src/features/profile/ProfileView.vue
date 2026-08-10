@@ -59,6 +59,11 @@ const isRunnerVerified = computed(() => hasActiveVerificationTag(user.value, "ru
 const unlockCards = computed(() => buildProfileUnlockCards(user.value));
 
 const editorOpen = ref(false);
+const accountViewGeneration = ref(0);
+const accountViewKey = computed(() => {
+  const accountId = typeof user.value?.id === "string" ? user.value.id.trim() : "";
+  return accountId ? `account:${accountId}` : `unowned:${accountViewGeneration.value}`;
+});
 
 const {
   listLoading,
@@ -70,12 +75,13 @@ const {
   postsContentFilter,
   loadProfileList,
   selectPostsContentFilter,
-  resetList: _resetList,
+  resetList,
 } = useProfileTabs({
   user,
   enterGuestState: () => enterGuestState(),
   isMissingSessionError,
   refreshCurrentSession,
+  resetAccountPresentation: () => resetAccountPresentation(),
 });
 
 const detail = useDetailNavigation();
@@ -112,7 +118,17 @@ function resetNotificationSessionState() {
   resetServerChanOptInSessionState();
 }
 
+function resetAccountPresentation() {
+  accountViewGeneration.value += 1;
+  clearAdminAccessState();
+  resetNotificationSessionState();
+  editorOpen.value = false;
+  aliasPickerOpen.value = false;
+  errorMessage.value = "";
+}
+
 function enterGuestState() {
+  resetList();
   clearAdminAccessState();
   resetNotificationSessionState();
   user.value = null;
@@ -160,6 +176,7 @@ async function logout() {
 }
 
 async function handleAuthenticated(authenticatedUser: ProfileUser | null) {
+  resetList();
   clearAdminAccessState();
   resetNotificationSessionState();
   if (authenticatedUser) {
@@ -187,7 +204,7 @@ onMounted(() => {
 
     <div v-if="loading" class="profile-view__state" role="status">{{ LOADING_PROFILE }}</div>
 
-    <template v-else-if="user">
+    <div v-else-if="user" :key="accountViewKey" class="profile-view__authenticated">
       <div class="profile-view__hero-bg" aria-hidden="true"></div>
 
       <ProfileHeader
@@ -325,7 +342,7 @@ onMounted(() => {
           {{ ADMIN_ENTER_LABEL }}
         </button>
       </footer>
-    </template>
+    </div>
 
     <section v-else class="profile-view__guest">
       <AuthPanel @authenticated="handleAuthenticated" />
@@ -364,6 +381,10 @@ onMounted(() => {
   display: grid;
   gap: var(--space-4);
   padding-top: var(--space-6);
+}
+
+.profile-view__authenticated {
+  display: contents;
 }
 
 .profile-view__unlock-section {

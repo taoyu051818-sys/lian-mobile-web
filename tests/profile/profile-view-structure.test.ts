@@ -171,5 +171,24 @@ describe("ProfileView structure (issue #829)", () => {
     );
     expect(accountReset).toContain("clearAdminAccessState()");
     expect(accountReset).toContain("resetNotificationSessionState()");
+    expect(accountReset).toContain("editorOpen.value = false");
+    expect(accountReset).toContain("aliasPickerOpen.value = false");
+    expect(accountReset).toContain('errorMessage.value = ""');
+  });
+
+  it("keys the authenticated subtree by proven account ownership", async () => {
+    const src = await loadContent();
+    const accountReset = src.slice(
+      src.indexOf("function resetAccountPresentation()"),
+      src.indexOf("function enterGuestState()"),
+    );
+
+    expect(src).toContain("const accountViewGeneration = ref(0)");
+    expect(src).toContain("const accountViewKey = computed(");
+    expect(accountReset).toContain("accountViewGeneration.value += 1");
+    expect(src).toMatch(
+      /<div\s+v-else-if="user"\s+:key="accountViewKey"\s+class="profile-view__authenticated">/,
+    );
+    expect(src).toMatch(/\.profile-view__authenticated\s*\{[^}]*display:\s*contents/);
   });
 });

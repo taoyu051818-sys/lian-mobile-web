@@ -196,6 +196,9 @@ guest/authenticated boundary
   loading/error state afterward.
 - A session refresh cannot mutate identity before the current list generation
   authorizes it. A-to-B clears A-owned list/session state before `user = B`.
+- A real account-owner change remounts the authenticated Profile subtree so
+  child components that load account data only on mount cannot retain A data
+  under B. A same-stable-ID refresh keeps the subtree instance.
 - A 401 refresh from A to B retries with B's IDs.
 - Existing F3a identity merge and Feed request-generation behavior remain
   unchanged.
@@ -219,6 +222,8 @@ Tests and inventory:
 - `tests/profile/useProfileTabs.request-race.test.ts`
 - `tests/profile/useProfileSession.account-transition.test.ts` (new)
 - `tests/profile/profile-view-structure.test.ts`
+- `tests/profile/serverchan-settings.structure.test.mjs`
+- `tests/profile/settings-block.structure.test.mjs`
 - `tests/feed/feedReadHistoryIdNormalization.contract.test.ts`
 - `scripts/check-test-inventory.mjs` (Vitest 162 -> 164 only)
 
@@ -295,6 +300,10 @@ network request is required.
   refresh does not clear an otherwise current collection.
 - A refresh pending, followed by logout/invalidation or explicit B sign-in,
   cannot later restore A into the session ref.
+- Two authenticated candidates without stable IDs are never assumed to be the
+  same owner; absence of identity proof takes the conservative reset path.
+- A-to-B changes the authenticated subtree key; same-stable-ID refresh leaves
+  it unchanged, preserving current same-account UI state.
 - Profile guest and authenticated boundaries call `resetList()` before user
   assignment/load, preserving the existing ServerChan resets.
 

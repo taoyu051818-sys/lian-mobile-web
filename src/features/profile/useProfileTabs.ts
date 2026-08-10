@@ -1,6 +1,6 @@
 import { computed, ref, type Ref } from "vue";
 import { fetchProfileTab } from "../../api/profile";
-import { getRecentReadHistoryIds } from "../../platform/browser-storage";
+import { accountReadHistoryScope, getRecentReadHistoryIds } from "../../platform/browser-storage";
 import { extractErrorMessage } from "../../utils/extractErrorMessage";
 import {
   EMPTY_HISTORY,
@@ -31,9 +31,15 @@ export function useProfileTabs(options: {
   user: Ref<ProfileUser | null>;
   enterGuestState: () => void;
   isMissingSessionError: (error: unknown) => boolean;
-  refreshCurrentSession: () => Promise<boolean>;
+  refreshCurrentSession: () => Promise<ProfileUser | null>;
+  resetAccountPresentation: () => void;
 }) {
-  const { enterGuestState, isMissingSessionError, refreshCurrentSession } = options;
+  const {
+    enterGuestState,
+    isMissingSessionError,
+    refreshCurrentSession,
+    resetAccountPresentation,
+  } = options;
 
   const listLoading = ref(false);
   const listError = ref("");
@@ -70,33 +76,19 @@ export function useProfileTabs(options: {
   );
 
   function readHistoryIds() {
-    return getRecentReadHistoryIds(localStorage, 50);
+    const scope = accountReadHistoryScope(options.user.value?.id ?? "");
+    return scope ? getRecentReadHistoryIds(scope, localStorage, 50) : [];
   }
 
-  async function fetchProfileTabWithSessionRefresh(
-    tab: ProfileTabKey,
-    tids: FeedItemId[] = [],
-    contentFilter: ProfilePostsContentFilter = "all",
-  ) {
-    try {
-      return await fetchProfileTab(tab, tids, { contentFilter });
-    } catch (error) {
-      if (!isMissingSessionError(error)) throw error;
-      const sessionStillValid = await refreshCurrentSession();
-      if (!sessionStillValid) throw error;
+  function accountId(profileUser: ProfileUser | null) {
+    return accountReadHistoryScope(profileUser?.id ?? "")?.userId ?? null;
+  }
 
-      try {
-        return await fetchProfileTab(tab, tids, { contentFilter });
-      } catch (retryError) {
-        if (isMissingSessionError(retryError)) {
-          throw new Error(
-            "登录状态已刷新，但个人列表接口仍返回未授权。请稍后重试，或重新登录后再打开赞过 / 收藏。",
-            { cause: retryError },
-          );
-        }
-        throw retryError;
-      }
-    }
+  function fetchCurrentProfileTab(tab: ProfileTabKey) {
+    const tids: FeedItemId[] = tab === "history" ? readHistoryIds() : [];
+    const contentFilter: ProfilePostsContentFilter =
+      tab === "posts" ? postsContentFilter.value : "all";
+    return fetchProfileTab(tab, tids, { contentFilter });
   }
 
   async function loadProfileList(tab: ProfileTabKey) {
@@ -117,11 +109,45 @@ export function useProfileTabs(options: {
     listLoading.value = true;
     listError.value = "";
     try {
-      const response = await fetchProfileTabWithSessionRefresh(
-        tab,
-        tab === "history" ? readHistoryIds() : [],
-        tab === "posts" ? postsContentFilter.value : "all",
-      );
+      let response;
+      try {
+        response = await fetchCurrentProfileTab(tab);
+      } catch (error) {
+        if (!isMissingSessionError(error)) throw error;
+
+        const refreshedUser = await refreshCurrentSession();
+        if (generation !== requestGeneration) return;
+        if (!refreshedUser) throw error;
+
+        const currentAccountId = accountId(options.user.value);
+        const refreshedAccountId = accountId(refreshedUser);
+        const sameAccount =
+          currentAccountId !== null &&
+          refreshedAccountId !== null &&
+          currentAccountId === refreshedAccountId;
+        if (!sameAccount) {
+          resetList();
+          resetAccountPresentation();
+          options.user.value = refreshedUser;
+          await loadProfileList(tab);
+          return;
+        }
+
+        options.user.value = refreshedUser;
+        if (generation !== requestGeneration) return;
+
+        try {
+          response = await fetchCurrentProfileTab(tab);
+        } catch (retryError) {
+          if (isMissingSessionError(retryError)) {
+            throw new Error(
+              "登录状态已刷新，但个人列表接口仍返回未授权。请稍后重试，或重新登录后再打开赞过 / 收藏。",
+              { cause: retryError },
+            );
+          }
+          throw retryError;
+        }
+      }
       if (generation !== requestGeneration) return;
       profileItems.value = response.items || [];
     } catch (error) {
