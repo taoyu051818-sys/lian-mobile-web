@@ -28,7 +28,8 @@
 ## Goal
 
 Make Publish location state an explicit, source-aware contract. A map place or
-free pin must reach the final publish payload with the original GCJ-02 data. A
+free pin must reach the final publish payload with the original GCJ-02 data,
+subject only to the existing deterministic seven-decimal wire rounding. A
 browser location must remain explicitly WGS84 and display-only until a separate
 conversion/backend contract is approved. New handoffs replace old bindings
 atomically and survive catalog ordering and account-scoped draft restoration.
@@ -114,6 +115,9 @@ the pending payload or converted into a structured map draft.
   location state to apply later.
 - Add an optional structured binding to the existing scoped draft snapshot.
   Old snapshots read as `null`; the storage key does not change.
+- Snapshot bindings pass through the same exact source/system/kind/range
+  validator as handoffs. Corrupt, incomplete, mismatched, or out-of-range
+  bindings restore as `null` and never reach the publish wire payload.
 
 ## State and ordering
 
