@@ -205,18 +205,18 @@ content remains B and must be preserved.
 
 ## Acceptance criteria
 
-- [ ] Old implementation fails the deferred snapshot and owner tests for the
+- [x] Old implementation fails the deferred snapshot and owner tests for the
       intended live-ref/reset/stale-result reasons.
-- [ ] Regular and Event snapshots contain no live source references.
-- [ ] All success, failure, partial, reset, scope, settle-order, and duplicate
+- [x] Regular and Event snapshots contain no live source references.
+- [x] All success, failure, partial, reset, scope, settle-order, and duplicate
       submit matrix cases pass.
-- [ ] Existing idempotency, Event, AI, location, account-scope, image-upload,
+- [x] Existing idempotency, Event, AI, location, account-scope, image-upload,
       actionable-preview-state, and submit tests do not regress.
-- [ ] Vitest inventory is exactly 160; Node structure inventory remains 65.
-- [ ] Typecheck, build, sanitizer, smoke, focused tests, and full
+- [x] Vitest inventory is exactly 160; Node structure inventory remains 65.
+- [x] Typecheck, build, sanitizer, smoke, focused tests, and full
       `npm run verify` pass.
-- [ ] Independent review records acceptance and no blocking finding remains.
-- [ ] Only allowed files change; no network, production, push, merge, or
+- [x] Independent review records acceptance and no blocking finding remains.
+- [x] Only allowed files change; no network, production, push, merge, or
       deployment action occurs.
 
 ## Data, compatibility, and migration

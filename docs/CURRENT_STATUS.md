@@ -3,8 +3,8 @@
 Last verified: 2026-08-10
 
 Active control issue: [#1090](https://github.com/taoyu051818-sys/lian-mobile-web/issues/1090)
-(F2f is accepted locally under a local-only task contract; network and
-production access remain paused, so no F2f issue was created online).
+(F2g is accepted locally under a local-only task contract; network and
+production access remain paused, so no F2g issue was created online).
 
 Open release blockers: None recorded as open GitHub issues.
 
@@ -12,17 +12,24 @@ Current production release: Not recorded in this repository.
 
 **Active execution queue:**
 
-- F2g immutable Publish submit snapshot and response ownership is active under
-  `docs/agent/tasks/publish-submit-snapshot-ownership.md`. It is local-only,
-  test-first, and does not change the API or backend.
-- F2f remains accepted locally; it does not claim that mounted auth refresh,
-  immutable submit snapshots, true network cancellation, or server-side orphan
-  cleanup are complete.
+- F2g immutable Publish submit snapshot and response ownership is accepted
+  locally under `docs/agent/tasks/publish-submit-snapshot-ownership.md`.
+- The next bounded Publish audit is F2h: verify the normal post-success stored
+  actionable-result render policy after the live form resets. It has no active
+  implementation task yet.
+- F2g does not claim Event idempotency, mounted auth refresh, true network
+  cancellation, or server-side side-effect reversal are complete.
 - Scope is local frontend code and tests only. No push, deployment, production
   mutation, or online environment check is authorized.
 
 Local audit baseline:
 
+- F2g Publish submit snapshot/response ownership accepted locally on
+  `codex/audit-f2g-publish-submit-snapshot`; implementation commit `ea0c29e`.
+- F2g validation passed: 160 Vitest files / 4,067 tests, 65 Node structure
+  files / 819 tests, build, sanitizer, 3 loopback smoke checks, and full
+  `npm run verify`. Two independent reviewers recorded `ACCEPT`; a separate
+  reachability review reported no blocking finding.
 - F2f Publish image-upload ownership/order accepted locally on
   `codex/audit-f2f-publish-image-upload-ownership`; implementation commit
   `8847203`.
