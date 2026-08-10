@@ -115,8 +115,8 @@ test("retryMessage resets deliveryState to sending before retry", () => {
   assert.ok(sendingIdx >= 0, "should set deliveryState to sending on retry");
 });
 
-test("MessagesView passes retryMessage to ChannelThread via emit", () => {
-  assert.match(viewSource, /@retry-message="composer\.retryMessage"/);
+test("MessagesView passes the composer retry handler to ChannelThread", () => {
+  assert.match(viewSource, /@retry-message="retryMessage"/);
 });
 
 // --- MessagesView scroll-to-bottom ---

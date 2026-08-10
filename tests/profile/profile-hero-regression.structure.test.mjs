@@ -7,7 +7,7 @@ import { fileURLToPath } from "node:url";
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
 
 function read(rel) {
-  return fs.readFileSync(path.join(repoRoot, rel), "utf8");
+  return fs.readFileSync(path.join(repoRoot, rel), "utf8").replace(/\r\n/g, "\n");
 }
 
 // --- ProfileView hero background ---
@@ -25,7 +25,7 @@ test("ProfileView hero gradient uses primary-soft token", () => {
 
 test("ProfileView does not use GlassPanel wrapper for hero", () => {
   const src = read("src/features/profile/ProfileView.vue");
-  assert.doesNotMatch(src, /<GlassPanel class="profile-view__card">/);
+  assert.doesNotMatch(src, /<GlassPanel\b/);
 });
 
 // --- ProfileView state machine ---
@@ -73,14 +73,20 @@ test("useProfileChrome includes editor toggle and logout actions", () => {
 
 test("ProfileHeader has centered hero layout with large avatar", () => {
   const src = read("src/features/profile/ProfileHeader.vue");
+  const css = read("src/features/profile/profile-header.css");
   assert.match(src, /profile-header__hero/);
   assert.match(src, /profile-header__avatar/);
-  assert.match(src, /justify-items:\s*center/);
+  assert.match(src, /@import "\.\/profile-header\.css"/);
+  assert.match(css, /\.profile-header__hero\s*\{[\s\S]*?justify-items:\s*center/);
 });
 
 test("ProfileHeader avatar is 80px orb", () => {
-  const src = read("src/features/profile/ProfileHeader.vue");
-  assert.match(src, /80px/);
+  const css = read("src/features/profile/profile-header.css");
+  const avatarRule = css.match(/\.profile-header__avatar\s*\{[\s\S]*?\n\}/);
+  assert.ok(avatarRule, "avatar style rule should exist");
+  assert.match(avatarRule[0], /width:\s*80px/);
+  assert.match(avatarRule[0], /height:\s*80px/);
+  assert.match(avatarRule[0], /border-radius:\s*var\(--radius-orb\)/);
 });
 
 test("ProfileHeader display name uses large bold style", () => {

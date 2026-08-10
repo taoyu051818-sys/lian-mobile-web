@@ -5,33 +5,39 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
-const readme = fs.readFileSync(path.join(repoRoot, "README.md"), "utf8");
-const queueSnapshot = readme.slice(
-  readme.indexOf("Core Product Model V1 queue snapshot"),
-  readme.indexOf("## Runtime model"),
-);
 
-test("README keeps the Core Product Model V1 queue snapshot visible", () => {
-  assert.match(readme, /Core Product Model V1 queue snapshot/);
-  assert.match(readme, /Snapshot source: GitHub issue truth checked on 2026-06-03/);
-  assert.match(readme, /Phase order source: `taoyu051818-sys\/lian-mobile-web#995`/);
+function read(rel) {
+  return fs.readFileSync(path.join(repoRoot, rel), "utf8").replace(/\r\n?/g, "\n");
+}
+
+const readme = read("README.md");
+const currentStatus = read("docs/CURRENT_STATUS.md");
+const archivedSnapshot = read("docs/archive/status-snapshot-2026-06.md");
+const phaseOrder = read("docs/product/CORE_PRODUCT_MODEL_V1_PHASE_ORDER.md");
+
+test("README points contributors to current status instead of embedding a stale issue queue", () => {
+  assert.match(readme, /\(docs\/CURRENT_STATUS\.md\)/);
+  assert.match(readme, /\(docs\/archive\/status-snapshot-2026-06\.md\)/);
+  assert.doesNotMatch(readme, /^## Core Product Model V1 queue snapshot$/m);
 });
 
-test("README records current open frontend child issues by phase", () => {
-  assert.match(readme, /Phase 1 — Semantic layer: open frontend children `#964`, `#972`/);
-  assert.match(
-    readme,
-    /Phase 2 — Identity and actionable publishing: open frontend children `#970`,\s+`#971`, `#991`, `#992`/,
-  );
-  assert.match(
-    readme,
-    /Phase 3 — Collaboration channels and local discovery: open frontend children\s+`#963`, `#976`/,
-  );
-  assert.match(readme, /Phase 4 — Collective action and settlement: open frontend child `#993`/);
+test("CURRENT_STATUS is the active queue contract", () => {
+  assert.match(currentStatus, /No active execution queue/);
+  assert.match(currentStatus, /open frontend issues/);
+  assert.match(currentStatus, /recent merged pull requests/);
 });
 
-test("README marks closed frontend children so contributors do not chase stale tickets", () => {
-  for (const issue of ["#966", "#967", "#611", "#610", "#710", "#994", "#979", "#977", "#948"]) {
-    assert.match(queueSnapshot, new RegExp(`${issue}[\\s\\S]*(closed|merged)`));
+test("the retired README queue is preserved only as a clearly historical archive", () => {
+  assert.match(archivedSnapshot, /Archived on 2026-08-02/);
+  assert.match(archivedSnapshot, /historical and must not be used as an active execution queue/i);
+  assert.match(archivedSnapshot, /\.\.\/CURRENT_STATUS\.md/);
+  assert.match(archivedSnapshot, /## Core Product Model V1 queue snapshot/);
+});
+
+test("durable phase ordering lives in the product contract rather than issue-state prose", () => {
+  for (const phase of ["Phase 0", "Phase 1", "Phase 2", "Phase 3", "Phase 4"]) {
+    assert.match(phaseOrder, new RegExp(`^## ${phase}\\b`, "m"));
   }
+  assert.match(phaseOrder, /## Queue maintenance rule/);
+  assert.match(phaseOrder, /tests\/phase0\/phase-order-contract\.test\.ts/);
 });

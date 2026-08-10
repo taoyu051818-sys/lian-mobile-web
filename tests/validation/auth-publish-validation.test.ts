@@ -1,14 +1,29 @@
 import { describe, expect, it } from "vitest";
 import {
   AUTH_MAX_INTEREST_SELECTIONS,
-  PUBLISH_BODY_MAX_LENGTH,
-  PUBLISH_TITLE_MAX_LENGTH,
   toggleSelectedInterest,
   validateAuthForm,
   validatePublishForm,
   type AuthValidationFields,
   type PublishValidationFields,
 } from "../../src/domain/validation/forms";
+import {
+  VALIDATION_BODY_MAX,
+  VALIDATION_BODY_REQUIRED,
+  VALIDATION_EMAIL_CODE_REQUIRED,
+  VALIDATION_EMAIL_REQUIRED,
+  VALIDATION_INTEREST_REQUIRED,
+  VALIDATION_LOGIN_REQUIRED,
+  VALIDATION_PASSWORD_MIN,
+  VALIDATION_TITLE_MAX,
+  VALIDATION_TITLE_REQUIRED,
+  VALIDATION_UPLOAD_INCOMPLETE,
+  VALIDATION_UPLOAD_IN_PROGRESS,
+  VALIDATION_USERNAME_REQUIRED,
+} from "../../src/config/brand";
+
+const PUBLISH_TITLE_LIMIT = 40;
+const PUBLISH_BODY_LIMIT = 300;
 
 function createAuthFields(overrides: Partial<AuthValidationFields> = {}): AuthValidationFields {
   return {
@@ -40,12 +55,12 @@ function createPublishFields(
 describe("auth and publish validation helpers", () => {
   it("keeps auth password validation ahead of mode-specific rules", () => {
     expect(validateAuthForm(createAuthFields({ password: "1234567", login: "" }))).toBe(
-      "密码至少需要 8 位。",
+      VALIDATION_PASSWORD_MIN.replace("{n}", "8"),
     );
   });
 
   it("requires a login identifier in login mode", () => {
-    expect(validateAuthForm(createAuthFields({ login: "   " }))).toBe("请填写邮箱或昵称。");
+    expect(validateAuthForm(createAuthFields({ login: "   " }))).toBe(VALIDATION_LOGIN_REQUIRED);
   });
 
   it("requires register mode to provide username and contact proof", () => {
@@ -58,7 +73,7 @@ describe("auth and publish validation helpers", () => {
           emailCode: "",
         }),
       ),
-    ).toBe("请填写昵称。");
+    ).toBe(VALIDATION_USERNAME_REQUIRED);
 
     expect(
       validateAuthForm(
@@ -68,7 +83,7 @@ describe("auth and publish validation helpers", () => {
           emailCode: "",
         }),
       ),
-    ).toBe("请填写高校邮箱。");
+    ).toBe(VALIDATION_EMAIL_REQUIRED);
 
     expect(
       validateAuthForm(
@@ -78,7 +93,7 @@ describe("auth and publish validation helpers", () => {
           emailCode: "",
         }),
       ),
-    ).toBe("高校邮箱注册需要填写验证码。");
+    ).toBe(VALIDATION_EMAIL_CODE_REQUIRED);
   });
 
   it("requires at least one interest when the auth flow marks it required", () => {
@@ -90,7 +105,7 @@ describe("auth and publish validation helpers", () => {
           interestSelectionRequired: true,
         }),
       ),
-    ).toBe("至少选择一个兴趣，用来初始化推荐流。");
+    ).toBe(VALIDATION_INTEREST_REQUIRED);
   });
 
   it("toggles selected interests and preserves the max selection cap", () => {
@@ -104,22 +119,30 @@ describe("auth and publish validation helpers", () => {
     expect(toggleSelectedInterest(fullSelection, "extra-tag")).toEqual(fullSelection);
   });
 
-  it("validates publish title and body requirements with shared limits", () => {
-    expect(validatePublishForm(createPublishFields({ title: "   " }))).toBe("请填写标题。");
+  it("validates publish title and body requirements at the product limits", () => {
+    expect(validatePublishForm(createPublishFields({ title: "   " }))).toBe(
+      VALIDATION_TITLE_REQUIRED,
+    );
     expect(
-      validatePublishForm(
-        createPublishFields({ title: "标".repeat(PUBLISH_TITLE_MAX_LENGTH + 1) }),
-      ),
-    ).toBe(`标题最多 ${PUBLISH_TITLE_MAX_LENGTH} 个字。`);
-    expect(validatePublishForm(createPublishFields({ body: "   " }))).toBe("请填写正文。");
+      validatePublishForm(createPublishFields({ title: "标".repeat(PUBLISH_TITLE_LIMIT) })),
+    ).toBe("");
     expect(
-      validatePublishForm(createPublishFields({ body: "文".repeat(PUBLISH_BODY_MAX_LENGTH + 1) })),
-    ).toBe(`正文最多 ${PUBLISH_BODY_MAX_LENGTH} 个字。`);
+      validatePublishForm(createPublishFields({ title: "标".repeat(PUBLISH_TITLE_LIMIT + 1) })),
+    ).toBe(VALIDATION_TITLE_MAX.replace("{n}", String(PUBLISH_TITLE_LIMIT)));
+    expect(validatePublishForm(createPublishFields({ body: "   " }))).toBe(
+      VALIDATION_BODY_REQUIRED,
+    );
+    expect(
+      validatePublishForm(createPublishFields({ body: "文".repeat(PUBLISH_BODY_LIMIT) })),
+    ).toBe("");
+    expect(
+      validatePublishForm(createPublishFields({ body: "文".repeat(PUBLISH_BODY_LIMIT + 1) })),
+    ).toBe(VALIDATION_BODY_MAX.replace("{n}", String(PUBLISH_BODY_LIMIT)));
   });
 
   it("blocks publish submission while uploads are incomplete", () => {
     expect(validatePublishForm(createPublishFields({ uploading: true }))).toBe(
-      "图片还在上传，稍等一下再发布。",
+      VALIDATION_UPLOAD_IN_PROGRESS,
     );
     expect(
       validatePublishForm(
@@ -128,7 +151,7 @@ describe("auth and publish validation helpers", () => {
           uploadedImageCount: 1,
         }),
       ),
-    ).toBe("还有图片没有上传成功，请重新选择或移除。");
+    ).toBe(VALIDATION_UPLOAD_INCOMPLETE);
   });
 
   // PRD V0.2 §2.2 — `place` posts are 无图 + 仅地点 + 无 body cards. The
@@ -155,7 +178,7 @@ describe("auth and publish validation helpers", () => {
           isPlaceOnly: true,
         }),
       ),
-    ).toBe("请填写标题。");
+    ).toBe(VALIDATION_TITLE_REQUIRED);
   });
 
   it("place-only flag does not bypass body-too-long guard (defensive)", () => {
@@ -163,10 +186,10 @@ describe("auth and publish validation helpers", () => {
       validatePublishForm(
         createPublishFields({
           title: "图书馆",
-          body: "文".repeat(PUBLISH_BODY_MAX_LENGTH + 1),
+          body: "文".repeat(PUBLISH_BODY_LIMIT + 1),
           isPlaceOnly: true,
         }),
       ),
-    ).toBe(`正文最多 ${PUBLISH_BODY_MAX_LENGTH} 个字。`);
+    ).toBe(VALIDATION_BODY_MAX.replace("{n}", String(PUBLISH_BODY_LIMIT)));
   });
 });

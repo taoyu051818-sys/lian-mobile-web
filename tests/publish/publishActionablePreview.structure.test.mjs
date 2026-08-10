@@ -7,7 +7,15 @@ import { fileURLToPath } from "node:url";
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
 
 function read(rel) {
-  return fs.readFileSync(path.join(repoRoot, rel), "utf8");
+  return fs.readFileSync(path.join(repoRoot, rel), "utf8").replace(/\r\n/g, "\n");
+}
+
+function sectionBetween(source, startToken, endToken) {
+  const start = source.indexOf(startToken);
+  const end = source.indexOf(endToken, start + startToken.length);
+  assert.ok(start > -1, `${startToken} should exist`);
+  assert.ok(end > start, `${endToken} should follow ${startToken}`);
+  return source.slice(start, end);
 }
 
 test("PublishView renders an actionable post structure preview from the publish draft", () => {
@@ -47,10 +55,7 @@ test("PublishActionablePreview summarizes draft signals with Chinese labels", ()
   assert.match(brandSrc, /PUBLISH_ACTIONABLE_PREVIEW_TITLE = "发布结构预览"/);
   assert.match(brandSrc, /PUBLISH_ACTIONABLE_PREVIEW_WIRE_KIND = "发布为"/);
   assert.match(brandSrc, /PUBLISH_ACTIONABLE_PREVIEW_COMPONENTS = "待补充"/);
-  assert.match(
-    brandSrc,
-    /PUBLISH_ACTIONABLE_PREVIEW_UNSTRUCTURED =\s*\n?\s*"当前只会发布为自由文本/,
-  );
+  assert.match(brandSrc, /PUBLISH_ACTIONABLE_PREVIEW_UNSTRUCTURED\s*=\s*"当前只会发布为自由文本/);
 
   assert.match(previewSrc, /data-testid="publish-preview-wire-kind"/);
   assert.match(previewSrc, /props\.normalizedTag\.replace\(\/\^#\+\/, ""\) === "求助"/);
@@ -79,18 +84,39 @@ test("publish success threads front-end-only actionable post structure into prev
   assert.match(submitSrc, /function createPublishActionablePostPreview/);
   assert.match(submitSrc, /components: SuggestedComponent\[\]/);
   assert.match(submitSrc, /components: input\.components\.map\(\(component\) => \(\{/);
-  assert.match(
+
+  const eventSubmit = sectionBetween(
     submitSrc,
+    "async function submitEvent()",
+    "async function submitPublish()",
+  );
+  const submitPublish = submitSrc.slice(submitSrc.indexOf("async function submitPublish()"));
+
+  assert.match(
+    submitPublish,
     /suggestedComponents: options\.suggestedComponents\?\.value \?\? \[\],[\s\S]*?components: options\.suggestedComponents\?\.value \?\? \[\]/,
   );
-  assert.match(
-    submitSrc,
-    /const submittedActionablePreview = createPublishActionablePostPreview\([\s\S]*?kind: "event"[\s\S]*?options\.resetForm\(\);\n\s*if \(options\.actionablePreview\) \{\n\s*options\.actionablePreview\.value = submittedActionablePreview/,
-  );
-  assert.match(
-    submitSrc,
-    /const submittedActionablePreview = createPublishActionablePostPreview\([\s\S]*?kind,[\s\S]*?locationArea: payload\.metadata\.locationArea \|\| ""[\s\S]*?if \(metadataRetryAvailable\) \{[\s\S]*?\} else \{[\s\S]*?options\.resetForm\(\);\n\s*\}\n\s*if \(options\.actionablePreview\) \{\n\s*options\.actionablePreview\.value = submittedActionablePreview/,
-  );
+  assert.match(eventSubmit, /createPublishActionablePostPreview\(\{[\s\S]*?kind:\s*"event"/);
+  assert.match(submitPublish, /createPublishActionablePostPreview\(\{[\s\S]*?kind,/);
+  assert.match(submitPublish, /locationArea:\s*payload\.metadata\.locationArea \|\| ""/);
+
+  for (const [label, section] of [
+    ["event", eventSubmit],
+    ["post", submitPublish],
+  ]) {
+    const previewIdx = section.indexOf("const submittedActionablePreview");
+    const resetIdx = section.indexOf("options.resetForm();", previewIdx);
+    const assignmentIdx = section.indexOf(
+      "options.actionablePreview.value = submittedActionablePreview",
+      previewIdx,
+    );
+    assert.ok(previewIdx > -1, `${label} submit should capture its preview before reset`);
+    assert.ok(resetIdx > previewIdx, `${label} submit should reset after capturing the preview`);
+    assert.ok(
+      assignmentIdx > resetIdx,
+      `${label} submit should restore the captured preview after form reset`,
+    );
+  }
   assert.match(
     viewSrc,
     /const actionablePreview = ref<PublishActionablePostPreview \| null>\(null\)/,

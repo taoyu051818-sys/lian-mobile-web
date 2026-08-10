@@ -16,7 +16,7 @@ import { fileURLToPath } from "node:url";
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
 
 function read(rel) {
-  return fs.readFileSync(path.join(repoRoot, rel), "utf8");
+  return fs.readFileSync(path.join(repoRoot, rel), "utf8").replace(/\r\n/g, "\n");
 }
 
 // --- Brand constants ---
@@ -247,16 +247,19 @@ test("ProfileServerChanBlock requires two-step confirm before unbind (destructiv
 
 // --- ProfileView mounts the new block ---
 
-test("ProfileView mounts ProfileServerChanBlock under the existing settings block", () => {
+test("ProfileView mounts ProfileServerChanBlock only in the authenticated profile", () => {
   const src = read("src/features/profile/ProfileView.vue");
   assert.match(src, /import ProfileServerChanBlock/);
-  assert.match(src, /<ProfileServerChanBlock/);
-  const settingsIdx = src.indexOf("<ProfileSettingsBlock");
+  const authenticatedIdx = src.indexOf('<template v-else-if="user">');
   const serverchanIdx = src.indexOf("<ProfileServerChanBlock");
-  const tabsIdx = src.indexOf("<ProfileTabs");
-  assert.ok(settingsIdx > -1 && serverchanIdx > -1 && tabsIdx > -1);
-  assert.ok(settingsIdx < serverchanIdx, "serverchan sits below settings");
-  assert.ok(serverchanIdx < tabsIdx, "serverchan sits above tabs");
+  const guestIdx = src.indexOf('<section v-else class="profile-view__guest">');
+  assert.ok(authenticatedIdx > -1 && serverchanIdx > -1 && guestIdx > -1);
+  assert.ok(authenticatedIdx < serverchanIdx, "ServerChan settings belong to signed-in profiles");
+  assert.ok(serverchanIdx < guestIdx, "ServerChan settings must not mount in the guest branch");
+  assert.match(
+    src.slice(serverchanIdx, src.indexOf(">", serverchanIdx) + 1),
+    /:is-authenticated="Boolean\(user\)"/,
+  );
 });
 
 // --- Opt-in dialog component ---

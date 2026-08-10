@@ -36,7 +36,7 @@ import { fileURLToPath } from "node:url";
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
 
 function read(rel) {
-  return fs.readFileSync(path.join(repoRoot, rel), "utf8");
+  return fs.readFileSync(path.join(repoRoot, rel), "utf8").replace(/\r\n/g, "\n");
 }
 
 test("PublishView no longer renders any publishKind radio (PRD V0.2 step F)", () => {
@@ -57,13 +57,13 @@ test("PublishView no longer renders any publishKind radio (PRD V0.2 step F)", ()
 });
 
 test("createSuggestedComponentsActions enforces merchant_verified before flipping publishKind", () => {
-  // The post-step-F "select merchant" path runs through accept(merchant_info)
-  // — the mutation on publishKind is wrapped in a verification check, so a
+  // The canonical V2 merchant ghost runs through accept(merchant). The
+  // mutation on publishKind is wrapped in a verification check, so a
   // leaked ghost cannot dump a non-merchant into the merchant panel.
   const src = read("src/features/publish/usePublishDraft.ts");
   assert.match(
     src,
-    /case\s+"merchant_info":[\s\S]*?if\s*\(params\.merchantVerified\.value\)\s*params\.publishKind\.value\s*=\s*"merchant"/,
+    /case\s+"merchant"\s*:\s*if\s*\(params\.merchantVerified\.value\)\s*params\.publishKind\.value\s*=\s*"merchant"/,
   );
 });
 
@@ -84,11 +84,10 @@ test("merchant hint banner default-collapsed (closed <details> on initial render
   // (`true`) — assert the trade consumer is unchanged so the diff doesn't
   // accidentally collapse the trade gate too.
   const merchantSrc = read("src/features/publish/PublishMerchantControls.vue");
-  assert.match(
-    merchantSrc,
-    /<PublishGateNotice[\s\S]*?data-testid="publish-merchant-gate"[\s\S]*?:default-open="false"/,
-    'merchant gate must pass :default-open="false" to the PublishGateNotice primitive',
-  );
+  const merchantNotice = merchantSrc.match(/<PublishGateNotice\b[\s\S]*?>/);
+  assert.ok(merchantNotice, "merchant gate notice should be mounted");
+  assert.match(merchantNotice[0], /data-testid="publish-merchant-gate"/);
+  assert.match(merchantNotice[0], /:default-open="false"/);
 
   const tradeSrc = read("src/features/publish/PublishTradeControls.vue");
   assert.doesNotMatch(

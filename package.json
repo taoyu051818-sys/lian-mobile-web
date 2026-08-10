@@ -13,8 +13,9 @@
     "dev": "vite --host 0.0.0.0",
     "build": "vue-tsc --noEmit && vite build",
     "preview": "vite preview --host 0.0.0.0",
-    "check": "node scripts/validate-project-structure.js && node scripts/check-encoding-contamination.js && npm run check:runtime-exposure && npm run check:unsafe-dom && npm run check:view-boundary && npm run check:asset-owners && npm run check:stale-docs && npm run check:ownership-doc && npm run check:large-vue && npm run format:check && npm run lint",
+    "check": "node scripts/validate-project-structure.js && node scripts/check-encoding-contamination.js && npm run check:test-inventory && npm run check:runtime-exposure && npm run check:unsafe-dom && npm run check:view-boundary && npm run check:asset-owners && npm run check:stale-docs && npm run check:ownership-doc && npm run check:large-vue && npm run format:check && npm run lint",
     "check:encoding": "node scripts/check-encoding-contamination.js",
+    "check:test-inventory": "node scripts/check-test-inventory.mjs",
     "check:runtime-exposure": "node scripts/guard-public-runtime-exposure.js",
     "check:unsafe-dom": "node scripts/guard-unsafe-dom-sinks.js",
     "check:view-boundary": "node scripts/check-view-imports-composable.mjs",
@@ -40,10 +41,11 @@
     "test:e2e:local:core:repeat": "playwright test tests/e2e/local/core-journeys.spec.ts --config=playwright.local.config.ts --repeat-each=3",
     "test:phase-order": "vitest run tests/phase0/phase-order-contract.test.ts",
     "test:unit": "vitest run",
+    "test:structure": "node scripts/run-node-tests.mjs",
     "test:runtime-exposure-guard": "node scripts/test-guard-public-runtime-exposure.js",
     "verify:static": "npm run check && npm run ops:guard && npm run build",
     "verify:smoke": "node scripts/run-smoke-with-server.js --port 4301 -- npm run test:vue",
-    "verify": "npm run verify:static && npm run test:unit && npm run verify:smoke",
+    "verify": "npm run verify:static && npm run test:unit && npm run test:structure && npm run test:html-sanitizer && npm run verify:smoke",
     "test:vue": "node scripts/smoke-vue-frontend.js http://127.0.0.1:4301"
   },
   "dependencies": {

@@ -35,14 +35,15 @@ test("markChannelMessagesRead is only called on reset loads, not pagination", ()
 test("API module exports buildChannelReadPayload and markChannelMessagesRead", () => {
   assert.match(apiSource, /export function buildChannelReadPayload/);
   assert.match(apiSource, /export async function markChannelMessagesRead/);
+  assert.match(apiSource, /return \{ eventIds:\s*messageIds,\s*readerId:\s*ensureClientId\(\) \}/);
 });
 
 test("API module posts to /api/channel/read", () => {
   assert.match(apiSource, /\/api\/channel\/read/);
 });
 
-test("types module defines ChannelReadPayload with messageIds and readerId", () => {
+test("types module defines ChannelReadPayload with backend eventIds and readerId", () => {
   assert.match(typesSource, /export interface ChannelReadPayload/);
-  assert.match(typesSource, /messageIds: Array<string \| number>/);
+  assert.match(typesSource, /eventIds:\s*Array<string \| number>/);
   assert.match(typesSource, /readerId: string/);
 });

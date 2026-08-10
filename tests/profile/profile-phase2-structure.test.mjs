@@ -7,7 +7,7 @@ import { fileURLToPath } from "node:url";
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
 
 function read(rel) {
-  return fs.readFileSync(path.join(repoRoot, rel), "utf8");
+  return fs.readFileSync(path.join(repoRoot, rel), "utf8").replace(/\r\n/g, "\n");
 }
 
 // --- ProfileHeader alias picker affordance ---
@@ -86,15 +86,20 @@ test("ProfileCollectionList emits open-item event", () => {
 
 test("ProfileCollectionList items are keyboard-accessible interactive elements", () => {
   const src = read("src/features/profile/ProfileCollectionList.vue");
-  assert.match(src, /role="button"/);
-  assert.match(src, /tabindex="0"/);
+  assert.match(src, /:role="itemStates\[index\]\?\.canOpen \? 'button' : undefined"/);
+  assert.match(src, /:tabindex="itemStates\[index\]\?\.canOpen \? 0 : undefined"/);
   assert.match(src, /@keydown\.enter/);
   assert.match(src, /@keydown\.space/);
+  assert.match(src, /function canOpen\(item: ProfileListItem\)/);
 });
 
-test("ProfileCollectionList items emit open-item on click", () => {
+test("ProfileCollectionList emits open-item through its guarded click handler", () => {
   const src = read("src/features/profile/ProfileCollectionList.vue");
-  assert.match(src, /@click="emit\('open-item'/);
+  assert.match(src, /@click="openItem\(item\)"/);
+  assert.match(
+    src,
+    /function openItem\(item: ProfileListItem\)\s*\{[\s\S]*?if \(!canOpen\(item\)[\s\S]*?emit\("open-item", item\.tid\)/,
+  );
 });
 
 test("ProfileCollectionList items have interactive hover and focus styles", () => {

@@ -7,7 +7,7 @@ import { fileURLToPath } from "node:url";
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
 
 function read(rel) {
-  return fs.readFileSync(path.join(repoRoot, rel), "utf8");
+  return fs.readFileSync(path.join(repoRoot, rel), "utf8").replace(/\r\n?/g, "\n");
 }
 
 // --- Shared reduced motion utility ---
@@ -81,17 +81,20 @@ test("content-immersive-ui reduced-motion disables transitions on interactive el
   assert.match(rmBlock, /transition:\s*none/);
 });
 
-// --- FeedView reduced-motion: declarative chrome takes over from JS short-circuits ---
-// Earlier versions short-circuited detail open/close in JS via prefersReducedMotion().
-// Since PR #599, FeedView routes detail phase through useFloatingChromeState().setDetailPhase(),
-// and the actual motion suppression lives in CSS (chrome-surface.css + shell-chrome.css
-// reduced-motion blocks). The JS short-circuit is no longer needed.
+// --- Detail phase reduced-motion ownership ---
+// DetailSurface owns the phase because it is the single App-level detail
+// surface. Feature views may consume shell visibility, but they must not drive
+// the phase or short-circuit the FSM for reduced motion.
 
-test("FeedView routes detail phase through floating chrome state (no JS reduced-motion short-circuit)", () => {
-  const src = read("src/features/feed/FeedView.vue");
-  assert.match(src, /useFloatingChromeState\(\)/);
-  assert.match(src, /setDetailPhase\(/);
-  assert.doesNotMatch(src, /function prefersReducedMotion\(\)/);
+test("DetailSurface owns detail phase while FeedView relies on declarative reduced-motion CSS", () => {
+  const detailSurface = read("src/app/DetailSurface.vue");
+  const feedView = read("src/features/feed/FeedView.vue");
+
+  assert.match(detailSurface, /const\s*\{\s*setDetailPhase\s*\}\s*=\s*useFloatingChromeState\(\)/);
+  assert.match(detailSurface, /setDetailPhase\(\s*open\s*\?\s*"open"\s*:\s*"idle"\s*\)/);
+  assert.match(feedView, /const\s*\{\s*shellVisible\s*\}\s*=\s*useFloatingChromeState\(\)/);
+  assert.doesNotMatch(feedView, /\bsetDetailPhase\s*\(/);
+  assert.doesNotMatch(feedView, /\bprefersReducedMotion\s*\(/);
 });
 
 // --- MessagesView reduced-motion awareness ---
