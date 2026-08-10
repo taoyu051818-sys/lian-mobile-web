@@ -8,15 +8,14 @@ Open release blockers: None recorded as open GitHub issues.
 
 Current production release: Not recorded in this repository.
 
-**Active execution queue:** F2a detail navigation monotonic request generation.
-
-- Task: `docs/agent/tasks/detail-navigation-monotonic-request-generation.md`.
-- Branch: `codex/audit-f2a-detail-request-generation`.
-- Scope: local reducer/tests/docs only; no API, DOM, backend, production,
-  deployment, or persisted-data change.
+**No active execution queue.**
 
 Local audit baseline:
 
+- F2a detail request generation accepted locally on
+  `codex/audit-f2a-detail-request-generation`; implementation commit `1653237`.
+- F2a validation passed: 155 Vitest files / 3,961 tests, 65 Node structure
+  files / 817 tests, build, smoke, and full `npm run verify`.
 - F1 Profile session state accepted locally on
   `codex/audit-f1-profile-session-state`; implementation commit `35768e7`.
 - F1 validation passed: 155 Vitest files / 3,955 tests, 65 Node structure

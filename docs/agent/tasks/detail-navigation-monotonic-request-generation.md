@@ -59,18 +59,18 @@ unchanged.
 
 ## Acceptance criteria
 
-- [ ] `open A -> close -> open B` gives B a newer generation; A cannot overwrite B.
-- [ ] `open A -> open B -> B ready -> open C` gives C a newer generation; A
+- [x] `open A -> close -> open B` gives B a newer generation; A cannot overwrite B.
+- [x] `open A -> open B -> B ready -> open C` gives C a newer generation; A
       cannot overwrite C.
-- [ ] `error -> retry` advances the generation and drops results from the
+- [x] `error -> retry` advances the generation and drops results from the
       failed attempt.
-- [ ] `ready -> open new tid` advances the generation.
-- [ ] Card open, deep-link, retry, user close, and popstate history effects are
+- [x] `ready -> open new tid` advances the generation.
+- [x] Card open, deep-link, retry, user close, and popstate history effects are
       unchanged.
-- [ ] Selectors still expose no tid/post while closed and the matching post
+- [x] Selectors still expose no tid/post while closed and the matching post
       while ready.
-- [ ] Focused reducer/store tests, build, and full `npm run verify` pass.
-- [ ] Only allowed files are changed.
+- [x] Focused reducer/store tests, build, and full `npm run verify` pass.
+- [x] Only allowed files are changed.
 
 ## Validation commands
 
