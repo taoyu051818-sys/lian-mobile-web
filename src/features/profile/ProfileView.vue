@@ -35,6 +35,9 @@ import { useProfileSession } from "./useProfileSession";
 import { useProfileTabs } from "./useProfileTabs";
 import { useProfileChrome } from "./useProfileChrome";
 import { useProfileAliasPicker } from "./useProfileAliasPicker";
+import { resetServerChanBindingSessionState } from "./useServerChanBinding";
+import { resetServerChanPreferencesSessionState } from "./useServerChanPreferences";
+import { resetServerChanOptInSessionState } from "./useServerChanOptIn";
 import { useActiveView } from "../../app/useActiveView";
 import { clearAdminAccessState } from "../admin/useAdminToken";
 import { buildProfileUnlockCards, hasActiveVerificationTag } from "./profileUnlocks";
@@ -103,8 +106,15 @@ const { displayName, avatarText, pageChrome } = useProfileChrome({
   onChromeChange: (spec) => emit("chrome", spec),
 });
 
+function resetNotificationSessionState() {
+  resetServerChanBindingSessionState();
+  resetServerChanPreferencesSessionState();
+  resetServerChanOptInSessionState();
+}
+
 function enterGuestState() {
   clearAdminAccessState();
+  resetNotificationSessionState();
   user.value = null;
   profileItems.value = [];
   editorOpen.value = false;
@@ -151,6 +161,7 @@ async function logout() {
 
 async function handleAuthenticated(authenticatedUser: ProfileUser | null) {
   clearAdminAccessState();
+  resetNotificationSessionState();
   if (authenticatedUser) {
     user.value = authenticatedUser;
   }

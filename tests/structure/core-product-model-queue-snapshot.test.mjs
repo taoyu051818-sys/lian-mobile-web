@@ -22,7 +22,11 @@ test("README points contributors to current status instead of embedding a stale 
 });
 
 test("CURRENT_STATUS is the active queue contract", () => {
-  assert.match(currentStatus, /No active execution queue/);
+  const hasActiveQueue = /\*\*Active execution queue:/.test(currentStatus);
+  const hasInactiveQueue = /\*\*No active execution queue\./.test(currentStatus);
+
+  assert.notEqual(hasActiveQueue, hasInactiveQueue);
+  assert.match(currentStatus, /Active control issue:/);
   assert.match(currentStatus, /open frontend issues/);
   assert.match(currentStatus, /recent merged pull requests/);
 });

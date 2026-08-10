@@ -111,4 +111,26 @@ describe("ProfileView structure (issue #829)", () => {
     // Check that min-height is set on .profile-collection
     expect(collectionContent).toMatch(/\.profile-collection\s*\{[^}]*min-height:/);
   });
+
+  it("resets every session-scoped ServerChan state at Profile session boundaries", async () => {
+    const src = await loadContent();
+    const resetBoundary = src.slice(
+      src.indexOf("function resetNotificationSessionState()"),
+      src.indexOf("function enterGuestState()"),
+    );
+    const guestBoundary = src.slice(
+      src.indexOf("function enterGuestState()"),
+      src.indexOf("async function loadProfile()"),
+    );
+    const authenticatedBoundary = src.slice(
+      src.indexOf("async function handleAuthenticated("),
+      src.indexOf("onMounted("),
+    );
+
+    expect(resetBoundary).toContain("resetServerChanBindingSessionState()");
+    expect(resetBoundary).toContain("resetServerChanPreferencesSessionState()");
+    expect(resetBoundary).toContain("resetServerChanOptInSessionState()");
+    expect(guestBoundary).toContain("resetNotificationSessionState()");
+    expect(authenticatedBoundary).toContain("resetNotificationSessionState()");
+  });
 });
