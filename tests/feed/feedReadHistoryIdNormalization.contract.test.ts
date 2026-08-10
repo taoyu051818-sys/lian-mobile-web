@@ -55,6 +55,13 @@ describe("Feed read-history id normalization", () => {
     expect(feedViewSource).toMatch(/onUnmounted\(\(\)\s*=>\s*\{[\s\S]*?feedData\.dispose\(\)/);
   });
 
+  it("wires pull refresh and error retry to explicit semantic actions", () => {
+    expect(feedViewSource).toContain("await feedData.refreshFeed()");
+    expect(feedViewSource).toContain('@action="feedData.retryFailedRequest"');
+    expect(feedViewSource).toContain(':action-loading="feedData.requestPending.value"');
+    expect(feedViewSource).not.toContain("feedData.loadFeed(true)");
+  });
+
   it("detail-navigation reducer uses a token guard, not an id-equality guard", () => {
     // The id-equality guard regressed in PR #601: anything that mutated
     // selectedPostId mid-flight (e.g. the deep-link watch) caused the finally

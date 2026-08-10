@@ -82,7 +82,7 @@ describe("useFeedData request generation", () => {
       .mockReturnValueOnce(latestRequest.promise);
     const feed = makeHarness();
 
-    const oldLoad = feed.loadFeed(true);
+    const oldLoad = feed.loadFeed("replace");
     feed.switchTab("精选");
 
     expect(fetchFeedMock).toHaveBeenCalledTimes(2);
@@ -110,7 +110,7 @@ describe("useFeedData request generation", () => {
       .mockReturnValueOnce(latestRequest.promise);
     const feed = makeHarness();
 
-    const oldLoad = feed.loadFeed(true);
+    const oldLoad = feed.loadFeed("replace");
     feed.setSelectedVisibilities(new Set(["school"]));
 
     expect(fetchFeedMock).toHaveBeenNthCalledWith(

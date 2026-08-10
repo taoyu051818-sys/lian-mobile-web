@@ -88,7 +88,7 @@ describe("useFeedData stable item identity", () => {
     fetchFeedMock.mockResolvedValueOnce(feedResponse([oldSnapshot, latestSnapshot, secondItem]));
     const feed = makeHarness();
 
-    await feed.loadFeed(true);
+    await feed.loadFeed("replace");
 
     expect(feed.items.value.map((item) => item.tid)).toEqual([1, 2]);
     expect(feed.items.value[0]).toEqual(latestSnapshot);
@@ -117,8 +117,8 @@ describe("useFeedData stable item identity", () => {
       );
     const feed = makeHarness();
 
-    await feed.loadFeed(true);
-    await feed.loadFeed(false);
+    await feed.loadFeed("replace");
+    await feed.loadFeed("append");
 
     expect(fetchFeedMock).toHaveBeenNthCalledWith(2, expect.objectContaining({ page: 2 }));
     expect(feed.items.value.map((item) => item.tid)).toEqual([1, 2, 3]);
@@ -135,8 +135,8 @@ describe("useFeedData stable item identity", () => {
       .mockResolvedValueOnce(feedResponse([feedItem(9, "new context")]));
     const feed = makeHarness();
 
-    await feed.loadFeed(true);
-    await feed.loadFeed(true);
+    await feed.loadFeed("replace");
+    await feed.loadFeed("replace");
 
     expect(feed.items.value.map((item) => item.tid)).toEqual([9]);
   });
@@ -147,7 +147,7 @@ describe("useFeedData stable item identity", () => {
     fetchFeedMock.mockResolvedValueOnce(feedResponse([firstItem, secondItem]));
     const feed = makeHarness();
 
-    await feed.loadFeed(true);
+    await feed.loadFeed("replace");
 
     expect(feed.items.value).toEqual([firstItem, secondItem]);
   });
@@ -162,7 +162,7 @@ describe("useFeedData stable item identity", () => {
     fetchFeedMock.mockResolvedValueOnce(feedResponse(invalidItems));
     const feed = makeHarness();
 
-    await feed.loadFeed(true);
+    await feed.loadFeed("replace");
 
     expect(feed.items.value).toEqual(invalidItems);
   });
@@ -178,11 +178,11 @@ describe("useFeedData stable item identity", () => {
       .mockReturnValueOnce(latestReset.promise);
     const feed = makeHarness();
 
-    await feed.loadFeed(true);
-    const paginationLoad = feed.loadFeed(false);
+    await feed.loadFeed("replace");
+    const paginationLoad = feed.loadFeed("append");
     expect(feed.loadingMore.value).toBe(true);
 
-    const resetLoad = feed.loadFeed(true);
+    const resetLoad = feed.loadFeed("replace");
     expect(feed.loading.value).toBe(true);
     expect(feed.loadingMore.value).toBe(false);
 

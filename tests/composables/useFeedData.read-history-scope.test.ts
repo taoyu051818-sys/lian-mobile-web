@@ -231,7 +231,7 @@ describe("useFeedData read-history ownership", () => {
     const feed = makeHarness();
 
     const initialization = feed.initialize();
-    const directLoad = feed.loadFeed(true);
+    const directLoad = feed.loadFeed("replace");
     feed.switchTab("featured");
     feed.setSelectedVisibilities(new Set(["school"]));
 
@@ -264,7 +264,7 @@ describe("useFeedData read-history ownership", () => {
     const initialization = feed.initialize().then(() => {
       initializationSettled = true;
     });
-    const directLoad = feed.loadFeed(true).then(() => {
+    const directLoad = feed.loadFeed("replace").then(() => {
       directLoadSettled = true;
     });
     feed.switchTab("featured");
