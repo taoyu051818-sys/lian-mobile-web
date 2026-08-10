@@ -182,6 +182,49 @@ describe("useFeedData read-history ownership", () => {
     expect(rememberReadItemMock).toHaveBeenCalledWith({ kind: "account", userId: "user-b" }, 222);
   });
 
+  it("drops an in-flight Feed response after dispose", async () => {
+    const feedResponse = deferred<FeedResponse>();
+    fetchAuthMeMock.mockResolvedValueOnce({ id: "user-a" });
+    fetchFeedMock.mockReturnValueOnce(feedResponse.promise);
+    const feed = makeHarness();
+
+    const initialization = feed.initialize();
+    await vi.waitFor(() => expect(fetchFeedMock).toHaveBeenCalledTimes(1));
+
+    feed.dispose();
+    feedResponse.resolve({
+      tabs: [{ id: "late", label: "Late" }],
+      items: [
+        {
+          tid: 909,
+          title: "late account A item",
+          bodyPreview: "late body",
+          cover: "",
+          primaryTag: "",
+          timeLabel: "now",
+          timestampISO: "2026-08-10T00:00:00.000Z",
+          likeCount: 0,
+          liked: false,
+          locationArea: "",
+          contentType: "text",
+        },
+      ],
+      hasMore: false,
+      nextPage: 77,
+    });
+    await initialization;
+    feed.rememberReadItem(909);
+
+    expect(feed.items.value).toEqual([]);
+    expect(feed.tabs.value.map((tab) => tab.id)).toEqual(["now", "featured"]);
+    expect(feed.page.value).toBe(1);
+    expect(feed.hasMore.value).toBe(true);
+    expect(feed.loading.value).toBe(false);
+    expect(feed.loadingMore.value).toBe(false);
+    expect(feed.errorMessage.value).toBe("");
+    expect(rememberReadItemMock).not.toHaveBeenCalled();
+  });
+
   it("coalesces resolving load, tab, and filter intents into one latest-context request", async () => {
     const auth = deferred<ProfileUser | null>();
     fetchAuthMeMock.mockReturnValueOnce(auth.promise);
