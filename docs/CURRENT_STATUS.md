@@ -12,8 +12,9 @@ Current production release: Not recorded in this repository.
 
 **Active execution queue:**
 
-- Next recommended lane: F2g immutable Publish submit snapshot and response
-  ownership. It requires a separate, bounded task contract before execution.
+- F2g immutable Publish submit snapshot and response ownership is active under
+  `docs/agent/tasks/publish-submit-snapshot-ownership.md`. It is local-only,
+  test-first, and does not change the API or backend.
 - F2f remains accepted locally; it does not claim that mounted auth refresh,
   immutable submit snapshots, true network cancellation, or server-side orphan
   cleanup are complete.
