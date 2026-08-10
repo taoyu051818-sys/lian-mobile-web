@@ -97,6 +97,10 @@ Rules:
   clears A-owned list/session presentation state synchronously before
   assigning B, then retries with B's IDs. A same-account refresh may update the
   user object without clearing the current collection.
+- `useProfileTabs` owns that commit boundary. Its
+  `resetAccountPresentation()` callback clears non-list Profile state but does
+  not write `user`; the composable performs `resetList()`, then the callback,
+  then `user = candidate` in that exact synchronous order.
 - Guest/authenticated Profile boundaries synchronously invalidate the prior
   collection request before changing identity or loading the next account.
 - Logout does not delete an account's scoped history. A later login as the
