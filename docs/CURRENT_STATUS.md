@@ -3,8 +3,8 @@
 Last verified: 2026-08-10
 
 Active control issue: [#1090](https://github.com/taoyu051818-sys/lian-mobile-web/issues/1090)
-(F2g is accepted locally under a local-only task contract; network and
-production access remain paused, so no F2g issue was created online).
+(F2h is active locally under a local-only task contract; network and
+production access remain paused, so no F2h issue was created online).
 
 Open release blockers: None recorded as open GitHub issues.
 
@@ -12,11 +12,12 @@ Current production release: Not recorded in this repository.
 
 **Active execution queue:**
 
+- F2h normal publish-success actionable-result rendering is active locally
+  under `docs/agent/tasks/publish-success-actionable-result-render.md`.
 - F2g immutable Publish submit snapshot and response ownership is accepted
   locally under `docs/agent/tasks/publish-submit-snapshot-ownership.md`.
-- The next bounded Publish audit is F2h: verify the normal post-success stored
-  actionable-result render policy after the live form resets. It has no active
-  implementation task yet.
+- F2h is limited to the preview render boundary, user-facing stored-kind label,
+  offline tests, and documentation. It does not change F2g submit/reset logic.
 - F2g does not claim Event idempotency, mounted auth refresh, true network
   cancellation, or server-side side-effect reversal are complete.
 - Scope is local frontend code and tests only. No push, deployment, production
