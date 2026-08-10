@@ -63,6 +63,7 @@ interface SubmitSnapshot<TRequest> {
   readonly request: Readonly<TRequest>;
   readonly preview: Readonly<PublishActionablePostPreview>;
   readonly locationFallback: string;
+  readonly draftOwnership: Readonly<unknown>;
 }
 
 interface ActiveSubmitRequest<TRequest> {
@@ -90,6 +91,12 @@ Required invariants:
 - Snapshot request and preview are deeply copied and frozen.
 - Regular and Event request inputs, previews, and location fallback text all
   come from their single captured snapshot.
+- `PublishView` supplies an exact, JSON-safe ownership projection for every
+  reset-owned raw draft field that is not reliably represented by the wire
+  request. It includes raw text/meta fields, Event/Merchant/Trade inputs, AI
+  candidates, location search/binding state, image preview URLs, selected and
+  uploaded counts/URLs, and upload state. F2f preview URLs distinguish two
+  otherwise identical local File selections.
 - Every physical request captures one monotonic generation and unique ticket.
 - Success, failure, haptic, partial/idempotency state, preview, `lastTid`, form
   reset, and `finally` may commit only for the active generation and ticket.
@@ -101,6 +108,10 @@ Required invariants:
 - Result ownership and regular-post idempotency transitions are separate. When
   a recoverable A is edited into B, B clears A's logical attempt before B
   captures its own request owner; B must not invalidate itself.
+- Internal payload-change or confirmed-completion handling calls a dedicated
+  `clearLogicalPublishAttempt()` that only clears key/payload/partial state.
+  It must never advance response generation, invalidate a ticket, or release
+  busy. Only the public `resetPublishAttempt()` performs external abandon.
 - The busy guard runs before validation and result clearing, so a duplicate
   submit while a request is active is a true no-op.
 - An owned success resets the form only if a fresh live fingerprint still
@@ -112,6 +123,7 @@ Required invariants:
 Runtime:
 
 - `src/features/publish/usePublishSubmit.ts`
+- `src/features/publish/PublishView.vue` (ownership projection wiring only)
 
 Tests and inventory:
 
@@ -119,6 +131,7 @@ Tests and inventory:
 - `tests/publish/usePublishSubmitIdempotency.test.ts`
 - `tests/publish/usePublishSubmitEventDraftContext.test.ts`
 - `tests/publish/publishLocationHandoff.structure.test.ts`
+- `tests/publish/publishActionablePreview.structure.test.mjs`
 - `scripts/check-test-inventory.mjs` (Vitest 159 -> 160 only)
 
 Documentation:
@@ -131,8 +144,8 @@ Documentation:
 
 - No backend, API client, DTO, event input, HTTP header, route, database,
   Redis, authentication, dependency, deployment, or production change.
-- No editor-locking or `PublishView`, `PublishComposer`, control-component, or
-  visual redesign.
+- No editor-locking, `PublishComposer`, control-component, or visual redesign.
+  The only `PublishView` change is the plain ownership-projection callback.
 - No global/cross-tab auth epoch or claim that arbitrary mounted identity
   changes are now safe.
 - No true request cancellation, AbortController, retry/backoff UI, or remote
@@ -143,8 +156,10 @@ Documentation:
   backend attempt contract and remains finding 40/B4.
 - No 202 metadata-recovery policy change.
 - The separate UI defect where a normal post-reset actionable preview is not
-  rendered remains a bounded follow-up; F2g guarantees the stored result is A,
-  not that the current component always displays it.
+  rendered remains a bounded follow-up. In the diverged A/B case, the existing
+  live draft preview may continue to describe B while the stored
+  `actionablePost` result subpanel describes A; F2g guarantees that stored A
+  result never mixes B fields.
 - No file outside the allowed list.
 
 ## Test-first matrix
@@ -154,6 +169,9 @@ browser, server, or production system.
 
 - Regular A pending -> mutate title, body, image list, location, candidates,
   and Merchant/Trade values -> A response uses only A request and A preview.
+- Image ownership uses three explicit B arms after A starts: B upload pending,
+  B upload success, and B upload failure with one selected preview but no new
+  uploaded URL. None may be cleared by A success.
 - Event A pending -> mutate time, capacity, join policy, images, location, and
   candidates -> Event request and preview remain A.
 - Owned, unchanged A success writes `lastTid`, message, haptic, snapshot
@@ -163,6 +181,10 @@ browser, server, or production system.
   partial state, haptic, reset, or busy mutation.
 - The same sequence with A failure and recoverable partial response is also
   silent and cannot resurrect A's logical retry state.
+- Owned recoverable A may land after B edits without resetting B. B submit then
+  clears A's logical/result state before capturing B's owner, keeps busy true,
+  rejects duplicate submit as a no-op, and uses a new key. The same transition
+  from a regular partial A into Event B must not self-invalidate.
 - A pending -> reset -> B pending -> A settles first: A `finally` cannot clear
   B busy; B result remains authoritative after either settle order.
 - Duplicate submit while `publishing=true` performs no validation mutation,
@@ -171,6 +193,15 @@ browser, server, or production system.
   explicit reset, and confirmed completion continue to rotate it.
 - F2e structure coverage proves scope invalidation still happens before form
   reset/restore; F2f image projections are copied rather than retained.
+- Manual reset coverage proves a pre-open confirmation calls external abandon
+  before clearing the form. A later stale result cannot repopulate it.
+
+Fingerprint equality is exact draft ownership, not merely normalized wire
+equality. The `PublishView` projection records raw title/body/tag/identity,
+place and panel/search state, Event/Merchant/Trade fields, AI candidates, and
+image preview/upload lifecycle. A user edit that later restores the same raw
+projection may be treated as unchanged; normalized-equal but raw-different
+content remains B and must be preserved.
 
 ## Acceptance criteria
 
@@ -216,7 +247,8 @@ npx vitest run \
   tests/publish/usePublishAiDraft.test.ts \
   tests/publish/usePublishDraftSession.test.ts \
   tests/publish/usePublishImageUploads.test.ts \
-  tests/publish/usePublishLocationOptions.test.ts
+  tests/publish/usePublishLocationOptions.test.ts \
+  tests/publish/publishLocationHandoff.structure.test.ts
 node --test \
   tests/publish/publishActionablePreview.structure.test.mjs \
   tests/publish/viewPostEntry.structure.test.mjs
