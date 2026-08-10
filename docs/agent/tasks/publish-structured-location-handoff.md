@@ -197,30 +197,44 @@ Documentation:
 
 ## Acceptance criteria
 
-- [ ] V2 known place round-trips all IDs, source, system, and coordinates.
-- [ ] V2 free pin reaches the final draft as
+- [x] V2 known place round-trips all IDs, source, system, and coordinates.
+- [x] V2 free pin reaches the final draft as
       `map_v2/gcj02/map_selection`.
-- [ ] Browser geolocation remains WGS84, is not converted or mislabeled, and
+- [x] Browser geolocation remains WGS84, is not converted or mislabeled, and
       produces display-only/manual wire state with null map coordinates.
-- [ ] Invalid ranges, incomplete pairs, unknown versions, and source/system
+- [x] Invalid ranges, incomplete pairs, unknown versions, and source/system
       mismatches are rejected and cleared.
-- [ ] Legacy place reads safely as map/GCJ-02; legacy coords reads as
+- [x] Legacy place reads safely as map/GCJ-02; legacy coords reads as
       legacy/unknown display-only.
-- [ ] Applying B while A is selected can never submit A, even if the catalog is
+- [x] Applying B while A is selected can never submit A, even if the catalog is
       late, fails, or does not contain B.
-- [ ] Catalog-before-handoff and handoff-before-catalog converge on the same
+- [x] Catalog-before-handoff and handoff-before-catalog converge on the same
       binding without losing fallback data.
-- [ ] A scoped draft restores the optional binding without crossing accounts;
+- [x] A scoped draft restores the optional binding without crossing accounts;
       old snapshots remain readable.
-- [ ] A late/deactivated geolocation result cannot overwrite a newer map
+- [x] A late/deactivated geolocation result cannot overwrite a newer map
       handoff or consume state owned by another Publish instance.
-- [ ] Picker confirmation clears its selection; the next picker entry starts
+- [x] Picker confirmation clears its selection; the next picker entry starts
       empty and disabled.
-- [ ] Focused tests demonstrate intended failures on the old implementation,
+- [x] Focused tests demonstrate intended failures on the old implementation,
       then pass on the new implementation.
-- [ ] Deterministic local browser journeys, build, and full `npm run verify`
+- [x] Deterministic local browser journeys, build, and full `npm run verify`
       pass.
-- [ ] Only allowed files are changed.
+- [x] Only allowed files are changed.
+
+## Acceptance result
+
+- Implementation commit: `1418bf6`.
+- Focused red baseline: 43 failures / 34 passes before implementation; two
+  additional authoritative-binding tests then reproduced the independent
+  review finding.
+- Final focused result: 6 files / 86 tests passed.
+- Final `npm run verify`: 157 Vitest files / 4,018 tests, 65 Node files / 817
+  tests, sanitizer, build, and loopback smoke all passed.
+- Deterministic in-app loopback browser journeys: 2/2 passed; no console
+  errors. The packaged Playwright browser itself was unavailable, so no online
+  target or browser download was used.
+- Independent reviewer result: `ACCEPT`, no remaining blocking finding.
 
 ## Validation commands
 

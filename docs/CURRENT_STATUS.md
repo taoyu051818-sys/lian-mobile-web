@@ -2,21 +2,29 @@
 
 Last verified: 2026-08-10
 
-Active control issue: [#1089](https://github.com/taoyu051818-sys/lian-mobile-web/issues/1089).
+Latest control issue: [#1089](https://github.com/taoyu051818-sys/lian-mobile-web/issues/1089)
+(implemented and accepted locally; not pushed or closed).
 
 Open release blockers: None recorded as open GitHub issues.
 
 Current production release: Not recorded in this repository.
 
-**Active execution queue:**
+**Next audit queue:**
 
-- F2d Publish structured location handoff on
-  `codex/audit-f2d-publish-structured-location`.
+- F2e Publish draft account-scope re-entry audit: verify A → B → A identity
+  changes in one mounted Publish instance before approving another mutation.
 - Scope is local frontend code and tests only. No push, deployment, production
   mutation, or online environment check is authorized.
 
 Local audit baseline:
 
+- F2d Publish structured location handoff accepted locally on
+  `codex/audit-f2d-publish-structured-location`; implementation commit
+  `1418bf6`.
+- F2d validation passed: 157 Vitest files / 4,018 tests, 65 Node structure
+  files / 817 tests, build, sanitizer, 3 local smoke checks, 2 deterministic
+  loopback browser journeys, and full `npm run verify`. Independent review
+  recorded `ACCEPT` with no remaining blocker.
 - F2c Publish map-picker draft continuity accepted locally on
   `codex/audit-f2c-publish-map-picker-continuity`; implementation commits
   `ccfc236` and `165233f`.
