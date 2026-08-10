@@ -7,6 +7,27 @@ import { readHistoryQuery, rememberReadItem } from "../../platform/browser-stora
 
 const PAGE_SIZE = 12;
 
+function mergeFeedItems(base: readonly FeedItem[], incoming: readonly FeedItem[]): FeedItem[] {
+  const merged: FeedItem[] = [];
+  const slotByTid = new Map<FeedItem["tid"], number>();
+
+  for (const item of [...base, ...incoming]) {
+    if (!Number.isInteger(item.tid) || item.tid <= 0) {
+      merged.push(item);
+      continue;
+    }
+    const slot = slotByTid.get(item.tid);
+    if (slot === undefined) {
+      slotByTid.set(item.tid, merged.length);
+      merged.push(item);
+      continue;
+    }
+    merged[slot] = item;
+  }
+
+  return merged;
+}
+
 export function useFeedData(options: { detailOpen: () => boolean; closeDetail: () => void }) {
   const tabs = ref<FeedTab[]>(DEFAULT_TABS);
   const activeTab = ref(DEFAULT_TABS[0].id);
@@ -56,7 +77,7 @@ export function useFeedData(options: { detailOpen: () => boolean; closeDetail: (
       if (generation !== requestGeneration) return;
       tabs.value = response.tabs.length ? response.tabs : DEFAULT_TABS;
       const nextItems = response.items || [];
-      items.value = reset ? nextItems : [...items.value, ...nextItems];
+      items.value = mergeFeedItems(reset ? [] : items.value, nextItems);
       hasMore.value = Boolean(response.hasMore);
       page.value = response.nextPage || (reset ? 2 : page.value + 1);
     } catch (error) {

@@ -152,6 +152,21 @@ describe("useFeedData stable item identity", () => {
     expect(feed.items.value).toEqual([firstItem, secondItem]);
   });
 
+  it("preserves non-positive ids without inventing an invalid-item identity policy", async () => {
+    const invalidItems = [
+      feedItem(0, "first zero id"),
+      feedItem(0, "second zero id"),
+      feedItem(-1, "first negative id"),
+      feedItem(-1, "second negative id"),
+    ];
+    fetchFeedMock.mockResolvedValueOnce(feedResponse(invalidItems));
+    const feed = makeHarness();
+
+    await feed.loadFeed(true);
+
+    expect(feed.items.value).toEqual(invalidItems);
+  });
+
   it("does not let a superseded pagination response revive reset context or flags", async () => {
     const stalePagination = deferred<FeedResponse>();
     const latestReset = deferred<FeedResponse>();
