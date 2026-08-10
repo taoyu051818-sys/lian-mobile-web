@@ -2,13 +2,18 @@
 
 Last verified: 2026-08-10
 
-Active control issue: [#1086](https://github.com/taoyu051818-sys/lian-mobile-web/issues/1086).
+Active control issue: [#1087](https://github.com/taoyu051818-sys/lian-mobile-web/issues/1087).
 
 Open release blockers: None recorded as open GitHub issues.
 
 Current production release: Not recorded in this repository.
 
-**No active execution queue.**
+**Active execution queue:**
+
+- F2b Publish AI attempt boundary on
+  `codex/audit-f2b-publish-ai-attempt-boundary`.
+- Scope is local frontend code and tests only. No push, deployment, production
+  mutation, or online environment check is authorized.
 
 Local audit baseline:
 
