@@ -7,7 +7,7 @@
 - Upstream source reviewed: `main@d0ee0e9802149e5d99bd2c5064d6770adb1c041d`.
 - Local prerequisite: F3a acceptance `2bb52f6` with implementation `70cc4e3`.
 - Working branch: `codex/audit-f3b-read-history-scope`.
-- Status: planned; no runtime or test implementation has started.
+- Status: test-first contract revision; runtime implementation has not started.
 - The root rules, current status, browser-storage helpers, Feed initialization,
   Profile identity/session/list lifecycle, auth/profile API contracts, and
   current read-history tests were checked from the local accepted baseline.
@@ -47,6 +47,16 @@ Two Profile races make a storage-only rename insufficient:
 F3b must close the browser key ownership and those two request boundaries in
 one coherent batch.
 
+Two lifecycle edges must be closed at the same time:
+
+3. Unmounting Feed does not cancel an in-flight `fetchAuthMe()`. Without an
+   explicit dispose generation, an old A-owned Feed instance can resolve after
+   the user has entered B in Profile, read A's local history, and send it with
+   the now-B cookie.
+4. While the first owner lookup is pending, tab/filter/reset requests can
+   queue multiple physical Feed requests or send one before ownership is
+   known unless they share one resolution gate and latest request generation.
+
 ## Product decision
 
 Read history is browser-local convenience data, owned by exactly one explicit
@@ -70,13 +80,23 @@ Rules:
   `unavailable`, never guest.
 - Unavailable history ownership must not block public Feed loading; the Feed
   request simply omits `read`, and card opens do not persist local history.
-- Each mounted Feed resolves ownership before its first request. Normal in-app
-  account changes go through Profile and unmount Feed, so the next Feed mount
-  resolves the new owner.
+- Each mounted Feed resolves ownership before its first request. Unmount is an
+  explicit cancellation boundary: a late owner lookup from a disposed
+  instance cannot commit an owner, read storage, or start a Feed request.
+- Reset loads, tab changes, and visibility changes while ownership is
+  resolving share one promise. They may update the desired context, but only
+  the latest request generation starts one physical Feed request after owner
+  resolution.
 - Profile history is account-only. Guest or missing-ID state supplies no local
   history IDs.
 - Every Profile history request attempt derives IDs from the current user. A
   401 retry after identity refresh must not reuse the first attempt's IDs.
+- `useProfileSession.refreshCurrentSession()` returns a candidate user without
+  mutating the live `user` ref. The requesting Profile list generation decides
+  whether that candidate is still current. On a real A-to-B transition it
+  clears A-owned list/session presentation state synchronously before
+  assigning B, then retries with B's IDs. A same-account refresh may update the
+  user object without clearing the current collection.
 - Guest/authenticated Profile boundaries synchronously invalidate the prior
   collection request before changing identity or loading the next account.
 - Logout does not delete an account's scoped history. A later login as the
@@ -117,6 +137,15 @@ mounted
      -> explicit guest/account -> load Feed with that scope's read query
      -> unavailable            -> load Feed without read query
 
+resolving owner + tab/filter/reset
+  -> retain latest desired context and generation
+  -> owner settles
+  -> exactly one request for latest context
+
+unmount/dispose
+  -> invalidate owner and request generations
+  -> late auth completion performs no owner/storage/Feed side effect
+
 card open
   -> ready owner      -> write only that scope
   -> unavailable      -> no-op, still open detail
@@ -130,9 +159,13 @@ card open
 ```text
 load history attempt
   -> derive scope/tids from current user
-  -> 401 -> refresh current session
-         -> derive scope/tids again
-         -> retry for refreshed owner
+  -> 401 -> fetch refreshed session candidate without committing it
+         -> stale list generation: discard candidate and stop
+         -> same account: update user, derive IDs again, retry
+         -> A to B: clear A list/session state
+                    -> assign B
+                    -> derive B IDs
+                    -> retry under the rebased current generation
 
 guest/authenticated boundary
   -> resetList() / generation++
@@ -151,8 +184,14 @@ guest/authenticated boundary
 - Blank account IDs cannot construct an account scope.
 - Feed never reads or writes guest history before guest identity is explicit.
 - Feed auth lookup error still produces a normal Feed request with no `read`.
+- Feed disposal invalidates owner resolution and all pending Feed commits. A
+  late disposed lookup cannot read any scoped key or issue a request.
+- Owner-resolution-time reset/tab/filter actions coalesce to exactly one
+  request using the latest tab and visibility state.
 - A Profile request invalidated by logout/account change cannot write rows or
   loading/error state afterward.
+- A session refresh cannot mutate identity before the current list generation
+  authorizes it. A-to-B clears A-owned list/session state before `user = B`.
 - A 401 refresh from A to B retries with B's IDs.
 - Existing F3a identity merge and Feed request-generation behavior remain
   unchanged.
@@ -165,6 +204,7 @@ Runtime:
 - `src/features/feed/useFeedData.ts`
 - `src/features/feed/FeedView.vue`
 - `src/features/profile/useProfileTabs.ts`
+- `src/features/profile/useProfileSession.ts`
 - `src/features/profile/ProfileView.vue`
 
 Tests and inventory:
@@ -173,9 +213,10 @@ Tests and inventory:
 - `tests/composables/useFeedData.read-history-scope.test.ts` (new)
 - `tests/composables/useFeedData.request-race.test.ts`
 - `tests/profile/useProfileTabs.request-race.test.ts`
+- `tests/profile/useProfileSession.account-transition.test.ts` (new)
 - `tests/profile/profile-view-structure.test.ts`
 - `tests/feed/feedReadHistoryIdNormalization.contract.test.ts`
-- `scripts/check-test-inventory.mjs` (Vitest 162 -> 163 only)
+- `scripts/check-test-inventory.mjs` (Vitest 162 -> 164 only)
 
 Documentation:
 
@@ -189,6 +230,10 @@ Documentation:
   endpoint, backend/server, cookie, session format, CSS, or dependency change.
 - No global auth store/event, cross-tab identity refresh, `storage` event,
   focus/visibility auth epoch, or mounted external cookie-change support.
+- No general redesign of Profile bootstrap/authentication. F3b makes the
+  history-triggered 401 refresh side-effect free until its current list owner
+  accepts the candidate; unrelated `loadProfile()` request arbitration remains
+  a separately tracked identity-lifecycle follow-up.
 - No server-backed history, cross-device sync, encryption, TTL, clear-history
   UI, account deletion cleanup, or multi-tab write locking.
 - No F3a merge, cursor, Feed request-intent, refresh, auto-load, reaction,
@@ -224,6 +269,12 @@ network request is required.
 - Auth reject or a user without ID still loads Feed with no `read`; remember is
   a no-op and does not fall back to guest.
 - No Feed request starts before initial owner resolution settles.
+- Auth A is deferred; initialize plus multiple tab/filter/reset actions starts
+  zero Feed requests while resolving, then exactly one request using A scope
+  and the latest context.
+- Auth A is deferred; disposing the instance before it settles produces no
+  owner commit, storage read/write, or Feed request. A newly mounted B instance
+  reads and requests only B.
 - Existing request-generation and F3a identity tests remain green.
 
 ### Profile
@@ -235,6 +286,11 @@ network request is required.
 - A history request receives 401; refresh changes the user to B; retry derives
   and sends B IDs instead of A IDs.
 - A same-account 401 refresh retains that account's IDs.
+- A-to-B refresh records the exact order: A collection/session reset precedes
+  `user = B`, retry uses B IDs, and B response can commit. A same-account
+  refresh does not clear an otherwise current collection.
+- A refresh pending, followed by logout/invalidation or explicit B sign-in,
+  cannot later restore A into the session ref.
 - Profile guest and authenticated boundaries call `resetList()` before user
   assignment/load, preserving the existing ServerChan resets.
 
@@ -248,7 +304,7 @@ network request is required.
       and composables rather than copied implementations.
 - [ ] Existing Feed request-generation, F3a identity, Profile tab/filter, and
       F1a session-reset tests remain green.
-- [ ] Vitest inventory is exactly 163; Node structure inventory remains 65.
+- [ ] Vitest inventory is exactly 164; Node structure inventory remains 65.
 - [ ] Typecheck, build, sanitizer, smoke, focused tests, and full
       `npm run verify` pass.
 - [ ] Independent review records acceptance and no blocking finding remains.
@@ -265,7 +321,14 @@ network request is required.
   unknown authenticated session. Mitigation: explicit unavailable state and
   tests asserting no read/write.
 - Reusing first-attempt history IDs after 401 could cross accounts. Mitigation:
-  rebuild IDs after every successful session refresh.
+  return an uncommitted refresh candidate, validate request ownership, and
+  rebuild IDs after every accepted session refresh.
+- Treating component unmount as implicit cancellation would allow an old Feed
+  owner request to leak history under a new cookie. Mitigation: explicit
+  dispose/lifecycle generation plus a two-instance interleaving test.
+- Firing every context request after the shared owner promise resolves would
+  duplicate network requests. Mitigation: generation-check after the owner
+  gate; only the latest desired context proceeds.
 - Resetting Profile after assigning B could persist a visible A result for one
   tick. Mitigation: invalidate list generation before identity assignment/load
   and assert source order.
@@ -275,7 +338,7 @@ network request is required.
 ## Rollback
 
 Revert the bounded F3b runtime, test, inventory, and documentation commits.
-Restore the Vitest inventory from 163 to 162. The untouched legacy key remains
+Restore the Vitest inventory from 164 to 162. The untouched legacy key remains
 available to the prior version; v2 keys can remain harmlessly in localStorage
 because rollback code does not read them. No API, server, database, Redis, or
 deployed-state cleanup is required.
@@ -289,6 +352,7 @@ npx vitest run \
   tests/composables/useFeedData.request-race.test.ts \
   tests/composables/useFeedData.item-identity.test.ts \
   tests/profile/useProfileTabs.request-race.test.ts \
+  tests/profile/useProfileSession.account-transition.test.ts \
   tests/profile/profile-view-structure.test.ts \
   tests/feed/feedReadHistoryIdNormalization.contract.test.ts
 npm run build
