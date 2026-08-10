@@ -3,8 +3,8 @@
 Last verified: 2026-08-10
 
 Active control issue: [#1090](https://github.com/taoyu051818-sys/lian-mobile-web/issues/1090)
-(F3e is accepted locally under a local-only task contract; network and
-production access remain paused, so no F3e issue was created online).
+(F3f is accepted locally under a local-only task contract; network and
+production access remain paused, so no F3f issue was created online).
 
 Open release blockers: None recorded as open GitHub issues.
 
@@ -12,6 +12,11 @@ Current production release: Not recorded in this repository.
 
 **Active execution queue:**
 
+- F3f Detail-origin reaction settlement projection is accepted locally under
+  `docs/agent/tasks/feed-detail-reaction-settlement-projection.md`;
+  implementation commit `e804e46`. Current authoritative Detail Like/Save
+  results now reach the mounted Feed, and a physical Feed response can only
+  overwrite settlements that predate that request's transport boundary.
 - F3e truthful Feed card context actions are accepted locally under
   `docs/agent/tasks/feed-card-context-action-truthfulness.md`; implementation
   commit `e917b8b`. A 360 ms hold now opens the owned custom menu, controls and
@@ -35,15 +40,15 @@ Current production release: Not recorded in this repository.
   `70cc4e3`. Its runtime scope is limited to client-side duplicate-`tid`
   projection.
 - The Feed read-only audit also recorded follow-up batches for cursor
-  pagination, Feed/Detail reaction reconciliation, and page restoration. They
-  are not part of F3a/F3b/F3c/F3d/F3e.
+  pagination, Feed-origin/Profile/cross-tab reaction reconciliation, and page
+  restoration. They are not part of F3a/F3b/F3c/F3d/F3e/F3f.
 - F2h normal publish-success actionable-result rendering is accepted locally
   under `docs/agent/tasks/publish-success-actionable-result-render.md`.
 - F2g immutable Publish submit snapshot and response ownership is accepted
   locally under `docs/agent/tasks/publish-submit-snapshot-ownership.md`.
-- The next bounded Feed batch should address Feed/Detail canonical reaction
-  reconciliation or page restoration. Cursor pagination and Event creation
-  idempotency remain coordinated API/backend follow-ups, not F3e changes.
+- The next bounded Feed batch should address remaining Feed-origin reaction
+  production or page restoration. Cursor pagination and Event creation
+  idempotency remain coordinated API/backend follow-ups, not F3f changes.
 - F2g does not claim Event idempotency, mounted auth refresh, true network
   cancellation, or server-side side-effect reversal are complete.
 - Scope is local frontend code and tests only. No push, deployment, production
@@ -51,6 +56,15 @@ Current production release: Not recorded in this repository.
 
 Local audit baseline:
 
+- F3f Detail-origin reaction settlement projection accepted locally on
+  `codex/audit-f3f-feed-detail-like-reconciliation`; task commit `bb33ef1`,
+  red-test commit `6fc4bdd`, public-surface contract commit `d10090f`, owner
+  predicate test commit `e2fd712`, and implementation commit `e804e46`.
+- F3f validation passed: 168 Vitest files / 4,209 tests, 65 Node structure
+  files / 824 tests, production build (646 modules / PWA 71 entries), HTML
+  sanitizer, 3 loopback smoke checks, and full `npm run verify` in 94.8
+  seconds. Two independent reviewers recorded `ACCEPT` with no blocking
+  finding after the external-owner predicate test seam was strengthened.
 - F3e truthful Feed card context actions accepted locally on
   `codex/audit-f3e-feed-context-actions`; task commit `855365b`, red-test commit
   `899bae6`, and implementation commit `e917b8b`.

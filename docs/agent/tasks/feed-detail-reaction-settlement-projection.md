@@ -8,15 +8,18 @@
 - Local prerequisite: accepted F3e head `f031b22`, with runtime implementation
   `e917b8b`.
 - Working branch: `codex/audit-f3f-feed-detail-like-reconciliation`.
-- Status: contract drafted; implementation and acceptance are pending.
+- Status: locally accepted on 2026-08-10.
+- Local commit chain: task `bb33ef1`; red tests `6fc4bdd`; required feature
+  public-surface clarification `d10090f`; external-owner predicate test
+  strengthening `e2fd712`; runtime implementation `e804e46`.
 - Current code, root `README.md`, `package.json`, `docs/CURRENT_STATUS.md`,
   `docs/agent/README.md`, `docs/agent/00_AGENT_RULES.md`, the accepted F3a-F3e
   tasks, and the local Feed/detail/reaction implementations were checked.
 - Recent online issues and merged pull requests are intentionally not queried
   because the user paused network/security-related activity.
 - This task is local frontend code and hermetic tests only. It authorizes no
-  push, merge, deployment, production mutation, server access, credential use,
-  or online browser journey.
+  push, merge, deployment, production mutation, remote/backend server access,
+  credential use, or online browser journey.
 
 ## Reproduced problem
 
@@ -369,6 +372,27 @@ Also run changed-file Prettier and ESLint, `vue-tsc --noEmit`,
 local verification bundle. The new Vitest file raises inventory from 167 to
 168; Node inventory remains 65.
 
+## Acceptance evidence
+
+- The original red phase collected the complete suite: 23 intended F3f
+  failures while 76 existing F3a-F3e guards remained green. Independent review
+  then found and closed an external-owner-predicate false-green seam before
+  acceptance.
+- Final F3f behavior: 24/24; combined focused Feed/Detail/F3e regression: 6
+  files and 100/100 tests.
+- Full `npm run verify` passed in 94.8 seconds: 168 Vitest files / 4,209 tests,
+  65 Node structure files / 824 tests, production build with 646 transformed
+  modules and 71 PWA precache entries, HTML sanitizer, repository guards, and
+  3/3 loopback smoke checks all passed. Lint retained only the existing
+  warnings.
+- Two independent reviewers inspected the channel, Detail generation/tickets,
+  physical-request boundary, per-kind projection, disposal/no-replay, test
+  discrimination, public feature surface, and exact file scope. Both recorded
+  `ACCEPT` with no remaining blocker.
+- All work stayed local. No push, merge, deployment, production mutation,
+  remote/backend server access, credential use, online browser journey, or
+  external network access occurred.
+
 ## Risks and mitigations
 
 - Risk: a late Feed response reverses a confirmed Detail action. Mitigation:
@@ -407,5 +431,5 @@ local verification bundle. The new Vitest file raises inventory from 167 to
   projection, disposal/no-replay, test discrimination, and exact allowed-file
   scope.
 - Only the primary review thread may record F3f as locally accepted.
-- No push, merge, deployment, production mutation, server access, or online
-  validation is authorized by this task.
+- No push, merge, deployment, production mutation, remote/backend server
+  access, or online validation is authorized by this task.
