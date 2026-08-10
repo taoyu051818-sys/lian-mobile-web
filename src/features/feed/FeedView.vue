@@ -37,7 +37,7 @@ const pullToRefresh = usePullToRefresh({
   threshold: 80,
   maxPull: 150,
   onRefresh: async () => {
-    await feedData.loadFeed(true);
+    await feedData.refreshFeed();
   },
 });
 
@@ -147,8 +147,8 @@ const filterBarMounted = computed(() => !detail.detailOpen.value && shellVisible
     <InlineError
       v-if="feedData.errorMessage.value"
       :action-label="CHANNEL_RELOAD"
-      :action-loading="feedData.loading.value"
-      @action="feedData.loadFeed(true)"
+      :action-loading="feedData.requestPending.value"
+      @action="feedData.retryFailedRequest"
     >
       {{ feedData.errorMessage.value }}
     </InlineError>
