@@ -12,6 +12,10 @@ Current production release: Not recorded in this repository.
 
 **Active execution queue:**
 
+- F3b account-scoped Feed/Profile read history is planned locally under
+  `docs/agent/tasks/feed-read-history-account-scope.md`. Its scope includes
+  explicit guest/account/unavailable ownership plus Profile logout-late and
+  401 account-change request boundaries; no implementation has started yet.
 - F3a stable Feed item-identity merge is accepted locally under
   `docs/agent/tasks/feed-stable-item-identity-merge.md`; implementation commit
   `70cc4e3`. Its runtime scope is limited to client-side duplicate-`tid`
