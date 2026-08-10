@@ -5,6 +5,11 @@ import type { FeedItem, FeedTab } from "../../types/feed";
 import type { AudienceVisibility } from "../../types/audience";
 import { LOADING_FEED, EMPTY_FEED, ERROR_LOAD_GENERIC, FEED_EMPTY_HINT } from "../../config/brand";
 import {
+  postReactionSettlements,
+  type PostReactionSettlement,
+  type PostReactionSettlementPort,
+} from "../reactions";
+import {
   accountReadHistoryScope,
   GUEST_READ_HISTORY_SCOPE,
   readHistoryQuery,
@@ -39,7 +44,13 @@ interface ActiveFeedRequest {
   descriptor: FeedRequestDescriptor;
   completion: FeedLogicalCompletion;
   retry: boolean;
+  reactionBoundary: number | null;
+  pendingLikeSettlements: Map<FeedItem["tid"], LikeSettlement>;
+  pendingSaveSettlements: Map<FeedItem["tid"], SaveSettlement>;
 }
+
+type LikeSettlement = Extract<PostReactionSettlement, { kind: "like" }>;
+type SaveSettlement = Extract<PostReactionSettlement, { kind: "save" }>;
 
 function createFeedLogicalCompletion(): FeedLogicalCompletion {
   let settled = false;
@@ -116,7 +127,29 @@ function mergeFeedItems(base: readonly FeedItem[], incoming: readonly FeedItem[]
   return merged;
 }
 
-export function useFeedData(options: { detailOpen: () => boolean; closeDetail: () => void }) {
+function projectReactionSettlements(
+  feedItems: readonly FeedItem[],
+  likeSettlements: ReadonlyMap<FeedItem["tid"], LikeSettlement>,
+  saveSettlements: ReadonlyMap<FeedItem["tid"], SaveSettlement>,
+): FeedItem[] {
+  return feedItems.map((item) => {
+    const like = likeSettlements.get(item.tid);
+    const save = saveSettlements.get(item.tid);
+    if (!like && !save) return item;
+    return {
+      ...item,
+      ...(like ? { liked: like.liked, likeCount: like.likeCount } : {}),
+      ...(save ? { bookmarked: save.bookmarked } : {}),
+    };
+  });
+}
+
+export function useFeedData(options: {
+  detailOpen: () => boolean;
+  closeDetail: () => void;
+  settlements?: PostReactionSettlementPort;
+}) {
+  const settlements = options.settlements ?? postReactionSettlements;
   const tabs = ref<FeedTab[]>(DEFAULT_TABS);
   const activeTab = ref(DEFAULT_TABS[0].id);
   const items = ref<FeedItem[]>([]);
@@ -138,6 +171,40 @@ export function useFeedData(options: { detailOpen: () => boolean; closeDetail: (
   let initializationPromise: Promise<void> | null = null;
   let resolvingCompletion: FeedLogicalCompletion | null = null;
   let activeRequest: ActiveFeedRequest | null = null;
+  const latestLikeSequences = new Map<FeedItem["tid"], number>();
+  const latestSaveSequences = new Map<FeedItem["tid"], number>();
+
+  function applySettlement(event: PostReactionSettlement): void {
+    if (disposed || !Number.isInteger(event.tid) || event.tid <= 0) return;
+
+    const latestSequences = event.kind === "like" ? latestLikeSequences : latestSaveSequences;
+    if (event.sequence <= (latestSequences.get(event.tid) ?? 0)) return;
+    latestSequences.set(event.tid, event.sequence);
+
+    let matched = false;
+    const nextItems = items.value.map((item) => {
+      if (item.tid !== event.tid) return item;
+      matched = true;
+      return event.kind === "like"
+        ? { ...item, liked: event.liked, likeCount: event.likeCount }
+        : { ...item, bookmarked: event.bookmarked };
+    });
+    if (matched) items.value = nextItems;
+
+    const request = activeRequest;
+    if (
+      !request ||
+      !isCurrent(request) ||
+      request.reactionBoundary === null ||
+      event.sequence <= request.reactionBoundary
+    ) {
+      return;
+    }
+    if (event.kind === "like") request.pendingLikeSettlements.set(event.tid, event);
+    else request.pendingSaveSettlements.set(event.tid, event);
+  }
+
+  const unsubscribeSettlements = settlements.subscribe(applySettlement);
 
   const requestPending = computed(() => loading.value || refreshing.value || loadingMore.value);
   const isEmpty = computed(
@@ -187,6 +254,8 @@ export function useFeedData(options: { detailOpen: () => boolean; closeDetail: (
   }
 
   function finishCurrentRequest(request: ActiveFeedRequest): void {
+    request.pendingLikeSettlements.clear();
+    request.pendingSaveSettlements.clear();
     if (!isCurrent(request)) return;
     clearBusyState();
     activeRequest = null;
@@ -203,20 +272,23 @@ export function useFeedData(options: { detailOpen: () => boolean; closeDetail: (
     try {
       const read =
         historyOwner.status === "ready" ? readHistoryQuery(historyOwner.scope) : undefined;
-      const response = await fetchFeed({
+      const query = {
         tab: request.descriptor.tab,
         page: request.descriptor.page,
         limit: PAGE_SIZE,
         read,
         visibility: request.descriptor.visibility ? [...request.descriptor.visibility] : undefined,
-      });
+      };
+      request.reactionBoundary = settlements.currentSequence();
+      const response = await fetchFeed(query);
 
       if (!isCurrent(request)) return;
       tabs.value = response.tabs.length ? response.tabs : DEFAULT_TABS;
       const nextItems = response.items || [];
-      items.value = mergeFeedItems(
-        request.descriptor.kind === "append" ? items.value : [],
-        nextItems,
+      items.value = projectReactionSettlements(
+        mergeFeedItems(request.descriptor.kind === "append" ? items.value : [], nextItems),
+        request.pendingLikeSettlements,
+        request.pendingSaveSettlements,
       );
       hasMore.value = Boolean(response.hasMore);
       page.value = response.nextPage || request.descriptor.page + 1;
@@ -250,6 +322,8 @@ export function useFeedData(options: { detailOpen: () => boolean; closeDetail: (
       if (activeRequest.completion !== resolvingCompletion) {
         activeRequest.completion.settle();
       }
+      activeRequest.pendingLikeSettlements.clear();
+      activeRequest.pendingSaveSettlements.clear();
     } else if (descriptor.kind === "append" && !hasMore.value) {
       return Promise.resolve();
     }
@@ -261,6 +335,9 @@ export function useFeedData(options: { detailOpen: () => boolean; closeDetail: (
       descriptor,
       completion,
       retry,
+      reactionBoundary: null,
+      pendingLikeSettlements: new Map(),
+      pendingSaveSettlements: new Map(),
     };
 
     if (!retry) {
@@ -372,14 +449,19 @@ export function useFeedData(options: { detailOpen: () => boolean; closeDetail: (
   function dispose(): void {
     if (disposed) return;
     disposed = true;
+    unsubscribeSettlements();
     lifecycleGeneration += 1;
     requestGeneration += 1;
     historyOwner = { status: "unavailable" };
     clearBusyState();
+    activeRequest?.pendingLikeSettlements.clear();
+    activeRequest?.pendingSaveSettlements.clear();
     activeRequest?.completion.settle();
     activeRequest = null;
     resolvingCompletion?.settle();
     resolvingCompletion = null;
+    latestLikeSequences.clear();
+    latestSaveSequences.clear();
   }
 
   return {
