@@ -12,6 +12,14 @@ Current production release: Not recorded in this repository.
 
 **Active execution queue:**
 
+- F3a stable Feed item-identity merge is planned locally under
+  `docs/agent/tasks/feed-stable-item-identity-merge.md`. Its runtime scope is
+  limited to client-side duplicate-`tid` projection; no implementation has
+  started yet.
+- The Feed read-only audit also recorded follow-up batches for cursor
+  pagination, account-scoped read history, Feed/Detail reaction
+  reconciliation, auto-load recovery, request intents, page restoration, and
+  truthful context-menu actions. They are not part of F3a.
 - F2h normal publish-success actionable-result rendering is accepted locally
   under `docs/agent/tasks/publish-success-actionable-result-render.md`.
 - F2g immutable Publish submit snapshot and response ownership is accepted
