@@ -55,9 +55,14 @@ upload behavior, user-facing copy, dependencies, or backend behavior.
 
 - `PublishView` has an explicit stable component name and emits
   `map-picker-open` immediately before changing the hash.
-- `AppViewHost` owns a narrow in-memory lease. Its `KeepAlive` always includes
-  `MapLeafletView`, and includes `PublishView` only while Publish is active or
-  the picker lease is active.
+- `AppViewHost` owns a narrow in-memory lease and two independent cache
+  containers. The existing Map cache is always mounted and can contain only
+  the active map view. A separate Publish cache exists only while Publish is
+  active or the picker lease is active, and its slot contains Publish only
+  while that view is active.
+- Do not dynamically mutate one `KeepAlive include` list. Vue's cache-pruning
+  path can inspect the unresolved async-wrapper name and evict the existing Map
+  entry when the include list changes.
 - Direct map/picker entry does not create a Publish lease. Leaving the picker
   for any non-Publish page clears the lease and evicts the cached Publish
   instance.
