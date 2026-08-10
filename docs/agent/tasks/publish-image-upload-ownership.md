@@ -84,10 +84,14 @@ Required invariants:
   the same entry ID and File reference, and an `uploading` entry status.
 - Removal resolves the current index to an entry ID synchronously. Removing an
   in-flight entry invalidates its ownership; the remaining queue continues.
+- A caller already waiting for that drain transfers to the replacement
+  runner. It settles after the replacement queue, without waiting for the
+  invalidated physical request to return.
 - Appending during an active drain uploads each accepted entry exactly once.
 - Reset and disposal increment generation before clearing state, release the
-  current busy flag immediately, revoke owned preview URLs exactly once, and
-  allow a new generation to start without waiting for old network work.
+  current busy flag immediately, and revoke owned preview URLs exactly once.
+  Reset allows a new generation without waiting for old network work;
+  disposal is terminal for that owner.
 - Old success, old failure, and old `finally` do not mutate the current URL,
   error, or busy state.
 - A current failure remains visible through the existing publish error path;
@@ -161,17 +165,17 @@ object-URL functions. It must never call a real network or browser service.
 
 ## Acceptance criteria
 
-- [ ] Old implementation fails the focused ownership/race tests for the
+- [x] Old implementation fails the focused ownership/race tests for the
       intended stale-index and stale-generation reasons.
-- [ ] Single-entry state is the only upload ownership source.
-- [ ] All removal, append, reset, and disposal matrix cases pass.
-- [ ] Existing image validation, AI, F2d location, F2e scope reset, submit, and
+- [x] Single-entry state is the only upload ownership source.
+- [x] All removal, append, reset, and disposal matrix cases pass.
+- [x] Existing image validation, AI, F2d location, F2e scope reset, submit, and
       9-image-limit tests do not regress.
-- [ ] Vitest inventory is exactly 159; Node structure inventory remains 65.
-- [ ] Typecheck, build, sanitizer, smoke, focused tests, and full
+- [x] Vitest inventory is exactly 159; Node structure inventory remains 65.
+- [x] Typecheck, build, sanitizer, smoke, focused tests, and full
       `npm run verify` pass.
-- [ ] Independent review records acceptance and no blocking finding remains.
-- [ ] Only allowed files change; no network, production, push, merge, or
+- [x] Independent review records acceptance and no blocking finding remains.
+- [x] Only allowed files change; no network, production, push, merge, or
       deployment action occurs.
 
 ## Data, compatibility, and migration
@@ -204,3 +208,16 @@ npx vitest run \
 npm run build
 npm run verify
 ```
+
+## Acceptance record
+
+- Locally accepted on 2026-08-10.
+- Implementation commit: `8847203`.
+- Final focused suite: 6 files / 77 tests passed.
+- Full verification: 159 Vitest files / 4,052 tests, 65 Node structure files /
+  817 tests, HTML sanitizer, build, and loopback smoke 3/3 passed.
+- Vite transformed 643 modules and generated 72 PWA precache entries.
+- Two independent reviewers recorded `ACCEPT`; the reachability review also
+  verified the remove-to-replacement completion transfer and reported no
+  blocking finding.
+- The commit is local only and has not been pushed, merged, or deployed.

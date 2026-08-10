@@ -3,8 +3,8 @@
 Last verified: 2026-08-10
 
 Active control issue: [#1090](https://github.com/taoyu051818-sys/lian-mobile-web/issues/1090)
-(F2e is accepted locally; F2f is proceeding under a local-only task contract
-while network and production access remain paused).
+(F2f is accepted locally under a local-only task contract; network and
+production access remain paused, so no F2f issue was created online).
 
 Open release blockers: None recorded as open GitHub issues.
 
@@ -12,17 +12,23 @@ Current production release: Not recorded in this repository.
 
 **Active execution queue:**
 
-- F2f Publish image-upload ownership/order: replace the mutable-index upload
-  model with stable image identity and local generation checks so removal,
-  reset, and disposal cannot accept stale results. Task contract:
-  `docs/agent/tasks/publish-image-upload-ownership.md`.
-- F2e remains accepted locally; F2f does not claim that mounted auth refresh,
-  immutable submit snapshots, or server-side orphan cleanup are complete.
+- Next recommended lane: F2g immutable Publish submit snapshot and response
+  ownership. It requires a separate, bounded task contract before execution.
+- F2f remains accepted locally; it does not claim that mounted auth refresh,
+  immutable submit snapshots, true network cancellation, or server-side orphan
+  cleanup are complete.
 - Scope is local frontend code and tests only. No push, deployment, production
   mutation, or online environment check is authorized.
 
 Local audit baseline:
 
+- F2f Publish image-upload ownership/order accepted locally on
+  `codex/audit-f2f-publish-image-upload-ownership`; implementation commit
+  `8847203`.
+- F2f validation passed: 159 Vitest files / 4,052 tests, 65 Node structure
+  files / 817 tests, build, sanitizer, 3 loopback smoke checks, and full
+  `npm run verify`. Two independent reviewers recorded `ACCEPT`; a separate
+  reachability review reported no blocking finding.
 - F2e Publish draft account-scope re-entry accepted locally on
   `codex/audit-f2e-publish-draft-scope-reentry`; implementation commit
   `d93721e`.
