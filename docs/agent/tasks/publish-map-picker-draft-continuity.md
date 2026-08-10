@@ -66,6 +66,10 @@ upload behavior, user-facing copy, dependencies, or backend behavior.
 - Direct map/picker entry does not create a Publish lease. Leaving the picker
   for any non-Publish page clears the lease and evicts the cached Publish
   instance.
+- Same-view in-app navigation from `#/map?picker=1` to plain `#/map` uses the
+  shared before-navigate hook because `history.pushState` emits neither
+  `hashchange` nor `popstate`. The hook is registered and removed with the
+  host lifecycle.
 - Returning to Publish clears the lease without evicting the active Publish
   instance. A later normal navigation then follows the existing unmount path.
 - `PublishView` consumes the one-shot handoff from `onActivated`, because a
@@ -77,19 +81,19 @@ upload behavior, user-facing copy, dependencies, or backend behavior.
 
 ## Acceptance criteria
 
-- [ ] Title, body, upload preview/state, publish kind, and Event/Merchant/Trade
+- [x] Title, body, upload preview/state, publish kind, and Event/Merchant/Trade
       subdraft refs survive picker cancel and confirm round trips.
-- [ ] The location handoff is consumed once when the cached Publish view is
+- [x] The location handoff is consumed once when the cached Publish view is
       activated.
-- [ ] Delayed Publish identity/chrome changes cannot overwrite the map shell
+- [x] Delayed Publish identity/chrome changes cannot overwrite the map shell
       while Publish is deactivated.
-- [ ] Navigating from the picker to Feed/Profile releases the lease; a later
+- [x] Navigating from the picker to Feed/Profile releases the lease; a later
       Publish visit uses the existing account-scoped restore path.
-- [ ] Direct `#/map?picker=1` entry does not create a hidden Publish instance.
-- [ ] Existing map KeepAlive behavior remains unchanged.
-- [ ] Persisted draft/session and location handoff contracts remain unchanged.
-- [ ] Focused tests, build, and full `npm run verify` pass.
-- [ ] Only allowed files are changed.
+- [x] Direct `#/map?picker=1` entry does not create a hidden Publish instance.
+- [x] Existing map KeepAlive behavior remains unchanged.
+- [x] Persisted draft/session and location handoff contracts remain unchanged.
+- [x] Focused tests, build, and full `npm run verify` pass.
+- [x] Only allowed files are changed.
 
 ## Validation commands
 

@@ -2,21 +2,24 @@
 
 Last verified: 2026-08-10
 
-Active control issue: [#1088](https://github.com/taoyu051818-sys/lian-mobile-web/issues/1088).
+Active control issue: None.
 
 Open release blockers: None recorded as open GitHub issues.
 
 Current production release: Not recorded in this repository.
 
-**Active execution queue:**
-
-- F2c Publish map-picker draft continuity on
-  `codex/audit-f2c-publish-map-picker-continuity`.
-- Scope is local frontend code and tests only. No push, deployment, production
-  mutation, or online environment check is authorized.
+**Active execution queue:** None. Start the next batch only from a new task
+contract and branch. No push, deployment, production mutation, or online
+environment check is authorized.
 
 Local audit baseline:
 
+- F2c Publish map-picker draft continuity accepted locally on
+  `codex/audit-f2c-publish-map-picker-continuity`; implementation commits
+  `ccfc236` and `165233f`.
+- F2c validation passed: 156 Vitest files / 3,981 tests, 65 Node structure
+  files / 817 tests, build, sanitizer, 3 local smoke checks, deterministic
+  local browser round trips, and full `npm run verify`.
 - F2b Publish AI attempt boundary accepted locally on
   `codex/audit-f2b-publish-ai-attempt-boundary`; implementation commit
   `391d17a`.
