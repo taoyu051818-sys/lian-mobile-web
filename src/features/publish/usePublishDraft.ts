@@ -24,7 +24,6 @@ import { extractErrorMessage } from "../../utils/extractErrorMessage";
 import {
   MAX_PUBLISH_IMAGE_COUNT,
   normalizePublishTag,
-  uploadPublishImage,
   validatePublishImageSelection,
 } from "../../api/publish";
 import { validatePublishForm } from "../../domain/validation/forms";
@@ -33,6 +32,7 @@ import type { AudienceVisibility } from "../../types/audience";
 import { useAudienceOptions } from "../../composables/useAudienceOptions";
 import { usePublishIdentity } from "./usePublishIdentity";
 import { usePublishAi } from "./usePublishAi";
+import { usePublishImageUploads } from "./usePublishImageUploads";
 import { useMerchantPublishDraft } from "./useMerchantPublishDraft";
 import { useTradePublishDraft } from "./useTradePublishDraft";
 import type { InferredKind, SuggestedComponent } from "../../types/publishSuggestion";
@@ -552,15 +552,24 @@ export function usePublishDraft() {
   const tagInput = ref("");
   const placeName = ref("");
   const visibility = ref<PublishVisibility>("public");
-  const selectedFiles = ref<File[]>([]);
-  const localPreviewUrls = ref<string[]>([]);
-  const uploadedImageUrls = ref<string[]>([]);
   const aiAttemptGeneration = ref(0);
-  const uploading = ref(false);
   const publishing = ref(false);
   const errorMessage = ref("");
   const successMessage = ref("");
   const lastTid = ref<string | number | null>(null);
+  const imageUploads = usePublishImageUploads({
+    onError: (error) => {
+      errorMessage.value = extractErrorMessage(error, ERROR_PUBLISH_IMAGE);
+    },
+  });
+  // The upload owner exposes frozen readonly projections. Existing Publish
+  // consumers only read these refs, but their long-lived public types still
+  // spell mutable arrays; keep that source-compatible facade until a separate
+  // contract lane can narrow every consumer together.
+  const selectedFiles = imageUploads.selectedFiles as unknown as ComputedRef<File[]>;
+  const localPreviewUrls = imageUploads.localPreviewUrls as unknown as ComputedRef<string[]>;
+  const uploadedImageUrls = imageUploads.uploadedImageUrls as unknown as ComputedRef<string[]>;
+  const uploading = imageUploads.uploading;
 
   const normalizedTag = computed(() => normalizePublishTag(tagInput.value));
 
@@ -661,11 +670,6 @@ export function usePublishDraft() {
     return `${PUBLISH_IMAGE_READY} ${uploadedImageUrls.value.length}/${selectedFiles.value.length} ${PUBLISH_IMAGE_COUNT_SUFFIX}`;
   });
 
-  function revokePreviewUrls() {
-    localPreviewUrls.value.forEach((url) => URL.revokeObjectURL(url));
-    localPreviewUrls.value = [];
-  }
-
   async function handleFiles(event: Event) {
     const input = event.target as HTMLInputElement;
     const selection = validatePublishImageSelection(
@@ -681,32 +685,7 @@ export function usePublishDraft() {
 
     errorMessage.value = selection.message;
     successMessage.value = "";
-    selectedFiles.value = [...selectedFiles.value, ...selection.acceptedFiles];
-    localPreviewUrls.value = [
-      ...localPreviewUrls.value,
-      ...selection.acceptedFiles.map((file) => URL.createObjectURL(file)),
-    ];
-    await uploadPendingImages();
-  }
-
-  async function uploadPendingImages() {
-    if (uploading.value) return;
-    uploading.value = true;
-    try {
-      for (
-        let index = uploadedImageUrls.value.length;
-        index < selectedFiles.value.length;
-        index += 1
-      ) {
-        const url = await uploadPublishImage(selectedFiles.value[index]);
-        uploadedImageUrls.value[index] = url;
-      }
-      uploadedImageUrls.value = uploadedImageUrls.value.filter(Boolean);
-    } catch (error) {
-      errorMessage.value = extractErrorMessage(error, ERROR_PUBLISH_IMAGE);
-    } finally {
-      uploading.value = false;
-    }
+    await imageUploads.addFiles(selection.acceptedFiles);
   }
 
   /**
@@ -721,10 +700,7 @@ export function usePublishDraft() {
   }
 
   function removeImage(index: number) {
-    if (localPreviewUrls.value[index]) URL.revokeObjectURL(localPreviewUrls.value[index]);
-    selectedFiles.value.splice(index, 1);
-    localPreviewUrls.value.splice(index, 1);
-    uploadedImageUrls.value.splice(index, 1);
+    imageUploads.removeAt(index);
   }
 
   function validate() {
@@ -800,20 +776,18 @@ export function usePublishDraft() {
     identity.identityTag.value = "";
     placeName.value = "";
     visibility.value = "public";
-    selectedFiles.value = [];
-    uploadedImageUrls.value = [];
+    imageUploads.reset();
     tagPanelOpen.value = false;
     visibilityPanelOpen.value = false;
     publishKind.value = "regular";
     merchant.reset();
     trade.reset();
     clearLocation();
-    revokePreviewUrls();
     resetAiAttempt();
   }
 
   onBeforeUnmount(() => {
-    revokePreviewUrls();
+    imageUploads.dispose();
   });
 
   return {

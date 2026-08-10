@@ -265,6 +265,35 @@ describe("Phase 3: publish flow wires AI policy + post-upload location panel", (
     expect(resetForm).toMatch(/resetAiAttempt\(\)/);
   });
 
+  it("installs one image-upload owner instead of keeping an index-owned upload loop", () => {
+    expect(draft).toContain('import { usePublishImageUploads } from "./usePublishImageUploads";');
+    expect(draft).toMatch(/const imageUploads = usePublishImageUploads\(\{/);
+  });
+
+  it("delegates accepted image selections to the image-upload owner", () => {
+    expect(draft).toMatch(/await imageUploads\.addFiles\(selection\.acceptedFiles\)/);
+  });
+
+  it("delegates image removal by the current visible index", () => {
+    expect(draft).toMatch(/imageUploads\.removeAt\(index\)/);
+  });
+
+  it("invalidates upload ownership through delegated reset and disposal", () => {
+    const resetForm = draft.slice(
+      draft.indexOf("function resetForm("),
+      draft.indexOf("onBeforeUnmount", draft.indexOf("function resetForm(")),
+    );
+    const disposalStart = draft.indexOf("onBeforeUnmount(() =>");
+    const disposal = draft.slice(disposalStart, draft.indexOf("return {", disposalStart));
+
+    expect(resetForm).toMatch(/imageUploads\.reset\(\)/);
+    expect(disposal).toMatch(/imageUploads\.dispose\(\)/);
+  });
+
+  it("never commits a remote upload URL through a captured numeric index", () => {
+    expect(draft).not.toMatch(/uploadedImageUrls\.value\s*\[\s*index\s*\]\s*=/);
+  });
+
   it("usePublishDraft surfaces notifyFirstUploadComplete on its public surface", () => {
     expect(draft).toMatch(/notifyFirstUploadComplete/);
     expect(draft).toMatch(/return\s*\{[\s\S]*notifyFirstUploadComplete/);
