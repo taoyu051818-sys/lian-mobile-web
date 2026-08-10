@@ -11,6 +11,7 @@ import { hapticMedium } from "../../composables/useHapticFeedback";
 import { sharePost, type SharePostResult } from "../../platform/share";
 import type { FeedItem, FeedItemId } from "../../types/feed";
 import { useToast } from "../../ui/feedback/useToast";
+import { postReactionSettlements, type PostReactionSettlementPort } from "../reactions";
 
 export type FeedCardBounds = Readonly<{
   top: number;
@@ -45,7 +46,25 @@ export interface UseFeedCardContextActionsOptions {
   item: Readonly<Ref<FeedItem>>;
   title: () => string;
   emitOpen: (id: FeedItemId, payload?: { item: FeedItem; rect: FeedCardBounds }) => void;
+  settlements?: PostReactionSettlementPort;
   dependencies?: FeedCardContextActionDependencies;
+}
+
+const REACTION_ITEM_KEYS = new Set<PropertyKey>(["liked", "likeCount", "bookmarked"]);
+
+function isReactionOnlyReplacement(previousItem: FeedItem, nextItem: FeedItem): boolean {
+  if (previousItem.tid !== nextItem.tid) return false;
+
+  const previousKeys = Reflect.ownKeys(previousItem).filter((key) => !REACTION_ITEM_KEYS.has(key));
+  const nextKeys = Reflect.ownKeys(nextItem).filter((key) => !REACTION_ITEM_KEYS.has(key));
+  if (previousKeys.length !== nextKeys.length) return false;
+
+  const nextKeySet = new Set(nextKeys);
+  const previousRecord = previousItem as unknown as Record<PropertyKey, unknown>;
+  const nextRecord = nextItem as unknown as Record<PropertyKey, unknown>;
+  return previousKeys.every(
+    (key) => nextKeySet.has(key) && Object.is(previousRecord[key], nextRecord[key]),
+  );
 }
 
 function cloneDetached<T>(value: T, seen = new WeakMap<object, unknown>()): T {
@@ -111,8 +130,17 @@ function feedbackForShare(
   }
 }
 
+function deliverFeedback(effect: () => void): void {
+  try {
+    effect();
+  } catch {
+    // Feedback is best-effort and must not reinterpret an authoritative API result.
+  }
+}
+
 export function useFeedCardContextActions(options: UseFeedCardContextActionsOptions) {
   const dependencies = options.dependencies;
+  const settlements = options.settlements ?? postReactionSettlements;
   const savePost = dependencies?.savePost ?? togglePostSave;
   const share = dependencies?.share ?? sharePost;
   const toast = dependencies?.toast ?? useToast();
@@ -150,6 +178,10 @@ export function useFeedCardContextActions(options: UseFeedCardContextActionsOpti
     () => options.item.value,
     (nextItem, previousItem) => {
       if (nextItem === previousItem) return;
+      if (isReactionOnlyReplacement(previousItem, nextItem)) {
+        bookmarked.value = Boolean(nextItem.bookmarked);
+        return;
+      }
       invalidateOwner();
       bookmarked.value = Boolean(nextItem.bookmarked);
     },
@@ -197,17 +229,29 @@ export function useFeedCardContextActions(options: UseFeedCardContextActionsOpti
     bookmarkBusy.value = true;
     closeMenu();
 
+    let response: Awaited<ReturnType<typeof savePost>>;
     try {
-      const response = await savePost(actionSnapshot.tid, desiredSaved);
-      if (!ownsSave(generation, ticket)) return;
-      bookmarked.value = Boolean(response.saved);
-      haptic();
-      toast.success(response.saved ? FEED_BOOKMARK_SAVED : FEED_BOOKMARK_REMOVED);
+      response = await savePost(actionSnapshot.tid, desiredSaved);
     } catch {
-      if (ownsSave(generation, ticket)) toast.error(ERROR_SAVE_ACTION);
-    } finally {
-      if (ownsSave(generation, ticket)) bookmarkBusy.value = false;
+      if (!ownsSave(generation, ticket)) return;
+      bookmarkBusy.value = false;
+      deliverFeedback(() => toast.error(ERROR_SAVE_ACTION));
+      return;
     }
+
+    if (!ownsSave(generation, ticket)) return;
+    const settledSaved = Boolean(response.saved);
+    bookmarked.value = settledSaved;
+    bookmarkBusy.value = false;
+    deliverFeedback(haptic);
+    deliverFeedback(() =>
+      toast.success(settledSaved ? FEED_BOOKMARK_SAVED : FEED_BOOKMARK_REMOVED),
+    );
+    settlements.publish({
+      kind: "save",
+      tid: actionSnapshot.tid,
+      bookmarked: settledSaved,
+    });
   }
 
   async function handleShare(): Promise<void> {
