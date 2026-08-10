@@ -74,19 +74,19 @@ None. Existing API payloads and endpoints remain unchanged.
 
 ## Acceptance criteria
 
-- [ ] Binding reset clears loaded, form, error, and busy state.
-- [ ] Preferences reset clears loaded values, errors, and busy state.
-- [ ] Opt-in reset closes the dialog and clears in-session dismissals.
-- [ ] A result from an earlier generation cannot overwrite current state or
+- [x] Binding reset clears loaded, form, error, and busy state.
+- [x] Preferences reset clears loaded values, errors, and busy state.
+- [x] Opt-in reset closes the dialog and clears in-session dismissals.
+- [x] A result from an earlier generation cannot overwrite current state or
       current busy flags.
-- [ ] `ProfileView.enterGuestState()` invokes all three reset boundaries.
-- [ ] The canonical status contract accepts exactly one of active or inactive
+- [x] `ProfileView.enterGuestState()` invokes all three reset boundaries.
+- [x] The canonical status contract accepts exactly one of active or inactive
       execution queue markers.
-- [ ] The status warning guard recognizes either valid queue marker without a
+- [x] The status warning guard recognizes either valid queue marker without a
       false missing-marker warning.
-- [ ] Normal load, bind, unbind, toggle, and opt-in flows remain green.
-- [ ] Focused tests, `npm run check`, build, and full `npm run verify` pass.
-- [ ] Only allowed files are changed.
+- [x] Normal load, bind, unbind, toggle, and opt-in flows remain green.
+- [x] Focused tests, `npm run check`, build, and full `npm run verify` pass.
+- [x] Only allowed files are changed.
 
 ## Validation commands
 
