@@ -442,6 +442,54 @@ describe("usePostReactions settlement ownership", () => {
     expect(events).toEqual([]);
   });
 
+  it("#5 distinguishes the external owner predicate and current Save rollback from generation resets", async () => {
+    const port = await createProductionPort();
+    if (!port) return;
+    const events: Settlement[] = [];
+    port.subscribe((event) => events.push(event));
+    const staleLikeSuccess = deferred<{ liked: boolean; likeCount: number }>();
+    const staleSaveFailure = deferred<{ saved: boolean }>();
+    const currentSaveFailure = deferred<{ saved: boolean }>();
+    togglePostLikeMock.mockReturnValueOnce(staleLikeSuccess.promise);
+    togglePostSaveMock
+      .mockReturnValueOnce(staleSaveFailure.promise)
+      .mockReturnValueOnce(currentSaveFailure.promise);
+    const harness = makeReactions(port);
+    harness.reactions.resetReactions(postSnapshot(1));
+
+    let current = true;
+    const staleLike = harness.reactions.handleLike(1, () => current);
+    current = false;
+    staleLikeSuccess.resolve({ liked: false, likeCount: 1 });
+    await staleLike;
+    expect(harness.reactions.liked.value).toBe(true);
+    expect(harness.reactions.likeCount.value).toBe(5);
+    expect(harness.reactions.likeBusy.value).toBe(true);
+    expect(harness.showMessage).not.toHaveBeenCalled();
+    expect(events).toEqual([]);
+
+    harness.reactions.resetReactions(postSnapshot(1));
+    current = true;
+    const staleSave = harness.reactions.handleSave(1, () => current);
+    current = false;
+    staleSaveFailure.reject(new Error("stale external-owner save failure"));
+    await staleSave;
+    expect(harness.reactions.saved.value).toBe(true);
+    expect(harness.reactions.saveBusy.value).toBe(true);
+    expect(harness.showError).not.toHaveBeenCalled();
+    expect(events).toEqual([]);
+
+    harness.reactions.resetReactions(postSnapshot(1));
+    current = true;
+    const failedSave = harness.reactions.handleSave(1, () => current);
+    currentSaveFailure.reject(new Error("current save failure"));
+    await failedSave;
+    expect(harness.reactions.saved.value).toBe(false);
+    expect(harness.reactions.saveBusy.value).toBe(false);
+    expect(harness.showError).toHaveBeenCalledTimes(1);
+    expect(events).toEqual([]);
+  });
+
   it("#6 rejects same-tid A1 work after A2 resets even when the old predicate becomes true again", async () => {
     const port = await createProductionPort();
     if (!port) return;
