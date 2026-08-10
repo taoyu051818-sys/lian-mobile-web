@@ -11,7 +11,7 @@
 - Root `README.md`, `package.json`, `docs/CURRENT_STATUS.md`, repository agent
   rules, system overview, development principles, and the Profile privacy
   explanation brief were checked.
-- The override files named by the historical task template are absent. Current
+- The override files named by the older task template are absent. Current
   code, active repository rules, and issue #1085 are authoritative.
 
 ## Goal
@@ -45,6 +45,7 @@ the current session loads them.
 - `tests/profile/profile-view-structure.test.ts`
 - `tests/structure/core-product-model-queue-snapshot.test.mjs`
 - `scripts/check-test-inventory.mjs`
+- `scripts/warn-stale-doc-keywords.js`
 - `docs/CURRENT_STATUS.md`
 - `docs/agent/tasks/audit-f1-profile-session-state.md`
 - `docs/agent/handoffs/audit-f1-profile-session-state.md`
@@ -81,6 +82,8 @@ None. Existing API payloads and endpoints remain unchanged.
 - [ ] `ProfileView.enterGuestState()` invokes all three reset boundaries.
 - [ ] The canonical status contract accepts exactly one of active or inactive
       execution queue markers.
+- [ ] The status warning guard recognizes either valid queue marker without a
+      false missing-marker warning.
 - [ ] Normal load, bind, unbind, toggle, and opt-in flows remain green.
 - [ ] Focused tests, `npm run check`, build, and full `npm run verify` pass.
 - [ ] Only allowed files are changed.
