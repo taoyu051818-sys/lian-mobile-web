@@ -118,9 +118,14 @@ the pending payload or converted into a structured map draft.
   addition to the canonical catalog selection.
 - Applying B clears A before any visible or structured field for B is written.
 - Catalog already loaded: rebind B to the canonical `MapLocation` by stable
-  `placeId`.
+  `placeId` for display and catalog metadata, while retaining the complete
+  handoff binding as the authoritative publish snapshot.
 - Catalog late or missing: immediately retain a complete structured fallback
-  from the handoff; a later successful catalog load may canonicalize it.
+  from the handoff; a later successful catalog load may canonicalize the UI
+  selection but must not replace the original handoff IDs or coordinates.
+- The final structured draft prefers the retained handoff binding. Catalog
+  before handoff and handoff before catalog therefore converge on the same
+  wire payload; only an explicit clear or a newer location action removes it.
 - Free pin creates `map_v2/gcj02/map_selection` without fabricating a place.
 - Browser WGS84 clears any map binding and remains display-only.
 - Consume pending handoff only after account-scoped restore is settled and
