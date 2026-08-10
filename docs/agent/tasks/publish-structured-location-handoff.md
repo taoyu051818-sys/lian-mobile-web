@@ -168,6 +168,11 @@ Tests:
 - `tests/publish/publishLocationHandoff.structure.test.ts`
 - `tests/e2e/local/publish-structured-location-journeys.spec.ts`
 
+Supporting quality gate:
+
+- `scripts/check-test-inventory.mjs` — only update the expected Vitest file
+  count from 156 to 157 for the newly approved location-options test file.
+
 Documentation:
 
 - `docs/CURRENT_STATUS.md`
