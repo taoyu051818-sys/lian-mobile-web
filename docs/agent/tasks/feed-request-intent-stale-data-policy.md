@@ -258,6 +258,9 @@ Tests and inventory:
 - `tests/composables/useFeedData.request-race.test.ts`
 - `tests/composables/useFeedData.read-history-scope.test.ts`
 - `tests/feed/feedReadHistoryIdNormalization.contract.test.ts`
+- `tests/phase0/phase4-deeplink-contract.test.ts` (update only the stale
+  `async function loadFeed` structural matcher so a direct Promise-returning
+  semantic action remains covered)
 - `tests/ui/InlineError.test.ts`
 - `scripts/check-test-inventory.mjs`
 
@@ -362,6 +365,7 @@ npx vitest run \
   tests/composables/useFeedData.request-race.test.ts \
   tests/composables/useFeedData.read-history-scope.test.ts \
   tests/feed/feedReadHistoryIdNormalization.contract.test.ts \
+  tests/phase0/phase4-deeplink-contract.test.ts \
   tests/ui/InlineError.test.ts
 node --test tests/feed/feedAutoLoadSentinel.structure.test.mjs
 npm run check:test-inventory
