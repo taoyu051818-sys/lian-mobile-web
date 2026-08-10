@@ -47,7 +47,7 @@ atomically and survive catalog ordering and account-scoped draft restoration.
 
 ## Handoff compatibility
 
-Keep the existing storage key and add a versioned discriminated union:
+Keep the existing storage key and add a versioned write/persistence union:
 
 ```ts
 type PublishLocationHandoffV2 =
@@ -82,6 +82,26 @@ type PublishLocationHandoffV2 =
       accuracy?: number;
     };
 ```
+
+`setPendingPublishLocation` accepts only this V2 union. The consume path has a
+separate normalized result type:
+
+```ts
+type NormalizedPublishLocationHandoff =
+  | PublishLocationHandoffV2
+  | {
+      version: 1;
+      source: "legacy";
+      coordinateSystem: "unknown";
+      kind: "coords";
+      lat: number;
+      lng: number;
+      label?: string;
+    };
+```
+
+The legacy variant is read compatibility only: it must never be written back as
+the pending payload or converted into a structured map draft.
 
 - Legacy `place` can be normalized to map-picker/GCJ-02 because its only
   producer is the existing map picker.
@@ -134,7 +154,7 @@ Tests:
 - `tests/publish/usePublishLocationOptions.test.ts`
 - `tests/publish/publishDraft.test.ts`
 - `tests/publish/publishLocationHandoff.structure.test.ts`
-- `tests/e2e/publish-structured-location-handoff.spec.ts`
+- `tests/e2e/local/publish-structured-location-journeys.spec.ts`
 
 Documentation:
 
@@ -189,13 +209,17 @@ npx vitest run \
   tests/publish/usePublishLocationOptions.test.ts \
   tests/publish/publishDraft.test.ts \
   tests/publish/publishLocationHandoff.structure.test.ts
-npx playwright test tests/e2e/publish-structured-location-handoff.spec.ts
+npx playwright test \
+  --config=playwright.local.config.ts \
+  tests/e2e/local/publish-structured-location-journeys.spec.ts
 npm run build
 npm run verify
 ```
 
-Configured remote account journeys may be skipped locally. Deterministic
-loopback journeys must not use an online account or production API.
+The F2d browser journey must use the local Playwright configuration, which
+rejects non-loopback targets and stubs the application API. Do not run this task
+through the default Playwright configuration or against an online account,
+production API, or deployed site.
 
 ## Rollback
 
