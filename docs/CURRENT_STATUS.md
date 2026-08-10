@@ -1,10 +1,10 @@
 # Current Status
 
-Last verified: 2026-08-10
+Last verified: 2026-08-11
 
 Active control issue: [#1090](https://github.com/taoyu051818-sys/lian-mobile-web/issues/1090)
-(F3f is accepted locally under a local-only task contract; network and
-production access remain paused, so no F3f issue was created online).
+(F3g is accepted locally under a local-only task contract; external-network and
+production access remain paused, so no F3g issue was created online).
 
 Open release blockers: None recorded as open GitHub issues.
 
@@ -12,6 +12,12 @@ Current production release: Not recorded in this repository.
 
 **Active execution queue:**
 
+- F3g Feed context-menu Save settlement publication is accepted locally under
+  `docs/agent/tasks/feed-context-save-settlement-publication.md`;
+  implementation commit `64a7603`. An authoritative context-menu Save result
+  now reaches the mounted Feed owner. Exact same-`tid` reaction-only shallow
+  replacements preserve the independent Save/Share owner tickets, while real
+  card replacements still invalidate them.
 - F3f Detail-origin reaction settlement projection is accepted locally under
   `docs/agent/tasks/feed-detail-reaction-settlement-projection.md`;
   implementation commit `e804e46`. Current authoritative Detail Like/Save
@@ -40,15 +46,18 @@ Current production release: Not recorded in this repository.
   `70cc4e3`. Its runtime scope is limited to client-side duplicate-`tid`
   projection.
 - The Feed read-only audit also recorded follow-up batches for cursor
-  pagination, Feed-origin/Profile/cross-tab reaction reconciliation, and page
-  restoration. They are not part of F3a/F3b/F3c/F3d/F3e/F3f.
+  pagination, Footer Like publication, Detail/Profile/cross-tab/account
+  reaction reconciliation, and page restoration. They are not part of
+  F3a/F3b/F3c/F3d/F3e/F3f/F3g.
 - F2h normal publish-success actionable-result rendering is accepted locally
   under `docs/agent/tasks/publish-success-actionable-result-render.md`.
 - F2g immutable Publish submit snapshot and response ownership is accepted
   locally under `docs/agent/tasks/publish-submit-snapshot-ownership.md`.
-- The next bounded Feed batch should address remaining Feed-origin reaction
-  production or page restoration. Cursor pagination and Event creation
-  idempotency remain coordinated API/backend follow-ups, not F3f changes.
+- The next bounded Feed batch should publish authoritative Footer Like
+  settlements without expanding the current mounted-Feed claim. Detail,
+  Profile, cross-tab, account-epoch, and page-restoration work remain separate;
+  cursor pagination and Event creation idempotency remain coordinated
+  API/backend follow-ups, not F3g changes.
 - F2g does not claim Event idempotency, mounted auth refresh, true network
   cancellation, or server-side side-effect reversal are complete.
 - Scope is local frontend code and tests only. No push, deployment, production
@@ -56,6 +65,16 @@ Current production release: Not recorded in this repository.
 
 Local audit baseline:
 
+- F3g Feed context-menu Save settlement publication accepted locally on
+  `codex/audit-f3g-feed-context-save`, building on accepted F3f head `2d0dd21`;
+  task commit `3c53b3f`, red-test/inventory commit `80b05ac`, and runtime
+  implementation commit `64a7603`.
+- F3g validation passed: the new behavior suite 35/35, six focused acceptance
+  files 100/100, the structure suite 16/16, 169 Vitest files / 4,244 tests,
+  65 Node structure files / 826 tests, production build (646 transformed
+  modules / PWA 71 entries), HTML sanitizer, 3 loopback smoke checks, and full
+  `npm run verify` with exit 0 in about 141.9 seconds. Two independent
+  reviewers recorded `ACCEPT` with no blocking finding.
 - F3f Detail-origin reaction settlement projection accepted locally on
   `codex/audit-f3f-feed-detail-like-reconciliation`; task commit `bb33ef1`,
   red-test commit `6fc4bdd`, public-surface contract commit `d10090f`, owner

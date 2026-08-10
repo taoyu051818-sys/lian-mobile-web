@@ -8,12 +8,13 @@
 - Local prerequisite: accepted F3f head `2d0dd21`, with runtime implementation
   `e804e46`.
 - Working branch: `codex/audit-f3g-feed-context-save`.
-- Status: contract drafted; implementation has not started.
+- Status: accepted locally on 2026-08-11; task commit `3c53b3f`, red-test and
+  inventory commit `80b05ac`, and runtime implementation commit `64a7603`.
 - Current code, repository rules/status, accepted F3a-F3f tasks/handoffs,
   `useFeedCardContextActions`, the F3f settlement port/Feed consumer, and their
   behavior/structure suites were checked.
 - Recent online issues and pull requests are intentionally not queried because
-  network/security-related work remains paused.
+  external/remote network work remains paused.
 - This task is local frontend code and hermetic tests only. It authorizes no
   push, merge, deployment, production mutation, remote/backend server access,
   credential use, or online browser journey.
@@ -413,10 +414,27 @@ Green/acceptance phase:
   Like/Detail/Profile/cross-tab/account/server-revision risks, and local-only
   status.
 
+## Local acceptance evidence
+
+- Accepted prerequisite: F3f head `2d0dd21`.
+- Commit chain: task contract `3c53b3f` -> red tests and inventory `80b05ac` ->
+  runtime implementation `64a7603`.
+- The new behavior suite passed 35/35; the six focused acceptance files passed
+  100/100; the structure suite passed 16/16.
+- Full validation passed 169 Vitest files / 4,244 tests and 65 Node structure
+  files / 826 tests. The production build transformed 646 modules and produced
+  71 PWA entries; the HTML sanitizer and all 3 loopback smoke checks passed.
+- Full `npm run verify` exited 0 in about 141.9 seconds.
+- Two independent reviewers returned `ACCEPT` with no blocking finding.
+- This is a local frontend acceptance only. It used no external/remote network
+  or remote backend; the only network/server activity was the 3 hermetic
+  localhost loopback preview checks. It performed no push, merge, deployment,
+  production mutation, or production validation.
+
 ## Rollback
 
-- Revert runtime, red-test/inventory, task, and later acceptance-doc commits in
-  reverse order.
+- Revert the acceptance-document change, runtime commit `64a7603`, red-test and
+  inventory commit `80b05ac`, and task commit `3c53b3f` in reverse order.
 - Inventory returns 169 → 168 when the new behavior file is reverted.
 - No browser data, account data, DB, Redis, storage, service-worker, or server
   cleanup is required.
