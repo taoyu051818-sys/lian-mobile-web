@@ -12,6 +12,10 @@ Current production release: Not recorded in this repository.
 
 **Active execution queue:**
 
+- F3c Feed request-intent and stale-data policy is accepted locally under
+  `docs/agent/tasks/feed-request-intent-stale-data-policy.md`; implementation
+  commit `fab9dc3`. Pull refresh now preserves committed data, append retry
+  owns the failed page, and every request/dispose path is generation guarded.
 - F3b account-scoped Feed/Profile read history is accepted locally under
   `docs/agent/tasks/feed-read-history-account-scope.md`; implementation commit
   `05a0fe8`. Guest/account history is isolated, old unowned history is ignored
@@ -22,14 +26,14 @@ Current production release: Not recorded in this repository.
   `70cc4e3`. Its runtime scope is limited to client-side duplicate-`tid`
   projection.
 - The Feed read-only audit also recorded follow-up batches for cursor
-  pagination, Feed/Detail reaction reconciliation, auto-load recovery, request
-  intents, page restoration, and truthful context-menu actions. They are not
-  part of F3a/F3b.
+  pagination, Feed/Detail reaction reconciliation, auto-load recovery, page
+  restoration, and truthful context-menu actions. They are not part of
+  F3a/F3b/F3c.
 - F2h normal publish-success actionable-result rendering is accepted locally
   under `docs/agent/tasks/publish-success-actionable-result-render.md`.
 - F2g immutable Publish submit snapshot and response ownership is accepted
   locally under `docs/agent/tasks/publish-submit-snapshot-ownership.md`.
-- The next bounded audit moves to the Feed page/module. Event creation
+- The next bounded Feed batch is auto-load sentinel recovery. Event creation
   idempotency remains a coordinated frontend/backend follow-up, not an F2h
   change.
 - F2g does not claim Event idempotency, mounted auth refresh, true network
@@ -39,6 +43,12 @@ Current production release: Not recorded in this repository.
 
 Local audit baseline:
 
+- F3c Feed request-intent ownership accepted locally on
+  `codex/audit-f3c-feed-request-intents`; implementation commit `fab9dc3`.
+- F3c validation passed: 165 Vitest files / 4,133 tests, 65 Node structure
+  files / 820 tests, production build (643 modules / PWA 71 entries), HTML
+  sanitizer, 3 loopback smoke checks, and full `npm run verify`. Two
+  independent reviewers recorded `ACCEPT` with no blocking finding.
 - F3b account-scoped Feed/Profile read history accepted locally on
   `codex/audit-f3b-read-history-scope`; implementation commit `05a0fe8`.
 - F3b validation passed: 164 Vitest files / 4,112 tests, 65 Node structure

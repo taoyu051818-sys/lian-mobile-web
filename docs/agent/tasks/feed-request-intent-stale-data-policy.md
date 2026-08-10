@@ -7,7 +7,9 @@
 - Upstream source reviewed: `main@d0ee0e9802149e5d99bd2c5064d6770adb1c041d`.
 - Local prerequisite: F3b acceptance `5fdb2db` with implementation `05a0fe8`.
 - Working branch: `codex/audit-f3c-feed-request-intents`.
-- Status: planned; runtime implementation has not started.
+- Status: accepted locally on 2026-08-10. The red-test commits are `59f53f4`
+  and `dbcf962`; the compatibility-contract commit is `18d7543`; the runtime
+  implementation is `fab9dc3`. None has been pushed, merged, or deployed.
 - Current code, root `README.md`, `package.json`, `docs/CURRENT_STATUS.md`,
   `docs/agent/README.md`, `docs/agent/00_AGENT_RULES.md`, the accepted F3a/F3b
   tasks, available local Feed references, and recent local history were checked.
