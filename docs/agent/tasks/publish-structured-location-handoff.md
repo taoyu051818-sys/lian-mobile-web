@@ -118,6 +118,12 @@ the pending payload or converted into a structured map draft.
 - Snapshot bindings pass through the same exact source/system/kind/range
   validator as handoffs. Corrupt, incomplete, mismatched, or out-of-range
   bindings restore as `null` and never reach the publish wire payload.
+- A non-null `mapPickerBinding` field marks the new authoritative snapshot
+  format. Its duplicate `selectedMapLocation` is never an independent fallback:
+  a valid binding restores from the binding and re-canonicalizes from the live
+  catalog, while an invalid binding clears both fields. Only old snapshots that
+  omit the binding field, or direct catalog snapshots that explicitly store a
+  null binding, may restore `selectedMapLocation` on its own.
 
 ## State and ordering
 
