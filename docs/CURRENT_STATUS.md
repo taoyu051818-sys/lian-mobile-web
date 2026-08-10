@@ -3,8 +3,8 @@
 Last verified: 2026-08-10
 
 Active control issue: [#1090](https://github.com/taoyu051818-sys/lian-mobile-web/issues/1090)
-(F2h is accepted locally under a local-only task contract; network and
-production access remain paused, so no F2h issue was created online).
+(F3d is accepted locally under a local-only task contract; network and
+production access remain paused, so no F3d issue was created online).
 
 Open release blockers: None recorded as open GitHub issues.
 
@@ -12,6 +12,10 @@ Current production release: Not recorded in this repository.
 
 **Active execution queue:**
 
+- F3d bounded Feed auto-load sentinel recovery is accepted locally under
+  `docs/agent/tasks/feed-auto-load-sentinel-recovery.md`; implementation commit
+  `750973b`. Disabled/cooldown-lost intersections now reconcile once, while one
+  continuous residency still cannot form an automatic request loop.
 - F3c Feed request-intent and stale-data policy is accepted locally under
   `docs/agent/tasks/feed-request-intent-stale-data-policy.md`; implementation
   commit `fab9dc3`. Pull refresh now preserves committed data, append retry
@@ -26,16 +30,16 @@ Current production release: Not recorded in this repository.
   `70cc4e3`. Its runtime scope is limited to client-side duplicate-`tid`
   projection.
 - The Feed read-only audit also recorded follow-up batches for cursor
-  pagination, Feed/Detail reaction reconciliation, auto-load recovery, page
-  restoration, and truthful context-menu actions. They are not part of
-  F3a/F3b/F3c.
+  pagination, Feed/Detail reaction reconciliation, page restoration, and
+  truthful context-menu actions. They are not part of F3a/F3b/F3c/F3d.
 - F2h normal publish-success actionable-result rendering is accepted locally
   under `docs/agent/tasks/publish-success-actionable-result-render.md`.
 - F2g immutable Publish submit snapshot and response ownership is accepted
   locally under `docs/agent/tasks/publish-submit-snapshot-ownership.md`.
-- The next bounded Feed batch is auto-load sentinel recovery. Event creation
-  idempotency remains a coordinated frontend/backend follow-up, not an F2h
-  change.
+- The next bounded Feed batch should address Feed/Detail canonical reaction
+  reconciliation or truthful context-menu action reachability. Cursor
+  pagination and Event creation idempotency remain coordinated API/backend
+  follow-ups, not F3d changes.
 - F2g does not claim Event idempotency, mounted auth refresh, true network
   cancellation, or server-side side-effect reversal are complete.
 - Scope is local frontend code and tests only. No push, deployment, production
@@ -43,6 +47,12 @@ Current production release: Not recorded in this repository.
 
 Local audit baseline:
 
+- F3d bounded Feed auto-load sentinel recovery accepted locally on
+  `codex/audit-f3d-feed-auto-load-sentinel`; implementation commit `750973b`.
+- F3d validation passed: 166 Vitest files / 4,144 tests, 65 Node structure
+  files / 820 tests, production build (643 modules / PWA 71 entries), HTML
+  sanitizer, 3 loopback smoke checks, and full `npm run verify` in 98.8 seconds.
+  Three independent reviewers recorded `ACCEPT` with no blocking finding.
 - F3c Feed request-intent ownership accepted locally on
   `codex/audit-f3c-feed-request-intents`; implementation commit `fab9dc3`.
 - F3c validation passed: 165 Vitest files / 4,133 tests, 65 Node structure

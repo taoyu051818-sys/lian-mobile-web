@@ -7,7 +7,9 @@
 - Upstream source reviewed: `main@d0ee0e9802149e5d99bd2c5064d6770adb1c041d`.
 - Local prerequisite: F3c acceptance `77874ba` with implementation `fab9dc3`.
 - Working branch: `codex/audit-f3d-feed-auto-load-sentinel`.
-- Status: planned; no runtime or test implementation has started.
+- Status: accepted locally on 2026-08-10. The task contract is `1f75320`, the
+  red-test commit is `5fd7be5`, and the runtime implementation is `750973b`.
+  None has been pushed, merged, or deployed.
 - Current code, root `README.md`, `package.json`, `docs/CURRENT_STATUS.md`,
   `docs/agent/README.md`, `docs/agent/00_AGENT_RULES.md`, the accepted F3a-F3c
   tasks, and available local Feed references were checked.
