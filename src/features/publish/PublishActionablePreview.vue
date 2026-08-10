@@ -42,6 +42,16 @@ const props = defineProps<{
   actionablePost: PublishActionablePostPreview | null;
 }>();
 
+const PUBLISHED_KIND_LABELS: Readonly<Record<InferredKind, string>> = {
+  image: "图片",
+  text: "文字",
+  event: "活动",
+  merchant: "商家",
+  trade: "交易",
+  help: "求助",
+  place: "地点",
+};
+
 const kindLabel = computed(() => {
   switch (props.kind) {
     case "event":
@@ -54,6 +64,10 @@ const kindLabel = computed(() => {
       return "普通帖子";
   }
 });
+
+const publishedKindLabel = computed(() =>
+  props.actionablePost ? PUBLISHED_KIND_LABELS[props.actionablePost.kind] : "",
+);
 
 const eventJoinPolicyLabel = computed(() => {
   switch (props.eventJoinPolicy) {
@@ -115,9 +129,10 @@ const hasStructure = computed(
     props.normalizedIdentityTag ||
     visibleComponents.value.length > 0,
 );
-const shouldRender = computed(
+const hasLiveDraftPreview = computed(
   () => props.title.trim().length > 0 || props.body.trim().length > 0 || hasStructure.value,
 );
+const shouldRender = computed(() => hasLiveDraftPreview.value || Boolean(props.actionablePost));
 </script>
 
 <template>
@@ -127,41 +142,54 @@ const shouldRender = computed(
     :aria-label="PUBLISH_ACTIONABLE_PREVIEW_TITLE"
     data-testid="publish-actionable-preview"
   >
-    <div class="publish-actionable-preview__header">
-      <span>{{ PUBLISH_ACTIONABLE_PREVIEW_TITLE }}</span>
-      <strong data-testid="publish-preview-kind"
-        >{{ PUBLISH_ACTIONABLE_PREVIEW_KIND }}：{{ kindLabel }}</strong
-      >
-    </div>
+    <template v-if="hasLiveDraftPreview">
+      <div class="publish-actionable-preview__header">
+        <span>{{ PUBLISH_ACTIONABLE_PREVIEW_TITLE }}</span>
+        <strong data-testid="publish-preview-kind"
+          >{{ PUBLISH_ACTIONABLE_PREVIEW_KIND }}：{{ kindLabel }}</strong
+        >
+      </div>
 
-    <div class="publish-actionable-preview__body">
-      <h3 v-if="title.trim()">{{ title.trim() }}</h3>
-      <p v-if="body.trim()">{{ body.trim() }}</p>
-      <p class="publish-actionable-preview__wire-kind" data-testid="publish-preview-wire-kind">
-        {{ PUBLISH_ACTIONABLE_PREVIEW_WIRE_KIND }}：{{ wireKindLabel }}
-      </p>
-      <p v-if="!hasStructure" class="publish-actionable-preview__empty">
-        {{ PUBLISH_ACTIONABLE_PREVIEW_UNSTRUCTURED }}
-      </p>
-    </div>
+      <div class="publish-actionable-preview__body">
+        <h3 v-if="title.trim()">{{ title.trim() }}</h3>
+        <p v-if="body.trim()">{{ body.trim() }}</p>
+        <p class="publish-actionable-preview__wire-kind" data-testid="publish-preview-wire-kind">
+          {{ PUBLISH_ACTIONABLE_PREVIEW_WIRE_KIND }}：{{ wireKindLabel }}
+        </p>
+        <p v-if="!hasStructure" class="publish-actionable-preview__empty">
+          {{ PUBLISH_ACTIONABLE_PREVIEW_UNSTRUCTURED }}
+        </p>
+      </div>
 
-    <div v-if="hasStructure" class="publish-actionable-preview__sections">
-      <span v-if="hasLocation" data-testid="publish-preview-location">
-        {{ PUBLISH_ACTIONABLE_PREVIEW_LOCATION }}：{{ locationLabel }}
-      </span>
-      <span v-if="normalizedTag">{{ normalizedTag }}</span>
-      <span v-if="normalizedIdentityTag">{{ normalizedIdentityTag }}</span>
-      <span v-if="hasEvent" data-testid="publish-preview-event">
-        {{ PUBLISH_ACTIONABLE_PREVIEW_EVENT }}：{{ eventStartsAt }} · {{ eventJoinPolicyLabel }}
-      </span>
-      <span v-if="hasMerchant" data-testid="publish-preview-merchant">
-        {{ PUBLISH_ACTIONABLE_PREVIEW_MERCHANT }}：{{ merchantName
-        }}{{ merchantCategory ? ` · ${merchantCategory}` : "" }}
-      </span>
-      <span v-if="hasTrade" data-testid="publish-preview-trade">
-        {{ PUBLISH_ACTIONABLE_PREVIEW_TRADE }}：{{ tradePrice || tradeCategory }}
-      </span>
-    </div>
+      <div v-if="hasStructure" class="publish-actionable-preview__sections">
+        <span v-if="hasLocation" data-testid="publish-preview-location">
+          {{ PUBLISH_ACTIONABLE_PREVIEW_LOCATION }}：{{ locationLabel }}
+        </span>
+        <span v-if="normalizedTag">{{ normalizedTag }}</span>
+        <span v-if="normalizedIdentityTag">{{ normalizedIdentityTag }}</span>
+        <span v-if="hasEvent" data-testid="publish-preview-event">
+          {{ PUBLISH_ACTIONABLE_PREVIEW_EVENT }}：{{ eventStartsAt }} · {{ eventJoinPolicyLabel }}
+        </span>
+        <span v-if="hasMerchant" data-testid="publish-preview-merchant">
+          {{ PUBLISH_ACTIONABLE_PREVIEW_MERCHANT }}：{{ merchantName
+          }}{{ merchantCategory ? ` · ${merchantCategory}` : "" }}
+        </span>
+        <span v-if="hasTrade" data-testid="publish-preview-trade">
+          {{ PUBLISH_ACTIONABLE_PREVIEW_TRADE }}：{{ tradePrice || tradeCategory }}
+        </span>
+      </div>
+
+      <ul v-if="visibleComponents.length" class="publish-actionable-preview__components">
+        <li
+          v-for="component in visibleComponents"
+          :key="`${component.kind}::${component.label}`"
+          data-testid="publish-preview-component"
+        >
+          <strong>{{ PUBLISH_ACTIONABLE_PREVIEW_COMPONENTS }}</strong>
+          <span>{{ component.label }}</span>
+        </li>
+      </ul>
+    </template>
 
     <ul
       v-if="actionablePost"
@@ -170,7 +198,7 @@ const shouldRender = computed(
     >
       <li>
         <strong>{{ PUBLISH_ACTIONABLE_PREVIEW_PUBLISHED }}</strong>
-        <span>{{ actionablePost.kind }}</span>
+        <span>{{ publishedKindLabel }}</span>
       </li>
       <li data-testid="publish-preview-action">
         <strong>{{ PUBLISH_ACTIONABLE_PREVIEW_ACTION }}</strong>
@@ -185,17 +213,6 @@ const shouldRender = computed(
       </li>
       <li v-for="item in actionablePost.structure" :key="item">
         <span>{{ item }}</span>
-      </li>
-    </ul>
-
-    <ul v-if="visibleComponents.length" class="publish-actionable-preview__components">
-      <li
-        v-for="component in visibleComponents"
-        :key="`${component.kind}::${component.label}`"
-        data-testid="publish-preview-component"
-      >
-        <strong>{{ PUBLISH_ACTIONABLE_PREVIEW_COMPONENTS }}</strong>
-        <span>{{ component.label }}</span>
       </li>
     </ul>
   </aside>

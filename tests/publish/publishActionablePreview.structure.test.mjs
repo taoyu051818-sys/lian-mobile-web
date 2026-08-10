@@ -143,6 +143,35 @@ test("PublishActionablePreview summarizes draft signals with Chinese labels", ()
   assert.match(previewSrc, /data-testid="publish-preview-trade"/);
   assert.match(previewSrc, /data-testid="publish-preview-component"/);
 });
+
+test("PublishActionablePreview separates live draft and stored result render boundaries", () => {
+  const previewSrc = read("src/features/publish/PublishActionablePreview.vue");
+
+  assert.match(previewSrc, /const hasLiveDraftPreview = computed\(/);
+  assert.match(
+    previewSrc,
+    /const shouldRender = computed\([\s\S]*?hasLiveDraftPreview\.value[\s\S]*?Boolean\(props\.actionablePost\)/,
+  );
+  assert.match(previewSrc, /<template v-if="hasLiveDraftPreview">/);
+
+  const liveBoundary = sectionBetween(
+    previewSrc,
+    '<template v-if="hasLiveDraftPreview">',
+    "</template>",
+  );
+  assert.match(liveBoundary, /data-testid="publish-preview-kind"/);
+  assert.match(liveBoundary, /data-testid="publish-preview-wire-kind"/);
+  assert.match(liveBoundary, /data-testid="publish-preview-component"/);
+  assert.doesNotMatch(liveBoundary, /data-testid="publish-preview-published-structure"/);
+
+  const liveBoundaryEnd = previewSrc.indexOf("</template>", previewSrc.indexOf(liveBoundary));
+  const publishedResultStart = previewSrc.indexOf('<ul\n      v-if="actionablePost"');
+  assert.ok(liveBoundaryEnd > -1, "live preview boundary should close");
+  assert.ok(
+    publishedResultStart > liveBoundaryEnd,
+    "stored result must render outside the live preview boundary",
+  );
+});
 test("publish success threads front-end-only actionable post structure into preview", () => {
   const typeSrc = read("src/types/publish.ts");
   const apiSrc = read("src/api/publish.ts");
@@ -215,5 +244,5 @@ test("publish success threads front-end-only actionable post structure into prev
   assert.match(previewSrc, /data-testid="publish-preview-action"/);
   assert.match(previewSrc, /data-testid="publish-preview-published-structure"/);
   assert.match(brandSrc, /PUBLISH_ACTIONABLE_PREVIEW_ACTION = "行动"/);
-  assert.match(brandSrc, /PUBLISH_ACTIONABLE_PREVIEW_PUBLISHED = "将发布为"/);
+  assert.match(brandSrc, /PUBLISH_ACTIONABLE_PREVIEW_PUBLISHED = "已发布为"/);
 });
