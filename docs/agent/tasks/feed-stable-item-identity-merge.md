@@ -155,6 +155,8 @@ calls the real `useFeedData` composable.
   payload.
 - Existing content followed by `loadFeed(true)` with `[9]` becomes only `[9]`.
 - Different IDs with equal title/body remain separate items.
+- A page-2 request superseded by a reset cannot append its overlapping items
+  or change the loading flags after it arrives late.
 - Pagination still requests page 2 and advances page/hasMore from the response.
 - Existing deferred request-generation tests remain unchanged and green.
 
