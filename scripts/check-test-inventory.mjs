@@ -5,7 +5,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const expected = Object.freeze({ node: 65, vitest: 165 });
+const expected = Object.freeze({ node: 65, vitest: 166 });
 
 async function countFiles(directory, suffix) {
   const entries = await readdir(directory, { withFileTypes: true });
