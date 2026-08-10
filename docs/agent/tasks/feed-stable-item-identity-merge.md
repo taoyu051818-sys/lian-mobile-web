@@ -7,7 +7,7 @@
 - Upstream source reviewed: `main@d0ee0e9802149e5d99bd2c5064d6770adb1c041d`.
 - Local prerequisite: accepted F2h baseline `66921af`.
 - Working branch: `codex/audit-f3a-feed-actions`.
-- Status: planned; no runtime or test implementation has started.
+- Locally accepted on 2026-08-10; implementation commit `70cc4e3`.
 - The root rules, current status, Feed view, Feed data composable, Feed API
   adapter, Feed item types, list rendering, pagination tests, and current test
   inventory were checked from the local accepted baseline.
@@ -164,16 +164,16 @@ The first two cases must fail against the old implementation.
 
 ## Acceptance criteria
 
-- [ ] The old implementation fails the two duplicate-identity behavior cases.
-- [ ] The minimal merge implementation passes every matrix case.
-- [ ] The new test imports the production composable and contains no mirrored
+- [x] The old implementation fails the two duplicate-identity behavior cases.
+- [x] The minimal merge implementation passes every matrix case.
+- [x] The new test imports the production composable and contains no mirrored
       merge implementation or source-regex assertion.
-- [ ] Existing Feed request-race and adapter tests remain green.
-- [ ] Vitest inventory is exactly 162; Node structure inventory remains 65.
-- [ ] Typecheck, build, sanitizer, smoke, focused tests, and full
+- [x] Existing Feed request-race and adapter tests remain green.
+- [x] Vitest inventory is exactly 162; Node structure inventory remains 65.
+- [x] Typecheck, build, sanitizer, smoke, focused tests, and full
       `npm run verify` pass.
-- [ ] Independent review records acceptance and no blocking finding remains.
-- [ ] Only allowed files change; no network, production, push, merge, or
+- [x] Independent review records acceptance and no blocking finding remains.
+- [x] Only allowed files change; no network, production, push, merge, or
       deployment action occurs.
 
 ## Test-debt note

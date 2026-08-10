@@ -12,10 +12,10 @@ Current production release: Not recorded in this repository.
 
 **Active execution queue:**
 
-- F3a stable Feed item-identity merge is planned locally under
-  `docs/agent/tasks/feed-stable-item-identity-merge.md`. Its runtime scope is
-  limited to client-side duplicate-`tid` projection; no implementation has
-  started yet.
+- F3a stable Feed item-identity merge is accepted locally under
+  `docs/agent/tasks/feed-stable-item-identity-merge.md`; implementation commit
+  `70cc4e3`. Its runtime scope is limited to client-side duplicate-`tid`
+  projection.
 - The Feed read-only audit also recorded follow-up batches for cursor
   pagination, account-scoped read history, Feed/Detail reaction
   reconciliation, auto-load recovery, request intents, page restoration, and
@@ -34,6 +34,12 @@ Current production release: Not recorded in this repository.
 
 Local audit baseline:
 
+- F3a stable Feed item-identity merge accepted locally on
+  `codex/audit-f3a-feed-actions`; implementation commit `70cc4e3`.
+- F3a validation passed: 162 Vitest files / 4,084 tests, 65 Node structure
+  files / 820 tests, build, sanitizer, 3 loopback smoke checks, and full
+  `npm run verify`. Two independent reviewers recorded `ACCEPT`; one initially
+  found and then verified the non-positive-ID contract boundary fix.
 - F2h Publish success actionable-result rendering accepted locally on
   `codex/audit-f2h-publish-success-preview`; implementation commit `e5e2c65`.
 - F2h validation passed: 161 Vitest files / 4,078 tests, 65 Node structure
