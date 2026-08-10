@@ -168,6 +168,76 @@ describe("detail-navigation store", () => {
     expect(nav.detailLoading.value).toBe(false);
     expect(nav.detailPost.value).toEqual({ tid: 2, title: "fresh" });
   });
+
+  it("keeps request tokens monotonic across close and reopen", () => {
+    const nav = useDetailNavigation();
+    nav.open(1, "card");
+    const firstToken = (effects.find((e) => e.kind === "fetch") as any).token;
+
+    nav.close("user-tap");
+    nav.open(2, "card");
+    const secondToken = (effects.filter((e) => e.kind === "fetch")[1] as any).token;
+    expect(secondToken).toBeGreaterThan(firstToken);
+
+    dispatch({
+      type: "fetch-result",
+      token: firstToken,
+      result: { ok: { tid: 1, title: "stale" } as any },
+    });
+    expect(nav.detailLoading.value).toBe(true);
+    expect(nav.detailTid.value).toBe(2);
+    expect(nav.detailPost.value).toBeNull();
+  });
+
+  it("keeps request tokens monotonic through a ready state and ignores an older late result", () => {
+    const nav = useDetailNavigation();
+    nav.open(1, "card");
+    const firstToken = (effects.find((e) => e.kind === "fetch") as any).token;
+
+    nav.open(2, "card");
+    const secondToken = (effects.filter((e) => e.kind === "fetch")[1] as any).token;
+    dispatch({
+      type: "fetch-result",
+      token: secondToken,
+      result: { ok: { tid: 2, title: "second" } as any },
+    });
+
+    nav.open(3, "card");
+    const thirdToken = (effects.filter((e) => e.kind === "fetch")[2] as any).token;
+    expect(thirdToken).toBeGreaterThan(secondToken);
+
+    dispatch({
+      type: "fetch-result",
+      token: firstToken,
+      result: { ok: { tid: 1, title: "stale" } as any },
+    });
+    expect(nav.detailLoading.value).toBe(true);
+    expect(nav.detailTid.value).toBe(3);
+    expect(nav.detailPost.value).toBeNull();
+  });
+
+  it("keeps request tokens monotonic on retry and ignores a late result from the failed attempt", () => {
+    const nav = useDetailNavigation();
+    nav.open(7, "card");
+    const failedToken = (effects.find((e) => e.kind === "fetch") as any).token;
+    dispatch({
+      type: "fetch-result",
+      token: failedToken,
+      result: { err: new Error("boom") },
+    });
+
+    nav.retry();
+    const retryToken = (effects.filter((e) => e.kind === "fetch")[1] as any).token;
+    expect(retryToken).toBeGreaterThan(failedToken);
+
+    dispatch({
+      type: "fetch-result",
+      token: failedToken,
+      result: { ok: { tid: 7, title: "stale" } as any },
+    });
+    expect(nav.detailLoading.value).toBe(true);
+    expect(nav.detailPost.value).toBeNull();
+  });
 });
 
 // Test harness must import after, not before, the store module above.

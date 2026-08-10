@@ -13,17 +13,18 @@ const POST2 = { tid: 2, title: "q" } as any;
 function loading(tid: number, token: number): DetailState {
   return { kind: "loading", tid, token };
 }
-function ready(tid: number, post: any = POST): DetailState {
-  return { kind: "ready", tid, post };
+function ready(tid: number, post: any = POST, token = 0): DetailState {
+  return { kind: "ready", tid, token, post };
 }
-function error(tid: number, message = "err"): DetailState {
-  return { kind: "error", tid, message };
+function error(tid: number, message = "err", token = 0): DetailState {
+  return { kind: "error", tid, token, message };
 }
 
 describe("detail-navigation reducer", () => {
   describe("initial state", () => {
     it("starts closed", () => {
       const s = initialState();
+      expect(s).toEqual({ kind: "closed", token: 0 });
       expect(s.kind).toBe("closed");
       expect(select.isOpen(s)).toBe(false);
       expect(select.tid(s)).toBeNull();
@@ -50,9 +51,9 @@ describe("detail-navigation reducer", () => {
     });
 
     it("retry source does not push history (URL already matches the current tid)", () => {
-      const out = reduce(error(7), { type: "open", tid: 7, source: "retry" });
-      expect(out.state).toEqual({ kind: "loading", tid: 7, token: 1 });
-      expect(out.effects).toEqual([{ kind: "fetch", tid: 7, token: 1 }]);
+      const out = reduce(error(7, "err", 4), { type: "open", tid: 7, source: "retry" });
+      expect(out.state).toEqual({ kind: "loading", tid: 7, token: 5 });
+      expect(out.effects).toEqual([{ kind: "fetch", tid: 7, token: 5 }]);
     });
 
     it("from loading on same tid: no-op (avoids token churn from immediate replays)", () => {
@@ -69,13 +70,13 @@ describe("detail-navigation reducer", () => {
     });
 
     it("from ready: jumps to loading the new tid", () => {
-      const out = reduce(ready(7), { type: "open", tid: 9, source: "card" });
-      expect(out.state).toEqual({ kind: "loading", tid: 9, token: 1 });
+      const out = reduce(ready(7, POST, 4), { type: "open", tid: 9, source: "card" });
+      expect(out.state).toEqual({ kind: "loading", tid: 9, token: 5 });
     });
 
     it("from error: starts a new load (a fresh attempt, not a retry of the same tid)", () => {
-      const out = reduce(error(7), { type: "open", tid: 9, source: "card" });
-      expect(out.state).toEqual({ kind: "loading", tid: 9, token: 1 });
+      const out = reduce(error(7, "err", 4), { type: "open", tid: 9, source: "card" });
+      expect(out.state).toEqual({ kind: "loading", tid: 9, token: 5 });
       expect(out.effects).toContainEqual({ kind: "history-push", tid: 9 });
     });
   });
@@ -90,19 +91,19 @@ describe("detail-navigation reducer", () => {
 
     it("user-tap: clears state + clears history", () => {
       const out = reduce(loading(7, 3), { type: "close", source: "user-tap" });
-      expect(out.state).toEqual({ kind: "closed" });
+      expect(out.state).toEqual({ kind: "closed", token: 3 });
       expect(out.effects).toEqual([{ kind: "history-clear" }]);
     });
 
     it("popstate: clears state but does not write history (browser already did)", () => {
       const out = reduce(ready(7), { type: "close", source: "popstate" });
-      expect(out.state).toEqual({ kind: "closed" });
+      expect(out.state).toEqual({ kind: "closed", token: 0 });
       expect(out.effects).toEqual([]);
     });
 
     it("tab-switch: clears history", () => {
       const out = reduce(error(7), { type: "close", source: "tab-switch" });
-      expect(out.state).toEqual({ kind: "closed" });
+      expect(out.state).toEqual({ kind: "closed", token: 0 });
       expect(out.effects).toEqual([{ kind: "history-clear" }]);
     });
   });
@@ -117,7 +118,7 @@ describe("detail-navigation reducer", () => {
 
     it("null on any open state: closes silently (URL already changed)", () => {
       const out = reduce(loading(7, 3), { type: "url-sync", tid: null });
-      expect(out.state).toEqual({ kind: "closed" });
+      expect(out.state).toEqual({ kind: "closed", token: 3 });
       expect(out.effects).toEqual([]);
     });
 
@@ -140,9 +141,9 @@ describe("detail-navigation reducer", () => {
     });
 
     it("different tid on ready: starts loading the new tid (forward nav between detail urls)", () => {
-      const out = reduce(ready(7), { type: "url-sync", tid: 9 });
-      expect(out.state).toEqual({ kind: "loading", tid: 9, token: 1 });
-      expect(out.effects).toEqual([{ kind: "fetch", tid: 9, token: 1 }]);
+      const out = reduce(ready(7, POST, 4), { type: "url-sync", tid: 9 });
+      expect(out.state).toEqual({ kind: "loading", tid: 9, token: 5 });
+      expect(out.effects).toEqual([{ kind: "fetch", tid: 9, token: 5 }]);
     });
 
     it("non-null on closed: cold-load deep link enters loading", () => {
@@ -164,7 +165,7 @@ describe("detail-navigation reducer", () => {
         token: 3,
         result: { ok: POST },
       });
-      expect(out.state).toEqual({ kind: "ready", tid: 7, post: POST });
+      expect(out.state).toEqual({ kind: "ready", tid: 7, token: 3, post: POST });
       expect(out.effects).toEqual([]);
     });
 
@@ -174,7 +175,7 @@ describe("detail-navigation reducer", () => {
         token: 3,
         result: { err: new Error("boom") },
       });
-      expect(out.state).toEqual({ kind: "error", tid: 7, message: "boom" });
+      expect(out.state).toEqual({ kind: "error", tid: 7, token: 3, message: "boom" });
     });
 
     it("from loading with matching token + non-Error: falls back to brand error copy", () => {
@@ -278,7 +279,82 @@ describe("detail-navigation reducer", () => {
         token: tokenB,
         result: { ok: POST2 },
       }).state;
-      expect(state).toEqual({ kind: "ready", tid: 2, post: POST2 });
+      expect(state).toEqual({ kind: "ready", tid: 2, token: tokenB, post: POST2 });
+    });
+
+    it("open(a) -> close -> open(b) gives b a new token and drops a's late result", () => {
+      let state: DetailState = initialState();
+      state = reduce(state, { type: "open", tid: 1, source: "card" }).state;
+      const tokenA = state.kind === "loading" ? state.token : -1;
+
+      state = reduce(state, { type: "close", source: "user-tap" }).state;
+      state = reduce(state, { type: "open", tid: 2, source: "card" }).state;
+      const tokenB = state.kind === "loading" ? state.token : -1;
+
+      expect(tokenB).toBeGreaterThan(tokenA);
+      const beforeLateResult = state;
+      const lateA = reduce(state, {
+        type: "fetch-result",
+        token: tokenA,
+        result: { ok: POST },
+      });
+      expect(lateA.state).toBe(beforeLateResult);
+    });
+
+    it("open(a) -> open(b) -> b ready -> open(c) keeps advancing and drops a's late result", () => {
+      let state: DetailState = initialState();
+      state = reduce(state, { type: "open", tid: 1, source: "card" }).state;
+      const tokenA = state.kind === "loading" ? state.token : -1;
+
+      state = reduce(state, { type: "open", tid: 2, source: "card" }).state;
+      const tokenB = state.kind === "loading" ? state.token : -1;
+      state = reduce(state, {
+        type: "fetch-result",
+        token: tokenB,
+        result: { ok: POST2 },
+      }).state;
+
+      state = reduce(state, { type: "open", tid: 3, source: "card" }).state;
+      const tokenC = state.kind === "loading" ? state.token : -1;
+      expect(tokenC).toBeGreaterThan(tokenB);
+
+      const beforeLateResult = state;
+      const lateA = reduce(state, {
+        type: "fetch-result",
+        token: tokenA,
+        result: { ok: POST },
+      });
+      expect(lateA.state).toBe(beforeLateResult);
+
+      const lateB = reduce(state, {
+        type: "fetch-result",
+        token: tokenB,
+        result: { ok: POST2 },
+      });
+      expect(lateB.state).toBe(beforeLateResult);
+    });
+
+    it("error -> retry advances the token and drops a late result from the failed attempt", () => {
+      let state: DetailState = initialState();
+      state = reduce(state, { type: "open", tid: 1, source: "card" }).state;
+      const failedToken = state.kind === "loading" ? state.token : -1;
+      state = reduce(state, {
+        type: "fetch-result",
+        token: failedToken,
+        result: { err: new Error("boom") },
+      }).state;
+
+      state = reduce(state, { type: "open", tid: 1, source: "retry" }).state;
+      const retryToken = state.kind === "loading" ? state.token : -1;
+      expect(retryToken).toBeGreaterThan(failedToken);
+
+      const beforeLateResult = state;
+      const out = reduce(state, {
+        type: "fetch-result",
+        token: failedToken,
+        result: { ok: POST },
+      });
+      expect(out.state).toBe(beforeLateResult);
     });
   });
 });

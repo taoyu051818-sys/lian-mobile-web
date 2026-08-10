@@ -26,10 +26,10 @@ import type { PostDetail } from "../../types/post";
 import { ERROR_LOAD_DETAIL } from "../../config/brand";
 
 export type DetailState =
-  | { kind: "closed" }
+  | { kind: "closed"; token: number }
   | { kind: "loading"; tid: number; token: number }
-  | { kind: "ready"; tid: number; post: PostDetail }
-  | { kind: "error"; tid: number; message: string };
+  | { kind: "ready"; tid: number; token: number; post: PostDetail }
+  | { kind: "error"; tid: number; token: number; message: string };
 
 export type OpenSource = "card" | "deep-link" | "retry";
 export type CloseSource = "user-tap" | "popstate" | "tab-switch" | "view-change";
@@ -55,7 +55,7 @@ export interface ReducerResult {
 }
 
 export function initialState(): DetailState {
-  return { kind: "closed" };
+  return { kind: "closed", token: 0 };
 }
 
 function currentTid(state: DetailState): number | null {
@@ -77,7 +77,7 @@ function startLoading(
 }
 
 function lastToken(state: DetailState): number {
-  return state.kind === "loading" ? state.token : 0;
+  return state.token;
 }
 
 function extractError(err: unknown): string {
@@ -114,14 +114,14 @@ export function reduce(state: DetailState, action: DetailAction): ReducerResult 
       if (action.source !== "popstate") {
         effects.push({ kind: "history-clear" });
       }
-      return { state: { kind: "closed" }, effects };
+      return { state: { kind: "closed", token: state.token }, effects };
     }
 
     case "url-sync": {
       const desired = action.tid;
       if (desired === null) {
         if (state.kind === "closed") return { state, effects: [] };
-        return { state: { kind: "closed" }, effects: [] };
+        return { state: { kind: "closed", token: state.token }, effects: [] };
       }
       if (currentTid(state) === desired) {
         // Hash already matches what we have — drop. This is the idempotence
@@ -141,12 +141,22 @@ export function reduce(state: DetailState, action: DetailAction): ReducerResult 
       }
       if ("ok" in action.result) {
         return {
-          state: { kind: "ready", tid: state.tid, post: action.result.ok },
+          state: {
+            kind: "ready",
+            tid: state.tid,
+            token: state.token,
+            post: action.result.ok,
+          },
           effects: [],
         };
       }
       return {
-        state: { kind: "error", tid: state.tid, message: extractError(action.result.err) },
+        state: {
+          kind: "error",
+          tid: state.tid,
+          token: state.token,
+          message: extractError(action.result.err),
+        },
         effects: [],
       };
     }
