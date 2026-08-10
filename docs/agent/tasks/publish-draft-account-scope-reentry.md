@@ -26,12 +26,16 @@ the narrow Map picker round trip, and Map has no account-switch surface.
 Therefore A → B → A is not a currently reachable normal-UI production
 incident.
 
-It is still a real composable-contract defect. `usePublishDraftSession`
-documents that every `userId` change recomputes the account scope, but
-`restoredScopes` makes the second A entry skip storage restore. The form keeps
-B's values while `persistedScope` points at A; the next edit can write B's
-draft into A's slot. A future auth refresh, focus refresh, or cross-tab session
-epoch would make this branch reachable immediately.
+It is still a real synchronous composable-contract defect.
+`usePublishDraftSession` documents that every `userId` change recomputes the
+account scope, but `restoredScopes` makes the second A entry skip storage
+restore. The form keeps B's values while `persistedScope` points at A; the
+next edit can write B's draft into A's slot.
+
+This batch is a prerequisite for, not a complete implementation of, mounted
+auth refresh. Upload, publish, capability, audience, and verification requests
+need a separate account-generation contract before a production path may
+change identity inside a mounted Publish instance.
 
 The same transition currently exposes only a boolean `restoreSettled` edge.
 Vue may batch a scope transition so a pending location handoff does not observe
@@ -39,16 +43,18 @@ a distinct false → true notification.
 
 ## Goal
 
-Make an explicit Publish account-scope change a bounded, ordered transaction:
-persist the outgoing scope, reset page-owned transient state, restore the
-target scope on every entry, publish a monotonic restore generation, and only
-then allow autosave and pending handoff consumption to target the new scope.
+Make an explicit, idle Publish account-scope change a bounded, ordered
+synchronous transaction: persist the outgoing scope, discard unowned transient
+handoffs, reset page-owned synchronous state, restore the target scope on every
+entry, publish a monotonic restore generation, and only then allow autosave to
+target the new scope.
 
 ## Product scope
 
 This is defensive state-integrity work with no intended visual or API change.
-It makes the existing composable contract truthful before a future auth-epoch
-lane can refresh identity in a mounted Publish instance.
+It repairs the existing scoped-draft composable contract. It does not authorize
+or complete a future mounted auth-refresh path; that path must first add
+account-generation guards to every asynchronous Publish capability.
 
 ## State transition contract
 
@@ -57,11 +63,11 @@ For `A -> B`:
 ```text
 persist A synchronously
   -> mark the form temporarily unowned
-  -> reset all Publish-owned transient state
+  -> discard any unscoped pending location handoff
+  -> reset Publish-owned synchronous transient state
   -> read and restore B every time
   -> set persistedScope = B
   -> increment restoreGeneration
-  -> consume a pending location handoff for B
   -> later edits autosave only to B
 ```
 
@@ -71,19 +77,30 @@ Required invariants:
 - Persist the outgoing scope before reset or target restore mutates refs.
 - During a transition, no intermediate state may be written to the outgoing
   scope.
+- Scope adoption runs synchronously when the identity ref changes. An edit
+  made after that assignment in the same tick belongs only to the target.
 - A target with no snapshot must remain empty; it may not retain the previous
   account's fields.
 - Anonymous is a first-class scope and follows the same transition rules.
-- While `identityLoaded` is false, do not read anonymous state or autosave to
-  any scope.
-- The page reset callback clears File objects, uploaded URLs and previews, AI
-  candidates/attempt state, Event/Merchant/Trade drafts, result/preview copy,
-  reset UI, and a pending geolocation attempt before the target restore.
+- Before the initial identity resolution establishes a persisted scope,
+  `identityLoaded=false` must not read anonymous state or autosave any scope.
+- The page reset callback is synchronous. It clears File objects, uploaded URLs
+  and previews, AI candidates/attempt state, Event/Merchant/Trade draft input,
+  result/preview copy, reset UI, and a pending geolocation attempt before the
+  target restore.
+- A pending Map/geolocation handoff has no account owner. Initial adoption may
+  consume it through the existing mount/activation path; a real owned-scope
+  transition must discard it instead of assigning A's handoff to B.
 - A monotonic `restoreGeneration` signals every completed target restore.
-  Publish may keep `restoreSettled` as a synchronous gate, but pending handoff
-  consumption must not rely on a coalescible boolean edge alone.
+  Publish may keep `restoreSettled` as a synchronous gate. The generation is a
+  latest-state notification, not an event queue for every intermediate
+  identity value in one Vue flush.
 - Profile logout keeps its existing `clearAllPublishDrafts` behavior. Ordinary
   scope transitions do not erase every account's saved slot.
+- This contract assumes no upload, publish, audience, merchant/trade
+  verification, or other account-bound request is in flight. A later lane must
+  add account generations and transition reasons before mounted auth refresh
+  is enabled.
 
 ## Repository and ownership scope
 
@@ -119,7 +136,8 @@ Documentation:
 - No Map coordinate, handoff envelope, or F2d validator change.
 - No Profile logout-policy change.
 - No global/cross-tab auth epoch, focus refresh, or submit-time identity probe;
-  that is a separate account-consistency lane.
+  that is a separate account-consistency lane and this batch must not be cited
+  as completing it.
 - No redesign of upload or publish HTTP cancellation. Results already in
   flight during a hypothetical scope transition remain a separate generation
   contract and must not be silently widened into this batch.
@@ -140,25 +158,46 @@ No HTTP or backend contract changes.
 
 The internal composable return gains a monotonic `restoreGeneration`. The
 existing `restoreSettled` remains available as the immediate readiness gate.
+No handoff or HTTP contract gains an account owner in this batch.
 
 ## Acceptance criteria
 
-- [ ] A focused test on `3afb386` proves A → B → A leaves B in A's form and
+- [x] A focused test on `3afb386` proves A → B → A leaves B in A's form and
       can contaminate A's storage.
-- [ ] After the fix, every scope entry restores the latest target snapshot.
-- [ ] The outgoing scope's latest edit is persisted before switching.
-- [ ] A scope with no snapshot is empty on every entry.
-- [ ] Guest → A → guest → A keeps anonymous and authenticated drafts isolated.
-- [ ] `identityLoaded=false` prevents premature anonymous restore/write.
-- [ ] Scope reset clears File objects and invokes the page transient-reset
+- [x] After the fix, every scope entry restores the latest target snapshot.
+- [x] The outgoing scope's latest edit is persisted before switching.
+- [x] Identity change followed by an edit in the same tick writes only the
+      target scope.
+- [x] A scope with no snapshot is empty on every entry.
+- [x] Guest → A → guest → A keeps anonymous and authenticated drafts isolated.
+- [x] `identityLoaded=false` prevents premature anonymous restore/write.
+- [x] Scope reset clears File objects and invokes the page transient-reset
       callback before target restore.
-- [ ] `restoreGeneration` advances once per completed adoption and a pending
-      Map handoff is consumed after the target restore, exactly once.
-- [ ] F2d binding/catalog behavior and Profile logout clearing do not regress.
-- [ ] Focused tests, build, and full `npm run verify` pass with 158 Vitest
+- [x] `restoreGeneration` advances once per completed adoption; initial mount
+      can consume its existing pending handoff, while an owned A -> B
+      transition discards an unscoped handoff before B is restored.
+- [x] F2d binding/catalog behavior and Profile logout clearing do not regress.
+- [x] Focused tests, build, and full `npm run verify` pass with 158 Vitest
       files; an independent reviewer records acceptance.
-- [ ] Only allowed files change; no push, deployment, or online environment
+- [x] Only allowed files change; no push, deployment, or online environment
       access occurs.
+
+## Acceptance result
+
+- Red baseline: 4 focused files / 48 tests produced 8 intentional failures
+  against the old implementation. A separately added identity-first same-tick
+  test also failed before synchronous scope adoption was enabled.
+- Final focused suite: 4 files / 50 tests passed.
+- Build and typecheck passed; Vite transformed 642 modules.
+- Full `npm run verify` passed:
+  - 158 Vitest files / 4,031 tests;
+  - 65 Node structure files / 817 tests;
+  - HTML sanitizer;
+  - loopback smoke 3/3.
+- Two independent reviewers recorded `ACCEPT` after the contract was narrowed
+  and the same-tick, operation-payload, and initial-adoption gaps were fixed.
+- No push, PR, merge, deployment, production access, or server mutation was
+  performed.
 
 ## Validation commands
 
@@ -181,16 +220,19 @@ npm run verify
   Mitigation: temporarily remove form ownership during the synchronous
   transition, set the target only after restore, and test same-tick edits plus
   identity changes.
-- A location handoff could apply before the target draft. Mitigation: use the
-  monotonic restore generation as the notification and retain
-  `restoreSettled` as the consume gate.
+- An unscoped location handoff could be misassigned to the target account.
+  Mitigation: discard it during an owned-scope reset; keep the existing
+  mount/activation consume path only for initial adoption.
 - The current UI does not normally change identity in a mounted Publish
   instance. Tests must describe this as defensive contract hardening, not
   evidence of a currently reachable account-switch incident.
+- Late upload/publish/capability results could repopulate cleared refs. This
+  batch explicitly does not enable mounted auth switching; a follow-up must
+  add account-generation invalidation before such a path is introduced.
 
 ## Rollback plan
 
-Revert the bounded F2e runtime, tests, and documentation commits. No server,
-database, Redis, API, or deployed-state cleanup is required. If local manual
-testing creates an unwanted draft, clear only the affected browser
-sessionStorage scope.
+Revert the bounded F2e runtime, tests, inventory-gate, and documentation
+commits. No server, database, Redis, API, or deployed-state cleanup is
+required. If local manual testing creates an unwanted draft, clear only the
+affected browser sessionStorage scope.

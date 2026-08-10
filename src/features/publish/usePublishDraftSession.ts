@@ -26,6 +26,12 @@ export interface UsePublishDraftSessionOptions {
   loadIdentity: () => void | Promise<void>;
   loadMapLocations: () => void;
   /**
+   * Synchronously clears page-owned transient state before an already-owned
+   * form moves to another account scope. Initial adoption intentionally skips
+   * this callback because no outgoing form owner exists yet.
+   */
+  resetTransientState?: () => void;
+  /**
    * Stable identifier for the signed-in account, or null when the identity
    * has not been resolved yet (e.g. while /api/auth/me is in flight). The
    * scope is recomputed every time this changes so a draft authored by user
@@ -56,6 +62,7 @@ export function usePublishDraftSession(options: UsePublishDraftSessionOptions) {
     publishing,
     loadIdentity,
     loadMapLocations,
+    resetTransientState,
     userId,
     identityLoaded,
   } = options;
@@ -71,7 +78,7 @@ export function usePublishDraftSession(options: UsePublishDraftSessionOptions) {
   // an account switch never accidentally writes user A's typed text to user
   // B's storage slot. Starts unset — we only persist after restore has run.
   const persistedScope = ref<string | null>(null);
-  const restoredScopes = ref<Set<string>>(new Set());
+  const restoreGeneration = ref(0);
   const restoreSettled = computed(
     () =>
       (identityLoaded ? identityLoaded.value : true) && persistedScope.value === currentScope.value,
@@ -122,11 +129,9 @@ export function usePublishDraftSession(options: UsePublishDraftSessionOptions) {
   function restoreDraftFromSession(scope: string) {
     const snapshot = readPublishDraft(scope);
     if (!snapshot) {
-      // No draft for this scope — make sure we don't leave another account's
-      // typed-but-unpersisted state in the form when the user just switched.
-      if (hasUnsavedDraft.value && persistedScope.value !== scope) {
-        clearFormFields();
-      }
+      // Every scope entry is a fresh read. An empty target must stay empty,
+      // even when this scope had been visited earlier in the same mount.
+      clearFormFields();
       draftNotice.value = "";
       return;
     }
@@ -153,11 +158,18 @@ export function usePublishDraftSession(options: UsePublishDraftSessionOptions) {
 
   function adoptScope(scope: string) {
     if (persistedScope.value === scope) return;
-    if (!restoredScopes.value.has(scope)) {
-      restoreDraftFromSession(scope);
-      restoredScopes.value.add(scope);
-    }
+
+    const outgoingScope = persistedScope.value;
+    if (outgoingScope !== null) persistPublishDraft();
+
+    // Remove ownership across the entire synchronous reset/restore window.
+    // The form-source watcher may be queued by these mutations, but it cannot
+    // target the outgoing account while ownership is null.
+    persistedScope.value = null;
+    if (outgoingScope !== null) resetTransientState?.();
+    restoreDraftFromSession(scope);
     persistedScope.value = scope;
+    restoreGeneration.value += 1;
   }
 
   function handleBeforeUnload(event: BeforeUnloadEvent) {
@@ -190,10 +202,10 @@ export function usePublishDraftSession(options: UsePublishDraftSessionOptions) {
         if (!loaded) return;
         adoptScope(scope);
       },
-      { immediate: true },
+      { immediate: true, flush: "sync" },
     );
   } else {
-    watch(currentScope, (scope) => adoptScope(scope), { immediate: true });
+    watch(currentScope, (scope) => adoptScope(scope), { immediate: true, flush: "sync" });
   }
 
   onMounted(() => {
@@ -216,5 +228,6 @@ export function usePublishDraftSession(options: UsePublishDraftSessionOptions) {
     restoreDraftFromSession: () => restoreDraftFromSession(currentScope.value),
     currentScope,
     restoreSettled,
+    restoreGeneration,
   };
 }

@@ -69,6 +69,7 @@ function emitChromeIfActive(spec: PageChromeSpec = draft.pageChrome.value) {
 // picker can write either a known place or a free coordinate.
 const geolocation = useGeolocation();
 const geolocationHint = ref("");
+let resetPublishAttemptForScopeTransition: () => void = () => undefined;
 
 function applyHandoff(payload: NormalizedPublishLocationHandoff) {
   if (payload.source === "map_picker") {
@@ -187,25 +188,44 @@ watch(
   { immediate: true },
 );
 
-const { draftNotice, hasUnsavedDraft, currentScope, restoreSettled } = usePublishDraftSession({
-  title: draft.title,
-  body: draft.body,
-  tagInput: draft.tagInput,
-  placeName: draft.placeName,
-  visibility: draft.visibility,
-  selectedFiles: draft.selectedFiles,
-  selectedMapLocation: locationOptions.selectedMapLocation,
-  mapPickerBinding: locationOptions.mapPickerBinding,
-  locationSearch: locationOptions.locationSearch,
-  locationPanelOpen: locationOptions.locationPanelOpen,
-  publishing: draft.publishing,
-  loadIdentity: draft.loadIdentity,
-  loadMapLocations: locationOptions.loadMapLocations,
-  userId: draft.userId,
-  identityLoaded: draft.identityLoaded,
-});
+function resetPublishTransientState() {
+  // Pending handoffs are not account-scoped. Once a form already owned by A
+  // moves to B, discard A's pending handoff instead of assigning it to B.
+  consumePendingPublishLocation();
+  resetPublishAttemptForScopeTransition();
+  draft.resetForm(locationOptions.clearLocationState);
+  eventDraft.reset();
+  geolocation.invalidatePendingRequest();
+  geolocation.clearError();
+  geolocationHint.value = "";
+  actionablePreview.value = null;
+  draft.errorMessage.value = "";
+  draft.successMessage.value = "";
+  draft.lastTid.value = null;
+  resetConfirmationVisible.value = false;
+}
 
-watch(restoreSettled, consumeHandoffIfActive);
+const { draftNotice, hasUnsavedDraft, currentScope, restoreSettled, restoreGeneration } =
+  usePublishDraftSession({
+    title: draft.title,
+    body: draft.body,
+    tagInput: draft.tagInput,
+    placeName: draft.placeName,
+    visibility: draft.visibility,
+    selectedFiles: draft.selectedFiles,
+    selectedMapLocation: locationOptions.selectedMapLocation,
+    mapPickerBinding: locationOptions.mapPickerBinding,
+    locationSearch: locationOptions.locationSearch,
+    locationPanelOpen: locationOptions.locationPanelOpen,
+    publishing: draft.publishing,
+    loadIdentity: draft.loadIdentity,
+    loadMapLocations: locationOptions.loadMapLocations,
+    resetTransientState: resetPublishTransientState,
+    userId: draft.userId,
+    identityLoaded: draft.identityLoaded,
+  });
+
+watch(restoreGeneration, consumeHandoffIfActive);
 
 function clearPublishState() {
   resetPublishAttempt();
@@ -255,6 +275,7 @@ const { postDetailUrl, resetPublishAttempt, submitPublish } = usePublishSubmit({
   tradePayload: () => draft.trade.payload(),
   tradeVerified: draft.trade.campusVerified,
 });
+resetPublishAttemptForScopeTransition = resetPublishAttempt;
 
 function requestResetForm() {
   if (!hasUnsavedDraft.value) {

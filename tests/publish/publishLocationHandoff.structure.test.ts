@@ -149,12 +149,12 @@ describe("publish location handoff structure", () => {
 
   it("consumes only after scoped restore settles while Publish is active", () => {
     expect(publishView).toMatch(
-      /const \{ draftNotice, hasUnsavedDraft, currentScope, restoreSettled \} = usePublishDraftSession/,
+      /const \{[\s\S]*draftNotice[\s\S]*hasUnsavedDraft[\s\S]*currentScope[\s\S]*restoreSettled[\s\S]*restoreGeneration[\s\S]*\}\s*=\s*usePublishDraftSession/,
     );
     expect(publishView).toMatch(
       /if \(publishViewActive\.value && restoreSettled\.value\) consumeHandoff\(\);/,
     );
-    expect(publishView).toMatch(/watch\(restoreSettled, consumeHandoffIfActive/);
+    expect(publishView).toMatch(/watch\(restoreGeneration, consumeHandoffIfActive/);
 
     const useCurrentLocation =
       publishView.match(/async function useCurrentLocation\(\) \{([\s\S]*?)\n\}/)?.[1] || "";
@@ -162,6 +162,39 @@ describe("publish location handoff structure", () => {
     expect(useCurrentLocation).not.toContain("!restoreSettled.value");
     expect(useCurrentLocation.indexOf("setPendingPublishLocation({")).toBeLessThan(
       useCurrentLocation.indexOf("consumeHandoffIfActive();"),
+    );
+  });
+
+  it("uses a monotonic scope-restore generation and resets transient state before handoff", () => {
+    expect(useDraftSession).not.toContain("restoredScopes");
+    expect(useDraftSession).toContain("resetTransientState");
+    expect(useDraftSession).toContain("const restoreGeneration = ref(0);");
+    expect(useDraftSession).toContain("restoreGeneration.value += 1;");
+    expect(useDraftSession).toContain("restoreGeneration,");
+    expect(publishView).toMatch(
+      /const \{[\s\S]*restoreGeneration[\s\S]*\}\s*=\s*usePublishDraftSession/,
+    );
+    expect(publishView).toContain("resetTransientState:");
+    const scopeResetBody =
+      publishView.match(/function resetPublishTransientState\(\) \{([\s\S]*?)\n\}/)?.[1] || "";
+    expect(scopeResetBody).toContain("consumePendingPublishLocation();");
+    expect(scopeResetBody).toContain("draft.resetForm(locationOptions.clearLocationState);");
+    expect(scopeResetBody).toContain("eventDraft.reset();");
+    expect(scopeResetBody).toContain("geolocation.invalidatePendingRequest();");
+    expect(scopeResetBody).toContain("geolocation.clearError();");
+    expect(scopeResetBody).toContain('geolocationHint.value = "";');
+    expect(scopeResetBody).toContain("actionablePreview.value = null;");
+    expect(scopeResetBody).toContain('draft.errorMessage.value = "";');
+    expect(scopeResetBody).toContain('draft.successMessage.value = "";');
+    expect(scopeResetBody).toContain("draft.lastTid.value = null;");
+    expect(scopeResetBody).toContain("resetConfirmationVisible.value = false;");
+    expect(scopeResetBody).toContain("resetPublishAttemptForScopeTransition();");
+    expect(publishView).toContain("resetPublishAttemptForScopeTransition = resetPublishAttempt;");
+    expect(publishView).toContain("resetTransientState: resetPublishTransientState,");
+    expect(publishView).toMatch(/watch\(restoreGeneration, consumeHandoffIfActive/);
+    expect(publishView).not.toMatch(/watch\(restoreSettled, consumeHandoffIfActive/);
+    expect(publishView).toMatch(
+      /onMounted\(\(\) => \{[\s\S]*?consumeHandoffIfActive\(\);[\s\S]*?window\.addEventListener\("pageshow", handlePageShow\);[\s\S]*?\}\);/,
     );
   });
 
