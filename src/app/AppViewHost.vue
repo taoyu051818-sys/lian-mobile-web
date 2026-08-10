@@ -1,8 +1,18 @@
 <script setup lang="ts">
-import { defineAsyncComponent, type Component, type PropType } from "vue";
+import {
+  computed,
+  defineAsyncComponent,
+  onMounted,
+  onUnmounted,
+  ref,
+  watch,
+  type Component,
+  type PropType,
+} from "vue";
 import type { AppViewKey } from "./view-types";
 import type { PageChromeSpec } from "../shell/page-model";
 import { FeedView } from "../features/feed";
+import { parseDeepLink, parseDeepLinkQuery } from "./deepLink";
 import ViewAsyncError from "./ViewAsyncError.vue";
 import ViewLoadingFallback from "./ViewLoadingFallback.vue";
 
@@ -39,16 +49,74 @@ const emit = defineEmits<{
   chrome: [payload: PageChromeSpec];
   close: [];
 }>();
+
+const publishPickerLease = ref(false);
+const shouldKeepPublishAlive = computed(
+  () => props.activeViewKey === "publish" || publishPickerLease.value,
+);
+
+function openPublishMapPicker() {
+  if (props.activeViewKey === "publish") publishPickerLease.value = true;
+}
+
+watch(
+  () => props.activeViewKey,
+  (nextView) => {
+    if (nextView !== "map") publishPickerLease.value = false;
+  },
+);
+
+// A hash-only transition from `#/map?picker=1` to regular `#/map` does not
+// change activeViewKey. Release only for that same-view exit; cross-view
+// navigation is left to the prop watcher so the Publish cache cannot be
+// pruned before the parent has applied its new active view.
+function releasePublishLeaseOnMapExit() {
+  if (!publishPickerLease.value || typeof window === "undefined") return;
+  const hash = window.location.hash;
+  const link = parseDeepLink(hash);
+  if (link?.view !== "map") return;
+  if (parseDeepLinkQuery(hash).picker !== "1") {
+    publishPickerLease.value = false;
+  }
+}
+
+onMounted(() => {
+  if (typeof window === "undefined") return;
+  window.addEventListener("hashchange", releasePublishLeaseOnMapExit);
+  window.addEventListener("popstate", releasePublishLeaseOnMapExit);
+});
+
+onUnmounted(() => {
+  if (typeof window === "undefined") return;
+  window.removeEventListener("hashchange", releasePublishLeaseOnMapExit);
+  window.removeEventListener("popstate", releasePublishLeaseOnMapExit);
+});
 </script>
 
 <template>
   <div class="app-view-host">
     <KeepAlive include="MapLeafletView">
       <component
-        :is="viewComponents[props.activeViewKey]"
+        :is="viewComponents.map"
+        v-if="props.activeViewKey === 'map'"
         @chrome="emit('chrome', $event)"
         @close="emit('close')"
       />
     </KeepAlive>
+    <KeepAlive v-if="shouldKeepPublishAlive" include="PublishView">
+      <component
+        :is="viewComponents.publish"
+        v-if="props.activeViewKey === 'publish'"
+        @chrome="emit('chrome', $event)"
+        @close="emit('close')"
+        @map-picker-open="openPublishMapPicker"
+      />
+    </KeepAlive>
+    <component
+      :is="viewComponents[props.activeViewKey]"
+      v-if="props.activeViewKey !== 'map' && props.activeViewKey !== 'publish'"
+      @chrome="emit('chrome', $event)"
+      @close="emit('close')"
+    />
   </div>
 </template>

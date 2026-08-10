@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref, watch } from "vue";
+import { computed, onActivated, onDeactivated, onMounted, onUnmounted, ref, watch } from "vue";
 import type { PageChromeSpec } from "../../shell/page-model";
 import {
   PUBLISH_AUTH_GATE_CTA,
@@ -40,8 +40,11 @@ import type { PublishActionablePostPreview } from "../../types/publish";
 import { useEventPublishDraft } from "../../composables/useEventPublishDraft";
 import { useActiveView } from "../../app/useActiveView";
 
+defineOptions({ name: "PublishView" });
+
 const emit = defineEmits<{
   chrome: [spec: PageChromeSpec];
+  "map-picker-open": [];
 }>();
 
 const RESET_CONFIRM_MESSAGE = [PUBLISH_CLEAR_CONFIRM, PUBLISH_IMAGE_RESELECT].join("");
@@ -51,7 +54,13 @@ const eventDraft = useEventPublishDraft();
 const actionablePreview = ref<PublishActionablePostPreview | null>(null);
 const locationOptions = usePublishLocationOptions(draft.placeName);
 const resetConfirmationVisible = ref(false);
+const publishViewActive = ref(false);
 const { setActiveView } = useActiveView();
+
+function emitChromeIfActive(spec: PageChromeSpec = draft.pageChrome.value) {
+  if (!publishViewActive.value) return;
+  emit("chrome", spec);
+}
 
 // mw#943 — geolocation + map-picker handoff. Both write through the same
 // sessionStorage key (`usePublishLocationHandoff`) so the consume path on
@@ -96,11 +105,16 @@ function consumeHandoff() {
   if (pending) applyHandoff(pending);
 }
 
+function consumeHandoffIfActive() {
+  if (publishViewActive.value) consumeHandoff();
+}
+
 function pickOnMap() {
   // The map picker reads `consumePendingPublishLocation` on its overlay
   // confirm, but the publish form has nothing to write yet — the picker is
   // the writer. We just navigate to the map view in picker mode.
   if (typeof window !== "undefined") {
+    emit("map-picker-open");
     window.location.hash = buildMapPickerHash();
   }
 }
@@ -119,7 +133,7 @@ async function useCurrentLocation() {
 // pageshow fires on initial nav AND on bfcache restore (browser back from
 // the picker). onMounted only catches the first case, so we bind both.
 function handlePageShow() {
-  consumeHandoff();
+  consumeHandoffIfActive();
 }
 
 // Auth gate: detect guest state after identity loads
@@ -279,7 +293,7 @@ async function handleFiles(event: Event) {
   });
 }
 
-watch(draft.pageChrome, (spec) => emit("chrome", spec), {
+watch(draft.pageChrome, emitChromeIfActive, {
   deep: true,
 });
 
@@ -288,7 +302,8 @@ watch(hasUnsavedDraft, (value) => {
 });
 
 onMounted(() => {
-  emit("chrome", draft.pageChrome.value);
+  publishViewActive.value = true;
+  emitChromeIfActive();
   if (!draft.merchant.verificationLoaded.value) {
     void draft.merchant.refreshVerification();
   }
@@ -296,13 +311,24 @@ onMounted(() => {
   // or the geolocation button (e.g. on the previous mount of this view).
   // pageshow covers bfcache restores; consume runs on both to keep the two
   // pathways idempotent.
-  consumeHandoff();
+  consumeHandoffIfActive();
   if (typeof window !== "undefined") {
     window.addEventListener("pageshow", handlePageShow);
   }
 });
 
+onActivated(() => {
+  publishViewActive.value = true;
+  emitChromeIfActive();
+  consumeHandoffIfActive();
+});
+
+onDeactivated(() => {
+  publishViewActive.value = false;
+});
+
 onUnmounted(() => {
+  publishViewActive.value = false;
   if (typeof window !== "undefined") {
     window.removeEventListener("pageshow", handlePageShow);
   }
