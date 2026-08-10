@@ -6,6 +6,7 @@ import {
   PUBLISH_AUTH_GATE_HINT,
   PUBLISH_AUTH_GATE_TITLE,
   PUBLISH_LOCATION_GEOLOC_HINT,
+  PUBLISH_LOCATION_LEGACY_HINT,
   PUBLISH_SECTION_LABEL,
   PUBLISH_VIEW_POST,
   PUBLISH_CLEAR_CONFIRM,
@@ -29,7 +30,7 @@ import { usePublishLocationOptions } from "./usePublishLocationOptions";
 import {
   consumePendingPublishLocation,
   setPendingPublishLocation,
-  type PublishLocationHandoff,
+  type NormalizedPublishLocationHandoff,
 } from "./usePublishLocationHandoff";
 import { useGeolocation } from "./useGeolocation";
 import { clearPublishDraft } from "./publishDraftSession";
@@ -69,35 +70,18 @@ function emitChromeIfActive(spec: PageChromeSpec = draft.pageChrome.value) {
 const geolocation = useGeolocation();
 const geolocationHint = ref("");
 
-function applyHandoff(payload: PublishLocationHandoff) {
-  if (payload.kind === "place") {
-    // Try to rebind to a known MapLocation if the catalog is loaded so the
-    // selected-state visuals (chip + place type label) match the existing
-    // search-list selection path. When the catalog isn't loaded yet, fall
-    // back to setting the place name directly — the user still sees their
-    // pick reflected, and a later re-pick from the panel can rebind.
-    const known = locationOptions.mapLocations.value.find((entry) => {
-      const placeId = entry.place?.id || entry.placeId || "";
-      return placeId && placeId === payload.placeId;
-    });
-    if (known) {
-      locationOptions.selectMapLocation(known);
-      return;
-    }
-    draft.placeName.value = payload.name;
-    locationOptions.locationPanelOpen.value = true;
+function applyHandoff(payload: NormalizedPublishLocationHandoff) {
+  if (payload.source === "map_picker") {
+    locationOptions.applyMapPickerHandoff(payload);
     geolocationHint.value = "";
     return;
   }
-  if (payload.kind === "coords") {
-    // Free coordinate — no place ID. Use the user-provided label when present,
-    // otherwise leave the place name empty so the user can fill it in. The
-    // hint copy nudges them to add a label.
-    draft.placeName.value = payload.label || draft.placeName.value;
-    locationOptions.clearMapLocation();
-    locationOptions.locationPanelOpen.value = true;
-    geolocationHint.value = PUBLISH_LOCATION_GEOLOC_HINT;
-  }
+
+  locationOptions.applyDisplayOnlyLocation(payload.source === "legacy" ? payload.label : undefined);
+  geolocationHint.value =
+    payload.source === "browser_geolocation"
+      ? PUBLISH_LOCATION_GEOLOC_HINT
+      : PUBLISH_LOCATION_LEGACY_HINT;
 }
 
 function consumeHandoff() {
@@ -106,7 +90,7 @@ function consumeHandoff() {
 }
 
 function consumeHandoffIfActive() {
-  if (publishViewActive.value) consumeHandoff();
+  if (publishViewActive.value && restoreSettled.value) consumeHandoff();
 }
 
 function pickOnMap() {
@@ -114,6 +98,7 @@ function pickOnMap() {
   // confirm, but the publish form has nothing to write yet — the picker is
   // the writer. We just navigate to the map view in picker mode.
   if (typeof window !== "undefined") {
+    geolocation.invalidatePendingRequest();
     emit("map-picker-open");
     window.location.hash = buildMapPickerHash();
   }
@@ -122,12 +107,20 @@ function pickOnMap() {
 async function useCurrentLocation() {
   geolocation.clearError();
   const coords = await geolocation.fetchCurrentLocation();
-  if (!coords) return;
+  if (!coords || !publishViewActive.value) return;
   // Route through the handoff key so both pathways converge on the same
   // consume logic. The publish form is already mounted, so we consume
   // immediately rather than waiting for a remount.
-  setPendingPublishLocation({ kind: "coords", lat: coords.lat, lng: coords.lng });
-  consumeHandoff();
+  setPendingPublishLocation({
+    version: 2,
+    source: "browser_geolocation",
+    coordinateSystem: "wgs84",
+    kind: "coords",
+    lat: coords.lat,
+    lng: coords.lng,
+    accuracy: coords.accuracy,
+  });
+  consumeHandoffIfActive();
 }
 
 // pageshow fires on initial nav AND on bfcache restore (browser back from
@@ -194,7 +187,7 @@ watch(
   { immediate: true },
 );
 
-const { draftNotice, hasUnsavedDraft, currentScope } = usePublishDraftSession({
+const { draftNotice, hasUnsavedDraft, currentScope, restoreSettled } = usePublishDraftSession({
   title: draft.title,
   body: draft.body,
   tagInput: draft.tagInput,
@@ -202,6 +195,7 @@ const { draftNotice, hasUnsavedDraft, currentScope } = usePublishDraftSession({
   visibility: draft.visibility,
   selectedFiles: draft.selectedFiles,
   selectedMapLocation: locationOptions.selectedMapLocation,
+  mapPickerBinding: locationOptions.mapPickerBinding,
   locationSearch: locationOptions.locationSearch,
   locationPanelOpen: locationOptions.locationPanelOpen,
   publishing: draft.publishing,
@@ -211,9 +205,12 @@ const { draftNotice, hasUnsavedDraft, currentScope } = usePublishDraftSession({
   identityLoaded: draft.identityLoaded,
 });
 
+watch(restoreSettled, consumeHandoffIfActive);
+
 function clearPublishState() {
   resetPublishAttempt();
   draft.resetForm(locationOptions.clearLocationState);
+  geolocationHint.value = "";
   actionablePreview.value = null;
   eventDraft.reset();
   clearPublishDraft(currentScope.value);
@@ -325,10 +322,12 @@ onActivated(() => {
 
 onDeactivated(() => {
   publishViewActive.value = false;
+  geolocation.invalidatePendingRequest();
 });
 
 onUnmounted(() => {
   publishViewActive.value = false;
+  geolocation.invalidatePendingRequest();
   if (typeof window !== "undefined") {
     window.removeEventListener("pageshow", handlePageShow);
   }
@@ -475,6 +474,7 @@ onUnmounted(() => {
           :panel-open="locationOptions.locationPanelOpen.value"
           :filtered-map-locations="locationOptions.filteredMapLocations.value"
           :selected-map-location="locationOptions.selectedMapLocation.value"
+          :has-structured-map-binding="locationOptions.hasStructuredMapBinding.value"
           :map-location-loading="locationOptions.mapLocationLoading.value"
           :map-location-error="locationOptions.mapLocationError.value"
           :location-search="locationOptions.locationSearch.value"

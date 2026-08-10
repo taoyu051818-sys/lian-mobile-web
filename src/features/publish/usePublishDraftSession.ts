@@ -2,6 +2,7 @@ import { computed, onBeforeUnmount, onMounted, ref, watch, type Ref } from "vue"
 import { PUBLISH_DRAFT_RECOVERED } from "../../config/brand";
 import type { MapLocation } from "../../types/map";
 import type { PublishVisibility } from "../../types/publish";
+import type { PublishMapPickerLocationHandoff } from "./usePublishLocationHandoff";
 import {
   PUBLISH_DRAFT_SCOPE_ANONYMOUS,
   hasMeaningfulPublishDraft,
@@ -18,6 +19,7 @@ export interface UsePublishDraftSessionOptions {
   visibility: Ref<PublishVisibility>;
   selectedFiles: Ref<File[]>;
   selectedMapLocation: Ref<MapLocation | null>;
+  mapPickerBinding: Ref<PublishMapPickerLocationHandoff | null>;
   locationSearch: Ref<string>;
   locationPanelOpen: Ref<boolean>;
   publishing: Ref<boolean>;
@@ -48,6 +50,7 @@ export function usePublishDraftSession(options: UsePublishDraftSessionOptions) {
     visibility,
     selectedFiles,
     selectedMapLocation,
+    mapPickerBinding,
     locationSearch,
     locationPanelOpen,
     publishing,
@@ -69,6 +72,10 @@ export function usePublishDraftSession(options: UsePublishDraftSessionOptions) {
   // B's storage slot. Starts unset — we only persist after restore has run.
   const persistedScope = ref<string | null>(null);
   const restoredScopes = ref<Set<string>>(new Set());
+  const restoreSettled = computed(
+    () =>
+      (identityLoaded ? identityLoaded.value : true) && persistedScope.value === currentScope.value,
+  );
 
   const hasUnsavedDraft = computed(() =>
     hasMeaningfulPublishDraft({
@@ -78,6 +85,7 @@ export function usePublishDraftSession(options: UsePublishDraftSessionOptions) {
       placeName: placeName.value,
       visibility: visibility.value,
       selectedMapLocation: selectedMapLocation.value,
+      mapPickerBinding: mapPickerBinding.value,
       selectedFileCount: selectedFiles.value.length,
     }),
   );
@@ -92,6 +100,7 @@ export function usePublishDraftSession(options: UsePublishDraftSessionOptions) {
         placeName: placeName.value,
         visibility: visibility.value,
         selectedMapLocation: selectedMapLocation.value,
+        mapPickerBinding: mapPickerBinding.value,
         selectedFileCount: selectedFiles.value.length,
       },
       persistedScope.value,
@@ -105,6 +114,7 @@ export function usePublishDraftSession(options: UsePublishDraftSessionOptions) {
     placeName.value = "";
     visibility.value = "public";
     selectedMapLocation.value = null;
+    mapPickerBinding.value = null;
     locationSearch.value = "";
     locationPanelOpen.value = false;
   }
@@ -127,8 +137,15 @@ export function usePublishDraftSession(options: UsePublishDraftSessionOptions) {
     placeName.value = snapshot.placeName;
     visibility.value = snapshot.visibility;
     selectedMapLocation.value = restorePublishDraftLocation(snapshot.selectedMapLocation);
-    locationSearch.value = snapshot.selectedMapLocation?.name || snapshot.placeName;
-    locationPanelOpen.value = Boolean(snapshot.selectedMapLocation || snapshot.placeName.trim());
+    mapPickerBinding.value = snapshot.mapPickerBinding;
+    const bindingLabel =
+      snapshot.mapPickerBinding?.kind === "place"
+        ? snapshot.mapPickerBinding.name
+        : snapshot.mapPickerBinding?.label || "";
+    locationSearch.value = snapshot.selectedMapLocation?.name || bindingLabel || snapshot.placeName;
+    locationPanelOpen.value = Boolean(
+      snapshot.selectedMapLocation || snapshot.mapPickerBinding || snapshot.placeName.trim(),
+    );
     draftNotice.value = snapshot.pendingImageCount
       ? `${PUBLISH_DRAFT_RECOVERED}，${snapshot.pendingImageCount} 张图片需要重新选择。`
       : PUBLISH_DRAFT_RECOVERED;
@@ -157,6 +174,7 @@ export function usePublishDraftSession(options: UsePublishDraftSessionOptions) {
       placeName,
       visibility,
       selectedMapLocation,
+      mapPickerBinding,
       () => selectedFiles.value.length,
     ],
     persistPublishDraft,
@@ -197,5 +215,6 @@ export function usePublishDraftSession(options: UsePublishDraftSessionOptions) {
     hasUnsavedDraft,
     restoreDraftFromSession: () => restoreDraftFromSession(currentScope.value),
     currentScope,
+    restoreSettled,
   };
 }

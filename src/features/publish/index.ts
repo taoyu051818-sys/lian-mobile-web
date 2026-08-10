@@ -4,4 +4,9 @@ export {
   setPendingPublishLocation,
   consumePendingPublishLocation,
 } from "./usePublishLocationHandoff";
-export type { PublishLocationHandoff } from "./usePublishLocationHandoff";
+export type {
+  NormalizedPublishLocationHandoff,
+  PublishBrowserLocationHandoff,
+  PublishLocationHandoffV2,
+  PublishMapPickerLocationHandoff,
+} from "./usePublishLocationHandoff";

@@ -1,5 +1,9 @@
 import type { MapLocation } from "../../types/map";
 import type { PublishVisibility } from "../../types/publish";
+import {
+  normalizePublishMapPickerLocationHandoff,
+  type PublishMapPickerLocationHandoff,
+} from "./usePublishLocationHandoff";
 
 export const PUBLISH_DRAFT_SESSION_KEY = "lian.publishDraft.sameSession";
 export const PUBLISH_DRAFT_SCOPE_ANONYMOUS = "anonymous";
@@ -44,6 +48,7 @@ export interface PublishDraftSnapshot {
   placeName: string;
   visibility: PublishVisibility;
   selectedMapLocation: PublishDraftLocationSnapshot | null;
+  mapPickerBinding: PublishMapPickerLocationHandoff | null;
   pendingImageCount: number;
 }
 
@@ -54,6 +59,7 @@ export interface PublishDraftInput {
   placeName: string;
   visibility: PublishVisibility;
   selectedMapLocation: MapLocation | null;
+  mapPickerBinding?: PublishMapPickerLocationHandoff | null;
   selectedFileCount: number;
 }
 
@@ -112,31 +118,38 @@ export function hasMeaningfulPublishDraft(
     normalizeText(input.placeName).trim() ||
     input.visibility !== DEFAULT_VISIBILITY ||
     input.selectedMapLocation ||
+    input.mapPickerBinding ||
     pendingImageCount > 0,
   );
 }
 
 export function buildPublishDraftSnapshot(input: PublishDraftInput): PublishDraftSnapshot | null {
-  if (!hasMeaningfulPublishDraft(input)) return null;
+  const mapPickerBinding = normalizePublishMapPickerLocationHandoff(input.mapPickerBinding);
+  const bindingIsAuthoritative =
+    input.mapPickerBinding !== null && input.mapPickerBinding !== undefined;
 
-  return {
+  const snapshot: PublishDraftSnapshot = {
     title: normalizeText(input.title),
     body: normalizeText(input.body),
     tagInput: normalizeText(input.tagInput),
     placeName: normalizeText(input.placeName),
     visibility: normalizeVisibility(input.visibility),
-    selectedMapLocation: input.selectedMapLocation
-      ? {
-          id: input.selectedMapLocation.id,
-          name: input.selectedMapLocation.name,
-          type: input.selectedMapLocation.type,
-          placeId: input.selectedMapLocation.placeId || input.selectedMapLocation.place?.id,
-          lat: input.selectedMapLocation.lat,
-          lng: input.selectedMapLocation.lng,
-        }
-      : null,
+    selectedMapLocation:
+      !bindingIsAuthoritative && input.selectedMapLocation
+        ? {
+            id: input.selectedMapLocation.id,
+            name: input.selectedMapLocation.name,
+            type: input.selectedMapLocation.type,
+            placeId: input.selectedMapLocation.placeId || input.selectedMapLocation.place?.id,
+            lat: input.selectedMapLocation.lat,
+            lng: input.selectedMapLocation.lng,
+          }
+        : null,
+    mapPickerBinding,
     pendingImageCount: normalizeImageCount(input.selectedFileCount),
   };
+
+  return hasMeaningfulPublishDraft(snapshot) ? snapshot : null;
 }
 
 export function readPublishDraft(
@@ -151,18 +164,24 @@ export function readPublishDraft(
     const parsed = JSON.parse(raw) as unknown;
     if (!parsed || typeof parsed !== "object") return null;
 
+    const record = parsed as Record<string, unknown>;
+    const rawMapPickerBinding = record.mapPickerBinding;
+    const bindingIsAuthoritative =
+      Object.prototype.hasOwnProperty.call(record, "mapPickerBinding") &&
+      rawMapPickerBinding !== null;
+    const mapPickerBinding = normalizePublishMapPickerLocationHandoff(rawMapPickerBinding);
+
     const draft: PublishDraftSnapshot = {
-      title: normalizeText((parsed as { title?: unknown }).title),
-      body: normalizeText((parsed as { body?: unknown }).body),
-      tagInput: normalizeText((parsed as { tagInput?: unknown }).tagInput),
-      placeName: normalizeText((parsed as { placeName?: unknown }).placeName),
-      visibility: normalizeVisibility((parsed as { visibility?: unknown }).visibility),
-      selectedMapLocation: normalizeLocation(
-        (parsed as { selectedMapLocation?: unknown }).selectedMapLocation,
-      ),
-      pendingImageCount: normalizeImageCount(
-        (parsed as { pendingImageCount?: unknown }).pendingImageCount,
-      ),
+      title: normalizeText(record.title),
+      body: normalizeText(record.body),
+      tagInput: normalizeText(record.tagInput),
+      placeName: normalizeText(record.placeName),
+      visibility: normalizeVisibility(record.visibility),
+      selectedMapLocation: bindingIsAuthoritative
+        ? null
+        : normalizeLocation(record.selectedMapLocation),
+      mapPickerBinding,
+      pendingImageCount: normalizeImageCount(record.pendingImageCount),
     };
 
     return hasMeaningfulPublishDraft(draft) ? draft : null;

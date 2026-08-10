@@ -36,6 +36,7 @@ export interface GeolocationCoords {
   lat: number;
   lng: number;
   accuracy?: number;
+  coordinateSystem: "wgs84";
 }
 
 interface NavigatorWithGeolocation {
@@ -74,6 +75,8 @@ function messageForError(code: number): string {
 export function useGeolocation(options: PositionOptions = DEFAULT_OPTIONS) {
   const isFetching = ref(false);
   const error = ref("");
+  let requestSequence = 0;
+  let activeRequest = 0;
 
   /**
    * Returns the coords on success, `null` on failure (with `error.value`
@@ -95,13 +98,26 @@ export function useGeolocation(options: PositionOptions = DEFAULT_OPTIONS) {
       return null;
     }
     isFetching.value = true;
+    const requestId = ++requestSequence;
+    activeRequest = requestId;
     try {
       return await new Promise<GeolocationCoords | null>((resolve) => {
         nav.geolocation!.getCurrentPosition(
           (position) => {
+            if (activeRequest !== requestId) {
+              resolve(null);
+              return;
+            }
             const lat = Number(position.coords.latitude);
             const lng = Number(position.coords.longitude);
-            if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+            if (
+              !Number.isFinite(lat) ||
+              !Number.isFinite(lng) ||
+              lat < -90 ||
+              lat > 90 ||
+              lng < -180 ||
+              lng > 180
+            ) {
               error.value = PUBLISH_LOCATION_GEOLOC_UNAVAILABLE;
               resolve(null);
               return;
@@ -110,10 +126,15 @@ export function useGeolocation(options: PositionOptions = DEFAULT_OPTIONS) {
             resolve({
               lat,
               lng,
-              accuracy: Number.isFinite(accuracy) ? accuracy : undefined,
+              accuracy: Number.isFinite(accuracy) && accuracy >= 0 ? accuracy : undefined,
+              coordinateSystem: "wgs84",
             });
           },
           (err) => {
+            if (activeRequest !== requestId) {
+              resolve(null);
+              return;
+            }
             error.value = messageForError(err?.code ?? 2);
             resolve(null);
           },
@@ -121,8 +142,16 @@ export function useGeolocation(options: PositionOptions = DEFAULT_OPTIONS) {
         );
       });
     } finally {
-      isFetching.value = false;
+      if (activeRequest === requestId) {
+        activeRequest = 0;
+        isFetching.value = false;
+      }
     }
+  }
+
+  function invalidatePendingRequest() {
+    activeRequest = 0;
+    isFetching.value = false;
   }
 
   function clearError() {
@@ -133,6 +162,7 @@ export function useGeolocation(options: PositionOptions = DEFAULT_OPTIONS) {
     isFetching,
     error,
     fetchCurrentLocation,
+    invalidatePendingRequest,
     clearError,
   };
 }

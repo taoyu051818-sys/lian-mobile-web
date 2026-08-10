@@ -8,15 +8,16 @@ function readRepoFile(relativePath: string) {
   return fs.readFileSync(path.join(repoRoot, relativePath), "utf8");
 }
 
-function extractHandoffKinds(source: string) {
-  return new Set(Array.from(source.matchAll(/kind: "([^"]+)";/g), ([, kind]) => kind));
-}
-
 describe("publish location handoff structure", () => {
   const appViewHost = readRepoFile("src/app/AppViewHost.vue");
   const handoff = readRepoFile("src/features/publish/usePublishLocationHandoff.ts");
   const mapPicker = readRepoFile("src/features/map/useMapPickerMode.ts");
   const publishView = readRepoFile("src/features/publish/PublishView.vue");
+  const locationOptions = readRepoFile("src/features/publish/usePublishLocationOptions.ts");
+  const draftSession = readRepoFile("src/features/publish/publishDraftSession.ts");
+  const useDraftSession = readRepoFile("src/features/publish/usePublishDraftSession.ts");
+  const locationControls = readRepoFile("src/features/publish/PublishLocationControls.vue");
+  const geolocation = readRepoFile("src/features/publish/useGeolocation.ts");
 
   it("keeps map and publish in independent static KeepAlive containers", () => {
     expect(appViewHost).not.toMatch(/<KeepAlive\s+:include=/);
@@ -77,13 +78,13 @@ describe("publish location handoff structure", () => {
       /function emitChromeIfActive\(spec: PageChromeSpec = draft\.pageChrome\.value\) \{\s*if \(!publishViewActive\.value\) return;\s*emit\("chrome", spec\);\s*\}/,
     );
     expect(publishView).toMatch(
-      /function consumeHandoffIfActive\(\) \{\s*if \(publishViewActive\.value\) consumeHandoff\(\);\s*\}/,
+      /function consumeHandoffIfActive\(\) \{\s*if \(publishViewActive\.value && restoreSettled\.value\) consumeHandoff\(\);\s*\}/,
     );
     expect(publishView).toMatch(
       /onActivated\(\(\) => \{\s*publishViewActive\.value = true;\s*emitChromeIfActive\(\);\s*consumeHandoffIfActive\(\);\s*\}\);/,
     );
     expect(publishView).toMatch(
-      /onDeactivated\(\(\) => \{\s*publishViewActive\.value = false;\s*\}\);/,
+      /onDeactivated\(\(\) => \{[\s\S]*?publishViewActive\.value = false;[\s\S]*?geolocation\.invalidatePendingRequest\(\);[\s\S]*?\}\);/,
     );
     expect(publishView).toMatch(
       /watch\(draft\.pageChrome, emitChromeIfActive, \{\s*deep: true,\s*\}\);/,
@@ -93,44 +94,107 @@ describe("publish location handoff structure", () => {
     );
   });
 
-  it("keeps map picker and current-location writes on the shared handoff envelope", () => {
+  it("separates v2 writes from normalized legacy reads and makes coordinate provenance explicit", () => {
     expect(handoff).toContain('const STORAGE_KEY = "lian:publish:pendingLocation"');
+    expect(handoff).toContain("export type PublishLocationHandoffV2 =");
+    expect(handoff).toContain("export type PublishMapPickerLocationHandoff =");
+    expect(handoff).toContain("export type NormalizedPublishLocationHandoff =");
+    expect(handoff).toContain('source: "map_picker"');
+    expect(handoff).toContain('coordinateSystem: "gcj02"');
+    expect(handoff).toContain('source: "browser_geolocation"');
+    expect(handoff).toContain('coordinateSystem: "wgs84"');
+    expect(handoff).toContain('source: "legacy"');
+    expect(handoff).toContain('coordinateSystem: "unknown"');
+    expect(handoff).toMatch(/setPendingPublishLocation\(payload: PublishLocationHandoffV2\)/);
     expect(handoff).toMatch(
-      /export type PublishLocationHandoff =\s*\| \{[\s\S]*kind: "place";[\s\S]*placeId: string;[\s\S]*lat: number;[\s\S]*lng: number;[\s\S]*\| \{[\s\S]*kind: "coords";[\s\S]*lat: number;[\s\S]*lng: number;/,
-    );
-
-    expect(mapPicker).toMatch(/setPendingPublishLocation, type PublishLocationHandoff/);
-    expect(mapPicker).toMatch(/function buildHandoff\(\): PublishLocationHandoff \| null/);
-    expect(mapPicker).toMatch(/setPendingPublishLocation\(payload\);\s*navigateBack\(\);/);
-
-    expect(publishView).toMatch(
-      /setPendingPublishLocation\(\{ kind: "coords", lat: coords\.lat, lng: coords\.lng \}\);\s*consumeHandoff\(\);/,
+      /consumePendingPublishLocation\(\): NormalizedPublishLocationHandoff \| null/,
     );
   });
 
-  it("keeps publish as the single destructive consumer for both place and coords payloads", () => {
-    expect(publishView).toMatch(
-      /const pending = consumePendingPublishLocation\(\);\s*if \(pending\) applyHandoff\(pending\);/,
-    );
-    expect(publishView).toMatch(
-      /if \(payload\.kind === "place"\) \{[\s\S]*locationOptions\.selectMapLocation\(known\);[\s\S]*draft\.placeName\.value = payload\.name;/,
-    );
-    expect(publishView).toMatch(
-      /if \(payload\.kind === "coords"\) \{[\s\S]*draft\.placeName\.value = payload\.label \|\| draft\.placeName\.value;[\s\S]*locationOptions\.clearMapLocation\(\);[\s\S]*geolocationHint\.value = PUBLISH_LOCATION_GEOLOC_HINT;/,
+  it("writes explicit GCJ-02 picker envelopes and clears the long-lived selection on confirm", () => {
+    expect(mapPicker).toContain("type PublishMapPickerLocationHandoff");
+    expect(mapPicker).toContain("version: 2");
+    expect(mapPicker).toContain('source: "map_picker"');
+    expect(mapPicker).toContain('coordinateSystem: "gcj02"');
+    expect(mapPicker).toMatch(
+      /setPendingPublishLocation\(payload\);\s*clearSelection\(\);\s*navigateBack\(\);/,
     );
   });
 
-  it("keeps every handoff kind covered by publish consume and map write paths", () => {
-    const handoffKinds = extractHandoffKinds(handoff);
-    const publishBranches = new Set(
-      Array.from(publishView.matchAll(/payload\.kind === "([^"]+)"/g), ([, kind]) => kind),
+  it("owns an atomic fallback binding and reconciles it by stable placeId after catalog load", () => {
+    expect(locationOptions).toContain(
+      "const mapPickerBinding = ref<PublishMapPickerLocationHandoff | null>(null);",
     );
-    const mapWrites = new Set(
-      Array.from(mapPicker.matchAll(/kind: "([^"]+)"/g), ([, kind]) => kind),
+    expect(locationOptions).toContain("function applyMapPickerHandoff(");
+    expect(locationOptions).toContain("selectedMapLocation.value = null;");
+    expect(locationOptions).toContain("mapPickerBinding.value = null;");
+    expect(locationOptions).toContain("function reconcileMapPickerBinding()");
+    expect(locationOptions).toContain("createMapV2LocationDraft({");
+    expect(locationOptions).toMatch(
+      /mapLocations\.value = data\.locations \|\| \[\];\s*reconcileMapPickerBinding\(\);/,
     );
+  });
 
-    expect(publishBranches).toEqual(handoffKinds);
-    expect(mapWrites).toEqual(handoffKinds);
+  it("persists the fallback inside the scoped draft and exposes restore settlement", () => {
+    expect(draftSession).toContain("mapPickerBinding: PublishMapPickerLocationHandoff | null;");
+    expect(draftSession).toContain("normalizePublishMapPickerLocationHandoff(");
+    expect(useDraftSession).toContain(
+      "mapPickerBinding: Ref<PublishMapPickerLocationHandoff | null>;",
+    );
+    expect(useDraftSession).toContain("mapPickerBinding.value = snapshot.mapPickerBinding;");
+    expect(useDraftSession).toContain("const restoreSettled = computed(");
+    expect(useDraftSession).toContain("restoreSettled,");
+    expect(publishView).toContain("mapPickerBinding: locationOptions.mapPickerBinding,");
+  });
+
+  it("consumes only after scoped restore settles while Publish is active", () => {
+    expect(publishView).toMatch(
+      /const \{ draftNotice, hasUnsavedDraft, currentScope, restoreSettled \} = usePublishDraftSession/,
+    );
+    expect(publishView).toMatch(
+      /if \(publishViewActive\.value && restoreSettled\.value\) consumeHandoff\(\);/,
+    );
+    expect(publishView).toMatch(/watch\(restoreSettled, consumeHandoffIfActive/);
+
+    const useCurrentLocation =
+      publishView.match(/async function useCurrentLocation\(\) \{([\s\S]*?)\n\}/)?.[1] || "";
+    expect(useCurrentLocation).toContain("if (!coords || !publishViewActive.value) return;");
+    expect(useCurrentLocation).not.toContain("!restoreSettled.value");
+    expect(useCurrentLocation.indexOf("setPendingPublishLocation({")).toBeLessThan(
+      useCurrentLocation.indexOf("consumeHandoffIfActive();"),
+    );
+  });
+
+  it("keeps map GCJ-02 structured but browser/legacy coordinates display-only", () => {
+    expect(publishView).toContain('if (payload.source === "map_picker")');
+    expect(publishView).toContain("locationOptions.applyMapPickerHandoff(payload);");
+    expect(publishView).toContain('payload.source === "browser_geolocation"');
+    expect(publishView).toContain("PUBLISH_LOCATION_GEOLOC_HINT");
+    expect(publishView).toContain("PUBLISH_LOCATION_LEGACY_HINT");
+    expect(publishView).toMatch(
+      /version: 2,[\s\S]*source: "browser_geolocation",[\s\S]*coordinateSystem: "wgs84",/,
+    );
+    expect(geolocation).toContain('coordinateSystem: "wgs84"');
+    expect(geolocation).not.toMatch(/gcj02|transform|convert/i);
+  });
+
+  it("invalidates delayed browser geolocation on picker entry and deactivation", () => {
+    const pickOnMap = publishView.match(/function pickOnMap\(\) \{([\s\S]*?)\n\}/)?.[1] || "";
+    expect(pickOnMap).toContain("geolocation.invalidatePendingRequest()");
+    expect(publishView).toMatch(
+      /onDeactivated\(\(\) => \{[\s\S]*geolocation\.invalidatePendingRequest\(\);[\s\S]*\}\);/,
+    );
+    expect(geolocation).toContain("function invalidatePendingRequest()");
+  });
+
+  it("renders fallback bindings as bound and keeps the manual-switch affordance", () => {
+    expect(locationControls).toContain("hasStructuredMapBinding: boolean;");
+    expect(locationControls).toContain("panelOpen || hasStructuredMapBinding || placeName.trim()");
+    expect(locationControls).toContain("hasStructuredMapBinding ? PUBLISH_LOCATION_BOUND");
+    expect(locationControls).toContain('v-if="hasStructuredMapBinding"');
+    expect(publishView).toContain(
+      ':has-structured-map-binding="locationOptions.hasStructuredMapBinding.value"',
+    );
   });
 
   it("does not duplicate the storage key outside the handoff module", () => {

@@ -21,7 +21,10 @@ export const PUBLISH_LOCATION_GEOLOC_DENIED = "位置权限被拒绝，请在浏
 export const PUBLISH_LOCATION_GEOLOC_UNAVAILABLE = "无法获取当前位置";
 export const PUBLISH_LOCATION_GEOLOC_TIMEOUT = "定位超时，请重试";
 export const PUBLISH_LOCATION_GEOLOC_UNSUPPORTED = "当前设备不支持定位";
-export const PUBLISH_LOCATION_GEOLOC_HINT = "使用了当前坐标，可以手填一个名字让别人更好认";
+export const PUBLISH_LOCATION_GEOLOC_HINT =
+  "浏览器定位为 WGS84，仅作展示，不会作为地图坐标提交；可以手填地点名称";
+export const PUBLISH_LOCATION_LEGACY_HINT = "旧版坐标来源不明，仅作展示，不会作为地图坐标提交";
+export const PUBLISH_LOCATION_MAP_PIN_BOUND = "已绑定地图选点（GCJ-02）";
 export const PUBLISH_LOCATION_PIN_LABEL = "自定义坐标";
 
 /** 地图选择模式 (mw#943 — picker overlay) */

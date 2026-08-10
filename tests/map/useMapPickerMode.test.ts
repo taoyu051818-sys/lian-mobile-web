@@ -167,13 +167,18 @@ describe("useMapPickerMode — confirm / cancel", () => {
     expect(backCalls).toBe(1);
     const handoff = consumePendingPublishLocation();
     expect(handoff).toEqual({
+      version: 2,
+      source: "map_picker",
+      coordinateSystem: "gcj02",
       kind: "place",
+      locationId: "loc-1",
       placeId: "p-1",
       name: "图书馆",
       type: "library",
       lat: 18.39,
       lng: 110.01,
     });
+    expect(picker.hasSelection.value).toBe(false);
   });
 
   it("confirm with a free pin writes a `coords` handoff", () => {
@@ -181,10 +186,14 @@ describe("useMapPickerMode — confirm / cancel", () => {
     picker.dropPin({ lat: 18.42, lng: 110.05 });
     expect(picker.commitSelection()).toBe(true);
     expect(consumePendingPublishLocation()).toEqual({
+      version: 2,
+      source: "map_picker",
+      coordinateSystem: "gcj02",
       kind: "coords",
       lat: 18.42,
       lng: 110.05,
     });
+    expect(picker.hasSelection.value).toBe(false);
   });
 
   it("confirm with a place that lacks a stable id falls back to coords + label", () => {
@@ -192,6 +201,9 @@ describe("useMapPickerMode — confirm / cancel", () => {
     picker.selectLocation(makeLocation({ place: undefined, placeId: "" }));
     picker.commitSelection();
     expect(consumePendingPublishLocation()).toEqual({
+      version: 2,
+      source: "map_picker",
+      coordinateSystem: "gcj02",
       kind: "coords",
       lat: 18.39,
       lng: 110.01,

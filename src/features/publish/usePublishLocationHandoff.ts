@@ -1,41 +1,14 @@
-/**
- * Cross-route location handoff for the publish flow (mw#943).
- *
- * The publish form lives at `#/publish`, but the location-picker map lives at
- * `#/map?picker=1`. Both routes mount fresh component trees, so a regular
- * Vue ref/composable cannot bridge the two — by the time MapLeafletView's
- * picker overlay commits the selection, PublishView has been unmounted, and
- * by the time PublishView re-mounts on `history.back()` the picker is gone.
- *
- * sessionStorage is the simplest envelope that survives the route change
- * without bloating the hash. The key is single-tenant ("there is at most one
- * pending location pick at a time"), which means we don't need a TTL —
- * `consumePendingPublishLocation()` is destructive on read, so the entry
- * cannot leak past the round-trip it was created for. A reload between the
- * map confirm and the publish mount also keeps the entry, which is the
- * desired UX (the user shouldn't lose their pick to a refresh).
- *
- * The geolocation button writes through the same key, so PublishView's
- * consume path is uniform across "picked from map" and "use my current
- * location" sources.
- */
+/** Cross-route location handoff shared by Publish and the Map picker. */
 
 const STORAGE_KEY = "lian:publish:pendingLocation";
 
-/**
- * Two payload shapes:
- *   - `place` — picked an existing campus place. Has a stable `placeId`, so
- *     PublishView can rebind to the same `MapLocation` from
- *     `usePublishLocationOptions.mapLocations` if the catalog is loaded, and
- *     fall back to a name-only display otherwise. `lat`/`lng` are carried so
- *     a fallback render still has coordinates without re-fetching.
- *   - `coords` — picked a free coordinate (long-press pin or "use my current
- *     location"). No place ID; PublishView treats it as a manual `placeName`
- *     with optional label override. The user can edit the label after.
- */
-export type PublishLocationHandoff =
+export type PublishMapPickerLocationHandoff =
   | {
+      version: 2;
+      source: "map_picker";
+      coordinateSystem: "gcj02";
       kind: "place";
+      locationId?: string;
       placeId: string;
       name: string;
       type?: string;
@@ -43,20 +16,50 @@ export type PublishLocationHandoff =
       lng: number;
     }
   | {
+      version: 2;
+      source: "map_picker";
+      coordinateSystem: "gcj02";
       kind: "coords";
       lat: number;
       lng: number;
       label?: string;
     };
 
+export type PublishBrowserLocationHandoff = {
+  version: 2;
+  source: "browser_geolocation";
+  coordinateSystem: "wgs84";
+  kind: "coords";
+  lat: number;
+  lng: number;
+  accuracy?: number;
+};
+
+/** The only union accepted by the write path. */
+export type PublishLocationHandoffV2 =
+  | PublishMapPickerLocationHandoff
+  | PublishBrowserLocationHandoff;
+
+export type LegacyPublishLocationHandoff = {
+  version: 1;
+  source: "legacy";
+  coordinateSystem: "unknown";
+  kind: "coords";
+  lat: number;
+  lng: number;
+  label?: string;
+};
+
+/** Read result. Legacy coordinates are intentionally read-only and display-only. */
+export type NormalizedPublishLocationHandoff =
+  | PublishLocationHandoffV2
+  | LegacyPublishLocationHandoff;
+
 function getStorage(): Storage | null {
   if (typeof window === "undefined") return null;
   try {
     return window.sessionStorage;
   } catch {
-    // Storage access can throw in sandboxed iframes / privacy modes. Falling
-    // back to "no handoff available" is preferable to crashing the publish
-    // flow — the user will just have to type a place name manually.
     return null;
   }
 }
@@ -65,75 +68,185 @@ function isFiniteNumber(value: unknown): value is number {
   return typeof value === "number" && Number.isFinite(value);
 }
 
+function hasValidLatLng(lat: unknown, lng: unknown): boolean {
+  return (
+    isFiniteNumber(lat) &&
+    isFiniteNumber(lng) &&
+    lat >= -90 &&
+    lat <= 90 &&
+    lng >= -180 &&
+    lng <= 180
+  );
+}
+
 function isNonEmptyString(value: unknown): value is string {
   return typeof value === "string" && value.trim().length > 0;
 }
 
-function normalize(parsed: unknown): PublishLocationHandoff | null {
-  if (!parsed || typeof parsed !== "object") return null;
-  const record = parsed as Record<string, unknown>;
+function normalizeMapPickerV2(
+  record: Record<string, unknown>,
+): PublishMapPickerLocationHandoff | null {
+  if (
+    record.version !== 2 ||
+    record.source !== "map_picker" ||
+    record.coordinateSystem !== "gcj02" ||
+    !hasValidLatLng(record.lat, record.lng)
+  ) {
+    return null;
+  }
+  const lat = record.lat as number;
+  const lng = record.lng as number;
+
   if (record.kind === "place") {
-    if (
-      isNonEmptyString(record.placeId) &&
-      isNonEmptyString(record.name) &&
-      isFiniteNumber(record.lat) &&
-      isFiniteNumber(record.lng)
-    ) {
-      const out: PublishLocationHandoff = {
-        kind: "place",
-        placeId: record.placeId.trim(),
-        name: record.name.trim(),
-        lat: record.lat,
-        lng: record.lng,
-      };
-      if (isNonEmptyString(record.type)) out.type = record.type.trim();
-      return out;
-    }
-    return null;
+    if (!isNonEmptyString(record.placeId) || !isNonEmptyString(record.name)) return null;
+    if (record.locationId !== undefined && !isNonEmptyString(record.locationId)) return null;
+    if (record.type !== undefined && !isNonEmptyString(record.type)) return null;
+    const result: Extract<PublishMapPickerLocationHandoff, { kind: "place" }> = {
+      version: 2,
+      source: "map_picker",
+      coordinateSystem: "gcj02",
+      kind: "place",
+      placeId: record.placeId.trim(),
+      name: record.name.trim(),
+      lat,
+      lng,
+    };
+    if (isNonEmptyString(record.locationId)) result.locationId = record.locationId.trim();
+    if (isNonEmptyString(record.type)) result.type = record.type.trim();
+    return result;
   }
+
   if (record.kind === "coords") {
-    if (isFiniteNumber(record.lat) && isFiniteNumber(record.lng)) {
-      const out: PublishLocationHandoff = {
-        kind: "coords",
-        lat: record.lat,
-        lng: record.lng,
-      };
-      if (isNonEmptyString(record.label)) out.label = record.label.trim();
-      return out;
-    }
-    return null;
+    if (record.label !== undefined && !isNonEmptyString(record.label)) return null;
+    const result: Extract<PublishMapPickerLocationHandoff, { kind: "coords" }> = {
+      version: 2,
+      source: "map_picker",
+      coordinateSystem: "gcj02",
+      kind: "coords",
+      lat,
+      lng,
+    };
+    if (isNonEmptyString(record.label)) result.label = record.label.trim();
+    return result;
   }
+
   return null;
 }
 
-/**
- * Write a pending pick. Both the map picker and the geolocation button call
- * this; PublishView consumes via `consumePendingPublishLocation`. The write
- * is fire-and-forget — if storage is unavailable we silently drop the
- * payload (the user will see no pre-fill on the publish form, which is the
- * least surprising fallback).
- */
-export function setPendingPublishLocation(payload: PublishLocationHandoff): void {
+function normalizeBrowserV2(record: Record<string, unknown>): PublishBrowserLocationHandoff | null {
+  if (
+    record.version !== 2 ||
+    record.source !== "browser_geolocation" ||
+    record.coordinateSystem !== "wgs84" ||
+    record.kind !== "coords" ||
+    !hasValidLatLng(record.lat, record.lng)
+  ) {
+    return null;
+  }
+  const lat = record.lat as number;
+  const lng = record.lng as number;
+  if (record.accuracy !== undefined && (!isFiniteNumber(record.accuracy) || record.accuracy < 0)) {
+    return null;
+  }
+  const result: PublishBrowserLocationHandoff = {
+    version: 2,
+    source: "browser_geolocation",
+    coordinateSystem: "wgs84",
+    kind: "coords",
+    lat,
+    lng,
+  };
+  if (isFiniteNumber(record.accuracy)) result.accuracy = record.accuracy;
+  return result;
+}
+
+function normalizeV2(parsed: unknown): PublishLocationHandoffV2 | null {
+  if (!parsed || typeof parsed !== "object") return null;
+  const record = parsed as Record<string, unknown>;
+  if (record.source === "map_picker") return normalizeMapPickerV2(record);
+  if (record.source === "browser_geolocation") return normalizeBrowserV2(record);
+  return null;
+}
+
+/** Pure validator used by account-scoped Publish draft snapshots. */
+export function normalizePublishMapPickerLocationHandoff(
+  parsed: unknown,
+): PublishMapPickerLocationHandoff | null {
+  if (!parsed || typeof parsed !== "object") return null;
+  return normalizeMapPickerV2(parsed as Record<string, unknown>);
+}
+
+function normalizeLegacy(record: Record<string, unknown>): NormalizedPublishLocationHandoff | null {
+  if (
+    record.version !== undefined ||
+    record.source !== undefined ||
+    record.coordinateSystem !== undefined ||
+    !hasValidLatLng(record.lat, record.lng)
+  ) {
+    return null;
+  }
+  const lat = record.lat as number;
+  const lng = record.lng as number;
+
+  if (record.kind === "place") {
+    if (!isNonEmptyString(record.placeId) || !isNonEmptyString(record.name)) return null;
+    const result: Extract<PublishMapPickerLocationHandoff, { kind: "place" }> = {
+      version: 2,
+      source: "map_picker",
+      coordinateSystem: "gcj02",
+      kind: "place",
+      placeId: record.placeId.trim(),
+      name: record.name.trim(),
+      lat,
+      lng,
+    };
+    if (isNonEmptyString(record.type)) result.type = record.type.trim();
+    return result;
+  }
+
+  if (record.kind === "coords") {
+    const result: LegacyPublishLocationHandoff = {
+      version: 1,
+      source: "legacy",
+      coordinateSystem: "unknown",
+      kind: "coords",
+      lat,
+      lng,
+    };
+    if (isNonEmptyString(record.label)) result.label = record.label.trim();
+    return result;
+  }
+
+  return null;
+}
+
+function normalizeReadPayload(parsed: unknown): NormalizedPublishLocationHandoff | null {
+  const v2 = normalizeV2(parsed);
+  if (v2) return v2;
+  if (!parsed || typeof parsed !== "object") return null;
+  return normalizeLegacy(parsed as Record<string, unknown>);
+}
+
+export function setPendingPublishLocation(payload: PublishLocationHandoffV2): void {
+  const normalized = normalizeV2(payload);
+  if (!normalized) {
+    clearPendingPublishLocation();
+    return;
+  }
   const store = getStorage();
   if (!store) return;
-  // Re-validate at write time so a malformed call site can't poison storage
-  // for a subsequent valid round-trip.
-  const normalized = normalize(payload);
-  if (!normalized) return;
   try {
     store.setItem(STORAGE_KEY, JSON.stringify(normalized));
   } catch {
-    /* swallow — quota errors and serialization failures are non-fatal */
+    try {
+      store.removeItem(STORAGE_KEY);
+    } catch {
+      // Storage failures must not block Publish.
+    }
   }
 }
 
-/**
- * Read-and-clear. Destructive on read so a single payload cannot be applied
- * twice (e.g. mount + pageshow firing back-to-back would otherwise consume
- * the same pick twice). Returns null when nothing is pending or the entry
- * is malformed.
- */
-export function consumePendingPublishLocation(): PublishLocationHandoff | null {
+export function consumePendingPublishLocation(): NormalizedPublishLocationHandoff | null {
   const store = getStorage();
   if (!store) return null;
   let raw: string | null;
@@ -143,28 +256,25 @@ export function consumePendingPublishLocation(): PublishLocationHandoff | null {
     return null;
   }
   if (!raw) return null;
-  // Always remove first — even if parsing fails, leaving a malformed entry
-  // would re-fail on every subsequent mount, which is worse than losing it.
   try {
     store.removeItem(STORAGE_KEY);
   } catch {
-    /* swallow */
+    // Destructive read remains best-effort in restricted storage modes.
   }
   try {
-    return normalize(JSON.parse(raw));
+    return normalizeReadPayload(JSON.parse(raw));
   } catch {
     return null;
   }
 }
 
-/** Test-only escape hatch — drops the pending entry without consuming it. */
 export function clearPendingPublishLocation(): void {
   const store = getStorage();
   if (!store) return;
   try {
     store.removeItem(STORAGE_KEY);
   } catch {
-    /* swallow */
+    // Storage cleanup is non-fatal.
   }
 }
 
