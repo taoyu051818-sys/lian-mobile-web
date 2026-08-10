@@ -201,8 +201,28 @@ describe("useFeedData request intent state", () => {
     const feed = makeHarness();
     await feed.loadFeed("replace");
 
-    fetchFeedMock.mockRejectedValueOnce(new Error("page two failed"));
-    await feed.loadFeed("append");
+    const failedAppend = deferred<FeedResponse>();
+    fetchFeedMock.mockReturnValueOnce(failedAppend.promise);
+    const append = feed.triggerLoadMore();
+    const appendWasPromise = append instanceof Promise;
+    let appendSettled = false;
+    if (appendWasPromise) {
+      void append.then(() => {
+        appendSettled = true;
+      });
+    }
+
+    expect(fetchFeedMock).toHaveBeenLastCalledWith(expect.objectContaining({ page: 2 }));
+    expect(feed.loadingMore.value).toBe(true);
+    expect(feed.requestPending.value).toBe(true);
+
+    await Promise.resolve();
+    const appendSettledBeforeTransport = appendSettled;
+    failedAppend.reject(new Error("page two failed"));
+    if (appendWasPromise) await append;
+
+    expect(appendWasPromise).toBe(true);
+    expect(appendSettledBeforeTransport).toBe(false);
 
     expect(feed.items.value.map((entry) => entry.tid)).toEqual([1, 2]);
     expect(feed.page.value).toBe(2);
@@ -213,17 +233,29 @@ describe("useFeedData request intent state", () => {
     const retryAttempt = deferred<FeedResponse>();
     fetchFeedMock.mockReturnValueOnce(retryAttempt.promise);
     const retry = feed.triggerLoadMore();
+    const retryWasPromise = retry instanceof Promise;
+    let retrySettled = false;
+    if (retryWasPromise) {
+      void retry.then(() => {
+        retrySettled = true;
+      });
+    }
 
     expect(fetchFeedMock).toHaveBeenLastCalledWith(expect.objectContaining({ page: 2 }));
     expect(feed.errorMessage.value).toBe("page two failed");
     expect(feed.loadingMore.value).toBe(true);
     expect(feed.requestPending.value).toBe(true);
 
+    await Promise.resolve();
+    const retrySettledBeforeTransport = retrySettled;
     const latestOverlap = item(2, "latest overlap", { liked: true, likeCount: 5 });
     retryAttempt.resolve(
       response([latestOverlap, item(3, "third")], { hasMore: false, nextPage: null }),
     );
-    await retry;
+    if (retryWasPromise) await retry;
+
+    expect(retryWasPromise).toBe(true);
+    expect(retrySettledBeforeTransport).toBe(false);
 
     expect(feed.items.value).toEqual([item(1, "first"), latestOverlap, item(3, "third")]);
     expect(feed.page.value).toBe(3);
@@ -622,6 +654,42 @@ describe("useFeedData no-op, retry, and dispose ownership", () => {
     await retry;
     expect(feed.items.value.map((entry) => entry.tid)).toEqual([2]);
     expect(feed.errorMessage.value).toBe("");
+  });
+
+  it("#2 clears an old failure when a real context replacement is admitted", async () => {
+    fetchFeedMock.mockResolvedValueOnce(response([item(1, "old context")]));
+    const feed = makeHarness();
+    await feed.loadFeed("replace");
+
+    fetchFeedMock.mockRejectedValueOnce(new Error("old refresh failure"));
+    await feed.refreshFeed();
+    expect(feed.errorMessage.value).toBe("old refresh failure");
+
+    const replacementAttempt = deferred<FeedResponse>();
+    fetchFeedMock.mockReturnValueOnce(replacementAttempt.promise);
+    const replacement = feed.switchTab("featured");
+
+    expect(feed.errorMessage.value).toBe("");
+    expect(feed.items.value).toEqual([]);
+    expect(feed.loading.value).toBe(true);
+
+    const callsBeforeRejectedRetry = fetchFeedMock.mock.calls.length;
+    await feed.retryFailedRequest();
+    expect(fetchFeedMock).toHaveBeenCalledTimes(callsBeforeRejectedRetry);
+
+    replacementAttempt.reject(new Error("new context failure"));
+    await replacement;
+    expect(feed.errorMessage.value).toBe("new context failure");
+
+    const retryAttempt = deferred<FeedResponse>();
+    fetchFeedMock.mockReturnValueOnce(retryAttempt.promise);
+    const retry = feed.retryFailedRequest();
+    expect(fetchFeedMock).toHaveBeenLastCalledWith(
+      expect.objectContaining({ tab: "featured", page: 1 }),
+    );
+    retryAttempt.resolve(response([item(2, "new context retry")]));
+    await retry;
+    expect(feed.items.value.map((entry) => entry.tid)).toEqual([2]);
   });
 
   it.each(["replace", "refresh", "append"] as const)(
