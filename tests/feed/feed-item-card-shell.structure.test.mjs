@@ -13,6 +13,40 @@ const wrapperSource = fs.readFileSync(
   path.join(repoRoot, "src/features/feed/FeedItemCard.vue"),
   "utf8",
 );
+const wrapperTemplateMatch = wrapperSource.match(/<template>([\s\S]*?)<\/template>/);
+assert.ok(wrapperTemplateMatch, "FeedItemCard must have one template block");
+const wrapperTemplateSource = wrapperTemplateMatch[1];
+
+function escapeRegExp(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function functionBody(source, name) {
+  const signature = new RegExp(`function\\s+${escapeRegExp(name)}\\s*\\(`);
+  const signatureMatch = signature.exec(source);
+  assert.ok(signatureMatch, `expected function ${name}`);
+  const parametersStart = source.indexOf("(", signatureMatch.index);
+  let parenthesisDepth = 0;
+  let parametersEnd = -1;
+  for (let index = parametersStart; index < source.length; index += 1) {
+    if (source[index] === "(") parenthesisDepth += 1;
+    if (source[index] === ")") parenthesisDepth -= 1;
+    if (parenthesisDepth === 0) {
+      parametersEnd = index;
+      break;
+    }
+  }
+  assert.notEqual(parametersEnd, -1, `expected ${name} parameter list`);
+  const bodyStart = source.indexOf("{", parametersEnd + 1);
+  assert.notEqual(bodyStart, -1, `expected ${name} function body`);
+  let depth = 0;
+  for (let index = bodyStart; index < source.length; index += 1) {
+    if (source[index] === "{") depth += 1;
+    if (source[index] === "}") depth -= 1;
+    if (depth === 0) return source.slice(bodyStart + 1, index);
+  }
+  assert.fail(`unterminated ${name} function body`);
+}
 
 // Step A of PRD_POST_CREATION_REVOLUTION_V0.2:
 // FeedItemCardShell.vue is the pure-presentation skeleton that publish (step G) will
@@ -141,6 +175,97 @@ test("FeedItemCard wrapper still owns useCardPointerInteraction and the open emi
   assert.match(wrapperSource, /import\s+\{[^}]*useCardPointerInteraction[^}]*\}\s+from/);
   assert.match(wrapperSource, /emit\(\s*"open"/);
   assert.match(wrapperSource, /<FeedItemCardShell\b/);
+});
+
+test("FeedItemCard wires its real item owner and open transition into context actions", () => {
+  assert.match(wrapperSource, /import\s+\{[^}]*\btoRef\b[^}]*\}\s+from\s+["']vue["']/);
+  assert.match(
+    wrapperSource,
+    /import\s+\{[^}]*useFeedCardContextActions[^}]*\}\s+from\s+["']\.\/useFeedCardContextActions["']/,
+  );
+  const actionOwnerCall = wrapperSource.match(
+    /const\s+([A-Za-z_$][\w$]*)\s*=\s*useFeedCardContextActions\(\{([\s\S]*?)\}\);/,
+  );
+  assert.ok(actionOwnerCall, "FeedItemCard must retain one production context-action owner");
+  const [, actionOwnerName, actionOptions] = actionOwnerCall;
+  const escapedOwner = escapeRegExp(actionOwnerName);
+
+  const itemRefDeclaration = wrapperSource.match(
+    /const\s+([A-Za-z_$][\w$]*)\s*=\s*toRef\(props,\s*["']item["']\);/,
+  );
+  const hasInlineItemRef = /item:\s*toRef\(props,\s*["']item["']\)/.test(actionOptions);
+  const hasNamedItemRef = Boolean(
+    itemRefDeclaration &&
+    new RegExp(`item:\\s*${escapeRegExp(itemRefDeclaration[1])}\\b`).test(actionOptions),
+  );
+  assert.ok(hasInlineItemRef || hasNamedItemRef, "action owner must receive toRef(props, 'item')");
+  assert.match(actionOptions, /title:\s*\(\)\s*=>\s*cardDisplayData\.value\.title/);
+  assert.match(actionOptions, /\bemitOpen(?:\s*:\s*emitOpen)?[,\n]/);
+
+  const emitOpenSignature = wrapperSource.match(
+    /function\s+emitOpen\s*\(\s*([A-Za-z_$][\w$]*)\s*:[^,]+,\s*([A-Za-z_$][\w$]*)\s*\??\s*:/,
+  );
+  assert.ok(emitOpenSignature, "emitOpen must accept the captured item id and open payload");
+  const [, emitOpenIdParameter, emitOpenPayloadParameter] = emitOpenSignature;
+  const emitOpenBody = functionBody(wrapperSource, "emitOpen");
+  assert.match(
+    emitOpenBody,
+    new RegExp(
+      `emit\\(\\s*["']open["']\\s*,\\s*${escapeRegExp(emitOpenIdParameter)}\\s*,\\s*${escapeRegExp(emitOpenPayloadParameter)}\\s*\\)`,
+    ),
+  );
+
+  const pointerCall = wrapperSource.match(
+    /useCardPointerInteraction\(\s*([A-Za-z_$][\w$]*)\s*,\s*\{([\s\S]*?)\}\s*\)/,
+  );
+  assert.ok(
+    pointerCall,
+    "pointer interaction must receive an explicit second-argument owner contract",
+  );
+  const [, pointerOpenName, pointerOptions] = pointerCall;
+  assert.match(pointerOptions, /ownerToken:\s*\(\)\s*=>\s*props\.item/);
+  assert.match(pointerOptions, new RegExp(`openContextMenu:\\s*${escapedOwner}\\.openMenu\\b`));
+  if (pointerOpenName !== "emitOpen") {
+    assert.match(
+      functionBody(wrapperSource, pointerOpenName),
+      /\bemitOpen\s*\(/,
+      "the pointer's first callback must reach the production emitOpen transition",
+    );
+  }
+});
+
+test("FeedItemCard connects menu actions and per-action presentation state to the production owner", () => {
+  const actionOwnerMatch = wrapperSource.match(
+    /const\s+([A-Za-z_$][\w$]*)\s*=\s*useFeedCardContextActions\(/,
+  );
+  assert.ok(actionOwnerMatch, "FeedItemCard must retain its context-action owner");
+  const escapedOwner = escapeRegExp(actionOwnerMatch[1]);
+  const menuTags = wrapperTemplateSource.match(/<FeedContextMenu\b[\s\S]*?\/>/g) ?? [];
+  assert.equal(menuTags.length, 1, "FeedItemCard must render one context-menu tag");
+  const menuTag = menuTags[0];
+
+  for (const [attribute, member] of [
+    [":visible", "visible"],
+    [":x", "x"],
+    [":y", "y"],
+    [":bookmarked", "bookmarked"],
+    [":bookmark-busy", "bookmarkBusy"],
+    [":share-busy", "shareBusy"],
+    [":request-pending", "requestPending"],
+  ]) {
+    assert.match(
+      menuTag,
+      new RegExp(`${escapeRegExp(attribute)}=["']${escapedOwner}\\.${member}\\.value["']`),
+    );
+  }
+  for (const [event, member] of [
+    ["share", "handleShare"],
+    ["bookmark", "handleBookmark"],
+    ["report", "handleReport"],
+    ["close", "closeMenu"],
+  ]) {
+    assert.match(menuTag, new RegExp(`@${event}=["']${escapedOwner}\\.${member}["']`));
+  }
 });
 
 test("FeedItemCard routes club items to FeedItemClubCard instead of the generic shell", () => {
