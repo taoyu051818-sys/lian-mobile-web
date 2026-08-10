@@ -8,7 +8,8 @@
 - Local prerequisite: accepted F3g head `3a56e12`, with runtime implementation
   `64a7603`.
 - Working branch: `codex/audit-f3h-feed-footer-like`.
-- Status: contract drafted; no F3h runtime or tests have been committed.
+- Status: accepted locally on 2026-08-11; task commit `e217f6e`, red-test and
+  inventory commit `d67b320`, and runtime implementation commit `956eff8`.
 - Current Footer, F3f settlement port and Feed consumer, F3g Context Save owner
   continuity, card/Shell wiring, and their focused suites were reviewed.
 - External/remote network and production access remain paused. This task
@@ -448,14 +449,34 @@ The local loopback preview processes used by repository smoke checks are the
 only permitted network/server activity. They do not authorize remote/backend or
 production access.
 
+## Local acceptance evidence
+
+- Accepted prerequisite: F3g head `3a56e12`.
+- Commit chain: task contract `e217f6e` -> red tests and inventory `d67b320` ->
+  runtime implementation `956eff8`.
+- The new behavior suite passed 42/42; the four F3e-F3h behavior files passed
+  140/140; eight core acceptance files passed 177/177; the structure suite
+  passed 20/20; and related Footer coverage passed 30/30.
+- Full validation passed 170 Vitest files / 4,286 tests and 65 Node structure
+  files / 830 tests. The production build transformed 647 modules and produced
+  71 PWA entries; the HTML sanitizer and all 3 loopback smoke checks passed.
+- Full `npm run verify` exited 0 in about 97.4 seconds.
+- Two independent reviewers returned `ACCEPT` with no blocking finding.
+- The accepted file scope is exactly two runtime files, three red-test/inventory
+  files, and three acceptance-documentation files.
+- This is a local frontend acceptance only. It used no external/remote network
+  or remote backend; the only network/server activity was the 3 hermetic
+  localhost loopback preview checks. It performed no push, merge, deployment,
+  production mutation, or production validation.
+
 ## Rollback
 
-If F3h is not accepted, revert in reverse order:
+Revert in reverse order:
 
-1. acceptance documentation commit, if created;
-2. runtime commit containing `useFeedCardLike.ts` and Footer wiring;
-3. red-test/inventory commit, restoring inventory `170 → 169`;
-4. this task commit.
+1. acceptance documentation commit;
+2. runtime commit `956eff8`;
+3. red-test and inventory commit `d67b320`, restoring inventory `170 → 169`;
+4. task commit `e217f6e`.
 
 Rollback requires no DB, Redis, browser storage, schema, cache, service-worker,
 or backend cleanup. Already-successful Likes are ordinary user/server state and

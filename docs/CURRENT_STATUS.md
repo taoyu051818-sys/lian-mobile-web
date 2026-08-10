@@ -3,8 +3,8 @@
 Last verified: 2026-08-11
 
 Active control issue: [#1090](https://github.com/taoyu051818-sys/lian-mobile-web/issues/1090)
-(F3g is accepted locally under a local-only task contract; external-network and
-production access remain paused, so no F3g issue was created online).
+(F3h is accepted locally under a local-only task contract; external-network and
+production access remain paused, so no F3h issue was created online).
 
 Open release blockers: None recorded as open GitHub issues.
 
@@ -12,6 +12,11 @@ Current production release: Not recorded in this repository.
 
 **Active execution queue:**
 
+- F3h Feed Footer Like settlement publication is accepted locally under
+  `docs/agent/tasks/feed-footer-like-settlement-publication.md`; implementation
+  commit `956eff8`. A current authoritative Footer Like result now reaches the
+  mounted Feed owner while same-`tid` refresh supplies the latest rollback
+  baseline and real owner transitions or disposal permanently stale old work.
 - F3g Feed context-menu Save settlement publication is accepted locally under
   `docs/agent/tasks/feed-context-save-settlement-publication.md`;
   implementation commit `64a7603`. An authoritative context-menu Save result
@@ -46,18 +51,16 @@ Current production release: Not recorded in this repository.
   `70cc4e3`. Its runtime scope is limited to client-side duplicate-`tid`
   projection.
 - The Feed read-only audit also recorded follow-up batches for cursor
-  pagination, Footer Like publication, Detail/Profile/cross-tab/account
-  reaction reconciliation, and page restoration. They are not part of
-  F3a/F3b/F3c/F3d/F3e/F3f/F3g.
+  pagination, Detail/Profile/cross-tab/account reaction reconciliation, and
+  page restoration. They are not part of F3a-F3h.
 - F2h normal publish-success actionable-result rendering is accepted locally
   under `docs/agent/tasks/publish-success-actionable-result-render.md`.
 - F2g immutable Publish submit snapshot and response ownership is accepted
   locally under `docs/agent/tasks/publish-submit-snapshot-ownership.md`.
-- The next bounded Feed batch should publish authoritative Footer Like
-  settlements without expanding the current mounted-Feed claim. Detail,
-  Profile, cross-tab, account-epoch, and page-restoration work remain separate;
-  cursor pagination and Event creation idempotency remain coordinated
-  API/backend follow-ups, not F3g changes.
+- Detail, Profile, reload/remount, cross-tab, account-epoch, server-revision,
+  cursor-pagination, and page-restoration work remain separate. Cursor
+  pagination and Event creation idempotency remain coordinated API/backend
+  follow-ups, not F3h changes.
 - F2g does not claim Event idempotency, mounted auth refresh, true network
   cancellation, or server-side side-effect reversal are complete.
 - Scope is local frontend code and tests only. No push, deployment, production
@@ -65,6 +68,17 @@ Current production release: Not recorded in this repository.
 
 Local audit baseline:
 
+- F3h Feed Footer Like settlement publication accepted locally on
+  `codex/audit-f3h-feed-footer-like`, building on accepted F3g head `3a56e12`;
+  task commit `e217f6e`, red-test and inventory commit `d67b320`, and runtime
+  implementation commit `956eff8`.
+- F3h validation passed: the new behavior suite 42/42, four F3e-F3h behavior
+  files 140/140, eight core acceptance files 177/177, the structure suite
+  20/20, 30/30 related Footer tests, 170 Vitest files / 4,286 tests, 65 Node
+  structure files / 830 tests, production build (647 transformed modules / PWA
+  71 entries), HTML sanitizer, 3 loopback smoke checks, and full
+  `npm run verify` with exit 0 in about 97.4 seconds. Two independent reviewers
+  recorded `ACCEPT` with no blocking finding.
 - F3g Feed context-menu Save settlement publication accepted locally on
   `codex/audit-f3g-feed-context-save`, building on accepted F3f head `2d0dd21`;
   task commit `3c53b3f`, red-test/inventory commit `80b05ac`, and runtime
