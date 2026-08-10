@@ -2,17 +2,19 @@
 
 Last verified: 2026-08-10
 
-Latest control issue: [#1089](https://github.com/taoyu051818-sys/lian-mobile-web/issues/1089)
-(implemented and accepted locally; not pushed or closed).
+Latest control issue: [#1090](https://github.com/taoyu051818-sys/lian-mobile-web/issues/1090)
+(F2e task contract recorded locally; implementation not yet started).
 
 Open release blockers: None recorded as open GitHub issues.
 
 Current production release: Not recorded in this repository.
 
-**Next audit queue:**
+**Active audit queue:**
 
-- F2e Publish draft account-scope re-entry audit: verify A → B → A identity
-  changes in one mounted Publish instance before approving another mutation.
+- F2e Publish draft account-scope re-entry: normal in-app login/logout was
+  confirmed to unmount Publish, so A → B → A is not a currently reachable
+  normal-UI incident. The composable contract still fails that transition and
+  is approved for bounded defensive hardening under #1090.
 - Scope is local frontend code and tests only. No push, deployment, production
   mutation, or online environment check is authorized.
 
