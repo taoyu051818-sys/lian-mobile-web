@@ -8,8 +8,9 @@
 - Local prerequisite: accepted F3d head `30f056a`, with runtime implementation
   `750973b`.
 - Working branch: `codex/audit-f3e-feed-context-actions`.
-- Status: contract drafted locally; no runtime or test implementation has been
-  accepted.
+- Status: accepted locally on 2026-08-10. The task contract is `855365b`, the
+  red-test commit is `899bae6`, and the runtime implementation is `e917b8b`.
+  None has been pushed, merged, or deployed.
 - Current code, root `README.md`, `package.json`, `docs/CURRENT_STATUS.md`,
   `docs/agent/README.md`, `docs/agent/00_AGENT_RULES.md`, the accepted F3a-F3d
   tasks, and the local Feed/detail/share/reaction implementations were checked.
@@ -390,6 +391,21 @@ Also run Prettier, ESLint, TypeScript, `git diff --check`, and the existing
 gesture/overlay/ARIA tests that do not require online access. The new Vitest
 file raises inventory from 166 to 167; Node inventory remains 65.
 
+## Acceptance evidence
+
+- The final behavior suite passed 39/39 and the two focused structure files
+  passed 18/18. The broader local Feed regression set passed 120/120.
+- Full `npm run verify` passed in 96.3 seconds: 167 Vitest files / 4,185 tests,
+  65 Node structure files / 824 tests, typecheck, lint, production build (644
+  modules / PWA 71 entries), HTML sanitizer, runtime guards, and 3 loopback
+  smoke checks all passed. Lint retained only three pre-existing warnings.
+- Adversarial review found one no-trailing-click suppression leak after move,
+  cancel, or long press. A fresh primary intent now releases that old latch
+  while the pre-intent A-to-B guard remains intact; the added recovery matrix
+  and both reviewers accepted the corrected implementation.
+- All validation remained local. No server, credential, production, external
+  network, online browser, push, merge, or deployment operation was performed.
+
 ## Risks and mitigations
 
 - Risk: fixing long press introduces duplicate native/custom menus. Mitigation:
@@ -423,5 +439,7 @@ file raises inventory from 166 to 167; Node inventory remains 65.
   control/owner isolation, async action generations, adapter compatibility,
   test discrimination, and exact allowed-file scope.
 - Only the primary review thread may record F3e as locally accepted.
+- Those requirements were satisfied after both independent reviewers recorded
+  `ACCEPT` on the final implementation and focused evidence.
 - No push, merge, deployment, production mutation, server access, or online
   validation is authorized by this task.

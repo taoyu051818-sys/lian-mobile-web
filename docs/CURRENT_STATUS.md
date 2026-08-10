@@ -3,8 +3,8 @@
 Last verified: 2026-08-10
 
 Active control issue: [#1090](https://github.com/taoyu051818-sys/lian-mobile-web/issues/1090)
-(F3d is accepted locally under a local-only task contract; network and
-production access remain paused, so no F3d issue was created online).
+(F3e is accepted locally under a local-only task contract; network and
+production access remain paused, so no F3e issue was created online).
 
 Open release blockers: None recorded as open GitHub issues.
 
@@ -12,6 +12,11 @@ Current production release: Not recorded in this repository.
 
 **Active execution queue:**
 
+- F3e truthful Feed card context actions are accepted locally under
+  `docs/agent/tasks/feed-card-context-action-truthfulness.md`; implementation
+  commit `e917b8b`. A 360 ms hold now opens the owned custom menu, controls and
+  replacement cards are isolated, bookmark state is server-authoritative,
+  sharing uses the canonical helper, and Report truthfully navigates to Detail.
 - F3d bounded Feed auto-load sentinel recovery is accepted locally under
   `docs/agent/tasks/feed-auto-load-sentinel-recovery.md`; implementation commit
   `750973b`. Disabled/cooldown-lost intersections now reconcile once, while one
@@ -30,16 +35,15 @@ Current production release: Not recorded in this repository.
   `70cc4e3`. Its runtime scope is limited to client-side duplicate-`tid`
   projection.
 - The Feed read-only audit also recorded follow-up batches for cursor
-  pagination, Feed/Detail reaction reconciliation, page restoration, and
-  truthful context-menu actions. They are not part of F3a/F3b/F3c/F3d.
+  pagination, Feed/Detail reaction reconciliation, and page restoration. They
+  are not part of F3a/F3b/F3c/F3d/F3e.
 - F2h normal publish-success actionable-result rendering is accepted locally
   under `docs/agent/tasks/publish-success-actionable-result-render.md`.
 - F2g immutable Publish submit snapshot and response ownership is accepted
   locally under `docs/agent/tasks/publish-submit-snapshot-ownership.md`.
 - The next bounded Feed batch should address Feed/Detail canonical reaction
-  reconciliation or truthful context-menu action reachability. Cursor
-  pagination and Event creation idempotency remain coordinated API/backend
-  follow-ups, not F3d changes.
+  reconciliation or page restoration. Cursor pagination and Event creation
+  idempotency remain coordinated API/backend follow-ups, not F3e changes.
 - F2g does not claim Event idempotency, mounted auth refresh, true network
   cancellation, or server-side side-effect reversal are complete.
 - Scope is local frontend code and tests only. No push, deployment, production
@@ -47,6 +51,14 @@ Current production release: Not recorded in this repository.
 
 Local audit baseline:
 
+- F3e truthful Feed card context actions accepted locally on
+  `codex/audit-f3e-feed-context-actions`; task commit `855365b`, red-test commit
+  `899bae6`, and implementation commit `e917b8b`.
+- F3e validation passed: 167 Vitest files / 4,185 tests, 65 Node structure
+  files / 824 tests, production build (644 modules / PWA 71 entries), HTML
+  sanitizer, 3 loopback smoke checks, and full `npm run verify` in 96.3 seconds.
+  Two independent reviewers recorded `ACCEPT` with no blocking finding after a
+  stale touch-suppression edge was found, fixed, and reverified.
 - F3d bounded Feed auto-load sentinel recovery accepted locally on
   `codex/audit-f3d-feed-auto-load-sentinel`; implementation commit `750973b`.
 - F3d validation passed: 166 Vitest files / 4,144 tests, 65 Node structure
