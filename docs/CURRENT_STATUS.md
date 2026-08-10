@@ -2,13 +2,18 @@
 
 Last verified: 2026-08-10
 
-Active control issue: None.
+Active control issue: [#1085](https://github.com/taoyu051818-sys/lian-mobile-web/issues/1085).
 
 Open release blockers: None recorded as open GitHub issues.
 
 Current production release: Not recorded in this repository.
 
-**No active execution queue.**
+**Active execution queue:** F1 Profile session-scoped notification state.
+
+- Task: `docs/agent/tasks/audit-f1-profile-session-state.md`.
+- Branch: `codex/audit-f1-profile-session-state`.
+- Scope: local frontend implementation and validation only; no push, merge,
+  deploy, backend change, or persisted browser-data migration.
 
 Local audit baseline:
 
