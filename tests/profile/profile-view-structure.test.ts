@@ -133,4 +133,43 @@ describe("ProfileView structure (issue #829)", () => {
     expect(guestBoundary).toContain("resetNotificationSessionState()");
     expect(authenticatedBoundary).toContain("resetNotificationSessionState()");
   });
+
+  it("invalidates the prior profile list before guest and authenticated identity transitions", async () => {
+    const src = await loadContent();
+    const guestBoundary = src.slice(
+      src.indexOf("function enterGuestState()"),
+      src.indexOf("async function loadProfile()"),
+    );
+    const authenticatedBoundary = src.slice(
+      src.indexOf("async function handleAuthenticated("),
+      src.indexOf("onMounted("),
+    );
+
+    expect(guestBoundary.indexOf("resetList()")).toBeGreaterThan(-1);
+    expect(guestBoundary.indexOf("resetList()")).toBeLessThan(
+      guestBoundary.indexOf("user.value = null"),
+    );
+    expect(authenticatedBoundary.indexOf("resetList()")).toBeGreaterThan(-1);
+    expect(authenticatedBoundary.indexOf("resetList()")).toBeLessThan(
+      authenticatedBoundary.indexOf("user.value = authenticatedUser"),
+    );
+    expect(authenticatedBoundary.indexOf("resetList()")).toBeLessThan(
+      authenticatedBoundary.indexOf("await loadProfile()"),
+    );
+  });
+
+  it("wires account-changing history refreshes to the existing session presentation reset", async () => {
+    const src = await loadContent();
+    const tabsSetup = src.slice(src.indexOf("useProfileTabs({"), src.indexOf("const detail"));
+    const accountReset = src.slice(
+      src.indexOf("function resetAccountPresentation()"),
+      src.indexOf("function enterGuestState()"),
+    );
+
+    expect(tabsSetup).toMatch(
+      /resetAccountPresentation:\s*\(\)\s*=>\s*resetAccountPresentation\(\)/,
+    );
+    expect(accountReset).toContain("clearAdminAccessState()");
+    expect(accountReset).toContain("resetNotificationSessionState()");
+  });
 });
