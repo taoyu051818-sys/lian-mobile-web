@@ -1,9 +1,8 @@
 <script setup lang="ts">
-import { computed, ref, watch } from "vue";
-import { togglePostLike } from "../../api/posts";
-import { FEED_LIKE, FEED_UNLIKE } from "../../config/brand";
+import { ref, toRef, watch } from "vue";
 import type { AudienceVisibility } from "../../types/audience";
 import { TrustBadge, VisibilityBadge } from "../../ui";
+import { useFeedCardLike } from "./useFeedCardLike";
 
 const props = defineProps<{
   tid: number;
@@ -17,58 +16,23 @@ const props = defineProps<{
   trustSignal?: string | null;
 }>();
 
-const emit = defineEmits<{
-  liked: [liked: boolean, count: number];
-}>();
+const { liked, likeCount, likeBusy, likeLabel, handleLike } = useFeedCardLike({
+  tid: toRef(props, "tid"),
+  liked: toRef(props, "liked"),
+  likeCount: toRef(props, "likeCount"),
+});
 
-// eslint-disable-next-line vue/no-dupe-keys -- intentional optimistic update: props synced to local refs
-const liked = ref(false);
-// eslint-disable-next-line vue/no-dupe-keys -- intentional optimistic update: props synced to local refs
-const likeCount = ref(0);
-const likeBusy = ref(false);
 const avatarError = ref(false);
 
-const likeLabel = computed(
-  () => `${liked.value ? FEED_UNLIKE : FEED_LIKE}，当前 ${likeCount.value} 个喜欢`,
-);
-
-// Performance: combine watchers to reduce reactivity overhead
 watch(
-  () => [props.liked, props.likeCount, props.authorAvatarUrl] as const,
-  ([newLiked, newLikeCount, _newAvatarUrl], oldValues) => {
-    liked.value = Boolean(newLiked);
-    likeCount.value = Math.max(0, Number(newLikeCount || 0));
-    // Reset avatar error state when URL changes
-    if (!oldValues || _newAvatarUrl !== oldValues[2]) {
-      avatarError.value = false;
-    }
+  () => props.authorAvatarUrl,
+  () => {
+    avatarError.value = false;
   },
-  { immediate: true },
 );
 
 function handleAvatarError() {
   avatarError.value = true;
-}
-
-async function handleLike() {
-  if (likeBusy.value) return;
-  const previousLiked = liked.value;
-  const previousCount = likeCount.value;
-  const nextLiked = !previousLiked;
-  liked.value = nextLiked;
-  likeCount.value = Math.max(0, previousCount + (nextLiked ? 1 : -1));
-  likeBusy.value = true;
-  try {
-    const response = await togglePostLike(props.tid, nextLiked);
-    liked.value = Boolean(response.liked);
-    likeCount.value = Math.max(0, Number(response.likeCount || 0));
-  } catch {
-    liked.value = previousLiked;
-    likeCount.value = previousCount;
-  } finally {
-    likeBusy.value = false;
-  }
-  emit("liked", liked.value, likeCount.value);
 }
 </script>
 
