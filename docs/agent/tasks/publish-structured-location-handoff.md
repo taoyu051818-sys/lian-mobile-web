@@ -109,6 +109,9 @@ the pending payload or converted into a structured map draft.
   `legacy/unknown` and keep it display-only.
 - Unknown versions, invalid ranges, incomplete pairs, and source/system
   mismatches are destructively cleared.
+- Validation failure is destructive on both write and consume. A rejected
+  newer write must clear any older pending payload instead of allowing stale
+  location state to apply later.
 - Add an optional structured binding to the existing scoped draft snapshot.
   Old snapshots read as `null`; the storage key does not change.
 
