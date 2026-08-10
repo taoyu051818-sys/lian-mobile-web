@@ -224,6 +224,8 @@ unsubscribes on `dispose()`.
 
 Runtime:
 
+- `src/features/reactions/index.ts` (new public surface required by the
+  repository feature-boundary guard; re-export only)
 - `src/features/reactions/postReactionSettlements.ts` (new)
 - `src/features/detail/usePostReactions.ts`
 - `src/features/feed/useFeedData.ts`
