@@ -2,15 +2,18 @@
 
 Last verified: 2026-08-10
 
-Active control issue: None.
+Active control issue: [#1089](https://github.com/taoyu051818-sys/lian-mobile-web/issues/1089).
 
 Open release blockers: None recorded as open GitHub issues.
 
 Current production release: Not recorded in this repository.
 
-**Active execution queue:** None. Start the next batch only from a new task
-contract and branch. No push, deployment, production mutation, or online
-environment check is authorized.
+**Active execution queue:**
+
+- F2d Publish structured location handoff on
+  `codex/audit-f2d-publish-structured-location`.
+- Scope is local frontend code and tests only. No push, deployment, production
+  mutation, or online environment check is authorized.
 
 Local audit baseline:
 
