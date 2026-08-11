@@ -8,8 +8,8 @@
 - Local prerequisite: accepted F3h head `72768cf`, with Footer Like runtime
   implementation `956eff8`.
 - Working branch: `codex/audit-f3i-detail-reaction-consumer`.
-- Status: contract drafted; runtime work is not authorized until this task and
-  the red-test matrix are independently accepted.
+- Status: accepted locally on 2026-08-11; task commit `f46e171`, red-test and
+  inventory commit `15fdfbb`, and runtime implementation commit `e78a855`.
 - F3f settlement-channel and Feed-consumer ownership, F3g Context Save
   publication, F3h Footer Like publication, the Detail navigation reducer, the
   Detail fetch bridge, `PostDetailPanel`, and `usePostReactions` were reviewed.
@@ -678,15 +678,36 @@ The local loopback preview processes used by repository smoke checks are the
 only permitted network/server activity. They do not authorize remote/backend or
 production access.
 
+## Local acceptance evidence
+
+- Accepted prerequisite: F3h head `72768cf`.
+- Commit chain: task contract `f46e171` -> red tests and inventory `15fdfbb` ->
+  runtime implementation `e78a855`.
+- The new behavior suite passed 45/45; nine focused files passed 239/239; and
+  the new projection structure plus existing Detail feedback suites passed
+  12/12.
+- Full validation passed 171 Vitest files / 4,331 tests and 66 Node structure
+  files / 839 tests. The production build transformed 647 modules and produced
+  71 PWA entries; the HTML sanitizer and all 3 hermetic localhost loopback
+  smoke checks passed.
+- Full `npm run verify` exited 0 in about 129.6 seconds.
+- Two independent reviewers returned `ACCEPT` with no blocking finding.
+- The accepted file scope is exactly three runtime files, two new tests plus
+  the inventory update, and three acceptance-documentation files.
+- This is a local frontend acceptance only. It used no external/remote network
+  or remote backend; the only network/server activity was the hermetic
+  localhost preview used by the 3 loopback smoke checks. It performed no push,
+  merge, deployment, production mutation, or production validation.
+
 ## Rollback
 
 Revert in reverse order:
 
 1. acceptance documentation commit;
-2. runtime implementation commit;
-3. red-test and inventory commit, restoring inventory `171 -> 170` Vitest and
-   `66 -> 65` Node files;
-4. task contract commit.
+2. runtime implementation commit `e78a855`;
+3. red-test and inventory commit `15fdfbb`, restoring inventory `171 -> 170`
+   Vitest and `66 -> 65` Node files;
+4. task contract commit `f46e171`.
 
 Rollback requires no DB, Redis, browser storage, schema, cache, service-worker,
 or backend cleanup. Already-successful reactions are ordinary user/server state

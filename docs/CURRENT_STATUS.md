@@ -3,8 +3,8 @@
 Last verified: 2026-08-11
 
 Active control issue: [#1090](https://github.com/taoyu051818-sys/lian-mobile-web/issues/1090)
-(F3h is accepted locally under a local-only task contract; external-network and
-production access remain paused, so no F3h issue was created online).
+(F3i is accepted locally under a local-only task contract; external-network and
+production access remain paused, so no F3i issue was created online).
 
 Open release blockers: None recorded as open GitHub issues.
 
@@ -12,6 +12,12 @@ Current production release: Not recorded in this repository.
 
 **Active execution queue:**
 
+- F3i mounted Detail reaction settlement consumption is accepted locally under
+  `docs/agent/tasks/detail-reaction-settlement-consumer.md`; implementation
+  commit `e78a855`. Current authoritative Footer Like, Context Save, and Detail
+  Like/Save settlements now project into the current mounted Detail owner. Physical
+  Detail requests use request-local sequence boundaries, while ready projection
+  preserves the exact post identity and unrelated Detail interactions.
 - F3h Feed Footer Like settlement publication is accepted locally under
   `docs/agent/tasks/feed-footer-like-settlement-publication.md`; implementation
   commit `956eff8`. A current authoritative Footer Like result now reaches the
@@ -51,16 +57,16 @@ Current production release: Not recorded in this repository.
   `70cc4e3`. Its runtime scope is limited to client-side duplicate-`tid`
   projection.
 - The Feed read-only audit also recorded follow-up batches for cursor
-  pagination, Detail/Profile/cross-tab/account reaction reconciliation, and
-  page restoration. They are not part of F3a-F3h.
+  pagination, Profile/cross-tab/account reaction reconciliation, and page
+  restoration. They are not part of F3a-F3i.
 - F2h normal publish-success actionable-result rendering is accepted locally
   under `docs/agent/tasks/publish-success-actionable-result-render.md`.
 - F2g immutable Publish submit snapshot and response ownership is accepted
   locally under `docs/agent/tasks/publish-submit-snapshot-ownership.md`.
-- Detail, Profile, reload/remount, cross-tab, account-epoch, server-revision,
+- Profile, reload/remount, cross-tab, account-epoch, server-revision,
   cursor-pagination, and page-restoration work remain separate. Cursor
   pagination and Event creation idempotency remain coordinated API/backend
-  follow-ups, not F3h changes.
+  follow-ups, not F3i changes.
 - F2g does not claim Event idempotency, mounted auth refresh, true network
   cancellation, or server-side side-effect reversal are complete.
 - Scope is local frontend code and tests only. No push, deployment, production
@@ -68,6 +74,17 @@ Current production release: Not recorded in this repository.
 
 Local audit baseline:
 
+- F3i mounted Detail reaction settlement consumption accepted locally on
+  `codex/audit-f3i-detail-reaction-consumer`, building on accepted F3h head
+  `72768cf`; task commit `f46e171`, red-test and inventory commit `15fdfbb`, and
+  runtime implementation commit `e78a855`.
+- F3i validation passed: the new behavior suite 45/45, nine focused files
+  239/239, the new structure plus Detail feedback suites 12/12, 171 Vitest files
+  / 4,331 tests, 66 Node structure files / 839 tests, production build (647
+  transformed modules / PWA 71 entries), HTML sanitizer, 3 hermetic localhost
+  loopback smoke checks, and full `npm run verify` with exit 0 in about 129.6
+  seconds. Two independent reviewers recorded `ACCEPT` with no blocking
+  finding.
 - F3h Feed Footer Like settlement publication accepted locally on
   `codex/audit-f3h-feed-footer-like`, building on accepted F3g head `3a56e12`;
   task commit `e217f6e`, red-test and inventory commit `d67b320`, and runtime
