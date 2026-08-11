@@ -719,6 +719,35 @@ describe("mounted Profile reaction membership", () => {
     },
   );
 
+  it("#7 never captures a visible liked row as a saved-request candidate", async () => {
+    const harness = makeHarness();
+    const likedRow = item(1, "liked-only-row");
+    await loadRows(harness, "liked", [likedRow]);
+    const likedProxy = harness.profile.profileItems.value[0];
+
+    const pendingSaved = deferred<ProfileListResponse>();
+    fetchProfileTabMock.mockReturnValueOnce(pendingSaved.promise);
+    const savedLoad = harness.profile.loadProfileList("saved");
+    expect(fetchProfileTabMock).toHaveBeenCalledWith("saved", [], { contentFilter: "all" });
+    expect(harness.profile.activeTab.value).toBe("saved");
+    expect(harness.profile.profileItems.value[0]).toBe(likedProxy);
+
+    publishMembership(harness.port, "saved", 1, false);
+    publishMembership(harness.port, "saved", 1, true);
+    expect(harness.profile.profileItems.value[0]).toBe(likedProxy);
+
+    const savedRows: ProfileListItem[] = [];
+    pendingSaved.resolve(response(savedRows));
+    await savedLoad;
+
+    expect(toRaw(harness.profile.profileItems.value)).toBe(savedRows);
+    expect(harness.profile.profileItems.value).toEqual([]);
+    const acceptedSavedArray = harness.profile.profileItems.value;
+    publishMembership(harness.port, "saved", 1, true);
+    expect(harness.profile.profileItems.value).toBe(acceptedSavedArray);
+    expect(harness.profile.profileItems.value).toEqual([]);
+  });
+
   it("#7 removes duplicate response tids, stashes only the first, and restores it once", async () => {
     const harness = makeHarness();
     const pending = deferred<ProfileListResponse>();
