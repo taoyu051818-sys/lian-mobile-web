@@ -824,6 +824,96 @@ describe("useAdminConsole overlapping finally ownership", () => {
     }
   }
 
+  type NestedParentKind = "review" | "create" | "revoke";
+
+  interface NestedParentFailureScenario {
+    runA: Promise<unknown>;
+    runB: Promise<unknown>;
+    nestedReloadMock: ReturnType<typeof vi.fn>;
+    readLoading(): boolean;
+    settleNestedA(): void;
+    rejectSuccessorOuter(): void;
+    startIndependentReload(): Promise<unknown>;
+    settleIndependentReload(): void;
+  }
+
+  async function beginNestedParentFailure(
+    kind: NestedParentKind,
+  ): Promise<NestedParentFailureScenario> {
+    installHappyApis();
+    const nestedA = deferred<unknown>();
+    const independentReload = deferred<unknown>();
+    const successorOuter = deferred<unknown>();
+    const harness = makeConsole();
+    let runA: Promise<unknown>;
+    let runB: Promise<unknown>;
+    let nestedReloadMock: ReturnType<typeof vi.fn>;
+    let readLoading: () => boolean;
+    let settleNestedA: () => void;
+    let startIndependentReload: () => Promise<unknown>;
+    let settleIndependentReload: () => void;
+
+    if (kind === "review") {
+      adminApi.patchAdminVerificationRequest
+        .mockResolvedValueOnce(verificationDetail)
+        .mockReturnValueOnce(successorOuter.promise);
+      adminApi.fetchAdminVerificationRequests
+        .mockReturnValueOnce(nestedA.promise)
+        .mockReturnValueOnce(independentReload.promise);
+      const invoke = () =>
+        harness.console.reviewVerificationRequest(verification, { status: "approved" });
+      runA = invoke();
+      await flush();
+      runB = invoke();
+      nestedReloadMock = adminApi.fetchAdminVerificationRequests;
+      readLoading = () => harness.console.verificationLoading.value;
+      settleNestedA = () => nestedA.resolve({ items: [verification], total: 1 });
+      startIndependentReload = () => harness.console.loadVerificationRequests("pending");
+      settleIndependentReload = () =>
+        independentReload.resolve({ items: [verification], total: 1 });
+    } else {
+      authLinkApi.fetchAdminAuthLinks
+        .mockReturnValueOnce(nestedA.promise)
+        .mockReturnValueOnce(independentReload.promise);
+      if (kind === "create") {
+        authLinkApi.createAdminAuthLink
+          .mockResolvedValueOnce(authLink)
+          .mockReturnValueOnce(successorOuter.promise);
+        const invoke = () => harness.console.createAuthLink({ ttlSeconds: 3_600 });
+        runA = invoke();
+        await flush();
+        runB = invoke();
+      } else {
+        authLinkApi.revokeAdminAuthLink
+          .mockResolvedValueOnce(undefined)
+          .mockReturnValueOnce(successorOuter.promise);
+        const invoke = () => harness.console.revokeAuthLink("link-1");
+        runA = invoke();
+        await flush();
+        runB = invoke();
+      }
+      nestedReloadMock = authLinkApi.fetchAdminAuthLinks;
+      readLoading = () => harness.console.authLinksLoading.value;
+      settleNestedA = () => nestedA.resolve({ items: [authLink] });
+      startIndependentReload = () => harness.console.loadAuthLinks();
+      settleIndependentReload = () => independentReload.resolve({ items: [authLink] });
+    }
+
+    expect(nestedReloadMock).toHaveBeenCalledTimes(1);
+    expect(readLoading()).toBe(true);
+    return {
+      runA,
+      runB,
+      nestedReloadMock,
+      readLoading,
+      settleNestedA,
+      rejectSuccessorOuter: () =>
+        successorOuter.reject(new Error("ordinary successor outer failure")),
+      startIndependentReload,
+      settleIndependentReload,
+    };
+  }
+
   it.each(["review", "create", "revoke"] as const)(
     "a %s nested reload whose parent is superseded cannot clear loading ownership",
     async (kind) => {
@@ -906,6 +996,49 @@ describe("useAdminConsole overlapping finally ownership", () => {
       expect(loadingAfterStaleParent).toBe(true);
       expect(loadingDuringSuccessorChild).toBe(true);
       expect(loadingAfterSuccessorChild).toBe(false);
+    },
+  );
+
+  it.each(["review", "create", "revoke"] as const)(
+    "a failed successor %s parent releases the superseded nested loading owner",
+    async (kind) => {
+      const scenario = await beginNestedParentFailure(kind);
+
+      scenario.settleNestedA();
+      await scenario.runA;
+      const loadingAfterStaleParent = scenario.readLoading();
+      scenario.rejectSuccessorOuter();
+      await scenario.runB;
+      const loadingAfterSuccessorFailure = scenario.readLoading();
+
+      expect(scenario.nestedReloadMock).toHaveBeenCalledTimes(1);
+      expect(loadingAfterStaleParent).toBe(true);
+      expect(loadingAfterSuccessorFailure).toBe(false);
+    },
+  );
+
+  it.each(["review", "create", "revoke"] as const)(
+    "a failed successor %s parent cannot clear an independent current reload",
+    async (kind) => {
+      const scenario = await beginNestedParentFailure(kind);
+
+      scenario.settleNestedA();
+      await scenario.runA;
+      const loadingAfterStaleParent = scenario.readLoading();
+      const independentRun = scenario.startIndependentReload();
+      expect(scenario.nestedReloadMock).toHaveBeenCalledTimes(2);
+      expect(scenario.readLoading()).toBe(true);
+
+      scenario.rejectSuccessorOuter();
+      await scenario.runB;
+      const loadingAfterSuccessorFailure = scenario.readLoading();
+      scenario.settleIndependentReload();
+      await independentRun;
+
+      expect(scenario.nestedReloadMock).toHaveBeenCalledTimes(2);
+      expect(loadingAfterStaleParent).toBe(true);
+      expect(loadingAfterSuccessorFailure).toBe(true);
+      expect(scenario.readLoading()).toBe(false);
     },
   );
 

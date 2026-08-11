@@ -5,6 +5,10 @@ const SENTINEL = "SENTINEL_OPS_TOKEN_MUST_NOT_LEAK_7f3c";
 const REQUEST_ID = "3f5a9c26-6571-4d6c-9c70-3517b2a7f4d8";
 const BFF_PATH = "/api/admin/laplatform/merchants";
 
+function isApiFixtureRequest(url: URL | string): boolean {
+  return new URL(url).pathname.startsWith("/api/");
+}
+
 interface Deferred<T> {
   promise: Promise<T>;
   resolve(value: T): void;
@@ -34,9 +38,26 @@ interface ApiFixture {
   adminMeRequests: Request[];
   legacyRequests: Request[];
   reportsRequests: Request[];
+  verificationRequests: Request[];
   authLoginRequests: Request[];
   authLogoutRequests: Request[];
   releaseReports: () => void;
+}
+
+function verificationQueue(verificationId = "shared-verification-id") {
+  return {
+    items: [
+      {
+        verificationId,
+        verificationType: "realname",
+        userId: "shared-user-id",
+        status: "pending",
+        createdAt: "2026-08-11T00:00:00.000Z",
+        updatedAt: "2026-08-11T01:02:03.004Z",
+      },
+    ],
+    total: 1,
+  };
 }
 
 function merchantEnvelope(url: URL, id = "merchant_demo", total = 1) {
@@ -93,6 +114,8 @@ async function installApi(
   options: {
     holdReports?: boolean;
     reportsError?: boolean;
+    reportsPlans?: ResponsePlan[];
+    verificationPlans?: ResponsePlan[];
     profileAuthenticated?: boolean;
   } = {},
 ): Promise<ApiFixture> {
@@ -100,14 +123,17 @@ async function installApi(
   const adminMeRequests: Request[] = [];
   const legacyRequests: Request[] = [];
   const reportsRequests: Request[] = [];
+  const verificationRequests: Request[] = [];
   const authLoginRequests: Request[] = [];
   const authLogoutRequests: Request[] = [];
   const reportsGate = deferred<void>();
   const profileUser = { id: "account-b", username: "Account B" };
   let profileAuthenticated = options.profileAuthenticated ?? false;
   let planIndex = 0;
+  let reportsPlanIndex = 0;
+  let verificationPlanIndex = 0;
 
-  await page.route("**/api/**", async (route) => {
+  await page.route(isApiFixtureRequest, async (route) => {
     const request = route.request();
     const url = new URL(request.url());
     if (url.pathname === BFF_PATH) {
@@ -134,12 +160,30 @@ async function installApi(
     if (url.pathname === "/api/admin/reports") {
       legacyRequests.push(request);
       reportsRequests.push(request);
+      if (options.reportsPlans) {
+        const plan = options.reportsPlans[reportsPlanIndex++] ?? {
+          status: 200,
+          body: { items: [], total: 0 },
+        };
+        await fulfill(route, plan, request);
+        return;
+      }
       if (options.holdReports) await reportsGate.promise;
       await route.fulfill(
         options.reportsError
           ? { status: 500, json: { error: "raw legacy failure" } }
           : { status: 200, json: { items: [], total: 0 } },
       );
+      return;
+    }
+    if (url.pathname === "/api/admin/verifications" && request.method() === "GET") {
+      legacyRequests.push(request);
+      verificationRequests.push(request);
+      const plan = options.verificationPlans?.[verificationPlanIndex++] ?? {
+        status: 200,
+        body: verificationQueue(),
+      };
+      await fulfill(route, plan, request);
       return;
     }
     if (url.pathname.startsWith("/api/admin/")) {
@@ -174,6 +218,7 @@ async function installApi(
     adminMeRequests,
     legacyRequests,
     reportsRequests,
+    verificationRequests,
     authLoginRequests,
     authLogoutRequests,
     releaseReports: reportsGate.resolve,
@@ -220,6 +265,12 @@ function strictPlan(status = 200, id = "merchant_demo", total = 1): ResponsePlan
     body: merchantEnvelope(new URL(`http://local.invalid${BFF_PATH}?limit=20&offset=0`), id, total),
   };
 }
+
+test("the API fixture route excludes Vite source modules", () => {
+  expect(isApiFixtureRequest("http://127.0.0.1:4317/api/admin/reports")).toBe(true);
+  expect(isApiFixtureRequest("http://127.0.0.1:4317/src/api/http.ts")).toBe(false);
+  expect(isApiFixtureRequest("http://127.0.0.1:4317/src/api/adminLaPlatform.ts")).toBe(false);
+});
 
 test.describe("@local-admin-la first merchants capability journey", () => {
   test("pending bootstrap has no privileged flash even with a stored ops token", async ({
@@ -532,6 +583,95 @@ test.describe("@local-admin-la complete initial failure FSM", () => {
     ]);
     await expect(page.getByTestId("admin-la-merchants-block")).toHaveCount(0);
   });
+});
+
+test.describe("@local-admin-la verification note account ownership", () => {
+  for (const status of [401, 403]) {
+    test(`current ${status} clears account A's unpublished note before account B loads the same id`, async ({
+      page,
+    }) => {
+      await preloadToken(page, "account-a-token");
+      const fixture = await installApi(page, [initialFailures[1].plan], {
+        verificationPlans: [
+          { status: 200, body: verificationQueue() },
+          { status, body: { error: "raw current authorization loss" } },
+          { status: 200, body: verificationQueue() },
+        ],
+      });
+      await openAdmin(page, fixture);
+      await expect.poll(() => fixture.reportsRequests.length).toBe(1);
+      await page.getByTestId("shell-chrome-tab-verifications").click();
+      await expect.poll(() => fixture.verificationRequests.length).toBe(1);
+      const note = page.locator(".admin-verification-block__editor textarea");
+      await note.fill("account A unpublished reviewer note");
+
+      await page.locator(".admin-verification-block__filters button").last().click();
+      await expect.poll(() => fixture.verificationRequests.length).toBe(2);
+      await expect(page.getByTestId("admin-access-reason")).toBeVisible();
+      expect(await storedToken(page)).toBeNull();
+
+      const tokenGate = page.locator(".admin-token-gate");
+      await tokenGate.locator("input").fill("account-b-token");
+      await tokenGate.locator("button").click();
+      await expect.poll(() => fixture.reportsRequests.length).toBe(2);
+      await page.getByTestId("shell-chrome-tab-verifications").click();
+      await expect.poll(() => fixture.verificationRequests.length).toBe(3);
+
+      await expect(note).toHaveValue("");
+    });
+  }
+
+  for (const staleStatus of [401, 403]) {
+    test(`stale account A ${staleStatus} cannot clear account B's current note`, async ({
+      page,
+    }) => {
+      const staleGate = deferred<void>();
+      await preloadToken(page, "account-a-token");
+      const fixture = await installApi(page, [initialFailures[1].plan], {
+        reportsPlans: [
+          { status: 200, body: { items: [], total: 0 } },
+          { status: 401, body: { error: "current reports authorization loss" } },
+          { status: 200, body: { items: [], total: 0 } },
+        ],
+        verificationPlans: [
+          { status: 200, body: verificationQueue() },
+          {
+            status: staleStatus,
+            body: { error: "stale account A authorization loss" },
+            wait: staleGate.promise,
+          },
+          { status: 200, body: verificationQueue() },
+        ],
+      });
+      await openAdmin(page, fixture);
+      await expect.poll(() => fixture.reportsRequests.length).toBe(1);
+      await page.getByTestId("shell-chrome-tab-verifications").click();
+      await expect.poll(() => fixture.verificationRequests.length).toBe(1);
+
+      await page.locator(".admin-verification-block__filters button").last().click();
+      await expect.poll(() => fixture.verificationRequests.length).toBe(2);
+      await page.getByTestId("shell-chrome-tab-reports").click();
+      await expect.poll(() => fixture.reportsRequests.length).toBe(2);
+      await expect(page.getByTestId("admin-access-reason")).toBeVisible();
+
+      const tokenGate = page.locator(".admin-token-gate");
+      await tokenGate.locator("input").fill("account-b-token");
+      await tokenGate.locator("button").click();
+      await expect.poll(() => fixture.reportsRequests.length).toBe(3);
+      await page.getByTestId("shell-chrome-tab-verifications").click();
+      await expect.poll(() => fixture.verificationRequests.length).toBe(3);
+      const note = page.locator(".admin-verification-block__editor textarea");
+      await note.fill("account B current reviewer note");
+
+      const staleResponse = fixture.verificationRequests[1].response();
+      staleGate.resolve();
+      expect((await staleResponse)?.status()).toBe(staleStatus);
+      await page.waitForTimeout(0);
+
+      await expect(page.getByTestId("admin-access-reason")).toHaveCount(0);
+      await expect(note).toHaveValue("account B current reviewer note");
+    });
+  }
 });
 
 test.describe("@local-admin-la established merchants failures", () => {
