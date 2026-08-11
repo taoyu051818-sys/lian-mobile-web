@@ -895,7 +895,8 @@ test.describe("@local-admin-la exit, account and unmount cleanup", () => {
     await storeToken(page);
     await profileButtons.last().click();
     await expect.poll(() => fixture.authLogoutRequests.length).toBe(1);
-    expect(await storedToken(page)).toBeNull();
+    await expect(page.locator(".auth-panel")).toBeVisible();
+    await expect.poll(() => storedToken(page)).toBeNull();
 
     gate.resolve();
     await page.waitForTimeout(0);

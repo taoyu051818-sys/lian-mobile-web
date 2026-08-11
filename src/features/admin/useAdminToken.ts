@@ -3,6 +3,7 @@ import { ref } from "vue";
 const STORAGE_KEY = "lian.adminToken";
 const tokenRef = ref<string>(readInitialToken());
 const sessionAdminRef = ref<boolean>(false);
+const authEpochRef = ref(0);
 
 function readInitialToken(): string {
   if (typeof window === "undefined") return "";
@@ -24,6 +25,7 @@ function writeStorage(value: string): void {
 }
 
 export function clearAdminAccessState() {
+  authEpochRef.value += 1;
   tokenRef.value = "";
   sessionAdminRef.value = false;
   writeStorage("");
@@ -32,14 +34,21 @@ export function clearAdminAccessState() {
 export function useAdminToken() {
   function setToken(value: string) {
     const trimmed = value.trim();
+    authEpochRef.value += 1;
     sessionAdminRef.value = false;
     tokenRef.value = trimmed;
     writeStorage(trimmed);
   }
 
   function clearToken() {
+    authEpochRef.value += 1;
     tokenRef.value = "";
     writeStorage("");
+  }
+
+  function advanceAuthEpoch() {
+    authEpochRef.value += 1;
+    return authEpochRef.value;
   }
 
   function setSessionAdmin(value: boolean) {
@@ -53,9 +62,11 @@ export function useAdminToken() {
 
   return {
     token: tokenRef,
+    authEpoch: authEpochRef,
     sessionAdmin: sessionAdminRef,
     setToken,
     clearToken,
+    advanceAuthEpoch,
     setSessionAdmin,
     clearSessionAdmin,
   };

@@ -280,7 +280,7 @@ test("AdminView disposes access, merchants, timers, and logical ops ownership on
   assert.ok(unmountBody, "AdminView must own one explicit unmount-disposal callback");
   assert.match(unmountBody, /\baccess\.dispose\(\)/);
   assert.match(unmountBody, /\bmerchants\.dispose\(\)/);
-  assert.match(unmountBody, /\bconsole\.dispose\(\)/);
+  assert.match(unmountBody, /\badminConsole\.dispose\(\)/);
   assert.doesNotMatch(src, /clearSessionAdmin\(\)/);
 });
 
