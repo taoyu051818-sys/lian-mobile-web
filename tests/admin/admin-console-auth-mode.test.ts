@@ -1042,6 +1042,61 @@ describe("useAdminConsole overlapping finally ownership", () => {
     },
   );
 
+  it.each(["review", "create", "revoke"] as const)(
+    "an ordinary failed %s parent cannot clear a pre-existing independent current reload",
+    async (kind) => {
+      installHappyApis();
+      const independentReload = deferred<unknown>();
+      const outer = deferred<unknown>();
+      const harness = makeConsole();
+      let independentRun: Promise<unknown>;
+      let outerRun: Promise<unknown>;
+      let nestedReloadMock: ReturnType<typeof vi.fn>;
+      let readLoading: () => boolean;
+      let settleIndependentReload: () => void;
+
+      if (kind === "review") {
+        adminApi.fetchAdminVerificationRequests.mockReturnValueOnce(independentReload.promise);
+        adminApi.patchAdminVerificationRequest.mockReturnValueOnce(outer.promise);
+        independentRun = harness.console.loadVerificationRequests("pending");
+        outerRun = harness.console.reviewVerificationRequest(verification, {
+          status: "approved",
+        });
+        nestedReloadMock = adminApi.fetchAdminVerificationRequests;
+        readLoading = () => harness.console.verificationLoading.value;
+        settleIndependentReload = () =>
+          independentReload.resolve({ items: [verification], total: 1 });
+      } else {
+        authLinkApi.fetchAdminAuthLinks.mockReturnValueOnce(independentReload.promise);
+        independentRun = harness.console.loadAuthLinks();
+        if (kind === "create") {
+          authLinkApi.createAdminAuthLink.mockReturnValueOnce(outer.promise);
+          outerRun = harness.console.createAuthLink({ ttlSeconds: 3_600 });
+        } else {
+          authLinkApi.revokeAdminAuthLink.mockReturnValueOnce(outer.promise);
+          outerRun = harness.console.revokeAuthLink("link-1");
+        }
+        nestedReloadMock = authLinkApi.fetchAdminAuthLinks;
+        readLoading = () => harness.console.authLinksLoading.value;
+        settleIndependentReload = () => independentReload.resolve({ items: [authLink] });
+      }
+
+      expect(nestedReloadMock).toHaveBeenCalledTimes(1);
+      expect(readLoading()).toBe(true);
+      outer.reject(new Error("ordinary outer failure with independent reload current"));
+      await outerRun;
+      const loadingAfterOuterFailure = readLoading();
+
+      settleIndependentReload();
+      await independentRun;
+
+      expect(nestedReloadMock).toHaveBeenCalledTimes(1);
+      expect(harness.onTokenInvalid).not.toHaveBeenCalled();
+      expect(loadingAfterOuterFailure).toBe(true);
+      expect(readLoading()).toBe(false);
+    },
+  );
+
   it.each([
     [
       "reports",
