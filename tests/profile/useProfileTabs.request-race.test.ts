@@ -1,6 +1,10 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { customRef, ref, watch, type Ref } from "vue";
 import type { ProfileListResponse, ProfileUser } from "../../src/types/profile";
+import {
+  createPostReactionSettlementChannel,
+  type PostReactionSettlementPort,
+} from "../../src/features/reactions";
 
 vi.mock("../../src/api/profile", () => ({
   fetchProfileTab: vi.fn(),
@@ -23,6 +27,13 @@ import * as profileApi from "../../src/api/profile";
 import { useProfileTabs } from "../../src/features/profile/useProfileTabs";
 
 const fetchProfileTabMock = vi.mocked(profileApi.fetchProfileTab);
+type ProfileTabs = ReturnType<typeof useProfileTabs> & { dispose?: () => void };
+type ProfileTabsOptions = Parameters<typeof useProfileTabs>[0] & {
+  settlements?: PostReactionSettlementPort;
+};
+const useProfileTabsWithSettlements = useProfileTabs as unknown as (
+  options: ProfileTabsOptions,
+) => ProfileTabs;
 
 beforeAll(() => {
   vi.stubGlobal("localStorage", {} as Storage);
@@ -57,7 +68,7 @@ function makeHarness(
   } = {},
 ) {
   const user = ref<ProfileUser | null>(options.initialUser ?? { id: "user-1" });
-  const tabs = useProfileTabs({
+  const tabs = useProfileTabsWithSettlements({
     user,
     enterGuestState: vi.fn(),
     isMissingSessionError:
@@ -66,6 +77,7 @@ function makeHarness(
       options.refreshCurrentSession ? options.refreshCurrentSession(user) : null,
     ),
     resetAccountPresentation: options.resetAccountPresentation ?? vi.fn(),
+    settlements: createPostReactionSettlementChannel(),
   });
   return { ...tabs, user };
 }
@@ -256,12 +268,13 @@ describe("useProfileTabs read-history ownership", () => {
         operations.push(`retry:${tids.join(",")}`);
         return response(202, "account B history");
       });
-    const profile = useProfileTabs({
+    const profile = useProfileTabsWithSettlements({
       user,
       enterGuestState: vi.fn(),
       isMissingSessionError: (error) => error === MISSING_SESSION,
       refreshCurrentSession: vi.fn(async () => ({ id: "user-b", username: "B" })),
       resetAccountPresentation: () => operations.push("external-reset"),
+      settlements: createPostReactionSettlementChannel(),
     });
     profile.profileItems.value = [{ tid: 101, title: "account A history" }];
     watch(
@@ -324,12 +337,13 @@ describe("useProfileTabs read-history ownership", () => {
         operations.push(`retry:${tids.join(",")}`);
         return response(303, "unowned B history");
       });
-    const profile = useProfileTabs({
+    const profile = useProfileTabsWithSettlements({
       user,
       enterGuestState: vi.fn(),
       isMissingSessionError: (error) => error === MISSING_SESSION,
       refreshCurrentSession: vi.fn(async () => ({ username: "missing-id B" })),
       resetAccountPresentation: () => operations.push("external-reset"),
+      settlements: createPostReactionSettlementChannel(),
     });
     profile.profileItems.value = [{ tid: 101, title: "unowned A history" }];
     watch(
