@@ -8,7 +8,10 @@
 - Local prerequisite: accepted F3i head `db45dfa`, including the no-replay
   settlement channel, Feed producers/consumer, and mounted Detail consumer.
 - Working branch: `codex/audit-f3j-profile-reaction-membership`.
-- Status: contract drafted; no runtime or test implementation yet.
+- Status: accepted locally on 2026-08-11.
+- Commit chain: task contract `11b1cc1` -> main red tests and inventory
+  `c908a4d` -> cross-tab candidate regression `38afc7f` -> synchronous nested
+  request-ownership regression `da98eef` -> runtime implementation `48b8ccc`.
 - External/remote network and production access remain paused. This task
   authorizes local frontend code, local commits, and hermetic tests only: no
   push, merge, deployment, production mutation, remote/backend server access,
@@ -527,25 +530,32 @@ Validation-only, unchanged unless a separate scope review authorizes otherwise:
 - no external/remote network, credential, production, push, merge, or deploy
   action.
 
-## Validation gates
+## Acceptance evidence
 
-Before acceptance:
+All acceptance gates passed locally:
 
-1. New behavior suite is RED against the accepted F3i runtime for semantic
-   reasons, with compatibility guards still green.
-2. New behavior suite is fully green after the single runtime change.
-3. Existing `useProfileTabs.request-race` and F3e-F3i settlement suites pass.
-4. The relationship structure gate proves the optional typed port, exact public
-   barrel imports/default singleton, production `ProfileView` default path, and
-   absence of module-scope replay storage or an alternate channel.
-5. Inventory reports exactly 172 Vitest files and 67 Node files.
-6. `vue-tsc --noEmit`, changed-file ESLint, Prettier, inventory, encoding scan,
-   conflict-marker scan, and `git diff --check` pass.
-7. Full Vitest, full Node tests, production build/PWA verification, sanitizer,
-   and hermetic localhost smoke pass.
-8. At least two independent reviewers return `ACCEPT` with no blocker.
-9. Final docs state mounted membership only, local-only verification, and all
-   unresolved boundaries without claiming global canonical state.
+1. The behavior contract was RED for semantic reasons against the accepted F3i
+   runtime, including the later cross-tab candidate and synchronous nested-load
+   ownership regressions; compatibility guards remained green.
+2. The final behavior suite passed 65/65 after the single runtime change.
+3. The relationship structure suite passed 6/6, proving the optional typed
+   port, exact public-barrel/default-singleton path, one construction-time
+   subscriber, production `ProfileView` default path, disposal ownership, and
+   absence of alternate channel or replay storage.
+4. Six `useProfileTabs.request-race` and F3e-F3i compatibility-guard files
+   passed 196/196.
+5. Full Vitest passed 172 files / 4,396 tests; full Node structure tests passed
+   67 files / 845 tests.
+6. The production build passed with 647 transformed modules and 71 PWA precache
+   entries; the HTML sanitizer and 3/3 hermetic localhost smoke checks passed.
+7. Full `npm run verify` exited 0 in about 105.5 seconds. Type checking,
+   changed-file ESLint, Prettier, inventory, encoding, conflict-marker, and diff
+   checks also passed.
+8. Two independent reviewers returned `ACCEPT` with no blocking finding.
+9. Validation was local-only. The only network/server activity was the
+   hermetic localhost preview used by the smoke runner; no external/remote
+   network, remote backend, production access, credential use, push, merge, or
+   deployment occurred.
 
 ## Known limits and non-goals
 
@@ -575,10 +585,13 @@ Before acceptance:
 Rollback is code-only and local:
 
 1. revert the eventual acceptance-doc commit;
-2. revert the runtime commit;
-3. revert the RED/inventory commit and restore inventory `172 -> 171` Vitest
-   and `67 -> 66` Node;
-4. revert the task commit.
+2. revert runtime commit `48b8ccc`;
+3. revert synchronous nested-request RED commit `da98eef`;
+4. revert cross-tab candidate RED commit `38afc7f`;
+5. revert main RED/inventory commit `c908a4d`, removing the two new test files,
+   restoring the request-race harness, and returning inventory `172 -> 171`
+   Vitest and `67 -> 66` Node;
+6. revert task commit `11b1cc1`.
 
 No database, Redis, storage, schema, service-worker, or user-data cleanup is
 required. Successfully completed Like/Save actions are ordinary server user

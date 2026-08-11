@@ -3,8 +3,8 @@
 Last verified: 2026-08-11
 
 Active control issue: [#1090](https://github.com/taoyu051818-sys/lian-mobile-web/issues/1090)
-(F3i is accepted locally under a local-only task contract; external-network and
-production access remain paused, so no F3i issue was created online).
+(F3j is accepted locally under a local-only task contract; external-network and
+production access remain paused, so no F3j issue was created online).
 
 Open release blockers: None recorded as open GitHub issues.
 
@@ -12,6 +12,14 @@ Current production release: Not recorded in this repository.
 
 **Active execution queue:**
 
+- F3j mounted Profile reaction-membership consumption is accepted locally under
+  `docs/agent/tasks/profile-reaction-membership-consumer.md`; implementation
+  commit `48b8ccc`. The current mounted `liked` or `saved` collection now
+  removes and restores known rows from authoritative Like/Save settlements,
+  while each physical request owns a sequence boundary that prevents a stale
+  membership response from overwriting newer matching events. Unknown positive
+  events cannot synthesize a Profile DTO, and Profile statistics remain
+  server-owned.
 - F3i mounted Detail reaction settlement consumption is accepted locally under
   `docs/agent/tasks/detail-reaction-settlement-consumer.md`; implementation
   commit `e78a855`. Current authoritative Footer Like, Context Save, and Detail
@@ -57,23 +65,39 @@ Current production release: Not recorded in this repository.
   `70cc4e3`. Its runtime scope is limited to client-side duplicate-`tid`
   projection.
 - The Feed read-only audit also recorded follow-up batches for cursor
-  pagination, Profile/cross-tab/account reaction reconciliation, and page
-  restoration. They are not part of F3a-F3i.
+  pagination, Profile statistics, reload/remount, cross-tab/account-epoch
+  reaction reconciliation, and page restoration. They are not part of
+  F3a-F3j.
 - F2h normal publish-success actionable-result rendering is accepted locally
   under `docs/agent/tasks/publish-success-actionable-result-render.md`.
 - F2g immutable Publish submit snapshot and response ownership is accepted
   locally under `docs/agent/tasks/publish-submit-snapshot-ownership.md`.
-- Profile, reload/remount, cross-tab, account-epoch, server-revision,
-  cursor-pagination, and page-restoration work remain separate. Cursor
-  pagination and Event creation idempotency remain coordinated API/backend
-  follow-ups, not F3i changes.
+- Profile statistics, reload/remount, cross-tab, account-epoch,
+  server-revision, cursor-pagination, and page-restoration work remain
+  separate. Cursor pagination and Event creation idempotency remain coordinated
+  API/backend follow-ups, not F3j changes.
 - F2g does not claim Event idempotency, mounted auth refresh, true network
   cancellation, or server-side side-effect reversal are complete.
 - Scope is local frontend code and tests only. No push, deployment, production
   mutation, or online environment check is authorized.
+- A future controlled deployment remains a separate release phase requiring its
+  own target, credential, backup, rollback, and health-check authorization; F3j
+  acceptance does not grant that production authority.
 
 Local audit baseline:
 
+- F3j mounted Profile reaction-membership consumption accepted locally on
+  `codex/audit-f3j-profile-reaction-membership`, building on accepted F3i head
+  `db45dfa`; task commit `11b1cc1`, main red-test/inventory commit `c908a4d`,
+  cross-tab candidate regression commit `38afc7f`, synchronous nested-request
+  ownership regression commit `da98eef`, and runtime implementation commit
+  `48b8ccc`.
+- F3j validation passed: the new behavior suite 65/65, the new structure suite
+  6/6, six compatibility-guard files 196/196, 172 Vitest files / 4,396 tests,
+  67 Node structure files / 845 tests, production build (647 transformed
+  modules / PWA 71 entries), HTML sanitizer, 3 hermetic localhost loopback
+  smoke checks, and full `npm run verify` with exit 0 in about 105.5 seconds.
+  Two independent reviewers recorded `ACCEPT` with no blocking finding.
 - F3i mounted Detail reaction settlement consumption accepted locally on
   `codex/audit-f3i-detail-reaction-consumer`, building on accepted F3h head
   `72768cf`; task commit `f46e171`, red-test and inventory commit `15fdfbb`, and
