@@ -532,10 +532,11 @@ The new local Playwright spec is hermetic and uses `page.route`; it never contac
    over-60 no-timer arms.
 8. Submit a non-empty explicit ops token and prove one reports request; repeat/empty/stale submits
    prove zero additional requests.
-9. Cover q, status, next/previous URL construction and disabled states. Unit coverage injects a
-   synthetic non-safe next offset; the local E2E reaches the 1,000,000 hard-bound fixture. In both,
-   assert Next is disabled and the guarded click issues zero requests; inspect all local E2E calls
-   and prove every serialized offset is a safe integer in the inclusive 0-1,000,000 range.
+9. Cover q, status, next/previous URL construction and disabled states. Unit coverage owns the
+   synthetic non-safe and 1,000,000 hard-bound fixtures because the production UI exposes only
+   20-row previous/next navigation; the local E2E covers a reachable total-boundary fixture. In
+   both, assert Next is disabled and the guarded click issues zero requests; inspect all local E2E
+   calls and prove every serialized offset is a safe integer in the inclusive 0-1,000,000 range.
 10. Resolve two merchants requests in reverse order and prove latest-wins plus physical abort.
 11. Settle a legacy ops request after lane/authEpoch/sequence invalidation and prove every late
     success/error/finally commit is ignored without claiming physical abort.
