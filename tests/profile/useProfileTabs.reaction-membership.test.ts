@@ -523,6 +523,51 @@ describe("mounted Profile reaction membership", () => {
     expect(harness.profile.listLoading.value).toBe(false);
   });
 
+  it.each(["resetList", "orders"] as const)(
+    "#5 preserves a nested saved request admitted from the %s visible reset",
+    async (boundary) => {
+      const harness = makeHarness();
+      await loadRows(harness, "liked", [item(1, `before-${boundary}`)]);
+      const pendingSaved = deferred<ProfileListResponse>();
+      fetchProfileTabMock.mockReturnValueOnce(pendingSaved.promise);
+      let nestedLoad: Promise<void> | undefined;
+      const stop = watch(
+        harness.profile.profileItems,
+        (rows) => {
+          if (rows.length === 0 && !nestedLoad) {
+            nestedLoad = harness.profile.loadProfileList("saved");
+          }
+        },
+        { flush: "sync" },
+      );
+
+      if (boundary === "resetList") {
+        harness.profile.resetList();
+      } else {
+        await harness.profile.loadProfileList("orders");
+      }
+
+      expect(nestedLoad).toBeDefined();
+      expect(fetchProfileTabMock).toHaveBeenCalledTimes(2);
+      expect(fetchProfileTabMock).toHaveBeenLastCalledWith("saved", [], {
+        contentFilter: "all",
+      });
+      expect(harness.profile.activeTab.value).toBe("saved");
+      expect(harness.profile.listLoading.value).toBe(true);
+      expect(harness.profile.profileItems.value).toEqual([]);
+
+      const savedRow = item(2, `saved-after-${boundary}`);
+      pendingSaved.resolve(response([savedRow]));
+      await nestedLoad;
+      stop();
+
+      expect(harness.profile.activeTab.value).toBe("saved");
+      expect(harness.profile.listLoading.value).toBe(false);
+      expect(harness.profile.profileItems.value).toHaveLength(1);
+      expect(toRaw(harness.profile.profileItems.value[0])).toBe(savedRow);
+    },
+  );
+
   it("#6 retires A candidates and retained callbacks before installing account B", async () => {
     const port = createPostReactionSettlementChannel();
     const bRequest = deferred<ProfileListResponse>();
