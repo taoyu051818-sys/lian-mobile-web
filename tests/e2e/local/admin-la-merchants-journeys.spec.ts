@@ -604,7 +604,7 @@ test.describe("@local-admin-la established merchants failures", () => {
   }
 
   test("missing, invalid, and over-60 retry values create no timer", async ({ page }) => {
-    for (const value of [undefined, "0", "1.5", "61", "not-a-date"] as const) {
+    for (const value of [undefined, "0", "-1", "61", "not-a-date"] as const) {
       const headers: Record<string, string> = value === undefined ? {} : { "retry-after": value };
       const fixture = await installApi(page, [
         strictPlan(),

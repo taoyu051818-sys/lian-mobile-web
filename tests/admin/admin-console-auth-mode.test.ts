@@ -150,6 +150,28 @@ function expectNoConsoleError(console: AdminConsole) {
   ]).toEqual(["", "", "", "", "", "", ""]);
 }
 
+function consoleEphemeralSnapshot(console: AdminConsole) {
+  return {
+    reports: [...console.reports.value],
+    reportsTotal: console.reportsTotal.value,
+    auditEvents: [...console.auditEvents.value],
+    verificationRequests: [...console.verificationRequests.value],
+    verificationTotal: console.verificationTotal.value,
+    revealedVerificationDetails: { ...console.revealedVerificationDetails.value },
+    authLinks: [...console.authLinks.value],
+  };
+}
+
+const EMPTY_CONSOLE_EPHEMERAL_STATE = {
+  reports: [],
+  reportsTotal: 0,
+  auditEvents: [],
+  verificationRequests: [],
+  verificationTotal: 0,
+  revealedVerificationDetails: {},
+  authLinks: [],
+};
+
 afterEach(() => {
   vi.resetAllMocks();
 });
@@ -187,6 +209,55 @@ describe("useAdminConsole exact ops authorization", () => {
       for (const call of api.mock.calls) expect(call[0]).toBe("exact-ops-token");
     }
   });
+
+  it.each([401, 403])(
+    "clears account A collections on current %i before account B ordinary load failure",
+    async (status) => {
+      installHappyApis();
+      const harness = makeConsole({ token: "account-a-token", lane: "ops", epoch: 10 });
+      await Promise.all([
+        harness.console.loadReports("pending"),
+        harness.console.loadAuditLog(),
+        harness.console.loadVerificationRequests("pending"),
+        harness.console.loadAuthLinks(),
+      ]);
+      await harness.console.revealVerificationRequest(verification);
+      expect(consoleEphemeralSnapshot(harness.console)).toEqual({
+        reports: [report],
+        reportsTotal: 1,
+        auditEvents: [auditEvent],
+        verificationRequests: [verification],
+        verificationTotal: 1,
+        revealedVerificationDetails: {
+          [verification.verificationId]: verificationDetail,
+        },
+        authLinks: [authLink],
+      });
+
+      harness.onTokenInvalid.mockImplementationOnce(() => {
+        harness.authEpoch.value += 1;
+        harness.token.value = "";
+        harness.lane.value = "gate";
+      });
+      adminApi.postAdminPostAction.mockRejectedValueOnce(
+        new LianApiError("raw account A authorization failure", status),
+      );
+      await harness.console.applyPostAction(2, "hide");
+      const afterGate = consoleEphemeralSnapshot(harness.console);
+
+      harness.token.value = "account-b-token";
+      harness.authEpoch.value += 1;
+      harness.lane.value = "ops";
+      adminApi.fetchAdminReports.mockRejectedValueOnce(
+        new Error("raw account B ordinary failure must not reveal account A"),
+      );
+      await harness.console.loadReports("pending");
+
+      expect(harness.onTokenInvalid).toHaveBeenCalledTimes(1);
+      expect(afterGate).toEqual(EMPTY_CONSOLE_EPHEMERAL_STATE);
+      expect(consoleEphemeralSnapshot(harness.console)).toEqual(EMPTY_CONSOLE_EPHEMERAL_STATE);
+    },
+  );
 });
 
 interface OperationCase<T = unknown> {
@@ -629,6 +700,215 @@ describe("useAdminConsole logical lane/epoch/sequence ownership", () => {
 });
 
 describe("useAdminConsole overlapping finally ownership", () => {
+  interface FinalizerCase {
+    name: string;
+    mock: ReturnType<typeof vi.fn>;
+    success: unknown;
+    invoke(console: AdminConsole): Promise<unknown>;
+    readOwner(console: AdminConsole): unknown;
+    expectedOwner: unknown;
+  }
+
+  function finalizerCases(): FinalizerCase[] {
+    return [
+      {
+        name: "reports load",
+        mock: adminApi.fetchAdminReports,
+        success: { items: [report], total: 1 },
+        invoke: (value) => value.loadReports("pending"),
+        readOwner: (value) => value.reportsLoading.value,
+        expectedOwner: true,
+      },
+      {
+        name: "audit load",
+        mock: adminApi.fetchAdminAuditLog,
+        success: { items: [auditEvent], total: 1 },
+        invoke: (value) => value.loadAuditLog(),
+        readOwner: (value) => value.auditLoading.value,
+        expectedOwner: true,
+      },
+      {
+        name: "verification load",
+        mock: adminApi.fetchAdminVerificationRequests,
+        success: { items: [verification], total: 1 },
+        invoke: (value) => value.loadVerificationRequests("pending"),
+        readOwner: (value) => value.verificationLoading.value,
+        expectedOwner: true,
+      },
+      {
+        name: "auth-link load",
+        mock: authLinkApi.fetchAdminAuthLinks,
+        success: { items: [authLink] },
+        invoke: (value) => value.loadAuthLinks(),
+        readOwner: (value) => value.authLinksLoading.value,
+        expectedOwner: true,
+      },
+      {
+        name: "verification reveal",
+        mock: adminApi.fetchAdminVerificationDetail,
+        success: verificationDetail,
+        invoke: (value) => value.revealVerificationRequest(verification),
+        readOwner: (value) => value.revealingVerificationId.value,
+        expectedOwner: verification.verificationId,
+      },
+      {
+        name: "auth-link create",
+        mock: authLinkApi.createAdminAuthLink,
+        success: authLink,
+        invoke: (value) => value.createAuthLink({ ttlSeconds: 3_600 }),
+        readOwner: (value) => value.authLinkCreating.value,
+        expectedOwner: true,
+      },
+    ];
+  }
+
+  interface FinalizerInvalidator {
+    name: string;
+    invalidate(harness: ConsoleHarness): Promise<void> | void;
+  }
+
+  function finalizerInvalidators(): FinalizerInvalidator[] {
+    return [
+      {
+        name: "lane change",
+        invalidate: (harness) => {
+          harness.lane.value = "gate";
+        },
+      },
+      {
+        name: "auth epoch change",
+        invalidate: (harness) => {
+          harness.authEpoch.value += 1;
+        },
+      },
+      {
+        name: "token replacement",
+        invalidate: (harness) => {
+          harness.token.value = "replacement-ops-token";
+        },
+      },
+      {
+        name: "authorization-version change",
+        invalidate: async (harness) => {
+          adminApi.postAdminPostAction.mockRejectedValueOnce(
+            new LianApiError("current authorization lost", 401),
+          );
+          await harness.console.applyPostAction(2, "hide");
+          expect(harness.onTokenInvalid).toHaveBeenCalledTimes(1);
+        },
+      },
+    ];
+  }
+
+  for (const operation of finalizerCases()) {
+    for (const invalidator of finalizerInvalidators()) {
+      it(`${operation.name} stale finally cannot write after ${invalidator.name}`, async () => {
+        installHappyApis();
+        const pending = deferred<unknown>();
+        operation.mock.mockReturnValueOnce(pending.promise);
+        const harness = makeConsole();
+        const run = operation.invoke(harness.console);
+
+        expect(operation.readOwner(harness.console)).toBe(operation.expectedOwner);
+        await invalidator.invalidate(harness);
+        const ownerAfterInvalidation = operation.readOwner(harness.console);
+        if (invalidator.name !== "authorization-version change") {
+          expect(ownerAfterInvalidation).toBe(operation.expectedOwner);
+        }
+
+        pending.resolve(operation.success);
+        await run;
+
+        expect(operation.readOwner(harness.console)).toBe(ownerAfterInvalidation);
+      });
+    }
+  }
+
+  it.each(["review", "create", "revoke"] as const)(
+    "a %s nested reload whose parent is superseded cannot clear loading ownership",
+    async (kind) => {
+      installHappyApis();
+      const nestedA = deferred<unknown>();
+      const nestedB = deferred<unknown>();
+      const successorOuter = deferred<unknown>();
+      let runA: Promise<unknown>;
+      let runB: Promise<unknown>;
+      let readLoading: () => boolean;
+      let settleNestedA: () => void;
+      let settleNestedB: () => void;
+      let settleSuccessorOuter: () => void;
+      let nestedReloadMock: ReturnType<typeof vi.fn>;
+      const harness = makeConsole();
+
+      if (kind === "review") {
+        adminApi.patchAdminVerificationRequest
+          .mockResolvedValueOnce(verificationDetail)
+          .mockReturnValueOnce(successorOuter.promise);
+        adminApi.fetchAdminVerificationRequests
+          .mockReturnValueOnce(nestedA.promise)
+          .mockReturnValueOnce(nestedB.promise);
+        const invoke = () =>
+          harness.console.reviewVerificationRequest(verification, { status: "approved" });
+        runA = invoke();
+        await flush();
+        expect(adminApi.fetchAdminVerificationRequests).toHaveBeenCalledTimes(1);
+        runB = invoke();
+        readLoading = () => harness.console.verificationLoading.value;
+        settleNestedA = () => nestedA.resolve({ items: [verification], total: 1 });
+        settleNestedB = () => nestedB.resolve({ items: [verification], total: 1 });
+        settleSuccessorOuter = () => successorOuter.resolve(verificationDetail);
+        nestedReloadMock = adminApi.fetchAdminVerificationRequests;
+      } else {
+        authLinkApi.fetchAdminAuthLinks
+          .mockReturnValueOnce(nestedA.promise)
+          .mockReturnValueOnce(nestedB.promise);
+        if (kind === "create") {
+          authLinkApi.createAdminAuthLink
+            .mockResolvedValueOnce(authLink)
+            .mockReturnValueOnce(successorOuter.promise);
+          const invoke = () => harness.console.createAuthLink({ ttlSeconds: 3_600 });
+          runA = invoke();
+          await flush();
+          expect(authLinkApi.fetchAdminAuthLinks).toHaveBeenCalledTimes(1);
+          runB = invoke();
+          settleSuccessorOuter = () => successorOuter.resolve(authLink);
+        } else {
+          authLinkApi.revokeAdminAuthLink
+            .mockResolvedValueOnce(undefined)
+            .mockReturnValueOnce(successorOuter.promise);
+          const invoke = () => harness.console.revokeAuthLink("link-1");
+          runA = invoke();
+          await flush();
+          expect(authLinkApi.fetchAdminAuthLinks).toHaveBeenCalledTimes(1);
+          runB = invoke();
+          settleSuccessorOuter = () => successorOuter.resolve(undefined);
+        }
+        readLoading = () => harness.console.authLinksLoading.value;
+        settleNestedA = () => nestedA.resolve({ items: [authLink] });
+        settleNestedB = () => nestedB.resolve({ items: [authLink] });
+        nestedReloadMock = authLinkApi.fetchAdminAuthLinks;
+      }
+
+      expect(nestedReloadMock).toHaveBeenCalledTimes(1);
+      expect(readLoading()).toBe(true);
+      settleNestedA();
+      await runA;
+      const loadingAfterStaleParent = readLoading();
+
+      settleSuccessorOuter();
+      await flush();
+      expect(nestedReloadMock).toHaveBeenCalledTimes(2);
+      const loadingDuringSuccessorChild = readLoading();
+      settleNestedB();
+      await runB;
+      const loadingAfterSuccessorChild = readLoading();
+
+      expect(loadingAfterStaleParent).toBe(true);
+      expect(loadingDuringSuccessorChild).toBe(true);
+      expect(loadingAfterSuccessorChild).toBe(false);
+    },
+  );
+
   it.each([
     [
       "reports",

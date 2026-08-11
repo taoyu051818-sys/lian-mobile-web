@@ -45,6 +45,31 @@ interface AdminAccessController {
 
 type UseAdminAccess = (options: UseAdminAccessOptions) => AdminAccessController;
 
+interface IntegratedMerchantQuery {
+  limit: number;
+  offset: number;
+  q?: string;
+  status?: "active" | "inactive";
+}
+
+interface IntegratedAdminMerchantsController {
+  rows: Ref<Array<{ id: string }>>;
+  loading: Ref<boolean>;
+  draftQ: Ref<string>;
+  status: Ref<"all" | "active" | "inactive">;
+  adoptInitial(value: MerchantEnvelope): void;
+  refresh(): Promise<void>;
+  retire(): void;
+  clear(): void;
+}
+
+type UseIntegratedAdminMerchants = (options: {
+  authEpoch: Ref<number>;
+  isSessionLane(): boolean;
+  fetchMerchants(query: IntegratedMerchantQuery, signal: AbortSignal): Promise<MerchantEnvelope>;
+  onAuthorizationLost(status: 401 | 403): void;
+}) => IntegratedAdminMerchantsController;
+
 async function requireAccess(): Promise<UseAdminAccess> {
   const specifier = new URL("../../src/features/admin/" + "useAdminAccess.ts", import.meta.url)
     .href;
@@ -60,6 +85,23 @@ async function requireAccess(): Promise<UseAdminAccess> {
   expect(loadError, "useAdminAccess runtime module must exist").toBeUndefined();
   expect(loaded?.useAdminAccess).toBeTypeOf("function");
   return loaded!.useAdminAccess!;
+}
+
+async function requireMerchants(): Promise<UseIntegratedAdminMerchants> {
+  const specifier = new URL("../../src/features/admin/" + "useAdminMerchants.ts", import.meta.url)
+    .href;
+  let loaded: { useAdminMerchants?: UseIntegratedAdminMerchants } | undefined;
+  let loadError: unknown;
+  try {
+    loaded = (await import(/* @vite-ignore */ specifier)) as {
+      useAdminMerchants?: UseIntegratedAdminMerchants;
+    };
+  } catch (error) {
+    loadError = error;
+  }
+  expect(loadError, "useAdminMerchants runtime module must exist").toBeUndefined();
+  expect(loaded?.useAdminMerchants).toBeTypeOf("function");
+  return loaded!.useAdminMerchants!;
 }
 
 interface Deferred<T> {
@@ -413,6 +455,158 @@ describe("administrator access FSM", () => {
       expect(harness.loadReports).not.toHaveBeenCalled();
     }
   });
+
+  it.each([401, 403] as const)(
+    "integrates a current merchants %i through retire, auth invalidation, access clear, then gate",
+    async (status) => {
+      const useAdminAccess = await requireAccess();
+      const useAdminMerchants = await requireMerchants();
+      const token = ref("retained-ops-token");
+      const authEpoch = ref(40);
+      const beforeEpoch = authEpoch.value;
+      const pending = deferred<MerchantEnvelope>();
+      const loadReports = vi.fn(async () => undefined);
+      let activeSignal: AbortSignal | undefined;
+      const events: Array<{
+        label: string;
+        lane: AdminLane;
+        token: string;
+        epoch: number;
+        signalAborted: boolean;
+        loading: boolean;
+        rowIds: string[];
+        draftQ: string;
+        status: "all" | "active" | "inactive";
+      }> = [];
+      const record = (label: string) => {
+        events.push({
+          label,
+          lane: access.lane.value,
+          token: token.value,
+          epoch: authEpoch.value,
+          signalAborted: activeSignal?.aborted ?? false,
+          loading: merchants.loading.value,
+          rowIds: merchants.rows.value.map((row) => row.id),
+          draftQ: merchants.draftQ.value,
+          status: merchants.status.value,
+        });
+      };
+
+      const merchants = useAdminMerchants({
+        authEpoch,
+        isSessionLane: () => access.lane.value === "session-merchants",
+        fetchMerchants: (_query, signal) => {
+          activeSignal = signal;
+          return pending.promise;
+        },
+        onAuthorizationLost: (lostStatus) => {
+          record("authorization-loss");
+          access.loseSessionAuthorization(lostStatus);
+        },
+      });
+      const access = useAdminAccess({
+        token,
+        authEpoch,
+        setToken: (value) => {
+          token.value = value;
+          authEpoch.value += 1;
+        },
+        clearToken: () => {
+          token.value = "";
+          authEpoch.value += 1;
+          record("clear-token");
+        },
+        advanceAuthEpoch: () => {
+          authEpoch.value += 1;
+          record("advance-auth-epoch");
+          return authEpoch.value;
+        },
+        probeMerchants: () => Promise.resolve(validEnvelope("initial-sensitive-row")),
+        adoptMerchants: merchants.adoptInitial,
+        retireMerchants: () => {
+          merchants.retire();
+          record("retire-merchants");
+        },
+        clearMerchants: () => {
+          record("clear-merchants");
+          merchants.clear();
+        },
+        loadReports,
+      });
+
+      await access.initialize();
+      expect(access.lane.value).toBe("session-merchants");
+      merchants.draftQ.value = "retained-filter";
+      merchants.status.value = "inactive";
+      const stopLaneAudit = watch(
+        access.lane,
+        (lane) => {
+          if (lane === "gate") record("gate");
+        },
+        { flush: "sync" },
+      );
+
+      const run = merchants.refresh();
+      expect(merchants.loading.value).toBe(true);
+      expect(merchants.rows.value).toEqual([]);
+      merchants.rows.value = [{ id: "authorization-order-sentinel" }];
+      pending.reject(safeError(status, status === 401 ? "AUTH_REQUIRED" : "CAPABILITY_REQUIRED"));
+      await run;
+      stopLaneAudit();
+
+      expect(events.map((event) => event.label)).toEqual([
+        "authorization-loss",
+        "retire-merchants",
+        "advance-auth-epoch",
+        "clear-token",
+        "clear-merchants",
+        "gate",
+      ]);
+      expect(events[0]).toMatchObject({
+        lane: "session-merchants",
+        token: "retained-ops-token",
+        epoch: beforeEpoch,
+        signalAborted: true,
+        loading: false,
+        rowIds: ["authorization-order-sentinel"],
+        draftQ: "retained-filter",
+        status: "inactive",
+      });
+      expect(events[1]).toMatchObject({
+        lane: "session-merchants",
+        token: "retained-ops-token",
+        epoch: beforeEpoch,
+        signalAborted: true,
+        loading: false,
+        rowIds: ["authorization-order-sentinel"],
+        draftQ: "retained-filter",
+        status: "inactive",
+      });
+      expect(events[2]?.epoch).toBeGreaterThan(beforeEpoch);
+      expect(events[2]?.token).toBe("retained-ops-token");
+      expect(events[3]?.epoch).toBeGreaterThan(beforeEpoch);
+      expect(events[3]?.token).toBe("");
+      expect(events[4]).toMatchObject({
+        lane: "session-merchants",
+        token: "",
+        rowIds: ["authorization-order-sentinel"],
+        draftQ: "retained-filter",
+        status: "inactive",
+      });
+      expect(events[5]).toMatchObject({
+        lane: "gate",
+        token: "",
+        rowIds: [],
+        draftQ: "",
+        status: "all",
+      });
+      expect(authEpoch.value).toBeGreaterThan(beforeEpoch);
+      expect(merchants.rows.value).toEqual([]);
+      expect(merchants.loading.value).toBe(false);
+      expect(access.reason.value).toBe(status === 401 ? "AUTH_REQUIRED" : "CAPABILITY_REQUIRED");
+      expect(loadReports).not.toHaveBeenCalled();
+    },
+  );
 
   it("bounds 429 cooldown to 1-60 seconds, never auto-retries, and clears stale timer ownership", async () => {
     vi.useFakeTimers();

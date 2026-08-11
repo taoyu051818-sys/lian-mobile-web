@@ -479,15 +479,50 @@ describe("administrator merchants queue state", () => {
         Promise.reject(safeError(status, status === 401 ? "AUTH_REQUIRED" : "CAPABILITY_REQUIRED")),
       );
       harness.controller.adoptInitial(envelope("sensitive-row"));
+      harness.controller.draftQ.value = "retained-filter";
+      harness.controller.status.value = "inactive";
+      let authorizationSnapshot:
+        | {
+            rows: Merchant[];
+            loading: boolean;
+            signalAborted: boolean;
+            draftQ: string;
+            status: "all" | "active" | "inactive";
+          }
+        | undefined;
       harness.onAuthorizationLost.mockImplementation(() => {
-        expect(harness.controller.rows.value).toEqual([]);
-        expect(harness.controller.loading.value).toBe(false);
+        const signal = harness.fetchMerchants.mock.calls[0]?.[1] as AbortSignal;
+        authorizationSnapshot = {
+          rows: [...harness.controller.rows.value],
+          loading: harness.controller.loading.value,
+          signalAborted: signal.aborted,
+          draftQ: harness.controller.draftQ.value,
+          status: harness.controller.status.value,
+        };
+        harness.controller.clear();
       });
 
-      await harness.controller.refresh();
+      const run = harness.controller.refresh();
+      expect(harness.controller.rows.value).toEqual([]);
+      // Admission intentionally clears visible rows. Reinsert an in-memory
+      // sentinel after admission so this oracle isolates authorization-loss
+      // ordering from the independent load-start behavior.
+      harness.controller.rows.value = [merchant("authorization-order-sentinel")];
+      await run;
 
       expect(harness.onAuthorizationLost).toHaveBeenCalledTimes(1);
       expect(harness.onAuthorizationLost).toHaveBeenCalledWith(status);
+      expect(authorizationSnapshot).toEqual({
+        rows: [merchant("authorization-order-sentinel")],
+        loading: false,
+        signalAborted: true,
+        draftQ: "retained-filter",
+        status: "inactive",
+      });
+      expect(harness.controller.rows.value).toEqual([]);
+      expect(harness.controller.loading.value).toBe(false);
+      expect(harness.controller.draftQ.value).toBe("");
+      expect(harness.controller.status.value).toBe("all");
       expect(harness.controller.error.value).toBeNull();
     },
   );
