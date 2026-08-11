@@ -2,9 +2,29 @@ import { onScopeDispose, ref } from "vue";
 import { LianApiError } from "../../api/http";
 import { togglePostLike, togglePostSave } from "../../api/posts";
 import type { PostDetail } from "../../types/post";
-import { postReactionSettlements, type PostReactionSettlementPort } from "../reactions";
+import {
+  postReactionSettlements,
+  type PostReactionSettlement,
+  type PostReactionSettlementPort,
+} from "../../features/reactions";
 
 type ReactionAction = "like" | "save";
+
+interface LikeAttempt {
+  readonly tid: number;
+  readonly generation: number;
+  readonly ticket: number;
+  readonly desiredLiked: boolean;
+  readonly admissionSequence: number;
+}
+
+interface SaveAttempt {
+  readonly tid: number;
+  readonly generation: number;
+  readonly ticket: number;
+  readonly desiredSaved: boolean;
+  readonly admissionSequence: number;
+}
 
 const AUTH_CODE_PATTERN =
   /(?:unauthorized|forbidden|auth(?:_| )?(?:required|invalid|expired)|invalid[_-]?session|session[_-]?expired)/i;
@@ -92,9 +112,17 @@ export function usePostReactions(options: {
   const likeBusy = ref(false);
   const saveBusy = ref(false);
 
+  let currentTid: number | null = null;
+  let baselineLiked = false;
+  let baselineLikeCount = 0;
+  let baselineSaved = false;
   let generation = 0;
   let likeTicket = 0;
   let saveTicket = 0;
+  let likeAttempt: LikeAttempt | null = null;
+  let saveAttempt: SaveAttempt | null = null;
+  let latestLikeSequence = 0;
+  let latestSaveSequence = 0;
   let disposed = false;
 
   function normalizedLikeCount(value: unknown): number {
@@ -106,89 +134,168 @@ export function usePostReactions(options: {
     return predicate ? predicate() : true;
   }
 
-  function ownsLike(ownerGeneration: number, ticket: number, predicate?: () => boolean): boolean {
+  function validTid(value: unknown): value is number {
+    return Number.isInteger(value) && Number(value) > 0;
+  }
+
+  function ownsLike(attempt: LikeAttempt, predicate?: () => boolean): boolean {
     return (
       !disposed &&
-      generation === ownerGeneration &&
-      likeTicket === ticket &&
+      currentTid === attempt.tid &&
+      generation === attempt.generation &&
+      likeTicket === attempt.ticket &&
+      likeAttempt === attempt &&
       externalOwnerIsCurrent(predicate)
     );
   }
 
-  function ownsSave(ownerGeneration: number, ticket: number, predicate?: () => boolean): boolean {
+  function ownsSave(attempt: SaveAttempt, predicate?: () => boolean): boolean {
     return (
       !disposed &&
-      generation === ownerGeneration &&
-      saveTicket === ticket &&
+      currentTid === attempt.tid &&
+      generation === attempt.generation &&
+      saveTicket === attempt.ticket &&
+      saveAttempt === attempt &&
       externalOwnerIsCurrent(predicate)
     );
   }
+
+  function consumeSettlement(event: PostReactionSettlement): void {
+    if (disposed || !validTid(event.tid) || event.tid !== currentTid) return;
+
+    if (event.kind === "like") {
+      if (!Number.isInteger(event.sequence) || event.sequence <= latestLikeSequence) return;
+      latestLikeSequence = event.sequence;
+      baselineLiked = Boolean(event.liked);
+      baselineLikeCount = normalizedLikeCount(event.likeCount);
+      if (!likeAttempt || event.sequence > likeAttempt.admissionSequence) {
+        liked.value = baselineLiked;
+        likeCount.value = baselineLikeCount;
+      }
+      return;
+    }
+
+    if (!Number.isInteger(event.sequence) || event.sequence <= latestSaveSequence) return;
+    latestSaveSequence = event.sequence;
+    baselineSaved = Boolean(event.bookmarked);
+    if (!saveAttempt || event.sequence > saveAttempt.admissionSequence) {
+      saved.value = baselineSaved;
+    }
+  }
+
+  const unsubscribe = settlements.subscribe(consumeSettlement);
 
   async function handleLike(postId: number | null, isStillCurrent?: () => boolean) {
-    if (disposed || postId == null || likeBusy.value) return;
-    const previousLiked = liked.value;
-    const previousCount = likeCount.value;
-    const nextLiked = !previousLiked;
-    const ownerGeneration = generation;
-    const ticket = ++likeTicket;
-    liked.value = nextLiked;
-    likeCount.value = Math.max(0, previousCount + (nextLiked ? 1 : -1));
+    if (
+      disposed ||
+      !validTid(postId) ||
+      postId !== currentTid ||
+      likeBusy.value ||
+      !externalOwnerIsCurrent(isStillCurrent)
+    ) {
+      return;
+    }
+
+    const desiredLiked = !liked.value;
+    const attempt: LikeAttempt = {
+      tid: postId,
+      generation,
+      ticket: ++likeTicket,
+      desiredLiked,
+      admissionSequence: settlements.currentSequence(),
+    };
+    likeAttempt = attempt;
+    liked.value = desiredLiked;
+    likeCount.value = Math.max(0, likeCount.value + (desiredLiked ? 1 : -1));
     likeBusy.value = true;
     options.clearMessages();
     try {
-      const response = await togglePostLike(postId, nextLiked);
-      if (!ownsLike(ownerGeneration, ticket, isStillCurrent)) return;
+      const response = await togglePostLike(attempt.tid, attempt.desiredLiked);
+      if (!ownsLike(attempt, isStillCurrent)) return;
       const settledLiked = Boolean(response.liked);
       const settledLikeCount = normalizedLikeCount(response.likeCount);
-      liked.value = settledLiked;
-      likeCount.value = settledLikeCount;
-      settlements.publish({
-        kind: "like",
-        tid: postId,
-        liked: settledLiked,
-        likeCount: settledLikeCount,
-      });
-      if (ownsLike(ownerGeneration, ticket, isStillCurrent)) {
+      baselineLiked = settledLiked;
+      baselineLikeCount = settledLikeCount;
+      liked.value = baselineLiked;
+      likeCount.value = baselineLikeCount;
+      likeAttempt = null;
+      likeBusy.value = false;
+      try {
         options.showMessage(
           settledLiked ? REACTION_SUCCESS_COPY.like.active : REACTION_SUCCESS_COPY.like.inactive,
         );
+      } catch {
+        // Feedback is observational and cannot reinterpret an authoritative success.
       }
+      settlements.publish({
+        kind: "like",
+        tid: attempt.tid,
+        liked: settledLiked,
+        likeCount: settledLikeCount,
+      });
     } catch (error) {
-      if (!ownsLike(ownerGeneration, ticket, isStillCurrent)) return;
-      liked.value = previousLiked;
-      likeCount.value = previousCount;
-      options.showError(new Error(resolveReactionErrorMessage("like", error)), "");
-    } finally {
-      if (ownsLike(ownerGeneration, ticket, isStillCurrent)) likeBusy.value = false;
+      if (!ownsLike(attempt, isStillCurrent)) return;
+      liked.value = baselineLiked;
+      likeCount.value = baselineLikeCount;
+      likeAttempt = null;
+      likeBusy.value = false;
+      try {
+        options.showError(new Error(resolveReactionErrorMessage("like", error)), "");
+      } catch {
+        // Feedback is observational and cannot keep a failed action active.
+      }
     }
   }
 
   async function handleSave(postId: number | null, isStillCurrent?: () => boolean) {
-    if (disposed || postId == null || saveBusy.value) return;
-    const previousSaved = saved.value;
-    const nextSaved = !previousSaved;
-    const ownerGeneration = generation;
-    const ticket = ++saveTicket;
-    saved.value = nextSaved;
+    if (
+      disposed ||
+      !validTid(postId) ||
+      postId !== currentTid ||
+      saveBusy.value ||
+      !externalOwnerIsCurrent(isStillCurrent)
+    ) {
+      return;
+    }
+
+    const desiredSaved = !saved.value;
+    const attempt: SaveAttempt = {
+      tid: postId,
+      generation,
+      ticket: ++saveTicket,
+      desiredSaved,
+      admissionSequence: settlements.currentSequence(),
+    };
+    saveAttempt = attempt;
+    saved.value = desiredSaved;
     saveBusy.value = true;
     options.clearMessages();
     try {
-      const response = await togglePostSave(postId, nextSaved);
-      if (!ownsSave(ownerGeneration, ticket, isStillCurrent)) return;
+      const response = await togglePostSave(attempt.tid, attempt.desiredSaved);
+      if (!ownsSave(attempt, isStillCurrent)) return;
       const settledSaved = Boolean(response.saved);
-      saved.value = settledSaved;
-      settlements.publish({ kind: "save", tid: postId, bookmarked: settledSaved });
-      if (ownsSave(ownerGeneration, ticket, isStillCurrent)) {
+      baselineSaved = settledSaved;
+      saved.value = baselineSaved;
+      saveAttempt = null;
+      saveBusy.value = false;
+      try {
         options.showMessage(
           settledSaved ? REACTION_SUCCESS_COPY.save.active : REACTION_SUCCESS_COPY.save.inactive,
         );
+      } catch {
+        // Feedback is observational and cannot reinterpret an authoritative success.
       }
+      settlements.publish({ kind: "save", tid: attempt.tid, bookmarked: settledSaved });
     } catch (error) {
-      if (!ownsSave(ownerGeneration, ticket, isStillCurrent)) return;
-      saved.value = previousSaved;
-      options.showError(new Error(resolveReactionErrorMessage("save", error)), "");
-    } finally {
-      if (ownsSave(ownerGeneration, ticket, isStillCurrent)) saveBusy.value = false;
+      if (!ownsSave(attempt, isStillCurrent)) return;
+      saved.value = baselineSaved;
+      saveAttempt = null;
+      saveBusy.value = false;
+      try {
+        options.showError(new Error(resolveReactionErrorMessage("save", error)), "");
+      } catch {
+        // Feedback is observational and cannot keep a failed action active.
+      }
     }
   }
 
@@ -197,22 +304,40 @@ export function usePostReactions(options: {
     generation += 1;
     likeTicket += 1;
     saveTicket += 1;
-    liked.value = Boolean(nextPost?.liked);
-    saved.value = Boolean(nextPost?.bookmarked);
-    likeCount.value = normalizedLikeCount(nextPost?.likeCount);
+    likeAttempt = null;
+    saveAttempt = null;
+    likeBusy.value = false;
+    saveBusy.value = false;
+    currentTid = validTid(nextPost?.tid) ? nextPost.tid : null;
+    baselineLiked = Boolean(nextPost?.liked);
+    baselineLikeCount = normalizedLikeCount(nextPost?.likeCount);
+    baselineSaved = Boolean(nextPost?.bookmarked);
+    liked.value = baselineLiked;
+    likeCount.value = baselineLikeCount;
+    saved.value = baselineSaved;
+    const sequenceFloor = settlements.currentSequence();
+    latestLikeSequence = sequenceFloor;
+    latestSaveSequence = sequenceFloor;
+  }
+
+  function dispose(): void {
+    if (disposed) return;
+    disposed = true;
+    try {
+      unsubscribe();
+    } catch {
+      // The terminal state must still retire local work if a custom port misbehaves.
+    }
+    generation += 1;
+    likeTicket += 1;
+    saveTicket += 1;
+    likeAttempt = null;
+    saveAttempt = null;
     likeBusy.value = false;
     saveBusy.value = false;
   }
 
-  onScopeDispose(() => {
-    if (disposed) return;
-    disposed = true;
-    generation += 1;
-    likeTicket += 1;
-    saveTicket += 1;
-    likeBusy.value = false;
-    saveBusy.value = false;
-  });
+  onScopeDispose(dispose);
 
   return {
     liked,
@@ -223,5 +348,6 @@ export function usePostReactions(options: {
     handleLike,
     handleSave,
     resetReactions,
+    dispose,
   };
 }

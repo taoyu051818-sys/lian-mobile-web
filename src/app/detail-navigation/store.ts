@@ -12,8 +12,9 @@
  * mutations are internal.
  */
 
-import { computed, ref, watch, type ComputedRef, type Ref } from "vue";
+import { computed, ref, toRaw, watch, type ComputedRef, type Ref } from "vue";
 import type { PostDetail } from "../../types/post";
+import { postReactionSettlements, type PostReactionSettlement } from "../../features/reactions";
 import {
   initialState,
   reduce,
@@ -31,12 +32,131 @@ import { registerBeforeNavigate } from "../view-hash";
 
 const stateRef = ref<DetailState>(initialState());
 
+interface DetailLoadingOwner {
+  tid: number;
+  token: number;
+  controller: AbortController;
+}
+
+interface DetailReadyProjectionOwner {
+  tid: number;
+  rawPost: PostDetail;
+  likeSequenceFloor: number;
+  saveSequenceFloor: number;
+}
+
+let loadingOwner: DetailLoadingOwner | null = null;
+let readyProjectionOwner: DetailReadyProjectionOwner | null = null;
+
+function releaseLoadingOwner(): void {
+  const owner = loadingOwner;
+  if (!owner) return;
+  loadingOwner = null;
+  owner.controller.abort();
+}
+
+function releaseLoadingOwnerForState(nextState: DetailState): void {
+  const owner = loadingOwner;
+  if (
+    owner &&
+    nextState.kind === "loading" &&
+    nextState.token === owner.token &&
+    Object.is(nextState.tid, owner.tid)
+  ) {
+    return;
+  }
+  releaseLoadingOwner();
+}
+
+function reconcileReadyProjectionOwner(nextState: DetailState): void {
+  if (nextState.kind !== "ready") {
+    readyProjectionOwner = null;
+    return;
+  }
+
+  const rawPost = toRaw(nextState.post);
+  if (
+    readyProjectionOwner &&
+    readyProjectionOwner.rawPost === rawPost &&
+    Object.is(readyProjectionOwner.tid, nextState.tid)
+  ) {
+    return;
+  }
+
+  const sequenceFloor = postReactionSettlements.currentSequence();
+  readyProjectionOwner = {
+    tid: nextState.tid,
+    rawPost,
+    likeSequenceFloor: sequenceFloor,
+    saveSequenceFloor: sequenceFloor,
+  };
+}
+
+function applyReadySettlement(event: PostReactionSettlement): void {
+  const state = stateRef.value;
+  const owner = readyProjectionOwner;
+  if (state.kind !== "ready" || !owner) return;
+
+  const rawPost = toRaw(state.post);
+  if (owner.rawPost !== rawPost) return;
+  if (!Number.isInteger(event.tid) || event.tid <= 0) return;
+  if (
+    !Object.is(event.tid, owner.tid) ||
+    !Object.is(event.tid, state.tid) ||
+    !Object.is(event.tid, state.post.tid)
+  ) {
+    return;
+  }
+
+  if (event.kind === "like") {
+    if (event.sequence <= owner.likeSequenceFloor) return;
+    owner.likeSequenceFloor = event.sequence;
+    state.post.liked = event.liked;
+    state.post.likeCount = event.likeCount;
+    return;
+  }
+
+  if (event.kind === "save") {
+    if (event.sequence <= owner.saveSequenceFloor) return;
+    owner.saveSequenceFloor = event.sequence;
+    state.post.bookmarked = event.bookmarked;
+  }
+}
+
+postReactionSettlements.subscribe(applyReadySettlement);
+
 type EffectHandler = (effect: SideEffect) => void;
+
+function runFetchEffect(effect: Extract<SideEffect, { kind: "fetch" }>): void {
+  const state = stateRef.value;
+  if (
+    state.kind !== "loading" ||
+    state.token !== effect.token ||
+    !Object.is(state.tid, effect.tid)
+  ) {
+    return;
+  }
+
+  const controller = new AbortController();
+  const owner: DetailLoadingOwner = {
+    tid: effect.tid,
+    token: effect.token,
+    controller,
+  };
+  loadingOwner = owner;
+
+  const clearOwner = (): void => {
+    if (loadingOwner === owner) loadingOwner = null;
+  };
+  void fetchDetailWithToken(effect.tid, effect.token, dispatch, {
+    signal: owner.controller.signal,
+  }).then(clearOwner, clearOwner);
+}
 
 const defaultEffectHandlers: Record<SideEffect["kind"], EffectHandler> = {
   fetch: (effect) => {
     if (effect.kind !== "fetch") return;
-    void fetchDetailWithToken(effect.tid, effect.token, dispatch);
+    runFetchEffect(effect);
   },
   "history-push": (effect) => {
     if (effect.kind !== "history-push") return;
@@ -69,12 +189,17 @@ export function __setEffectHandlersForTesting(
  * code should go through close() instead.
  */
 export function __resetStoreForTesting(): void {
+  releaseLoadingOwner();
+  readyProjectionOwner = null;
   stateRef.value = initialState();
 }
 
 export function dispatch(action: DetailAction): void {
   const result = reduce(stateRef.value, action);
-  stateRef.value = result.state;
+  const nextState = result.state;
+  releaseLoadingOwnerForState(nextState);
+  reconcileReadyProjectionOwner(nextState);
+  stateRef.value = nextState;
   for (const effect of result.effects) {
     effectHandlers[effect.kind](effect);
   }
