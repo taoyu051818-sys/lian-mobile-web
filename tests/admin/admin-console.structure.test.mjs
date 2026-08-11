@@ -208,22 +208,53 @@ test("ProfileView does not render an unconditional admin link", () => {
 
 // --- AdminView: gate before queue/audit, exit clears token ---
 
-test("AdminView shows the token gate while no admin session is established", () => {
+test("AdminView renders the token gate only from an explicit gate or probe-error lane", () => {
   const src = read("src/features/admin/AdminView.vue");
   assert.match(src, /<AdminTokenGate/);
-  assert.match(src, /v-else-if="!consoleEnabled"/);
+  assert.match(src, /probing/);
+  assert.match(src, /probe-error/);
+  assert.match(src, /gate/);
+  assert.doesNotMatch(src, /v-else-if="!consoleEnabled"/);
 });
 
-test("AdminView probes /api/admin/me on entry before using the ops token fallback", () => {
-  const src = read("src/features/admin/AdminView.vue");
-  assert.match(src, /fetchAdminMe/);
-  assert.match(src, /isAdminMeRoleEligible/);
-  assert.match(src, /sessionAdmin/);
-  assert.match(src, /consoleEnabled/);
-  assert.match(src, /sessionAdmin\.value\s*\|\|\s*Boolean\(token\.value\)/);
-  assert.match(src, /probeAdminSession/);
-  assert.doesNotMatch(src, /if\s*\(token\.value\)\s*return/);
-  assert.match(src, /await\s+probeAdminSession\(\)/);
+test("AdminView uses the exact merchants BFF as its only initial capability request", () => {
+  const viewSrc = read("src/features/admin/AdminView.vue");
+  const consoleSrc = read("src/features/admin/useAdminConsole.ts");
+  const accessSrc = read("src/features/admin/useAdminAccess.ts");
+  const merchantsSrc = read("src/features/admin/useAdminMerchants.ts");
+  const blockSrc = read("src/features/admin/AdminLaMerchantsBlock.vue");
+  const apiSrc = read("src/api/adminLaPlatform.ts");
+  const barrelSrc = read("src/features/admin/index.ts");
+  const la2bRuntimeSources = [
+    viewSrc,
+    consoleSrc,
+    accessSrc,
+    merchantsSrc,
+    blockSrc,
+    apiSrc,
+    barrelSrc,
+  ];
+  for (const src of la2bRuntimeSources) {
+    assert.doesNotMatch(
+      src,
+      /fetchAdminMe|isAdminMeRoleEligible|\/api\/admin\/me|\broleIds\b|\bviaToken\b/,
+    );
+    assert.doesNotMatch(
+      src,
+      /https?:\/\/|\b(?:VITE_)?LAPLATFORM_(?:BASE_URL|ORIGIN)\b|LAPLATFORM_SERVICE_TOKEN|\bADMIN_TOKEN\b|withAuthHeader|["'`](?:authorization|x-admin-token|Bearer\b)/i,
+    );
+    assert.doesNotMatch(
+      src,
+      /\blocalStorage\b|\bsessionStorage\b|\bindexedDB\b|\bCacheStorage\b|\bcaches\b/,
+    );
+  }
+  assert.match(apiSrc, /\/api\/admin\/laplatform\/merchants/);
+  assert.match(apiSrc, /cache:\s*"no-store"/);
+  assert.match(apiSrc, /redirect:\s*"error"/);
+  assert.doesNotMatch(
+    apiSrc,
+    /(?:["'`](?:authorization|x-admin-token)["'`]|(?:^|[,{])\s*authorization)\s*:|(?:set|append)\s*\(\s*["'`](?:authorization|x-admin-token)["'`]/im,
+  );
 });
 
 test("api/admin probes session-admin without attaching a Bearer header", () => {
@@ -233,17 +264,24 @@ test("api/admin probes session-admin without attaching a Bearer header", () => {
   assert.doesNotMatch(match[0], /withAuthHeader|authorization|Bearer/);
 });
 
-test("AdminView clears the ops token when session-admin mode is available", () => {
+test("AdminView keeps merchants and legacy ops surfaces mutually exclusive", () => {
   const src = read("src/features/admin/AdminView.vue");
-  assert.match(src, /setSessionAdmin\(true\)[\s\S]*?clearToken\(\)/);
+  assert.match(src, /session-merchants/);
+  assert.match(src, /AdminLaMerchantsBlock/);
+  assert.match(src, /\bops\b/);
+  assert.doesNotMatch(src, /sessionAdmin|setSessionAdmin|clearSessionAdmin/);
 });
 
-test("AdminView clears both admin auth modes when leaving the admin surface", () => {
+test("AdminView disposes access, merchants, timers, and logical ops ownership on unmount", () => {
   const src = read("src/features/admin/AdminView.vue");
-  assert.match(src, /onBeforeUnmount/);
-  assert.match(src, /clearAdminAccess/);
-  assert.match(src, /clearToken\(\)/);
-  assert.match(src, /clearSessionAdmin\(\)/);
+  const unmountBody = src.match(
+    /onBeforeUnmount\s*\(\s*\(\)\s*=>\s*\{(?<body>[\s\S]*?)\}\s*\)\s*;?/,
+  )?.groups?.body;
+  assert.ok(unmountBody, "AdminView must own one explicit unmount-disposal callback");
+  assert.match(unmountBody, /\baccess\.dispose\(\)/);
+  assert.match(unmountBody, /\bmerchants\.dispose\(\)/);
+  assert.match(unmountBody, /\bconsole\.dispose\(\)/);
+  assert.doesNotMatch(src, /clearSessionAdmin\(\)/);
 });
 
 test("api/admin exposes a session probe and a role-eligibility helper", () => {
@@ -255,11 +293,11 @@ test("api/admin exposes a session probe and a role-eligibility helper", () => {
   assert.match(src, /moderator/);
 });
 
-test("AdminView exit button clears both the token and the session-admin flag", () => {
+test("AdminView exit button delegates the ordered lane and epoch reset", () => {
   const src = read("src/features/admin/AdminView.vue");
   assert.match(src, /admin:exit/);
-  assert.match(src, /clearToken\(\)/);
-  assert.match(src, /clearSessionAdmin\(\)/);
+  assert.match(src, /\.exit\(\)/);
+  assert.doesNotMatch(src, /clearSessionAdmin\(\)/);
 });
 
 test("ProfileView clears fallback admin access on logout or auth change", () => {

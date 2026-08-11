@@ -89,4 +89,48 @@ describe("useAdminToken", () => {
     expect(window.sessionStorage.getItem("lian.adminToken")).toBe("ops-token");
     expect(window.localStorage.getItem("lian.adminToken")).toBeNull();
   });
+
+  it("shares a monotonic in-memory auth epoch across set, clear, and the profile reset hook", () => {
+    installStorage();
+    const first = useAdminToken() as ReturnType<typeof useAdminToken> & {
+      authEpoch: { value: number };
+      advanceAuthEpoch: () => number;
+    };
+    const second = useAdminToken() as ReturnType<typeof useAdminToken> & {
+      authEpoch: { value: number };
+      advanceAuthEpoch: () => number;
+    };
+    const start = first.authEpoch.value;
+
+    first.setToken("ops-token");
+    expect(first.authEpoch.value).toBeGreaterThan(start);
+    expect(second.authEpoch.value).toBe(first.authEpoch.value);
+    const afterSet = first.authEpoch.value;
+
+    second.clearToken();
+    expect(first.authEpoch.value).toBeGreaterThan(afterSet);
+    const afterClear = first.authEpoch.value;
+
+    clearAdminAccessState();
+    expect(first.authEpoch.value).toBeGreaterThan(afterClear);
+    expect(second.authEpoch.value).toBe(first.authEpoch.value);
+    expect(window.sessionStorage.getItem("lian.adminToken")).toBeNull();
+  });
+
+  it("exposes an explicit epoch invalidation for lane reset and disposal without persisting it", () => {
+    installStorage();
+    const adminToken = useAdminToken() as ReturnType<typeof useAdminToken> & {
+      authEpoch: { value: number };
+      advanceAuthEpoch: () => number;
+    };
+    adminToken.setToken("sentinel-ops-token");
+    const before = adminToken.authEpoch.value;
+
+    expect(adminToken.advanceAuthEpoch()).toBeGreaterThan(before);
+    expect(adminToken.authEpoch.value).toBeGreaterThan(before);
+    expect(adminToken.token.value).toBe("sentinel-ops-token");
+    expect(window.sessionStorage.getItem("lian.adminToken")).toBe("sentinel-ops-token");
+    expect(window.sessionStorage.getItem("lian.adminAuthEpoch")).toBeNull();
+    expect(window.localStorage.getItem("lian.adminAuthEpoch")).toBeNull();
+  });
 });
