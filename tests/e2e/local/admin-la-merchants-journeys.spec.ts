@@ -868,7 +868,7 @@ test.describe("@local-admin-la exit, account and unmount cleanup", () => {
     await authPanel.locator('input[type="password"]').fill("safe-password-123");
     await authPanel.locator('button[type="submit"]').click();
     await expect.poll(() => fixture.authLoginRequests.length).toBe(1);
-    expect(await storedToken(page)).toBeNull();
+    await expect.poll(() => storedToken(page)).toBeNull();
 
     gate.resolve();
     await page.waitForTimeout(0);
