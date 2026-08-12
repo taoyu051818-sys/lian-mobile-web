@@ -54,15 +54,15 @@ test("PostDetailTradeBlock renders hidden alongside the shipped trade badges", (
   assert.match(src, /data-testid="post-detail-trade-risk"/);
   assert.match(src, /data-testid="post-detail-trade-contact"/);
   assert.match(src, /:data-state="trade\.state"/);
-  for (const slug of [
-    "TRADE_STATE_AVAILABLE",
-    "TRADE_STATE_RESERVED",
-    "TRADE_STATE_SOLD",
-    "TRADE_STATE_CANCELLED",
+  for (const [state, label] of [
+    ["available", "TRADE_STATE_AVAILABLE"],
+    ["reserved", "TRADE_STATE_RESERVED"],
+    ["sold", "TRADE_STATE_SOLD"],
+    ["cancelled", "TRADE_STATE_CANCELLED"],
+    ["hidden", "TRADE_STATE_HIDDEN"],
   ]) {
-    assert.match(src, new RegExp(slug));
+    assert.match(src, new RegExp(`${state}:\\s*${label}`));
   }
-  assert.match(src, /hidden:\s*"已隐藏"/);
   assert.match(src, /data-state="hidden"/);
   assert.match(src, /TRADE_RISK_HINT/);
 });

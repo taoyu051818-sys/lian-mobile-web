@@ -7,28 +7,31 @@ import { fileURLToPath } from "node:url";
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
 
 function read(relativePath) {
-  return fs.readFileSync(path.join(repoRoot, relativePath), "utf8");
+  return fs.readFileSync(path.join(repoRoot, relativePath), "utf8").replace(/\r\n/g, "\n");
 }
 
 test("ProfileView uses hero background gradient instead of single GlassPanel wrapper", () => {
   const src = read("src/features/profile/ProfileView.vue");
   assert.match(src, /profile-view__hero-bg/);
   assert.match(src, /linear-gradient/);
-  assert.doesNotMatch(src, /<GlassPanel class="profile-view__card">/);
+  assert.doesNotMatch(src, /<GlassPanel\b/);
 });
 
 test("ProfileView renders guest AuthPanel without GlassPanel wrapper", () => {
   const src = read("src/features/profile/ProfileView.vue");
   assert.match(src, /profile-view__guest/);
-  assert.match(src, /<AuthPanel @authenticated="handleAuthenticated"/);
+  assert.match(src, /<AuthPanel\b[^>]*@authenticated="handleAuthenticated"[^>]*\/>/);
 });
 
 test("ProfileHeader uses centered hero layout with large avatar", () => {
   const src = read("src/features/profile/ProfileHeader.vue");
+  const css = read("src/features/profile/profile-header.css");
   assert.match(src, /profile-header__hero/);
   assert.match(src, /profile-header__avatar/);
   assert.match(src, /profile-header__name/);
-  assert.match(src, /justify-items: center/);
+  assert.match(src, /@import "\.\/profile-header\.css"/);
+  assert.match(css, /\.profile-header__hero\s*\{[\s\S]*?justify-items:\s*center/);
+  assert.match(css, /\.profile-header__avatar\s*\{[\s\S]*?width:\s*80px/);
 });
 
 test("ProfileHeader does not use IdentityBadge component", () => {

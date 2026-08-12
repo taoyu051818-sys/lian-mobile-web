@@ -2,6 +2,7 @@ import { describe, expect, it, beforeEach, vi } from "vitest";
 
 import {
   useServerChanPreferences,
+  resetServerChanPreferencesSessionState,
   __setServerChanPreferencesApiForTesting,
   __resetServerChanPreferencesForTesting,
 } from "../../src/features/profile/useServerChanPreferences";
@@ -27,6 +28,102 @@ describe("useServerChanPreferences", () => {
     expect(prefs.preferences.value).toBeNull();
     expect(prefs.isReady.value).toBe(false);
     expect(prefs.loading.value).toBe(false);
+  });
+
+  it("session reset clears account-scoped values and busy state", () => {
+    const prefs = useServerChanPreferences();
+    prefs.preferences.value = ALL_ON;
+    prefs.loading.value = true;
+    prefs.loadError.value = "old load error";
+    prefs.saving.value = true;
+    prefs.saveError.value = "old save error";
+
+    resetServerChanPreferencesSessionState();
+
+    expect(prefs.preferences.value).toBeNull();
+    expect(prefs.loading.value).toBe(false);
+    expect(prefs.loadError.value).toBe("");
+    expect(prefs.saving.value).toBe(false);
+    expect(prefs.saveError.value).toBe("");
+  });
+
+  it("ignores a load result from the prior session without clearing the current busy state", async () => {
+    let resolveOld: ((value: ServerChanPreferences) => void) | null = null;
+    let resolveCurrent: ((value: ServerChanPreferences) => void) | null = null;
+    const fetch = vi
+      .fn()
+      .mockImplementationOnce(
+        () =>
+          new Promise<ServerChanPreferences>((resolve) => {
+            resolveOld = resolve;
+          }),
+      )
+      .mockImplementationOnce(
+        () =>
+          new Promise<ServerChanPreferences>((resolve) => {
+            resolveCurrent = resolve;
+          }),
+      );
+    __setServerChanPreferencesApiForTesting({ fetch });
+    const prefs = useServerChanPreferences();
+
+    const oldLoad = prefs.load();
+    resetServerChanPreferencesSessionState();
+    const currentLoad = prefs.load();
+
+    resolveOld?.(ALL_ON);
+    await oldLoad;
+    expect(prefs.preferences.value).toBeNull();
+    expect(prefs.loading.value).toBe(true);
+
+    resolveCurrent?.(ALL_OFF);
+    await currentLoad;
+    expect(prefs.preferences.value).toEqual(ALL_OFF);
+    expect(prefs.loading.value).toBe(false);
+  });
+
+  it("keeps the current optimistic toggle when a prior-session update finishes late", async () => {
+    let resolveOld: ((value: ServerChanPreferences) => void) | null = null;
+    let resolveCurrent: ((value: ServerChanPreferences) => void) | null = null;
+    const update = vi
+      .fn()
+      .mockImplementationOnce(
+        () =>
+          new Promise<ServerChanPreferences>((resolve) => {
+            resolveOld = resolve;
+          }),
+      )
+      .mockImplementationOnce(
+        () =>
+          new Promise<ServerChanPreferences>((resolve) => {
+            resolveCurrent = resolve;
+          }),
+      );
+    __setServerChanPreferencesApiForTesting({ update });
+    const prefs = useServerChanPreferences();
+    prefs.preferences.value = { ...ALL_OFF };
+
+    const oldToggle = prefs.toggle("eventStartingReminder", true);
+    resetServerChanPreferencesSessionState();
+    prefs.preferences.value = { ...ALL_OFF };
+    const currentToggle = prefs.toggle("rewardSettledReminder", true);
+
+    resolveOld?.(ALL_ON);
+    await expect(oldToggle).resolves.toBe(false);
+    expect(prefs.preferences.value).toEqual({
+      eventStartingReminder: false,
+      rewardSettledReminder: true,
+    });
+    expect(prefs.saving.value).toBe(true);
+
+    const currentResult = {
+      eventStartingReminder: false,
+      rewardSettledReminder: true,
+    };
+    resolveCurrent?.(currentResult);
+    await expect(currentToggle).resolves.toBe(true);
+    expect(prefs.preferences.value).toEqual(currentResult);
+    expect(prefs.saving.value).toBe(false);
   });
 
   it("loads preferences via the api seam and sets ready=true", async () => {

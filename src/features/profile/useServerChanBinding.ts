@@ -86,22 +86,44 @@ const manualOpen = ref(false);
  * persisted.
  */
 const manualKey = ref("");
+let sessionGeneration = 0;
 
 const isBound = computed(() => Boolean(binding.value?.bound));
 const isEnabled = computed(() => Boolean(binding.value?.enabled));
 
+function isCurrentSession(generation: number): boolean {
+  return generation === sessionGeneration;
+}
+
+/** Clear account-scoped UI state and invalidate work started by the prior session. */
+export function resetServerChanBindingSessionState(): void {
+  sessionGeneration += 1;
+  binding.value = null;
+  loading.value = false;
+  loadError.value = "";
+  submitting.value = false;
+  submitError.value = "";
+  unbindBusy.value = false;
+  manualOpen.value = false;
+  manualKey.value = "";
+}
+
 async function load() {
   if (loading.value) return;
+  const generation = sessionGeneration;
   loading.value = true;
   loadError.value = "";
   try {
-    binding.value = await api.fetchBinding();
+    const next = await api.fetchBinding();
+    if (!isCurrentSession(generation)) return;
+    binding.value = next;
   } catch {
+    if (!isCurrentSession(generation)) return;
     // Generic load failure; binding state stays whatever it was. Brand
     // string only — backend response body is intentionally NOT echoed.
     loadError.value = SERVERCHAN_LOAD_FAILED;
   } finally {
-    loading.value = false;
+    if (isCurrentSession(generation)) loading.value = false;
   }
 }
 
@@ -121,9 +143,11 @@ function clearManualKey() {
 }
 
 async function startBindFlow(): Promise<boolean> {
+  const generation = sessionGeneration;
   submitError.value = "";
   try {
     const { url } = await api.fetchBindUrl();
+    if (!isCurrentSession(generation)) return false;
     if (!url) {
       loadError.value = SERVERCHAN_BIND_URL_FAILED;
       return false;
@@ -131,6 +155,7 @@ async function startBindFlow(): Promise<boolean> {
     openExternal(url);
     return true;
   } catch {
+    if (!isCurrentSession(generation)) return false;
     loadError.value = SERVERCHAN_BIND_URL_FAILED;
     return false;
   }
@@ -143,10 +168,12 @@ async function submitManualKey(): Promise<boolean> {
     submitError.value = SERVERCHAN_BIND_KEY_INVALID;
     return false;
   }
+  const generation = sessionGeneration;
   submitting.value = true;
   submitError.value = "";
   try {
     const next = await api.bind(value);
+    if (!isCurrentSession(generation)) return false;
     binding.value = next;
     // Clear the local input as soon as the round-trip lands. The composable
     // never touches `value` again — caller's reactive ref is reset to "".
@@ -154,6 +181,7 @@ async function submitManualKey(): Promise<boolean> {
     manualOpen.value = false;
     return true;
   } catch (err) {
+    if (!isCurrentSession(generation)) return false;
     if (err instanceof LianApiError) {
       if (err.status === 400 && err.code === BINDING_KEY_INVALID_CODE) {
         submitError.value = SERVERCHAN_BIND_KEY_INVALID;
@@ -167,24 +195,27 @@ async function submitManualKey(): Promise<boolean> {
     }
     return false;
   } finally {
-    submitting.value = false;
+    if (isCurrentSession(generation)) submitting.value = false;
   }
 }
 
 async function unbindNow(): Promise<boolean> {
   if (unbindBusy.value) return false;
+  const generation = sessionGeneration;
   unbindBusy.value = true;
   submitError.value = "";
   loadError.value = "";
   try {
     await api.unbind();
+    if (!isCurrentSession(generation)) return false;
     binding.value = { bound: false, enabled: false };
     return true;
   } catch {
+    if (!isCurrentSession(generation)) return false;
     loadError.value = SERVERCHAN_UNBIND_FAILED;
     return false;
   } finally {
-    unbindBusy.value = false;
+    if (isCurrentSession(generation)) unbindBusy.value = false;
   }
 }
 
@@ -274,14 +305,7 @@ export function __setServerChanBindingPlatformForTesting(next: {
 
 /** Test-only — reset the singleton to a clean state between cases. */
 export function __resetServerChanBindingForTesting(): void {
-  binding.value = null;
-  loading.value = false;
-  loadError.value = "";
-  submitting.value = false;
-  submitError.value = "";
-  unbindBusy.value = false;
-  manualOpen.value = false;
-  manualKey.value = "";
+  resetServerChanBindingSessionState();
   api = defaultApi;
   openExternal = defaultOpenExternalUrl;
   readHash = defaultReadLocationHash;

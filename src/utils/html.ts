@@ -117,3 +117,53 @@ export function sanitizeHtml(value: string) {
 
   return document.body.innerHTML.trim();
 }
+
+const HTML_ENTITY_VALUES: Record<string, string> = {
+  amp: "&",
+  apos: "'",
+  gt: ">",
+  lt: "<",
+  nbsp: " ",
+  quot: '"',
+};
+
+function decodeHtmlEntities(value: string) {
+  return value.replace(/&(#x[\da-f]+|#\d+|amp|apos|gt|lt|nbsp|quot);/gi, (match, entity) => {
+    const normalized = String(entity).toLowerCase();
+    if (normalized.startsWith("#x")) {
+      const codePoint = Number.parseInt(normalized.slice(2), 16);
+      return Number.isInteger(codePoint) && codePoint >= 0 && codePoint <= 0x10ffff
+        ? String.fromCodePoint(codePoint)
+        : match;
+    }
+    if (normalized.startsWith("#")) {
+      const codePoint = Number.parseInt(normalized.slice(1), 10);
+      return Number.isInteger(codePoint) && codePoint >= 0 && codePoint <= 0x10ffff
+        ? String.fromCodePoint(codePoint)
+        : match;
+    }
+    return HTML_ENTITY_VALUES[normalized] ?? match;
+  });
+}
+
+export function stripHtml(value: string) {
+  const safeHtml = sanitizeHtml(value);
+  if (!safeHtml) return "";
+
+  if (typeof DOMParser !== "undefined") {
+    const parser = new DOMParser();
+    const document = parser.parseFromString(safeHtml, "text/html");
+    return String(document.body.textContent || "")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+
+  return decodeHtmlEntities(
+    safeHtml
+      .replace(/<br\s*\/?>/gi, " ")
+      .replace(/<\/(?:blockquote|div|h[1-6]|li|ol|p|pre|ul)>/gi, " ")
+      .replace(/<[^>]+>/g, " "),
+  )
+    .replace(/\s+/g, " ")
+    .trim();
+}

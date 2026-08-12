@@ -49,21 +49,40 @@ const loading = ref(false);
 const loadError = ref("");
 const saving = ref(false);
 const saveError = ref("");
+let sessionGeneration = 0;
 
 const isReady = computed(() => preferences.value !== null);
+
+function isCurrentSession(generation: number): boolean {
+  return generation === sessionGeneration;
+}
+
+/** Clear account-scoped UI state and invalidate work started by the prior session. */
+export function resetServerChanPreferencesSessionState(): void {
+  sessionGeneration += 1;
+  preferences.value = null;
+  loading.value = false;
+  loadError.value = "";
+  saving.value = false;
+  saveError.value = "";
+}
 
 export type ServerChanPreferenceKey = keyof ServerChanPreferences;
 
 async function load() {
   if (loading.value) return;
+  const generation = sessionGeneration;
   loading.value = true;
   loadError.value = "";
   try {
-    preferences.value = await api.fetch();
+    const next = await api.fetch();
+    if (!isCurrentSession(generation)) return;
+    preferences.value = next;
   } catch {
+    if (!isCurrentSession(generation)) return;
     loadError.value = SERVERCHAN_PREFERENCES_LOAD_FAILED;
   } finally {
-    loading.value = false;
+    if (isCurrentSession(generation)) loading.value = false;
   }
 }
 
@@ -76,6 +95,7 @@ async function load() {
  */
 async function toggle(key: ServerChanPreferenceKey, next: boolean): Promise<boolean> {
   if (!preferences.value || saving.value) return false;
+  const generation = sessionGeneration;
   const before: ServerChanPreferences = { ...preferences.value };
   const optimistic: ServerChanPreferences = { ...preferences.value, [key]: next };
   preferences.value = optimistic;
@@ -83,14 +103,16 @@ async function toggle(key: ServerChanPreferenceKey, next: boolean): Promise<bool
   saveError.value = "";
   try {
     const result = await api.update(optimistic);
+    if (!isCurrentSession(generation)) return false;
     preferences.value = result;
     return true;
   } catch {
+    if (!isCurrentSession(generation)) return false;
     preferences.value = before;
     saveError.value = SERVERCHAN_PREFERENCES_PATCH_FAILED;
     return false;
   } finally {
-    saving.value = false;
+    if (isCurrentSession(generation)) saving.value = false;
   }
 }
 
@@ -101,11 +123,14 @@ async function toggle(key: ServerChanPreferenceKey, next: boolean): Promise<bool
  */
 async function setErrandOrderReminder(orderId: string, enabled: boolean): Promise<boolean> {
   if (!orderId) return false;
+  const generation = sessionGeneration;
   saveError.value = "";
   try {
     await api.setErrandOrder(orderId, enabled);
+    if (!isCurrentSession(generation)) return false;
     return true;
   } catch {
+    if (!isCurrentSession(generation)) return false;
     saveError.value = SERVERCHAN_PREFERENCES_PATCH_FAILED;
     return false;
   }
@@ -148,11 +173,7 @@ export function __setServerChanPreferencesApiForTesting(next: Partial<Preference
 
 /** Test-only — reset the singleton to a clean state between cases. */
 export function __resetServerChanPreferencesForTesting(): void {
-  preferences.value = null;
-  loading.value = false;
-  loadError.value = "";
-  saving.value = false;
-  saveError.value = "";
+  resetServerChanPreferencesSessionState();
   api = defaultApi;
 }
 

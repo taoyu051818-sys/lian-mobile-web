@@ -21,7 +21,7 @@
 
 import { computed, onBeforeUnmount, ref } from "vue";
 import { parseDeepLinkQuery } from "../../app/deepLink";
-import { setPendingPublishLocation, type PublishLocationHandoff } from "../publish";
+import { setPendingPublishLocation, type PublishMapPickerLocationHandoff } from "../publish";
 import type { MapLocation, MapPoint } from "../../types/map";
 
 export interface MapPickerSelection {
@@ -109,7 +109,7 @@ export function useMapPickerMode(options: UseMapPickerModeOptions = {}) {
    * nothing is selected — the overlay disables its confirm button in that
    * case.
    */
-  function buildHandoff(): PublishLocationHandoff | null {
+  function buildHandoff(): PublishMapPickerLocationHandoff | null {
     const { location, pin } = selection.value;
     if (location) {
       const placeId = placeIdForLocation(location);
@@ -120,14 +120,21 @@ export function useMapPickerMode(options: UseMapPickerModeOptions = {}) {
       // dropping the selection on the floor.
       if (!placeId) {
         return {
+          version: 2,
+          source: "map_picker",
+          coordinateSystem: "gcj02",
           kind: "coords",
           lat: location.lat,
           lng: location.lng,
           label: location.name,
         };
       }
-      const out: PublishLocationHandoff = {
+      const out: PublishMapPickerLocationHandoff = {
+        version: 2,
+        source: "map_picker",
+        coordinateSystem: "gcj02",
         kind: "place",
+        locationId: location.id,
         placeId,
         name: location.name,
         lat: location.lat,
@@ -138,7 +145,14 @@ export function useMapPickerMode(options: UseMapPickerModeOptions = {}) {
       return out;
     }
     if (pin) {
-      return { kind: "coords", lat: pin.lat, lng: pin.lng };
+      return {
+        version: 2,
+        source: "map_picker",
+        coordinateSystem: "gcj02",
+        kind: "coords",
+        lat: pin.lat,
+        lng: pin.lng,
+      };
     }
     return null;
   }
@@ -154,6 +168,7 @@ export function useMapPickerMode(options: UseMapPickerModeOptions = {}) {
     const payload = buildHandoff();
     if (!payload) return false;
     setPendingPublishLocation(payload);
+    clearSelection();
     navigateBack();
     return true;
   }

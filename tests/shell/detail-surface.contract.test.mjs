@@ -28,7 +28,14 @@ import { fileURLToPath } from "node:url";
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
 
 function read(rel) {
-  return fs.readFileSync(path.join(repoRoot, rel), "utf8");
+  return fs.readFileSync(path.join(repoRoot, rel), "utf8").replace(/\r\n?/g, "\n");
+}
+
+function templateOf(source) {
+  const start = source.indexOf("<template>");
+  const end = source.lastIndexOf("</template>");
+  assert.ok(start >= 0 && end > start, "component must contain a template block");
+  return source.slice(start, end);
 }
 
 // --- 1. ShellChrome resident slot contract ---
@@ -71,11 +78,12 @@ test("PostDetailPanel is mounted exactly once at the App level (DetailSurface)",
 
 test("FeedView no longer mounts PostDetailPanel locally", () => {
   const src = read("src/features/feed/FeedView.vue");
-  assert.doesNotMatch(src, /<PostDetailPanel/);
+  const template = templateOf(src);
+  assert.doesNotMatch(template, /<PostDetailPanel/);
   assert.doesNotMatch(src, /import.*PostDetailPanel/);
   // The is-detail-open class on the section is also gone — FeedView is the
   // list surface only and no longer reshapes around the detail.
-  assert.doesNotMatch(src, /is-detail-open/);
+  assert.doesNotMatch(template, /\bis-detail-open\b/);
 });
 
 test("MessagesView no longer mounts PostDetailPanel locally", () => {
@@ -114,13 +122,15 @@ test("useActiveView no longer imports or reads the detail-navigation FSM", () =>
   assert.doesNotMatch(src, /detailOpen/);
 });
 
-test("useActiveView's effective view is purely (secret ?? viewFromHash)", () => {
+test("useActiveView derives active view directly from the view-hash singleton", () => {
   const src = read("src/app/useActiveView.ts");
-  // The shape is intentionally narrow so future regressions stand out.
+  assert.match(src, /const\s+viewFromHash\s*=\s*getViewFromHashRef\(\)/);
   assert.match(
     src,
-    /effectiveActiveViewKey = computed<AppViewKey>\(\s*\(\)\s*=>\s*secretActiveViewKey\.value\s*\?\?\s*viewFromHash\.value/,
+    /const\s+activeView\s*=\s*computed\(\s*\(\)\s*=>\s*getViewDefinition\(viewFromHash\.value\)\s*\)/,
   );
+  assert.match(src, /activeViewKey:\s*viewFromHash/);
+  assert.doesNotMatch(src, /secretActiveViewKey|effectiveActiveViewKey/);
 });
 
 // --- 4. floatingChromeState detail-phase ownership ---
@@ -133,8 +143,8 @@ test("DetailSurface owns the detail floating-chrome phase signal", () => {
   assert.match(src, /setDetailPhase\(open \? "open" : "idle"\)/);
 });
 
-test("FeedView no longer drives the floating-chrome detail phase", () => {
+test("FeedView only consumes shell visibility and does not drive the detail phase", () => {
   const src = read("src/features/feed/FeedView.vue");
-  assert.doesNotMatch(src, /useFloatingChromeState/);
-  assert.doesNotMatch(src, /setDetailPhase/);
+  assert.match(src, /const\s*\{\s*shellVisible\s*\}\s*=\s*useFloatingChromeState\(\)/);
+  assert.doesNotMatch(src, /\bsetDetailPhase\s*\(/);
 });

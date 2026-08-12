@@ -24,6 +24,7 @@ import { useBodyScrollLock } from "../../composables/useBodyScrollLock";
 import {
   GESTURE_CONTEXT_SHARE,
   GESTURE_CONTEXT_BOOKMARK,
+  GESTURE_CONTEXT_UNBOOKMARK,
   GESTURE_CONTEXT_REPORT,
 } from "../../config/brand";
 
@@ -32,6 +33,9 @@ const props = defineProps<{
   x: number;
   y: number;
   bookmarked?: boolean;
+  bookmarkBusy?: boolean;
+  shareBusy?: boolean;
+  requestPending?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -174,11 +178,13 @@ onBeforeUnmount(() => {
         :style="menuStyle"
         role="menu"
         aria-label="操作菜单"
+        :aria-busy="requestPending"
       >
         <button
           type="button"
           class="feed-context-menu__item"
           role="menuitem"
+          :disabled="shareBusy"
           @click="handleShareAction"
         >
           <span class="feed-context-menu__icon" aria-hidden="true">
@@ -204,6 +210,7 @@ onBeforeUnmount(() => {
           :class="{ 'is-active': bookmarked }"
           :aria-pressed="bookmarked"
           role="menuitem"
+          :disabled="bookmarkBusy"
           @click="handleBookmarkAction"
         >
           <span class="feed-context-menu__icon" aria-hidden="true">
@@ -218,7 +225,7 @@ onBeforeUnmount(() => {
               <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
             </svg>
           </span>
-          {{ GESTURE_CONTEXT_BOOKMARK }}
+          {{ bookmarked ? GESTURE_CONTEXT_UNBOOKMARK : GESTURE_CONTEXT_BOOKMARK }}
         </button>
 
         <button
@@ -318,6 +325,11 @@ onBeforeUnmount(() => {
 
 .feed-context-menu__item:active {
   background: rgba(0, 0, 0, 0.1);
+}
+
+.feed-context-menu__item:disabled {
+  cursor: default;
+  opacity: 0.55;
 }
 
 .feed-context-menu__item.is-active {

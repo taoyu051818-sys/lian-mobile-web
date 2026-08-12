@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from "vue";
+import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import type { PageChromeSpec } from "../../shell/page-model";
 import type { FeedItemId } from "../../types/feed";
 import type { AudienceVisibility } from "../../types/audience";
@@ -37,7 +37,7 @@ const pullToRefresh = usePullToRefresh({
   threshold: 80,
   maxPull: 150,
   onRefresh: async () => {
-    await feedData.loadFeed(true);
+    await feedData.refreshFeed();
   },
 });
 
@@ -85,7 +85,11 @@ onMounted(() => {
   if (!detail.detailOpen.value) {
     chrome.setSlot("top", "feed-filter");
   }
-  void feedData.loadFeed(true);
+  void feedData.initialize();
+});
+
+onUnmounted(() => {
+  feedData.dispose();
 });
 
 function openItem(id: FeedItemId) {
@@ -143,8 +147,8 @@ const filterBarMounted = computed(() => !detail.detailOpen.value && shellVisible
     <InlineError
       v-if="feedData.errorMessage.value"
       :action-label="CHANNEL_RELOAD"
-      :action-loading="feedData.loading.value"
-      @action="feedData.loadFeed(true)"
+      :action-loading="feedData.requestPending.value"
+      @action="feedData.retryFailedRequest"
     >
       {{ feedData.errorMessage.value }}
     </InlineError>

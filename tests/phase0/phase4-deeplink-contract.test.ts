@@ -255,7 +255,7 @@ describe("Phase 4 (deeplink): consumers wire the hash into the SPA", () => {
   it("useFeedData no longer closes the detail on initial mount load", () => {
     // Initial mount must not clobber a deep-link-opened detail. The close-detail
     // wiring should live in the user-initiated switchTab path only.
-    const loadFeedBody = useFeedData.match(/async function loadFeed[\s\S]*?\n {2}}/)?.[0] ?? "";
+    const loadFeedBody = useFeedData.match(/function loadFeed[\s\S]*?\n {2}}/)?.[0] ?? "";
     expect(loadFeedBody.length).toBeGreaterThan(0);
     expect(loadFeedBody).not.toMatch(/closeDetail/);
     const switchTabBody = useFeedData.match(/function switchTab[\s\S]*?\n {2}}/)?.[0] ?? "";

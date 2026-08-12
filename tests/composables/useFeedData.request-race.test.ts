@@ -9,7 +9,15 @@ vi.mock("../../src/api/feed", () => ({
   fetchFeed: vi.fn(),
 }));
 
+vi.mock("../../src/api/profile", () => ({
+  fetchAuthMe: vi.fn(),
+}));
+
 vi.mock("../../src/platform/browser-storage", () => ({
+  GUEST_READ_HISTORY_SCOPE: Object.freeze({ kind: "guest" }),
+  accountReadHistoryScope: vi.fn((userId: string) =>
+    userId.trim() ? { kind: "account", userId: userId.trim() } : null,
+  ),
   readHistoryQuery: vi.fn(() => ""),
   rememberReadItem: vi.fn(),
 }));
@@ -74,7 +82,7 @@ describe("useFeedData request generation", () => {
       .mockReturnValueOnce(latestRequest.promise);
     const feed = makeHarness();
 
-    const oldLoad = feed.loadFeed(true);
+    const oldLoad = feed.loadFeed("replace");
     feed.switchTab("精选");
 
     expect(fetchFeedMock).toHaveBeenCalledTimes(2);
@@ -102,7 +110,7 @@ describe("useFeedData request generation", () => {
       .mockReturnValueOnce(latestRequest.promise);
     const feed = makeHarness();
 
-    const oldLoad = feed.loadFeed(true);
+    const oldLoad = feed.loadFeed("replace");
     feed.setSelectedVisibilities(new Set(["school"]));
 
     expect(fetchFeedMock).toHaveBeenNthCalledWith(

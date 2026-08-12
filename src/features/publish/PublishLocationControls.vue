@@ -23,6 +23,7 @@ defineProps<{
   panelOpen: boolean;
   filteredMapLocations: MapLocation[];
   selectedMapLocation: MapLocation | null;
+  hasStructuredMapBinding: boolean;
   mapLocationLoading: boolean;
   mapLocationError: string;
   locationSearch: string;
@@ -62,16 +63,16 @@ const emit = defineEmits<{
 
 <template>
   <section
-    v-if="panelOpen || selectedMapLocation || placeName.trim()"
+    v-if="panelOpen || hasStructuredMapBinding || placeName.trim()"
     class="publish-location__panel"
     aria-labelledby="publish-map-title"
   >
     <div class="publish-location__panel-header">
       <strong id="publish-map-title">{{ PUBLISH_LOCATION_LABEL }}</strong>
-      <span>{{ selectedMapLocation ? PUBLISH_LOCATION_BOUND : PUBLISH_LOCATION_HINT }}</span>
+      <span>{{ hasStructuredMapBinding ? PUBLISH_LOCATION_BOUND : PUBLISH_LOCATION_HINT }}</span>
     </div>
 
-    <div v-if="selectedMapLocation || placeName.trim()" class="publish-location__preview">
+    <div v-if="hasStructuredMapBinding || placeName.trim()" class="publish-location__preview">
       <LocationChip>{{ locationPreviewLabel }}</LocationChip>
       <span>{{ locationBindingMeta }}</span>
     </div>
@@ -155,7 +156,7 @@ const emit = defineEmits<{
     </div>
     <div v-else class="publish-location__mini-state">{{ PUBLISH_LOCATION_NO_MATCH }}</div>
 
-    <div v-if="selectedMapLocation" class="publish-location__selected">
+    <div v-if="hasStructuredMapBinding" class="publish-location__selected">
       <div>
         <LocationChip>{{ knownPlaceLabel }}</LocationChip>
         <span>{{

@@ -128,12 +128,15 @@ test("MerchantCenterGate exposes the gate testid + verify CTA", () => {
 // --- view: gate vs verified branches + chrome wiring ---
 
 test("MerchantCenterView shows the gate when the user is not merchant_verified", () => {
-  const src = read("src/features/merchant/MerchantCenterView.vue");
+  const viewSrc = read("src/features/merchant/MerchantCenterView.vue");
+  const centerSrc = read("src/features/merchant/useMerchantCenter.ts");
   // Identity comes from /api/auth/me via useIsMerchantVerified — never the
   // empty-list shortcut.
-  assert.match(src, /useIsMerchantVerified/);
-  assert.match(src, /MerchantCenterGate/);
-  assert.match(src, /v-if="!isMerchantVerified"/);
+  assert.match(viewSrc, /const center\s*=\s*useMerchantCenter\(\)/);
+  assert.match(centerSrc, /const isMerchantVerified\s*=\s*useIsMerchantVerified\(user\)/);
+  assert.match(viewSrc, /<MerchantCenterGate/);
+  assert.match(viewSrc, /v-if="!center\.isMerchantVerified\.value"/);
+  assert.match(viewSrc, /@go-verify="goVerify"/);
 });
 
 test("MerchantCenterView surfaces the post list with hours + errand status", () => {
@@ -155,10 +158,22 @@ test("MerchantCenterView refreshes the post list on mount when verified", () => 
 
 test("PostDetailMerchantBlock renders an unavailable branch with reason text", () => {
   const src = read("src/features/detail/PostDetailMerchantBlock.vue");
-  assert.match(src, /data-testid="post-detail-merchant-errand-unavailable"/);
-  assert.match(src, /data-testid="post-detail-merchant-errand-reason"/);
-  assert.match(src, /errandUnavailable/);
-  assert.match(src, /errandReasonText/);
+  assert.match(
+    src,
+    /const errandUnavailable\s*=\s*computed\(\(\)\s*=>\s*props\.errandEntryAvailable\s*===\s*false\)/,
+  );
+  assert.match(src, /const unavailableReasonLabel\s*=\s*computed/);
+  assert.match(src, /errandReasonText\(\s*\{/);
+  assert.match(
+    src,
+    /const errandWrapperTestId[\s\S]*\?\s*"post-detail-merchant-errand-unavailable"[\s\S]*:\s*"post-detail-merchant-errand-entry"/,
+  );
+  assert.match(
+    src,
+    /const errandMessageTestId[\s\S]*\?\s*"post-detail-merchant-errand-reason"[\s\S]*:\s*"post-detail-merchant-errand-hint"/,
+  );
+  assert.match(src, /:data-testid="errandWrapperTestId"/);
+  assert.match(src, /:message-test-id="errandMessageTestId"/);
 });
 
 test("PostDetail type carries errandUnavailableReason fields", () => {

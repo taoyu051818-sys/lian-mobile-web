@@ -87,6 +87,8 @@ export interface FeedItem {
   timestampISO: string;
   likeCount: number;
   liked: boolean;
+  /** Server-authoritative save state; normalized to boolean by the Feed adapter. */
+  bookmarked?: boolean;
   locationArea: string;
   contentType: string;
   presentationIntent?: FeedPresentationIntent | string | null;

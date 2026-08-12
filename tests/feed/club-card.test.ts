@@ -5,11 +5,16 @@ function readRepoFile(rel: string) {
   return readFileSync(new URL(rel, import.meta.url), "utf8").replace(/\r\n/g, "\n");
 }
 
+function typeUnion(source: string, name: string) {
+  const match = source.match(new RegExp(`export type ${name}\\s*=([\\s\\S]*?);`));
+  expect(match, `${name} type declaration should exist`).not.toBeNull();
+  return match?.[1] ?? "";
+}
+
 describe("Club card types", () => {
   it("FeedPresentationIntent includes club", () => {
     const feedTypes = readRepoFile("../../src/types/feed.ts");
-    expect(feedTypes).toMatch(/"club"/);
-    expect(feedTypes).toMatch(/FeedPresentationIntent.*club/);
+    expect(typeUnion(feedTypes, "FeedPresentationIntent")).toMatch(/\|\s*"club"/);
   });
 
   it("FeedItem has optional club field", () => {
@@ -46,11 +51,19 @@ describe("Club card component", () => {
     const component = readRepoFile("../../src/features/feed/FeedItemClubCard.vue");
     expect(component).toMatch(/import.*FeedItem.*from.*types\/feed/);
     expect(component).toMatch(/import.*ClubMetadata.*from.*types\/post/);
-    expect(component).toMatch(/import.*CLUB_CARD_PRESIDENT_LABEL/);
-    expect(component).toMatch(/import.*CLUB_CARD_FOUNDED_LABEL/);
-    expect(component).toMatch(/import.*CLUB_CARD_MEMBERS_LABEL/);
-    expect(component).toMatch(/import.*CLUB_CATEGORY_LABELS/);
-    expect(component).toMatch(/import.*FEED_CARD_MARK_CLUB/);
+    const brandImport = component.match(
+      /import\s*\{([^}]*)\}\s*from\s*"\.\.\/\.\.\/config\/brand"/,
+    );
+    expect(brandImport, "club card should import its labels from the brand module").not.toBeNull();
+    for (const name of [
+      "CLUB_CARD_PRESIDENT_LABEL",
+      "CLUB_CARD_FOUNDED_LABEL",
+      "CLUB_CARD_MEMBERS_LABEL",
+      "CLUB_CATEGORY_LABELS",
+      "FEED_CARD_MARK_CLUB",
+    ]) {
+      expect(brandImport?.[1]).toMatch(new RegExp(`\\b${name}\\b`));
+    }
   });
 
   it("FeedItemClubCard.vue uses useCardPointerInteraction", () => {

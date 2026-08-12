@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref, watch } from "vue";
+import { computed, onActivated, onDeactivated, onMounted, onUnmounted, ref, watch } from "vue";
 import type { PageChromeSpec } from "../../shell/page-model";
 import {
   PUBLISH_AUTH_GATE_CTA,
   PUBLISH_AUTH_GATE_HINT,
   PUBLISH_AUTH_GATE_TITLE,
   PUBLISH_LOCATION_GEOLOC_HINT,
+  PUBLISH_LOCATION_LEGACY_HINT,
   PUBLISH_SECTION_LABEL,
   PUBLISH_VIEW_POST,
   PUBLISH_CLEAR_CONFIRM,
@@ -29,7 +30,7 @@ import { usePublishLocationOptions } from "./usePublishLocationOptions";
 import {
   consumePendingPublishLocation,
   setPendingPublishLocation,
-  type PublishLocationHandoff,
+  type NormalizedPublishLocationHandoff,
 } from "./usePublishLocationHandoff";
 import { useGeolocation } from "./useGeolocation";
 import { clearPublishDraft } from "./publishDraftSession";
@@ -40,8 +41,11 @@ import type { PublishActionablePostPreview } from "../../types/publish";
 import { useEventPublishDraft } from "../../composables/useEventPublishDraft";
 import { useActiveView } from "../../app/useActiveView";
 
+defineOptions({ name: "PublishView" });
+
 const emit = defineEmits<{
   chrome: [spec: PageChromeSpec];
+  "map-picker-open": [];
 }>();
 
 const RESET_CONFIRM_MESSAGE = [PUBLISH_CLEAR_CONFIRM, PUBLISH_IMAGE_RESELECT].join("");
@@ -51,7 +55,13 @@ const eventDraft = useEventPublishDraft();
 const actionablePreview = ref<PublishActionablePostPreview | null>(null);
 const locationOptions = usePublishLocationOptions(draft.placeName);
 const resetConfirmationVisible = ref(false);
+const publishViewActive = ref(false);
 const { setActiveView } = useActiveView();
+
+function emitChromeIfActive(spec: PageChromeSpec = draft.pageChrome.value) {
+  if (!publishViewActive.value) return;
+  emit("chrome", spec);
+}
 
 // mw#943 — geolocation + map-picker handoff. Both write through the same
 // sessionStorage key (`usePublishLocationHandoff`) so the consume path on
@@ -59,36 +69,20 @@ const { setActiveView } = useActiveView();
 // picker can write either a known place or a free coordinate.
 const geolocation = useGeolocation();
 const geolocationHint = ref("");
+let resetPublishAttemptForScopeTransition: () => void = () => undefined;
 
-function applyHandoff(payload: PublishLocationHandoff) {
-  if (payload.kind === "place") {
-    // Try to rebind to a known MapLocation if the catalog is loaded so the
-    // selected-state visuals (chip + place type label) match the existing
-    // search-list selection path. When the catalog isn't loaded yet, fall
-    // back to setting the place name directly — the user still sees their
-    // pick reflected, and a later re-pick from the panel can rebind.
-    const known = locationOptions.mapLocations.value.find((entry) => {
-      const placeId = entry.place?.id || entry.placeId || "";
-      return placeId && placeId === payload.placeId;
-    });
-    if (known) {
-      locationOptions.selectMapLocation(known);
-      return;
-    }
-    draft.placeName.value = payload.name;
-    locationOptions.locationPanelOpen.value = true;
+function applyHandoff(payload: NormalizedPublishLocationHandoff) {
+  if (payload.source === "map_picker") {
+    locationOptions.applyMapPickerHandoff(payload);
     geolocationHint.value = "";
     return;
   }
-  if (payload.kind === "coords") {
-    // Free coordinate — no place ID. Use the user-provided label when present,
-    // otherwise leave the place name empty so the user can fill it in. The
-    // hint copy nudges them to add a label.
-    draft.placeName.value = payload.label || draft.placeName.value;
-    locationOptions.clearMapLocation();
-    locationOptions.locationPanelOpen.value = true;
-    geolocationHint.value = PUBLISH_LOCATION_GEOLOC_HINT;
-  }
+
+  locationOptions.applyDisplayOnlyLocation(payload.source === "legacy" ? payload.label : undefined);
+  geolocationHint.value =
+    payload.source === "browser_geolocation"
+      ? PUBLISH_LOCATION_GEOLOC_HINT
+      : PUBLISH_LOCATION_LEGACY_HINT;
 }
 
 function consumeHandoff() {
@@ -96,11 +90,17 @@ function consumeHandoff() {
   if (pending) applyHandoff(pending);
 }
 
+function consumeHandoffIfActive() {
+  if (publishViewActive.value && restoreSettled.value) consumeHandoff();
+}
+
 function pickOnMap() {
   // The map picker reads `consumePendingPublishLocation` on its overlay
   // confirm, but the publish form has nothing to write yet — the picker is
   // the writer. We just navigate to the map view in picker mode.
   if (typeof window !== "undefined") {
+    geolocation.invalidatePendingRequest();
+    emit("map-picker-open");
     window.location.hash = buildMapPickerHash();
   }
 }
@@ -108,18 +108,26 @@ function pickOnMap() {
 async function useCurrentLocation() {
   geolocation.clearError();
   const coords = await geolocation.fetchCurrentLocation();
-  if (!coords) return;
+  if (!coords || !publishViewActive.value) return;
   // Route through the handoff key so both pathways converge on the same
   // consume logic. The publish form is already mounted, so we consume
   // immediately rather than waiting for a remount.
-  setPendingPublishLocation({ kind: "coords", lat: coords.lat, lng: coords.lng });
-  consumeHandoff();
+  setPendingPublishLocation({
+    version: 2,
+    source: "browser_geolocation",
+    coordinateSystem: "wgs84",
+    kind: "coords",
+    lat: coords.lat,
+    lng: coords.lng,
+    accuracy: coords.accuracy,
+  });
+  consumeHandoffIfActive();
 }
 
 // pageshow fires on initial nav AND on bfcache restore (browser back from
 // the picker). onMounted only catches the first case, so we bind both.
 function handlePageShow() {
-  consumeHandoff();
+  consumeHandoffIfActive();
 }
 
 // Auth gate: detect guest state after identity loads
@@ -180,26 +188,49 @@ watch(
   { immediate: true },
 );
 
-const { draftNotice, hasUnsavedDraft, currentScope } = usePublishDraftSession({
-  title: draft.title,
-  body: draft.body,
-  tagInput: draft.tagInput,
-  placeName: draft.placeName,
-  visibility: draft.visibility,
-  selectedFiles: draft.selectedFiles,
-  selectedMapLocation: locationOptions.selectedMapLocation,
-  locationSearch: locationOptions.locationSearch,
-  locationPanelOpen: locationOptions.locationPanelOpen,
-  publishing: draft.publishing,
-  loadIdentity: draft.loadIdentity,
-  loadMapLocations: locationOptions.loadMapLocations,
-  userId: draft.userId,
-  identityLoaded: draft.identityLoaded,
-});
+function resetPublishTransientState() {
+  // Pending handoffs are not account-scoped. Once a form already owned by A
+  // moves to B, discard A's pending handoff instead of assigning it to B.
+  consumePendingPublishLocation();
+  resetPublishAttemptForScopeTransition();
+  draft.resetForm(locationOptions.clearLocationState);
+  eventDraft.reset();
+  geolocation.invalidatePendingRequest();
+  geolocation.clearError();
+  geolocationHint.value = "";
+  actionablePreview.value = null;
+  draft.errorMessage.value = "";
+  draft.successMessage.value = "";
+  draft.lastTid.value = null;
+  resetConfirmationVisible.value = false;
+}
+
+const { draftNotice, hasUnsavedDraft, currentScope, restoreSettled, restoreGeneration } =
+  usePublishDraftSession({
+    title: draft.title,
+    body: draft.body,
+    tagInput: draft.tagInput,
+    placeName: draft.placeName,
+    visibility: draft.visibility,
+    selectedFiles: draft.selectedFiles,
+    selectedMapLocation: locationOptions.selectedMapLocation,
+    mapPickerBinding: locationOptions.mapPickerBinding,
+    locationSearch: locationOptions.locationSearch,
+    locationPanelOpen: locationOptions.locationPanelOpen,
+    publishing: draft.publishing,
+    loadIdentity: draft.loadIdentity,
+    loadMapLocations: locationOptions.loadMapLocations,
+    resetTransientState: resetPublishTransientState,
+    userId: draft.userId,
+    identityLoaded: draft.identityLoaded,
+  });
+
+watch(restoreGeneration, consumeHandoffIfActive);
 
 function clearPublishState() {
   resetPublishAttempt();
   draft.resetForm(locationOptions.clearLocationState);
+  geolocationHint.value = "";
   actionablePreview.value = null;
   eventDraft.reset();
   clearPublishDraft(currentScope.value);
@@ -243,7 +274,51 @@ const { postDetailUrl, resetPublishAttempt, submitPublish } = usePublishSubmit({
   merchantVerified: draft.merchant.merchantVerified,
   tradePayload: () => draft.trade.payload(),
   tradeVerified: draft.trade.campusVerified,
+  draftOwnership: () => ({
+    title: draft.title.value,
+    body: draft.body.value,
+    tagInput: draft.tagInput.value,
+    identityTag: draft.identityTag.value,
+    placeName: draft.placeName.value,
+    visibility: draft.visibility.value,
+    aliasId: draft.aliasId.value,
+    tagPanelOpen: draft.tagPanelOpen.value,
+    visibilityPanelOpen: draft.visibilityPanelOpen.value,
+    publishKind: draft.publishKind.value,
+    selectedFileCount: draft.selectedFiles.value.length,
+    localPreviewUrls: draft.localPreviewUrls.value,
+    uploadedImageUrls: draft.uploadedImageUrls.value,
+    uploading: draft.uploading.value,
+    locationSearch: locationOptions.locationSearch.value,
+    mapPickerBinding: locationOptions.mapPickerBinding.value,
+    selectedMapLocation: locationOptions.selectedMapLocation.value,
+    selectedLocationDraft: locationOptions.selectedLocationDraft.value,
+    locationPanelOpen: locationOptions.locationPanelOpen.value,
+    geolocationHint: geolocationHint.value,
+    postType: eventDraft.postType.value,
+    startsAt: eventDraft.startsAt.value,
+    endsAt: eventDraft.endsAt.value,
+    capacity: eventDraft.capacity.value,
+    joinPolicy: eventDraft.joinPolicy.value,
+    merchant: {
+      name: draft.merchant.name.value,
+      category: draft.merchant.category.value,
+      hours: draft.merchant.hours.value,
+      contact: draft.merchant.contact.value,
+      errandSupported: draft.merchant.errandSupported.value,
+    },
+    trade: {
+      price: draft.trade.price.value,
+      state: draft.trade.state.value,
+      category: draft.trade.category.value,
+    },
+    llmInferredKind: draft.llmInferredKind.value,
+    titleCandidate: draft.titleCandidate.value,
+    bodyCandidate: draft.bodyCandidate.value,
+    suggestedComponents: draft.suggestedComponents.value,
+  }),
 });
+resetPublishAttemptForScopeTransition = resetPublishAttempt;
 
 function requestResetForm() {
   if (!hasUnsavedDraft.value) {
@@ -279,7 +354,7 @@ async function handleFiles(event: Event) {
   });
 }
 
-watch(draft.pageChrome, (spec) => emit("chrome", spec), {
+watch(draft.pageChrome, emitChromeIfActive, {
   deep: true,
 });
 
@@ -288,7 +363,8 @@ watch(hasUnsavedDraft, (value) => {
 });
 
 onMounted(() => {
-  emit("chrome", draft.pageChrome.value);
+  publishViewActive.value = true;
+  emitChromeIfActive();
   if (!draft.merchant.verificationLoaded.value) {
     void draft.merchant.refreshVerification();
   }
@@ -296,13 +372,26 @@ onMounted(() => {
   // or the geolocation button (e.g. on the previous mount of this view).
   // pageshow covers bfcache restores; consume runs on both to keep the two
   // pathways idempotent.
-  consumeHandoff();
+  consumeHandoffIfActive();
   if (typeof window !== "undefined") {
     window.addEventListener("pageshow", handlePageShow);
   }
 });
 
+onActivated(() => {
+  publishViewActive.value = true;
+  emitChromeIfActive();
+  consumeHandoffIfActive();
+});
+
+onDeactivated(() => {
+  publishViewActive.value = false;
+  geolocation.invalidatePendingRequest();
+});
+
 onUnmounted(() => {
+  publishViewActive.value = false;
+  geolocation.invalidatePendingRequest();
   if (typeof window !== "undefined") {
     window.removeEventListener("pageshow", handlePageShow);
   }
@@ -449,6 +538,7 @@ onUnmounted(() => {
           :panel-open="locationOptions.locationPanelOpen.value"
           :filtered-map-locations="locationOptions.filteredMapLocations.value"
           :selected-map-location="locationOptions.selectedMapLocation.value"
+          :has-structured-map-binding="locationOptions.hasStructuredMapBinding.value"
           :map-location-loading="locationOptions.mapLocationLoading.value"
           :map-location-error="locationOptions.mapLocationError.value"
           :location-search="locationOptions.locationSearch.value"

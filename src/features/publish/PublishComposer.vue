@@ -27,6 +27,7 @@ import {
   useInjectedTitleCandidate,
   useInjectedSuggestedComponents,
   useInjectedLlmInferredKind,
+  useInjectedPublishAiAttemptContext,
 } from "./usePublishDraft";
 import { usePublishLlmTick } from "./usePublishLlmTick";
 import type { MapLocation } from "../../types/map";
@@ -92,10 +93,14 @@ const suggestedComponents = useInjectedSuggestedComponents();
 // submit-side reads the same ref via inject when it derives the wire
 // `kind` (priority chain in inferKind.ts).
 const llmInferredKind = useInjectedLlmInferredKind();
+const aiAttemptContext = useInjectedPublishAiAttemptContext();
 
 usePublishLlmTick({
   title: toRef(props, "title"),
   body: toRef(props, "body"),
+  imageUrls: aiAttemptContext.imageUrls,
+  locationLabel: aiAttemptContext.locationLabel,
+  attemptGeneration: aiAttemptContext.attemptGeneration,
   setTitleCandidate: titleCandidate.setTitleCandidate,
   setBodyCandidate: bodyCandidate.setBodyCandidate,
   suggestedComponents,

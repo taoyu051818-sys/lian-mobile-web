@@ -19,6 +19,10 @@ const feedDataSource = fs.readFileSync(
   path.join(repoRoot, "src/features/feed/useFeedData.ts"),
   "utf8",
 );
+const feedViewSource = fs.readFileSync(
+  path.join(repoRoot, "src/features/feed/FeedView.vue"),
+  "utf8",
+);
 const feedCardSource = fs
   .readFileSync(path.join(repoRoot, "src/features/feed/FeedItemCard.vue"), "utf8")
   .replace(/\r\n/g, "\n");
@@ -29,23 +33,33 @@ const detailStateSource = fs.readFileSync(
   path.join(repoRoot, "src/app/detail-navigation/state.ts"),
   "utf8",
 );
-const browserStorageSource = fs.readFileSync(
-  path.join(repoRoot, "src/platform/browser-storage.ts"),
-  "utf8",
-);
-
 describe("Feed read-history id normalization", () => {
-  it("useFeedData delegates read history to platform/browser-storage", () => {
-    expect(feedDataSource).toMatch(
-      /import \{.*readHistoryQuery.*rememberReadItem.*\} from "\.\.\/\.\.\/platform\/browser-storage"/,
-    );
+  it("keeps localStorage ownership behind the browser-storage boundary", () => {
     expect(feedDataSource).not.toMatch(/localStorage\.getItem/);
+    expect(feedDataSource).not.toMatch(/localStorage\.setItem/);
+    expect(feedDataSource).toContain("readHistoryQuery");
+    expect(feedDataSource).toContain("rememberReadItem");
   });
 
-  it("browser-storage normalizes TIDs in readHistoryQuery and rememberReadItem", () => {
-    expect(browserStorageSource).toMatch(/String\(entry\.tid\)/);
-    expect(browserStorageSource).toMatch(/const normalizedId = id == null \? "" : String\(id\)/);
-    expect(browserStorageSource).toMatch(/String\(entry\.tid\) !== normalizedId/);
+  it("routes the first Feed mount through identity-first initialization", () => {
+    const mountedBlock = feedViewSource.slice(
+      feedViewSource.indexOf("onMounted(() =>"),
+      feedViewSource.indexOf("function openItem("),
+    );
+
+    expect(mountedBlock).toContain("feedData.initialize()");
+    expect(mountedBlock).not.toContain("feedData.loadFeed(true)");
+  });
+
+  it("disposes Feed ownership when the view unmounts", () => {
+    expect(feedViewSource).toMatch(/onUnmounted\(\(\)\s*=>\s*\{[\s\S]*?feedData\.dispose\(\)/);
+  });
+
+  it("wires pull refresh and error retry to explicit semantic actions", () => {
+    expect(feedViewSource).toContain("await feedData.refreshFeed()");
+    expect(feedViewSource).toContain('@action="feedData.retryFailedRequest"');
+    expect(feedViewSource).toContain(':action-loading="feedData.requestPending.value"');
+    expect(feedViewSource).not.toContain("feedData.loadFeed(true)");
   });
 
   it("detail-navigation reducer uses a token guard, not an id-equality guard", () => {

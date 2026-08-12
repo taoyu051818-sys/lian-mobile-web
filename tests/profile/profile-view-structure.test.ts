@@ -111,4 +111,84 @@ describe("ProfileView structure (issue #829)", () => {
     // Check that min-height is set on .profile-collection
     expect(collectionContent).toMatch(/\.profile-collection\s*\{[^}]*min-height:/);
   });
+
+  it("resets every session-scoped ServerChan state at Profile session boundaries", async () => {
+    const src = await loadContent();
+    const resetBoundary = src.slice(
+      src.indexOf("function resetNotificationSessionState()"),
+      src.indexOf("function enterGuestState()"),
+    );
+    const guestBoundary = src.slice(
+      src.indexOf("function enterGuestState()"),
+      src.indexOf("async function loadProfile()"),
+    );
+    const authenticatedBoundary = src.slice(
+      src.indexOf("async function handleAuthenticated("),
+      src.indexOf("onMounted("),
+    );
+
+    expect(resetBoundary).toContain("resetServerChanBindingSessionState()");
+    expect(resetBoundary).toContain("resetServerChanPreferencesSessionState()");
+    expect(resetBoundary).toContain("resetServerChanOptInSessionState()");
+    expect(guestBoundary).toContain("resetNotificationSessionState()");
+    expect(authenticatedBoundary).toContain("resetNotificationSessionState()");
+  });
+
+  it("invalidates the prior profile list before guest and authenticated identity transitions", async () => {
+    const src = await loadContent();
+    const guestBoundary = src.slice(
+      src.indexOf("function enterGuestState()"),
+      src.indexOf("async function loadProfile()"),
+    );
+    const authenticatedBoundary = src.slice(
+      src.indexOf("async function handleAuthenticated("),
+      src.indexOf("onMounted("),
+    );
+
+    expect(guestBoundary.indexOf("resetList()")).toBeGreaterThan(-1);
+    expect(guestBoundary.indexOf("resetList()")).toBeLessThan(
+      guestBoundary.indexOf("user.value = null"),
+    );
+    expect(authenticatedBoundary.indexOf("resetList()")).toBeGreaterThan(-1);
+    expect(authenticatedBoundary.indexOf("resetList()")).toBeLessThan(
+      authenticatedBoundary.indexOf("user.value = authenticatedUser"),
+    );
+    expect(authenticatedBoundary.indexOf("resetList()")).toBeLessThan(
+      authenticatedBoundary.indexOf("await loadProfile()"),
+    );
+  });
+
+  it("wires account-changing history refreshes to the existing session presentation reset", async () => {
+    const src = await loadContent();
+    const tabsSetup = src.slice(src.indexOf("useProfileTabs({"), src.indexOf("const detail"));
+    const accountReset = src.slice(
+      src.indexOf("function resetAccountPresentation()"),
+      src.indexOf("function enterGuestState()"),
+    );
+
+    expect(tabsSetup).toMatch(
+      /resetAccountPresentation:\s*\(\)\s*=>\s*resetAccountPresentation\(\)/,
+    );
+    expect(accountReset).toContain("clearAdminAccessState()");
+    expect(accountReset).toContain("resetNotificationSessionState()");
+    expect(accountReset).toContain("editorOpen.value = false");
+    expect(accountReset).toContain("aliasPickerOpen.value = false");
+    expect(accountReset).toContain('errorMessage.value = ""');
+  });
+
+  it("keys the authenticated subtree by proven account ownership", async () => {
+    const src = await loadContent();
+    const accountReset = src.slice(
+      src.indexOf("function resetAccountPresentation()"),
+      src.indexOf("function enterGuestState()"),
+    );
+
+    expect(src).toContain("const accountViewGeneration = ref(0)");
+    expect(src).toContain("const accountViewKey = computed(");
+    expect(accountReset).toContain("accountViewGeneration.value += 1");
+    expect(src).toMatch(
+      /<div\s+v-else-if="user"\s+:key="accountViewKey"\s+class="profile-view__authenticated">/,
+    );
+    expect(src).toMatch(/\.profile-view__authenticated\s*\{[^}]*display:\s*contents/);
+  });
 });

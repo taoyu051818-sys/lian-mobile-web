@@ -11,6 +11,7 @@ import {
   restorePublishDraftLocation,
   savePublishDraft,
 } from "../../src/features/publish/publishDraftSession";
+import type { PublishMapPickerLocationHandoff } from "../../src/features/publish/usePublishLocationHandoff";
 
 function createMemoryStorage(): Storage {
   const store = new Map<string, string>();
@@ -45,6 +46,19 @@ const SAMPLE_INPUT = {
   visibility: "campus" as const,
   selectedMapLocation: null,
   selectedFileCount: 0,
+};
+
+const MAP_PICKER_BINDING: PublishMapPickerLocationHandoff = {
+  version: 2,
+  source: "map_picker",
+  coordinateSystem: "gcj02",
+  kind: "place",
+  locationId: "location-b",
+  placeId: "place-b",
+  name: "Place B",
+  type: "canteen",
+  lat: 18.42,
+  lng: 110.03,
 };
 
 describe("publish draft session helpers", () => {
@@ -106,6 +120,7 @@ describe("publish draft session helpers", () => {
         lat: 31.23,
         lng: 121.47,
       },
+      mapPickerBinding: null,
       pendingImageCount: 2,
     });
   });
@@ -134,6 +149,7 @@ describe("publish draft session helpers", () => {
       placeName: "",
       visibility: "public",
       selectedMapLocation: null,
+      mapPickerBinding: null,
       pendingImageCount: 1,
     });
 
@@ -148,6 +164,7 @@ describe("publish draft session helpers", () => {
       placeName: "",
       visibility: "public",
       selectedMapLocation: null,
+      mapPickerBinding: null,
       pendingImageCount: 0,
     });
   });
@@ -190,6 +207,167 @@ describe("publish draft session helpers", () => {
       placeId: "place-canteen-1",
       lat: 30.1,
       lng: 120.2,
+    });
+  });
+
+  it("treats a structured map binding by itself as a meaningful draft", () => {
+    expect(
+      hasMeaningfulPublishDraft({
+        title: "",
+        body: "",
+        tagInput: "",
+        placeName: "",
+        visibility: "public",
+        selectedMapLocation: null,
+        mapPickerBinding: MAP_PICKER_BINDING,
+        selectedFileCount: 0,
+      }),
+    ).toBe(true);
+  });
+
+  it("persists and restores a structured fallback only inside its account scope", () => {
+    const storage = createMemoryStorage();
+    const aliceScope = resolvePublishDraftScope({ id: "alice" });
+    const bobScope = resolvePublishDraftScope({ id: "bob" });
+
+    savePublishDraft(
+      {
+        ...SAMPLE_INPUT,
+        title: "",
+        body: "",
+        tagInput: "",
+        placeName: "Place B",
+        mapPickerBinding: MAP_PICKER_BINDING,
+      },
+      aliceScope,
+      storage,
+    );
+
+    expect(readPublishDraft(aliceScope, storage)?.mapPickerBinding).toEqual(MAP_PICKER_BINDING);
+    expect(readPublishDraft(bobScope, storage)).toBeNull();
+  });
+
+  it("keeps old snapshots and their canonical selection readable with a null binding", () => {
+    const storage = createMemoryStorage();
+    storage.setItem(
+      `${PUBLISH_DRAFT_SESSION_KEY}::${PUBLISH_DRAFT_SCOPE_ANONYMOUS}`,
+      JSON.stringify({
+        title: "legacy draft",
+        visibility: "public",
+        selectedMapLocation: {
+          id: "legacy-location",
+          name: "Legacy place",
+          placeId: "legacy-place",
+          lat: 18.3,
+          lng: 110,
+        },
+      }),
+    );
+
+    expect(readPublishDraft(PUBLISH_DRAFT_SCOPE_ANONYMOUS, storage)).toMatchObject({
+      title: "legacy draft",
+      mapPickerBinding: null,
+      selectedMapLocation: {
+        id: "legacy-location",
+        placeId: "legacy-place",
+      },
+    });
+  });
+
+  it("keeps an explicit null binding compatible with a direct catalog selection", () => {
+    const storage = createMemoryStorage();
+    storage.setItem(
+      `${PUBLISH_DRAFT_SESSION_KEY}::${PUBLISH_DRAFT_SCOPE_ANONYMOUS}`,
+      JSON.stringify({
+        title: "direct catalog draft",
+        visibility: "public",
+        mapPickerBinding: null,
+        selectedMapLocation: {
+          id: "catalog-location",
+          name: "Catalog place",
+          placeId: "catalog-place",
+          lat: 18.3,
+          lng: 110,
+        },
+      }),
+    );
+
+    expect(readPublishDraft(PUBLISH_DRAFT_SCOPE_ANONYMOUS, storage)).toMatchObject({
+      mapPickerBinding: null,
+      selectedMapLocation: {
+        id: "catalog-location",
+        placeId: "catalog-place",
+      },
+    });
+  });
+
+  it("clears a duplicate WGS selection when its non-null map binding is invalid", () => {
+    const storage = createMemoryStorage();
+    storage.setItem(
+      `${PUBLISH_DRAFT_SESSION_KEY}::${PUBLISH_DRAFT_SCOPE_ANONYMOUS}`,
+      JSON.stringify({
+        title: "keep safe text",
+        visibility: "public",
+        mapPickerBinding: { ...MAP_PICKER_BINDING, coordinateSystem: "wgs84" },
+        selectedMapLocation: {
+          id: "browser-wgs-selection",
+          name: "Browser coordinates",
+          lat: 18.401,
+          lng: 110.002,
+        },
+      }),
+    );
+
+    expect(readPublishDraft(PUBLISH_DRAFT_SCOPE_ANONYMOUS, storage)).toMatchObject({
+      title: "keep safe text",
+      mapPickerBinding: null,
+      selectedMapLocation: null,
+    });
+  });
+
+  it("keeps a valid binding authoritative over a mismatched selected location", () => {
+    const selectedMapLocation = {
+      id: "stale-location-a",
+      name: "Stale place A",
+      placeId: "stale-place-a",
+      lat: 18.2,
+      lng: 109.8,
+    };
+    const snapshot = buildPublishDraftSnapshot({
+      ...SAMPLE_INPUT,
+      selectedMapLocation,
+      mapPickerBinding: MAP_PICKER_BINDING,
+    });
+    expect(snapshot).toMatchObject({
+      mapPickerBinding: MAP_PICKER_BINDING,
+      selectedMapLocation: null,
+    });
+
+    const storage = createMemoryStorage();
+    storage.setItem(
+      `${PUBLISH_DRAFT_SESSION_KEY}::${PUBLISH_DRAFT_SCOPE_ANONYMOUS}`,
+      JSON.stringify({ ...snapshot, selectedMapLocation }),
+    );
+    expect(readPublishDraft(PUBLISH_DRAFT_SCOPE_ANONYMOUS, storage)).toMatchObject({
+      mapPickerBinding: MAP_PICKER_BINDING,
+      selectedMapLocation: null,
+    });
+  });
+
+  it.each([
+    ["source/system mismatch", { ...MAP_PICKER_BINDING, coordinateSystem: "wgs84" }],
+    ["out-of-range coordinates", { ...MAP_PICKER_BINDING, lat: 91 }],
+    ["incomplete coordinates", { ...MAP_PICKER_BINDING, lng: undefined }],
+  ])("drops a damaged structured binding: %s", (_label, mapPickerBinding) => {
+    const storage = createMemoryStorage();
+    storage.setItem(
+      `${PUBLISH_DRAFT_SESSION_KEY}::${PUBLISH_DRAFT_SCOPE_ANONYMOUS}`,
+      JSON.stringify({ title: "keep text", visibility: "public", mapPickerBinding }),
+    );
+
+    expect(readPublishDraft(PUBLISH_DRAFT_SCOPE_ANONYMOUS, storage)).toMatchObject({
+      title: "keep text",
+      mapPickerBinding: null,
     });
   });
 });

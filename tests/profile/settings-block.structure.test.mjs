@@ -7,7 +7,7 @@ import { fileURLToPath } from "node:url";
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
 
 function read(rel) {
-  return fs.readFileSync(path.join(repoRoot, rel), "utf8");
+  return fs.readFileSync(path.join(repoRoot, rel), "utf8").replace(/\r\n/g, "\n");
 }
 
 // --- Types mirror backend ---
@@ -55,7 +55,7 @@ test("patchProfileSettings issues PATCH /api/me/settings with the patch in the b
 // in a pure reducer (testable as data) rather than scattered across four
 // component-local refs.
 
-test("settings-state state.ts defines the four-state discriminated union", () => {
+test("settings-state state.ts defines the five-state discriminated union", () => {
   const src = read("src/features/profile/settings-state/state.ts");
   assert.match(src, /export type SettingsState/);
   for (const kind of ["idle", "loading", "ready", "saving", "error"]) {
@@ -169,18 +169,20 @@ test("ProfileSettingsBlock surfaces error message + retry only on load failure",
   assert.match(src, /settings\.errorPhase\.value === 'load'/);
 });
 
-// --- ProfileView mounts the block under stats, above tabs ---
+// --- ProfileView mounts the block for authenticated profiles ---
 
-test("ProfileView mounts ProfileSettingsBlock between stats and tabs", () => {
+test("ProfileView mounts ProfileSettingsBlock only in the authenticated profile", () => {
   const src = read("src/features/profile/ProfileView.vue");
   assert.match(src, /import ProfileSettingsBlock/);
   assert.match(src, /<ProfileSettingsBlock \/>/);
-  const statsIdx = src.indexOf("<ProfileStatsBlock");
+  const authenticatedIdx = src.indexOf(
+    '<div v-else-if="user" :key="accountViewKey" class="profile-view__authenticated">',
+  );
   const settingsIdx = src.indexOf("<ProfileSettingsBlock");
-  const tabsIdx = src.indexOf("<ProfileTabs");
-  assert.ok(statsIdx > -1 && settingsIdx > -1 && tabsIdx > -1, "all three should be present");
-  assert.ok(statsIdx < settingsIdx, "settings sits below stats");
-  assert.ok(settingsIdx < tabsIdx, "settings sits above tabs");
+  const guestIdx = src.indexOf('<section v-else class="profile-view__guest">');
+  assert.ok(authenticatedIdx > -1 && settingsIdx > -1 && guestIdx > -1);
+  assert.ok(authenticatedIdx < settingsIdx, "settings belong to signed-in profiles");
+  assert.ok(settingsIdx < guestIdx, "settings must not mount in the guest branch");
 });
 
 // --- Brand strings registered ---

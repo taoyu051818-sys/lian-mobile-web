@@ -130,6 +130,25 @@ describe("feed adapter normalization", () => {
     });
   });
 
+  it("normalizes the authoritative bookmark state with legacy saved compatibility", () => {
+    const cases = [
+      { input: { tid: 66, bookmarked: true }, expected: true },
+      { input: { tid: 67, bookmarked: false }, expected: false },
+      { input: { tid: 68, saved: true }, expected: true },
+      { input: { tid: 69, saved: false }, expected: false },
+      { input: { tid: 70 }, expected: false },
+    ];
+
+    for (const { input, expected } of cases) {
+      expect(normalizeFeedItem(input)?.bookmarked).toBe(expected);
+    }
+  });
+
+  it("prefers bookmarked over the legacy saved alias when both are present", () => {
+    expect(normalizeFeedItem({ tid: 71, bookmarked: false, saved: true })?.bookmarked).toBe(false);
+    expect(normalizeFeedItem({ tid: 72, bookmarked: true, saved: false })?.bookmarked).toBe(true);
+  });
+
   it("preserves backend-shaped graph primitives on feed items", () => {
     const item = normalizeFeedItem({
       tid: "41",

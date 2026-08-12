@@ -2,6 +2,7 @@ import { describe, expect, it, beforeEach, vi } from "vitest";
 
 import {
   useServerChanBinding,
+  resetServerChanBindingSessionState,
   __setServerChanBindingApiForTesting,
   __setServerChanBindingPlatformForTesting,
   __resetServerChanBindingForTesting,
@@ -33,6 +34,105 @@ describe("useServerChanBinding", () => {
     expect(binding.isEnabled.value).toBe(false);
     expect(binding.loading.value).toBe(false);
     expect(binding.loadError.value).toBe("");
+  });
+
+  it("session reset clears account-scoped state", () => {
+    const binding = useServerChanBinding();
+    binding.binding.value = BOUND;
+    binding.loading.value = true;
+    binding.loadError.value = "old load error";
+    binding.submitting.value = true;
+    binding.submitError.value = "old submit error";
+    binding.unbindBusy.value = true;
+    binding.manualOpen.value = true;
+    binding.manualKey.value = SCT_TEST_PLACEHOLDER;
+
+    resetServerChanBindingSessionState();
+
+    expect(binding.binding.value).toBeNull();
+    expect(binding.loading.value).toBe(false);
+    expect(binding.loadError.value).toBe("");
+    expect(binding.submitting.value).toBe(false);
+    expect(binding.submitError.value).toBe("");
+    expect(binding.unbindBusy.value).toBe(false);
+    expect(binding.manualOpen.value).toBe(false);
+    expect(binding.manualKey.value).toBe("");
+  });
+
+  it("ignores a load result from the prior session without clearing the current busy state", async () => {
+    let resolveOld: ((value: ServerChanBinding) => void) | null = null;
+    let resolveCurrent: ((value: ServerChanBinding) => void) | null = null;
+    const fetchBinding = vi
+      .fn()
+      .mockImplementationOnce(
+        () =>
+          new Promise<ServerChanBinding>((resolve) => {
+            resolveOld = resolve;
+          }),
+      )
+      .mockImplementationOnce(
+        () =>
+          new Promise<ServerChanBinding>((resolve) => {
+            resolveCurrent = resolve;
+          }),
+      );
+    __setServerChanBindingApiForTesting({ fetchBinding });
+    const binding = useServerChanBinding();
+
+    const oldLoad = binding.load();
+    resetServerChanBindingSessionState();
+    const currentLoad = binding.load();
+
+    resolveOld?.(BOUND);
+    await oldLoad;
+    expect(binding.binding.value).toBeNull();
+    expect(binding.loading.value).toBe(true);
+
+    resolveCurrent?.({ bound: false, enabled: false });
+    await currentLoad;
+    expect(binding.binding.value).toEqual({ bound: false, enabled: false });
+    expect(binding.loading.value).toBe(false);
+  });
+
+  it("keeps the current bind form intact when a prior-session bind finishes late", async () => {
+    let resolveOld: ((value: ServerChanBinding) => void) | null = null;
+    let resolveCurrent: ((value: ServerChanBinding) => void) | null = null;
+    const bind = vi
+      .fn()
+      .mockImplementationOnce(
+        () =>
+          new Promise<ServerChanBinding>((resolve) => {
+            resolveOld = resolve;
+          }),
+      )
+      .mockImplementationOnce(
+        () =>
+          new Promise<ServerChanBinding>((resolve) => {
+            resolveCurrent = resolve;
+          }),
+      );
+    __setServerChanBindingApiForTesting({ bind });
+    const binding = useServerChanBinding();
+
+    binding.openManualForm();
+    binding.manualKey.value = "SCT_TEST_PLACEHOLDER_OLD";
+    const oldSubmit = binding.submitManualKey();
+    resetServerChanBindingSessionState();
+    binding.openManualForm();
+    binding.manualKey.value = "SCT_TEST_PLACEHOLDER_CURRENT";
+    const currentSubmit = binding.submitManualKey();
+
+    resolveOld?.(BOUND);
+    await expect(oldSubmit).resolves.toBe(false);
+    expect(binding.binding.value).toBeNull();
+    expect(binding.manualKey.value).toBe("SCT_TEST_PLACEHOLDER_CURRENT");
+    expect(binding.submitting.value).toBe(true);
+
+    resolveCurrent?.(BOUND);
+    await expect(currentSubmit).resolves.toBe(true);
+    expect(binding.binding.value).toEqual(BOUND);
+    expect(binding.manualKey.value).toBe("");
+    expect(binding.submitting.value).toBe(false);
   });
 
   it("transitions through loading → bound on a successful fetch", async () => {

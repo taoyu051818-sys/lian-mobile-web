@@ -42,11 +42,18 @@ const dialogState = ref<ServerChanOptInDialogState>({
 });
 
 const dismissedThisSession = new Set<ServerChanOptInKind>();
+let sessionGeneration = 0;
+
+/** Clear account-scoped dialog state and invalidate a pending confirmation. */
+export function resetServerChanOptInSessionState(): void {
+  sessionGeneration += 1;
+  dismissedThisSession.clear();
+  dialogState.value = { open: false, kind: null, busy: false, orderId: "" };
+}
 
 /** Test-only — reset session dismissal state. */
 export function __resetServerChanOptInDismissedForTesting(): void {
-  dismissedThisSession.clear();
-  dialogState.value = { open: false, kind: null, busy: false, orderId: "" };
+  resetServerChanOptInSessionState();
 }
 
 interface UseServerChanOptInOptions {
@@ -108,6 +115,7 @@ export function useServerChanOptIn(options: UseServerChanOptInOptions) {
   async function confirmOptIn(): Promise<boolean> {
     const current = dialogState.value;
     if (!current.open || !current.kind) return false;
+    const generation = sessionGeneration;
     dialogState.value = { ...current, busy: true };
     let ok = false;
     if (current.kind === "event-start") {
@@ -121,6 +129,7 @@ export function useServerChanOptIn(options: UseServerChanOptInOptions) {
     } else if (current.kind === "errand-order") {
       ok = await preferences.setErrandOrderReminder(current.orderId, true);
     }
+    if (generation !== sessionGeneration) return false;
     // After confirm — whether success or failure — close. On failure the view
     // can re-trigger from a different surface. We add to the dismissed set
     // either way so a failed click does not loop the dialog.

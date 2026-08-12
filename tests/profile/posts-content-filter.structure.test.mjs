@@ -7,7 +7,13 @@ import { fileURLToPath } from "node:url";
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
 
 function read(rel) {
-  return fs.readFileSync(path.join(repoRoot, rel), "utf8");
+  return fs.readFileSync(path.join(repoRoot, rel), "utf8").replace(/\r\n/g, "\n");
+}
+
+function openingTag(source, component) {
+  const match = source.match(new RegExp(`<${component}\\b[\\s\\S]*?>`));
+  assert.ok(match, `${component} opening tag should exist`);
+  return match[0];
 }
 
 // --- Types: ProfilePostsContentFilter ---
@@ -59,12 +65,13 @@ test("useProfileTabs exposes a postsContentFilter ref and threads it through loa
 
 // --- Component: ProfilePostsContentFilter.vue ---
 
-test("ProfilePostsContentFilter.vue renders one chip per filter option with role tablist", () => {
+test("ProfilePostsContentFilter.vue renders one radio per filter option", () => {
   const src = read("src/features/profile/ProfilePostsContentFilter.vue");
-  assert.match(src, /role="tablist"/);
-  // a11y: the active chip must announce aria-selected so screen readers can
-  // read out the current filter.
-  assert.match(src, /aria-selected/);
+  assert.match(src, /role="radiogroup"/);
+  assert.match(src, /role="radio"/);
+  // A content filter is a single-choice control, so the active chip exposes
+  // the radio-state contract rather than relying on tab semantics.
+  assert.match(src, /:aria-checked="modelValue === chip\.value"/);
   // The chip strip is a v-for over a static descriptor list. Assert the
   // descriptor list enumerates every supported filter value, plus the data
   // attribute the structure / e2e tests can target.
@@ -89,7 +96,10 @@ test("ProfileView mounts ProfilePostsContentFilter only when the posts tab is ac
   assert.match(src, /import ProfilePostsContentFilter/);
   // Gate on the active tab — chip strip must not appear on history / saved /
   // liked / replies / drafts / map / orders.
-  assert.match(src, /<ProfilePostsContentFilter[\s\S]*?activeTab\s*===\s*['"]posts['"]/);
+  const tag = openingTag(src, "ProfilePostsContentFilter");
+  assert.match(tag, /v-if="activeTab === 'posts'"/);
+  assert.match(tag, /:model-value="postsContentFilter"/);
+  assert.match(tag, /@select="selectPostsContentFilter"/);
 });
 
 // --- Brand strings registered in config/brand/profile.ts ---

@@ -48,16 +48,33 @@ test("typed fallback block exposes stable per-type testids and disabled action s
 
 test("PostDetailContent mounts typed fallback blocks whenever a typed extension is missing", () => {
   const src = read("src/features/detail/PostDetailContent.vue");
-  assert.match(src, /import type \{ PostType \} from "\.\.\/\.\.\/types\/post"/);
   assert.match(
     src,
-    /import PostDetailTypedFallbackBlock from "\.\/PostDetailTypedFallbackBlock\.vue"/,
+    /import\s+type\s*\{[^}]*\bPostType\b[^}]*\}\s+from\s+"\.\.\/\.\.\/types\/post"/,
+  );
+  assert.match(
+    src,
+    /import\s*\{[^}]*\bresolvePostCapabilities\b[^}]*\}\s+from\s+"\.\/postCapabilityRegistry"/,
+  );
+  assert.match(
+    src,
+    /import\s+PostDetailTypedFallbackBlock\s+from\s+"\.\/PostDetailTypedFallbackBlock\.vue"/,
   );
   assert.match(src, /postType\?:\s*PostType/);
-  assert.match(src, /const showEventFallback = computed\(/);
-  assert.match(src, /const showHelpFallback = computed\(/);
-  assert.match(src, /const showMerchantFallback = computed\(/);
-  assert.match(src, /const showTradeFallback = computed\(/);
+  assert.match(src, /resolvePostCapabilities\(\s*\{[\s\S]*type:\s*props\.postType/);
+  for (const [name, id] of [
+    ["Event", "event"],
+    ["Help", "help"],
+    ["Merchant", "merchant"],
+    ["Trade", "trade"],
+  ]) {
+    assert.match(
+      src,
+      new RegExp(
+        `const show${name}Fallback\\s*=\\s*computed\\(\\(\\)\\s*=>\\s*selectionFor\\("${id}"\\)\\s*===\\s*"fallback"\\)`,
+      ),
+    );
+  }
   assert.match(src, /v-else-if="showEventFallback" post-type="event"/);
   assert.match(src, /v-else-if="showHelpFallback" post-type="help"/);
   assert.match(src, /v-else-if="showMerchantFallback" post-type="merchant"/);

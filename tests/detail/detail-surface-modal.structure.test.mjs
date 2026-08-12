@@ -41,11 +41,14 @@ test("DetailSurface freezes the underlying host while the overlay is open", () =
 
 test("useActiveView keeps detail independent from the host tab so close returns to the original view", () => {
   const src = read("src/app/useActiveView.ts");
-  assert.match(src, /Post detail is now an App-level overlay/);
+  assert.match(src, /const viewFromHash\s*=\s*getViewFromHashRef\(\)/);
   assert.match(
     src,
-    /opening or closing a detail must not move the user off whichever tab they're on/,
+    /const activeView\s*=\s*computed\(\(\)\s*=>\s*getViewDefinition\(viewFromHash\.value\)\)/,
   );
+  assert.match(src, /function setActiveView\(key:\s*AppViewKey\)/);
+  assert.match(src, /pushViewHash\(key\)/);
+  assert.doesNotMatch(src, /useDetailNavigation|detail\.(?:open|close)\(/);
 });
 
 test("stable shell teleport targets stay mounted for the detail topbar; reply-dock lives on the surface", () => {

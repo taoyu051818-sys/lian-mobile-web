@@ -5,15 +5,14 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
-const profileViewSource = fs.readFileSync(
-  path.join(repoRoot, "src/features/profile/ProfileView.vue"),
-  "utf8",
-);
-const unlockSource = fs.readFileSync(
-  path.join(repoRoot, "src/features/profile/profileUnlocks.ts"),
-  "utf8",
-);
-const brandSource = fs.readFileSync(path.join(repoRoot, "src/config/brand/profile.ts"), "utf8");
+
+function read(rel) {
+  return fs.readFileSync(path.join(repoRoot, rel), "utf8").replace(/\r\n/g, "\n");
+}
+
+const profileViewSource = read("src/features/profile/ProfileView.vue");
+const unlockSource = read("src/features/profile/profileUnlocks.ts");
+const brandSource = read("src/config/brand/profile.ts");
 
 test("profile unlock helper maps campus, merchant, and runner tags to verification-center cards", () => {
   for (const tag of ["campus_verified", "merchant_verified", "runner"]) {
@@ -29,12 +28,19 @@ test("profile unlock helper maps campus, merchant, and runner tags to verificati
   }
 });
 
-test("ProfileView renders unlock cards and only mounts errand orders after runner verification", () => {
+test("ProfileView renders unlock cards, exposes requester orders, and gates the runner center", () => {
   assert.match(profileViewSource, /buildProfileUnlockCards/);
   assert.match(profileViewSource, /const isRunnerVerified = computed/);
   assert.match(profileViewSource, /v-if="unlockCards\.length"/);
   assert.match(profileViewSource, /data-testid="profile-unlock-card-cta"/);
-  assert.match(profileViewSource, /<ProfileErrandOrdersBlock v-if="isRunnerVerified" \/>/);
+  // The orders tab belongs to the requester and is not a runner capability.
+  assert.match(profileViewSource, /<ProfileErrandOrdersBlock v-if="activeTab === 'orders'" \/>/);
+  assert.doesNotMatch(profileViewSource, /<ProfileErrandOrdersBlock[^>]*isRunnerVerified/);
+  // Runner verification instead unlocks entry to the runner work center.
+  assert.match(
+    profileViewSource,
+    /<footer\s+v-if="isRunnerVerified"[\s\S]*?data-testid="profile-runner-entry"/,
+  );
 });
 
 test("ProfileView routes every unlock CTA back into the verification center", () => {

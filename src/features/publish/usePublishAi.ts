@@ -10,6 +10,7 @@ interface UsePublishAiOptions {
   body: Ref<string>;
   tagInput: Ref<string>;
   placeName: Ref<string>;
+  attemptGeneration: Ref<number>;
   visibility: Ref<PublishVisibility>;
   isAllowed: (value: AudienceVisibility) => boolean;
 }
@@ -28,6 +29,7 @@ export function usePublishAi(options: UsePublishAiOptions) {
     title: options.title,
     body: options.body,
     locationLabel: options.placeName,
+    attemptGeneration: options.attemptGeneration,
     onSuggestion: (suggestion) => {
       const patch = planAiSuggestionPatch(
         {

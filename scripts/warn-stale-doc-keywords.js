@@ -21,8 +21,8 @@ const REQUIRED_CURRENT_STATUS_MARKERS = [
   "Active control issue:",
   "Open release blockers:",
   "Current production release:",
-  "No active execution queue.",
 ];
+const CURRENT_STATUS_QUEUE_MARKERS = ["**No active execution queue.", "**Active execution queue:"];
 
 async function walkMdFiles(dir) {
   const results = [];
@@ -86,6 +86,12 @@ async function main() {
     const missingMarkers = REQUIRED_CURRENT_STATUS_MARKERS.filter(
       (marker) => !currentStatus.includes(marker),
     );
+    const queueMarkerCount = CURRENT_STATUS_QUEUE_MARKERS.filter((marker) =>
+      currentStatus.includes(marker),
+    ).length;
+    if (queueMarkerCount !== 1) {
+      missingMarkers.push("exactly one active or inactive execution queue marker");
+    }
 
     if (missingMarkers.length === 0) {
       console.log("warn-stale-doc-keywords: Current status markers present.");

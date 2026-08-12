@@ -17,7 +17,7 @@ const retryCallers = [
   {
     file: "src/features/feed/FeedView.vue",
     label: ':action-label="CHANNEL_RELOAD"',
-    action: '@action="feedData.loadFeed(true)"',
+    action: '@action="feedData.retryFailedRequest"',
   },
   {
     file: "src/features/messages/ChannelThread.vue",

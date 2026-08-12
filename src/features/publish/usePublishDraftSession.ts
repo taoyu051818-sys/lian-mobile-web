@@ -2,6 +2,7 @@ import { computed, onBeforeUnmount, onMounted, ref, watch, type Ref } from "vue"
 import { PUBLISH_DRAFT_RECOVERED } from "../../config/brand";
 import type { MapLocation } from "../../types/map";
 import type { PublishVisibility } from "../../types/publish";
+import type { PublishMapPickerLocationHandoff } from "./usePublishLocationHandoff";
 import {
   PUBLISH_DRAFT_SCOPE_ANONYMOUS,
   hasMeaningfulPublishDraft,
@@ -18,11 +19,18 @@ export interface UsePublishDraftSessionOptions {
   visibility: Ref<PublishVisibility>;
   selectedFiles: Ref<File[]>;
   selectedMapLocation: Ref<MapLocation | null>;
+  mapPickerBinding: Ref<PublishMapPickerLocationHandoff | null>;
   locationSearch: Ref<string>;
   locationPanelOpen: Ref<boolean>;
   publishing: Ref<boolean>;
   loadIdentity: () => void | Promise<void>;
   loadMapLocations: () => void;
+  /**
+   * Synchronously clears page-owned transient state before an already-owned
+   * form moves to another account scope. Initial adoption intentionally skips
+   * this callback because no outgoing form owner exists yet.
+   */
+  resetTransientState?: () => void;
   /**
    * Stable identifier for the signed-in account, or null when the identity
    * has not been resolved yet (e.g. while /api/auth/me is in flight). The
@@ -48,11 +56,13 @@ export function usePublishDraftSession(options: UsePublishDraftSessionOptions) {
     visibility,
     selectedFiles,
     selectedMapLocation,
+    mapPickerBinding,
     locationSearch,
     locationPanelOpen,
     publishing,
     loadIdentity,
     loadMapLocations,
+    resetTransientState,
     userId,
     identityLoaded,
   } = options;
@@ -68,7 +78,11 @@ export function usePublishDraftSession(options: UsePublishDraftSessionOptions) {
   // an account switch never accidentally writes user A's typed text to user
   // B's storage slot. Starts unset — we only persist after restore has run.
   const persistedScope = ref<string | null>(null);
-  const restoredScopes = ref<Set<string>>(new Set());
+  const restoreGeneration = ref(0);
+  const restoreSettled = computed(
+    () =>
+      (identityLoaded ? identityLoaded.value : true) && persistedScope.value === currentScope.value,
+  );
 
   const hasUnsavedDraft = computed(() =>
     hasMeaningfulPublishDraft({
@@ -78,6 +92,7 @@ export function usePublishDraftSession(options: UsePublishDraftSessionOptions) {
       placeName: placeName.value,
       visibility: visibility.value,
       selectedMapLocation: selectedMapLocation.value,
+      mapPickerBinding: mapPickerBinding.value,
       selectedFileCount: selectedFiles.value.length,
     }),
   );
@@ -92,6 +107,7 @@ export function usePublishDraftSession(options: UsePublishDraftSessionOptions) {
         placeName: placeName.value,
         visibility: visibility.value,
         selectedMapLocation: selectedMapLocation.value,
+        mapPickerBinding: mapPickerBinding.value,
         selectedFileCount: selectedFiles.value.length,
       },
       persistedScope.value,
@@ -105,6 +121,7 @@ export function usePublishDraftSession(options: UsePublishDraftSessionOptions) {
     placeName.value = "";
     visibility.value = "public";
     selectedMapLocation.value = null;
+    mapPickerBinding.value = null;
     locationSearch.value = "";
     locationPanelOpen.value = false;
   }
@@ -112,11 +129,9 @@ export function usePublishDraftSession(options: UsePublishDraftSessionOptions) {
   function restoreDraftFromSession(scope: string) {
     const snapshot = readPublishDraft(scope);
     if (!snapshot) {
-      // No draft for this scope — make sure we don't leave another account's
-      // typed-but-unpersisted state in the form when the user just switched.
-      if (hasUnsavedDraft.value && persistedScope.value !== scope) {
-        clearFormFields();
-      }
+      // Every scope entry is a fresh read. An empty target must stay empty,
+      // even when this scope had been visited earlier in the same mount.
+      clearFormFields();
       draftNotice.value = "";
       return;
     }
@@ -127,8 +142,15 @@ export function usePublishDraftSession(options: UsePublishDraftSessionOptions) {
     placeName.value = snapshot.placeName;
     visibility.value = snapshot.visibility;
     selectedMapLocation.value = restorePublishDraftLocation(snapshot.selectedMapLocation);
-    locationSearch.value = snapshot.selectedMapLocation?.name || snapshot.placeName;
-    locationPanelOpen.value = Boolean(snapshot.selectedMapLocation || snapshot.placeName.trim());
+    mapPickerBinding.value = snapshot.mapPickerBinding;
+    const bindingLabel =
+      snapshot.mapPickerBinding?.kind === "place"
+        ? snapshot.mapPickerBinding.name
+        : snapshot.mapPickerBinding?.label || "";
+    locationSearch.value = snapshot.selectedMapLocation?.name || bindingLabel || snapshot.placeName;
+    locationPanelOpen.value = Boolean(
+      snapshot.selectedMapLocation || snapshot.mapPickerBinding || snapshot.placeName.trim(),
+    );
     draftNotice.value = snapshot.pendingImageCount
       ? `${PUBLISH_DRAFT_RECOVERED}，${snapshot.pendingImageCount} 张图片需要重新选择。`
       : PUBLISH_DRAFT_RECOVERED;
@@ -136,11 +158,18 @@ export function usePublishDraftSession(options: UsePublishDraftSessionOptions) {
 
   function adoptScope(scope: string) {
     if (persistedScope.value === scope) return;
-    if (!restoredScopes.value.has(scope)) {
-      restoreDraftFromSession(scope);
-      restoredScopes.value.add(scope);
-    }
+
+    const outgoingScope = persistedScope.value;
+    if (outgoingScope !== null) persistPublishDraft();
+
+    // Remove ownership across the entire synchronous reset/restore window.
+    // The form-source watcher may be queued by these mutations, but it cannot
+    // target the outgoing account while ownership is null.
+    persistedScope.value = null;
+    if (outgoingScope !== null) resetTransientState?.();
+    restoreDraftFromSession(scope);
     persistedScope.value = scope;
+    restoreGeneration.value += 1;
   }
 
   function handleBeforeUnload(event: BeforeUnloadEvent) {
@@ -157,6 +186,7 @@ export function usePublishDraftSession(options: UsePublishDraftSessionOptions) {
       placeName,
       visibility,
       selectedMapLocation,
+      mapPickerBinding,
       () => selectedFiles.value.length,
     ],
     persistPublishDraft,
@@ -172,10 +202,10 @@ export function usePublishDraftSession(options: UsePublishDraftSessionOptions) {
         if (!loaded) return;
         adoptScope(scope);
       },
-      { immediate: true },
+      { immediate: true, flush: "sync" },
     );
   } else {
-    watch(currentScope, (scope) => adoptScope(scope), { immediate: true });
+    watch(currentScope, (scope) => adoptScope(scope), { immediate: true, flush: "sync" });
   }
 
   onMounted(() => {
@@ -197,5 +227,7 @@ export function usePublishDraftSession(options: UsePublishDraftSessionOptions) {
     hasUnsavedDraft,
     restoreDraftFromSession: () => restoreDraftFromSession(currentScope.value),
     currentScope,
+    restoreSettled,
+    restoreGeneration,
   };
 }

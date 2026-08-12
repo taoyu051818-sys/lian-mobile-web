@@ -24,7 +24,6 @@ import { extractErrorMessage } from "../../utils/extractErrorMessage";
 import {
   MAX_PUBLISH_IMAGE_COUNT,
   normalizePublishTag,
-  uploadPublishImage,
   validatePublishImageSelection,
 } from "../../api/publish";
 import { validatePublishForm } from "../../domain/validation/forms";
@@ -33,6 +32,7 @@ import type { AudienceVisibility } from "../../types/audience";
 import { useAudienceOptions } from "../../composables/useAudienceOptions";
 import { usePublishIdentity } from "./usePublishIdentity";
 import { usePublishAi } from "./usePublishAi";
+import { usePublishImageUploads } from "./usePublishImageUploads";
 import { useMerchantPublishDraft } from "./useMerchantPublishDraft";
 import { useTradePublishDraft } from "./useTradePublishDraft";
 import type { InferredKind, SuggestedComponent } from "../../types/publishSuggestion";
@@ -43,6 +43,25 @@ import type { InferredKind, SuggestedComponent } from "../../types/publishSugges
 // === "event" — that ref is kept in sync with publishKind via a watch in
 // PublishView so the submit/createEvent contract is unchanged.
 export type PublishKind = "regular" | "event" | "merchant" | "trade";
+
+export interface PublishAiAttemptContext {
+  attemptGeneration: Ref<number>;
+  imageUrls: Ref<string[]>;
+  locationLabel: Ref<string>;
+}
+
+export const PublishAiAttemptContextKey: InjectionKey<PublishAiAttemptContext> =
+  Symbol("PublishAiAttemptContext");
+
+export function useInjectedPublishAiAttemptContext(): PublishAiAttemptContext {
+  const context = inject(PublishAiAttemptContextKey, null);
+  if (!context) {
+    throw new Error(
+      "usePublishDraft must be installed (provided) before consuming PublishAiAttemptContextKey",
+    );
+  }
+  return context;
+}
 
 /**
  * Body candidate slot (PRD V0.2 step B).
@@ -533,14 +552,24 @@ export function usePublishDraft() {
   const tagInput = ref("");
   const placeName = ref("");
   const visibility = ref<PublishVisibility>("public");
-  const selectedFiles = ref<File[]>([]);
-  const localPreviewUrls = ref<string[]>([]);
-  const uploadedImageUrls = ref<string[]>([]);
-  const uploading = ref(false);
+  const aiAttemptGeneration = ref(0);
   const publishing = ref(false);
   const errorMessage = ref("");
   const successMessage = ref("");
   const lastTid = ref<string | number | null>(null);
+  const imageUploads = usePublishImageUploads({
+    onError: (error) => {
+      errorMessage.value = extractErrorMessage(error, ERROR_PUBLISH_IMAGE);
+    },
+  });
+  // The upload owner exposes frozen readonly projections. Existing Publish
+  // consumers only read these refs, but their long-lived public types still
+  // spell mutable arrays; keep that source-compatible facade until a separate
+  // contract lane can narrow every consumer together.
+  const selectedFiles = imageUploads.selectedFiles as unknown as ComputedRef<File[]>;
+  const localPreviewUrls = imageUploads.localPreviewUrls as unknown as ComputedRef<string[]>;
+  const uploadedImageUrls = imageUploads.uploadedImageUrls as unknown as ComputedRef<string[]>;
+  const uploading = imageUploads.uploading;
 
   const normalizedTag = computed(() => normalizePublishTag(tagInput.value));
 
@@ -579,6 +608,7 @@ export function usePublishDraft() {
     body,
     tagInput,
     placeName,
+    attemptGeneration: aiAttemptGeneration,
     visibility,
     isAllowed: (value) => audience.isAllowed(value),
   });
@@ -640,11 +670,6 @@ export function usePublishDraft() {
     return `${PUBLISH_IMAGE_READY} ${uploadedImageUrls.value.length}/${selectedFiles.value.length} ${PUBLISH_IMAGE_COUNT_SUFFIX}`;
   });
 
-  function revokePreviewUrls() {
-    localPreviewUrls.value.forEach((url) => URL.revokeObjectURL(url));
-    localPreviewUrls.value = [];
-  }
-
   async function handleFiles(event: Event) {
     const input = event.target as HTMLInputElement;
     const selection = validatePublishImageSelection(
@@ -660,32 +685,7 @@ export function usePublishDraft() {
 
     errorMessage.value = selection.message;
     successMessage.value = "";
-    selectedFiles.value = [...selectedFiles.value, ...selection.acceptedFiles];
-    localPreviewUrls.value = [
-      ...localPreviewUrls.value,
-      ...selection.acceptedFiles.map((file) => URL.createObjectURL(file)),
-    ];
-    await uploadPendingImages();
-  }
-
-  async function uploadPendingImages() {
-    if (uploading.value) return;
-    uploading.value = true;
-    try {
-      for (
-        let index = uploadedImageUrls.value.length;
-        index < selectedFiles.value.length;
-        index += 1
-      ) {
-        const url = await uploadPublishImage(selectedFiles.value[index]);
-        uploadedImageUrls.value[index] = url;
-      }
-      uploadedImageUrls.value = uploadedImageUrls.value.filter(Boolean);
-    } catch (error) {
-      errorMessage.value = extractErrorMessage(error, ERROR_PUBLISH_IMAGE);
-    } finally {
-      uploading.value = false;
-    }
+    await imageUploads.addFiles(selection.acceptedFiles);
   }
 
   /**
@@ -700,10 +700,7 @@ export function usePublishDraft() {
   }
 
   function removeImage(index: number) {
-    if (localPreviewUrls.value[index]) URL.revokeObjectURL(localPreviewUrls.value[index]);
-    selectedFiles.value.splice(index, 1);
-    localPreviewUrls.value.splice(index, 1);
-    uploadedImageUrls.value.splice(index, 1);
+    imageUploads.removeAt(index);
   }
 
   function validate() {
@@ -747,6 +744,11 @@ export function usePublishDraft() {
   // call writes to it; PublishView's `usePublishSubmit` reads it. Provided
   // here so neither side has to prop-drill the ref through the composer.
   provide(PublishLlmInferredKindKey, llmInferredKind);
+  provide(PublishAiAttemptContextKey, {
+    attemptGeneration: aiAttemptGeneration,
+    imageUrls: uploadedImageUrls,
+    locationLabel: placeName,
+  });
   // PRD V0.2 step E-main — accept / dismiss actions for the ghost UI. The
   // factory takes refs (publishKind / tagInput / verification flags) so the
   // mutations land back on the same draft the rest of PublishView reads.
@@ -759,28 +761,33 @@ export function usePublishDraft() {
   });
   provide(PublishSuggestedComponentsActionsKey, suggestedComponentsActions);
 
+  function resetAiAttempt() {
+    candidate.setBodyCandidate(null);
+    titleCandidate.setTitleCandidate(null);
+    suggestedComponents.value = [];
+    llmInferredKind.value = null;
+    aiAttemptGeneration.value += 1;
+  }
+
   function resetForm(clearLocation: () => void) {
     title.value = "";
     body.value = "";
-    candidate.setBodyCandidate(null);
-    titleCandidate.setTitleCandidate(null);
     tagInput.value = "";
     identity.identityTag.value = "";
     placeName.value = "";
     visibility.value = "public";
-    selectedFiles.value = [];
-    uploadedImageUrls.value = [];
+    imageUploads.reset();
     tagPanelOpen.value = false;
     visibilityPanelOpen.value = false;
     publishKind.value = "regular";
     merchant.reset();
     trade.reset();
     clearLocation();
-    revokePreviewUrls();
+    resetAiAttempt();
   }
 
   onBeforeUnmount(() => {
-    revokePreviewUrls();
+    imageUploads.dispose();
   });
 
   return {

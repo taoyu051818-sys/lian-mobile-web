@@ -22,15 +22,21 @@ test("MessagesView emits chrome spec via watcher", () => {
   assert.match(src, /watch\(pageChrome.*emit\("chrome"/);
 });
 
-test("MessagesView declares tab spec with onTabSelect handler", () => {
+test("MessagesView renders inbox categories through the channel-filter chrome slot", () => {
   const src = read("src/features/messages/MessagesView.vue");
-  assert.match(src, /onTabSelect/);
-  assert.match(src, /ariaLabel:\s*"消息分类"/);
+  assert.match(src, /slot:\s*"channel-filter"/);
+  assert.match(src, /usePageChromeSlot\("channel-filter"\)/);
+  assert.match(src, /<Teleport\s+v-if="filterBarMounted"\s+defer\s+to="#lian-shell-top-slot">/);
+  assert.match(src, /<ChannelFilterBar/);
+  assert.match(src, /:active-category="activeTab"/);
+  assert.match(src, /@update:active-category="handleCategoryChange"/);
 });
 
-test("MessagesView sets bottom visible based on active tab", () => {
+test("MessagesView keeps shell bottom chrome visible across inbox categories", () => {
   const src = read("src/features/messages/MessagesView.vue");
-  assert.match(src, /visible:\s*activeTab\.value\s*===\s*"channel"/);
+  assert.match(src, /bottom:\s*\{\s*visible:\s*true/);
+  assert.match(src, /<ChannelComposer\s+v-if="activeTab === 'channel'"/);
+  assert.match(src, /<NotificationList\s+v-else/);
 });
 
 test("MessagesView does not use floating chrome controller", () => {

@@ -26,29 +26,34 @@ const sentinelComposableSource = fs.readFileSync(
   "utf8",
 );
 
-test("FeedView delegates top tabs to shell chrome via declarative pageChrome spec", () => {
+test("FeedView owns the feed-filter chrome slot while detail is closed", () => {
   assert.match(feedViewSource, /PageChromeSpec/);
   assert.match(feedViewSource, /const pageChrome = computed<PageChromeSpec>/);
-  assert.match(feedViewSource, /kind:\s*"tabs"/);
-  assert.match(feedViewSource, /items:\s*tabs\.value/);
-  assert.match(feedViewSource, /activeKey:\s*activeTab\.value/);
-  assert.match(feedViewSource, /onTabSelect:\s*switchTab/);
-  assert.doesNotMatch(feedViewSource, /useShellChrome/);
+  assert.match(feedViewSource, /top:\s*detail\.detailOpen\.value/);
+  assert.match(feedViewSource, /tabs:\s*null/);
+  assert.match(feedViewSource, /slot:\s*"feed-filter"/);
+  assert.match(feedViewSource, /chrome\.setSlot\("top",\s*"feed-filter"\)/);
+  assert.match(
+    feedViewSource,
+    /<Teleport\s+v-if="filterBarMounted"\s+defer\s+to="#lian-shell-top-slot">/,
+  );
+  assert.match(feedViewSource, /<FeedFilterBar/);
+  assert.match(feedViewSource, /:tabs="feedData\.tabs\.value"/);
+  assert.match(feedViewSource, /:active-tab-id="feedData\.activeTab\.value"/);
+  assert.match(feedViewSource, /@update:active-tab-id="handleTabChange"/);
 });
 
 test("FeedView delegates content list to FeedList and FeedLoadMore", () => {
-  assert.match(feedViewSource, /import FeedList from "\.\/feed\/FeedList\.vue";/);
-  assert.match(feedViewSource, /import FeedLoadMore from "\.\/feed\/FeedLoadMore\.vue";/);
-  assert.match(feedViewSource, /function triggerLoadMore\(\) \{/);
-  assert.match(feedViewSource, /if \(!canAutoLoadMore\.value\) return;/);
-  assert.match(feedViewSource, /void loadFeed\(false\);/);
-  assert.match(feedViewSource, /<FeedList .*:items="items"/);
+  assert.match(feedViewSource, /import\s+FeedList\s+from\s+"\.\/FeedList\.vue"/);
+  assert.match(feedViewSource, /import\s+FeedLoadMore\s+from\s+"\.\/FeedLoadMore\.vue"/);
+  assert.match(feedViewSource, /<FeedList/);
+  assert.match(feedViewSource, /:items="feedData\.items\.value"/);
   assert.match(feedViewSource, /@open="openItem"/);
   assert.match(feedViewSource, /<FeedLoadMore/);
-  assert.match(feedViewSource, /:has-more="hasMore"/);
-  assert.match(feedViewSource, /:loading-more="loadingMore"/);
-  assert.match(feedViewSource, /:can-auto-load-more="canAutoLoadMore"/);
-  assert.match(feedViewSource, /@load-more="triggerLoadMore"/);
+  assert.match(feedViewSource, /:has-more="feedData\.hasMore\.value"/);
+  assert.match(feedViewSource, /:loading-more="feedData\.loadingMore\.value"/);
+  assert.match(feedViewSource, /:can-auto-load-more="feedData\.canAutoLoadMore\.value"/);
+  assert.match(feedViewSource, /@load-more="feedData\.triggerLoadMore"/);
 });
 
 test("FeedLoadMore wires the auto-load sentinel and emits loadMore", () => {
@@ -75,11 +80,13 @@ test("FeedList renders FeedItemCard in a masonry layout", () => {
 test("FeedAutoLoadSentinel component wraps the composable", () => {
   assert.match(
     sentinelComponentSource,
-    /import \{ useAutoLoadSentinel \} from "\.\.\/\.\.\/composables\/useAutoLoadSentinel";/,
+    /import\s*\{\s*useAutoLoadSentinel\s*\}\s*from\s*"\.\.\/\.\.\/composables\/useAutoLoadSentinel"/,
   );
   assert.match(sentinelComponentSource, /const targetRef = ref<HTMLElement \| null>\(null\);/);
-  assert.match(sentinelComponentSource, /useAutoLoadSentinel\(targetRef/);
+  assert.match(sentinelComponentSource, /useAutoLoadSentinel\(\s*targetRef,/);
   assert.match(sentinelComponentSource, /emit\("intersect"\);/);
+  assert.match(sentinelComponentSource, /enabled:\s*\(\)\s*=>\s*props\.enabled/);
+  assert.match(sentinelComponentSource, /cooldownMs:\s*props\.cooldownMs/);
   assert.match(sentinelComponentSource, /ref="targetRef"/);
 });
 
@@ -97,7 +104,7 @@ test("the shared sentinel composable keeps observer setup and cleanup explicit",
   );
   assert.match(sentinelComposableSource, /observer = new IntersectionObserver/);
   assert.match(sentinelComposableSource, /observer\.observe\(target\);/);
-  assert.match(sentinelComposableSource, /stopWatchingTarget = watch\(targetRef,/);
+  assert.match(sentinelComposableSource, /stopWatchingTarget\s*=\s*watch\(\s*targetRef,/);
   assert.match(sentinelComposableSource, /onBeforeUnmount\(\(\) => \{/);
   assert.match(sentinelComposableSource, /stopWatchingTarget\?\.\(\);/);
   assert.match(sentinelComposableSource, /disconnect\(\);/);

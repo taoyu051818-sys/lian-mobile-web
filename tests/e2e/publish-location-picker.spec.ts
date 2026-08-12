@@ -5,12 +5,14 @@
  * gesture detection) and `navigator.geolocation`, both of which are
  * fragile in headless Playwright + jsdom. The composables are unit-tested
  * directly in `tests/publish/use*.test.ts` and `tests/map/useMapPickerMode.test.ts`,
- * so this spec narrows to two e2e-only invariants:
+ * so this spec narrows to three e2e-only invariants:
  *
  *   1. The "在地图上选" button on the publish form navigates to the map
  *      view in picker mode (`#/map?picker=1`) and surfaces the picker
  *      overlay.
- *   2. The "使用当前位置" button lives on the publish form alongside it.
+ *   2. Cancelling the picker returns to the same in-memory publish draft,
+ *      including non-serializable image preview state.
+ *   3. The "使用当前位置" button lives on the publish form alongside it.
  *
  * What is intentionally not covered here:
  *   - Long-press → free pin (Leaflet event timing in headless mode is flaky;
@@ -70,12 +72,40 @@ test.describe("@registered publish location picker entry", () => {
     const page = await context.newPage();
 
     try {
+      await context.route("**/api/upload/image*", async (route) => {
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify({
+            ok: true,
+            url: "https://example.invalid/uploads/publish-picker-continuity.png",
+          }),
+        });
+      });
+
       await page.goto("/#/publish");
       await expect(page.locator(".publish-view")).toBeVisible();
+
+      const titleInput = page.locator(".publish-composer__headline input").first();
+      const bodyInput = page.locator(".publish-composer__body-field textarea").first();
+      await titleInput.fill("Picker continuity title");
+      await bodyInput.fill("Picker continuity body");
 
       // Open the location panel.
       const locationToolbar = page.getByRole("button", { name: "地点" }).first();
       await locationToolbar.click();
+
+      const png1x1 = Buffer.from(
+        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNgAAIAAAUAAen63NgAAAAASUVORK5CYII=",
+        "base64",
+      );
+      await page.locator(".publish-composer__hidden-input").setInputFiles({
+        name: "picker-continuity.png",
+        mimeType: "image/png",
+        buffer: png1x1,
+      });
+      const imagePreview = page.locator(".publish-image-preview__item img");
+      await expect(imagePreview).toHaveCount(1);
 
       const pickOnMapBtn = page.locator('[data-testid="publish-location-pick-on-map"]');
       await expect(pickOnMapBtn).toBeVisible();
@@ -96,6 +126,26 @@ test.describe("@registered publish location picker entry", () => {
       const cancelBtn = page.locator('[data-testid="map-picker-cancel"]');
       await cancelBtn.click();
       await expect.poll(() => page.url()).toContain("#/publish");
+      await expect(page.locator(".publish-view")).toBeVisible();
+      await expect(titleInput).toHaveValue("Picker continuity title");
+      await expect(bodyInput).toHaveValue("Picker continuity body");
+      await expect(imagePreview).toHaveCount(1);
+      await expect(page.locator('[data-testid="publish-draft-notice"]')).toHaveCount(0);
+
+      // Re-enter the picker, then select the already-active Map tab. That
+      // path uses history.pushState (no hashchange/popstate), so it is the
+      // same-view lease-release edge. A later Publish visit must restore the
+      // serializable draft but not the previous component's File/object URL.
+      await pickOnMapBtn.click();
+      await expect.poll(() => page.url()).toContain("#/map?picker=1");
+      await page.locator('.bottom-tab-bar__item[aria-current="page"]').click();
+      await expect.poll(() => new URL(page.url()).hash).toBe("#/map");
+      await page.locator(".bottom-tab-bar__item").filter({ hasText: "发布" }).click();
+      await expect(page.locator(".publish-view")).toBeVisible();
+      await expect(imagePreview).toHaveCount(0);
+      await expect(page.locator('[data-testid="publish-draft-notice"]')).toContainText(
+        "图片需要重新选择",
+      );
     } finally {
       await context.close();
       await api.dispose();

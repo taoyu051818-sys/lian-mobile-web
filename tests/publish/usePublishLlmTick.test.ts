@@ -8,7 +8,7 @@ import type {
   PublishLlmTickFetcher,
   PublishLlmTickResponse,
 } from "../../src/features/publish/usePublishLlmTick";
-import type { SuggestedComponent } from "../../src/types/publishSuggestion";
+import type { InferredKind, SuggestedComponent } from "../../src/types/publishSuggestion";
 
 /**
  * PRD V0.2 step E-pre — `usePublishLlmTick` plumbs the LLM preview tick into
@@ -24,9 +24,12 @@ interface Harness {
   title: ReturnType<typeof ref<string>>;
   body: ReturnType<typeof ref<string>>;
   imageUrls: ReturnType<typeof ref<ReadonlyArray<string>>>;
+  locationLabel: ReturnType<typeof ref<string>>;
+  attemptGeneration: ReturnType<typeof ref<number>>;
   setTitleCandidate: ReturnType<typeof vi.fn>;
   setBodyCandidate: ReturnType<typeof vi.fn>;
   suggestedComponents: ReturnType<typeof ref<SuggestedComponent[]>>;
+  llmInferredKind: ReturnType<typeof ref<InferredKind | null>>;
   fetcher: ReturnType<typeof vi.fn>;
   scope: ReturnType<typeof effectScope>;
   refresh: () => Promise<void>;
@@ -62,9 +65,12 @@ function makeHarness(over: { fetchResponse?: PublishLlmTickResponse | Error } = 
   const title = ref("");
   const body = ref("");
   const imageUrls = ref<ReadonlyArray<string>>([]);
+  const locationLabel = ref("");
+  const attemptGeneration = ref(0);
   const setTitleCandidate = vi.fn<(value: string | null) => void>();
   const setBodyCandidate = vi.fn<(value: string | null) => void>();
   const suggestedComponents = ref<SuggestedComponent[]>([]);
+  const llmInferredKind = ref<InferredKind | null>(null);
   const fetcher: ReturnType<typeof vi.fn> = vi.fn(() => {
     if (over.fetchResponse instanceof Error) return Promise.reject(over.fetchResponse);
     return Promise.resolve(over.fetchResponse ?? fullResponse());
@@ -76,9 +82,12 @@ function makeHarness(over: { fetchResponse?: PublishLlmTickResponse | Error } = 
       title,
       body,
       imageUrls,
+      locationLabel,
+      attemptGeneration,
       setTitleCandidate,
       setBodyCandidate,
       suggestedComponents,
+      llmInferredKind,
       fetcher: fetcher as unknown as PublishLlmTickFetcher,
     });
     refresh = handle.refresh;
@@ -87,9 +96,12 @@ function makeHarness(over: { fetchResponse?: PublishLlmTickResponse | Error } = 
     title,
     body,
     imageUrls,
+    locationLabel,
+    attemptGeneration,
     setTitleCandidate,
     setBodyCandidate,
     suggestedComponents,
+    llmInferredKind,
     fetcher,
     scope,
     refresh,
@@ -231,6 +243,110 @@ describe("usePublishLlmTick (PRD V0.2 step E-pre)", () => {
     h.scope.stop();
   });
 
+  it("drops a response from an older attempt even when the new draft has identical text", async () => {
+    let resolve!: (value: PublishLlmTickResponse) => void;
+    const h = makeHarness({ fetchResponse: undefined });
+    h.fetcher.mockReset();
+    h.fetcher.mockImplementation(
+      () =>
+        new Promise<PublishLlmTickResponse>((r) => {
+          resolve = r;
+        }),
+    );
+
+    h.title.value = "same title";
+    h.body.value = "same body";
+    vi.advanceTimersByTime(PUBLISH_LLM_TICK_DEBOUNCE_MS);
+    await flushMicrotasks();
+    h.attemptGeneration.value += 1;
+
+    resolve(fullResponse({ title: "old attempt" }));
+    await flushMicrotasks();
+
+    expect(h.setTitleCandidate).not.toHaveBeenCalled();
+    expect(h.setBodyCandidate).not.toHaveBeenCalled();
+    expect(h.suggestedComponents.value).toEqual([]);
+    expect(h.llmInferredKind.value).toBeNull();
+    h.scope.stop();
+  });
+
+  it("drops an image-only response when only the image snapshot changed", async () => {
+    let resolve!: (value: PublishLlmTickResponse) => void;
+    const h = makeHarness({ fetchResponse: undefined });
+    h.fetcher.mockReset();
+    h.fetcher.mockImplementation(
+      () =>
+        new Promise<PublishLlmTickResponse>((r) => {
+          resolve = r;
+        }),
+    );
+
+    h.imageUrls.value = ["https://cdn.example/old.jpg"];
+    void h.refresh();
+    await flushMicrotasks();
+    h.imageUrls.value = ["https://cdn.example/new.jpg"];
+
+    resolve(fullResponse({ title: "old image" }));
+    await flushMicrotasks();
+
+    expect(h.setTitleCandidate).not.toHaveBeenCalled();
+    expect(h.setBodyCandidate).not.toHaveBeenCalled();
+    expect(h.suggestedComponents.value).toEqual([]);
+    expect(h.llmInferredKind.value).toBeNull();
+    h.scope.stop();
+  });
+
+  it("drops a response when only the location snapshot changed", async () => {
+    let resolve!: (value: PublishLlmTickResponse) => void;
+    const h = makeHarness({ fetchResponse: undefined });
+    h.fetcher.mockReset();
+    h.fetcher.mockImplementation(
+      () =>
+        new Promise<PublishLlmTickResponse>((r) => {
+          resolve = r;
+        }),
+    );
+
+    h.title.value = "unchanged title";
+    h.locationLabel.value = "Library";
+    void h.refresh();
+    await flushMicrotasks();
+    h.locationLabel.value = "Gym";
+
+    resolve(fullResponse({ title: "old location" }));
+    await flushMicrotasks();
+
+    expect(h.setTitleCandidate).not.toHaveBeenCalled();
+    expect(h.setBodyCandidate).not.toHaveBeenCalled();
+    expect(h.suggestedComponents.value).toEqual([]);
+    expect(h.llmInferredKind.value).toBeNull();
+    h.scope.stop();
+  });
+
+  it("generation changes cancel pending debounce work without firing a request", async () => {
+    const h = makeHarness();
+    h.title.value = "abandoned";
+    h.attemptGeneration.value += 1;
+
+    vi.advanceTimersByTime(PUBLISH_LLM_TICK_DEBOUNCE_MS * 2);
+    await flushMicrotasks();
+
+    expect(h.fetcher).not.toHaveBeenCalled();
+    h.scope.stop();
+  });
+
+  it("does not make image or location changes automatic trigger sources", async () => {
+    const h = makeHarness();
+    h.imageUrls.value = ["https://cdn.example/image.jpg"];
+    h.locationLabel.value = "Library";
+
+    vi.advanceTimersByTime(PUBLISH_LLM_TICK_DEBOUNCE_MS * 2);
+    await flushMicrotasks();
+
+    expect(h.fetcher).not.toHaveBeenCalled();
+    h.scope.stop();
+  });
+
   it("keeps only the most recent fire's response when two ticks race", async () => {
     const h = makeHarness({ fetchResponse: undefined });
     h.fetcher.mockReset();
@@ -339,5 +455,29 @@ describe("usePublishLlmTick (PRD V0.2 step E-pre)", () => {
     vi.advanceTimersByTime(PUBLISH_LLM_TICK_DEBOUNCE_MS * 2);
     await flushMicrotasks();
     expect(h.fetcher).not.toHaveBeenCalled();
+  });
+
+  it("disposing the scope invalidates an in-flight response", async () => {
+    let resolve!: (value: PublishLlmTickResponse) => void;
+    const h = makeHarness({ fetchResponse: undefined });
+    h.fetcher.mockReset();
+    h.fetcher.mockImplementation(
+      () =>
+        new Promise<PublishLlmTickResponse>((r) => {
+          resolve = r;
+        }),
+    );
+
+    h.title.value = "in flight";
+    vi.advanceTimersByTime(PUBLISH_LLM_TICK_DEBOUNCE_MS);
+    await flushMicrotasks();
+    h.scope.stop();
+    resolve(fullResponse({ title: "after dispose" }));
+    await flushMicrotasks();
+
+    expect(h.setTitleCandidate).not.toHaveBeenCalled();
+    expect(h.setBodyCandidate).not.toHaveBeenCalled();
+    expect(h.suggestedComponents.value).toEqual([]);
+    expect(h.llmInferredKind.value).toBeNull();
   });
 });

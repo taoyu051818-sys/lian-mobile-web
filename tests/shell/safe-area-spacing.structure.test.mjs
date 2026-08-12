@@ -7,7 +7,7 @@ import { fileURLToPath } from "node:url";
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..");
 
 function read(rel) {
-  return fs.readFileSync(path.join(repoRoot, rel), "utf8");
+  return fs.readFileSync(path.join(repoRoot, rel), "utf8").replace(/\r\n?/g, "\n");
 }
 
 // --- Design tokens: safe-area offset variables ---
@@ -59,8 +59,8 @@ test("shell-chrome.css bottom region pads for safe-area-inset-bottom", () => {
 
 // --- Floating chrome: side inset with safe-area fallback ---
 
-test("floating-chrome.css uses max() for side insets with safe-area fallback", () => {
-  const css = read("src/styles/floating-chrome.css");
+test("chrome-surface.css uses max() for side insets with safe-area fallback", () => {
+  const css = read("src/styles/chrome-surface.css");
   assert.match(css, /max\(var\(--floating-bar-side-inset\),\s*env\(safe-area-inset-right\)\)/);
   assert.match(css, /max\(var\(--floating-bar-side-inset\),\s*env\(safe-area-inset-left\)\)/);
 });
@@ -106,9 +106,9 @@ test("ChannelThread bottom padding accounts for safe-area-inset-bottom", () => {
   assert.match(src, /env\(safe-area-inset-bottom\)/);
 });
 
-// --- Map view: post detail safe-area clearance ---
+// --- Map view: full-bleed stage safe-area clearance ---
 
-test("MapLeafletView post-detail panel uses safe-area-inset-bottom for clearance", () => {
+test("MapLeafletView full-bleed stage uses safe-area-inset-bottom for clearance", () => {
   const src = read("src/features/map/MapLeafletView.vue");
   assert.match(src, /env\(safe-area-inset-bottom\)/);
 });
