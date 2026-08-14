@@ -26,6 +26,8 @@ import {
 } from "../../../config/brand";
 import type { CommerceStore } from "../../../types/commerce";
 import { EmptyState, InlineError } from "../../../ui";
+import CommerceStoreProductsSection from "../product/CommerceStoreProductsSection.vue";
+import { isCommerceProductVisible } from "../useCommerceProductRead";
 import type { CommerceReadErrorKind, CommerceReadStatus } from "../useCommerceStoreRead";
 
 const props = defineProps<{
@@ -36,6 +38,7 @@ const props = defineProps<{
 
 const emit = defineEmits<{ retry: [] }>();
 const catalogHref = buildCommerceCatalogHash();
+const productVisible = isCommerceProductVisible();
 
 const errorCopy = computed(() => {
   if (props.errorKind === "rate-limited") {
@@ -128,6 +131,11 @@ function displayRating(value: string) {
         <span>{{ COMMERCE_FAVORITES_LABEL }} {{ store.favoriteCount }}</span>
       </p>
     </article>
+
+    <CommerceStoreProductsSection
+      v-if="productVisible && status === 'ready' && store"
+      :store-id="store.id"
+    />
   </div>
 </template>
 

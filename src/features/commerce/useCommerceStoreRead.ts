@@ -83,7 +83,10 @@ export function useCommerceStoreRead(
   function owns(requestGeneration: number, route: CommerceRoute): boolean {
     if (generation.value !== requestGeneration) return false;
     if (route.name === "catalog") return activeRoute.value?.name === "catalog";
-    return activeRoute.value?.name === "store" && activeRoute.value.storeId === route.storeId;
+    if (route.name === "store") {
+      return activeRoute.value?.name === "store" && activeRoute.value.storeId === route.storeId;
+    }
+    return false;
   }
 
   async function loadRoute(route: CommerceRoute | null): Promise<void> {
@@ -99,6 +102,10 @@ export function useCommerceStoreRead(
       return;
     }
     if (!route) {
+      status.value = "not-found";
+      return;
+    }
+    if (route.name === "product") {
       status.value = "not-found";
       return;
     }
@@ -119,7 +126,7 @@ export function useCommerceStoreRead(
         if (!owns(requestGeneration, route)) return;
         items.value = result.items;
         status.value = result.items.length === 0 ? "empty" : "ready";
-      } else {
+      } else if (route.name === "store") {
         const result = await transport.detail(route.storeId, controller.signal);
         if (!owns(requestGeneration, route)) return;
         store.value = result.store;

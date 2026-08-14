@@ -65,6 +65,8 @@ describe("PWA runtime route matching", () => {
     for (const href of [
       "https://lian.test/api/commerce/stores",
       "https://lian.test/api/commerce/stores/1",
+      "https://lian.test/api/commerce/stores/1/products",
+      "https://lian.test/api/commerce/products/10",
     ]) {
       expect(pwaNavigationRouteMatch(routeCandidate(href, { mode: "navigate" }))).toBe(false);
       expect(pwaNavigationRouteMatch(routeCandidate(href))).toBe(false);

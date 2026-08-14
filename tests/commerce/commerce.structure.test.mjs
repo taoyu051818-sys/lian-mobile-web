@@ -17,9 +17,14 @@ function commerceRuntimeSource() {
     "src/config/brand/commerce.ts",
     "src/features/commerce/CommerceView.vue",
     "src/features/commerce/useCommerceStoreRead.ts",
+    "src/features/commerce/useCommerceProductRead.ts",
     "src/features/commerce/catalog/CommerceStoreListPage.vue",
     "src/features/commerce/catalog/CommerceStoreCard.vue",
     "src/features/commerce/store/CommerceStoreDetailPage.vue",
+    "src/features/commerce/product/CommerceStoreProductsSection.vue",
+    "src/features/commerce/product/CommerceProductCard.vue",
+    "src/features/commerce/product/CommerceProductDetailPage.vue",
+    "src/features/commerce/product/formatCommercePrice.ts",
     "src/types/commerce.ts",
   ];
   return files.map((file) => read(file)).join("\n");
@@ -57,6 +62,8 @@ test("the browser transport is direct same-origin fetch with no API-base or priv
   assert.match(api, /fetch\(path,\s*\{/);
   assert.match(api, /"\/api\/commerce\/stores"/);
   assert.match(api, /`\/api\/commerce\/stores\/\$\{storeId\}`/);
+  assert.match(api, /`\/api\/commerce\/stores\/\$\{storeId\}\/products`/);
+  assert.match(api, /`\/api\/commerce\/products\/\$\{productId\}`/);
   assert.match(api, /credentials:\s*"same-origin"/);
   assert.match(api, /cache:\s*"no-store"/);
   assert.match(api, /redirect:\s*"error"/);
@@ -66,6 +73,18 @@ test("the browser transport is direct same-origin fetch with no API-base or priv
   assert.doesNotMatch(allCommerce, /https?:\/\//i);
   assert.doesNotMatch(allCommerce, /\/internal\//i);
   assert.doesNotMatch(allCommerce, /LAPlatform|legacy fallback|service credential/i);
+});
+
+test("product visibility is a second default-off gate and cannot open without the store catalog", () => {
+  const owner = read("src/features/commerce/useCommerceProductRead.ts");
+  const env = read(".env.example");
+  const envTypes = read("src/vite-env.d.ts");
+  assert.match(env, /^VITE_COMMERCE_CATALOG_VISIBLE=false$/m);
+  assert.match(env, /^VITE_COMMERCE_PRODUCT_VISIBLE=false$/m);
+  assert.match(envTypes, /readonly VITE_COMMERCE_PRODUCT_VISIBLE\?: string/);
+  assert.match(owner, /VITE_COMMERCE_CATALOG_VISIBLE === "true"/);
+  assert.match(owner, /VITE_COMMERCE_PRODUCT_VISIBLE === "true"/);
+  assert.match(owner, /&&/);
 });
 
 test("success adoption is exact, correlated, no-store, and schema pinned", () => {
@@ -78,7 +97,7 @@ test("success adoption is exact, correlated, no-store, and schema pinned", () =>
   assert.match(api, /value\.requestId !== responseRequestId/);
   assert.match(api, /value\.schemaVersion !== "1\.0\.0"/);
   assert.match(api, /assertExactKeys/);
-  assert.match(api, /items must be dense/);
+  assert.match(api, /hasOwnProperty\.call\(value, index\)/);
   assert.match(api, /value\.logoAssetRef !== null/);
 });
 
@@ -93,6 +112,18 @@ test("read ownership has one 12-second abort boundary and generation-plus-route 
   assert.match(owner, /status\.value = "closed"/);
 });
 
+test("product read ownership has its own abort, generation, exact-target, and retry boundary", () => {
+  const owner = read("src/features/commerce/useCommerceProductRead.ts");
+  assert.match(owner, /const DEFAULT_TIMEOUT_MS = 12_000/);
+  assert.match(owner, /activeController\?\.abort\(\)/);
+  assert.match(owner, /generation\.value \+= 1/);
+  assert.match(owner, /generation\.value !== requestGeneration/);
+  assert.match(owner, /storeId/);
+  assert.match(owner, /productId/);
+  assert.match(owner, /return loadTarget\(activeTarget\.value\)/);
+  assert.match(owner, /status\.value = "closed"/);
+});
+
 test("CommerceView deduplicates paired history events but explicit retry stays owned by the reader", () => {
   const view = read("src/features/commerce/CommerceView.vue");
   assert.match(view, /window\.addEventListener\("hashchange", syncRouteFromLocation\)/);
@@ -100,6 +131,16 @@ test("CommerceView deduplicates paired history events but explicit retry stays o
   assert.match(view, /if \(hash === observedHash\) return/);
   assert.match(view, /@retry="reader\.retry"/);
   assert.match(view, /reader\.dispose\(\)/);
+});
+
+test("store products mount only behind both visibility and an accepted ready store", () => {
+  const detail = read("src/features/commerce/store/CommerceStoreDetailPage.vue");
+  const view = read("src/features/commerce/CommerceView.vue");
+  assert.match(detail, /const productVisible = isCommerceProductVisible\(\)/);
+  assert.match(detail, /v-if="productVisible && status === 'ready' && store"/);
+  assert.match(detail, /:store-id="store\.id"/);
+  assert.match(view, /v-if="route\?\.name === 'product'"/);
+  assert.match(view, /:product-id="route\.productId"/);
 });
 
 test("closed, empty, not-found, and error surfaces reuse the shared UI vocabulary", () => {
@@ -135,5 +176,15 @@ test("null logo references render only local CSS placeholders and no browser ima
   assert.match(combined, /data-testid="commerce-logo-placeholder"/);
   assert.match(combined, /commerce-store-card__logo/);
   assert.match(combined, /commerce-detail-page__logo/);
+  assert.doesNotMatch(combined, /<img\b|<picture\b|background-image|url\(/i);
+});
+
+test("null product cover references render only local CSS placeholders with no asset URL surface", () => {
+  const card = read("src/features/commerce/product/CommerceProductCard.vue");
+  const detail = read("src/features/commerce/product/CommerceProductDetailPage.vue");
+  const combined = `${card}\n${detail}`;
+  assert.match(combined, /data-testid="commerce-product-cover-placeholder"/);
+  assert.match(combined, /commerce-product-card__cover/);
+  assert.match(combined, /commerce-product-detail__cover/);
   assert.doesNotMatch(combined, /<img\b|<picture\b|background-image|url\(/i);
 });

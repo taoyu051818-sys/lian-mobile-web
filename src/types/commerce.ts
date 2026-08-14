@@ -1,6 +1,6 @@
 /**
- * Anonymous, non-personalized store projection exposed by LIAN's public
- * commerce BFF. These types mirror only the accepted browser contract; they
+ * Anonymous, non-personalized projections exposed by LIAN's public commerce
+ * BFF. These types mirror only the accepted browser contracts; they
  * deliberately contain no GDPlatform origin, account state, or asset URL.
  */
 
@@ -42,5 +42,59 @@ export interface CommerceStoreListResult {
 
 export interface CommerceStoreDetailResult {
   store: CommerceStore;
+  meta: CommerceResponseMeta;
+}
+
+export interface CommerceProductPriceRange {
+  currency: "CNY";
+  minAmountMinor: number;
+  maxAmountMinor: number;
+}
+
+export interface CommerceProductSkuPrice {
+  currency: "CNY";
+  amountMinor: number;
+}
+
+export interface CommerceProductSummary {
+  id: string;
+  storeId: string;
+  name: string;
+  subtitle: string;
+  coverAssetRef: null;
+  priceRange: CommerceProductPriceRange;
+  availability: "available";
+  rating: string;
+  salesCount: number;
+  recommended: boolean;
+}
+
+export interface CommerceProductSku {
+  id: string;
+  name: string;
+  price: CommerceProductSkuPrice;
+  availability: "available" | "unavailable";
+  default: boolean;
+}
+
+export interface CommerceProduct extends CommerceProductSummary {
+  skus: CommerceProductSku[];
+}
+
+export interface CommerceProductPage {
+  page: number;
+  pageSize: number;
+  total: number;
+  hasMore: boolean;
+}
+
+export interface CommerceProductListResult {
+  items: CommerceProductSummary[];
+  page: CommerceProductPage;
+  meta: CommerceResponseMeta;
+}
+
+export interface CommerceProductDetailResult {
+  product: CommerceProduct;
   meta: CommerceResponseMeta;
 }

@@ -27,6 +27,7 @@ interface CommerceFixture {
   listStatus: number;
   missingStoreIds: Set<string>;
   commerceRequests: Request[];
+  productRequests: Request[];
   imageRequests: Request[];
   externalRequests: Request[];
 }
@@ -56,6 +57,7 @@ async function installCommerceFixture(page: Page): Promise<CommerceFixture> {
     listStatus: 200,
     missingStoreIds: new Set(),
     commerceRequests: [],
+    productRequests: [],
     imageRequests: [],
     externalRequests: [],
   };
@@ -71,6 +73,15 @@ async function installCommerceFixture(page: Page): Promise<CommerceFixture> {
     const request = route.request();
     const url = new URL(request.url());
     const path = url.pathname;
+
+    if (
+      /^\/api\/commerce\/stores\/[1-9][0-9]*\/products$/.test(path) ||
+      /^\/api\/commerce\/products\/[1-9][0-9]*$/.test(path)
+    ) {
+      state.productRequests.push(request);
+      await route.fulfill({ status: 500, contentType: "application/json", body: "{}" });
+      return;
+    }
 
     if (path === "/api/commerce/stores") {
       state.commerceRequests.push(request);
@@ -173,6 +184,11 @@ function commercePaths(requests: Request[]) {
 }
 
 test.describe("@local-commerce anonymous store-read journeys", () => {
+  test.beforeAll(() => {
+    expect(process.env.VITE_COMMERCE_CATALOG_VISIBLE).toBe("true");
+    expect(process.env.VITE_COMMERCE_PRODUCT_VISIBLE).toBe("false");
+  });
+
   test("Profile exposes one real loading-safe anchor to both guest and authenticated readers", async ({
     page,
   }) => {
@@ -231,6 +247,8 @@ test.describe("@local-commerce anonymous store-read journeys", () => {
     await expect(storeAnchor).toHaveAttribute("href", "#/commerce/stores/1");
     await storeAnchor.click();
     await expect(page.getByTestId("commerce-detail-page")).toContainText(STORE_ONE.name);
+    await expect(page.getByTestId("commerce-products-section")).toHaveCount(0);
+    expect(fixture.productRequests).toHaveLength(0);
     expect(commercePaths(fixture.commerceRequests).at(-1)).toBe("/api/commerce/stores/1");
 
     await page.reload();
@@ -259,6 +277,25 @@ test.describe("@local-commerce anonymous store-read journeys", () => {
       }),
     ).toHaveLength(0);
     expect(fixture.externalRequests).toHaveLength(0);
+    expect(fixture.productRequests).toHaveLength(0);
+  });
+
+  test("product flag off preserves store behavior and closes a direct product hash locally", async ({
+    page,
+  }) => {
+    const fixture = await installCommerceFixture(page);
+
+    await page.goto("/#/commerce/stores/1");
+    await expect(page.getByTestId("commerce-detail-page")).toContainText(STORE_ONE.name);
+    await expect(page.getByTestId("commerce-products-section")).toHaveCount(0);
+    expect(commercePaths(fixture.commerceRequests)).toEqual(["/api/commerce/stores/1"]);
+    expect(fixture.productRequests).toHaveLength(0);
+
+    await page.goto("/#/commerce/products/10");
+    await expect(page.getByTestId("commerce-product-closed")).toBeVisible();
+    await page.waitForTimeout(50);
+    expect(commercePaths(fixture.commerceRequests)).toEqual(["/api/commerce/stores/1"]);
+    expect(fixture.productRequests).toHaveLength(0);
   });
 
   test("list 404 is a safe retryable error, detail 404 is not-found, and invalid hashes add no request", async ({

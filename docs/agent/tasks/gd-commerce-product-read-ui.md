@@ -1,6 +1,6 @@
 # Task: GD commerce product read UI
 
-Status: approved; implementation not started
+Status: implementation complete; independently accepted
 Base: `4b337ce00087c00462ff4a23c4a5eff91d2a0589`
 Date: 2026-08-14
 
@@ -280,6 +280,28 @@ git diff --check
 The local Playwright runner blocks service workers, so JSON no-cache is verified by the PWA matcher
 test. The handoff must also record a normal preview built with both commerce flags explicitly false
 and prove that direct store/product hashes show the local closed state with zero commerce requests.
+
+## Implementation evidence
+
+The frozen implementation is complete in the local worktree. It remains default-off and is not
+deployed.
+
+- focused commerce Vitest: 190/190 passing;
+- test inventory: 180 Vitest files and 68 Node test files;
+- commerce structure: 13/13 passing;
+- store compatibility E2E with catalog=true/product=false: 4/4 passing;
+- product E2E with both frontend flags true: 5/5 passing;
+- production build: 681 modules transformed and 75 PWA precache entries;
+- full `npm run verify` with both frontend commerce flags explicitly false: 4,868/4,868 Vitest
+  assertions, 858/858 Node structure assertions, static checks, HTML sanitizer, two production
+  builds, PWA generation and 3/3 frontend smoke checks passing;
+- the resulting normal preview was opened directly at `#/commerce/stores/1` and
+  `#/commerce/products/10`; both rendered their local closed surface and issued zero
+  `/api/commerce` requests;
+- `git diff --check`: passing.
+
+Independent read-only review accepted this implementation with no remaining P0/P1/P2/P3 issue.
+This acceptance authorizes the phase commit, but not deployment or any feature-flag change.
 
 ## Release gates and rollback
 
