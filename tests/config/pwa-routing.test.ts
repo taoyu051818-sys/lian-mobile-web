@@ -61,6 +61,18 @@ describe("PWA runtime route matching", () => {
     expect(pwaNavigationRouteMatch(routeCandidate("https://lian.test/post/123"))).toBe(false);
   });
 
+  it("keeps commerce JSON reads outside navigation and image runtime caches", () => {
+    for (const href of [
+      "https://lian.test/api/commerce/stores",
+      "https://lian.test/api/commerce/stores/1",
+    ]) {
+      expect(pwaNavigationRouteMatch(routeCandidate(href, { mode: "navigate" }))).toBe(false);
+      expect(pwaNavigationRouteMatch(routeCandidate(href))).toBe(false);
+      expect(pwaImageRouteMatch(routeCandidate(href))).toBe(false);
+    }
+    expect(viteConfigSource).not.toMatch(/commerce[^\n]*Cache(?:First|Only)|commerce-cache/i);
+  });
+
   it("caches same-origin images even when their URL has no extension", () => {
     expect(
       pwaImageRouteMatch(routeCandidate("https://lian.test/image/123", { destination: "image" })),

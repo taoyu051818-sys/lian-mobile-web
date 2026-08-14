@@ -1,6 +1,6 @@
 # Task: GD commerce store read UI
 
-Status: in progress; provider and BFF start gate accepted
+Status: implementation complete; independently accepted; not deployed
 Base: `origin/main@017201731b76fe628cc4c2d4a2dd7a67d3c9d232`
 Date: 2026-08-13
 
@@ -212,8 +212,10 @@ The local E2E command intentionally enables only its Vite process; default-off b
 unit/structure assertion. Local Playwright blocks service workers, so JSON no-cache behavior is
 verified in `tests/config/pwa-routing.test.ts`, not inferred from the browser journey.
 
-The task remains blocked until the start gate is filled with accepted commit SHAs. Implementation is
-not accepted until an independent reviewer records the result in a matching handoff.
+The start gate was satisfied before runtime work began. An independent final reviewer accepted the
+completed implementation on 2026-08-14 with no P1, P2, or submission-blocking P3 findings; the
+matching handoff records the verification evidence. No deployment or feature-flag change is
+authorized by that acceptance.
 
 ## Non-goals
 

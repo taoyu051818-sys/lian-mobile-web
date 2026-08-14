@@ -48,6 +48,8 @@ describe("Phase 4 (deeplink): parseDeepLink", () => {
     expect(parseDeepLink("#/merchant")).toEqual({ view: "merchant" });
     expect(parseDeepLink("#/errand-order")).toEqual({ view: "errand-order" });
     expect(parseDeepLink("#/runner")).toEqual({ view: "runner" });
+    expect(parseDeepLink("#/commerce")).toEqual({ view: "commerce" });
+    expect(parseDeepLink("#/commerce/stores/2147483647")).toEqual({ view: "commerce" });
     // Trailing-slash and query-tail handling must work for secret views too.
     expect(parseDeepLink("#/merchant/")).toEqual({ view: "merchant" });
     expect(parseDeepLink("#/merchant?ref=push")).toEqual({ view: "merchant" });
@@ -80,7 +82,9 @@ describe("Phase 4 (deeplink): builders", () => {
     expect(buildViewHash("merchant")).toBe("#/merchant");
     expect(buildViewHash("errand-order")).toBe("#/errand-order");
     expect(buildViewHash("runner")).toBe("#/runner");
+    expect(buildViewHash("commerce")).toBe("#/commerce");
     expect(parseDeepLink(buildViewHash("merchant"))).toEqual({ view: "merchant" });
+    expect(parseDeepLink(buildViewHash("commerce"))).toEqual({ view: "commerce" });
   });
 });
 
