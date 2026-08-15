@@ -16,7 +16,7 @@
  *   - the copy source (everything routes through `src/config/brand`);
  *   - the development-fixture gate, so a preview helper can never ship.
  */
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -244,5 +244,46 @@ describe("commerce catalog UI: development fixtures", () => {
     expect(commerceView).toContain("catalogFixture.value?.status ?? reader.status.value");
     expect(commerceView).toContain("catalogFixture.value?.errorKind ?? reader.errorKind.value");
     expect(commerceView).toContain("catalogFixture.value?.items ?? reader.items.value");
+  });
+});
+
+describe("commerce catalog UI: development fixture behavior", () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it.each([
+    { dev: false, enabled: "true", scenario: "normal" },
+    { dev: true, enabled: "false", scenario: "normal" },
+    { dev: true, enabled: undefined, scenario: "normal" },
+    { dev: true, enabled: "true", scenario: undefined },
+    { dev: true, enabled: "true", scenario: "unknown" },
+  ])("keeps real rendering inputs when the fixture gate is not fully accepted", async (env) => {
+    vi.stubEnv("DEV", env.dev);
+    vi.stubEnv("VITE_UI_FIXTURES", env.enabled);
+    vi.stubEnv("VITE_UI_FIXTURE_SCENARIO", env.scenario);
+
+    const { useCommerceStoreUiFixture } =
+      await import("../../src/features/commerce/dev/useCommerceStoreUiFixture");
+
+    expect(useCommerceStoreUiFixture().value).toBeNull();
+  });
+
+  it("loads the selected typed fixture only when both development gates are accepted", async () => {
+    vi.stubEnv("DEV", true);
+    vi.stubEnv("VITE_UI_FIXTURES", "true");
+    vi.stubEnv("VITE_UI_FIXTURE_SCENARIO", "normal");
+
+    const { useCommerceStoreUiFixture } =
+      await import("../../src/features/commerce/dev/useCommerceStoreUiFixture");
+    const fixture = useCommerceStoreUiFixture();
+
+    expect(fixture.value).toBeNull();
+    await vi.waitFor(() => expect(fixture.value?.status).toBe("ready"));
+    expect(fixture.value?.items[0]).toMatchObject({
+      id: "1",
+      logoAssetRef: null,
+      recommended: true,
+    });
   });
 });
