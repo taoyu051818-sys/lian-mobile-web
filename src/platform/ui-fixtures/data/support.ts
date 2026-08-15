@@ -135,6 +135,80 @@ export function timeLabelFor(index: number): string {
   return `${Math.floor(index / 7)} 天前`;
 }
 
+const STORE_NAMES = [
+  "北苑鲜食便利",
+  "西门文创小铺",
+  "三教咖啡角",
+  "南门果切吧",
+  "体育馆运动补给",
+  "留学生公寓杂货",
+  "逸夫楼文具站",
+  "东区烘焙工坊",
+] as const;
+
+const PRODUCT_NAMES = [
+  "手冲挂耳咖啡",
+  "全麦三明治",
+  "冰镇柠檬茶",
+  "手账胶带套装",
+  "运动电解质水",
+  "现切菠萝盒",
+  "黑色中性笔",
+  "原味贝果",
+] as const;
+
+export function storeNameFor(index: number): string {
+  return seeded(STORE_NAMES, index);
+}
+
+export function productNameFor(index: number): string {
+  return seeded(PRODUCT_NAMES, index);
+}
+
+/**
+ * Fixed-point rating string the commerce decoder accepts: exactly `0`, or
+ * `[1-4].dd`, or `5.00`. Anything else is rejected as malformed.
+ */
+export function ratingFor(index: number, offset: number): string {
+  const tenths = (index * 7 + offset * 13) % 40; // 0..39
+  const whole = 1 + Math.floor(tenths / 10); // 1..4
+  const decimals = String((tenths * 7) % 100).padStart(2, "0");
+  return `${whole}.${decimals}`;
+}
+
+/** Deterministic non-negative safe integer inside a range. */
+export function seededCount(index: number, min: number, max: number): number {
+  const span = Math.max(1, max - min);
+  return min + ((index * 977 + 311) % span);
+}
+
+/**
+ * Pad/trim the corpus into a copy string of a target length so the strict
+ * commerce length bounds (name<=50, summary<=255, areaLabel<=100) are exercised
+ * near their limits without ever exceeding them.
+ */
+export function summaryFor(index: number, targetLength: number): string {
+  const base = seeded(BODY_PREVIEWS, index);
+  if (targetLength <= base.length) return base.slice(0, targetLength);
+  let out = base;
+  let cursor = index + 1;
+  while (out.length < targetLength) {
+    out += seeded(BODY_PREVIEWS, cursor);
+    cursor += 1;
+  }
+  return out.slice(0, targetLength);
+}
+
+export function sentenceFor(index: number, targetLength: number): string {
+  const base = seeded(PRODUCT_NAMES, index);
+  if (targetLength <= base.length) return base.slice(0, targetLength);
+  return summaryFor(index, targetLength);
+}
+
+export function pick<T>(pool: readonly T[], index: number): T {
+  return seeded(pool, index);
+}
+
 export interface IdentityProfile {
   id: string;
   username: string;
