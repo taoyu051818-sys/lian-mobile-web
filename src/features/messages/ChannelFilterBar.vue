@@ -215,15 +215,31 @@ function toggleState() {
   padding: var(--floating-bar-padding);
 }
 
+/* Wrapper is required by the dual-state Transition, not decoration:
+   `position: relative` anchors the absolutely-positioned nav during the
+   A<->B slide (both navs coexist mid-transition), and `overflow: hidden`
+   clips the translateX(±100%) slide so chips never bleed past the bar.
+   It also reserves a stable `--floating-bar-button-height` track so the
+   bar height does not jump between the visibility and category states. */
 .channel-filter-bar__chips-container {
   position: relative;
   flex: 1;
   min-height: var(--floating-bar-button-height);
   overflow: hidden;
+  /* Center the 32px nav inside the 40px track. Block layout pinned it to
+     the top, leaving 8px dead space below and reading 4px higher than the
+     toggle button sitting beside it in the same bar. */
+  display: flex;
+  align-items: center;
 }
 
 .channel-filter-bar__chips {
   display: flex;
+  /* Fill the track width as the old block child did, while `min-width: 0`
+     keeps the chip row shrinkable so overflow-x can scroll instead of
+     stretching the container. */
+  flex: 1;
+  min-width: 0;
   /* Center chips when they fit; fall back to start when scrolling kicks in. */
   justify-content: safe center;
   gap: var(--space-2);
@@ -348,7 +364,12 @@ function toggleState() {
     transform 300ms cubic-bezier(0.34, 1.56, 0.64, 1),
     opacity 300ms cubic-bezier(0.34, 1.56, 0.64, 1);
   position: absolute;
+  /* `bottom: 0` alongside `top: 0` stretches the out-of-flow nav to the full
+     track height so its own `align-items: center` keeps the chips centered
+     mid-slide. With `top: 0` alone it collapsed to 32px at the top edge and
+     the chips visibly jumped up during the transition. */
   top: 0;
+  bottom: 0;
   left: 0;
   right: 0;
 }
