@@ -19,6 +19,7 @@
  */
 
 import type { AppViewKey } from "./view-types";
+import { parseCommerceRoute } from "./commerce-route";
 
 const POST_HASH_PATTERN = /^#?\/post\/(\d+)(?:[/?#].*)?$/;
 const VIEW_HASH_PATTERN =
@@ -34,6 +35,9 @@ export type DeepLink = { view: "post-detail"; tid: number } | { view: AppViewKey
  */
 export function parseDeepLink(hash: string | null | undefined): DeepLink | null {
   if (!hash) return null;
+  // Commerce owns stricter raw-hash semantics than the legacy view matcher:
+  // no trimming, trailing slash/query, percent decoding, or path tail.
+  if (parseCommerceRoute(hash)) return { view: "commerce" };
   const trimmed = hash.trim();
   const postMatch = POST_HASH_PATTERN.exec(trimmed);
   if (postMatch) {

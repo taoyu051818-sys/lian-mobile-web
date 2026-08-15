@@ -6,7 +6,19 @@ import {
   type ShellLayoutMode,
 } from "../../src/app/view-types";
 
-const ALL_VIEWS: AppViewKey[] = ["feed", "map", "publish", "messages", "profile"];
+const ALL_VIEWS: AppViewKey[] = [
+  "feed",
+  "map",
+  "publish",
+  "messages",
+  "profile",
+  "admin",
+  "verification",
+  "merchant",
+  "errand-order",
+  "runner",
+  "commerce",
+];
 
 describe("shellLayoutModes", () => {
   it("maps every view key to a layout mode", () => {
@@ -19,6 +31,7 @@ describe("shellLayoutModes", () => {
     expect(shellLayoutModes.feed).toBe("content");
     expect(shellLayoutModes.publish).toBe("content");
     expect(shellLayoutModes.profile).toBe("content");
+    expect(shellLayoutModes.commerce).toBe("content");
   });
 
   it("uses full-bleed mode for map", () => {
@@ -35,6 +48,7 @@ describe("getShellLayoutMode", () => {
     expect(getShellLayoutMode("feed")).toBe("content");
     expect(getShellLayoutMode("map")).toBe("full-bleed");
     expect(getShellLayoutMode("messages")).toBe("composer-safe");
+    expect(getShellLayoutMode("commerce")).toBe("content");
   });
 
   it("returns content as fallback for unmapped keys", () => {

@@ -14,6 +14,8 @@ import {
   PROFILE_UNLOCKS_SECTION_LABEL,
   RUNNER_ENTER_LABEL,
   VERIFICATION_ENTER_LABEL,
+  COMMERCE_PROFILE_ENTRY,
+  COMMERCE_PROFILE_ENTRY_HINT,
 } from "../../config/brand";
 import { extractErrorMessage } from "../../utils/extractErrorMessage";
 import { useDetailNavigation } from "../../app/detail-navigation";
@@ -48,6 +50,9 @@ const emit = defineEmits<{
 
 const { setActiveView } = useActiveView();
 const adminEntryVisible = computed(() => import.meta.env.VITE_ADMIN_VISIBLE === "true");
+const commerceEntryVisible = computed(
+  () => import.meta.env.VITE_COMMERCE_CATALOG_VISIBLE === "true",
+);
 
 const { user, loading, errorMessage, isMissingSessionError, refreshCurrentSession } =
   useProfileSession();
@@ -347,6 +352,17 @@ onMounted(() => {
     <section v-else class="profile-view__guest">
       <AuthPanel @authenticated="handleAuthenticated" />
     </section>
+
+    <footer
+      v-if="commerceEntryVisible && !loading"
+      class="profile-view__commerce-entry"
+      data-testid="profile-commerce-entry"
+    >
+      <a class="profile-view__commerce-link" href="#/commerce">
+        <strong>{{ COMMERCE_PROFILE_ENTRY }}</strong>
+        <span>{{ COMMERCE_PROFILE_ENTRY_HINT }}</span>
+      </a>
+    </footer>
   </section>
 </template>
 
@@ -385,6 +401,46 @@ onMounted(() => {
 
 .profile-view__authenticated {
   display: contents;
+}
+
+.profile-view__commerce-entry {
+  display: flex;
+}
+
+.profile-view__commerce-link {
+  display: grid;
+  width: 100%;
+  min-height: 64px;
+  align-content: center;
+  gap: var(--space-1);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid rgba(31, 167, 160, 0.24);
+  border-radius: var(--radius-card);
+  background: rgba(255, 252, 247, 0.96);
+  color: inherit;
+  text-decoration: none;
+}
+
+.profile-view__commerce-link:hover,
+.profile-view__commerce-link:focus-visible {
+  background: rgba(31, 167, 160, 0.08);
+  outline: none;
+}
+
+.profile-view__commerce-link:focus-visible {
+  box-shadow: inset 0 0 0 2px var(--lian-primary);
+}
+
+.profile-view__commerce-link strong {
+  color: var(--lian-ink);
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.profile-view__commerce-link span {
+  color: var(--lian-muted);
+  font-size: 12px;
+  line-height: 1.5;
 }
 
 .profile-view__unlock-section {

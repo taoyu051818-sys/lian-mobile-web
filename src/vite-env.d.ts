@@ -3,6 +3,8 @@
 
 interface ImportMetaEnv {
   readonly VITE_ADMIN_VISIBLE?: string;
+  readonly VITE_COMMERCE_CATALOG_VISIBLE?: string;
+  readonly VITE_COMMERCE_PRODUCT_VISIBLE?: string;
 }
 
 interface ImportMeta {
