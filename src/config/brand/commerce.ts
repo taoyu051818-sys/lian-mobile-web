@@ -18,6 +18,12 @@ export const COMMERCE_TIMEOUT_TITLE = "店铺加载超时";
 export const COMMERCE_TIMEOUT_HINT = "网络可能不稳定，可以重新加载。";
 export const COMMERCE_RETRY = "重新加载";
 
+export const COMMERCE_CATALOG_HEADING = "校园周边店铺";
+export const COMMERCE_CATALOG_HINT = "按区域浏览店铺，无需登录即可查看。";
+export const COMMERCE_CATALOG_COUNT_SUFFIX = " 家店铺可浏览";
+export const COMMERCE_CATALOG_LIST_LABEL = "店铺列表";
+export const COMMERCE_RATING_LABEL = "评分";
+
 export const COMMERCE_STORE_NOT_FOUND_TITLE = "没有找到这家店铺";
 export const COMMERCE_STORE_NOT_FOUND_HINT = "店铺可能已下线，也可以返回店铺列表继续浏览。";
 export const COMMERCE_BACK_TO_CATALOG = "返回店铺列表";

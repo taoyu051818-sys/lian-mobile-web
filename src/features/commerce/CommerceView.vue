@@ -11,6 +11,7 @@ import {
 import type { PageChromeSpec } from "../../shell/page-model";
 import { EmptyState } from "../../ui";
 import CommerceStoreListPage from "./catalog/CommerceStoreListPage.vue";
+import { useCommerceStoreUiFixture } from "./dev/useCommerceStoreUiFixture";
 import CommerceProductDetailPage from "./product/CommerceProductDetailPage.vue";
 import CommerceStoreDetailPage from "./store/CommerceStoreDetailPage.vue";
 import { useCommerceStoreRead } from "./useCommerceStoreRead";
@@ -23,6 +24,13 @@ const emit = defineEmits<{
 const route = shallowRef<CommerceRoute | null>(null);
 const reader = useCommerceStoreRead();
 let observedHash: string | null = null;
+
+// Development-only catalog preview. Stays null in production and whenever the
+// fixture switch is off, so the reader's real state renders unchanged.
+const catalogFixture = useCommerceStoreUiFixture();
+const catalogStatus = computed(() => catalogFixture.value?.status ?? reader.status.value);
+const catalogErrorKind = computed(() => catalogFixture.value?.errorKind ?? reader.errorKind.value);
+const catalogItems = computed(() => catalogFixture.value?.items ?? reader.items.value);
 
 const pageChrome = computed<PageChromeSpec>(() => ({
   top: {
@@ -77,9 +85,9 @@ onBeforeUnmount(() => {
 
     <CommerceStoreListPage
       v-else-if="route?.name === 'catalog'"
-      :status="reader.status.value"
-      :error-kind="reader.errorKind.value"
-      :items="reader.items.value"
+      :status="catalogStatus"
+      :error-kind="catalogErrorKind"
+      :items="catalogItems"
       @retry="reader.retry"
     />
 
