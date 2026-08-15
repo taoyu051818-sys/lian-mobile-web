@@ -32,40 +32,8 @@ import {
   type FixtureScenario,
   type FixtureVolume,
 } from "../types";
-
-// Exhaustive by type: adding a FixtureScenario without a label fails typecheck.
-const SCENARIO_LABELS: Record<FixtureScenario, string> = {
-  normal: "正常",
-  empty: "空数据",
-  "partial-data": "缺可选字段",
-  "long-copy": "超长文案",
-  "many-items": "大量条目",
-  loading: "加载中",
-  error: "请求失败",
-  "not-found": "404",
-  forbidden: "无权限",
-  unauthorized: "未登录",
-  timeout: "请求超时",
-  "rate-limited": "限流",
-};
-
-const IDENTITY_LABELS: Record<FixtureIdentity, string> = {
-  guest: "游客",
-  registered: "已注册（未认证）",
-  "verified-student": "在校学生",
-  "merchant-pending": "商家（待审核）",
-  "merchant-approved": "商家（已通过）",
-  runner: "骑手",
-  "organization-member": "社团成员",
-  admin: "管理员",
-  "disabled-user": "已封禁",
-};
-
-const VOLUME_LABELS: Record<FixtureVolume, string> = {
-  sparse: "少",
-  default: "中",
-  dense: "多",
-};
+import FixtureRequestLog from "./FixtureRequestLog.vue";
+import { IDENTITY_LABELS, SCENARIO_LABELS, VOLUME_LABELS } from "./labels";
 
 const state = shallowRef(getFixtureState());
 const counts = ref(getFixtureRequestCounts());
@@ -97,18 +65,36 @@ function togglePanel() {
 
 // The store is framework-free, so bridge its subscription into refs rather than
 // making the store itself depend on Vue.
+/**
+ * The store's log is a plain mutable array outside Vue's reactivity, so the
+ * `recentLog` computed below needs an explicit version to depend on. Declared
+ * before the subscription that increments it to avoid a temporal dead zone.
+ */
+const logVersion = ref(0);
+
 const stop = subscribeFixtureState(() => {
   state.value = getFixtureState();
   counts.value = getFixtureRequestCounts();
+  logVersion.value += 1;
 });
 onBeforeUnmount(stop);
 
-const unmappedCount = computed(() => counts.value.unmapped);
-const blockedCount = computed(() => counts.value.blocked);
-/** Unmapped or blocked traffic is the signal that coverage or isolation broke. */
-const hasProblem = computed(() => unmappedCount.value > 0 || blockedCount.value > 0);
-/** Log lives in the store, not in the state object. */
-const recentLog = computed(() => getFixtureRequestLog().slice(-12).reverse());
+const recentLog = computed(() => {
+  void logVersion.value;
+  return getFixtureRequestLog().slice(-12).reverse();
+});
+
+/**
+ * Surfaced on the collapsed handle so a coverage or isolation failure is visible
+ * without opening the panel. Unmapped means a missing fixture (501); blocked
+ * means a request tried to leave the origin.
+ */
+const problemCount = computed(() => counts.value.unmapped + counts.value.blocked);
+const hasProblem = computed(() => problemCount.value > 0);
+
+function clearLog() {
+  clearFixtureRequestLog();
+}
 
 /**
  * Fixture state is read at request time, and the feature composables cache
@@ -167,9 +153,7 @@ function resetAll() {
         <span class="fixture-toolbar__handle-state">{{
           SCENARIO_LABELS[state.scenario] ?? state.scenario
         }}</span>
-        <span v-if="hasProblem" class="fixture-toolbar__badge">
-          {{ unmappedCount + blockedCount }}
-        </span>
+        <span v-if="hasProblem" class="fixture-toolbar__badge">{{ problemCount }}</span>
       </button>
 
       <div v-if="!collapsed" class="fixture-toolbar__body">
@@ -231,35 +215,13 @@ function resetAll() {
           <button type="button" class="fixture-toolbar__button" @click="resetAll">重置</button>
         </div>
 
-        <button
-          type="button"
-          class="fixture-toolbar__log-toggle"
-          :aria-expanded="logOpen"
-          @click="logOpen = !logOpen"
-        >
-          请求 {{ counts.total }} · 命中 {{ counts.handled }} ·
-          <span :class="{ 'fixture-toolbar__count--bad': unmappedCount > 0 }">
-            未覆盖 {{ unmappedCount }}
-          </span>
-          ·
-          <span :class="{ 'fixture-toolbar__count--bad': blockedCount > 0 }">
-            拦截 {{ blockedCount }}
-          </span>
-        </button>
-
-        <p v-if="hasProblem" class="fixture-toolbar__hint">
-          未覆盖表示该接口还没有 fixture（返回 501）；拦截表示有请求试图访问外部网络。
-        </p>
-
-        <ul v-if="logOpen" class="fixture-toolbar__log">
-          <li v-for="entry in recentLog" :key="entry.id">
-            <span class="fixture-toolbar__log-outcome" :data-outcome="entry.outcome">
-              {{ entry.outcome }}
-            </span>
-            <span class="fixture-toolbar__log-path">{{ entry.method }} {{ entry.path }}</span>
-          </li>
-          <li v-if="recentLog.length === 0" class="fixture-toolbar__log-empty">暂无请求记录</li>
-        </ul>
+        <FixtureRequestLog
+          :counts="counts"
+          :entries="recentLog"
+          :open="logOpen"
+          @toggle="logOpen = !logOpen"
+          @clear="clearLog"
+        />
       </div>
     </aside>
   </Teleport>
@@ -403,69 +365,7 @@ function resetAll() {
   gap: var(--space-2);
 }
 
-.fixture-toolbar__log-toggle {
-  padding: var(--space-1) var(--space-2);
-  border: 0;
-  border-radius: var(--radius-button);
-  background: var(--lian-surface-content-muted);
-  color: inherit;
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-}
-
-.fixture-toolbar__count--bad {
-  color: var(--lian-danger);
-  font-weight: 700;
-}
-
-.fixture-toolbar__hint {
-  margin: 0;
-  opacity: 0.7;
-  line-height: 1.5;
-}
-
-.fixture-toolbar__log {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
-  max-height: 168px;
-  margin: 0;
-  padding: 0;
-  overflow-y: auto;
-  list-style: none;
-}
-
-.fixture-toolbar__log li {
-  display: flex;
-  gap: var(--space-2);
-  align-items: baseline;
-}
-
-.fixture-toolbar__log-outcome {
-  flex: 0 0 62px;
-  font-size: 10px;
-  text-transform: uppercase;
-  opacity: 0.7;
-}
-
-.fixture-toolbar__log-outcome[data-outcome="unmatched"],
-.fixture-toolbar__log-outcome[data-outcome="blocked"] {
-  color: var(--lian-danger);
-  opacity: 1;
-  font-weight: 700;
-}
-
-.fixture-toolbar__log-path {
-  flex: 1;
-  min-width: 0;
-  overflow-wrap: anywhere;
-  font-family: var(--font-mono, monospace);
-}
-
-.fixture-toolbar__log-empty {
-  opacity: 0.6;
-}
+/* Request-log styles live in FixtureRequestLog.vue alongside its markup. */
 
 @media (prefers-reduced-motion: reduce) {
   .fixture-toolbar {

@@ -21,12 +21,7 @@ const hasProblem = () => props.counts.unmapped > 0 || props.counts.blocked > 0;
 </script>
 
 <template>
-  <button
-    type="button"
-    class="fixture-log__summary"
-    :aria-expanded="open"
-    @click="emit('toggle')"
-  >
+  <button type="button" class="fixture-log__summary" :aria-expanded="open" @click="emit('toggle')">
     请求 {{ counts.total }} · 命中 {{ counts.handled }} ·
     <span :class="{ 'fixture-log__count--bad': counts.unmapped > 0 }">
       未覆盖 {{ counts.unmapped }}
@@ -104,9 +99,10 @@ const hasProblem = () => props.counts.unmapped > 0 || props.counts.blocked > 0;
 
 /* Values come from `FixtureRequestLogEntry["outcome"]`. `unmapped` (not
    "unmatched") is the real key — the earlier selector never matched. */
+/* Matches FixtureRequestOutcome exactly; "unmapped" (not "unmatched") is the
+   value the store emits, which an earlier selector here got wrong. */
 .fixture-log__outcome[data-outcome="unmapped"],
-.fixture-log__outcome[data-outcome="blocked"],
-.fixture-log__outcome[data-outcome="failed"] {
+.fixture-log__outcome[data-outcome="blocked"] {
   color: var(--lian-danger);
   opacity: 1;
   font-weight: 700;
