@@ -15,7 +15,7 @@ import { fixtureJson, fixtureNotFound } from "../contract";
 import { registerFixtureFamily } from "../registry";
 import type { FixtureIdentity, FixtureRequestContext, FixtureScenario } from "../types";
 import { claimErrandOrder, isErrandOrderClaimed } from "../writes";
-import { area, identityProfile, itemCount, timestampFor } from "./support";
+import { area, identityProfile, isRunner, itemCount, timestampFor } from "./support";
 
 const FAMILY = "errands";
 
@@ -102,7 +102,7 @@ function gateFor(identity: FixtureIdentity, scenario: FixtureScenario) {
   if (identity === "guest") {
     return { ok: false, reason: "not_logged_in", reasonText: "请先登录后再下单" };
   }
-  if (!identityProfile(identity).tags.includes("campus_verified")) {
+  if (!identityProfile(identity).verificationTags.includes("campus-email")) {
     return { ok: false, reason: "not_verified", reasonText: "完成校园认证后即可使用跑腿服务" };
   }
   if (scenario === "partial-data") {
@@ -154,7 +154,7 @@ export function registerErrandFixtures(): void {
       "/api/errands/orders/available",
       ({ scenario, identity }: FixtureRequestContext) => {
         // Only runners see the open pool; everyone else gets the real 403.
-        if (!identityProfile(identity).tags.includes("runner")) {
+        if (!isRunner(identity)) {
           return fixtureJson(
             { error: "仅认证骑手可查看可接订单", code: "FIXTURE_RUNNER_REQUIRED" },
             403,

@@ -1,10 +1,26 @@
 import { createApp } from "./app";
 import { installDisableGestureZoom } from "./composables/useDisableGestureZoom";
+import { startOfflineFixtureRuntime } from "./platform/ui-fixtures";
 import { registerSW } from "virtual:pwa-register";
 
 installDisableGestureZoom();
-const { app } = createApp();
-app.mount("#vue-root");
+
+/**
+ * Mount the SPA. In offline fixture mode the transport must be installed BEFORE
+ * mounting, otherwise the first views fire their reads against the real
+ * network and only later requests get intercepted.
+ *
+ * `startOfflineFixtureRuntime()` resolves immediately (returns `false`) in
+ * production and whenever `VITE_UI_FIXTURES` is not `"true"`, so the normal
+ * path just pays one already-resolved promise tick.
+ */
+async function bootstrap(): Promise<void> {
+  await startOfflineFixtureRuntime();
+  const { app } = createApp();
+  app.mount("#vue-root");
+}
+
+void bootstrap();
 
 // PWA service worker registration with update prompt
 // RFC §8: "New SW detected → SPA shows a non-blocking toast"

@@ -16,6 +16,7 @@ import {
   area,
   countFor,
   identityProfile,
+  isMerchant,
   isPartial,
   itemCount,
   localCover,
