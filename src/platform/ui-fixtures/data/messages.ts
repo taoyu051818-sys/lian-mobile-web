@@ -35,11 +35,20 @@ import {
 const FAMILY = "messages";
 
 const VISIBILITIES = ["public", "campus", "school"] as const;
-const NOTIFICATION_KINDS = ["reply", "verification", "errand-order", "generic"] as const;
+// From `NotificationKind` in src/types/messages.ts. Note `order` is the kind;
+// `errand-order` is a *target* kind, not a notification kind.
+const NOTIFICATION_KINDS = [
+  "reply",
+  "verification",
+  "order",
+  "event-completed",
+  "moderation",
+  "generic",
+] as const;
 
-function readPaging(url: URL): { offset: number; limit: number } {
-  const offset = Math.max(0, Number(url.searchParams.get("offset") ?? 0) || 0);
-  const rawLimit = Number(url.searchParams.get("limit") ?? 30) || 30;
+function readPaging(query: URLSearchParams): { offset: number; limit: number } {
+  const offset = Math.max(0, Number(query.get("offset") ?? 0) || 0);
+  const rawLimit = Number(query.get("limit") ?? 30) || 30;
   return { offset, limit: Math.min(Math.max(1, rawLimit), 100) };
 }
 
@@ -85,12 +94,16 @@ function notificationItem(index: number, scenario: FixtureScenario) {
     read: index % 3 === 0,
     timestampISO: timestampFor(index),
     time: timeLabelFor(index),
+    // Covers all four NotificationTarget variants, including the `none` case
+    // that renders a non-navigable row.
     target:
-      kind === "errand-order"
+      kind === "order"
         ? ({ kind: "errand-order", orderId: `errand-${index}` } as const)
         : kind === "verification"
           ? ({ kind: "verification" } as const)
-          : ({ kind: "detail", tid: 52_000 + index } as const),
+          : kind === "moderation"
+            ? ({ kind: "none", reason: "内容已被移除" } as const)
+            : ({ kind: "detail", tid: 52_000 + index } as const),
   };
 }
 
@@ -117,8 +130,8 @@ export function registerMessagesFixtures(): void {
     [
       "GET",
       "/api/channel",
-      ({ url, scenario, volume, identity }: FixtureRequestContext) => {
-        const { offset, limit } = readPaging(url);
+      ({ query, scenario, volume, identity }: FixtureRequestContext) => {
+        const { offset, limit } = readPaging(query);
         const selfId = identityProfile(identity).id;
         return fixtureJson(page(channelCorpus(scenario, volume, selfId), offset, limit));
       },
@@ -127,19 +140,26 @@ export function registerMessagesFixtures(): void {
       "POST",
       "/api/channel/messages",
       ({ body, identity }: FixtureRequestContext) => {
-        const payload = (body ?? {}) as { content?: string; visibility?: string; clientNonce?: string };
+        const payload = (body ?? {}) as {
+          content?: string;
+          visibility?: string;
+          clientNonce?: string;
+        };
         const profile = identityProfile(identity);
+        const label = profile.username || "我";
         appendChannelMessage({
           id: `channel-sent-${Date.now().toString(36)}`,
+          // Echoed back so `replacePendingWithLatest` can match the optimistic
+          // item by nonce instead of falling back to content equality.
           clientNonce: payload.clientNonce || "",
           content: payload.content || "",
           plainText: payload.content || "",
           visibility: payload.visibility || "public",
           actor: {
             id: profile.id,
-            name: profile.displayName,
-            displayName: profile.displayName,
-            avatarText: profile.displayName.slice(0, 2),
+            name: label,
+            displayName: label,
+            avatarText: label.slice(0, 2),
             authoritative: true,
           },
           timestampISO: new Date().toISOString(),
@@ -156,8 +176,8 @@ export function registerMessagesFixtures(): void {
     [
       "GET",
       "/api/messages",
-      ({ url, scenario, volume }: FixtureRequestContext) => {
-        const { offset, limit } = readPaging(url);
+      ({ query, scenario, volume }: FixtureRequestContext) => {
+        const { offset, limit } = readPaging(query);
         const items = Array.from({ length: itemCount(scenario, volume) }, (_, index) =>
           notificationItem(index, scenario),
         );

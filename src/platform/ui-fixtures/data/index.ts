@@ -10,6 +10,7 @@ import { registerCommerceFixtures } from "./commerce";
 import { registerContentFixtures } from "./content";
 import { registerErrandFixtures } from "./errands";
 import { registerIdentityFixtures } from "./identity";
+import { registerMessagesFixtures } from "./messages";
 import { registerProfileFixtures } from "./profile";
 
 let registered = false;
@@ -23,6 +24,7 @@ export function registerAllFixtures(): void {
   registerIdentityFixtures();
   registerContentFixtures();
   registerProfileFixtures();
+  registerMessagesFixtures();
   registerCommerceFixtures();
   registerErrandFixtures();
 }

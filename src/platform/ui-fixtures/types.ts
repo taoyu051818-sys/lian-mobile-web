@@ -166,6 +166,14 @@ export interface FixtureRoute {
 
 export type FixtureRequestOutcome = "handled" | "unmapped" | "blocked" | "passthrough";
 
+/** Running tally returned by `getFixtureRequestCounts()` for the DEV toolbar. */
+export interface FixtureRequestCounts {
+  handled: number;
+  unmapped: number;
+  blocked: number;
+  total: number;
+}
+
 export interface FixtureRequestLogEntry {
   id: number;
   at: string;

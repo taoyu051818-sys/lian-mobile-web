@@ -137,7 +137,11 @@ export function registerContentFixtures(): void {
   ]);
 
   registerFixtureFamily("detail", [
-    ["GET", "/api/posts/:id", (context) => fixtureJson(postDetail(context, context.params.id ?? ""))],
+    [
+      "GET",
+      "/api/posts/:id",
+      (context) => fixtureJson(postDetail(context, context.params.id ?? "")),
+    ],
     [
       "GET",
       "/api/posts/:id/replies",
@@ -151,12 +155,20 @@ export function registerContentFixtures(): void {
       "/api/posts/:id/replies",
       (context) => {
         const body = (context.body ?? {}) as Record<string, unknown>;
-        const text = typeof body.body === "string" ? body.body : typeof body.content === "string" ? body.content : "";
+        const text =
+          typeof body.body === "string"
+            ? body.body
+            : typeof body.content === "string"
+              ? body.content
+              : "";
         if (!text.trim()) {
           return fixtureJson({ error: "回复内容不能为空", code: "EMPTY_REPLY" }, 400);
         }
         const reply = addReply(context.params.id ?? "", text.trim());
-        return fixtureJson({ ok: true, reply: { ...reply, actor: actorFor(0), timeLabel: "刚刚" } }, 201);
+        return fixtureJson(
+          { ok: true, reply: { ...reply, actor: actorFor(0), timeLabel: "刚刚" } },
+          201,
+        );
       },
     ],
     [
@@ -165,8 +177,7 @@ export function registerContentFixtures(): void {
       (context) => {
         const id = context.params.id ?? "";
         const body = (context.body ?? {}) as Record<string, unknown>;
-        const liked =
-          typeof body.liked === "boolean" ? body.liked : togglePostLike(id, false);
+        const liked = typeof body.liked === "boolean" ? body.liked : togglePostLike(id, false);
         if (typeof body.liked === "boolean") togglePostLike(id, !body.liked);
         const index = Math.max(0, Number(id) - BASE_TID);
         const baseCount = countFor(index, context.scenario);
@@ -199,7 +210,11 @@ export function registerContentFixtures(): void {
         });
       },
     ],
-    ["GET", "/api/posts/:id/share-card", () => fixtureJson({ card: { title: "分享卡片", lines: [] } })],
+    [
+      "GET",
+      "/api/posts/:id/share-card",
+      () => fixtureJson({ card: { title: "分享卡片", lines: [] } }),
+    ],
   ]);
 
   registerFixtureFamily("reactions", [

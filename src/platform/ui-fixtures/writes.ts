@@ -95,25 +95,38 @@ export function hydrateFixtureWrites(): void {
     if (!raw) return;
     const parsed = JSON.parse(raw) as Record<string, unknown>;
     const next = createStore();
-    if (Array.isArray(parsed.likedPostIds)) next.likedPostIds = new Set(parsed.likedPostIds as string[]);
-    if (Array.isArray(parsed.savedPostIds)) next.savedPostIds = new Set(parsed.savedPostIds as string[]);
-    if (Array.isArray(parsed.votes)) next.votes = new Map(parsed.votes as Array<[string, "up" | "down"]>);
+    if (Array.isArray(parsed.likedPostIds))
+      next.likedPostIds = new Set(parsed.likedPostIds as string[]);
+    if (Array.isArray(parsed.savedPostIds))
+      next.savedPostIds = new Set(parsed.savedPostIds as string[]);
+    if (Array.isArray(parsed.votes))
+      next.votes = new Map(parsed.votes as Array<[string, "up" | "down"]>);
     if (Array.isArray(parsed.replies)) {
       next.replies = new Map(
         parsed.replies as Array<[string, Array<{ id: string; body: string; createdAt: string }>]>,
       );
     }
-    if (Array.isArray(parsed.joinedEventIds)) next.joinedEventIds = new Set(parsed.joinedEventIds as string[]);
+    if (Array.isArray(parsed.joinedEventIds))
+      next.joinedEventIds = new Set(parsed.joinedEventIds as string[]);
     if (Array.isArray(parsed.claimedErrandOrderIds)) {
       next.claimedErrandOrderIds = new Set(parsed.claimedErrandOrderIds as string[]);
     }
     if (Array.isArray(parsed.cart)) {
-      next.cart = new Map(parsed.cart as Array<[string, { productId: string; skuId: string; quantity: number }]>);
+      next.cart = new Map(
+        parsed.cart as Array<[string, { productId: string; skuId: string; quantity: number }]>,
+      );
     }
     if (parsed.settings && typeof parsed.settings === "object") {
       next.settings = parsed.settings as Record<string, unknown>;
     }
-    if (Array.isArray(parsed.publishedPostIds)) next.publishedPostIds = parsed.publishedPostIds as string[];
+    if (Array.isArray(parsed.publishedPostIds))
+      next.publishedPostIds = parsed.publishedPostIds as string[];
+    if (Array.isArray(parsed.sentChannelMessages)) {
+      next.sentChannelMessages = parsed.sentChannelMessages as Array<Record<string, unknown>>;
+    }
+    if (Array.isArray(parsed.readNotificationIds)) {
+      next.readNotificationIds = new Set(parsed.readNotificationIds as string[]);
+    }
     if (typeof parsed.counter === "number") next.counter = parsed.counter;
     store = next;
   } catch {
@@ -191,7 +204,10 @@ export function getPostVote(postId: string): "up" | "down" | null {
   return store.votes.get(postId) ?? null;
 }
 
-export function addReply(postId: string, body: string): { id: string; body: string; createdAt: string } {
+export function addReply(
+  postId: string,
+  body: string,
+): { id: string; body: string; createdAt: string } {
   const reply = { id: nextId("reply"), body, createdAt: new Date().toISOString() };
   const existing = store.replies.get(postId) ?? [];
   store.replies.set(postId, [...existing, reply]);
@@ -260,4 +276,37 @@ export function recordPublishedPost(): string {
 
 export function getPublishedPostIds(): string[] {
   return [...store.publishedPostIds];
+}
+
+/**
+ * Records a channel message sent this session. `/api/channel` is a single
+ * campus-wide channel, so there is nothing to key by.
+ *
+ * This matters for realism: POST `/api/channel/messages` returns no body and
+ * `useChannelMessages` reconciles its optimistic item by re-fetching, so the
+ * send only survives if the message is persisted here first.
+ */
+export function appendChannelMessage(message: Record<string, unknown>): string {
+  const id = nextId("msg");
+  store.sentChannelMessages.push({ ...message, id });
+  persist();
+  return id;
+}
+
+export function getChannelMessages(): Array<Record<string, unknown>> {
+  return [...store.sentChannelMessages];
+}
+
+export function markNotificationRead(notificationId: string): void {
+  store.readNotificationIds.add(notificationId);
+  persist();
+}
+
+export function markAllNotificationsRead(ids: readonly string[]): void {
+  for (const id of ids) store.readNotificationIds.add(id);
+  persist();
+}
+
+export function isNotificationRead(notificationId: string, fallback = false): boolean {
+  return store.readNotificationIds.has(notificationId) || fallback;
 }

@@ -25,11 +25,7 @@ import {
 } from "./contract";
 import { isOfflineFixtureRuntimeEnabled } from "./env";
 import { matchFixtureRoute } from "./registry";
-import {
-  getEffectiveScenario,
-  getFixtureState,
-  recordFixtureRequest,
-} from "./state";
+import { getEffectiveScenario, getFixtureState, recordFixtureRequest } from "./state";
 import type { FixtureRequestContext } from "./types";
 import { isTransportScenario } from "./types";
 
@@ -45,9 +41,7 @@ let originalFetch: typeof fetch | null = null;
 const FALLBACK_BASE = "http://localhost/";
 
 function resolveBase(): string {
-  return typeof window !== "undefined" && window.location
-    ? window.location.href
-    : FALLBACK_BASE;
+  return typeof window !== "undefined" && window.location ? window.location.href : FALLBACK_BASE;
 }
 
 function resolveBaseOrigin(): string {
@@ -181,12 +175,24 @@ async function handleApiRequest(
   await delay(state.latencyMs, signal);
 
   if (scenario === "loading") {
-    recordFixtureRequest({ method, path, route: match?.route.pattern ?? "", status: 0, outcome: "handled" });
+    recordFixtureRequest({
+      method,
+      path,
+      route: match?.route.pattern ?? "",
+      status: 0,
+      outcome: "handled",
+    });
     await hangUntilAborted(signal);
   }
 
   if (scenario === "timeout") {
-    recordFixtureRequest({ method, path, route: match?.route.pattern ?? "", status: 0, outcome: "handled" });
+    recordFixtureRequest({
+      method,
+      path,
+      route: match?.route.pattern ?? "",
+      status: 0,
+      outcome: "handled",
+    });
     await delay(TIMEOUT_SCENARIO_DELAY_MS, signal);
     throw makeAbortError();
   }

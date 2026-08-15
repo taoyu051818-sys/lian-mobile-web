@@ -59,11 +59,7 @@ export function registerIdentityFixtures(): void {
       },
     ],
     ["POST", "/api/auth/logout", () => fixtureJson({})],
-    [
-      "POST",
-      "/api/auth/register",
-      (context) => fixtureJson({ user: userPayload(context) }, 201),
-    ],
+    ["POST", "/api/auth/register", (context) => fixtureJson({ user: userPayload(context) }, 201)],
     [
       "GET",
       "/api/auth/rules",
@@ -77,8 +73,16 @@ export function registerIdentityFixtures(): void {
     ],
     ["POST", "/api/auth/email-code", () => fixtureJson({ sent: true, cooldownSeconds: 60 })],
     ["POST", "/api/auth/avatar", () => fixtureJson({ ok: true })],
-    ["POST", "/api/auth/aliases/activate", (context) => fixtureJson({ user: userPayload(context) })],
-    ["POST", "/api/auth/aliases/deactivate", (context) => fixtureJson({ user: userPayload(context) })],
+    [
+      "POST",
+      "/api/auth/aliases/activate",
+      (context) => fixtureJson({ user: userPayload(context) }),
+    ],
+    [
+      "POST",
+      "/api/auth/aliases/deactivate",
+      (context) => fixtureJson({ user: userPayload(context) }),
+    ],
     ["POST", "/api/auth/redeem-link", (context) => fixtureJson({ user: userPayload(context) })],
     ["GET", "/api/auth-link/:token/card", () => fixtureJson({ card: null })],
   ]);

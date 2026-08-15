@@ -121,9 +121,7 @@ export function registerProfileFixtures(): void {
       "/api/me/settings",
       ({ body }: FixtureRequestContext) =>
         fixtureJson(
-          mergeSettings(
-            body && typeof body === "object" ? (body as Record<string, unknown>) : {},
-          ),
+          mergeSettings(body && typeof body === "object" ? (body as Record<string, unknown>) : {}),
         ),
     ],
     ["GET", "/api/me/posts", activityHandler()],

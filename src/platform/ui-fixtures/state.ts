@@ -11,6 +11,7 @@
 
 import type {
   FixtureIdentity,
+  FixtureRequestCounts,
   FixtureRequestLogEntry,
   FixtureRequestOutcome,
   FixtureRuntimeState,
@@ -192,12 +193,7 @@ export function getFixtureRequestLog(): FixtureRequestLogEntry[] {
   return [...requestLog].reverse();
 }
 
-export function getFixtureRequestCounts(): {
-  handled: number;
-  unmapped: number;
-  blocked: number;
-  total: number;
-} {
+export function getFixtureRequestCounts(): FixtureRequestCounts {
   return {
     handled: handledCount,
     unmapped: unmappedCount,

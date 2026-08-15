@@ -13,7 +13,11 @@ import type { FixtureScenario } from "./types";
 export const UNMAPPED_FIXTURE_CODE = "UNMAPPED_FIXTURE_REQUEST";
 export const BLOCKED_FIXTURE_CODE = "BLOCKED_EXTERNAL_REQUEST";
 
-function jsonResponse(body: unknown, status: number, headers: Record<string, string> = {}): Response {
+function jsonResponse(
+  body: unknown,
+  status: number,
+  headers: Record<string, string> = {},
+): Response {
   return new Response(JSON.stringify(body), {
     status,
     headers: { "content-type": "application/json; charset=utf-8", ...headers },
@@ -133,18 +137,11 @@ export function resolveTransportFailure(scenario: FixtureScenario): TransportFai
 }
 
 export function unmappedFixtureResponse(method: string, path: string, route: string): Response {
-  return fixtureError(
-    501,
-    `离线 Fixture 未映射该请求：${method} ${path}`,
-    UNMAPPED_FIXTURE_CODE,
-    { "x-fixture-route": route || "unmatched" },
-  );
+  return fixtureError(501, `离线 Fixture 未映射该请求：${method} ${path}`, UNMAPPED_FIXTURE_CODE, {
+    "x-fixture-route": route || "unmatched",
+  });
 }
 
 export function blockedExternalResponse(url: string): Response {
-  return fixtureError(
-    502,
-    `离线模式已阻止外部请求：${url}`,
-    BLOCKED_FIXTURE_CODE,
-  );
+  return fixtureError(502, `离线模式已阻止外部请求：${url}`, BLOCKED_FIXTURE_CODE);
 }

@@ -200,14 +200,17 @@ function resetAll() {
 
         <div class="fixture-toolbar__field">
           <span class="fixture-toolbar__label">数量</span>
-          <div class="fixture-toolbar__segment" role="group" aria-label="数据量">
+          <!-- Mutually exclusive choice, so this is a radiogroup rather than a
+               set of aria-pressed toggles (see tests/ui/aria-pressed-coverage). -->
+          <div class="fixture-toolbar__segment" role="radiogroup" aria-label="数据量">
             <button
               v-for="name in FIXTURE_VOLUMES"
               :key="name"
               type="button"
+              role="radio"
               class="fixture-toolbar__segment-button"
               :class="{ 'is-active': state.volume === name }"
-              :aria-pressed="state.volume === name"
+              :aria-checked="state.volume === name"
               @click="applyVolume(name)"
             >
               {{ VOLUME_LABELS[name] }}
@@ -266,13 +269,19 @@ function resetAll() {
 .fixture-toolbar {
   position: fixed;
   left: var(--space-3);
-  bottom: calc(var(--space-3) + env(safe-area-inset-bottom, 0px));
+  /* Clears the bottom nav and any composer docked above it, so the toolbar
+     never covers the controls being tested. */
+  bottom: calc(var(--space-3) + 132px + env(safe-area-inset-bottom, 0px));
   /* Above every app surface, including sheets, so it stays usable. */
   z-index: calc(var(--z-toast) + 10);
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
   width: min(300px, calc(100vw - var(--space-3) * 2));
+  /* On short viewports the open panel would otherwise run off the top. */
+  max-height: calc(100vh - 180px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
   padding: var(--space-2);
   border-radius: var(--radius-card);
   border: 1px solid var(--glass-border);

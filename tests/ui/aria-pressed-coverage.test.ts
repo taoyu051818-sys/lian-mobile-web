@@ -100,6 +100,14 @@ const TOGGLE_BUTTON_WHITELIST: Array<{
     marker: /@click="emit\('filterChange', opt\.value\)"/,
   },
   {
+    // DEV-only fixture toolbar, stripped from production builds. Listed because
+    // the latency control is a genuine on/off toggle; the adjacent volume
+    // switcher is a radiogroup and correctly uses aria-checked instead.
+    file: "src/platform/ui-fixtures/dev/FixtureToolbar.vue",
+    description: "fixture toolbar latency toggle",
+    marker: /@click="toggleLatency"/,
+  },
+  {
     // Post #831 split — verification filter button moved out of AdminView.vue
     // into AdminVerificationBlock.vue. We anchor on the v-for source
     // (`verificationFilters`) because the @click handler text alone is

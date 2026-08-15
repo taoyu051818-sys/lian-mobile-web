@@ -5,7 +5,9 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const expected = Object.freeze({ node: 68, vitest: 181 });
+// vitest 181 -> 184: offline UI-fixture suites (transport isolation/fail-closed,
+// production stripping, commerce fixture contract).
+const expected = Object.freeze({ node: 68, vitest: 184 });
 
 async function countFiles(directory, suffix) {
   const entries = await readdir(directory, { withFileTypes: true });

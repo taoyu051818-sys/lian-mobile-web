@@ -101,6 +101,9 @@ describe("offline fixture transport", () => {
       "/api/me/stats",
       "/api/commerce/stores",
       "/api/errands/orders/mine",
+      // 消息 is a bottom-nav destination; an unmapped route here breaks the tab.
+      "/api/channel?limit=30",
+      "/api/messages?limit=30",
     ];
 
     for (const probe of probes) {
