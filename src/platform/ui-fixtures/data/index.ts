@@ -26,3 +26,12 @@ export function registerAllFixtures(): void {
   registerCommerceFixtures();
   registerErrandFixtures();
 }
+
+/**
+ * Drops the idempotence latch. Needed by tests that call `clearFixtureRoutes()`
+ * between cases, which would otherwise leave the latch set and the registry
+ * permanently empty.
+ */
+export function resetFixtureRegistration(): void {
+  registered = false;
+}

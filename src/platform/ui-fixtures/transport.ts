@@ -41,11 +41,21 @@ type FetchInit = Parameters<typeof fetch>[1];
 
 let originalFetch: typeof fetch | null = null;
 
+/** Single source of truth for "what counts as our own origin". */
+const FALLBACK_BASE = "http://localhost/";
+
+function resolveBase(): string {
+  return typeof window !== "undefined" && window.location
+    ? window.location.href
+    : FALLBACK_BASE;
+}
+
+function resolveBaseOrigin(): string {
+  return new URL(resolveBase()).origin;
+}
+
 function resolveUrl(input: FetchInput): URL {
-  const base =
-    typeof window !== "undefined" && window.location
-      ? window.location.href
-      : "http://localhost/";
+  const base = resolveBase();
   if (typeof input === "string") return new URL(input, base);
   if (input instanceof URL) return new URL(input.href);
   if (typeof Request !== "undefined" && input instanceof Request) {
@@ -62,9 +72,14 @@ function resolveMethod(input: FetchInput, init: FetchInit): string {
   return "GET";
 }
 
+/**
+ * Compared against the same base `resolveUrl()` uses, so external traffic is
+ * still blocked in non-browser contexts (tests, tooling). Returning `true`
+ * whenever `window` is absent would have punched a hole in the isolation
+ * guarantee exactly where it is hardest to notice.
+ */
 function isSameOrigin(url: URL): boolean {
-  if (typeof window === "undefined" || !window.location) return true;
-  return url.origin === window.location.origin;
+  return url.origin === resolveBaseOrigin();
 }
 
 async function resolveBody(input: FetchInput, init: FetchInit): Promise<unknown> {
@@ -248,8 +263,12 @@ export function installOfflineFixtureTransport(): boolean {
   if (typeof globalThis.fetch !== "function") return false;
   if (originalFetch) return true;
 
-  originalFetch = globalThis.fetch.bind(globalThis);
-  const passthrough = originalFetch;
+  // Keep the untouched reference so uninstall restores exactly what was there
+  // (binding here would hand back a different function than we replaced).
+  originalFetch = globalThis.fetch;
+  const target = originalFetch;
+  const passthrough = (input: FetchInput, init?: FetchInit) =>
+    target.call(globalThis, input as never, init as never);
 
   globalThis.fetch = async function offlineFixtureFetch(
     input: FetchInput,

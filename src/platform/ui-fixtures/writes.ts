@@ -23,6 +23,12 @@ interface WriteStore {
   cart: Map<string, { productId: string; skuId: string; quantity: number }>;
   settings: Record<string, unknown>;
   publishedPostIds: string[];
+  /**
+   * Channel messages sent during the session. Kept as opaque records because
+   * only the messages fixture family reads them back, and it owns the shape.
+   */
+  sentChannelMessages: Array<Record<string, unknown>>;
+  readNotificationIds: Set<string>;
   counter: number;
 }
 
@@ -37,6 +43,8 @@ function createStore(): WriteStore {
     cart: new Map(),
     settings: {},
     publishedPostIds: [],
+    sentChannelMessages: [],
+    readNotificationIds: new Set(),
     counter: 0,
   };
 }
@@ -69,6 +77,8 @@ function persist(): void {
         cart: [...store.cart],
         settings: store.settings,
         publishedPostIds: store.publishedPostIds,
+        sentChannelMessages: store.sentChannelMessages,
+        readNotificationIds: [...store.readNotificationIds],
         counter: store.counter,
       }),
     );
