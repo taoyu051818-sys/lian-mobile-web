@@ -144,6 +144,7 @@ Rules:
 - Contract tests are reserved for behavior the unit runtime cannot reproduce. The `#636` family is the exemplar: jsdom can't surface a Vue Teleport target race, so we lock the source-level shape (`tests/shell/detail-surface.contract.test.mjs`).
 - E2E specs target `nat100` / a real backend; do not stub the detail or feed APIs in E2E.
 - A bug fix without a regression test is unfinished. Add one.
+- For manual UI state review (loading / empty / error / long-copy / identity variants) without a backend, use the offline fixture preview — see [`ui-fixtures-preview.md`](./ui-fixtures-preview.md). It is DEV-only and fail-closed: an unmapped `/api/*` route returns 501 rather than reaching a real backend.
 
 ## 11. Verification
 

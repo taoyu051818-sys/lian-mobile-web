@@ -3,6 +3,9 @@ node_modules/
 
 # Build outputs
 dist/
+# Throwaway build dir used by the fixture production-stripping guard test;
+# ignored so a failed run cannot leave a bundle staged for commit.
+dist-fixture-guard/
 coverage/
 test-results/
 playwright-report/
