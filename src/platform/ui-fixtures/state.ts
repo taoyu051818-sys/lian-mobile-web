@@ -10,13 +10,11 @@
  */
 
 import type {
-  FixtureIdentity,
   FixtureRequestCounts,
   FixtureRequestLogEntry,
   FixtureRequestOutcome,
   FixtureRuntimeState,
   FixtureScenario,
-  FixtureVolume,
 } from "./types";
 import { isFixtureIdentity, isFixtureScenario, isFixtureVolume } from "./types";
 import { readDefaultIdentity, readDefaultScenario } from "./env";

@@ -15,7 +15,6 @@ import { getSettings, mergeSettings } from "../writes";
 import {
   area,
   countFor,
-  identityProfile,
   isMerchant,
   isPartial,
   itemCount,
