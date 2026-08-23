@@ -31,10 +31,16 @@ The deployable artifact is the output of `npm run build` (the Vite `dist/` direc
 | Manifest and icons        | `public/manifest.webmanifest`, `public/icons/*`          | When PWA installability is enabled                    |
 | Standalone tool assets    | `public/tools/*` and referenced same-origin static files | Internal tools shipped alongside the repo when needed |
 
-**CI artifact boundary** (`.github/workflows/frontend.yml`):
+**Current verification boundary** (`.github/workflows/frontend-verify.yml`):
 
 - `npm run verify` runs static guards, build, unit tests, and smoke in one step.
-- The workflow should archive the built artifact instead of rebuilding during deployment.
+- It is the authoritative automatic PR/main quality gate; deterministic browser journeys run in
+  the separate `.github/workflows/e2e-pr-gate.yml` workflow.
+
+**Prelaunch release gap:** `.github/workflows/frontend-auto-build.yml` is manual-only and still
+rebuilds on the target host. It is retained as a disabled-by-default development tool, not an
+accepted production release path. Before launch, a separate release task must make it download and
+deploy the reviewed CI artifact without installing or building on the target.
 
 **Deployment rule:** the target host receives the pre-built artifact. It must never run `npm install`, `npm run build`, or any build step at runtime.
 
@@ -283,7 +289,7 @@ Before deploying a new frontend release:
 
 - [ ] CI passed (`npm run verify`)
 - [ ] `E2E PR Gate` passed for PR-bound releases
-- [ ] Full `E2E Journey` is green from the latest scheduled run or a manual run for every journey group touched by a release that changes user flows, role permissions, publish/order state, messaging, profile/detail pages, or runtime API contracts
+- [ ] Full `E2E Journey` is green from an explicit manual run against the target commit and environment for every journey group touched by a release that changes user flows, role permissions, publish/order state, messaging, profile/detail pages, or runtime API contracts
 - [ ] Release manifest generated with git SHA, build time, Node/npm versions, and asset list
 - [ ] Previous release ID recorded as rollback target
 - [ ] Runtime config verified for the target environment
