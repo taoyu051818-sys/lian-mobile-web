@@ -2,8 +2,6 @@ name: Production Canary
 
 on:
   workflow_dispatch:
-  schedule:
-    - cron: "17 18 * * *"
 
 permissions:
   contents: read

@@ -1,12 +1,6 @@
-name: frontend auto build
+name: Frontend Release Build
 
 on:
-  pull_request:
-    branches:
-      - main
-  push:
-    branches:
-      - main
   workflow_dispatch:
 
 concurrency:
@@ -56,7 +50,7 @@ jobs:
   deploy-main:
     name: deploy main frontend
     needs: verify
-    if: (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref == 'refs/heads/main'
+    if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     environment: frontend-production
     steps:
