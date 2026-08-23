@@ -2,25 +2,27 @@
 
 Last verified: 2026-08-23
 
-Active control issue: [#1097](https://github.com/taoyu051818-sys/lian-mobile-web/issues/1097)
-for the Actor-backed cart MVP. Workflow governance issue
-[#1098](https://github.com/taoyu051818-sys/lian-mobile-web/issues/1098) is implemented by the
-CI-consolidation change that publishes this status.
+Active control issue: the frontend Actor/Cart implementation in
+[#1097](https://github.com/taoyu051818-sys/lian-mobile-web/issues/1097) is independently accepted
+by the change that publishes this status. Backend [#943](https://github.com/taoyu051818-sys/lian-platform-server/issues/943)
+and GDPlatform [#3](https://github.com/taoyu051818-sys/gdplatform-dev/issues/3) remain in the local
+cross-repository integration queue.
 
-Open release blockers: No release has been requested. The Actor/Cart vertical slice, its local
-provider path, and cross-repository verification must pass before any release proposal.
+Open release blockers: No release has been requested. The default-off Actor/Cart vertical slice
+must pass its isolated provider migration and cross-repository local verification before any
+release proposal.
 
 Current production release: None recorded. The project is not launched and all commerce exposure
 flags remain default-off.
 
 **Active execution queue:**
 
-- Frontend `#1097`: implement strict Actor initialization, SKU selection and cart read/set/delete
-  without adding quote, checkout, order or payment.
 - LIAN backend `#943`: make the local backend/test baseline self-contained without changing public
   contracts or authentication behavior.
 - GDPlatform `#3`: provide a production-closed local Actor/Cart policy seam and formal migration
   status/apply path while retaining signed assertions, exact scopes and idempotency.
+- Cross-repository local smoke: login, catalog, strict Actor initialization, cart read/set/delete,
+  cleanup and logout after the backend/provider changes are accepted.
 
 ## Accepted baseline
 
@@ -30,11 +32,13 @@ flags remain default-off.
   deterministic local E2E gate; deployment and online canary remain explicit manual actions.
   Vercel previews remain available, but root configuration disables automatic Production
   deployments from `main`.
-- Anonymous store and product discovery is implemented behind default-off frontend/backend/provider
-  flags. Actor and cart UI are not part of that accepted baseline.
-- On 2026-08-23 the unchanged full `npm run verify` command passed in the CI-consolidation worktree:
-  184 Vitest files / 4,957 tests, 68 Node files / 858 tests, sanitizer, production builds and three
-  loopback smoke checks.
+- Anonymous store/product discovery plus authenticated SKU selection and cart read/set/delete are
+  independently accepted behind default-off frontend/backend/provider flags. Quote, checkout,
+  order and payment remain outside the implemented slice.
+- On 2026-08-23 the full `npm run verify` command passed after the Actor/Cart implementation:
+  184 Vitest files / 4,986 tests, 68 Node files / 861 tests, sanitizer, production builds and three
+  loopback smoke checks. The dedicated cart browser journey and the cart-disabled compatibility
+  journeys also passed.
 - The local Playwright PR gate remains a separate automatic pull-request workflow. No production
   host, credential, feature flag or external service was changed by the active work.
 

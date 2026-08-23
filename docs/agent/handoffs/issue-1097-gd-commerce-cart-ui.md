@@ -4,8 +4,9 @@ Status: independently reviewed; accepted for integration; default off; not deplo
 
 ## Current source check
 
-- Frontend base: `643acae6a091d666e7ea6c206555690f9e46812e` on
-  `codex/commerce-cart-mvp`.
+- Original implementation base: `643acae6a091d666e7ea6c206555690f9e46812e`; the accepted change was
+  rebased onto frontend CI baseline `5db9c0f9b1be9c17a52027482fbad147e09277a4` on
+  `codex/commerce-cart-mvp` before integration.
 - Backend source checked: `5282945987604d7e12b4c60856b5318f6a430572` on
   `codex/prelaunch-backend-baseline`, including the current Actor/Cart OpenAPI documents and BFF
   handoffs.
@@ -118,8 +119,10 @@ git diff --check
 - `npm run check`: passed; only pre-existing warning-only asset, stale-doc, and ESLint findings were
   reported. The commerce product detail is below the repository's 300-line warning threshold.
 - `npm run build`: passed, 714 modules transformed.
-- Full `npm run verify`: passed with 184/184 Vitest files and 4,985/4,985 assertions, 68/68 Node
-  files and 861/861 assertions, sanitizer checks, two builds, and 3/3 preview smoke checks.
+- Full `npm run verify`: passed before rebase with 184/184 Vitest files and 4,985/4,985 assertions,
+  68/68 Node files and 861/861 assertions, sanitizer checks, two builds, and 3/3 preview smoke
+  checks. The accepted CI-baseline rebase adds one Vercel configuration assertion, bringing the
+  expected Vitest total to 4,986 without changing commerce behavior.
 - Cart Playwright journey: 1/1 passed. It covered available-default selection, exact 409-triggered
   Actor initialization, one set retry, cart read, absolute quantity set, delete, cold refresh,
   cookies, browser-generated Origin/Sec-Fetch-Site, CSRF, exact bodies, and five distinct UUIDv4
