@@ -1,14 +1,22 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   CommerceApiError,
+  decodeCommerceActorInitialize,
+  decodeCommerceCartResult,
   decodeCommerceProduct,
   decodeCommerceProductDetail,
   decodeCommerceProductList,
   decodeCommerceProductSummary,
+  deleteCommerceCartItem,
+  fetchCommerceActorInitialize,
+  fetchCommerceCart,
   fetchCommerceProductDetail,
   fetchCommerceStoreProducts,
+  setCommerceCartItem,
 } from "../../src/api/commerce";
 import { formatCommercePrice } from "../../src/features/commerce/product/formatCommercePrice";
+import { commerceRoutes } from "../../src/platform/ui-fixtures/data/commerce";
+import type { FixtureRequestContext } from "../../src/platform/ui-fixtures/types";
 
 const REQUEST_ID = "0f47a18d-3b6c-4c8a-9cf1-1a2b3c4d5e6f";
 
@@ -66,6 +74,48 @@ function detailEnvelope(productId = "10", overrides: Record<string, unknown> = {
   };
 }
 
+function cartItem(overrides: Record<string, unknown> = {}) {
+  return {
+    skuId: "1",
+    productId: "10",
+    storeId: "1",
+    productName: "校园帆布包",
+    skuName: "蓝色",
+    quantity: 1,
+    referenceUnitPrice: { currency: "CNY", amountMinor: 1200 },
+    availability: "available",
+    ...overrides,
+  };
+}
+
+function cartEnvelope(items: unknown[] = [cartItem()], overrides: Record<string, unknown> = {}) {
+  return {
+    data: { cart: { items } },
+    meta: { requestId: REQUEST_ID, schemaVersion: "1.0.0" },
+    ...overrides,
+  };
+}
+
+function actorEnvelope(overrides: Record<string, unknown> = {}) {
+  return {
+    data: { actor: { initialized: true } },
+    meta: { requestId: REQUEST_ID, schemaVersion: "1.0.0" },
+    ...overrides,
+  };
+}
+
+function strictErrorResponse(status: number, error: string, code: string) {
+  return new Response(JSON.stringify({ error, code, requestId: REQUEST_ID }), {
+    status,
+    headers: {
+      "Content-Type": "application/json; charset=utf-8",
+      "Cache-Control": "no-store",
+      "X-Request-Id": REQUEST_ID,
+      ...(status === 429 ? { "Retry-After": "30" } : {}),
+    },
+  });
+}
+
 function successResponse(
   body: unknown,
   options: { status?: number; headers?: Record<string, string> } = {},
@@ -85,6 +135,32 @@ function installFetch(response: Response | Promise<Response>) {
   const fetchMock = vi.fn().mockResolvedValue(response);
   vi.stubGlobal("fetch", fetchMock);
   return fetchMock;
+}
+
+async function runCommerceFixture(pattern: string, params: Record<string, string>) {
+  const route = commerceRoutes.find((candidate) => candidate.pattern === pattern);
+  if (!route) throw new Error(`missing commerce fixture ${pattern}`);
+  const context: FixtureRequestContext = {
+    method: "GET",
+    path: pattern,
+    route: pattern,
+    params,
+    query: new URLSearchParams(),
+    body: null,
+    state: {
+      scenario: "normal",
+      identity: "registered",
+      volume: "default",
+      latencyMs: 0,
+      errorOverride: null,
+    },
+    scenario: "normal",
+    identity: "registered",
+    volume: "default",
+  };
+  const result = await route.handler(context);
+  if (!(result instanceof Response)) throw new Error("commerce fixture did not return Response");
+  return result;
 }
 
 async function expectApiKind(promise: Promise<unknown>, kind: CommerceApiError["kind"]) {
@@ -500,4 +576,252 @@ describe("commerce integer-minor-unit price formatting", () => {
       expect(() => formatCommercePrice(minor)).toThrow(RangeError);
     },
   );
+});
+
+describe("commerce actor and cart strict contract", () => {
+  it("decodes only exact actor and ordered cart envelopes", () => {
+    expect(decodeCommerceActorInitialize(actorEnvelope(), REQUEST_ID).initialized).toBe(true);
+    expect(
+      decodeCommerceCartResult(
+        cartEnvelope([cartItem({ skuId: "1" }), cartItem({ skuId: "10", quantity: 99 })]),
+        REQUEST_ID,
+      ).cart.items,
+    ).toHaveLength(2);
+
+    for (const candidate of [
+      actorEnvelope({ data: { actor: { initialized: false } } }),
+      actorEnvelope({ data: { actor: { initialized: true, extra: true } } }),
+      cartEnvelope([cartItem({ extra: true })]),
+      cartEnvelope([cartItem({ skuId: "01" })]),
+      cartEnvelope([cartItem({ productName: "<img>" })]),
+      cartEnvelope([cartItem({ quantity: 0 })]),
+      cartEnvelope([cartItem({ quantity: 100, availability: "available" })]),
+      cartEnvelope([cartItem({ skuId: "10" }), cartItem({ skuId: "2" })]),
+      cartEnvelope([cartItem({ referenceUnitPrice: null, availability: "available" })]),
+    ]) {
+      expect(() =>
+        "actor" in ((candidate as { data: object }).data as object)
+          ? decodeCommerceActorInitialize(candidate, REQUEST_ID)
+          : decodeCommerceCartResult(candidate, REQUEST_ID),
+      ).toThrowError(CommerceApiError);
+    }
+  });
+
+  it("keeps cart reads header-light and emits exact dedicated write requests", async () => {
+    const keys = [
+      "11111111-1111-4111-8111-111111111111",
+      "22222222-2222-4222-8222-222222222222",
+      "33333333-3333-4333-8333-333333333333",
+    ];
+    vi.stubGlobal("crypto", { randomUUID: vi.fn().mockImplementation(() => keys.shift()) });
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(successResponse(cartEnvelope([])))
+      .mockResolvedValueOnce(successResponse(actorEnvelope()))
+      .mockResolvedValueOnce(successResponse(cartEnvelope()))
+      .mockResolvedValueOnce(successResponse(cartEnvelope([])));
+    vi.stubGlobal("fetch", fetchMock);
+    const signal = new AbortController().signal;
+
+    await fetchCommerceCart(signal);
+    await fetchCommerceActorInitialize(signal);
+    await setCommerceCartItem("1", 1, signal);
+    await deleteCommerceCartItem("1", signal);
+
+    expect(fetchMock.mock.calls[0]).toEqual([
+      "/api/commerce/cart",
+      {
+        method: "GET",
+        credentials: "same-origin",
+        cache: "no-store",
+        redirect: "error",
+        headers: { Accept: "application/json" },
+        signal,
+      },
+    ]);
+    expect(
+      fetchMock.mock.calls.slice(1).map(([url, init]) => [url, init.method, init.body]),
+    ).toEqual([
+      ["/api/commerce/actors/me", "PUT", "{}"],
+      ["/api/commerce/cart/items/1", "PUT", '{"quantity":1}'],
+      ["/api/commerce/cart/items/1", "DELETE", "{}"],
+    ]);
+    expect(fetchMock.mock.calls.slice(1).map(([, init]) => init.headers)).toEqual([
+      {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+        "Idempotency-Key": "11111111-1111-4111-8111-111111111111",
+        "X-LIAN-CSRF": "1",
+      },
+      {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+        "Idempotency-Key": "22222222-2222-4222-8222-222222222222",
+        "X-LIAN-CSRF": "1",
+      },
+      {
+        Accept: "application/json",
+        "Content-Type": "application/json",
+        "Idempotency-Key": "33333333-3333-4333-8333-333333333333",
+        "X-LIAN-CSRF": "1",
+      },
+    ]);
+    for (const [, init] of fetchMock.mock.calls.slice(1)) {
+      expect(init.credentials).toBe("same-origin");
+      expect(init.cache).toBe("no-store");
+      expect(init.redirect).toBe("error");
+      expect(init.signal).toBe(signal);
+      expect(init.headers).not.toHaveProperty("Origin");
+      expect(init.headers).not.toHaveProperty("Sec-Fetch-Site");
+    }
+  });
+
+  it("maps only exact correlated error envelopes to actor/login/item semantics", async () => {
+    const cases = [
+      [401, "Commerce login is required", "COMMERCE_LOGIN_REQUIRED", "login-required"],
+      [
+        409,
+        "Commerce actor initialization is required",
+        "COMMERCE_ACTOR_INITIALIZATION_REQUIRED",
+        "actor-initialization-required",
+      ],
+      [
+        409,
+        "Commerce cart item is unavailable",
+        "COMMERCE_CART_ITEM_UNAVAILABLE",
+        "item-unavailable",
+      ],
+      [
+        409,
+        "Commerce cart item limit was reached",
+        "COMMERCE_CART_LIMIT_EXCEEDED",
+        "cart-limit-exceeded",
+      ],
+      [429, "Commerce cart request rate is limited", "COMMERCE_CART_RATE_LIMITED", "rate-limited"],
+    ] as const;
+    for (const [status, error, code, kind] of cases) {
+      vi.stubGlobal("crypto", { randomUUID: () => "11111111-1111-4111-8111-111111111111" });
+      installFetch(strictErrorResponse(status, error, code));
+      await expectApiKind(setCommerceCartItem("1", 1, new AbortController().signal), kind);
+      vi.unstubAllGlobals();
+    }
+
+    vi.stubGlobal("crypto", { randomUUID: () => "11111111-1111-4111-8111-111111111111" });
+    installFetch(
+      new Response(
+        JSON.stringify({
+          error: "Commerce actor initialization is required",
+          code: "COMMERCE_ACTOR_INITIALIZATION_REQUIRED",
+          requestId: REQUEST_ID.replace(/.$/, "0"),
+        }),
+        {
+          status: 409,
+          headers: {
+            "Content-Type": "application/json",
+            "Cache-Control": "no-store",
+            "X-Request-Id": REQUEST_ID,
+          },
+        },
+      ),
+    );
+    await expectApiKind(setCommerceCartItem("1", 1, new AbortController().signal), "malformed");
+  });
+
+  it("validates cart input before generating an idempotency key or fetching", async () => {
+    const randomUUID = vi.fn();
+    const fetchMock = vi.fn();
+    vi.stubGlobal("crypto", { randomUUID });
+    vi.stubGlobal("fetch", fetchMock);
+    await expectApiKind(setCommerceCartItem("01", 1, new AbortController().signal), "malformed");
+    await expectApiKind(setCommerceCartItem("1", 0, new AbortController().signal), "malformed");
+    await expectApiKind(
+      deleteCommerceCartItem("2147483648", new AbortController().signal),
+      "malformed",
+    );
+    expect(randomUUID).not.toHaveBeenCalled();
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("correlates mutation success snapshots to the exact SKU and absolute quantity", async () => {
+    vi.stubGlobal("crypto", { randomUUID: () => "11111111-1111-4111-8111-111111111111" });
+    installFetch(successResponse(cartEnvelope([])));
+    await expectApiKind(setCommerceCartItem("1", 2, new AbortController().signal), "malformed");
+
+    installFetch(successResponse(cartEnvelope([cartItem({ skuId: "1", quantity: 1 })])));
+    await expectApiKind(setCommerceCartItem("1", 2, new AbortController().signal), "malformed");
+
+    installFetch(
+      successResponse(
+        cartEnvelope([
+          cartItem({
+            skuId: "1",
+            quantity: 2,
+            availability: "unavailable",
+            productName: null,
+            skuName: null,
+            referenceUnitPrice: null,
+          }),
+        ]),
+      ),
+    );
+    await expectApiKind(setCommerceCartItem("1", 2, new AbortController().signal), "malformed");
+
+    installFetch(successResponse(cartEnvelope([cartItem({ skuId: "1", quantity: 1 })])));
+    await expectApiKind(deleteCommerceCartItem("1", new AbortController().signal), "malformed");
+  });
+
+  it("rejects a path-impossible cart error even when its envelope is otherwise exact", async () => {
+    installFetch(
+      strictErrorResponse(
+        409,
+        "Commerce actor initialization is required",
+        "COMMERCE_ACTOR_INITIALIZATION_REQUIRED",
+      ),
+    );
+    await expectApiKind(fetchCommerceCart(new AbortController().signal), "malformed");
+  });
+});
+
+describe("commerce fixture global product and SKU identity", () => {
+  it("keeps store product ranges disjoint and detail ownership reversible", async () => {
+    const firstStoreResponse = await runCommerceFixture("/api/commerce/stores/:storeId/products", {
+      storeId: "1",
+    });
+    const secondStoreResponse = await runCommerceFixture("/api/commerce/stores/:storeId/products", {
+      storeId: "2",
+    });
+    const firstStore = decodeCommerceProductList(
+      await firstStoreResponse.json(),
+      firstStoreResponse.headers.get("x-request-id") ?? "",
+      "1",
+    );
+    const secondStore = decodeCommerceProductList(
+      await secondStoreResponse.json(),
+      secondStoreResponse.headers.get("x-request-id") ?? "",
+      "2",
+    );
+    expect(firstStore.items.map((item) => item.id)).toEqual(["1", "2", "3", "4", "5", "6"]);
+    expect(secondStore.items.map((item) => item.id)).toEqual(["19", "20", "21", "22", "23", "24"]);
+
+    const firstDetailResponse = await runCommerceFixture("/api/commerce/products/:productId", {
+      productId: "1",
+    });
+    const secondDetailResponse = await runCommerceFixture("/api/commerce/products/:productId", {
+      productId: "19",
+    });
+    const firstDetail = decodeCommerceProductDetail(
+      await firstDetailResponse.json(),
+      firstDetailResponse.headers.get("x-request-id") ?? "",
+      "1",
+    );
+    const secondDetail = decodeCommerceProductDetail(
+      await secondDetailResponse.json(),
+      secondDetailResponse.headers.get("x-request-id") ?? "",
+      "19",
+    );
+    expect(firstDetail.product.storeId).toBe("1");
+    expect(secondDetail.product.storeId).toBe("2");
+    expect(firstDetail.product.skus.map((item) => item.id)).toEqual(["1", "2"]);
+    expect(secondDetail.product.skus.map((item) => item.id)).toEqual(["73", "74"]);
+  });
 });

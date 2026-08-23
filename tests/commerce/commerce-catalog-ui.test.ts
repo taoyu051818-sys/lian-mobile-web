@@ -35,12 +35,20 @@ const STORE_CARD = "src/features/commerce/catalog/CommerceStoreCard.vue";
 const FIXTURE_HOOK = "src/features/commerce/dev/useCommerceStoreUiFixture.ts";
 const FIXTURE_DATA = "src/features/commerce/__fixtures__/commerce-store-fixtures.ts";
 const COMMERCE_VIEW = "src/features/commerce/CommerceView.vue";
+const PRODUCT_DETAIL = "src/features/commerce/product/CommerceProductDetailPage.vue";
+const PRODUCT_CART_CONTROLS = "src/features/commerce/product/CommerceProductCartControls.vue";
+const CART_PAGE = "src/features/commerce/cart/CommerceCartPage.vue";
+const CART_OWNER = "src/features/commerce/useCommerceCart.ts";
 
 const listPage = read(LIST_PAGE);
 const storeCard = read(STORE_CARD);
 const fixtureHook = read(FIXTURE_HOOK);
 const fixtureData = read(FIXTURE_DATA);
 const commerceView = read(COMMERCE_VIEW);
+const productDetail = read(PRODUCT_DETAIL);
+const productCartControls = read(PRODUCT_CART_CONTROLS);
+const cartPage = read(CART_PAGE);
+const cartOwner = read(CART_OWNER);
 
 describe("commerce catalog UI: read-path contract", () => {
   it("keeps the presentational prop shape the parent view passes down", () => {
@@ -285,5 +293,60 @@ describe("commerce catalog UI: development fixture behavior", () => {
       logoAssetRef: null,
       recommended: true,
     });
+  });
+});
+
+describe("commerce cart MVP UI contract", () => {
+  it("keeps requests in one instance-scoped owner and disposes both mounted consumers", () => {
+    expect(cartPage).toContain("const cart = useCommerceCart()");
+    expect(productCartControls).toContain("const cart = useCommerceCart()");
+    expect(cartPage).not.toContain("fetch(");
+    expect(productDetail).not.toContain("fetch(");
+    expect(cartPage).toContain("onBeforeUnmount(cart.dispose)");
+    expect(productCartControls).toContain("onBeforeUnmount(cart.dispose)");
+    expect(cartOwner).toContain("const items = ref<CommerceCartItem[]>([])");
+    expect(cartOwner).not.toMatch(/\b(?:provide|inject|createStore|localStorage|sessionStorage)\b/);
+  });
+
+  it("selects the available default deterministically and sends an absolute quantity of one", () => {
+    expect(productCartControls).toContain('sku.default && sku.availability === "available"');
+    expect(productCartControls).toContain('sku.availability === "available"');
+    expect(productCartControls).toContain(":disabled=\"sku.availability === 'unavailable'\"");
+    expect(productCartControls).toContain("cart.setQuantity(selectedSkuId.value, 1)");
+    expect(productCartControls).toContain("item.skuId === selectedSkuId.value");
+    expect(productCartControls).toContain("item.quantity === 1");
+    expect(productCartControls).toContain('item.availability === "available"');
+    expect(productCartControls).toContain('data-testid="commerce-add-to-cart"');
+    expect(productCartControls).toContain('data-testid="commerce-add-success"');
+    expect(productDetail).toContain("<CommerceProductCartControls");
+  });
+
+  it("renders closed, loading, empty, login, unavailable, error, and authoritative item states", () => {
+    for (const testid of [
+      "commerce-cart-page",
+      "commerce-cart-closed",
+      "commerce-cart-loading",
+      "commerce-cart-empty",
+      "commerce-cart-login",
+      "commerce-cart-error",
+      "commerce-cart-items",
+    ]) {
+      expect(cartPage).toContain(`data-testid="${testid}"`);
+    }
+    expect(cartPage).toContain("item.availability === 'unavailable'");
+    expect(cartPage).toContain("item.availability === 'unavailable' && item.quantity > 99");
+    expect(cartPage).toContain('data-testid="commerce-cart-normalize-quantity"');
+    expect(cartPage).toContain("cart.setQuantity(item.skuId, 99)");
+    expect(cartPage).toContain("cart.setQuantity(item.skuId, item.quantity - 1)");
+    expect(cartPage).toContain("cart.setQuantity(item.skuId, item.quantity + 1)");
+    expect(cartPage).toContain("cart.deleteItem(item.skuId)");
+  });
+
+  it("owns an exact cart route and keeps visible copy in the brand module", () => {
+    expect(commerceView).toContain("<CommerceCartPage v-else-if=\"route?.name === 'cart'\"");
+    for (const source of [productDetail, productCartControls, cartPage]) {
+      const template = source.slice(source.indexOf("<template"), source.indexOf("<style"));
+      expect(template).not.toMatch(/[\u4e00-\u9fff]/);
+    }
   });
 });

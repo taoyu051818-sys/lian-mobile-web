@@ -1,7 +1,8 @@
 export type CommerceRoute =
   | { name: "catalog" }
   | { name: "store"; storeId: string }
-  | { name: "product"; productId: string };
+  | { name: "product"; productId: string }
+  | { name: "cart" };
 
 const STORE_DETAIL_PREFIX = "#/commerce/stores/";
 const PRODUCT_DETAIL_PREFIX = "#/commerce/products/";
@@ -21,9 +22,10 @@ export function isCanonicalCommerceStoreId(value: unknown): value is string {
 
 export const isCanonicalCommerceProductId = isCanonicalCommerceStoreId;
 
-/** Parse only the three exact raw hash shapes owned by the commerce slice. */
+/** Parse only the four exact raw hash shapes owned by the commerce slice. */
 export function parseCommerceRoute(hash: string | null | undefined): CommerceRoute | null {
   if (hash === "#/commerce") return { name: "catalog" };
+  if (hash === "#/commerce/cart") return { name: "cart" };
   if (typeof hash !== "string") return null;
   if (hash.startsWith(STORE_DETAIL_PREFIX)) {
     const storeId = hash.slice(STORE_DETAIL_PREFIX.length);
@@ -38,6 +40,10 @@ export function parseCommerceRoute(hash: string | null | undefined): CommerceRou
 
 export function buildCommerceCatalogHash(): "#/commerce" {
   return "#/commerce";
+}
+
+export function buildCommerceCartHash(): "#/commerce/cart" {
+  return "#/commerce/cart";
 }
 
 export function buildCommerceStoreHash(storeId: string): string {

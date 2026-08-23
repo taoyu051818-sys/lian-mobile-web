@@ -1,6 +1,11 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { CommerceApiError } from "../../src/api/commerce";
 import {
+  isCommerceCartVisible,
+  useCommerceCart,
+  type CommerceCartTransport,
+} from "../../src/features/commerce/useCommerceCart";
+import {
   isCommerceProductVisible,
   useCommerceProductRead,
   type CommerceProductReadTransport,
@@ -14,6 +19,8 @@ import type {
   CommerceProductDetailResult,
   CommerceProductListResult,
   CommerceProductSummary,
+  CommerceActorInitializeResult,
+  CommerceCartResult,
 } from "../../src/types/commerce";
 
 const REQUEST_ID = "0f47a18d-3b6c-4c8a-9cf1-1a2b3c4d5e6f";
@@ -67,6 +74,42 @@ function detailResult(id = "1", storeId = "1"): CommerceProductDetailResult {
   };
 }
 
+function cartResult(skuId = "1", quantity = 1): CommerceCartResult {
+  return {
+    cart: {
+      items: [
+        {
+          skuId,
+          productId: "1",
+          storeId: "1",
+          productName: "商品 1",
+          skuName: "规格 1",
+          quantity,
+          referenceUnitPrice: { currency: "CNY", amountMinor: 100 },
+          availability: "available",
+        },
+      ],
+    },
+    meta: { requestId: REQUEST_ID, schemaVersion: "1.0.0" },
+  };
+}
+
+function cartTransport(overrides: Partial<CommerceCartTransport> = {}): CommerceCartTransport {
+  const initialized: CommerceActorInitializeResult = {
+    initialized: true,
+    meta: { requestId: REQUEST_ID, schemaVersion: "1.0.0" },
+  };
+  return {
+    read: vi.fn().mockResolvedValue({ ...cartResult(), cart: { items: [] } }),
+    initializeActor: vi.fn().mockResolvedValue(initialized),
+    set: vi
+      .fn()
+      .mockImplementation(async (skuId: string, quantity: number) => cartResult(skuId, quantity)),
+    delete: vi.fn().mockResolvedValue({ ...cartResult(), cart: { items: [] } }),
+    ...overrides,
+  };
+}
+
 interface Deferred<T> {
   promise: Promise<T>;
   resolve(value: T): void;
@@ -112,6 +155,21 @@ describe("commerce product visibility", () => {
     vi.stubEnv("VITE_COMMERCE_CATALOG_VISIBLE", catalog);
     vi.stubEnv("VITE_COMMERCE_PRODUCT_VISIBLE", productFlag);
     expect(isCommerceProductVisible()).toBe(expected);
+  });
+});
+
+describe("commerce cart visibility", () => {
+  it.each([
+    ["true", "true", "true", true],
+    ["true", "true", "false", false],
+    ["true", "false", "true", false],
+    ["false", "true", "true", false],
+    ["true", "true", "TRUE", false],
+  ] as const)("requires catalog=%s product=%s cart=%s", (catalog, productFlag, cart, expected) => {
+    vi.stubEnv("VITE_COMMERCE_CATALOG_VISIBLE", catalog);
+    vi.stubEnv("VITE_COMMERCE_PRODUCT_VISIBLE", productFlag);
+    vi.stubEnv("VITE_COMMERCE_CART_VISIBLE", cart);
+    expect(isCommerceCartVisible()).toBe(expected);
   });
 });
 
@@ -353,5 +411,181 @@ describe("commerce product read-state ownership", () => {
     expect(reader.items.value).toEqual([]);
     expect(reader.page.value).toBeNull();
     expect(reader.product.value).toBeNull();
+  });
+});
+
+describe("commerce cart instance ownership", () => {
+  it("reads an authoritative empty cart without initializing an actor", async () => {
+    const port = cartTransport();
+    const cart = useCommerceCart(port, { visible: () => true });
+
+    await cart.read();
+
+    expect(cart.status.value).toBe("empty");
+    expect(cart.items.value).toEqual([]);
+    expect(port.read).toHaveBeenCalledTimes(1);
+    expect(port.initializeActor).not.toHaveBeenCalled();
+  });
+
+  it("initializes exactly once only for the correlated PUT precondition and retries PUT once", async () => {
+    const calls: string[] = [];
+    const port = cartTransport({
+      set: vi
+        .fn()
+        .mockImplementationOnce(async () => {
+          calls.push("set:first");
+          throw new CommerceApiError("actor-initialization-required", "contract precondition", 409);
+        })
+        .mockImplementationOnce(async (skuId: string, quantity: number) => {
+          calls.push("set:retry");
+          return cartResult(skuId, quantity);
+        }),
+      initializeActor: vi.fn().mockImplementation(async () => {
+        calls.push("actor");
+        return {
+          initialized: true,
+          meta: { requestId: REQUEST_ID, schemaVersion: "1.0.0" },
+        };
+      }),
+    });
+    const cart = useCommerceCart(port, { visible: () => true });
+
+    await cart.setQuantity("1", 2);
+
+    expect(calls).toEqual(["set:first", "actor", "set:retry"]);
+    expect(cart.status.value).toBe("ready");
+    expect(cart.items.value[0]?.quantity).toBe(2);
+    expect(port.set).toHaveBeenCalledTimes(2);
+    expect(port.initializeActor).toHaveBeenCalledTimes(1);
+  });
+
+  it("can repair an unavailable legacy quantity with one authoritative absolute set", async () => {
+    const legacy = cartResult("1", 150);
+    legacy.cart.items[0] = {
+      ...legacy.cart.items[0]!,
+      productName: null,
+      skuName: null,
+      referenceUnitPrice: null,
+      availability: "unavailable",
+    };
+    const port = cartTransport({
+      read: vi.fn().mockResolvedValue(legacy),
+      set: vi
+        .fn()
+        .mockImplementation(async (skuId: string, quantity: number) => cartResult(skuId, quantity)),
+    });
+    const cart = useCommerceCart(port, { visible: () => true });
+
+    await cart.read();
+    expect(cart.items.value[0]).toMatchObject({ quantity: 150, availability: "unavailable" });
+
+    await cart.setQuantity("1", 99);
+
+    expect(port.set).toHaveBeenCalledWith("1", 99, expect.any(AbortSignal));
+    expect(cart.items.value[0]).toMatchObject({ quantity: 99, availability: "available" });
+    expect(cart.status.value).toBe("ready");
+  });
+
+  it.each(["login-required", "item-unavailable", "cart-limit-exceeded", "malformed"] as const)(
+    "never initializes on %s",
+    async (kind) => {
+      const port = cartTransport({
+        set: vi.fn().mockRejectedValue(new CommerceApiError(kind, "secret transport prose", 409)),
+      });
+      const cart = useCommerceCart(port, { visible: () => true });
+
+      await cart.setQuantity("1", 2);
+
+      expect(port.initializeActor).not.toHaveBeenCalled();
+      expect(cart.items.value).toEqual([]);
+      expect(cart.status.value).toBe(
+        kind === "login-required"
+          ? "login-required"
+          : kind === "item-unavailable"
+            ? "item-unavailable"
+            : "error",
+      );
+    },
+  );
+
+  it("makes a superseding mutation abort and permanently stale the prior response", async () => {
+    const first = deferred<CommerceCartResult>();
+    const signals: AbortSignal[] = [];
+    const port = cartTransport({
+      set: vi
+        .fn()
+        .mockImplementationOnce((_skuId: string, _quantity: number, signal: AbortSignal) => {
+          signals.push(signal);
+          return first.promise;
+        })
+        .mockImplementationOnce(async (skuId: string, quantity: number, signal: AbortSignal) => {
+          signals.push(signal);
+          return cartResult(skuId, quantity);
+        }),
+    });
+    const cart = useCommerceCart(port, { visible: () => true });
+
+    const firstSet = cart.setQuantity("1", 2);
+    await cart.setQuantity("1", 3);
+    expect(signals[0]?.aborted).toBe(true);
+    first.resolve(cartResult("1", 2));
+    await firstSet;
+
+    expect(cart.items.value[0]?.quantity).toBe(3);
+    expect(cart.activeTarget.value).toEqual({ name: "set", skuId: "1", quantity: 3 });
+  });
+
+  it("uses one timeout across set, actor initialization, and its single retry", async () => {
+    vi.useFakeTimers();
+    const signals: AbortSignal[] = [];
+    const port = cartTransport({
+      set: vi
+        .fn()
+        .mockRejectedValueOnce(
+          new CommerceApiError("actor-initialization-required", "precondition", 409),
+        ),
+      initializeActor: vi.fn().mockImplementation((_signal: AbortSignal) => {
+        signals.push(_signal);
+        return new Promise<CommerceActorInitializeResult>((_resolve, reject) => {
+          _signal.addEventListener(
+            "abort",
+            () => reject(new CommerceApiError("aborted", "aborted")),
+            { once: true },
+          );
+        });
+      }),
+    });
+    const cart = useCommerceCart(port, { visible: () => true, timeoutMs: 10 });
+
+    const update = cart.setQuantity("1", 2);
+    await vi.advanceTimersByTimeAsync(10);
+    await update;
+
+    expect(signals[0]?.aborted).toBe(true);
+    expect(cart.status.value).toBe("error");
+    expect(cart.errorKind.value).toBe("timeout");
+    expect(port.set).toHaveBeenCalledTimes(1);
+  });
+
+  it("clears account-scoped DTOs and stales settlement on dispose", async () => {
+    const pending = deferred<CommerceCartResult>();
+    const signals: AbortSignal[] = [];
+    const port = cartTransport({
+      read: vi.fn().mockImplementation((signal: AbortSignal) => {
+        signals.push(signal);
+        return pending.promise;
+      }),
+    });
+    const cart = useCommerceCart(port, { visible: () => true });
+
+    const load = cart.read();
+    cart.dispose();
+    expect(signals[0]?.aborted).toBe(true);
+    pending.resolve(cartResult("1", 2));
+    await load;
+
+    expect(cart.status.value).toBe("idle");
+    expect(cart.items.value).toEqual([]);
+    expect(cart.activeTarget.value).toBeNull();
   });
 });

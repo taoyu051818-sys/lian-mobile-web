@@ -21,7 +21,8 @@ import { pick, ratingFor, seededCount, sentenceFor, storeNameFor, summaryFor } f
 const SCHEMA_VERSION = "1.0.0";
 const DEFAULT_PAGE_SIZE = 20;
 const FAMILY = "commerce";
-const MAX_PRODUCT_ID = 18;
+const MAX_PRODUCTS_PER_STORE = 18;
+const MAX_SKUS_PER_PRODUCT = 4;
 
 const AREA_LABELS = [
   "北苑食堂一层",
@@ -76,12 +77,12 @@ function skuAmountMinor(index: number, skuIndex: number): number {
  * ids strictly ascending and unique, exactly one `default: true`, and at least
  * one `availability: "available"`.
  */
-function buildSkus(index: number, scenario: FixtureScenario) {
+function buildSkus(productOrdinal: number, scenario: FixtureScenario) {
   const count = scenario === "long-copy" ? 4 : scenario === "partial-data" ? 3 : 2;
   return Array.from({ length: count }, (_, skuIndex) => ({
-    id: canonicalId(skuIndex),
+    id: String(productOrdinal * MAX_SKUS_PER_PRODUCT + skuIndex + 1),
     name: scenario === "long-copy" ? sentenceFor(skuIndex + 2, 20) : sentenceFor(skuIndex + 2, 6),
-    price: { currency: "CNY" as const, amountMinor: skuAmountMinor(index, skuIndex) },
+    price: { currency: "CNY" as const, amountMinor: skuAmountMinor(productOrdinal, skuIndex) },
     // Only non-first skus may be unavailable, guaranteeing an available one.
     availability:
       scenario === "partial-data" && skuIndex === count - 1
@@ -97,20 +98,21 @@ function buildSkus(index: number, scenario: FixtureScenario) {
  * from the available skus so the decoder's min/max cross-check passes.
  */
 function buildProductSummary(storeIndex: number, index: number, scenario: FixtureScenario) {
-  const skus = buildSkus(index, scenario);
+  const productOrdinal = storeIndex * MAX_PRODUCTS_PER_STORE + index;
+  const skus = buildSkus(productOrdinal, scenario);
   const availableAmounts = skus
     .filter((sku) => sku.availability === "available")
     .map((sku) => sku.price.amountMinor);
   const partial = scenario === "partial-data" && index % 2 === 0;
 
   return {
-    id: canonicalId(index),
+    id: canonicalId(productOrdinal),
     storeId: canonicalId(storeIndex),
     name:
       scenario === "long-copy"
-        ? `${sentenceFor(index, 40)}（加量装 · 校园限定 · 支持到店自提）`.slice(0, 128)
-        : sentenceFor(index, 18),
-    subtitle: partial ? "" : summaryFor(index + 3, scenario === "long-copy" ? 150 : 48),
+        ? `${sentenceFor(productOrdinal, 40)}（加量装 · 校园限定 · 支持到店自提）`.slice(0, 128)
+        : sentenceFor(productOrdinal, 18),
+    subtitle: partial ? "" : summaryFor(productOrdinal + 3, scenario === "long-copy" ? 150 : 48),
     coverAssetRef: null,
     priceRange: {
       currency: "CNY" as const,
@@ -118,9 +120,9 @@ function buildProductSummary(storeIndex: number, index: number, scenario: Fixtur
       maxAmountMinor: Math.max(...availableAmounts),
     },
     availability: "available" as const,
-    rating: partial ? "0" : ratingFor(index, 3),
-    salesCount: scenario === "long-copy" ? 987_654 : seededCount(index + 3, 12, 3_600),
-    recommended: index % 3 === 0,
+    rating: partial ? "0" : ratingFor(productOrdinal, 3),
+    salesCount: scenario === "long-copy" ? 987_654 : seededCount(productOrdinal + 3, 12, 3_600),
+    recommended: productOrdinal % 3 === 0,
   };
 }
 
@@ -133,7 +135,7 @@ function storeCount(scenario: FixtureScenario, volume: FixtureVolume): number {
 
 function productCount(scenario: FixtureScenario, volume: FixtureVolume): number {
   if (scenario === "empty") return 0;
-  if (scenario === "many-items") return volume === "dense" ? MAX_PRODUCT_ID : 14;
+  if (scenario === "many-items") return volume === "dense" ? MAX_PRODUCTS_PER_STORE : 14;
   if (scenario === "long-copy") return 3;
   return volume === "sparse" ? 2 : 6;
 }
@@ -217,16 +219,26 @@ export const commerceRoutes: FixtureRoute[] = [
     family: FAMILY,
     method: "GET",
     pattern: "/api/commerce/products/:productId",
-    handler: ({ scenario, params }: FixtureRequestContext) => {
+    handler: ({ scenario, volume, params }: FixtureRequestContext) => {
       const raw = params.productId ?? "";
-      const index = Number(raw) - 1;
-      if (!Number.isInteger(index) || index < 0 || index >= MAX_PRODUCT_ID) {
+      const productOrdinal = Number(raw) - 1;
+      const storeIndex = Math.floor(productOrdinal / MAX_PRODUCTS_PER_STORE);
+      const productIndex = productOrdinal % MAX_PRODUCTS_PER_STORE;
+      const acceptedStoreCount = scenario === "empty" ? 1 : storeCount(scenario, volume);
+      const acceptedProductCount =
+        scenario === "empty" ? MAX_PRODUCTS_PER_STORE : productCount(scenario, volume);
+      if (
+        !Number.isInteger(productOrdinal) ||
+        productOrdinal < 0 ||
+        storeIndex >= acceptedStoreCount ||
+        productIndex >= acceptedProductCount
+      ) {
         return fixtureNotFound("商品不存在或已下架");
       }
       // Detail = summary keys + `skus`, and nothing else.
       const product = {
-        ...buildProductSummary(0, index, scenario),
-        skus: buildSkus(index, scenario),
+        ...buildProductSummary(storeIndex, productIndex, scenario),
+        skus: buildSkus(productOrdinal, scenario),
       };
       return fixtureStrictJson(
         (requestId) => ({

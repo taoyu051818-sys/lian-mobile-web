@@ -98,3 +98,33 @@ export interface CommerceProductDetailResult {
   product: CommerceProduct;
   meta: CommerceResponseMeta;
 }
+
+export interface CommerceActorInitializeResult {
+  initialized: true;
+  meta: CommerceResponseMeta;
+}
+
+export interface CommerceCartReferenceUnitPrice {
+  currency: "CNY";
+  amountMinor: number;
+}
+
+export interface CommerceCartItem {
+  skuId: string;
+  productId: string;
+  storeId: string;
+  productName: string | null;
+  skuName: string | null;
+  quantity: number;
+  referenceUnitPrice: CommerceCartReferenceUnitPrice | null;
+  availability: "available" | "unavailable";
+}
+
+export interface CommerceCart {
+  items: CommerceCartItem[];
+}
+
+export interface CommerceCartResult {
+  cart: CommerceCart;
+  meta: CommerceResponseMeta;
+}

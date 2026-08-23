@@ -5,6 +5,7 @@ interface ImportMetaEnv {
   readonly VITE_ADMIN_VISIBLE?: string;
   readonly VITE_COMMERCE_CATALOG_VISIBLE?: string;
   readonly VITE_COMMERCE_PRODUCT_VISIBLE?: string;
+  readonly VITE_COMMERCE_CART_VISIBLE?: string;
   /** Development-only UI fixture switch; ignored by production builds. */
   readonly VITE_UI_FIXTURES?: string;
   readonly VITE_UI_FIXTURE_SCENARIO?: string;
