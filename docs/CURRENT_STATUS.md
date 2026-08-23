@@ -3,8 +3,9 @@
 Last verified: 2026-08-23
 
 Active control issue: [#1097](https://github.com/taoyu051818-sys/lian-mobile-web/issues/1097)
-for the Actor-backed cart MVP. Workflow governance is tracked separately in
-[#1098](https://github.com/taoyu051818-sys/lian-mobile-web/issues/1098).
+for the Actor-backed cart MVP. Workflow governance issue
+[#1098](https://github.com/taoyu051818-sys/lian-mobile-web/issues/1098) is implemented by the
+CI-consolidation change that publishes this status.
 
 Open release blockers: No release has been requested. The Actor/Cart vertical slice, its local
 provider path, and cross-repository verification must pass before any release proposal.
@@ -16,8 +17,6 @@ flags remain default-off.
 
 - Frontend `#1097`: implement strict Actor initialization, SKU selection and cart read/set/delete
   without adding quote, checkout, order or payment.
-- Frontend `#1098`: retain one authoritative full PR verification workflow and the deterministic
-  local E2E gate; keep deployment and online canary available as explicit manual actions.
 - LIAN backend `#943`: make the local backend/test baseline self-contained without changing public
   contracts or authentication behavior.
 - GDPlatform `#3`: provide a production-closed local Actor/Cart policy seam and formal migration
@@ -25,8 +24,10 @@ flags remain default-off.
 
 ## Accepted baseline
 
-- `origin/main` at `643acae` contains the accepted offline commerce fixtures and restored frontend
-  CI from PR `#1096`.
+- The implementation base `643acae` contains the accepted offline commerce fixtures and restored
+  frontend CI from PR `#1096`.
+- The CI-consolidation change retains one authoritative full PR verification workflow and the
+  deterministic local E2E gate; deployment and online canary remain explicit manual actions.
 - Anonymous store and product discovery is implemented behind default-off frontend/backend/provider
   flags. Actor and cart UI are not part of that accepted baseline.
 - On 2026-08-23 the unchanged full `npm run verify` command passed in the CI-consolidation worktree:
