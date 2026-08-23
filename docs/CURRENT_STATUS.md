@@ -28,6 +28,8 @@ flags remain default-off.
   frontend CI from PR `#1096`.
 - The CI-consolidation change retains one authoritative full PR verification workflow and the
   deterministic local E2E gate; deployment and online canary remain explicit manual actions.
+  Vercel previews remain available, but root configuration disables automatic Production
+  deployments from `main`.
 - Anonymous store and product discovery is implemented behind default-off frontend/backend/provider
   flags. Actor and cart UI are not part of that accepted baseline.
 - On 2026-08-23 the unchanged full `npm run verify` command passed in the CI-consolidation worktree:

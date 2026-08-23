@@ -21,6 +21,8 @@ This task changes workflow orchestration only. It must not reduce the assertions
 - The existing local Playwright PR gate remains enabled and unchanged in coverage.
 - The main-branch deployment workflow remains available, but runs only through an explicit manual
   dispatch and only for `main`.
+- Vercel keeps preview deployments for review branches but must not automatically create a
+  Production deployment from `main`.
 - The online production journey remains available, but loses its unattended schedule and runs only
   through an explicit manual dispatch.
 - Legacy duplicate verification workflow(s) may be removed when their checks are fully covered by
@@ -36,6 +38,11 @@ Allowed workflow files:
 - `.github/workflows/frontend.yml`
 - `.github/workflows/frontend-auto-build.yml`
 - `.github/workflows/e2e-journey.yml`
+
+Allowed deployment/test files:
+
+- `vercel.json`
+- `tests/config/pwa-routing.test.ts`
 
 Allowed documentation files:
 
@@ -53,6 +60,7 @@ settings and every other file are forbidden unless this task is amended first.
 - workflow YAML parses successfully;
 - event/condition inspection proves one PR full-verify path, preserved local E2E, manual-only
   deployment and manual-only online canary;
+- Vercel configuration and its focused contract test prove `main` auto-deployment is disabled;
 - `npm run verify` passes unchanged;
 - `git diff --check` passes;
 - a handoff records the retained coverage and deferred release automation.

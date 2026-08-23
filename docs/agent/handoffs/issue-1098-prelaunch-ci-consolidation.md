@@ -18,6 +18,8 @@ normal development path:
 - `Frontend Release Build` is manual-dispatch only and deploys only when explicitly dispatched from
   `main` into the existing protected production environment;
 - `Production Canary` remains available read-only, but its unattended daily schedule is removed.
+- root `vercel.json` retains review-branch previews while disabling automatic deployments from
+  `main`, closing the external Git-integration path that previously produced Production deploys.
 
 No application source, test assertion, package script, dependency, feature flag, branch-protection
 setting, credential or external environment changed.
@@ -29,6 +31,7 @@ production artifact path; fixing that release implementation remains a separate 
 ## Validation
 
 - all workflow YAML files parsed successfully;
+- `vercel.json` parsed and its focused contract test pins `git.deploymentEnabled.main=false`;
 - static event inspection found one PR `npm run verify` path, the existing PR E2E path, no scheduled
   production canary and no push-triggered deployment;
 - unchanged `npm run verify` passed: 184 Vitest files / 4,957 tests, 68 Node files / 858 tests,

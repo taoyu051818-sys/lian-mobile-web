@@ -35,6 +35,10 @@ script.
 Before launch, `frontend-auto-build.yml` and `e2e-journey.yml` are explicit manual release tools.
 They are not scheduled and do not run on a pull request or main push.
 
+Vercel review-branch previews remain enabled, while root `vercel.json` disables automatic
+deployments from `main`. A Production deployment therefore requires a separate explicit release
+action rather than following from a merge.
+
 ## Port contract
 
 - Vite preview uses port `4173` by default (configurable via `--port`).

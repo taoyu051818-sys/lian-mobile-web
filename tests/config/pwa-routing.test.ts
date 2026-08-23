@@ -4,6 +4,9 @@ import type { RouteMatchCallbackOptions } from "workbox-core/types";
 import { pwaImageRouteMatch, pwaNavigationRouteMatch } from "../../vite.config";
 
 const viteConfigSource = readFileSync(new URL("../../vite.config.ts", import.meta.url), "utf8");
+const vercelConfig = JSON.parse(
+  readFileSync(new URL("../../vercel.json", import.meta.url), "utf8"),
+) as unknown;
 
 function routeCandidate(
   href: string,
@@ -106,5 +109,18 @@ describe("PWA runtime route matching", () => {
         }),
       ),
     ).toBe(false);
+  });
+});
+
+describe("prelaunch deployment routing", () => {
+  it("keeps Vercel previews available without auto-deploying main to Production", () => {
+    expect(vercelConfig).toEqual({
+      $schema: "https://openapi.vercel.sh/vercel.json",
+      git: {
+        deploymentEnabled: {
+          main: false,
+        },
+      },
+    });
   });
 });
