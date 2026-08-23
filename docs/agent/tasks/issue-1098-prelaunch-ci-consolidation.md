@@ -42,6 +42,8 @@ Allowed documentation files:
 - `docs/agent/tasks/issue-1098-prelaunch-ci-consolidation.md`
 - `docs/agent/handoffs/issue-1098-prelaunch-ci-consolidation.md`
 - `docs/CURRENT_STATUS.md`
+- `docs/ops/frontend-verification-runtime.md`
+- `docs/frontend/release-runbook.md`
 
 Application code, test code, package scripts, dependencies, build configuration, branch-protection
 settings and every other file are forbidden unless this task is amended first.

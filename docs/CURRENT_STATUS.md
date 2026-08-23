@@ -33,8 +33,8 @@ flags remain default-off.
 - On 2026-08-23 the unchanged full `npm run verify` command passed in the CI-consolidation worktree:
   184 Vitest files / 4,957 tests, 68 Node files / 858 tests, sanitizer, production builds and three
   loopback smoke checks.
-- The local Playwright PR gate remains a separate required workflow. No production host, credential,
-  feature flag or external service was changed by the active work.
+- The local Playwright PR gate remains a separate automatic pull-request workflow. No production
+  host, credential, feature flag or external service was changed by the active work.
 
 ## Coordination rule
 

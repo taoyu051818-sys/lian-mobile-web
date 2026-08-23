@@ -31,10 +31,16 @@ The deployable artifact is the output of `npm run build` (the Vite `dist/` direc
 | Manifest and icons        | `public/manifest.webmanifest`, `public/icons/*`          | When PWA installability is enabled                    |
 | Standalone tool assets    | `public/tools/*` and referenced same-origin static files | Internal tools shipped alongside the repo when needed |
 
-**CI artifact boundary** (`.github/workflows/frontend.yml`):
+**Current verification boundary** (`.github/workflows/frontend-verify.yml`):
 
 - `npm run verify` runs static guards, build, unit tests, and smoke in one step.
-- The workflow should archive the built artifact instead of rebuilding during deployment.
+- It is the authoritative automatic PR/main quality gate; deterministic browser journeys run in
+  the separate `.github/workflows/e2e-pr-gate.yml` workflow.
+
+**Prelaunch release gap:** `.github/workflows/frontend-auto-build.yml` is manual-only and still
+rebuilds on the target host. It is retained as a disabled-by-default development tool, not an
+accepted production release path. Before launch, a separate release task must make it download and
+deploy the reviewed CI artifact without installing or building on the target.
 
 **Deployment rule:** the target host receives the pre-built artifact. It must never run `npm install`, `npm run build`, or any build step at runtime.
 

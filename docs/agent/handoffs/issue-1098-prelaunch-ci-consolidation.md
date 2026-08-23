@@ -22,6 +22,10 @@ normal development path:
 No application source, test assertion, package script, dependency, feature flag, branch-protection
 setting, credential or external environment changed.
 
+The live verification and release docs now point at the retained workflows. The runbook also
+records that the manual prelaunch deploy still rebuilds remotely and is therefore not an accepted
+production artifact path; fixing that release implementation remains a separate prelaunch task.
+
 ## Validation
 
 - all workflow YAML files parsed successfully;

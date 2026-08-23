@@ -27,7 +27,13 @@ The legacy static runtime was removed in PR #282. The legacy smoke script `scrip
 
 ## CI workflow contract
 
-The `Frontend Validation` workflow (`frontend.yml`) calls `npm run verify` as a single step.
+The `Frontend Verify` workflow (`frontend-verify.yml`) is the sole normal pull-request/main-push
+workflow that calls `npm run verify`. Deterministic browser journeys remain a separate automatic
+pull-request workflow in `e2e-pr-gate.yml`; they complement rather than duplicate the verification
+script.
+
+Before launch, `frontend-auto-build.yml` and `e2e-journey.yml` are explicit manual release tools.
+They are not scheduled and do not run on a pull request or main push.
 
 ## Port contract
 
