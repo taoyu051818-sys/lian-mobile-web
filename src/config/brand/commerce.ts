@@ -65,3 +65,33 @@ export const COMMERCE_PRODUCT_SKU_DEFAULT = "默认规格";
 export const COMMERCE_PRODUCT_DISCOVERY_NOTICE =
   "页面中的价格与可售状态仅供浏览，不代表报价、库存预留或准确库存承诺。";
 export const COMMERCE_BACK_TO_STORE = "返回店铺";
+
+export const COMMERCE_CART_HEADING = "购物车";
+export const COMMERCE_CART_OPEN = "查看购物车";
+export const COMMERCE_CART_BACK = "继续浏览商城";
+export const COMMERCE_CART_LOADING = "正在加载购物车…";
+export const COMMERCE_CART_EMPTY_TITLE = "购物车还是空的";
+export const COMMERCE_CART_EMPTY_HINT = "选择商品规格后，可以按绝对数量加入购物车。";
+export const COMMERCE_CART_LOGIN_TITLE = "请先登录";
+export const COMMERCE_CART_LOGIN_HINT = "登录后才能保存和查看你的购物车。";
+export const COMMERCE_CART_LOGIN_CTA = "去登录";
+export const COMMERCE_CART_ERROR_TITLE = "购物车暂时不可用";
+export const COMMERCE_CART_ERROR_HINT = "没有改动页面中的数量，可以稍后重试。";
+export const COMMERCE_CART_ITEM_UNAVAILABLE_TITLE = "这个规格暂时不可售";
+export const COMMERCE_CART_ITEM_UNAVAILABLE_HINT = "购物车没有采用本次改动，请重新选择规格。";
+export const COMMERCE_CART_LIMIT_TITLE = "购物车数量已达上限";
+export const COMMERCE_CART_CONFLICT_TITLE = "这次修改没有生效";
+export const COMMERCE_CART_RETRY = "重试";
+export const COMMERCE_CART_REMOVE = "移除";
+export const COMMERCE_CART_DECREASE = "减少一件";
+export const COMMERCE_CART_INCREASE = "增加一件";
+export const COMMERCE_CART_NORMALIZE_QUANTITY = "调整为 99 件";
+export const COMMERCE_CART_QUANTITY = "数量";
+export const COMMERCE_CART_REFERENCE_PRICE = "参考单价";
+export const COMMERCE_CART_UNAVAILABLE = "暂不可售，可以移除";
+export const COMMERCE_CART_NAME_FALLBACK = "商品信息暂不可用";
+export const COMMERCE_CART_SKU_FALLBACK = "规格信息暂不可用";
+
+export const COMMERCE_PRODUCT_ADD_TO_CART = "加入购物车（数量 1）";
+export const COMMERCE_PRODUCT_ADDING_TO_CART = "正在加入…";
+export const COMMERCE_PRODUCT_ADDED_TO_CART = "已按数量 1 加入购物车。";

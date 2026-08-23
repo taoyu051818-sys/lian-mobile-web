@@ -105,7 +105,7 @@ export function useCommerceStoreRead(
       status.value = "not-found";
       return;
     }
-    if (route.name === "product") {
+    if (route.name === "product" || route.name === "cart") {
       status.value = "not-found";
       return;
     }

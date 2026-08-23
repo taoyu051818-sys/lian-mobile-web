@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  buildCommerceCartHash,
   buildCommerceCatalogHash,
   buildCommerceProductHash,
   buildCommerceStoreHash,
@@ -27,6 +28,9 @@ describe("commerce raw-hash route contract", () => {
       expect(parseDeepLink(hash)).toEqual({ view: "commerce" });
     }
     expect(parseDeepLink("#/commerce")).toEqual({ view: "commerce" });
+    expect(buildCommerceCartHash()).toBe("#/commerce/cart");
+    expect(parseCommerceRoute(buildCommerceCartHash())).toEqual({ name: "cart" });
+    expect(parseDeepLink(buildCommerceCartHash())).toEqual({ view: "commerce" });
   });
 
   it("keeps identifiers string-valued and enforces the exact GD INT range", () => {
@@ -46,6 +50,8 @@ describe("commerce raw-hash route contract", () => {
     "#",
     "#/commerce/",
     "#/commerce?x=1",
+    "#/commerce/cart/",
+    "#/commerce/cart?x=1",
     " /commerce",
     "/commerce",
     "#/commerce/stores/",

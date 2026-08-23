@@ -11,6 +11,7 @@ import {
 import type { PageChromeSpec } from "../../shell/page-model";
 import { EmptyState } from "../../ui";
 import CommerceStoreListPage from "./catalog/CommerceStoreListPage.vue";
+import CommerceCartPage from "./cart/CommerceCartPage.vue";
 import { useCommerceStoreUiFixture } from "./dev/useCommerceStoreUiFixture";
 import CommerceProductDetailPage from "./product/CommerceProductDetailPage.vue";
 import CommerceStoreDetailPage from "./store/CommerceStoreDetailPage.vue";
@@ -74,6 +75,8 @@ onBeforeUnmount(() => {
 <template>
   <section class="commerce-view" :aria-label="COMMERCE_SECTION_LABEL">
     <CommerceProductDetailPage v-if="route?.name === 'product'" :product-id="route.productId" />
+
+    <CommerceCartPage v-else-if="route?.name === 'cart'" />
 
     <EmptyState
       v-else-if="reader.status.value === 'closed'"

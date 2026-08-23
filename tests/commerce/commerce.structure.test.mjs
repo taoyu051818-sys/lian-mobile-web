@@ -18,13 +18,16 @@ function commerceRuntimeSource() {
     "src/features/commerce/CommerceView.vue",
     "src/features/commerce/useCommerceStoreRead.ts",
     "src/features/commerce/useCommerceProductRead.ts",
+    "src/features/commerce/useCommerceCart.ts",
     "src/features/commerce/catalog/CommerceStoreListPage.vue",
     "src/features/commerce/catalog/CommerceStoreCard.vue",
     "src/features/commerce/store/CommerceStoreDetailPage.vue",
     "src/features/commerce/product/CommerceStoreProductsSection.vue",
     "src/features/commerce/product/CommerceProductCard.vue",
     "src/features/commerce/product/CommerceProductDetailPage.vue",
+    "src/features/commerce/product/CommerceProductCartControls.vue",
     "src/features/commerce/product/formatCommercePrice.ts",
+    "src/features/commerce/cart/CommerceCartPage.vue",
     "src/types/commerce.ts",
   ];
   return files.map((file) => read(file)).join("\n");
@@ -85,6 +88,42 @@ test("product visibility is a second default-off gate and cannot open without th
   assert.match(owner, /VITE_COMMERCE_CATALOG_VISIBLE === "true"/);
   assert.match(owner, /VITE_COMMERCE_PRODUCT_VISIBLE === "true"/);
   assert.match(owner, /&&/);
+});
+
+test("cart visibility is a third default-off gate and cannot open without discovery", () => {
+  const owner = read("src/features/commerce/useCommerceCart.ts");
+  const env = read(".env.example");
+  const envTypes = read("src/vite-env.d.ts");
+  assert.match(env, /^VITE_COMMERCE_CART_VISIBLE=false$/m);
+  assert.match(envTypes, /readonly VITE_COMMERCE_CART_VISIBLE\?: string/);
+  assert.match(owner, /VITE_COMMERCE_CATALOG_VISIBLE === "true"/);
+  assert.match(owner, /VITE_COMMERCE_PRODUCT_VISIBLE === "true"/);
+  assert.match(owner, /VITE_COMMERCE_CART_VISIBLE === "true"/);
+});
+
+test("cart writes are dedicated literal same-origin requests with browser-owned provenance headers", () => {
+  const api = read("src/api/commerce.ts");
+  assert.match(api, /"\/api\/commerce\/actors\/me"/);
+  assert.match(api, /"\/api\/commerce\/cart"/);
+  assert.match(api, /`\/api\/commerce\/cart\/items\/\$\{skuId\}`/);
+  assert.match(api, /"Content-Type"\] = "application\/json"/);
+  assert.match(api, /"X-LIAN-CSRF"\] = "1"/);
+  assert.match(api, /"Idempotency-Key"\] = createCommerceIdempotencyKey\(\)/);
+  assert.match(api, /globalThis\.crypto\.randomUUID\(\)/);
+  assert.doesNotMatch(api, /headers\[["'](?:Origin|Sec-Fetch-Site)["']\]/);
+  assert.doesNotMatch(api, /Math\.random/);
+});
+
+test("cart owner retains one abort-generation boundary and only initializes for the exact condition", () => {
+  const owner = read("src/features/commerce/useCommerceCart.ts");
+  assert.match(owner, /const DEFAULT_TIMEOUT_MS = 12_000/);
+  assert.match(owner, /activeController\?\.abort\(\)/);
+  assert.match(owner, /generation\.value \+= 1/);
+  assert.match(owner, /generation\.value === requestGeneration/);
+  assert.match(owner, /error\.kind !== "actor-initialization-required"/);
+  assert.match(owner, /await transport\.initializeActor\(controller\.signal\)/);
+  assert.match(owner, /result = await transport\.set\(target\.skuId, target\.quantity/);
+  assert.match(owner, /items\.value = \[\]/);
 });
 
 test("success adoption is exact, correlated, no-store, and schema pinned", () => {

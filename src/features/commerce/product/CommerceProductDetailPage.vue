@@ -5,12 +5,14 @@ import * as brand from "../../../config/brand";
 import type { CommerceProductSku } from "../../../types/commerce";
 import { EmptyState, InlineError } from "../../../ui";
 import { useCommerceProductRead } from "../useCommerceProductRead";
+import { isCommerceCartVisible } from "../useCommerceCart";
+import CommerceProductCartControls from "./CommerceProductCartControls.vue";
 import { formatCommercePrice } from "./formatCommercePrice";
 
 const props = defineProps<{ productId: string }>();
 const reader = useCommerceProductRead();
 const catalogHref = buildCommerceCatalogHash();
-
+const cartVisible = isCommerceCartVisible();
 const backHref = computed(() =>
   reader.status.value === "ready" && reader.product.value
     ? buildCommerceStoreHash(reader.product.value.storeId)
@@ -38,21 +40,17 @@ const errorCopy = computed(() => {
   }
   return { title: brand.COMMERCE_PRODUCT_ERROR_TITLE, hint: brand.COMMERCE_PRODUCT_ERROR_HINT };
 });
-
 function displayRating(value: string) {
   return value === "0" ? brand.COMMERCE_RATING_EMPTY : value;
 }
-
 function skuName(sku: CommerceProductSku) {
   return sku.name || brand.COMMERCE_PRODUCT_SKU_NAME_FALLBACK;
 }
-
 function skuAvailability(sku: CommerceProductSku) {
   return sku.availability === "available"
     ? brand.COMMERCE_PRODUCT_SKU_AVAILABLE
     : brand.COMMERCE_PRODUCT_SKU_UNAVAILABLE;
 }
-
 watch(
   () => props.productId,
   (productId) => {
@@ -69,7 +67,6 @@ onBeforeUnmount(reader.dispose);
     <a class="commerce-product-detail__back" :href="backHref">
       {{ reader.product.value ? brand.COMMERCE_BACK_TO_STORE : brand.COMMERCE_BACK_TO_CATALOG }}
     </a>
-
     <EmptyState
       v-if="reader.status.value === 'closed'"
       class="commerce-product-detail__state"
@@ -77,14 +74,12 @@ onBeforeUnmount(reader.dispose);
       :description="brand.COMMERCE_PRODUCT_CLOSED_HINT"
       data-testid="commerce-product-closed"
     />
-
     <EmptyState
       v-else-if="reader.status.value === 'loading'"
       class="commerce-product-detail__state"
       :description="brand.COMMERCE_PRODUCT_LOADING"
       data-testid="commerce-product-loading"
     />
-
     <EmptyState
       v-else-if="reader.status.value === 'not-found' || reader.status.value === 'empty'"
       class="commerce-product-detail__state"
@@ -92,7 +87,6 @@ onBeforeUnmount(reader.dispose);
       :description="brand.COMMERCE_PRODUCT_NOT_FOUND_HINT"
       data-testid="commerce-product-not-found"
     />
-
     <InlineError
       v-else-if="reader.status.value === 'error'"
       class="commerce-product-detail__error"
@@ -143,6 +137,7 @@ onBeforeUnmount(reader.dispose);
       <p class="commerce-product-detail__notice">{{ brand.COMMERCE_PRODUCT_DISCOVERY_NOTICE }}</p>
 
       <section
+        v-if="!cartVisible"
         class="commerce-product-detail__skus"
         :aria-label="brand.COMMERCE_PRODUCT_SKU_HEADING"
       >
@@ -160,6 +155,8 @@ onBeforeUnmount(reader.dispose);
           </li>
         </ul>
       </section>
+
+      <CommerceProductCartControls v-if="cartVisible" :skus="reader.product.value.skus" />
     </article>
   </div>
 </template>
