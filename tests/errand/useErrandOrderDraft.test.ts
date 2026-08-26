@@ -94,6 +94,44 @@ describe("useErrandOrderDraft — pickup hint seeding (#609 PR2)", () => {
   });
 });
 
+describe("useErrandOrderDraft — stable dropoff place", () => {
+  it("adopts a catalog place and clears stale identity after a manual edit", () => {
+    const ctx = useErrandOrderDraft(123, "海大食堂");
+    const contract = ctx as typeof ctx & {
+      setDropoffPlace?: (place: {
+        id: string;
+        name: string;
+        lat: number;
+        lng: number;
+        place?: { id: string; name: string };
+      }) => void;
+    };
+
+    expect(typeof contract.setDropoffPlace).toBe("function");
+    contract.setDropoffPlace?.({
+      id: "location-safe-building",
+      name: "明德楼大厅",
+      lat: 18.401,
+      lng: 110.022,
+      place: { id: "place-safe-building", name: "明德楼大厅" },
+    });
+    expect(ctx.draft.value.dropoffLocation).toEqual({
+      placeId: "place-safe-building",
+      label: "明德楼大厅",
+      lat: 18.401,
+      lng: 110.022,
+    });
+
+    ctx.setDropoff("明德楼 901（手填）");
+    expect(ctx.draft.value.dropoffLocation).toEqual({
+      placeId: "",
+      label: "明德楼 901（手填）",
+      lat: null,
+      lng: null,
+    });
+  });
+});
+
 describe("useErrandOrderDraft — gate evaluation (#609 PR2)", () => {
   it("anonymous user collapses to not_logged_in without bubbling wallet/eligibility 401s", async () => {
     mockAuthMe.mockResolvedValue(null);

@@ -8,6 +8,7 @@
  */
 import { computed, ref } from "vue";
 import { fetchErrandOrderEligibility, createErrandOrder } from "../../api/errands";
+import { fetchMapV2Items } from "../../api/map";
 import { fetchAuthMe, fetchProfileWallet } from "../../api/profile";
 import { extractErrorMessage } from "../../utils/extractErrorMessage";
 import {
@@ -24,6 +25,7 @@ import type {
   ErrandOrderGateReason,
   ErrandOrderRequest,
 } from "../../types/errand";
+import type { MapLocation } from "../../types/map";
 import type { PostLocation } from "../../types/post";
 import { gateReasonFallback } from "./errand-format";
 
@@ -64,6 +66,47 @@ function deriveLocalGate(
     return { reason: "insufficient_balance", ok: false };
   }
   return { reason: "", ok: true };
+}
+
+export function errandDropoffPlaceLabel(location: MapLocation): string {
+  return (location.place?.name || location.name || "").trim();
+}
+
+function hasUsableDropoffPlace(location: MapLocation) {
+  const label = errandDropoffPlaceLabel(location);
+  const placeId = (location.place?.id || location.placeId || location.id || "").trim();
+  return Boolean(
+    label && placeId && Number.isFinite(location.lat) && Number.isFinite(location.lng),
+  );
+}
+
+export function useErrandDropoffPlaces() {
+  const loading = ref(false);
+  const loaded = ref(false);
+  const locations = ref<MapLocation[]>([]);
+
+  const selectableLocations = computed(() => locations.value.filter(hasUsableDropoffPlace));
+
+  async function loadPlaces() {
+    loading.value = true;
+    try {
+      const data = await fetchMapV2Items();
+      locations.value = Array.isArray(data.locations) ? data.locations : [];
+    } catch {
+      locations.value = [];
+    } finally {
+      loaded.value = true;
+      loading.value = false;
+    }
+  }
+
+  return {
+    loading,
+    loaded,
+    locations,
+    selectableLocations,
+    loadPlaces,
+  };
 }
 
 export function useErrandOrderDraft(initialMerchantPostId: number, initialPickupHint = "") {
@@ -205,6 +248,19 @@ export function useErrandOrderDraft(initialMerchantPostId: number, initialPickup
     };
   }
 
+  function setDropoffPlace(place: MapLocation) {
+    const label = (place.place?.name || place.name || "").trim();
+    const placeId = (place.place?.id || place.placeId || place.id || "").trim();
+    const lat = Number.isFinite(place.lat) ? place.lat : null;
+    const lng = Number.isFinite(place.lng) ? place.lng : null;
+    draft.value.dropoffLocation = {
+      placeId,
+      label,
+      lat,
+      lng,
+    };
+  }
+
   function validate(): string {
     if (!draft.value.merchantPostId) return ERRAND_ORDER_VALIDATE_MERCHANT;
     if (!draft.value.pickupLocation || !draft.value.pickupLocation.label.trim()) {
@@ -291,6 +347,7 @@ export function useErrandOrderDraft(initialMerchantPostId: number, initialPickup
     setNotes,
     setPickup,
     setDropoff,
+    setDropoffPlace,
     submit,
     reset,
   };

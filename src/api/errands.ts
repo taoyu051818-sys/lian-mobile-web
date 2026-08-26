@@ -117,10 +117,12 @@ function normalizeErrandOrder(value: unknown): ErrandOrder | null {
   const record = asRecord(value);
   const orderId = asString(record.orderId);
   if (!orderId) return null;
+  const status = asEnum(record.status ?? record.state, ERRAND_STATUSES) || "unknown";
   const pickup = normalizePostLocation(record.pickupLocation);
   const dropoff = normalizePostLocation(record.dropoffLocation);
-  if (!pickup || !dropoff) return null;
-  const status = asEnum(record.status, ERRAND_STATUSES) || "unknown";
+  const isPrivacySafeTerminal =
+    (status === "completed" || status === "cancelled") && !pickup && !dropoff;
+  if ((!pickup || !dropoff) && !isPrivacySafeTerminal) return null;
   const mode = asEnum(record.mode, ERRAND_MODES) || "dedicated";
   const merchantPostIdRaw = asNumber(record.merchantPostId, Number.NaN);
   const merchantPostId = Number.isFinite(merchantPostIdRaw)
@@ -131,18 +133,25 @@ function normalizeErrandOrder(value: unknown): ErrandOrder | null {
   const etaSeconds =
     Number.isFinite(etaSecondsRaw) && etaSecondsRaw > 0 ? etaSecondsRaw : undefined;
   const runnerLocation = normalizeRunnerLocation(record.runnerLocation);
+  const requesterUserId = asString(record.requesterUserId ?? record.creatorUserId);
+  const title = asString(record.title);
+  const createdAt = asString(record.createdAt);
+  const state = asEnum(record.state, ERRAND_STATUSES);
   return {
     orderId,
-    requesterUserId: asString(record.requesterUserId),
+    ...(requesterUserId ? { requesterUserId } : {}),
     ...(runnerUserId ? { runnerUserId } : {}),
     ...(merchantPostId !== undefined ? { merchantPostId } : {}),
-    pickupLocation: pickup,
-    dropoffLocation: dropoff,
+    ...(pickup ? { pickupLocation: pickup } : {}),
+    ...(dropoff ? { dropoffLocation: dropoff } : {}),
+    ...(title ? { title } : {}),
+    ...(state ? { state } : {}),
     mode,
     status,
     feePoints: asNonNegInt(record.feePoints ?? record.feeAmount),
     rewardPoints: asNonNegInt(record.rewardPoints ?? record.rewardAmount),
     totalLockedPoints: asNonNegInt(record.totalLockedPoints ?? record.lockedBalanceAmount),
+    ...(createdAt ? { createdAt } : {}),
     ...(etaSeconds !== undefined ? { etaSeconds } : {}),
     ...(runnerLocation ? { runnerLocation } : {}),
   };
@@ -176,10 +185,14 @@ export function normalizeErrandOrderDetail(value: unknown): ErrandOrderDetail | 
   const timeline = rawTimeline
     .map((entry) => normalizeTimelineEvent(entry))
     .filter((entry): entry is ErrandOrderTimelineEvent => entry !== null);
-  // Backend usually ships `created` first; if the timeline is empty, synthesize
-  // a single entry from the order record so the detail view always renders at
-  // least one row.
-  if (!timeline.length) {
+  const privacySafeTerminal =
+    (order.status === "completed" || order.status === "cancelled") &&
+    !order.pickupLocation &&
+    !order.dropoffLocation;
+  // Backend usually ships `created` first; if a full participant timeline is
+  // empty, synthesize a single entry. The exact-safe terminal runner
+  // projection intentionally ships no timeline, so preserve that omission.
+  if (!timeline.length && !privacySafeTerminal) {
     timeline.push({
       status: order.status,
       at: asString(record.createdAt) || asString(orderRecord.createdAt),
@@ -264,6 +277,18 @@ export async function cancelErrandOrder(orderId: string): Promise<ErrandOrderDet
   // Backend may return a `{ ok: true }` shape without echoing the order;
   // fall back to a re-fetch so the timeline view re-renders with the
   // cancelled state.
+  return fetchErrandOrder(orderId);
+}
+
+export async function completeErrandOrder(orderId: string): Promise<ErrandOrderDetail | null> {
+  const data = await apiSend<unknown>(
+    `/api/errands/orders/${encodeURIComponent(orderId)}/complete`,
+    {
+      method: "POST",
+    },
+  );
+  const detail = normalizeErrandOrderDetail(data);
+  if (detail) return detail;
   return fetchErrandOrder(orderId);
 }
 

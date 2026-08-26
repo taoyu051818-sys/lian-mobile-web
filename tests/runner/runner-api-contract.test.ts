@@ -23,12 +23,17 @@ vi.mock("../../src/api/http", () => ({
 }));
 
 import {
+  fetchActiveRunnerOrders,
   fetchAvailableRunnerOrders,
   markRunnerOrderAtShop,
   markRunnerOrderPickedUp,
 } from "../../src/api/runner";
 import { RUNNER_POINTS_SUFFIX } from "../../src/config/brand";
 import RunnerOrderCard from "../../src/features/runner/RunnerOrderCard.vue";
+import {
+  TERMINAL_RUNNER_SAFE_MINE_WIRE,
+  TERMINAL_RUNNER_SAFE_ORDER_KEYS,
+} from "../errand/fixtures/errand-wire-fixtures";
 
 describe("runner API contract", () => {
   beforeEach(() => {
@@ -106,6 +111,50 @@ describe("runner API contract", () => {
       totalLockedPoints: 7,
     });
   });
+
+  it("accepts the privacy-minimal pool allowlist without inventing locations or notes", async () => {
+    apiGetMock.mockResolvedValue({
+      items: [
+        {
+          orderId: "privacy-safe",
+          merchantPostId: 99,
+          state: "paid_locked",
+          status: "paid_locked",
+          title: "公开商家标题",
+          mode: "dedicated",
+          feePoints: 2,
+          rewardPoints: 5,
+          totalLockedPoints: 7,
+          createdAt: "2026-08-24T00:00:00.000Z",
+        },
+      ],
+    });
+
+    const result = await fetchAvailableRunnerOrders();
+    expect(result.items).toEqual([
+      expect.objectContaining({ id: "privacy-safe", status: "available", title: "公开商家标题" }),
+    ]);
+    expect(result.items[0]).not.toHaveProperty("pickup");
+    expect(result.items[0]).not.toHaveProperty("dropoff");
+    expect(result.items[0]).not.toHaveProperty("note");
+  });
+
+  it("preserves real completed/cancelled safe history from runner mine without falling back to available", async () => {
+    apiGetMock.mockResolvedValue(TERMINAL_RUNNER_SAFE_MINE_WIRE);
+
+    const result = await fetchActiveRunnerOrders();
+
+    expect(result.items.map((item) => item.status)).toEqual(["completed", "cancelled"]);
+    for (const item of result.items) {
+      expect(item.status).not.toBe("available");
+      expect(item).not.toHaveProperty("pickup");
+      expect(item).not.toHaveProperty("dropoff");
+      expect(item).not.toHaveProperty("note");
+    }
+    expect(Object.keys(TERMINAL_RUNNER_SAFE_MINE_WIRE.items[0]).sort()).toEqual([
+      ...TERMINAL_RUNNER_SAFE_ORDER_KEYS,
+    ]);
+  });
 });
 
 describe("runner reward rendering", () => {
@@ -127,5 +176,39 @@ describe("runner reward rendering", () => {
     expect(html).toContain(`125 ${RUNNER_POINTS_SUFFIX}`);
     expect(html).not.toContain("¥");
     expect(html).not.toContain("1.25");
+  });
+
+  it("renders completed/cancelled history with terminal labels and no accept action", async () => {
+    const completedHtml = await renderToString(
+      createSSRApp({
+        render: () =>
+          h(RunnerOrderCard, {
+            order: {
+              id: "history-completed",
+              status: "completed",
+              title: "已结算跑腿",
+              rewardPoints: 5,
+            },
+          }),
+      }),
+    );
+    const cancelledHtml = await renderToString(
+      createSSRApp({
+        render: () =>
+          h(RunnerOrderCard, {
+            order: {
+              id: "history-cancelled",
+              status: "cancelled",
+              title: "已取消跑腿",
+              rewardPoints: 5,
+            },
+          }),
+      }),
+    );
+
+    expect(completedHtml).toContain("已完成");
+    expect(completedHtml).not.toContain("runner-action-accept-history-completed");
+    expect(cancelledHtml).toContain("已取消");
+    expect(cancelledHtml).not.toContain("runner-action-accept-history-cancelled");
   });
 });

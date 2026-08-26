@@ -6,6 +6,8 @@
  * reuse in other contexts (e.g., order cards, summaries).
  */
 import {
+  ERRAND_ORDER_DETAIL_LABEL,
+  ERRAND_ORDER_DETAIL_STATUS_LABEL,
   ERRAND_ORDER_DETAIL_NOTES_LABEL,
   ERRAND_ORDER_DROPOFF_TITLE,
   ERRAND_ORDER_FEE_LABEL,
@@ -13,7 +15,7 @@ import {
   ERRAND_ORDER_PICKUP_TITLE,
   ERRAND_ORDER_POINTS_SUFFIX,
 } from "../../config/brand";
-import { modeLabel } from "./errand-format";
+import { modeLabel, statusLabel } from "./errand-format";
 import type { ErrandOrder } from "../../types/errand";
 
 defineProps<{
@@ -24,11 +26,19 @@ defineProps<{
 
 <template>
   <dl class="errand-order-meta" data-testid="errand-order-meta">
+    <div v-if="order.title" class="errand-order-meta__row">
+      <dt>{{ ERRAND_ORDER_DETAIL_LABEL }}</dt>
+      <dd>{{ order.title }}</dd>
+    </div>
     <div class="errand-order-meta__row">
+      <dt>{{ ERRAND_ORDER_DETAIL_STATUS_LABEL }}</dt>
+      <dd>{{ statusLabel(order.status) }}</dd>
+    </div>
+    <div v-if="order.pickupLocation" class="errand-order-meta__row">
       <dt>{{ ERRAND_ORDER_PICKUP_TITLE }}</dt>
       <dd data-testid="errand-order-meta-pickup">{{ order.pickupLocation.label }}</dd>
     </div>
-    <div class="errand-order-meta__row">
+    <div v-if="order.dropoffLocation" class="errand-order-meta__row">
       <dt>{{ ERRAND_ORDER_DROPOFF_TITLE }}</dt>
       <dd data-testid="errand-order-meta-dropoff">{{ order.dropoffLocation.label }}</dd>
     </div>

@@ -313,22 +313,48 @@ test("issue #609 PR2: ErrandOrderView wires the route hint into the draft", () =
   assert.match(src, /resetDraft\(next,\s*route\.pickupHint\.value/);
 });
 
-test("issue #609 PR2: ErrandOrderView surfaces the V0.2 dropoff picker hint", () => {
-  // The brief explicitly allows V0.1 to ship without a click-to-place picker
-  // (the existing MapLeafletView is read-only). The form must label that
-  // gap in user-visible copy so the freeform dropoff field reads as a
-  // deliberate V0.1 placeholder, not a missing feature.
+test("RC1: ErrandOrderView mounts the catalog dropoff place picker", () => {
   const src = read("src/features/errand/ErrandOrderView.vue");
-  assert.match(src, /ERRAND_ORDER_DROPOFF_PICKER_DEFERRED/);
-  assert.match(src, /data-testid="errand-order-dropoff-picker-deferred"/);
+  assert.match(src, /ErrandDropoffPlacePicker/);
+  assert.match(src, /setDropoffPlace/);
+  assert.doesNotMatch(src, /ERRAND_ORDER_DROPOFF_PICKER_DEFERRED/);
 });
 
-test("issue #609 PR2: ERRAND_ORDER_DROPOFF_PICKER_DEFERRED brand string is registered", () => {
+test("RC1: dropoff picker is a sibling of the input label, not nested inside it", () => {
+  const src = read("src/features/errand/ErrandOrderView.vue");
+  const labelMatch = src.match(
+    /<label class="errand-order-view__field">[\s\S]*?ERRAND_ORDER_DROPOFF_TITLE[\s\S]*?<\/label>/,
+  );
+  assert.ok(labelMatch, "dropoff label block must exist");
+  assert.doesNotMatch(labelMatch[0], /ErrandDropoffPlacePicker/);
+});
+
+test("RC1: catalog picker and requester-complete brand strings are registered", () => {
   const src = read("src/config/brand/merchant.ts");
-  assert.match(src, /export const ERRAND_ORDER_DROPOFF_PICKER_DEFERRED\b/);
-  // Copy must mention V0.2 so the deferral is calibrated for users — a
-  // generic "暂未开放" would read as a permanent gap.
-  assert.match(src, /V0\.2/);
+  for (const key of [
+    "ERRAND_ORDER_DROPOFF_PICKER_TITLE",
+    "ERRAND_ORDER_DROPOFF_PICKER_LOADING",
+    "ERRAND_ORDER_DROPOFF_PICKER_EMPTY",
+    "ERRAND_ORDER_COMPLETE_CTA",
+    "ERRAND_ORDER_COMPLETE_PENDING",
+    "ERRAND_ORDER_COMPLETE_FAILED",
+  ]) {
+    assert.match(src, new RegExp(`export const ${key}\\b`));
+  }
+});
+
+test("RC1: requester complete stays behind delivered state and the accepted endpoint", () => {
+  const api = read("src/api/errands.ts");
+  const composable = read("src/features/errand/useErrandOrderDetail.ts");
+  const view = read("src/features/errand/ErrandOrderTimelineView.vue");
+  assert.match(api, /export async function completeErrandOrder/);
+  assert.match(api, /\/complete/);
+  assert.match(composable, /canComplete/);
+  assert.match(composable, /async function complete/);
+  assert.match(view, /data-testid="errand-order-timeline-complete"/);
+  assert.match(view, /v-if="canComplete"/);
+  assert.match(view, /:disabled="completing"/);
+  assert.match(view, /ERRAND_ORDER_COMPLETE_PENDING/);
 });
 
 // --- view branches ---

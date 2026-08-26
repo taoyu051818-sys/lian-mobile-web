@@ -28,8 +28,16 @@ function normalizeRunnerStatus(value: unknown): RunnerOrder["status"] {
   // no separate in-transit action, so keep presenting it as the deliverable
   // `picked_up` state.
   if (value === "delivering") return "picked_up";
-  if (value === "picked_up" || value === "delivered" || value === "cancelled") return value;
-  return "available";
+  if (
+    value === "picked_up" ||
+    value === "delivered" ||
+    value === "completed" ||
+    value === "cancelled" ||
+    value === "refunded"
+  ) {
+    return value;
+  }
+  return "unknown";
 }
 
 function normalizeOptionalPoints(...values: unknown[]): number | undefined {
@@ -49,22 +57,29 @@ function normalizeRunnerOrder(value: BackendRunnerOrder): RunnerOrder | null {
   const source = value.order || value;
   const id = String(source.id || source.orderId || "");
   if (!id) return null;
-  return {
+  const normalized: RunnerOrder = {
     id,
     status: normalizeRunnerStatus(source.status || source.state),
     title: String(source.title || source.summary || id),
-    summary: source.summary,
-    pickup: source.pickup || source.pickupLocation,
-    dropoff: source.dropoff || source.dropoffLocation,
-    feePoints: normalizeOptionalPoints(source.feePoints, source.feeAmount),
-    rewardPoints: normalizeOptionalPoints(source.rewardPoints, source.rewardAmount),
-    totalLockedPoints: normalizeOptionalPoints(
-      source.totalLockedPoints,
-      source.lockedBalanceAmount,
-    ),
-    createdAt: source.createdAt,
-    note: source.note || source.notes,
   };
+  if (source.summary) normalized.summary = source.summary;
+  const pickup = source.pickup || source.pickupLocation;
+  if (pickup) normalized.pickup = pickup;
+  const dropoff = source.dropoff || source.dropoffLocation;
+  if (dropoff) normalized.dropoff = dropoff;
+  const feePoints = normalizeOptionalPoints(source.feePoints, source.feeAmount);
+  if (feePoints !== undefined) normalized.feePoints = feePoints;
+  const rewardPoints = normalizeOptionalPoints(source.rewardPoints, source.rewardAmount);
+  if (rewardPoints !== undefined) normalized.rewardPoints = rewardPoints;
+  const totalLockedPoints = normalizeOptionalPoints(
+    source.totalLockedPoints,
+    source.lockedBalanceAmount,
+  );
+  if (totalLockedPoints !== undefined) normalized.totalLockedPoints = totalLockedPoints;
+  if (source.createdAt) normalized.createdAt = source.createdAt;
+  const note = source.note || source.notes;
+  if (note) normalized.note = note;
+  return normalized;
 }
 
 function normalizeRunnerOrderList(data: BackendRunnerOrderList): RunnerOrderListResponse {

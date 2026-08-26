@@ -47,11 +47,18 @@ export interface ErrandRunnerLocation {
 
 export interface ErrandOrder {
   orderId: string;
-  requesterUserId: string;
+  /** Omitted from the assigned runner's privacy-safe terminal projection. */
+  requesterUserId?: string;
   runnerUserId?: string;
   merchantPostId?: number;
-  pickupLocation: PostLocation;
-  dropoffLocation: PostLocation;
+  /** Omitted from the assigned runner's privacy-safe terminal projection. */
+  pickupLocation?: PostLocation;
+  /** Omitted from the assigned runner's privacy-safe terminal projection. */
+  dropoffLocation?: PostLocation;
+  /** Public order title retained by the exact-safe projection. */
+  title?: string;
+  /** Backend state alias retained by the exact-safe projection. */
+  state?: ErrandStatus;
   mode: ErrandMode;
   status: ErrandStatus;
   /** Service fee charged to the requester, in points. */
@@ -60,6 +67,8 @@ export interface ErrandOrder {
   rewardPoints: number;
   /** Total requester balance locked for this order, in points. */
   totalLockedPoints: number;
+  /** Creation time retained by the exact-safe projection. */
+  createdAt?: string;
   etaSeconds?: number;
   runnerLocation?: ErrandRunnerLocation;
 }
