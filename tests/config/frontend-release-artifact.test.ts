@@ -70,7 +70,7 @@ describe("frontend release artifact deployment", () => {
 
     expect(deploy).toMatch(/restore_previous_dist=0/);
     expect(deploy).toMatch(/restore_previous_dist=1/);
-    expect(deploy).toContain('[ ! -e dist ]');
+    expect(deploy).toContain("[ ! -e dist ]");
     expect(deploy).toMatch(/mv "\$previous_dir" dist/);
     expect(deploy).toMatch(/mv "\$release_dir" dist/);
   });
