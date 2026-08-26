@@ -1,6 +1,17 @@
 # Current Status
 
-Last verified: 2026-08-23
+Last verified: 2026-08-24
+
+RC1 LA retirement R1 is prepared as a frontend-only implementation candidate. It removes the
+automatic LA administrator probe, browser client, merchant component/request owner and
+`session-merchants` lane. The legacy LIAN ops-token reports, verification, auth-link and audit
+surfaces remain, with account-epoch and request-owner cleanup on exit, account change, logout and
+unmount.
+
+This source change is not a deployment approval. Before deploying R1, the release owner must attest
+through an approved non-secret inventory that both running backend LA flags are false and record the
+observable frontend/backend release identities. The backend LA route remains unchanged and
+default-off as the bounded R1 rollback control.
 
 Active control issue: the frontend Actor/Cart implementation in
 [#1097](https://github.com/taoyu051818-sys/lian-mobile-web/issues/1097) is independently accepted

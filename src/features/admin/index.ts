@@ -7,8 +7,6 @@ export { default as AdminQueueList } from "./AdminQueueList.vue";
 export { default as AdminQueueItem } from "./AdminQueueItem.vue";
 export { default as AdminUserActionPanel } from "./AdminUserActionPanel.vue";
 export { default as AdminAuditLogList } from "./AdminAuditLogList.vue";
-export { default as AdminLaMerchantsBlock } from "./AdminLaMerchantsBlock.vue";
 export { useAdminToken } from "./useAdminToken";
 export { useAdminConsole } from "./useAdminConsole";
 export { useAdminAccess } from "./useAdminAccess";
-export { useAdminMerchants } from "./useAdminMerchants";

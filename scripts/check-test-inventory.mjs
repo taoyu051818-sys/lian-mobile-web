@@ -5,10 +5,9 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-// vitest 181 -> 184: offline UI-fixture suites (transport isolation/fail-closed,
-// production stripping, commerce fixture contract).
-// node 68 -> 69: commerce E2E PR-gate structure contract.
-const expected = Object.freeze({ node: 69, vitest: 184 });
+// RC1 B0/B1 source queue: commerce E2E PR-gate structure plus LAPlatform
+// retirement structure replace old provider-specific Vitest/browser coverage.
+const expected = Object.freeze({ node: 70, vitest: 182 });
 
 async function countFiles(directory, suffix) {
   const entries = await readdir(directory, { withFileTypes: true });

@@ -72,7 +72,7 @@ const verificationDetail = {
   realName: "safe detail",
 };
 
-type AdminConsole = ReturnType<typeof useAdminConsole> & { dispose?: () => void };
+type AdminConsole = ReturnType<typeof useAdminConsole>;
 
 interface ConsoleHarness {
   token: Ref<string>;
@@ -178,10 +178,8 @@ afterEach(() => {
 
 describe("useAdminConsole exact ops authorization", () => {
   it.each([
-    ["probing", "ops-token"],
-    ["session-merchants", "ops-token"],
+    ["session", "ops-token"],
     ["gate", "ops-token"],
-    ["probe-error", "ops-token"],
     ["disposed", "ops-token"],
     ["ops", ""],
     ["ops", "   "],
@@ -1202,7 +1200,7 @@ describe("useAdminConsole overlapping finally ownership", () => {
 
     harness.lane.value = "disposed";
     harness.authEpoch.value += 1;
-    harness.console.dispose?.();
+    harness.console.dispose();
     reports.resolve({ items: [report], total: 1 });
     action.reject(new Error("late raw failure"));
     await Promise.all([reportsRun, actionRun]);
@@ -1212,5 +1210,33 @@ describe("useAdminConsole overlapping finally ownership", () => {
     expect(harness.console.actionMessage.value).toBe("");
     expect(harness.console.actionError.value).toBe("");
     expect(harness.console.reportsLoading.value).toBe(false);
+  });
+
+  it("retirement clears account state, rejects late work, and remains reusable for a new token", async () => {
+    const accountAReports = deferred<unknown>();
+    adminApi.fetchAdminReports
+      .mockReturnValueOnce(accountAReports.promise)
+      .mockResolvedValueOnce({ items: [updatedReport], total: 1 });
+    const harness = makeConsole({ token: "account-a-token", epoch: 20 });
+    const accountARun = harness.console.loadReports("pending");
+    await flush();
+
+    harness.console.retire();
+    harness.authEpoch.value += 1;
+    harness.token.value = "account-b-token";
+    accountAReports.resolve({ items: [report], total: 1 });
+    await accountARun;
+
+    expect(consoleEphemeralSnapshot(harness.console)).toEqual(EMPTY_CONSOLE_EPHEMERAL_STATE);
+    expect(harness.console.reportsLoading.value).toBe(false);
+
+    await harness.console.loadReports("pending");
+
+    expect(adminApi.fetchAdminReports).toHaveBeenLastCalledWith("account-b-token", {
+      status: "pending",
+      limit: 100,
+    });
+    expect(harness.console.reports.value).toEqual([updatedReport]);
+    expect(harness.console.reportsTotal.value).toBe(1);
   });
 });
