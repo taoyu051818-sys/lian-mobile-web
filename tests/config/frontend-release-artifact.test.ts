@@ -5,6 +5,10 @@ const workflow = readFileSync(
   new URL("../../.github/workflows/frontend-auto-build.yml", import.meta.url),
   "utf8",
 );
+const frontendVerifyWorkflow = readFileSync(
+  new URL("../../.github/workflows/frontend-verify.yml", import.meta.url),
+  "utf8",
+);
 const releaseRunbook = readFileSync(
   new URL("../../docs/frontend/release-runbook.md", import.meta.url),
   "utf8",
@@ -21,6 +25,15 @@ describe("frontend release artifact deployment", () => {
   it("keeps the release workflow manual-only", () => {
     expect(workflow).toMatch(/on:\s*\n\s*workflow_dispatch:/);
     expect(workflow).not.toMatch(/\n\s*push:/);
+  });
+
+  it("keeps frontend verification manually runnable without deployment", () => {
+    expect(frontendVerifyWorkflow).toMatch(/on:\s*\n\s*workflow_dispatch:/);
+    expect(frontendVerifyWorkflow).toMatch(/\n\s*pull_request:/);
+    expect(frontendVerifyWorkflow).toMatch(/\n\s*push:/);
+    expect(frontendVerifyWorkflow).toMatch(/npm run verify/);
+    expect(frontendVerifyWorkflow).not.toMatch(/environment:\s*frontend-production/);
+    expect(frontendVerifyWorkflow).not.toMatch(/\bdeploy-main\b/);
   });
 
   it("passes the reviewed dist artifact from verify to deploy-main", () => {
