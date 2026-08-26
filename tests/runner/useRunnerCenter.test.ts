@@ -118,7 +118,7 @@ describe("useRunnerCenter state machine", () => {
     expect(ctrl.activeOrders.value[0].status).toBe("accepted");
   });
 
-  it("at_shop -> picked_up -> delivered advances and removes on terminal", async () => {
+  it("at_shop -> picked_up -> delivered advances into read-only runner history", async () => {
     vi.mocked(runnerApi.fetchActiveRunnerOrders).mockResolvedValue({
       items: [order("a1", "accepted")],
     });
@@ -136,7 +136,7 @@ describe("useRunnerCenter state machine", () => {
     expect(ctrl.activeOrders.value[0].status).toBe("picked_up");
 
     await ctrl.markDelivered("a1");
-    expect(ctrl.activeOrders.value).toEqual([]);
+    expect(ctrl.activeOrders.value).toEqual([order("a1", "delivered")]);
   });
 
   it("tracks per-order pending action while a transition is in flight", async () => {

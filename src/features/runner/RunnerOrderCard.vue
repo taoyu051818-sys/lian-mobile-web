@@ -2,6 +2,9 @@
 import { computed } from "vue";
 import { LianButton } from "../../ui";
 import {
+  ERRAND_ORDER_STATUS_COMPLETED,
+  ERRAND_ORDER_STATUS_REFUNDED,
+  ERRAND_ORDER_STATUS_UNKNOWN,
   RUNNER_ACTION_ACCEPT,
   RUNNER_ACTION_AT_SHOP,
   RUNNER_ACTION_DELIVER,
@@ -41,7 +44,10 @@ const STATUS_LABELS: Record<RunnerOrderStatus, string> = {
   at_shop: RUNNER_STATUS_AT_SHOP,
   picked_up: RUNNER_STATUS_PICKED_UP,
   delivered: RUNNER_STATUS_DELIVERED,
+  completed: ERRAND_ORDER_STATUS_COMPLETED,
   cancelled: RUNNER_STATUS_CANCELLED,
+  refunded: ERRAND_ORDER_STATUS_REFUNDED,
+  unknown: ERRAND_ORDER_STATUS_UNKNOWN,
 };
 
 const statusLabel = computed(() => STATUS_LABELS[props.order.status] ?? props.order.status);

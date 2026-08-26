@@ -12,22 +12,156 @@
  *    its own. Caller is responsible for invoking `start(orderId)` /
  *    `stop()` from the view's lifecycle hooks so we never leak a timer.
  */
-import { computed, ref } from "vue";
-import { cancelErrandOrder, fetchErrandOrder } from "../../api/errands";
+import { computed, ref, watch, type Ref } from "vue";
+import { cancelErrandOrder, completeErrandOrder, fetchErrandOrder } from "../../api/errands";
+import { fetchAuthMe } from "../../api/profile";
 import { extractErrorMessage } from "../../utils/extractErrorMessage";
-import { ERRAND_ORDER_DETAIL_LOAD_ERROR, ORDERS_CANCEL_FAILED } from "../../config/brand";
+import {
+  ERRAND_ORDER_COMPLETE_FAILED,
+  ERRAND_ORDER_DETAIL_LOAD_ERROR,
+  ORDERS_CANCEL_FAILED,
+} from "../../config/brand";
 import type { ErrandOrderDetail } from "../../types/errand";
 import { isTerminalErrandStatus } from "./errand-format";
 
 const POLL_INTERVAL_MS = 12_000;
 
-export function useErrandOrderDetail() {
+export function useErrandOrderDetail(currentUserId?: Ref<string> | string) {
+  const managesViewerIdentity = currentUserId === undefined;
   const detail = ref<ErrandOrderDetail | null>(null);
   const loading = ref(false);
   const loaded = ref(false);
   const errorMessage = ref("");
   const cancelling = ref(false);
   const cancelError = ref("");
+  const completing = ref(false);
+  const completeError = ref("");
+  const managedCurrentUserId = ref("");
+
+  const viewerUserId = computed(() => {
+    if (managesViewerIdentity) return managedCurrentUserId.value.trim();
+    return (typeof currentUserId === "string" ? currentUserId : currentUserId.value).trim();
+  });
+
+  let activeOrderId = "";
+  let lifecycleGeneration = 0;
+  let viewerLoadGeneration = 0;
+  let pollTimer: ReturnType<typeof setTimeout> | null = null;
+  let pollOrderId = "";
+  let pollGeneration = 0;
+
+  function resetActionState() {
+    cancelling.value = false;
+    cancelError.value = "";
+    completing.value = false;
+    completeError.value = "";
+  }
+
+  function clearPublicState() {
+    detail.value = null;
+    loading.value = false;
+    loaded.value = false;
+    errorMessage.value = "";
+    resetActionState();
+  }
+
+  function clearPollTimer() {
+    if (pollTimer !== null) {
+      clearTimeout(pollTimer);
+      pollTimer = null;
+    }
+  }
+
+  /** Retire only the polling owner; keep a just-adopted terminal detail. */
+  function stopPolling() {
+    pollGeneration++;
+    pollOrderId = "";
+    clearPollTimer();
+  }
+
+  /**
+   * A terminal write owns the newest server truth for this order. Retire all
+   * read snapshots admitted before the write settled (including same-order
+   * manual refreshes), but keep the terminal DTO itself visible.
+   */
+  function adoptTerminalDetail(next: ErrandOrderDetail) {
+    detail.value = next;
+    loading.value = false;
+    loaded.value = true;
+    errorMessage.value = "";
+    resetActionState();
+    lifecycleGeneration++;
+    stopPolling();
+  }
+
+  function setActiveOrder(orderId: string) {
+    if (activeOrderId === orderId) return;
+    stopPolling();
+    activeOrderId = orderId;
+    lifecycleGeneration++;
+    clearPublicState();
+  }
+
+  function snapshotOperation(orderId: string) {
+    return {
+      orderId,
+      viewerUserId: viewerUserId.value,
+      generation: lifecycleGeneration,
+      managedViewerGeneration: viewerLoadGeneration,
+    };
+  }
+
+  function isCurrentOperation(snapshot: ReturnType<typeof snapshotOperation>) {
+    const viewerMatches =
+      snapshot.viewerUserId === viewerUserId.value ||
+      (managesViewerIdentity &&
+        !snapshot.viewerUserId &&
+        Boolean(viewerUserId.value) &&
+        snapshot.managedViewerGeneration === viewerLoadGeneration);
+    return (
+      snapshot.orderId === activeOrderId &&
+      viewerMatches &&
+      snapshot.generation === lifecycleGeneration
+    );
+  }
+
+  watch(
+    viewerUserId,
+    (nextViewerUserId, previousViewerUserId) => {
+      if (managesViewerIdentity && !previousViewerUserId && nextViewerUserId) {
+        resetActionState();
+        return;
+      }
+      lifecycleGeneration++;
+      activeOrderId = "";
+      stopPolling();
+      clearPublicState();
+    },
+    { flush: "sync" },
+  );
+
+  async function loadCurrentUserId() {
+    if (!managesViewerIdentity) return;
+    const generation = ++viewerLoadGeneration;
+    try {
+      const me = await fetchAuthMe();
+      if (generation !== viewerLoadGeneration) return;
+      managedCurrentUserId.value = typeof me?.id === "string" ? me.id.trim() : "";
+    } catch {
+      if (generation !== viewerLoadGeneration) return;
+      managedCurrentUserId.value = "";
+    }
+  }
+
+  function resetCurrentUserId() {
+    if (!managesViewerIdentity) return;
+    viewerLoadGeneration++;
+    managedCurrentUserId.value = "";
+    lifecycleGeneration++;
+    activeOrderId = "";
+    stopPolling();
+    clearPublicState();
+  }
 
   /**
    * Cancel CTA is only meaningful while the order is still in flight.
@@ -38,30 +172,33 @@ export function useErrandOrderDetail() {
    * one if no runner has been assigned yet.
    */
   const canCancel = computed(() => {
-    const status = detail.value?.order.status;
-    return Boolean(status && !isTerminalErrandStatus(status) && !cancelling.value);
+    const order = detail.value?.order;
+    return Boolean(
+      order &&
+      order.orderId === activeOrderId &&
+      !isTerminalErrandStatus(order.status) &&
+      !cancelling.value,
+    );
   });
 
-  let pollTimer: ReturnType<typeof setTimeout> | null = null;
-  let pollOrderId = "";
-  let pollGeneration = 0;
-
-  function clearPollTimer() {
-    if (pollTimer !== null) {
-      clearTimeout(pollTimer);
-      pollTimer = null;
-    }
-  }
+  const canComplete = computed(() => {
+    const order = detail.value?.order;
+    if (!order || order.orderId !== activeOrderId || completing.value) return false;
+    return order.status === "delivered" && order.requesterUserId === viewerUserId.value;
+  });
 
   async function refresh(orderId: string) {
     if (!orderId) {
-      detail.value = null;
+      stop();
       return;
     }
+    setActiveOrder(orderId);
+    const request = snapshotOperation(orderId);
     loading.value = true;
     errorMessage.value = "";
     try {
       const next = await fetchErrandOrder(orderId);
+      if (!isCurrentOperation(request)) return;
       // `fetchErrandOrder` returns null when the wire shape couldn't be
       // normalized (e.g. backend dropped a required field). Without an
       // explicit error here the timeline view would render an empty
@@ -75,9 +212,10 @@ export function useErrandOrderDetail() {
       detail.value = next;
       loaded.value = true;
     } catch (error) {
+      if (!isCurrentOperation(request)) return;
       errorMessage.value = extractErrorMessage(error, ERRAND_ORDER_DETAIL_LOAD_ERROR);
     } finally {
-      loading.value = false;
+      if (isCurrentOperation(request)) loading.value = false;
     }
   }
 
@@ -92,14 +230,16 @@ export function useErrandOrderDetail() {
     if (!orderId) return;
     if (pollOrderId === orderId && pollTimer !== null) return;
     stop();
+    setActiveOrder(orderId);
     pollOrderId = orderId;
     const generation = ++pollGeneration;
 
     const tick = async () => {
       if (generation !== pollGeneration) return;
+      const request = snapshotOperation(orderId);
       try {
         const next = await fetchErrandOrder(orderId);
-        if (generation !== pollGeneration) return;
+        if (generation !== pollGeneration || !isCurrentOperation(request)) return;
         if (next) {
           // Polling refreshes are silent on the error channel: a transient
           // 5xx mid-poll shouldn't replace a successful timeline with an
@@ -109,30 +249,35 @@ export function useErrandOrderDetail() {
           errorMessage.value = "";
         }
         if (!next || isTerminalErrandStatus(next.order.status)) {
-          clearPollTimer();
+          stopPolling();
           return;
         }
       } catch {
+        if (generation !== pollGeneration || !isCurrentOperation(request)) return;
         // Same rationale as above — drop the error and let the next tick
         // try again. The user's manual refresh button is the surface for
         // genuine "load failed" affordance.
       }
-      if (generation !== pollGeneration) return;
+      if (generation !== pollGeneration || !isCurrentOperation(request)) return;
       pollTimer = setTimeout(tick, POLL_INTERVAL_MS);
     };
 
     void refresh(orderId).then(() => {
       if (generation !== pollGeneration) return;
       const status = detail.value?.order.status;
-      if (status && isTerminalErrandStatus(status)) return;
+      if (status && isTerminalErrandStatus(status)) {
+        stopPolling();
+        return;
+      }
       pollTimer = setTimeout(tick, POLL_INTERVAL_MS);
     });
   }
 
   function stop() {
-    pollGeneration++;
-    pollOrderId = "";
-    clearPollTimer();
+    stopPolling();
+    activeOrderId = "";
+    lifecycleGeneration++;
+    clearPublicState();
   }
 
   /**
@@ -146,25 +291,62 @@ export function useErrandOrderDetail() {
    * failed cancel does not blank out the timeline the user is looking at.
    */
   async function cancel(orderId: string) {
-    if (!orderId || cancelling.value) return;
+    if (
+      !orderId ||
+      orderId !== activeOrderId ||
+      detail.value?.order.orderId !== orderId ||
+      !canCancel.value
+    ) {
+      return;
+    }
+    const request = snapshotOperation(orderId);
     cancelling.value = true;
     cancelError.value = "";
     try {
       const next = await cancelErrandOrder(orderId);
+      if (!isCurrentOperation(request)) return;
       if (next) {
-        detail.value = next;
-        loaded.value = true;
         // Cancellation is terminal; ticking again would just re-fetch the same
-        // cancelled record. Stop the poll generation so an in-flight tick
-        // doesn't overwrite the cancelled state.
-        stop();
+        // cancelled record. Retire both poll and manual-read owners so neither
+        // can overwrite the cancelled state after this write succeeds.
+        adoptTerminalDetail(next);
       } else {
         cancelError.value = ORDERS_CANCEL_FAILED;
       }
     } catch (error) {
+      if (!isCurrentOperation(request)) return;
       cancelError.value = extractErrorMessage(error, ORDERS_CANCEL_FAILED);
     } finally {
-      cancelling.value = false;
+      if (isCurrentOperation(request)) cancelling.value = false;
+    }
+  }
+
+  async function complete(orderId: string) {
+    if (
+      !orderId ||
+      orderId !== activeOrderId ||
+      detail.value?.order.orderId !== orderId ||
+      !canComplete.value
+    ) {
+      return;
+    }
+    const request = snapshotOperation(orderId);
+    completing.value = true;
+    completeError.value = "";
+    try {
+      const next = await completeErrandOrder(orderId);
+      if (!isCurrentOperation(request)) return;
+      if (next) {
+        adoptTerminalDetail(next);
+        return;
+      } else {
+        completeError.value = ERRAND_ORDER_COMPLETE_FAILED;
+      }
+    } catch (error) {
+      if (!isCurrentOperation(request)) return;
+      completeError.value = extractErrorMessage(error, ERRAND_ORDER_COMPLETE_FAILED);
+    } finally {
+      if (isCurrentOperation(request)) completing.value = false;
     }
   }
 
@@ -175,10 +357,16 @@ export function useErrandOrderDetail() {
     errorMessage,
     cancelling,
     cancelError,
+    completing,
+    completeError,
     canCancel,
+    canComplete,
+    loadCurrentUserId,
+    resetCurrentUserId,
     refresh,
     start,
     stop,
     cancel,
+    complete,
   };
 }

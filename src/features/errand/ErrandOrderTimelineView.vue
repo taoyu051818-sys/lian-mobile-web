@@ -21,6 +21,9 @@
  */
 import { computed, onMounted, onBeforeUnmount, ref, watch } from "vue";
 import {
+  ERRAND_ORDER_COMPLETE_CTA,
+  ERRAND_ORDER_COMPLETE_FAILED,
+  ERRAND_ORDER_COMPLETE_PENDING,
   ERRAND_ORDER_DETAIL_AUTO_REFRESH_HINT,
   ERRAND_ORDER_DETAIL_BACK,
   ERRAND_ORDER_DETAIL_LABEL,
@@ -64,26 +67,36 @@ const {
   errorMessage,
   cancelling,
   cancelError,
+  completing,
+  completeError,
   canCancel,
+  canComplete,
+  loadCurrentUserId,
+  resetCurrentUserId,
   refresh: refreshDetail,
   start: startDetail,
   stop: stopDetail,
   cancel: cancelDetail,
+  complete: completeDetail,
 } = useErrandOrderDetail();
 
 onMounted(() => {
+  void loadCurrentUserId();
   if (props.orderId) startDetail(props.orderId);
 });
 
 watch(
   () => props.orderId,
   (next) => {
+    resetCurrentUserId();
+    void loadCurrentUserId();
     if (next) startDetail(next);
     else stopDetail();
   },
 );
 
 onBeforeUnmount(() => {
+  resetCurrentUserId();
   stopDetail();
 });
 
@@ -114,6 +127,11 @@ async function handleCancel() {
   }
   confirmingCancel.value = false;
   await cancelDetail(props.orderId);
+}
+
+async function handleComplete() {
+  if (!props.orderId || !canComplete.value) return;
+  await completeDetail(props.orderId);
 }
 
 const confirmingCancel = ref(false);
@@ -303,6 +321,22 @@ watch(
         </button>
       </section>
 
+      <div
+        v-if="canComplete"
+        class="errand-order-timeline-view__actions"
+        data-testid="errand-order-timeline-complete-actions"
+      >
+        <button
+          type="button"
+          class="errand-order-timeline-view__complete"
+          :disabled="completing"
+          data-testid="errand-order-timeline-complete"
+          @click="() => void handleComplete()"
+        >
+          {{ completing ? ERRAND_ORDER_COMPLETE_PENDING : ERRAND_ORDER_COMPLETE_CTA }}
+        </button>
+      </div>
+
       <!--
         Cancel CTA — only while the order is non-terminal. The composable's
         `canCancel` already excludes terminal states + an in-flight cancel.
@@ -344,6 +378,15 @@ watch(
         data-testid="errand-order-timeline-cancel-error"
       >
         {{ cancelError }}
+      </p>
+
+      <p
+        v-if="completeError"
+        class="errand-order-timeline-view__status is-error"
+        role="alert"
+        data-testid="errand-order-timeline-complete-error"
+      >
+        {{ completeError || ERRAND_ORDER_COMPLETE_FAILED }}
       </p>
 
       <p
@@ -548,6 +591,23 @@ watch(
 }
 
 .errand-order-timeline-view__cancel:disabled {
+  opacity: 0.5;
+  cursor: progress;
+}
+
+.errand-order-timeline-view__complete {
+  appearance: none;
+  border: 0;
+  border-radius: var(--radius-chip, 999px);
+  background: var(--lian-primary, #1fa7a0);
+  color: #fff;
+  font-weight: 850;
+  height: 36px;
+  padding: 0 var(--space-3);
+  cursor: pointer;
+}
+
+.errand-order-timeline-view__complete:disabled {
   opacity: 0.5;
   cursor: progress;
 }

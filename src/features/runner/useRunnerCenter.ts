@@ -89,12 +89,10 @@ export function useRunnerCenter() {
       if (idx >= 0) availableOrders.value[idx] = updated;
     }
     const activeIdx = activeOrders.value.findIndex((o) => o.id === updated.id);
-    // After an `accept` the order moves out of `available` and into `active`;
-    // a `deliver` removes it from `active` because the runner is done with it.
-    if (updated.status === "delivered" || updated.status === "cancelled") {
-      activeOrders.value = activeOrders.value.filter((o) => o.id !== updated.id);
-      return;
-    }
+    // After an `accept` the order moves out of `available` and into the
+    // runner's own history. Terminal rows remain read-only in this bucket;
+    // hiding them made a real `/mine` response look empty and masked decoder
+    // drift.
     if (activeIdx >= 0) activeOrders.value[activeIdx] = updated;
     else if (updated.status !== "available") activeOrders.value = [updated, ...activeOrders.value];
   }

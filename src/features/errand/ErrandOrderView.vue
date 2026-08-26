@@ -20,7 +20,6 @@ import {
   ERRAND_ORDER_BACK,
   ERRAND_ORDER_BALANCE_LABEL,
   ERRAND_ORDER_DROPOFF_HINT,
-  ERRAND_ORDER_DROPOFF_PICKER_DEFERRED,
   ERRAND_ORDER_DROPOFF_PLACEHOLDER,
   ERRAND_ORDER_DROPOFF_TITLE,
   ERRAND_ORDER_FEE_LABEL,
@@ -48,6 +47,7 @@ import {
 } from "../../config/brand";
 import type { ErrandMode } from "../../types/errand";
 import ErrandOrderGate from "./ErrandOrderGate.vue";
+import ErrandDropoffPlacePicker from "./ErrandDropoffPlacePicker.vue";
 import ErrandOrderTimelineView from "./ErrandOrderTimelineView.vue";
 import { useErrandOrderDraft } from "./useErrandOrderDraft";
 import { useErrandOrderRoute } from "./useErrandOrderRoute";
@@ -84,6 +84,7 @@ const {
   setNotes,
   setPickup,
   setDropoff,
+  setDropoffPlace,
   submit: submitDraft,
   reset: resetDraft,
 } = useErrandOrderDraft(initialMerchantPostId, initialPickupHint);
@@ -288,13 +289,9 @@ function handleTimelineBack() {
           required
         />
         <small>{{ ERRAND_ORDER_DROPOFF_HINT }}</small>
-        <small
-          class="errand-order-view__deferred"
-          data-testid="errand-order-dropoff-picker-deferred"
-        >
-          {{ ERRAND_ORDER_DROPOFF_PICKER_DEFERRED }}
-        </small>
       </label>
+
+      <ErrandDropoffPlacePicker @select="setDropoffPlace" />
 
       <label class="errand-order-view__field">
         <span>{{ ERRAND_ORDER_NOTES_TITLE }}</span>

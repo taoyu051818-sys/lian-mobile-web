@@ -23,9 +23,12 @@ export type RunnerOrderStatus =
   | "at_shop"
   | "picked_up"
   | "delivered"
-  | "cancelled";
+  | "completed"
+  | "cancelled"
+  | "refunded"
+  | "unknown";
 
-export type RunnerActiveStatus = Exclude<RunnerOrderStatus, "available" | "cancelled">;
+export type RunnerActiveStatus = "accepted" | "at_shop" | "picked_up";
 
 export interface RunnerOrderLocation {
   label?: string;
