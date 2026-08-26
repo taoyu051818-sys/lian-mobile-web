@@ -41,6 +41,36 @@ describe("notification API pagination and read state", () => {
     ).toBe(true);
   });
 
+  it("preserves the backend provider source needed for a scoped read mutation", () => {
+    const result = notificationsApi.normalizeNotificationResponse({
+      items: [
+        { id: "local", source: "lian" },
+        { id: "reply", source: "nodebb" },
+      ],
+    });
+
+    expect(result.items?.map((entry) => entry.source)).toEqual(["lian", "nodebb"]);
+  });
+
+  it("preserves a positive reply pid without replacing the tid detail target", () => {
+    const result = notificationsApi.normalizeNotificationResponse({
+      items: [{ id: "reply", source: "nodebb", tid: 77, pid: 901, type: "new-reply" }],
+    });
+
+    expect(result.items?.[0]).toMatchObject({
+      id: "reply",
+      source: "nodebb",
+      tid: 77,
+      pid: 901,
+      target: { kind: "detail", tid: 77 },
+    });
+    expect(
+      notificationsApi.normalizeNotificationResponse({
+        items: [{ id: "invalid-pid", tid: 77, pid: 0 }],
+      }).items?.[0]?.pid,
+    ).toBeUndefined();
+  });
+
   it("normalizes notification-array responses for pagination", () => {
     const result = notificationsApi.normalizeNotificationResponse(
       { notifications: [{ id: "n1", title: "通知" }], hasMore: true },
@@ -101,23 +131,25 @@ describe("notification API pagination and read state", () => {
     expect(result.nextOffset).toBe(1);
   });
 
-  it("posts each unique notification to the existing per-id read endpoint", async () => {
-    await notificationsApi.markNotificationsRead([]);
-    expect(http.apiSend).not.toHaveBeenCalled();
+  it("narrows read mutation to one notification identity per call", async () => {
+    await notificationsApi.markNotificationRead("n1");
 
-    await notificationsApi.markNotificationsRead(["n1", "n2", "n1"]);
-
-    expect(http.apiSend).toHaveBeenNthCalledWith(1, "/api/notifications/n1/read", {
+    expect(http.apiSend).toHaveBeenCalledWith("/api/notifications/n1/read", {
       method: "POST",
     });
-    expect(http.apiSend).toHaveBeenNthCalledWith(2, "/api/notifications/n2/read", {
+    expect(http.apiSend).toHaveBeenCalledTimes(1);
+  });
+
+  it("echoes the item source when posting a provider-scoped read", async () => {
+    await notificationsApi.markNotificationRead("reply-1", "nodebb");
+
+    expect(http.apiSend).toHaveBeenCalledWith("/api/notifications/reply-1/read?source=nodebb", {
       method: "POST",
     });
-    expect(http.apiSend).toHaveBeenCalledTimes(2);
   });
 
   it("rejects ids outside the backend route contract before sending", async () => {
-    await expect(notificationsApi.markNotificationsRead(["没有后端通知 ID"])).rejects.toThrow(
+    await expect(notificationsApi.markNotificationRead("没有后端通知 ID")).rejects.toThrow(
       "通知缺少可用于更新已读状态的 ID",
     );
     expect(http.apiSend).not.toHaveBeenCalled();

@@ -5,7 +5,7 @@ import type { NotificationItem, NotificationResponse } from "../../src/types/mes
 
 vi.mock("../../src/api/notifications", () => ({
   fetchNotifications: vi.fn(),
-  markNotificationsRead: vi.fn(),
+  markNotificationRead: vi.fn(),
 }));
 
 const notificationsApi = await import("../../src/api/notifications");
@@ -61,7 +61,7 @@ describe("useNotifications", () => {
     vi.mocked(notificationsApi.fetchNotifications)
       .mockResolvedValueOnce(response([item("n1", false)], true, 1))
       .mockResolvedValueOnce(response([item("n1", false), item("n2", false)], false, 3));
-    vi.mocked(notificationsApi.markNotificationsRead).mockResolvedValue(undefined);
+    vi.mocked(notificationsApi.markNotificationRead).mockResolvedValue(undefined);
 
     const notifications = useNotifications();
     await notifications.loadNotifications();
@@ -140,7 +140,7 @@ describe("useNotifications", () => {
     await notifications.openNotification(notifications.notificationItems.value[0]);
 
     expect(notifications.notificationItems.value[0]?.read).toBe(true);
-    expect(notificationsApi.markNotificationsRead).not.toHaveBeenCalled();
+    expect(notificationsApi.markNotificationRead).not.toHaveBeenCalled();
   });
 
   it("does not fetch more notifications when the current page is complete", async () => {
@@ -190,7 +190,7 @@ describe("useNotifications", () => {
           resolveReset = resolve;
         }),
       );
-    vi.mocked(notificationsApi.markNotificationsRead).mockResolvedValue(undefined);
+    vi.mocked(notificationsApi.markNotificationRead).mockResolvedValue(undefined);
 
     const notifications = useNotifications();
     await notifications.loadNotifications();
@@ -209,7 +209,7 @@ describe("useNotifications", () => {
 
   it("marks unread notifications read locally when opened and posts the read payload", async () => {
     vi.mocked(notificationsApi.fetchNotifications).mockResolvedValue(response([item("n1", false)]));
-    vi.mocked(notificationsApi.markNotificationsRead).mockResolvedValue(undefined);
+    vi.mocked(notificationsApi.markNotificationRead).mockResolvedValue(undefined);
 
     const notifications = useNotifications();
     await notifications.loadNotifications();
@@ -217,13 +217,103 @@ describe("useNotifications", () => {
     await notifications.openNotification(notifications.notificationItems.value[0]);
 
     expect(notifications.notificationItems.value[0]?.read).toBe(true);
-    expect(notificationsApi.markNotificationsRead).toHaveBeenCalledWith(["n1"]);
+    expect(notificationsApi.markNotificationRead).toHaveBeenCalledWith("n1");
+  });
+
+  it("keeps the inbox provider source on the read mutation", async () => {
+    vi.mocked(notificationsApi.fetchNotifications).mockResolvedValue(
+      response([{ ...item("n1", false), source: "nodebb" }]),
+    );
+    vi.mocked(notificationsApi.markNotificationRead).mockResolvedValue(undefined);
+
+    const notifications = useNotifications();
+    await notifications.loadNotifications();
+    notifications.openNotification(notifications.notificationItems.value[0]);
+
+    expect(notificationsApi.markNotificationRead).toHaveBeenCalledWith("n1", "nodebb");
+  });
+
+  it("keeps LIAN and NodeBB rows with the same backend id as separate identities", async () => {
+    vi.mocked(notificationsApi.fetchNotifications).mockResolvedValue(
+      response([
+        { ...item("shared"), source: "lian", title: "LIAN shared id" },
+        { ...item("shared"), source: "nodebb", title: "NodeBB shared id" },
+      ]),
+    );
+
+    const notifications = useNotifications();
+    await notifications.loadNotifications();
+
+    expect(
+      notifications.notificationItems.value.map((entry) => [entry.source, entry.id, entry.title]),
+    ).toEqual([
+      ["lian", "shared", "LIAN shared id"],
+      ["nodebb", "shared", "NodeBB shared id"],
+    ]);
+  });
+
+  it("scopes concurrent optimistic read and rollback to the selected provider identity", async () => {
+    let rejectLian: ((error: Error) => void) | undefined;
+    let resolveNodebb: (() => void) | undefined;
+    vi.mocked(notificationsApi.fetchNotifications).mockResolvedValue(
+      response([
+        { ...item("shared"), source: "lian", title: "LIAN shared id" },
+        { ...item("shared"), source: "nodebb", title: "NodeBB shared id" },
+      ]),
+    );
+    vi.mocked(notificationsApi.markNotificationRead).mockImplementation((_id, source) => {
+      if (source === "lian") {
+        return new Promise<void>((_resolve, reject) => {
+          rejectLian = reject;
+        });
+      }
+      return new Promise<void>((resolve) => {
+        resolveNodebb = resolve;
+      });
+    });
+    const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    const notifications = useNotifications();
+    await notifications.loadNotifications();
+    const lian = notifications.notificationItems.value.find((entry) => entry.source === "lian");
+    const nodebb = notifications.notificationItems.value.find((entry) => entry.source === "nodebb");
+    if (!lian || !nodebb) throw new Error("provider collision rows were merged");
+
+    notifications.openNotification(lian);
+    expect(
+      notifications.notificationItems.value.map((entry) => [entry.source, entry.read]),
+    ).toEqual([
+      ["lian", true],
+      ["nodebb", false],
+    ]);
+    notifications.openNotification(nodebb);
+    expect(
+      notifications.notificationItems.value.map((entry) => [entry.source, entry.read]),
+    ).toEqual([
+      ["lian", true],
+      ["nodebb", true],
+    ]);
+
+    rejectLian?.(new Error("LIAN read failed"));
+    resolveNodebb?.();
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(
+      notifications.notificationItems.value.map((entry) => [entry.source, entry.read]),
+    ).toEqual([
+      ["lian", false],
+      ["nodebb", true],
+    ]);
+    expect(notificationsApi.markNotificationRead).toHaveBeenNthCalledWith(1, "shared", "lian");
+    expect(notificationsApi.markNotificationRead).toHaveBeenNthCalledWith(2, "shared", "nodebb");
+    consoleError.mockRestore();
   });
 
   it("keeps opening immediate when the backend read request is still pending", async () => {
     let resolveRead: (() => void) | undefined;
     vi.mocked(notificationsApi.fetchNotifications).mockResolvedValue(response([item("n1", false)]));
-    vi.mocked(notificationsApi.markNotificationsRead).mockReturnValue(
+    vi.mocked(notificationsApi.markNotificationRead).mockReturnValue(
       new Promise<void>((resolve) => {
         resolveRead = resolve;
       }),
@@ -236,14 +326,14 @@ describe("useNotifications", () => {
 
     expect(openResult).toBeUndefined();
     expect(notifications.notificationItems.value[0]?.read).toBe(true);
-    expect(notificationsApi.markNotificationsRead).toHaveBeenCalledWith(["n1"]);
+    expect(notificationsApi.markNotificationRead).toHaveBeenCalledWith("n1");
 
     resolveRead?.();
   });
 
   it("rolls back the local read mark when the backend read endpoint is unavailable", async () => {
     vi.mocked(notificationsApi.fetchNotifications).mockResolvedValue(response([item("n1", false)]));
-    vi.mocked(notificationsApi.markNotificationsRead).mockRejectedValue(new Error("not found"));
+    vi.mocked(notificationsApi.markNotificationRead).mockRejectedValue(new Error("not found"));
     const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
 
     const notifications = useNotifications();
@@ -263,7 +353,7 @@ describe("useNotifications", () => {
 
   it("makes a network-failed read mutation retryable", async () => {
     vi.mocked(notificationsApi.fetchNotifications).mockResolvedValue(response([item("n1", false)]));
-    vi.mocked(notificationsApi.markNotificationsRead).mockRejectedValue(
+    vi.mocked(notificationsApi.markNotificationRead).mockRejectedValue(
       new TypeError("NetworkError when fetching"),
     );
     const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
@@ -277,17 +367,17 @@ describe("useNotifications", () => {
     expect(notifications.notificationItems.value[0]?.read).toBe(false);
     expect(notifications.notificationFetchState.value).toBe("idle");
 
-    vi.mocked(notificationsApi.markNotificationsRead).mockResolvedValueOnce(undefined);
+    vi.mocked(notificationsApi.markNotificationRead).mockResolvedValueOnce(undefined);
     notifications.openNotification(notifications.notificationItems.value[0]);
     await new Promise((resolve) => queueMicrotask(resolve));
-    expect(notificationsApi.markNotificationsRead).toHaveBeenCalledTimes(2);
+    expect(notificationsApi.markNotificationRead).toHaveBeenCalledTimes(2);
     expect(notifications.notificationItems.value[0]?.read).toBe(true);
     consoleError.mockRestore();
   });
 
   it("keeps read-on-open failures out of fetch state", async () => {
     vi.mocked(notificationsApi.fetchNotifications).mockResolvedValue(response([item("n1", false)]));
-    vi.mocked(notificationsApi.markNotificationsRead).mockRejectedValue(
+    vi.mocked(notificationsApi.markNotificationRead).mockRejectedValue(
       new LianApiError("expired", 401),
     );
     const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
@@ -306,7 +396,7 @@ describe("useNotifications", () => {
     vi.mocked(notificationsApi.fetchNotifications).mockResolvedValue(
       response([{ ...item("n1", false), id: "同城招募" }]),
     );
-    vi.mocked(notificationsApi.markNotificationsRead).mockResolvedValue(undefined);
+    vi.mocked(notificationsApi.markNotificationRead).mockResolvedValue(undefined);
 
     const notifications = useNotifications();
     await notifications.loadNotifications();
@@ -314,7 +404,7 @@ describe("useNotifications", () => {
     await notifications.openNotification(notifications.notificationItems.value[0]);
 
     expect(notifications.notificationItems.value[0]?.read).toBe(true);
-    expect(notificationsApi.markNotificationsRead).toHaveBeenCalledWith(["同城招募"]);
+    expect(notificationsApi.markNotificationRead).toHaveBeenCalledWith("同城招募");
   });
 
   it("preserves the current page and reports an error when load more fails", async () => {

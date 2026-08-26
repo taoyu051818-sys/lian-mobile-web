@@ -54,6 +54,8 @@ export type NotificationKind =
   | "moderation"
   | "generic";
 
+export type NotificationSource = "lian" | "nodebb";
+
 export type NotificationTarget =
   | { kind: "detail"; tid: number }
   | { kind: "verification" }
@@ -62,7 +64,9 @@ export type NotificationTarget =
 
 export interface NotificationItem {
   id?: string | number;
+  source?: NotificationSource;
   tid?: string | number;
+  pid?: number;
   type?: string;
   title?: string;
   excerpt?: string;

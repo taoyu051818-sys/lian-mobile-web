@@ -11,6 +11,12 @@ const source = readFileSync(
 ).replace(/\r\n/g, "\n");
 
 describe("NotificationList relation target context", () => {
+  it("uses the shared source-plus-id identity for Vue keys and memo invalidation", () => {
+    expect(source).toContain('import { notificationIdentityKey } from "./useNotifications";');
+    expect(source).toContain(':key="notificationIdentityKey(item)"');
+    expect(source).toMatch(/v-memo="\[[\s\S]*item\.source,[\s\S]*item\.id,/);
+  });
+
   it("declares a literal-fallback label mapper for known PostRelation types", () => {
     expect(source).toMatch(/help_event_link:\s*RELATION_TYPE_HELP_EVENT_LINK/);
     expect(source).toMatch(/solution_event:\s*RELATION_TYPE_SOLUTION_EVENT/);

@@ -136,18 +136,22 @@ test("MessagesView routes notification error retry through retryNotifications", 
   assert.match(viewSource, /@retry="retryNotifications"/);
 });
 
-test("useNotifications preserves local read marks across paginated merges", () => {
+test("useNotifications preserves provider-scoped local read marks across paginated merges", () => {
   assert.match(
     notificationsSource,
-    /applyLocalReadMarks\(response\.items \|\| \[\], locallyReadNotificationIds\)/,
+    /applyLocalReadMarks\(response\.items \|\| \[\], locallyReadNotificationKeys\)/,
+  );
+  assert.match(
+    notificationsSource,
+    /locallyReadNotificationKeys\.has\(notificationIdentityKey\(item\)\)/,
   );
   assert.match(notificationsSource, /current\?\.read \? \{ \.\.\.item, read: true \} : item/);
 });
 
 test("useNotifications fingerprints id-less repeated rows instead of appending them forever", () => {
-  assert.match(notificationsSource, /function notificationMergeKey\(item: NotificationItem\)/);
-  assert.match(notificationsSource, /merged\.set\(notificationMergeKey\(item\), item\)/);
-  assert.match(notificationsSource, /return `fallback:\$\{JSON\.stringify\(/);
+  assert.match(notificationsSource, /function notificationIdentityKey\(item: NotificationItem\)/);
+  assert.match(notificationsSource, /merged\.set\(notificationIdentityKey\(item\), item\)/);
+  assert.match(notificationsSource, /return `source:\$\{source\}:fallback:\$\{JSON\.stringify\(/);
 });
 
 test("pure JS: explicit nextOffset=0 is preserved", () => {

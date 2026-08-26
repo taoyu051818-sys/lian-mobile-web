@@ -46,6 +46,7 @@ import type {
   NotificationItem,
   NotificationKind,
   NotificationResponse,
+  NotificationSource,
   NotificationTarget,
 } from "../types/messages";
 
@@ -53,7 +54,9 @@ type UnknownRecord = Record<string, unknown>;
 
 interface RawNotificationItem {
   id?: string | number;
+  source?: string;
   tid?: string | number;
+  pid?: string | number;
   targetTid?: string | number;
   postId?: string | number;
   targetId?: string | number;
@@ -503,6 +506,14 @@ function resolveNotificationTid(raw: RawNotificationItem): number | null {
   );
 }
 
+function resolveNotificationPid(raw: RawNotificationItem): number | null {
+  const data = asRecord(raw.data);
+  const meta = asRecord(raw.meta);
+  const target = asRecord(raw.target);
+  const pid = firstNumber(raw.pid, data?.pid, meta?.pid, target?.pid);
+  return pid !== null && Number.isSafeInteger(pid) && pid > 0 ? pid : null;
+}
+
 function resolveNotificationOrderId(raw: RawNotificationItem): string {
   const data = asRecord(raw.data);
   const meta = asRecord(raw.meta);
@@ -589,6 +600,7 @@ export function normalizeNotificationItem(raw: RawNotificationItem): Notificatio
   const kind = resolveNotificationKind(raw);
   const target = resolveNotificationTarget(raw, kind);
   const tid = resolveNotificationTid(raw);
+  const pid = resolveNotificationPid(raw);
   const rawTitle = firstString(raw.title, data?.title, meta?.title, targetRecord?.title);
   const rawExcerpt = firstString(raw.excerpt, raw.body, raw.text, data?.excerpt, meta?.excerpt);
   const type = firstString(raw.type, data?.type, meta?.type, targetRecord?.type);
@@ -634,7 +646,9 @@ export function normalizeNotificationItem(raw: RawNotificationItem): Notificatio
 
   return {
     id: raw.id || raw.targetId || tid || title,
+    source: raw.source === "lian" || raw.source === "nodebb" ? raw.source : undefined,
     tid: tid ?? undefined,
+    pid: pid ?? undefined,
     type: type || undefined,
     title: title || undefined,
     excerpt: excerpt || undefined,
@@ -688,20 +702,21 @@ export async function fetchNotifications(offset = 0, limit = 30): Promise<Notifi
   return normalizeNotificationResponse(response, requestedOffset);
 }
 
-function notificationReadPath(notificationId: string | number): string {
+function notificationReadPath(
+  notificationId: string | number,
+  source?: NotificationSource,
+): string {
   const normalizedId = String(notificationId);
   if (!/^[A-Za-z0-9:._-]+$/.test(normalizedId)) {
     throw new Error("通知缺少可用于更新已读状态的 ID。");
   }
-  return `/api/notifications/${normalizedId}/read`;
+  const path = `/api/notifications/${normalizedId}/read`;
+  return source ? `${path}?source=${source}` : path;
 }
 
-export async function markNotificationsRead(
-  notificationIds: Array<string | number>,
+export async function markNotificationRead(
+  notificationId: string | number,
+  source?: NotificationSource,
 ): Promise<void> {
-  if (!notificationIds.length) return;
-  const uniqueIds = [...new Map(notificationIds.map((id) => [String(id), id])).values()];
-  for (const notificationId of uniqueIds) {
-    await apiSend(notificationReadPath(notificationId), { method: "POST" });
-  }
+  await apiSend(notificationReadPath(notificationId, source), { method: "POST" });
 }

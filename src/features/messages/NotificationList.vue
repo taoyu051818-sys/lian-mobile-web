@@ -43,6 +43,7 @@ import { actorDisplayName } from "../../domain/actor";
 import { TrustBadge } from "../../ui";
 import type { NotificationItem } from "../../types/messages";
 import { formatRelativeTime } from "../../utils/time";
+import { notificationIdentityKey } from "./useNotifications";
 import type { NotificationFetchState } from "./useNotifications";
 
 const props = withDefaults(
@@ -247,8 +248,9 @@ function openNotification(item: NotificationItem) {
       -->
       <article
         v-for="item in props.items"
-        :key="String(item.id || item.tid || item.title)"
+        :key="notificationIdentityKey(item)"
         v-memo="[
+          item.source,
           item.id,
           item.read,
           item.title,

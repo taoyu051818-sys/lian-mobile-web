@@ -11,6 +11,7 @@ if (parsedBaseURL.protocol !== "http:" || !LOOPBACK_HOSTS.has(parsedBaseURL.host
 }
 
 const port = parsedBaseURL.port || "80";
+const localBrowserChannel = process.env.LIAN_LOCAL_E2E_BROWSER_CHANNEL ?? "chrome";
 
 export default defineConfig({
   testDir: "tests/e2e/local",
@@ -43,7 +44,10 @@ export default defineConfig({
   projects: [
     {
       name: "chromium-local",
-      use: { ...devices["Desktop Chrome"], ...(process.env.CI ? {} : { channel: "chrome" }) },
+      use: {
+        ...devices["Desktop Chrome"],
+        ...(process.env.CI ? {} : { channel: localBrowserChannel }),
+      },
     },
   ],
 });
