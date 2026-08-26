@@ -31,7 +31,13 @@ export const RUNNER_POOL_KEYS = TERMINAL_RUNNER_SAFE_ORDER_KEYS;
 
 export type ErrandActorKey = "creatorA" | "runnerB" | "runnerC" | "ordinaryD";
 type ErrandStatus =
-  "paid_locked" | "assigned" | "at_shop" | "delivering" | "delivered" | "completed" | "cancelled";
+  | "paid_locked"
+  | "assigned"
+  | "at_shop"
+  | "delivering"
+  | "delivered"
+  | "completed"
+  | "cancelled";
 
 interface FixtureActor {
   key: ErrandActorKey;
@@ -55,7 +61,11 @@ interface HeldResponseState {
 interface ErrandFixtureOrder {
   status: ErrandStatus;
   runnerUserId?: string;
-  timeline: Array<{ status: ErrandStatus; at: string; actor: "requester" | "runner" }>;
+  timeline: Array<{
+    status: ErrandStatus;
+    at: string;
+    actor: "requester" | "runner";
+  }>;
 }
 
 export interface ErrandLocationRunnerState {
@@ -72,7 +82,9 @@ export interface ErrandLocationRunnerState {
 const FIXED_AT = "2026-08-24T10:00:00.000Z";
 
 function verificationState(tags: Array<"campus_verified" | "runner">) {
-  return Object.fromEntries(tags.map((tag) => [tag, { tag, grantedAt: FIXED_AT, active: true }]));
+  return Object.fromEntries(
+    tags.map((tag) => [tag, { tag, grantedAt: FIXED_AT, active: true }]),
+  );
 }
 
 const ACTORS: FixtureActor[] = [
@@ -139,7 +151,11 @@ function actorByLogin(login: string) {
 }
 
 function json(route: Route, body: unknown, status = 200) {
-  return route.fulfill({ status, contentType: "application/json", body: JSON.stringify(body) });
+  return route.fulfill({
+    status,
+    contentType: "application/json",
+    body: JSON.stringify(body),
+  });
 }
 
 function poolOrder(order: ErrandFixtureOrder) {
@@ -152,13 +168,20 @@ function poolOrder(order: ErrandFixtureOrder) {
     mode: "dedicated",
     feePoints: 3,
     rewardPoints: 5,
-    totalLockedPoints: ["completed", "cancelled"].includes(order.status) ? 0 : 8,
+    totalLockedPoints: ["completed", "cancelled"].includes(order.status)
+      ? 0
+      : 8,
     createdAt: FIXED_AT,
   };
   if (["completed", "cancelled"].includes(order.status)) {
     const keys = Object.keys(projected).sort();
-    if (JSON.stringify(keys) !== JSON.stringify([...TERMINAL_RUNNER_SAFE_ORDER_KEYS])) {
-      throw new Error(`terminal runner wire fixture drifted: ${keys.join(",")}`);
+    if (
+      JSON.stringify(keys) !==
+      JSON.stringify([...TERMINAL_RUNNER_SAFE_ORDER_KEYS])
+    ) {
+      throw new Error(
+        `terminal runner wire fixture drifted: ${keys.join(",")}`,
+      );
     }
   }
   return projected;
@@ -207,7 +230,10 @@ function safeDetail(order: ErrandFixtureOrder) {
   };
 }
 
-function canSeeFullOrder(actor: ErrandActorKey | null, order: ErrandFixtureOrder) {
+function canSeeFullOrder(
+  actor: ErrandActorKey | null,
+  order: ErrandFixtureOrder,
+) {
   if (actor === "creatorA") return true;
   return (
     actor === "runnerB" &&
@@ -229,17 +255,26 @@ async function fixtureResponse(
   const held = state.heldResponse;
   let matchedHeld: HeldResponseState | null = null;
   let responseBody = body;
-  if (held && held.actor === actor && held.method === method && held.path === path) {
+  if (
+    held &&
+    held.actor === actor &&
+    held.method === method &&
+    held.path === path
+  ) {
     matchedHeld = held;
     state.heldResponse = null;
     if (held.responseTitle) {
-      const record = body && typeof body === "object" ? (body as { items?: unknown[] }) : {};
+      const record =
+        body && typeof body === "object" ? (body as { items?: unknown[] }) : {};
       if (Array.isArray(record.items)) {
         responseBody = {
           ...record,
           items: record.items.map((item) =>
             item && typeof item === "object"
-              ? { ...(item as Record<string, unknown>), title: held.responseTitle }
+              ? {
+                  ...(item as Record<string, unknown>),
+                  title: held.responseTitle,
+                }
               : item,
           ),
         };
@@ -284,7 +319,8 @@ export function holdNextResponse(
   path: string,
   responseTitle?: string,
 ) {
-  if (state.heldResponse) throw new Error("Only one fixture response may be held at a time.");
+  if (state.heldResponse)
+    throw new Error("Only one fixture response may be held at a time.");
   let signalStarted: () => void = () => undefined;
   let signalFinished: () => void = () => undefined;
   let release: () => void = () => undefined;
@@ -337,10 +373,17 @@ export async function installErrandLocationRunnerApi(page: Page) {
       });
     }
     if (path === "/api/auth/rules" && method === "GET") {
-      return json(route, { institutions: [], interests: [], interestsRequired: false });
+      return json(route, {
+        institutions: [],
+        interests: [],
+        interestsRequired: false,
+      });
     }
     if (path === "/api/auth/login" && method === "POST") {
-      const payload = request.postDataJSON() as { login?: string; password?: string };
+      const payload = request.postDataJSON() as {
+        login?: string;
+        password?: string;
+      };
       const actor = actorByLogin(String(payload.login || ""));
       if (!actor || payload.password !== ERRAND_PASSWORD) {
         return json(route, { error: "email or password is incorrect" }, 401);
@@ -387,14 +430,22 @@ export async function installErrandLocationRunnerApi(page: Page) {
       return json(route, { points: 100, honor: 0, lockedPoints: 0 });
     }
     if (path === "/api/me/stats" && method === "GET") {
-      return json(route, { posts: 0, replies: 0, saved: 0, liked: 0, contribution: 0 });
+      return json(route, {
+        posts: 0,
+        replies: 0,
+        saved: 0,
+        liked: 0,
+        contribution: 0,
+      });
     }
     if (path === "/api/me/rewards" && method === "GET") {
       return json(route, { lifecycle: "placeholder", entries: [] });
     }
     if (path === "/api/me/settings" && method === "GET") return json(route, {});
-    if (path === "/api/me/history" && method === "POST") return json(route, { items: [] });
-    if (path.startsWith("/api/me/") && method === "GET") return json(route, { items: [] });
+    if (path === "/api/me/history" && method === "POST")
+      return json(route, { items: [] });
+    if (path.startsWith("/api/me/") && method === "GET")
+      return json(route, { items: [] });
     if (path === "/api/identity/actors" && method === "GET") {
       return json(route, { actors: [] });
     }
@@ -402,7 +453,12 @@ export async function installErrandLocationRunnerApi(page: Page) {
       return json(route, { bound: false, enabled: false });
     }
     if (path === "/api/channel" && method === "GET") {
-      return json(route, { ok: true, items: [], hasMore: false, nextOffset: 0 });
+      return json(route, {
+        ok: true,
+        items: [],
+        hasMore: false,
+        nextOffset: 0,
+      });
     }
     if (path === "/api/messages" && method === "GET") {
       const terminalNotification =
@@ -438,11 +494,15 @@ export async function installErrandLocationRunnerApi(page: Page) {
         },
       });
     }
-    if (/^\/api\/notifications\/[A-Za-z0-9:._-]+\/read$/.test(path) && method === "POST") {
+    if (
+      /^\/api\/notifications\/[A-Za-z0-9:._-]+\/read$/.test(path) &&
+      method === "POST"
+    ) {
       return json(route, { ok: true });
     }
     if (path === "/api/errands/orders/eligibility" && method === "GET") {
-      if (actorAtRequest !== "creatorA") return json(route, { error: "forbidden" }, 403);
+      if (actorAtRequest !== "creatorA")
+        return json(route, { error: "forbidden" }, 403);
       return json(route, {
         ok: true,
         reason: "",
@@ -452,7 +512,8 @@ export async function installErrandLocationRunnerApi(page: Page) {
       });
     }
     if (path === "/api/errands/orders" && method === "POST") {
-      if (actorAtRequest !== "creatorA") return json(route, { error: "forbidden" }, 403);
+      if (actorAtRequest !== "creatorA")
+        return json(route, { error: "forbidden" }, 403);
       const payload = request.postDataJSON();
       state.createBodies.push(payload);
       state.order = {
@@ -466,7 +527,9 @@ export async function installErrandLocationRunnerApi(page: Page) {
         return json(route, { error: "runner verification required" }, 403);
       }
       const items =
-        state.order && state.order.status === "paid_locked" && !state.order.runnerUserId
+        state.order &&
+        state.order.status === "paid_locked" &&
+        !state.order.runnerUserId
           ? [poolOrder(state.order)]
           : [];
       return fixtureResponse(route, state, actorAtRequest, method, path, {
@@ -481,15 +544,26 @@ export async function installErrandLocationRunnerApi(page: Page) {
           return json(route, { error: "runner verification required" }, 403);
         }
         const visibleToAssignedRunner =
-          actorAtRequest === "runnerB" && state.order.runnerUserId === "assigned-runner-B-id";
-        const terminal = ["completed", "cancelled"].includes(state.order.status);
+          actorAtRequest === "runnerB" &&
+          state.order.runnerUserId === "assigned-runner-B-id";
+        const terminal = ["completed", "cancelled"].includes(
+          state.order.status,
+        );
         const items = visibleToAssignedRunner
           ? [terminal ? poolOrder(state.order) : fullOrder(state.order)]
           : [];
         const body = { items, total: items.length };
-        return fixtureResponse(route, state, actorAtRequest, method, path, body);
+        return fixtureResponse(
+          route,
+          state,
+          actorAtRequest,
+          method,
+          path,
+          body,
+        );
       }
-      if (actorAtRequest !== "creatorA") return json(route, { error: "forbidden" }, 403);
+      if (actorAtRequest !== "creatorA")
+        return json(route, { error: "forbidden" }, 403);
       return json(route, { items: [fullOrder(state.order)], total: 1 });
     }
 
@@ -499,14 +573,28 @@ export async function installErrandLocationRunnerApi(page: Page) {
         return json(route, { error: "not found" }, 404);
       }
       if (canSeeFullOrder(actorAtRequest, state.order)) {
-        return fixtureResponse(route, state, actorAtRequest, method, path, fullDetail(state.order));
+        return fixtureResponse(
+          route,
+          state,
+          actorAtRequest,
+          method,
+          path,
+          fullDetail(state.order),
+        );
       }
       if (
         actorAtRequest === "runnerB" &&
         state.order.runnerUserId === "assigned-runner-B-id" &&
         ["completed", "cancelled"].includes(state.order.status)
       ) {
-        return fixtureResponse(route, state, actorAtRequest, method, path, safeDetail(state.order));
+        return fixtureResponse(
+          route,
+          state,
+          actorAtRequest,
+          method,
+          path,
+          safeDetail(state.order),
+        );
       }
       return fixtureResponse(
         route,
@@ -528,7 +616,10 @@ export async function installErrandLocationRunnerApi(page: Page) {
       }
       const action = transitionMatch[2];
       if (action === "accept") {
-        if (actorAtRequest !== "runnerB" || state.order.status !== "paid_locked") {
+        if (
+          actorAtRequest !== "runnerB" ||
+          state.order.status !== "paid_locked"
+        ) {
           return json(route, { error: "transition forbidden" }, 409);
         }
         state.order.runnerUserId = "assigned-runner-B-id";
@@ -544,23 +635,33 @@ export async function installErrandLocationRunnerApi(page: Page) {
         }
         state.order.status = "delivering";
       } else if (action === "deliver") {
-        if (actorAtRequest !== "runnerB" || state.order.status !== "delivering") {
+        if (
+          actorAtRequest !== "runnerB" ||
+          state.order.status !== "delivering"
+        ) {
           return json(route, { error: "transition forbidden" }, 409);
         }
         state.order.status = "delivered";
       } else if (action === "complete") {
-        if (actorAtRequest !== "creatorA" || state.order.status !== "delivered") {
+        if (
+          actorAtRequest !== "creatorA" ||
+          state.order.status !== "delivered"
+        ) {
           return json(route, { error: "transition forbidden" }, 409);
         }
         state.order.status = "completed";
       } else {
-        if (actorAtRequest !== "creatorA") return json(route, { error: "forbidden" }, 403);
+        if (actorAtRequest !== "creatorA")
+          return json(route, { error: "forbidden" }, 403);
         state.order.status = "cancelled";
       }
       state.order.timeline.push({
         status: state.order.status,
-        at: new Date(Date.parse(FIXED_AT) + state.order.timeline.length * 60_000).toISOString(),
-        actor: action === "complete" || action === "cancel" ? "requester" : "runner",
+        at: new Date(
+          Date.parse(FIXED_AT) + state.order.timeline.length * 60_000,
+        ).toISOString(),
+        actor:
+          action === "complete" || action === "cancel" ? "requester" : "runner",
       });
       state.transitions.push(action);
       const body =
@@ -572,7 +673,11 @@ export async function installErrandLocationRunnerApi(page: Page) {
 
     const key = `${method} ${path}`;
     state.unexpectedRequests.push(key);
-    return json(route, { error: `unexpected errand fixture request: ${key}` }, 500);
+    return json(
+      route,
+      { error: `unexpected errand fixture request: ${key}` },
+      500,
+    );
   });
 
   return state;
@@ -586,7 +691,8 @@ export async function loginErrandActor(page: Page, login: string) {
   await panel.locator('input[type="password"]').fill(ERRAND_PASSWORD);
   const response = page.waitForResponse(
     (candidate) =>
-      candidate.url().endsWith("/api/auth/login") && candidate.request().method() === "POST",
+      candidate.url().endsWith("/api/auth/login") &&
+      candidate.request().method() === "POST",
   );
   await panel.locator('button[type="submit"]').click();
   await expect((await response).ok()).toBe(true);
@@ -602,10 +708,12 @@ export async function openProfileWithoutReload(page: Page) {
 }
 
 export async function logoutErrandActor(page: Page) {
-  if (!/#\/profile$/.test(new URL(page.url()).hash)) await openProfileWithoutReload(page);
+  if (!/#\/profile$/.test(new URL(page.url()).hash))
+    await openProfileWithoutReload(page);
   const response = page.waitForResponse(
     (candidate) =>
-      candidate.url().endsWith("/api/auth/logout") && candidate.request().method() === "POST",
+      candidate.url().endsWith("/api/auth/logout") &&
+      candidate.request().method() === "POST",
   );
   await page.getByRole("button", { name: "退出登录" }).click();
   await expect((await response).ok()).toBe(true);
@@ -614,5 +722,6 @@ export async function logoutErrandActor(page: Page) {
 
 export function expectNoPrivateSentinel(value: unknown) {
   const wire = JSON.stringify(value);
-  for (const sentinel of PRIVATE_SENTINELS) expect(wire).not.toContain(sentinel);
+  for (const sentinel of PRIVATE_SENTINELS)
+    expect(wire).not.toContain(sentinel);
 }
