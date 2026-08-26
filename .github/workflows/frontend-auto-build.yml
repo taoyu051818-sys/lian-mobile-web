@@ -91,6 +91,14 @@ jobs:
           EXPECTED_COMMIT: ${{ github.sha }}
         run: |
           set -Eeuo pipefail
+          if ! printf '%s' "$LIAN_WEB_DIR" | grep -Eq '^/[A-Za-z0-9._/-]+$'; then
+            echo "LIAN_WEB_DIR must be an absolute path with only A-Z a-z 0-9 . _ - / characters"
+            exit 1
+          fi
+          if printf '%s' "$LIAN_WEB_DIR" | grep -Eq '(^|/)\.\.?(/|$)|//'; then
+            echo "LIAN_WEB_DIR must not contain dot segments or repeated slashes"
+            exit 1
+          fi
           tar -C release-dist -czf frontend-dist.tgz .
           scp -i ~/.ssh/lian_web_deploy_key \
             -o IdentitiesOnly=yes \
@@ -142,6 +150,15 @@ jobs:
           LIAN_WEB_DIR: ${{ vars.LIAN_WEB_DIR || '/opt/lian-mobile-web' }}
           EXPECTED_COMMIT: ${{ github.sha }}
         run: |
+          set -Eeuo pipefail
+          if ! printf '%s' "$LIAN_WEB_DIR" | grep -Eq '^/[A-Za-z0-9._/-]+$'; then
+            echo "LIAN_WEB_DIR must be an absolute path with only A-Z a-z 0-9 . _ - / characters"
+            exit 1
+          fi
+          if printf '%s' "$LIAN_WEB_DIR" | grep -Eq '(^|/)\.\.?(/|$)|//'; then
+            echo "LIAN_WEB_DIR must not contain dot segments or repeated slashes"
+            exit 1
+          fi
           ssh -i ~/.ssh/lian_web_deploy_key \
             -o IdentitiesOnly=yes \
             -o StrictHostKeyChecking=yes \

@@ -52,6 +52,15 @@ describe("frontend release artifact deployment", () => {
     expect(deploy).toMatch(/cat dist\/build-commit\.txt/);
   });
 
+  it("validates the production target directory before interpolating it into ssh", () => {
+    const deploy = deployMainSection();
+
+    expect(deploy).toContain("grep -Eq '^/[A-Za-z0-9._/-]+$'");
+    expect(deploy).toContain("grep -Eq '(^|/)\\.\\.?(/|$)|//'");
+    expect(deploy).toMatch(/LIAN_WEB_DIR must be an absolute path/);
+    expect(deploy).toMatch(/LIAN_WEB_DIR must not contain dot segments/);
+  });
+
   it("documents the artifact-only production boundary", () => {
     expect(releaseRunbook).toMatch(/uploads the reviewed `dist\/` artifact/i);
     expect(releaseRunbook).toMatch(/downloads\s+that exact artifact/i);
