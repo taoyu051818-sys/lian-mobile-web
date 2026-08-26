@@ -99,6 +99,10 @@ jobs:
             echo "LIAN_WEB_DIR must not contain dot segments or repeated slashes"
             exit 1
           fi
+          if [ "$LIAN_WEB_DIR" = "/" ] || printf '%s' "$LIAN_WEB_DIR" | grep -Eq '/$'; then
+            echo "LIAN_WEB_DIR must not be root or end with a slash"
+            exit 1
+          fi
           tar -C release-dist -czf frontend-dist.tgz .
           scp -i ~/.ssh/lian_web_deploy_key \
             -o IdentitiesOnly=yes \
@@ -157,6 +161,10 @@ jobs:
           fi
           if printf '%s' "$LIAN_WEB_DIR" | grep -Eq '(^|/)\.\.?(/|$)|//'; then
             echo "LIAN_WEB_DIR must not contain dot segments or repeated slashes"
+            exit 1
+          fi
+          if [ "$LIAN_WEB_DIR" = "/" ] || printf '%s' "$LIAN_WEB_DIR" | grep -Eq '/$'; then
+            echo "LIAN_WEB_DIR must not be root or end with a slash"
             exit 1
           fi
           ssh -i ~/.ssh/lian_web_deploy_key \

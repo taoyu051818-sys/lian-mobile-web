@@ -72,6 +72,9 @@ describe("frontend release artifact deployment", () => {
     expect(deploy).toContain("grep -Eq '(^|/)\\.\\.?(/|$)|//'");
     expect(deploy).toMatch(/LIAN_WEB_DIR must be an absolute path/);
     expect(deploy).toMatch(/LIAN_WEB_DIR must not contain dot segments/);
+    expect(deploy).toContain('[ "$LIAN_WEB_DIR" = "/" ]');
+    expect(deploy).toContain("grep -Eq '/$'");
+    expect(deploy).toMatch(/LIAN_WEB_DIR must not be root or end with a slash/);
   });
 
   it("documents the artifact-only production boundary", () => {
