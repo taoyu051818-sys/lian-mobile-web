@@ -31,7 +31,13 @@ export const RUNNER_POOL_KEYS = TERMINAL_RUNNER_SAFE_ORDER_KEYS;
 
 export type ErrandActorKey = "creatorA" | "runnerB" | "runnerC" | "ordinaryD";
 type ErrandStatus =
-  "paid_locked" | "assigned" | "at_shop" | "delivering" | "delivered" | "completed" | "cancelled";
+  | "paid_locked"
+  | "assigned"
+  | "at_shop"
+  | "delivering"
+  | "delivered"
+  | "completed"
+  | "cancelled";
 
 interface FixtureActor {
   key: ErrandActorKey;
