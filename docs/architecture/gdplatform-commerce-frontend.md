@@ -1,13 +1,13 @@
 # GDPlatform commerce frontend boundary
 
-Status: accepted implementation baseline
-Date: 2026-08-13
+Status: RC1 R1 implementation candidate
+Date: 2026-08-24
 
 ## Decision
 
 LIAN is the user experience and same-origin BFF client. GDPlatform is the commercial system of
-record. NodeBB remains the community content system. LAPlatform will be retired after its bounded
-read compatibility window.
+record. NodeBB remains the community forum system. LAPlatform is retired from the LIAN frontend:
+the browser has no LA client, component, request state, route, fallback or session-derived lane.
 
 The frontend must not merge these concepts:
 
@@ -23,9 +23,9 @@ never receive or persist a GDPlatform service token, actor assertion, internal o
 credential or verified openid assertion. Pricing, discounts, inventory and payable totals are always
 server-calculated.
 
-The existing LAPlatform administrator merchant UI provides reusable request-ownership, abort,
-auth-epoch, strict decoding and finite-state patterns. Its LA-specific name, path and DTO are not the
-target architecture.
+The request-ownership and auth-epoch protections learned from the former administrator merchant UI
+remain in the neutral admin and commerce state owners. No LA-specific name, path, DTO or transport
+remains in frontend runtime source.
 
 ## Feature layout
 
@@ -60,17 +60,17 @@ invalidated on auth epoch changes; late responses from an old account cannot upd
 
 ## Delivery order
 
-1. Replace the LA administrator read with a neutral commerce route while preserving the accepted
-   decoder and request ownership protections.
+1. RC1 R1 removes the LA administrator browser journey while preserving the legacy LIAN ops-token
+   reports, verification, auth-link and audit contract.
 2. Add store and product resource routing and read-only journeys.
 3. Add account-scoped cart, quote and idempotent order creation without real-money payment.
 4. Add commerce-order list/detail separately from existing errand order pages.
 5. Add payment and refunds only after backend AppID/openid and reconciliation gates pass.
-6. Remove LA-specific UI, types and compatibility paths after zero old traffic is verified.
+6. Withdraw the default-off LIAN backend LA route only in the separately reviewed R2 slice after an
+   accepted R1 release is observed making zero LA calls.
 
-The old LA compatibility path is default-off. It may be enabled only when the backend records a
-named owner, exact removal date and per-route traffic telemetry; frontend fallback must not silently
-keep it alive or extend the deadline.
+The backend compatibility route and both default-false flags remain only as a bounded R1 rollback
+control. The frontend cannot enable them and never falls back to LA when GD is disabled or fails.
 
 Every API slice requires strict DTO tests, auth-switch and stale-response tests, malformed-response
 failure, deep-link refresh, no-direct-GD-origin checks and a backend contract reference.

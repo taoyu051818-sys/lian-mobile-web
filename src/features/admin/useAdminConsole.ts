@@ -489,13 +489,18 @@ export function useAdminConsole({
     }
   }
 
-  function dispose() {
+  function retire() {
     if (disposed) return;
-    disposed = true;
     lifecycle += 1;
     retireOperationOwners();
     clearEphemeral();
     authorizationVersion += 1;
+  }
+
+  function dispose() {
+    if (disposed) return;
+    retire();
+    disposed = true;
   }
 
   return {
@@ -533,6 +538,7 @@ export function useAdminConsole({
     applyUserStatus,
     reviewVerificationRequest,
     revealVerificationRequest,
+    retire,
     dispose,
   };
 }
