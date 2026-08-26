@@ -72,9 +72,13 @@ export function errandDropoffPlaceLabel(location: MapLocation): string {
   return (location.place?.name || location.name || "").trim();
 }
 
+export function errandDropoffPlaceId(location: MapLocation): string {
+  return (location.place?.id || location.placeId || "").trim();
+}
+
 function hasUsableDropoffPlace(location: MapLocation) {
   const label = errandDropoffPlaceLabel(location);
-  const placeId = (location.place?.id || location.placeId || location.id || "").trim();
+  const placeId = errandDropoffPlaceId(location);
   return Boolean(
     label && placeId && Number.isFinite(location.lat) && Number.isFinite(location.lng),
   );
@@ -250,7 +254,7 @@ export function useErrandOrderDraft(initialMerchantPostId: number, initialPickup
 
   function setDropoffPlace(place: MapLocation) {
     const label = (place.place?.name || place.name || "").trim();
-    const placeId = (place.place?.id || place.placeId || place.id || "").trim();
+    const placeId = errandDropoffPlaceId(place);
     const lat = Number.isFinite(place.lat) ? place.lat : null;
     const lng = Number.isFinite(place.lng) ? place.lng : null;
     draft.value.dropoffLocation = {

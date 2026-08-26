@@ -6,7 +6,11 @@ import {
   ERRAND_ORDER_DROPOFF_PICKER_TITLE,
 } from "../../config/brand";
 import type { MapLocation } from "../../types/map";
-import { errandDropoffPlaceLabel, useErrandDropoffPlaces } from "./useErrandOrderDraft";
+import {
+  errandDropoffPlaceId,
+  errandDropoffPlaceLabel,
+  useErrandDropoffPlaces,
+} from "./useErrandOrderDraft";
 
 const emit = defineEmits<{
   select: [place: MapLocation];
@@ -35,7 +39,7 @@ onMounted(() => {
     <div v-else class="errand-dropoff-place-picker__options">
       <button
         v-for="location in selectableLocations"
-        :key="location.place?.id || location.placeId || location.id"
+        :key="errandDropoffPlaceId(location)"
         type="button"
         class="errand-dropoff-place-picker__option"
         data-testid="errand-order-dropoff-place-option"
