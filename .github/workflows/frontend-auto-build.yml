@@ -70,7 +70,74 @@ jobs:
           chmod 600 ~/.ssh/lian_web_deploy_key
           ssh-keyscan -H "${{ secrets.LIAN_WEB_SSH_HOST }}" >> ~/.ssh/known_hosts
 
-      - name: Pull, build, and stamp production frontend
+      - name: Download reviewed frontend artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-dist-${{ github.sha }}
+          path: release-dist
+
+      - name: Verify reviewed artifact marker
+        env:
+          EXPECTED_COMMIT: ${{ github.sha }}
+        run: |
+          set -Eeuo pipefail
+          test -f release-dist/build-commit.txt
+          grep -qx "commit=$EXPECTED_COMMIT" release-dist/build-commit.txt
+          cat release-dist/build-commit.txt
+
+      - name: Upload reviewed frontend artifact
+        env:
+          LIAN_WEB_DIR: ${{ vars.LIAN_WEB_DIR || '/opt/lian-mobile-web' }}
+          EXPECTED_COMMIT: ${{ github.sha }}
+        run: |
+          set -Eeuo pipefail
+          tar -C release-dist -czf frontend-dist.tgz .
+          scp -i ~/.ssh/lian_web_deploy_key \
+            -o IdentitiesOnly=yes \
+            -o StrictHostKeyChecking=yes \
+            frontend-dist.tgz \
+            "${{ secrets.LIAN_WEB_SSH_USER }}@${{ secrets.LIAN_WEB_SSH_HOST }}:/tmp/lian-frontend-${EXPECTED_COMMIT}.tgz"
+
+          ssh -i ~/.ssh/lian_web_deploy_key \
+            -o IdentitiesOnly=yes \
+            -o StrictHostKeyChecking=yes \
+            "${{ secrets.LIAN_WEB_SSH_USER }}@${{ secrets.LIAN_WEB_SSH_HOST }}" \
+            "LIAN_WEB_DIR='${LIAN_WEB_DIR}' EXPECTED_COMMIT='${EXPECTED_COMMIT}' bash -s" <<'REMOTE'
+          set -Eeuo pipefail
+
+          archive="/tmp/lian-frontend-${EXPECTED_COMMIT}.tgz"
+          cd "$LIAN_WEB_DIR"
+
+          release_dir="$(mktemp -d "$LIAN_WEB_DIR/.release-dist.XXXXXX")"
+          cleanup_release_dir=1
+          cleanup() {
+            if [ "${cleanup_release_dir:-0}" = "1" ] && [ -n "${release_dir:-}" ]; then
+              rm -rf "$release_dir"
+            fi
+            rm -f "$archive"
+          }
+          trap cleanup EXIT
+
+          tar -xzf "$archive" -C "$release_dir"
+          test -f "$release_dir/build-commit.txt"
+          grep -qx "commit=$EXPECTED_COMMIT" "$release_dir/build-commit.txt"
+
+          previous_dir=""
+          if [ -d dist ]; then
+            previous_dir="dist.previous.$(date -u +%Y%m%dT%H%M%SZ)"
+            mv dist "$previous_dir"
+          fi
+
+          mv "$release_dir" dist
+          cleanup_release_dir=0
+
+          echo "Frontend artifact deployed at $EXPECTED_COMMIT"
+          if [ -n "$previous_dir" ]; then
+            echo "Previous dist moved to $previous_dir"
+          fi
+          REMOTE
+
+      - name: Verify remote build marker
         env:
           LIAN_WEB_DIR: ${{ vars.LIAN_WEB_DIR || '/opt/lian-mobile-web' }}
           EXPECTED_COMMIT: ${{ github.sha }}
@@ -81,42 +148,8 @@ jobs:
             "${{ secrets.LIAN_WEB_SSH_USER }}@${{ secrets.LIAN_WEB_SSH_HOST }}" \
             "LIAN_WEB_DIR='${LIAN_WEB_DIR}' EXPECTED_COMMIT='${EXPECTED_COMMIT}' bash -s" <<'REMOTE'
           set -Eeuo pipefail
-
-          cd "$LIAN_WEB_DIR"
-          git fetch origin main
-          git reset --hard origin/main
-
-          current_commit="$(git rev-parse HEAD)"
-          if [ "$current_commit" != "$EXPECTED_COMMIT" ]; then
-            echo "ERROR: deployed checkout is $current_commit, expected $EXPECTED_COMMIT"
-            exit 1
-          fi
-
-          npm ci
-          npm run build
-
-          mkdir -p dist
-          {
-            echo "commit=$current_commit"
-            echo "branch=main"
-            echo "built_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-            echo "builder=github-actions"
-          } > dist/build-commit.txt
-
-          echo "Frontend build deployed at $current_commit"
-          REMOTE
-
-      - name: Verify remote build marker
-        env:
-          LIAN_WEB_DIR: ${{ vars.LIAN_WEB_DIR || '/opt/lian-mobile-web' }}
-        run: |
-          ssh -i ~/.ssh/lian_web_deploy_key \
-            -o IdentitiesOnly=yes \
-            -o StrictHostKeyChecking=yes \
-            "${{ secrets.LIAN_WEB_SSH_USER }}@${{ secrets.LIAN_WEB_SSH_HOST }}" \
-            "LIAN_WEB_DIR='${LIAN_WEB_DIR}' bash -s" <<'REMOTE'
-          set -Eeuo pipefail
           cd "$LIAN_WEB_DIR"
           test -f dist/build-commit.txt
+          grep -qx "commit=$EXPECTED_COMMIT" dist/build-commit.txt
           cat dist/build-commit.txt
           REMOTE
