@@ -122,9 +122,13 @@ jobs:
 
           release_dir="$(mktemp -d "$LIAN_WEB_DIR/.release-dist.XXXXXX")"
           cleanup_release_dir=1
+          restore_previous_dist=0
           cleanup() {
             if [ "${cleanup_release_dir:-0}" = "1" ] && [ -n "${release_dir:-}" ]; then
               rm -rf "$release_dir"
+            fi
+            if [ "${restore_previous_dist:-0}" = "1" ] && [ -n "${previous_dir:-}" ] && [ -d "$previous_dir" ] && [ ! -e dist ]; then
+              mv "$previous_dir" dist
             fi
             rm -f "$archive"
           }
@@ -138,10 +142,12 @@ jobs:
           if [ -d dist ]; then
             previous_dir="dist.previous.$(date -u +%Y%m%dT%H%M%SZ)"
             mv dist "$previous_dir"
+            restore_previous_dist=1
           fi
 
           mv "$release_dir" dist
           cleanup_release_dir=0
+          restore_previous_dist=0
 
           echo "Frontend artifact deployed at $EXPECTED_COMMIT"
           if [ -n "$previous_dir" ]; then
