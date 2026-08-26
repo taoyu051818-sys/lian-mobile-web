@@ -84,9 +84,16 @@ test("useChannelMessages calls markChannelMessagesRead only on reset loads", () 
 // --- notification read-on-open wiring ---
 
 test("api/notifications.ts posts notification read state to the existing per-id endpoint", () => {
-  assert.match(notificationsApiSource, /if \(!notificationIds\.length\) return/);
+  assert.match(
+    notificationsApiSource,
+    /export async function markNotificationRead\(\s*notificationId: string \| number,\s*source\?: NotificationSource,/,
+  );
   assert.match(notificationsApiSource, /`\/api\/notifications\/\$\{normalizedId\}\/read`/);
-  assert.match(notificationsApiSource, /apiSend\(notificationReadPath\(notificationId\)/);
+  assert.match(
+    notificationsApiSource,
+    /apiSend\(notificationReadPath\(notificationId, source\), \{ method: "POST" \}\)/,
+  );
+  assert.doesNotMatch(notificationsApiSource, /markNotificationsRead/);
   assert.doesNotMatch(notificationsApiSource, /apiSend\("\/api\/messages\/read"/);
 });
 
@@ -95,20 +102,32 @@ test("api/notifications.ts treats missing read flags as already read", () => {
 });
 
 test("useNotifications marks unread notifications locally and explicitly rolls back a failed POST", () => {
-  const localIdx = notificationsSource.indexOf("markNotificationReadLocally(item.id)");
-  const postIdx = notificationsSource.indexOf(
-    "markNotificationsRead([item.id]).catch((error) => {",
+  const identityIdx = notificationsSource.indexOf(
+    "const identityKey = notificationIdentityKey(item)",
   );
+  const localIdx = notificationsSource.indexOf("markNotificationReadLocally(item)");
+  const postIdx = notificationsSource.indexOf("const readRequest = item.source");
   const rollbackIdx = notificationsSource.indexOf(
-    "locallyReadNotificationIds.delete(String(item.id))",
+    "locallyReadNotificationKeys.delete(identityKey)",
   );
   assert.match(
     notificationsSource,
     /if \(item\.read \|\| item\.id === undefined \|\| item\.id === null\) return/,
   );
+  assert.match(notificationsSource, /return `source:\$\{source\}:id:\$\{String\(item\.id\)\}`/);
+  assert.match(notificationsSource, /markNotificationRead\(item\.id, item\.source\)/);
+  assert.match(
+    notificationsSource,
+    /notificationIdentityKey\(entry\) === identityKey \? \{ \.\.\.entry, read: false \} : entry/,
+  );
+  assert.ok(identityIdx >= 0, "opened notifications should capture their source/id identity");
   assert.ok(localIdx >= 0, "opened unread notifications should be marked read locally");
   assert.ok(postIdx >= 0, "opened unread notifications should post read state");
   assert.ok(rollbackIdx >= 0, "failed read mutations should roll back the local read mark");
+  assert.ok(
+    identityIdx < localIdx,
+    "the composite identity should be captured before local mutation",
+  );
   assert.ok(localIdx < postIdx, "local read mark should not wait for the backend POST");
   assert.ok(postIdx < rollbackIdx, "rollback should run from the POST failure handler");
 });

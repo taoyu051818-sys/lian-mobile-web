@@ -1,5 +1,5 @@
 import { ref } from "vue";
-import { fetchNotifications, markNotificationsRead } from "../../api/notifications";
+import { fetchNotifications, markNotificationRead } from "../../api/notifications";
 import { LianApiError } from "../../api/http";
 import type { NotificationItem } from "../../types/messages";
 
@@ -30,24 +30,25 @@ export function mergeNotificationItems(
 ): NotificationItem[] {
   const merged = new Map<string, NotificationItem>();
   for (const item of existing) {
-    merged.set(notificationMergeKey(item), item);
+    merged.set(notificationIdentityKey(item), item);
   }
   for (const item of incoming) {
-    const key = notificationMergeKey(item);
+    const key = notificationIdentityKey(item);
     const current = merged.get(key);
     merged.set(key, current?.read ? { ...item, read: true } : item);
   }
   return [...merged.values()];
 }
 
-function notificationMergeKey(item: NotificationItem): string {
+export function notificationIdentityKey(item: NotificationItem): string {
+  const source = item.source ?? "legacy";
   if (item.id !== undefined && item.id !== null && String(item.id)) {
-    return `id:${String(item.id)}`;
+    return `source:${source}:id:${String(item.id)}`;
   }
   // NodeBB notifications are appended to every LIAN page and some legacy
   // rows do not carry ids. A stable content fingerprint prevents an exact
   // repeat from accumulating while still keeping rows with distinct targets.
-  return `fallback:${JSON.stringify([
+  return `source:${source}:fallback:${JSON.stringify([
     item.type,
     item.kind,
     item.tid,
@@ -62,10 +63,12 @@ function notificationMergeKey(item: NotificationItem): string {
 
 function applyLocalReadMarks(
   items: NotificationItem[],
-  locallyReadNotificationIds: Set<string>,
+  locallyReadNotificationKeys: Set<string>,
 ): NotificationItem[] {
   return items.map((item) =>
-    item.id !== undefined && item.id !== null && locallyReadNotificationIds.has(String(item.id))
+    item.id !== undefined &&
+    item.id !== null &&
+    locallyReadNotificationKeys.has(notificationIdentityKey(item))
       ? { ...item, read: true }
       : item,
   );
@@ -78,7 +81,7 @@ export function useNotifications() {
   const notificationHasMore = ref(false);
   const notificationOffset = ref(0);
   const notificationLastFailedReset = ref(true);
-  const locallyReadNotificationIds = new Set<string>();
+  const locallyReadNotificationKeys = new Set<string>();
 
   async function loadNotifications(reset = true) {
     if (notificationLoading.value) return;
@@ -94,7 +97,7 @@ export function useNotifications() {
     try {
       const requestedOffset = reset ? 0 : notificationOffset.value;
       const response = await fetchNotifications(requestedOffset, NOTIFICATION_PAGE_SIZE);
-      const nextItems = applyLocalReadMarks(response.items || [], locallyReadNotificationIds);
+      const nextItems = applyLocalReadMarks(response.items || [], locallyReadNotificationKeys);
       notificationItems.value = reset
         ? mergeNotificationItems([], nextItems)
         : mergeNotificationItems(notificationItems.value, nextItems);
@@ -123,23 +126,28 @@ export function useNotifications() {
     await loadNotifications(notificationLastFailedReset.value);
   }
 
-  function markNotificationReadLocally(notificationId: string | number) {
-    locallyReadNotificationIds.add(String(notificationId));
+  function markNotificationReadLocally(notification: NotificationItem) {
+    const identityKey = notificationIdentityKey(notification);
+    locallyReadNotificationKeys.add(identityKey);
     notificationItems.value = notificationItems.value.map((item) =>
-      String(item.id) === String(notificationId) ? { ...item, read: true } : item,
+      notificationIdentityKey(item) === identityKey ? { ...item, read: true } : item,
     );
   }
 
   function openNotification(item: NotificationItem) {
     if (item.read || item.id === undefined || item.id === null) return;
-    markNotificationReadLocally(item.id);
-    void markNotificationsRead([item.id]).catch((error) => {
+    const identityKey = notificationIdentityKey(item);
+    markNotificationReadLocally(item);
+    const readRequest = item.source
+      ? markNotificationRead(item.id, item.source)
+      : markNotificationRead(item.id);
+    void readRequest.catch((error) => {
       // Keep the optimistic update only when the backend accepts it. Rolling
       // back makes the row retryable instead of hiding a failed mutation until
       // the next full refresh.
-      locallyReadNotificationIds.delete(String(item.id));
+      locallyReadNotificationKeys.delete(identityKey);
       notificationItems.value = notificationItems.value.map((entry) =>
-        String(entry.id) === String(item.id) ? { ...entry, read: false } : entry,
+        notificationIdentityKey(entry) === identityKey ? { ...entry, read: false } : entry,
       );
       // Read failures are independent from inbox-fetch state, but must remain
       // observable for diagnostics.
