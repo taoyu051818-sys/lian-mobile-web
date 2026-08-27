@@ -37,10 +37,10 @@ The deployable artifact is the output of `npm run build` (the Vite `dist/` direc
 - It is the authoritative automatic PR/main quality gate; deterministic browser journeys run in
   the separate `.github/workflows/e2e-pr-gate.yml` workflow.
 
-**Prelaunch release gap:** `.github/workflows/frontend-auto-build.yml` is manual-only and still
-rebuilds on the target host. It is retained as a disabled-by-default development tool, not an
-accepted production release path. Before launch, a separate release task must make it download and
-deploy the reviewed CI artifact without installing or building on the target.
+**Prelaunch release boundary:** `.github/workflows/frontend-auto-build.yml` is manual-only. Its
+`verify` job builds and uploads the reviewed `dist/` artifact, and its `deploy-main` job downloads
+that exact artifact before copying it to the target host. The target host must only unpack and serve
+the artifact; it must not run dependency installation, source checkout repair, or a build step.
 
 **Deployment rule:** the target host receives the pre-built artifact. It must never run `npm install`, `npm run build`, or any build step at runtime.
 

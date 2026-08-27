@@ -33,7 +33,9 @@ pull-request workflow in `e2e-pr-gate.yml`; they complement rather than duplicat
 script.
 
 Before launch, `frontend-auto-build.yml` and `e2e-journey.yml` are explicit manual release tools.
-They are not scheduled and do not run on a pull request or main push.
+They are not scheduled and do not run on a pull request or main push. The frontend release workflow
+deploys only the `dist/` artifact produced by its verification job; the production host must not
+repair source, install dependencies, or rebuild the app during deployment.
 
 Vercel review-branch previews remain enabled, while root `vercel.json` disables automatic
 deployments from `main`. A Production deployment therefore requires a separate explicit release
