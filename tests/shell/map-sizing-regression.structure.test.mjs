@@ -49,15 +49,36 @@ test("useMapChrome exports composable with filter state and toggle", () => {
   assert.match(src, /MAP_FILTERS/);
 });
 
-test("MapLeafletView delegates post detail rendering to the global feed detail host", () => {
-  const src = read("src/features/map/MapLeafletView.vue");
+test("MapView delegates post detail rendering to the global feed detail host", () => {
+  const src = read("src/features/map/MapView.vue");
   assert.doesNotMatch(src, /PostDetailPanel/);
   assert.match(src, /detail\.open\(Number\(place\.tid\), "card"\)/);
 });
 
-// --- MapCanvas leaflet integration ---
+// --- MapCanvas Konva integration ---
 
-test("MapCanvas.vue exists for leaflet rendering", () => {
+test("MapCanvas.vue owns the Konva stage", () => {
   const src = read("src/features/map/MapCanvas.vue");
-  assert.ok(src.length > 0, "MapCanvas.vue should not be empty");
+  assert.match(src, /from "vue-konva"/);
+  assert.match(src, /<Stage/);
+  assert.match(src, /data-testid="konva-map-stage"/);
+  assert.doesNotMatch(src, /leaflet/i);
+});
+
+test("legacy Leaflet runtime and public editor are retired", () => {
+  const pkg = JSON.parse(read("package.json"));
+  assert.equal(pkg.dependencies.leaflet, undefined);
+  assert.equal(pkg.devDependencies?.["@types/leaflet"], undefined);
+  assert.equal(pkg.dependencies.konva, "^10.3.2");
+  assert.equal(pkg.dependencies["vue-konva"], "^3.4.0");
+  for (const rel of [
+    "src/platform/leaflet.ts",
+    "src/features/map/MapLeafletView.vue",
+    "public/tools/map-v2-editor.html",
+    "public/tools/map-v2-editor.js",
+    "public/tools/map-georef.html",
+    "public/tools/map-coastline-align.html",
+  ]) {
+    assert.equal(fs.existsSync(path.join(repoRoot, rel)), false, `${rel} must stay retired`);
+  }
 });

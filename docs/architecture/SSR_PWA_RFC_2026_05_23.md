@@ -131,7 +131,7 @@ Phase 1 SSRs only `/post/:tid` and `/`. The bulk of LIAN's composables are reach
 1. `src/composables/useReducedMotion.ts` — uses `window.matchMedia`. Must guard with `onMounted` and provide an SSR default of `reduce = false`.
 2. Any composable touching `localStorage` (draft session, interest picker, publish recovery). On SSR these must short-circuit to a deterministic empty value. Phase 1 doesn't render publish or feed surfaces, but the audit list must enumerate them so phase 1.5 isn't a surprise.
 3. Hash-listener / `window.location` consumers (share helpers, deep-link bootstrap) — must not register listeners during SSR.
-4. Leaflet map init — wrap in `<ClientOnly>` (or its hand-rolled equivalent — we don't pull in Nuxt's tag) so the map only mounts after hydration.
+4. Konva map init — keep the canvas chunk client-only so the stage mounts after hydration.
 5. `usePublishDraft` family — `localStorage` read in factory. Audit but defer enforcement to phase 1.5.
 
 **Phase boundary note:** because phase 1 SSR only covers `/post/:tid` and `/`, the SSR-safety bar applies to the components those two routes actually render. Publish / messages / profile / map composables are deferred to phase 1.5; they must not be SSR-hardened in phase 1 (out of scope, out of test budget).

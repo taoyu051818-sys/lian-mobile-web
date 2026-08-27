@@ -1,6 +1,13 @@
 # Current Status
 
-Last verified: 2026-08-24
+Last verified: 2026-08-27
+
+The active map implementation now uses a JSON-first Konva scene rendered through `vue-konva`.
+The Leaflet runtime, Leaflet composables and unauthenticated public map editing/georeference tools
+have been retired rather than kept as a parallel compatibility path. Existing `/api/map/v2/items`
+discovery, place/post navigation, publish location picking and `PostLocation` handoff remain the
+business boundaries. The next map slice is an authenticated scene editor and persistence API; it
+must build on the same scene schema instead of restoring the retired tools.
 
 RC1 LA retirement R1 is prepared as a frontend-only implementation candidate. It removes the
 automatic LA administrator probe, browser client, merchant component/request owner and

@@ -48,7 +48,7 @@ App.vue                              ← thin bootstrap and app mount
     │   ├── PageSurface.vue          ← generic content surface wrapper
     │   │   └── AppViewHost.vue      ← active page switcher
     │   │       ├── FeedView.vue
-    │   │       ├── MapLeafletView.vue
+    │   │       ├── MapView.vue
     │   │       ├── PublishView.vue
     │   │       ├── MessagesView.vue
     │   │       └── ProfileView.vue
@@ -120,13 +120,13 @@ The original foundation and page chrome migration work is merged:
 
 ## 6. Per-View Ownership Summary
 
-| View           | Current shell-chrome relationship                                            | Page-owned content relationship                                                                           | Notes                                                                  |
-| -------------- | ---------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
-| FeedView       | Declares top chrome intent through typed shell state; shell renders the tabs | Feed content, feed detail flow, and feed-local interaction state remain page-owned                        | The old Teleport-based feed top-tab pattern is historical only.        |
-| MapLeafletView | Uses shell chrome where appropriate for shared chrome presentation           | Map canvas, selection state, and detail orchestration remain map-owned                                    | `useMapSelection` reinforces page ownership of selection/detail logic. |
-| PublishView    | No longer routes publish actions through shell chrome                        | Publish form, clear action, and submit action are page-owned                                              | Bottom nav stays visible; `usePublishChromeActions` is removed.        |
-| MessagesView   | Uses shell chrome for page-level chrome surfaces where needed                | Message list rendering, bubble layout, sender identity placement, and composer behavior remain page-owned | Message-author-above-bubble is UI/content truth, not shell truth.      |
-| ProfileView    | Uses shell chrome for profile-level shell actions                            | Profile content remains page-owned                                                                        | No special stale doc correction needed in this slice.                  |
+| View         | Current shell-chrome relationship                                            | Page-owned content relationship                                                                           | Notes                                                                  |
+| ------------ | ---------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| FeedView     | Declares top chrome intent through typed shell state; shell renders the tabs | Feed content, feed detail flow, and feed-local interaction state remain page-owned                        | The old Teleport-based feed top-tab pattern is historical only.        |
+| MapView      | Uses shell chrome where appropriate for shared chrome presentation           | Konva canvas, selection state, and detail orchestration remain map-owned                                  | `useMapSelection` reinforces page ownership of selection/detail logic. |
+| PublishView  | No longer routes publish actions through shell chrome                        | Publish form, clear action, and submit action are page-owned                                              | Bottom nav stays visible; `usePublishChromeActions` is removed.        |
+| MessagesView | Uses shell chrome for page-level chrome surfaces where needed                | Message list rendering, bubble layout, sender identity placement, and composer behavior remain page-owned | Message-author-above-bubble is UI/content truth, not shell truth.      |
+| ProfileView  | Uses shell chrome for profile-level shell actions                            | Profile content remains page-owned                                                                        | No special stale doc correction needed in this slice.                  |
 
 ## 7. Current ShellChrome Contract
 
@@ -222,7 +222,7 @@ src/
     feed/
       FeedView.vue               ← feed content + feed-owned behavior, shell tab intent
     map/
-      MapLeafletView.vue         ← map content + map-owned behavior
+      MapView.vue                ← map content + map-owned behavior
       useMapSelection.ts         ← map-local selection/detail orchestration
     publish/
       PublishView.vue            ← publish content + local publish actions

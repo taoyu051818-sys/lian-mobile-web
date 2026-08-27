@@ -63,7 +63,7 @@ LIAN 是一个面向高校/园区/组织场景的 WAP 网页应用。核心不�
 
 ### 2.3 地图现状
 
-地图页当前使用 `MapLeafletView.vue`，已经接入 `MapCanvas`、`MapPlaceSheet`、`MapStatus`、`PostDetailPanel`，支持地图上的地点/帖子点击后展示地点 sheet 或帖子详情。
+地图页当前使用 `MapView.vue` 和 Konva `MapCanvas`，已经接入 `MapPlaceSheet`、`MapStatus` 与全局帖子详情，支持地点/帖子点击及结构化选点。
 
 后端当前 live API surface 中，地图主接口为：
 

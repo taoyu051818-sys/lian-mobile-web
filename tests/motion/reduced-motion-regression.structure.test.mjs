@@ -110,7 +110,7 @@ test("MessagesView uses declarative chrome (no floating chrome data attributes)"
 // together" feel of Dynamic Island. Guard the surfaces that own real motion.
 
 const motionTrackedFiles = [
-  "src/features/map/map-canvas.css",
+  "src/features/map/MapCanvas.vue",
   "src/shell/shell-chrome.css",
   "src/styles/content-immersive-ui.css",
   "src/features/feed/FeedItemCard.vue",

@@ -23,7 +23,7 @@ describe("publish location handoff structure", () => {
     expect(appViewHost).not.toMatch(/<KeepAlive\s+:include=/);
     expect(appViewHost.match(/<KeepAlive\b/g)).toHaveLength(2);
     expect(appViewHost).toMatch(
-      /<KeepAlive include="MapLeafletView">[\s\S]*?:is="viewComponents\.map"[\s\S]*?v-if="props\.activeViewKey === 'map'"[\s\S]*?<\/KeepAlive>/,
+      /<KeepAlive include="MapView">[\s\S]*?:is="viewComponents\.map"[\s\S]*?v-if="props\.activeViewKey === 'map'"[\s\S]*?<\/KeepAlive>/,
     );
     expect(appViewHost).toMatch(
       /<KeepAlive\s+v-if="shouldKeepPublishAlive"\s+include="PublishView">[\s\S]*?:is="viewComponents\.publish"[\s\S]*?v-if="props\.activeViewKey === 'publish'"[\s\S]*?<\/KeepAlive>/,

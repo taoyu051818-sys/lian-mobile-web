@@ -29,28 +29,25 @@ CSP is introduced in **Report-Only** mode first. Enforcement is a separate follo
 
 ### 2.1 Current Resource Truth
 
-Audited from `index.html`, `src/platform/leaflet.ts`, `src/views/MapLeafletView.vue`, and the standalone tool pages under `public/tools/`.
+Audited from `index.html`, `src/features/map/MapCanvas.vue`, and the remaining task-board page under `public/tools/`.
 
-| Resource                                  | Origin                                               | Directive                 | Current truth                                                                                                                                                                 |
-| ----------------------------------------- | ---------------------------------------------------- | ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Bundled Leaflet runtime for the Vue shell | same-origin Vite assets                              | `script-src`, `style-src` | `src/platform/leaflet.ts` imports `leaflet` and `leaflet/dist/leaflet.css`, so the active user-facing Vue runtime no longer loads Leaflet from `unpkg` in root `index.html`.  |
-| Standalone tool Leaflet CSS               | `https://unpkg.com/leaflet@1.9.4/dist/leaflet.css`   | `style-src`               | Still loaded by `public/tools/map-v2-editor.html`, `public/tools/map-georef.html`, and `public/tools/map-coastline-align.html`.                                               |
-| Standalone tool Leaflet JS                | `https://unpkg.com/leaflet@1.9.4/dist/leaflet.js`    | `script-src`              | Still loaded by the same standalone tool pages.                                                                                                                               |
-| Gaode tile servers                        | `https://webrd0{1-4}.is.autonavi.com/appmaptile?...` | `img-src`, `connect-src`  | Third-party map tiles remain an external runtime dependency.                                                                                                                  |
-| Campus base map                           | `/assets/campus-base-map.png`                        | `img-src`                 | Same-origin static asset.                                                                                                                                                     |
-| API endpoint                              | same-origin (`/api/...`)                             | `connect-src`             | Proxied through the app origin.                                                                                                                                               |
-| Image proxy                               | same-origin (`/api/image-proxy`)                     | `img-src`, `connect-src`  | Proxied through the app origin.                                                                                                                                               |
-| Runtime config inline script              | injected HTML `<script>`                             | `script-src`              | Release docs still reserve an inline runtime-config injection path, so Report-Only planning must keep that possibility in mind until the deploy contract is narrowed further. |
+| Resource                        | Origin                           | Directive                | Current truth                                                                                                                                                                 |
+| ------------------------------- | -------------------------------- | ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Bundled Konva/vue-konva runtime | same-origin Vite assets          | `script-src`             | The active map scene uses reviewed npm dependencies bundled by Vite.                                                                                                          |
+| Campus base map                 | `/assets/campus-base-map.png`    | `img-src`                | Same-origin static asset.                                                                                                                                                     |
+| API endpoint                    | same-origin (`/api/...`)         | `connect-src`            | Proxied through the app origin.                                                                                                                                               |
+| Image proxy                     | same-origin (`/api/image-proxy`) | `img-src`, `connect-src` | Proxied through the app origin.                                                                                                                                               |
+| Runtime config inline script    | injected HTML `<script>`         | `script-src`             | Release docs still reserve an inline runtime-config injection path, so Report-Only planning must keep that possibility in mind until the deploy contract is narrowed further. |
 
 ### 2.2 Report-Only Policy
 
 ```text
 Content-Security-Policy-Report-Only:
   default-src 'self';
-  script-src 'self' https://unpkg.com 'unsafe-inline';
-  style-src 'self' https://unpkg.com 'unsafe-inline';
-  img-src 'self' https://webrd01.is.autonavi.com https://webrd02.is.autonavi.com https://webrd03.is.autonavi.com https://webrd04.is.autonavi.com data: blob:;
-  connect-src 'self' https://webrd01.is.autonavi.com https://webrd02.is.autonavi.com https://webrd03.is.autonavi.com https://webrd04.is.autonavi.com;
+  script-src 'self' 'unsafe-inline';
+  style-src 'self' 'unsafe-inline';
+  img-src 'self' data: blob:;
+  connect-src 'self';
   font-src 'self';
   frame-src 'none';
   object-src 'none';
@@ -61,29 +58,25 @@ Content-Security-Policy-Report-Only:
 
 #### Directive Notes
 
-| Directive     | Value                                                                                                                                                | Why                                                                                                                                                                                                                                                                                                                      |
-| ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `default-src` | `'self'`                                                                                                                                             | Restrictive default; every category must be explicitly allowlisted.                                                                                                                                                                                                                                                      |
-| `script-src`  | `'self' https://unpkg.com 'unsafe-inline'`                                                                                                           | The active Vue shell should work from same-origin bundled assets. `unpkg.com` remains temporarily allowlisted only because the standalone internal map tools still load Leaflet there. `'unsafe-inline'` is retained for runtime-config injection and other deploy-time inline script exceptions until they are removed. |
-| `style-src`   | `'self' https://unpkg.com 'unsafe-inline'`                                                                                                           | Same split as `script-src`: same-origin for the bundled app, `unpkg.com` only for the remaining standalone tool pages, and `'unsafe-inline'` for current style/runtime exceptions.                                                                                                                                       |
-| `img-src`     | `'self' https://webrd01.is.autonavi.com https://webrd02.is.autonavi.com https://webrd03.is.autonavi.com https://webrd04.is.autonavi.com data: blob:` | Same-origin assets plus Gaode tile servers. `data:` and `blob:` stay for current rendering fallbacks.                                                                                                                                                                                                                    |
-| `connect-src` | `'self' https://webrd01.is.autonavi.com https://webrd02.is.autonavi.com https://webrd03.is.autonavi.com https://webrd04.is.autonavi.com`             | Same-origin API/image proxy plus tile-related fetches where needed.                                                                                                                                                                                                                                                      |
-| `font-src`    | `'self'`                                                                                                                                             | No external fonts currently loaded.                                                                                                                                                                                                                                                                                      |
-| `frame-src`   | `'none'`                                                                                                                                             | No iframes in the app.                                                                                                                                                                                                                                                                                                   |
-| `object-src`  | `'none'`                                                                                                                                             | No plugins or embeds.                                                                                                                                                                                                                                                                                                    |
-| `base-uri`    | `'self'`                                                                                                                                             | Prevent `<base>` hijacking.                                                                                                                                                                                                                                                                                              |
-| `form-action` | `'self'`                                                                                                                                             | Forms only submit to same origin.                                                                                                                                                                                                                                                                                        |
-| `report-uri`  | `/api/csp-report`                                                                                                                                    | Collect violation reports during the Report-Only phase. Needs a backend endpoint or log aggregator.                                                                                                                                                                                                                      |
+| Directive     | Value                    | Why                                                                                                                                                        |
+| ------------- | ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `default-src` | `'self'`                 | Restrictive default; every category must be explicitly allowlisted.                                                                                        |
+| `script-src`  | `'self' 'unsafe-inline'` | Konva, Vue, and application code ship as same-origin reviewed bundles. `'unsafe-inline'` remains only for the documented runtime-config/deploy exceptions. |
+| `style-src`   | `'self' 'unsafe-inline'` | Same-origin styles plus the current inline-style exception.                                                                                                |
+| `img-src`     | `'self' data: blob:`     | Same-origin map backgrounds and icons; `data:` and `blob:` cover existing preview/upload flows.                                                            |
+| `connect-src` | `'self'`                 | Map and business data are fetched through same-origin APIs.                                                                                                |
+| `font-src`    | `'self'`                 | No external fonts currently loaded.                                                                                                                        |
+| `frame-src`   | `'none'`                 | No iframes in the app.                                                                                                                                     |
+| `object-src`  | `'none'`                 | No plugins or embeds.                                                                                                                                      |
+| `base-uri`    | `'self'`                 | Prevent `<base>` hijacking.                                                                                                                                |
+| `form-action` | `'self'`                 | Forms only submit to same origin.                                                                                                                          |
+| `report-uri`  | `/api/csp-report`        | Collect violation reports during the Report-Only phase. Needs a backend endpoint or log aggregator.                                                        |
 
-### 2.3 Gaode Tile Origin Pattern
+### 2.3 Map origins
 
-Gaode tiles load from `webrd01` through `webrd04.is.autonavi.com`. All four subdomains are listed explicitly rather than using a wildcard (`*.is.autonavi.com`) to avoid over-permitting sibling services on the same domain.
-
-The important current split is:
-
-- the active Vue shell no longer needs `unpkg.com` for Leaflet
-- the standalone internal tools still do
-- Gaode tiles remain external for both the Vue map surface and the tool surfaces
+The Konva map runtime uses a same-origin background asset and same-origin APIs. The retired Leaflet
+tools and invisible Gaode tile layer are gone, so neither `unpkg.com` nor Gaode tile hosts belong in
+the active map CSP allowlist.
 
 ---
 
@@ -132,29 +125,20 @@ Add the `Content-Security-Policy-Report-Only` header alongside the minimum heade
 
 ## 5. SRI (Subresource Integrity)
 
-Current repo truth is no longer the older `index.html`-based story. Root `index.html` does not load Leaflet from `unpkg` anymore. The remaining external Leaflet tags live in standalone internal map tools under `public/tools/`, and they currently load without SRI attributes.
-
-Representative current tool-side tags:
-
-```html
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-```
+Current map truth contains no external script or stylesheet tags. Konva and vue-konva are pinned in
+the npm lockfile and bundled by Vite, so SRI does not apply to the active map runtime.
 
 **Requirements (from #152):**
 
 - Any remaining external `<script>` or `<link>` tags must eventually carry `integrity` and `crossorigin`.
-- SRI hashes MUST be updated whenever the tool-side Leaflet version changes.
+- SRI hashes MUST be updated whenever any future external asset version changes.
 - A CI guard should verify that external resource tags in `public/` stay registered and gain SRI instead of drifting silently.
 - The external asset inventory (URL, version, SRI state, owner) should stay tracked in docs or a manifest.
 
 ### 5.1 External Asset Inventory
 
-| Asset                       | URL                                                | Version      | SRI state                      | Loaded in                                                                                                  |
-| --------------------------- | -------------------------------------------------- | ------------ | ------------------------------ | ---------------------------------------------------------------------------------------------------------- |
-| Standalone tool Leaflet CSS | `https://unpkg.com/leaflet@1.9.4/dist/leaflet.css` | 1.9.4        | Missing on current `main`      | `public/tools/map-v2-editor.html`, `public/tools/map-georef.html`, `public/tools/map-coastline-align.html` |
-| Standalone tool Leaflet JS  | `https://unpkg.com/leaflet@1.9.4/dist/leaflet.js`  | 1.9.4        | Missing on current `main`      | `public/tools/map-v2-editor.html`, `public/tools/map-georef.html`, `public/tools/map-coastline-align.html` |
-| Vue-shell Leaflet runtime   | bundled through npm/Vite                           | repo-managed | Not applicable as external SRI | `src/platform/leaflet.ts`                                                                                  |
+The active map external-asset inventory is empty. New external script/style origins require an
+explicit security review, CSP entry, integrity value, and owner before landing.
 
 ---
 
@@ -167,7 +151,7 @@ Representative current tool-side tags:
 | **Phase 3**            | Enable `Content-Security-Policy-Report-Only`. Monitor for violations.                                                | No — does not block resources.                           |
 | **Phase 4**            | Implement `/api/csp-report` or another reporting sink.                                                               | No                                                       |
 | **Phase 5**            | Remove or narrow remaining inline-script and inline-style exceptions.                                                | Requires code and deploy-contract work.                  |
-| **Phase 6**            | Add SRI (or eliminate the external dependency) for the remaining standalone tool Leaflet tags.                       | Requires tool-page follow-up under #152.                 |
+| **Phase 6**            | Keep the external script/style inventory empty or require SRI for any explicitly approved addition.                  | Required before adding an external resource.             |
 | **Phase 7**            | Switch from Report-Only to enforced `Content-Security-Policy`.                                                       | Only after the exceptions and reports are under control. |
 
 ---
@@ -201,4 +185,4 @@ Additional directives to consider as the app grows: `accelerometer`, `gyroscope`
 - [#112 — harden security headers, permissions, and admin tool boundaries](https://github.com/taoyu051818-sys/lian-mobile-web/issues/112)
 - [#152 — define external CDN, vendored asset, SRI, CSP, and offline dependency contracts](https://github.com/taoyu051818-sys/lian-mobile-web/issues/152)
 - [#125 — dependency supply-chain and GitHub Actions hardening](https://github.com/taoyu051818-sys/lian-mobile-web/issues/125)
-- [src/platform/leaflet.ts](https://github.com/taoyu051818-sys/lian-mobile-web/blob/main/src/platform/leaflet.ts)
+- [Konva map engine](../architecture/konva-map-engine.md)
