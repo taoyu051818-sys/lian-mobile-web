@@ -32,6 +32,7 @@ const props = defineProps<{
   visibleLayers?: Record<string, boolean>;
   viewportPolicy?: MapViewportPolicy;
   editable?: boolean;
+  selectedAssetId?: string;
 }>();
 
 const emit = defineEmits<{
@@ -39,8 +40,18 @@ const emit = defineEmits<{
   "place-select": [place: MapLocation | MapPost];
   "viewport-change": [viewport: MapViewportQuery];
   "map-longpress": [latlng: { lat: number; lng: number }];
+  "object-select": [id: string];
   "object-change": [
-    payload: { id: string; x: number; y: number; lat: number; lng: number; rotation: number },
+    payload: {
+      id: string;
+      x: number;
+      y: number;
+      lat: number;
+      lng: number;
+      rotation: number;
+      width: number;
+      height: number;
+    },
   ];
 }>();
 
@@ -266,11 +277,26 @@ function markerScale(): number {
   return 1 / Math.max(stageScale.value, 0.001);
 }
 
-function markerGroup(x: number, y: number) {
-  return { x, y, scaleX: markerScale(), scaleY: markerScale() };
+function markerGroup(x: number, y: number, place: MapLocation | MapPost) {
+  const onSelect = (event: KonvaEventObject<MouseEvent | TouchEvent>) => selectPlace(event, place);
+  return {
+    x,
+    y,
+    scaleX: markerScale(),
+    scaleY: markerScale(),
+    onClick: onSelect,
+    onTap: onSelect,
+  };
 }
 
-function handleAssetChange(payload: { id: string; x: number; y: number; rotation: number }) {
+function handleAssetChange(payload: {
+  id: string;
+  x: number;
+  y: number;
+  rotation: number;
+  width: number;
+  height: number;
+}) {
   const geographic = unprojectScenePoint(scene.value.bounds, payload);
   emit("object-change", { ...payload, ...geographic });
 }
@@ -407,15 +433,15 @@ onBeforeUnmount(() => {
           :key="asset.id"
           :asset="asset"
           :editable="editable"
+          :selected="selectedAssetId === asset.id"
+          @select="emit('object-select', $event)"
           @change="handleAssetChange"
         />
 
         <Group
           v-for="location in visibleLayers.locations === false ? [] : scene.locations"
           :key="location.id"
-          :config="markerGroup(location.x, location.y)"
-          @click="selectPlace($event, location.source)"
-          @tap="selectPlace($event, location.source)"
+          :config="markerGroup(location.x, location.y, location.source)"
         >
           <Circle
             :config="{
@@ -445,9 +471,7 @@ onBeforeUnmount(() => {
         <Group
           v-for="post in visibleLayers.posts === false ? [] : scene.posts"
           :key="post.id"
-          :config="markerGroup(post.x, post.y)"
-          @click="selectPlace($event, post.source)"
-          @tap="selectPlace($event, post.source)"
+          :config="markerGroup(post.x, post.y, post.source)"
         >
           <Rect
             :config="{

@@ -56,6 +56,8 @@ export interface MapSceneAsset extends MapScenePoint {
   url: string;
   width: number;
   height: number;
+  anchorX: number;
+  anchorY: number;
   rotation: number;
   opacity: number;
   linkedEntity: MapLinkedEntity;
@@ -152,6 +154,12 @@ function assetFromMap(bounds: MapBounds, asset: MapAsset, index: number): MapSce
   const point = projectMapPoint(bounds, { lat, lng });
   const width = Math.max(8, Number(asset.size?.[0] || 48));
   const height = Math.max(8, Number(asset.size?.[1] || 48));
+  const anchorX = Number.isFinite(Number(asset.anchor?.[0]))
+    ? Number(asset.anchor?.[0])
+    : width / 2;
+  const anchorY = Number.isFinite(Number(asset.anchor?.[1]))
+    ? Number(asset.anchor?.[1])
+    : height / 2;
   const id = String(asset.id || `asset-${index}`);
   return {
     id,
@@ -159,6 +167,8 @@ function assetFromMap(bounds: MapBounds, asset: MapAsset, index: number): MapSce
     url: String(asset.url || ""),
     width,
     height,
+    anchorX,
+    anchorY,
     rotation: Number(asset.rotation || 0),
     opacity: Math.max(0, Math.min(1, Number(asset.opacity ?? 1))),
     x: point.x,

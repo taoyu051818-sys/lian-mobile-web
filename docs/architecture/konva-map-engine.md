@@ -37,9 +37,12 @@ structured identity before submit.
 
 ## Editor boundary
 
-`MapCanvas` accepts `editable` and emits `object-change` for scene assets. The replacement editor
-must be a Vue admin view using the existing authenticated admin session. Public standalone HTML
-tools, ops-token JavaScript, and CDN-loaded Leaflet are retired and must not be reintroduced.
+`MapCanvas` accepts `editable`, binds the selected asset to a Konva `Transformer`, and emits
+`object-select` / `object-change` events for dragging, scaling and rotation. `AdminMapEditorBlock`
+owns the authenticated draft and calls `GET/PUT /api/admin/map-v2`; uploads use the same-origin,
+ops-token-protected `POST /api/admin/map-v2/assets` endpoint. Authorization identity and request ownership are retired on token or
+auth-epoch change and on unmount. Public standalone HTML tools, inline ops-token JavaScript, and
+CDN-loaded Leaflet are retired and must not be reintroduced.
 
 ## Retired files
 
