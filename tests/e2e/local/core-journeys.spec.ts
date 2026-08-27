@@ -33,6 +33,22 @@ test.describe("@local-core deterministic core journeys", () => {
     expectNoUnexpectedApiRequests(state);
   });
 
+  test("anonymous opens the Konva campus map", async ({ page }) => {
+    const state = await installLocalCoreApi(page);
+    const mapResponse = page.waitForResponse((response) =>
+      response.url().includes("/api/map/v2/items"),
+    );
+
+    await page.goto("/#/map");
+
+    await expect((await mapResponse).ok()).toBe(true);
+    await expect(page.locator('[data-testid="konva-map-stage"] canvas').first()).toBeVisible();
+    await expect(page.locator('[data-testid="konva-map-zoom-controls"]')).toBeVisible();
+    await page.locator('[data-testid="konva-map-zoom-in"]').click();
+    await page.locator('[data-testid="konva-map-zoom-out"]').click();
+    expectNoUnexpectedApiRequests(state);
+  });
+
   test("anonymous opens a deterministic post detail", async ({ page }) => {
     const state = await installLocalCoreApi(page);
     await page.goto("/");

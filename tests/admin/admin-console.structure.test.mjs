@@ -154,11 +154,9 @@ test("useAdminToken clears the fallback token from sessionStorage and never loca
 });
 
 test("shared admin token key is never stored in localStorage", () => {
-  for (const rel of ["src/features/admin/useAdminToken.ts", "public/tools/map-v2-editor.js"]) {
-    const src = read(rel);
-    assert.doesNotMatch(src, /localStorage[\s\S]{0,120}lian\.adminToken/);
-    assert.doesNotMatch(src, /lian\.adminToken[\s\S]{0,120}localStorage/);
-  }
+  const src = read("src/features/admin/useAdminToken.ts");
+  assert.doesNotMatch(src, /localStorage[\s\S]{0,120}lian\.adminToken/);
+  assert.doesNotMatch(src, /lian\.adminToken[\s\S]{0,120}localStorage/);
 });
 
 test("useAdminToken exposes a sessionAdmin flag separate from the ops token", () => {

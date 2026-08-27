@@ -80,7 +80,7 @@ export function useMapPickerMode(options: UseMapPickerModeOptions = {}) {
 
   /**
    * Existing-marker tap: highlight as the picker target, drop any previously
-   * dropped pin (last-action-wins). The marker tap path in MapLeafletView
+   * dropped pin (last-action-wins). The marker tap path in MapView
    * funnels here in picker mode instead of opening the post detail sheet.
    */
   function selectLocation(location: MapLocation) {

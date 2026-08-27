@@ -96,7 +96,7 @@ App.vue
 |   |-- ContentFrame.vue
 |   |   `-- AppViewHost.vue
 |   |       |-- FeedView.vue
-|   |       |-- MapLeafletView.vue
+|   |       |-- MapView.vue
 |   |       |-- PublishView.vue
 |   |       |-- MessagesView.vue
 |   |       `-- ProfileView.vue
@@ -138,7 +138,7 @@ messages
 profile
 ```
 
-The view mapping in `AppViewHost.vue` now points the map view at `MapLeafletView.vue`, not the older `MapView.vue` wording that still appears in stale docs.
+The view mapping in `AppViewHost.vue` points the map route at the Konva-backed `MapView.vue`.
 
 ### `src/shell/`
 
@@ -172,7 +172,7 @@ Current feature directories:
 
 ```text
 src/features/feed/       FeedView.vue, FeedList.vue, FeedItemCard.vue, ...
-src/features/map/        MapLeafletView.vue, MapCanvas.vue, useMapSelection.ts, ...
+src/features/map/        MapView.vue, MapCanvas.vue, mapScene.ts, useMapSelection.ts, ...
 src/features/publish/    PublishView.vue, PublishComposer.vue, PublishActionBar.vue, ...
 src/features/messages/   MessagesView.vue, ChannelComposer.vue, ChannelThread.vue, ...
 src/features/profile/    ProfileView.vue, ProfileHeader.vue, ProfileEditorPanel.vue, ...
@@ -186,13 +186,13 @@ These views own feature workflows such as feed interactions, map selection, publ
 
 ```text
 feed     -> src/features/feed/FeedView.vue
-map      -> src/features/map/MapLeafletView.vue       (async)
+map      -> src/features/map/MapView.vue              (async)
 publish  -> src/features/publish/PublishView.vue       (async)
 messages -> src/features/messages/MessagesView.vue     (async)
 profile  -> src/features/profile/ProfileView.vue       (async)
 ```
 
-`feed` is eagerly loaded; the other four are loaded asynchronously via `defineAsyncComponent`. `MapLeafletView` is kept alive across navigation via `<KeepAlive include="MapLeafletView">`.
+`feed` is eagerly loaded; the other views are loaded asynchronously via `defineAsyncComponent`. `MapView` is kept alive across navigation via `<KeepAlive include="MapView">`.
 
 ### `src/ui/`
 
@@ -245,12 +245,12 @@ The app now exposes five primary shell-mounted views:
 | Key        | Label  | Layout mode     | Current surface                          |
 | ---------- | ------ | --------------- | ---------------------------------------- |
 | `feed`     | `首页` | `content`       | `src/features/feed/FeedView.vue`         |
-| `map`      | `探索` | `full-bleed`    | `src/features/map/MapLeafletView.vue`    |
+| `map`      | `探索` | `full-bleed`    | `src/features/map/MapView.vue`           |
 | `publish`  | `发布` | `content`       | `src/features/publish/PublishView.vue`   |
 | `messages` | `消息` | `composer-safe` | `src/features/messages/MessagesView.vue` |
 | `profile`  | `我的` | `content`       | `src/features/profile/ProfileView.vue`   |
 
-The map row is the most important stale-doc correction in this lane: current runtime truth is centered on `MapLeafletView.vue` inside shell-owned framing, not an older `MapView.vue`-based structure description.
+The map row is centered on `MapView.vue`, with `MapCanvas.vue` owning the Konva stage and `mapScene.ts` owning the JSON scene adapter.
 
 ## Historical notes that are no longer current
 

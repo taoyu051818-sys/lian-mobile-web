@@ -31,7 +31,7 @@ function asyncView(loader: () => Promise<Component>) {
 // initial bundle stays small.
 const viewComponents: Record<AppViewKey, Component> = {
   feed: FeedView,
-  map: asyncView(() => import("../features/map").then((m) => m.MapLeafletView)),
+  map: asyncView(() => import("../features/map").then((m) => m.MapView)),
   publish: asyncView(() => import("../features/publish").then((m) => m.PublishView)),
   messages: asyncView(() => import("../features/messages").then((m) => m.MessagesView)),
   profile: asyncView(() => import("../features/profile").then((m) => m.ProfileView)),
@@ -119,7 +119,7 @@ onUnmounted(() => {
 
 <template>
   <div class="app-view-host">
-    <KeepAlive include="MapLeafletView">
+    <KeepAlive include="MapView">
       <component
         :is="viewComponents.map"
         v-if="props.activeViewKey === 'map'"

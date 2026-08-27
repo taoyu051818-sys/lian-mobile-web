@@ -5,7 +5,7 @@ function readRepoFile(rel: string) {
   return readFileSync(new URL(rel, import.meta.url), "utf8").replace(/\r\n/g, "\n");
 }
 
-describe("Phase 2: map viewport policy is wired into Leaflet (PRD V0.1 §7.2.3)", () => {
+describe("Phase 2: map viewport policy is wired into Konva (PRD V0.1 §7.2.3)", () => {
   const canvas = readRepoFile("../../src/features/map/MapCanvas.vue");
 
   it("MapCanvas accepts a viewportPolicy prop", () => {
@@ -14,8 +14,8 @@ describe("Phase 2: map viewport policy is wired into Leaflet (PRD V0.1 §7.2.3)"
 
   it("MapCanvas no longer hardcodes minZoom: 15 / maxZoom: 17", () => {
     // The policy-driven version reads min/max off `policy.minZoom` etc.
-    expect(canvas).toMatch(/minZoom:\s*policy\.minZoom/);
-    expect(canvas).toMatch(/maxZoom:\s*policy\.maxZoom/);
+    expect(canvas).toMatch(/policy\.value\.minZoom/);
+    expect(canvas).toMatch(/policy\.value\.maxZoom/);
   });
 
   it("MapCanvas falls back to DEFAULT_MAP_VIEWPORT_POLICY when prop omitted", () => {
@@ -23,8 +23,8 @@ describe("Phase 2: map viewport policy is wired into Leaflet (PRD V0.1 §7.2.3)"
     expect(canvas).toMatch(/props\.viewportPolicy\s*\?\?\s*DEFAULT_MAP_VIEWPORT_POLICY/);
   });
 
-  it("MapLeafletView passes the default policy to MapCanvas", () => {
-    const view = readRepoFile("../../src/features/map/MapLeafletView.vue");
+  it("MapView passes the default policy to MapCanvas", () => {
+    const view = readRepoFile("../../src/features/map/MapView.vue");
     expect(view).toMatch(/import\s*\{\s*DEFAULT_MAP_VIEWPORT_POLICY\s*\}/);
     expect(view).toMatch(/:viewport-policy="DEFAULT_MAP_VIEWPORT_POLICY"/);
   });

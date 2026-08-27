@@ -17,6 +17,7 @@ export const ADMIN_TOKEN_CLEARED = "令牌已清除。";
 /** Tab */
 export const ADMIN_TAB_REPORTS = "举报队列";
 export const ADMIN_TAB_AUDIT = "审计日志";
+export const ADMIN_TAB_MAP = "地图编辑";
 export const ADMIN_TAB_LABEL = "管理后台标签";
 
 /** 队列 */

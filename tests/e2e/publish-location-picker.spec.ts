@@ -1,7 +1,7 @@
 /**
  * mw#943 — Publish form location picker entry-point smoke test.
  *
- * The full picker round-trip exercises Leaflet (map mount + long-press
+ * The full picker round-trip exercises Konva (map mount + long-press
  * gesture detection) and `navigator.geolocation`, both of which are
  * fragile in headless Playwright + jsdom. The composables are unit-tested
  * directly in `tests/publish/use*.test.ts` and `tests/map/useMapPickerMode.test.ts`,
@@ -15,7 +15,7 @@
  *   3. The "使用当前位置" button lives on the publish form alongside it.
  *
  * What is intentionally not covered here:
- *   - Long-press → free pin (Leaflet event timing in headless mode is flaky;
+ *   - Long-press → free pin (canvas event timing in headless mode is flaky;
  *     covered in `useMapPickerMode.test.ts` via `dropPin()`).
  *   - Geolocation success/error paths (covered in
  *     `useGeolocation.test.ts` with a stubbed `navigator.geolocation`).

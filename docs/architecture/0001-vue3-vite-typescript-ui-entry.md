@@ -26,7 +26,7 @@ Vue 3 is selected now to avoid building another long-lived vanilla architecture 
 Do not rewrite all pages at once. High-risk areas must migrate one boundary at a time:
 
 - Publish flow: image upload, map location picking, AI preview, drafts, audience.
-- Map v2: Leaflet lifecycle, editor controls, location cards, picking mode.
+- Map v2: Konva scene lifecycle, editor event boundary, location cards, picking mode.
 - Messages: bottom scroll, older message loading, notification switching.
 - Detail: gallery, lightbox, replies, feed scroll restoration.
 - Auth/avatar crop: dialogs, crop state, profile refresh.

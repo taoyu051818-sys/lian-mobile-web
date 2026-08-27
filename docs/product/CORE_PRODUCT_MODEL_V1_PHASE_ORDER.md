@@ -41,7 +41,7 @@ Guarded by:
 
 Scope anchors:
 
-- Map viewport policy in Leaflet views
+- Map viewport policy in the Konva scene view
 - Publish metadata controls honoring backend-driven audience gating
 
 ## Phase 3 — AI-assisted publish flow
