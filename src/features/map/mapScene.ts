@@ -67,7 +67,7 @@ export interface MapSceneLocation extends MapScenePoint {
   id: string;
   label: string;
   imageUrl?: string;
-  linkedEntity: MapLinkedEntity;
+  linkedEntity?: MapLinkedEntity;
   source: MapLocation;
 }
 
@@ -230,14 +230,17 @@ export function buildMapScene(
       .slice(0, MAX_RENDERED_ASSETS)
       .map((asset, index) => assetFromMap(bounds, asset, index))
       .filter((asset): asset is MapSceneAsset => asset !== null),
-    locations: (mapData?.locations || []).slice(0, MAX_RENDERED_LOCATIONS).map((location) => ({
-      id: String(location.id),
-      label: location.name,
-      imageUrl: location.card?.imageUrl || location.icon?.url,
-      ...projectMapPoint(bounds, location),
-      linkedEntity: { kind: "place", id: String(location.placeId || location.id) },
-      source: location,
-    })),
+    locations: (mapData?.locations || []).slice(0, MAX_RENDERED_LOCATIONS).map((location) => {
+      const placeId = location.place?.id || location.placeId;
+      return {
+        id: String(location.id),
+        label: location.name,
+        imageUrl: location.card?.imageUrl || location.icon?.url,
+        ...projectMapPoint(bounds, location),
+        ...(placeId ? { linkedEntity: { kind: "place" as const, id: String(placeId) } } : {}),
+        source: location,
+      };
+    }),
     posts: (mapData?.posts || []).slice(0, MAX_RENDERED_POSTS).map((post) => ({
       id: String(post.tid),
       label: post.title || post.locationArea || "地图内容",

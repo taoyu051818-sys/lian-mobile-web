@@ -30,6 +30,7 @@ describe("Konva map scene", () => {
       zoom: 16,
       locations: [
         { id: "library", placeId: "place-library", name: "图书馆", lat: 18.39, lng: 110.01 },
+        { id: "marker-only", name: "临时标记", lat: 18.391, lng: 110.011 },
       ],
       posts: [{ tid: 42, title: "失物招领", lat: 18.4, lng: 110.02 }],
       layers: {
@@ -53,6 +54,8 @@ describe("Konva map scene", () => {
       kind: "place",
       id: "place-library",
     });
+    expect(scene.locations[1]?.id).toBe("marker-only");
+    expect(scene.locations[1]?.linkedEntity).toBeUndefined();
     expect(scene.posts[0]?.linkedEntity).toEqual({ kind: "post", id: "42" });
     expect(scene.assets[0]?.linkedEntity).toEqual({ kind: "device", id: "camera-1" });
   });
