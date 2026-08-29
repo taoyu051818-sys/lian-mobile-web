@@ -1,4 +1,8 @@
-# RFC: Leaflet Map Performance Optimization
+# RFC: Leaflet Map Performance Optimization (Retired)
+
+> Historical only. The Leaflet runtime and standalone Leaflet tools were retired on 2026-08-27.
+> The active design is `docs/architecture/konva-map-engine.md`; none of the implementation phases
+> below are current work instructions.
 
 **Status:** Draft  
 **Created:** 2026-05-24  

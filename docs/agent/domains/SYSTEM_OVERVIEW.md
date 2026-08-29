@@ -15,13 +15,14 @@ NodeBB topics + LIAN metadata → mobile feed cards.
 
 ## Map
 
-Campus exploration with Gaode tiles + LIAN overlays.
+Campus exploration rendered by the Vue 3 + vue-konva + Konva scene engine.
 
-- Layers: areas, routes, roads, junctions, buildings, environmentElements, buildingGroups, assets
-- Locations: `data/locations.json` (GCJ-02 coordinates)
-- Admin editor: `/tools/map-v2-editor.html`
-- Canonical bounds: south 18.3700734, west 109.9940365, north 18.4149043, east 110.0503482
-- Bounds defined in 3 places: `map-v2-editor.js`, `map-v2-service.js`, `validate-locations.js` — must match
+- Runtime: `MapView.vue` → `MapCanvas.vue` → `mapScene.ts`
+- Data source: same-origin `/api/map/v2/items`; the renderer does not own business records
+- Scene: background + areas + roads + routes + assets + linked place/post entities
+- Interaction: pan, bounded zoom, marker selection, publish/errand picker long-press
+- Editable assets: `MapCanvas` exposes `editable` and `object-change`; editing UI must live inside the authenticated Vue admin surface
+- Retired: Leaflet runtime adapter and public standalone map editor/georeference pages
 
 ## Audience
 

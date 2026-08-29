@@ -54,7 +54,7 @@ src/entry-client.ts
   └─ createApp() from src/app.ts
        └─ createVueApp(App).use(i18n)
   └─ app.mount("#vue-root")
-  └─ idle-time prefetch: MapLeafletView.vue chunk (requestIdleCallback / setTimeout fallback)
+  └─ idle-time prefetch: MapView.vue + Konva chunk (requestIdleCallback / setTimeout fallback)
 ```
 
 Key behaviors:

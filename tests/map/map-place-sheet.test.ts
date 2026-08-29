@@ -9,7 +9,7 @@ const sheetSource = readFileSync(
   "utf8",
 ).replace(/\r\n/g, "\n");
 const viewSource = readFileSync(
-  path.join(repoRoot, "src/features/map/MapLeafletView.vue"),
+  path.join(repoRoot, "src/features/map/MapView.vue"),
   "utf8",
 ).replace(/\r\n/g, "\n");
 

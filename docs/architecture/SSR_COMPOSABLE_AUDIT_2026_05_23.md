@@ -15,7 +15,7 @@ API 的 composable，标识 phase 1 SSR 路径是否会触达 + 修复策略，�
 - **B. SSR 默认空值 + onMounted 异步加载** —— `localStorage` / `sessionStorage` 类持久态
   在 SSR 返回空骨架，挂载后再读真实值。注意客户端首屏要用骨架渲染，`onMounted` 之后再
   补真值（必要时用 Suspense / v-if）。
-- **C. `<ClientOnly>` wrapper** —— 大块只在浏览器有意义的子树（leaflet 地图、第三方 SDK），
+- **C. `<ClientOnly>` wrapper** —— 大块只在浏览器有意义的子树（Konva canvas、第三方 SDK），
   整个组件外面套 `<ClientOnly>` 替代手动守卫。LIAN 没引入 Nuxt，phase 2 落地时手写一个
   最小 `<ClientOnly>` 等价物。
 - **D. 纯客户端逻辑保留** —— 事件 listener / DOM 写入只在 `onMounted` 内执行；SSR 路径
@@ -83,7 +83,7 @@ API 的 composable，标识 phase 1 SSR 路径是否会触达 + 修复策略，�
   并以 `https://lian.invalid` 做 SSR 兜底；`preloadImages` 已带 `typeof window === "undefined"`
   early return。**策略 A**，phase 1 detail SSR 已合规——这是 phase 1 关键路径，本审计确认
   通过。
-- **`src/features/map/*`** —— Leaflet 初始化、map canvas DOM 操作。**phase 2 起**：整个
+- **`src/features/map/*`** —— Konva stage 初始化、map canvas DOM 操作。**phase 2 起**：整个
   map view 用 **策略 C**（`<ClientOnly>` wrapper）。phase 1 不 SSR 地图，无影响。
 - **`src/features/errand/*`** —— `ErrandOrderTimelineView.vue:113` 注释提到避开
   `window.confirm`；composable 本身未发现浏览器 API。**phase 2 起**审。

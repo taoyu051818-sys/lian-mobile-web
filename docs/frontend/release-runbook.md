@@ -37,10 +37,10 @@ The deployable artifact is the output of `npm run build` (the Vite `dist/` direc
 - It is the authoritative automatic PR/main quality gate; deterministic browser journeys run in
   the separate `.github/workflows/e2e-pr-gate.yml` workflow.
 
-**Prelaunch release gap:** `.github/workflows/frontend-auto-build.yml` is manual-only and still
-rebuilds on the target host. It is retained as a disabled-by-default development tool, not an
-accepted production release path. Before launch, a separate release task must make it download and
-deploy the reviewed CI artifact without installing or building on the target.
+**Prelaunch release boundary:** `.github/workflows/frontend-auto-build.yml` is manual-only. Its
+`verify` job builds and uploads the reviewed `dist/` artifact, and its `deploy-main` job downloads
+that exact artifact before copying it to the target host. The target host must only unpack and serve
+the artifact; it must not run dependency installation, source checkout repair, or a build step.
 
 **Deployment rule:** the target host receives the pre-built artifact. It must never run `npm install`, `npm run build`, or any build step at runtime.
 
@@ -132,38 +132,29 @@ Production must differentiate resource types for caching.
 
 ## 5. CDN and external assets
 
-The active Vue shell no longer loads Leaflet from `unpkg` in root `index.html`. Leaflet is bundled through `src/platform/leaflet.ts` as part of the Vite build. The remaining external Leaflet dependency lives in standalone internal map tools under `public/tools/`.
+The active map uses Konva and vue-konva bundled through npm/Vite. The old Leaflet runtime and
+standalone Leaflet editor/georeference tools are retired. Map data and backgrounds are same-origin.
 
 **Current external dependencies:**
 
-| Resource                    | URL                                                | SRI state                      | Notes                                                                                                                    |
-| --------------------------- | -------------------------------------------------- | ------------------------------ | ------------------------------------------------------------------------------------------------------------------------ |
-| Standalone tool Leaflet CSS | `https://unpkg.com/leaflet@1.9.4/dist/leaflet.css` | Missing on current `main`      | Loaded by `public/tools/map-v2-editor.html`, `public/tools/map-georef.html`, and `public/tools/map-coastline-align.html` |
-| Standalone tool Leaflet JS  | `https://unpkg.com/leaflet@1.9.4/dist/leaflet.js`  | Missing on current `main`      | Loaded by the same tool pages                                                                                            |
-| Gaode tiles                 | `https://webrd0{s}.is.autonavi.com/...`            | N/A                            | Third-party map tile provider used by the Vue map surface and the tool surfaces                                          |
-| Vue-shell Leaflet runtime   | bundled via npm/Vite                               | Not applicable as external SRI | Imported through `src/platform/leaflet.ts`                                                                               |
+The active map has no external script, stylesheet, or tile-host dependency. Any new external
+resource requires a separate CSP/SRI/security review.
 
 **Risks:**
 
-- `unpkg` outage or network restriction now affects the standalone internal tools, not the main Vue shell.
-- Third-party tile availability still affects map rendering across the app and tools.
-- Missing SRI on tool-side Leaflet tags leaves a supply-chain gap for those pages.
-- PWA offline behavior must not assume third-party tiles or tool-side CDN assets are available.
+- A stale service worker can still serve an older map bundle after a rollback.
+- Oversized scene JSON or image assets can still affect memory on low-end devices.
 
 **Mitigations (tracked in #152):**
 
-- Keep the main user-facing Vue shell on bundled Leaflet.
-- Add SRI or remove the external dependency for the remaining tool-side Leaflet tags.
-- Keep an external asset inventory: URL, version, SRI state, owner, and upgrade process.
-- Define CSP `script-src` / `style-src` / `img-src` / `connect-src` allowlists that cover only the still-needed external origins.
-- Do not pre-cache third-party tiles by default in the Service Worker.
+- Keep Konva/vue-konva pinned in `package-lock.json` and bundled by Vite.
+- Keep the external script/style inventory empty unless a reviewed exception is approved.
+- Bound scene node counts and verify the map chunk and background in release smoke.
 
 **Release checklist for external assets:**
 
-- [ ] Verify Gaode tile endpoints are reachable from the target environment
-- [ ] If the internal tools are part of the deployment surface, verify their `unpkg` Leaflet dependency is reachable too
-- [ ] Verify CSP allowlist covers the still-required external origins and no broader set
-- [ ] Verify any added SRI values match the expected Leaflet version
+- [ ] Verify the Konva map chunk and `/assets/campus-base-map.png` are served from the reviewed build
+- [ ] Verify CSP does not reintroduce retired `unpkg.com` or Gaode tile origins for the map
 
 ---
 
@@ -179,7 +170,7 @@ Vue/Vite is the sole active web runtime on `main`.
 
 - `GET /` should return 200.
 - `GET /api/feed` and `GET /api/map/v2/items` should return JSON (or 502 if backend is down; this is acceptable in smoke).
-- The map surface should load using bundled Leaflet from the reviewed build artifact rather than a runtime `unpkg` dependency.
+- The map surface should load the bundled Konva engine and same-origin background from the reviewed artifact.
 
 ---
 
@@ -189,16 +180,16 @@ Run these checks immediately after deploying to each environment.
 
 **Smoke checklist:**
 
-| Check                           | Target     | Expected                                                               |
-| ------------------------------- | ---------- | ---------------------------------------------------------------------- |
-| `GET /`                         | Vue/Vite   | 200                                                                    |
-| `GET /api/feed`                 | Vue/Vite   | JSON response (skip if backend unavailable)                            |
-| `GET /api/map/v2/items`         | Vue/Vite   | JSON response (skip if backend unavailable)                            |
-| `cache-control` on `GET /`      | Production | `no-cache` or `max-age=0, must-revalidate`                             |
-| `cache-control` on hashed asset | Production | `max-age=31536000, immutable`                                          |
-| Release ID                      | Production | Matches expected git SHA from the release manifest                     |
-| Tool-side Leaflet CDN           | Production | Only required if the standalone internal tools are in deployment scope |
-| Gaode tiles                     | Production | Reachable where map functionality is expected                          |
+| Check                           | Target     | Expected                                                   |
+| ------------------------------- | ---------- | ---------------------------------------------------------- |
+| `GET /`                         | Vue/Vite   | 200                                                        |
+| `GET /api/feed`                 | Vue/Vite   | JSON response (skip if backend unavailable)                |
+| `GET /api/map/v2/items`         | Vue/Vite   | JSON response (skip if backend unavailable)                |
+| `cache-control` on `GET /`      | Production | `no-cache` or `max-age=0, must-revalidate`                 |
+| `cache-control` on hashed asset | Production | `max-age=31536000, immutable`                              |
+| Release ID                      | Production | Matches expected git SHA from the release manifest         |
+| Konva map stage                 | Production | Visible canvas, zoom controls, no retired Leaflet requests |
+| Gaode tiles                     | Production | Reachable where map functionality is expected              |
 
 **Decision criteria:**
 
@@ -298,7 +289,7 @@ Before deploying a new frontend release:
 - [ ] PWA kill switch tested when PWA is enabled
 - [ ] `cache-control` headers configured at the CDN / reverse-proxy layer
 - [ ] Rollback artifact available and verified
-- [ ] If internal tools are in scope, their remaining `unpkg` Leaflet dependency is reviewed too
+- [ ] Confirm retired Leaflet tool routes are absent from the release artifact
 
 ## Post-release checklist
 

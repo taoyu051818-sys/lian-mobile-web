@@ -8,6 +8,7 @@ import {
   ADMIN_SECTION_LABEL,
   ADMIN_TAB_AUDIT,
   ADMIN_TAB_LABEL,
+  ADMIN_TAB_MAP,
   ADMIN_TAB_REPORTS,
   ADMIN_VERIFICATION_TAB_LABEL,
 } from "../../config/brand";
@@ -20,6 +21,7 @@ import type {
 } from "../../types/admin";
 import AdminAuditBlock from "./AdminAuditBlock.vue";
 import AdminAuthLinkBlock from "./AdminAuthLinkBlock.vue";
+import AdminMapEditorBlock from "./AdminMapEditorBlock.vue";
 import AdminReportsBlock from "./AdminReportsBlock.vue";
 import AdminTokenGate from "./AdminTokenGate.vue";
 import AdminVerificationBlock from "./AdminVerificationBlock.vue";
@@ -32,7 +34,7 @@ import { useAdminAccess } from "./useAdminAccess";
 import { useAdminConsole } from "./useAdminConsole";
 import { useAdminToken } from "./useAdminToken";
 
-type AdminTabKey = "reports" | "verifications" | "auth-links" | "audit";
+type AdminTabKey = "reports" | "verifications" | "auth-links" | "map" | "audit";
 
 const emit = defineEmits<{
   chrome: [spec: PageChromeSpec];
@@ -68,6 +70,7 @@ const tabs: Array<{ key: AdminTabKey; label: string }> = [
   { key: "reports", label: ADMIN_TAB_REPORTS },
   { key: "verifications", label: ADMIN_VERIFICATION_TAB_LABEL },
   { key: "auth-links", label: ADMIN_AUTH_LINK_TAB_LABEL },
+  { key: "map", label: ADMIN_TAB_MAP },
   { key: "audit", label: ADMIN_TAB_AUDIT },
 ];
 
@@ -117,7 +120,7 @@ function selectTab(key: AdminTabKey) {
     void adminConsole.loadVerificationRequests(verificationStatusFilter.value);
   } else if (key === "auth-links") {
     void adminConsole.loadAuthLinks();
-  } else {
+  } else if (key === "reports") {
     void adminConsole.loadReports(statusFilter.value);
   }
 }
@@ -255,6 +258,13 @@ onBeforeUnmount(() => {
         @create="(payload) => adminConsole.createAuthLink(payload)"
         @revoke="(linkToken) => adminConsole.revokeAuthLink(linkToken)"
         @copy-url="() => {}"
+      />
+
+      <AdminMapEditorBlock
+        v-else-if="activeTab === 'map'"
+        :token="token"
+        :auth-epoch="authEpoch"
+        @authorization-lost="exitAdminAccess"
       />
 
       <AdminAuditBlock

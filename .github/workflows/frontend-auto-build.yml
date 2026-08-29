@@ -70,11 +70,46 @@ jobs:
           chmod 600 ~/.ssh/lian_web_deploy_key
           ssh-keyscan -H "${{ secrets.LIAN_WEB_SSH_HOST }}" >> ~/.ssh/known_hosts
 
-      - name: Pull, build, and stamp production frontend
+      - name: Download reviewed frontend artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-dist-${{ github.sha }}
+          path: release-dist
+
+      - name: Verify reviewed artifact marker
+        env:
+          EXPECTED_COMMIT: ${{ github.sha }}
+        run: |
+          set -Eeuo pipefail
+          test -f release-dist/build-commit.txt
+          grep -qx "commit=$EXPECTED_COMMIT" release-dist/build-commit.txt
+          cat release-dist/build-commit.txt
+
+      - name: Upload reviewed frontend artifact
         env:
           LIAN_WEB_DIR: ${{ vars.LIAN_WEB_DIR || '/opt/lian-mobile-web' }}
           EXPECTED_COMMIT: ${{ github.sha }}
         run: |
+          set -Eeuo pipefail
+          if ! printf '%s' "$LIAN_WEB_DIR" | grep -Eq '^/[A-Za-z0-9._/-]+$'; then
+            echo "LIAN_WEB_DIR must be an absolute path with only A-Z a-z 0-9 . _ - / characters"
+            exit 1
+          fi
+          if printf '%s' "$LIAN_WEB_DIR" | grep -Eq '(^|/)\.\.?(/|$)|//'; then
+            echo "LIAN_WEB_DIR must not contain dot segments or repeated slashes"
+            exit 1
+          fi
+          if [ "$LIAN_WEB_DIR" = "/" ] || printf '%s' "$LIAN_WEB_DIR" | grep -Eq '/$'; then
+            echo "LIAN_WEB_DIR must not be root or end with a slash"
+            exit 1
+          fi
+          tar -C release-dist -czf frontend-dist.tgz .
+          scp -i ~/.ssh/lian_web_deploy_key \
+            -o IdentitiesOnly=yes \
+            -o StrictHostKeyChecking=yes \
+            frontend-dist.tgz \
+            "${{ secrets.LIAN_WEB_SSH_USER }}@${{ secrets.LIAN_WEB_SSH_HOST }}:/tmp/lian-frontend-${EXPECTED_COMMIT}.tgz"
+
           ssh -i ~/.ssh/lian_web_deploy_key \
             -o IdentitiesOnly=yes \
             -o StrictHostKeyChecking=yes \
@@ -82,41 +117,70 @@ jobs:
             "LIAN_WEB_DIR='${LIAN_WEB_DIR}' EXPECTED_COMMIT='${EXPECTED_COMMIT}' bash -s" <<'REMOTE'
           set -Eeuo pipefail
 
+          archive="/tmp/lian-frontend-${EXPECTED_COMMIT}.tgz"
           cd "$LIAN_WEB_DIR"
-          git fetch origin main
-          git reset --hard origin/main
 
-          current_commit="$(git rev-parse HEAD)"
-          if [ "$current_commit" != "$EXPECTED_COMMIT" ]; then
-            echo "ERROR: deployed checkout is $current_commit, expected $EXPECTED_COMMIT"
-            exit 1
+          release_dir="$(mktemp -d "$LIAN_WEB_DIR/.release-dist.XXXXXX")"
+          cleanup_release_dir=1
+          restore_previous_dist=0
+          cleanup() {
+            if [ "${cleanup_release_dir:-0}" = "1" ] && [ -n "${release_dir:-}" ]; then
+              rm -rf "$release_dir"
+            fi
+            if [ "${restore_previous_dist:-0}" = "1" ] && [ -n "${previous_dir:-}" ] && [ -d "$previous_dir" ] && [ ! -e dist ]; then
+              mv "$previous_dir" dist
+            fi
+            rm -f "$archive"
+          }
+          trap cleanup EXIT
+
+          tar -xzf "$archive" -C "$release_dir"
+          test -f "$release_dir/build-commit.txt"
+          grep -qx "commit=$EXPECTED_COMMIT" "$release_dir/build-commit.txt"
+
+          previous_dir=""
+          if [ -d dist ]; then
+            previous_dir="dist.previous.$(date -u +%Y%m%dT%H%M%SZ)"
+            mv dist "$previous_dir"
+            restore_previous_dist=1
           fi
 
-          npm ci
-          npm run build
+          mv "$release_dir" dist
+          cleanup_release_dir=0
+          restore_previous_dist=0
 
-          mkdir -p dist
-          {
-            echo "commit=$current_commit"
-            echo "branch=main"
-            echo "built_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
-            echo "builder=github-actions"
-          } > dist/build-commit.txt
-
-          echo "Frontend build deployed at $current_commit"
+          echo "Frontend artifact deployed at $EXPECTED_COMMIT"
+          if [ -n "$previous_dir" ]; then
+            echo "Previous dist moved to $previous_dir"
+          fi
           REMOTE
 
       - name: Verify remote build marker
         env:
           LIAN_WEB_DIR: ${{ vars.LIAN_WEB_DIR || '/opt/lian-mobile-web' }}
+          EXPECTED_COMMIT: ${{ github.sha }}
         run: |
+          set -Eeuo pipefail
+          if ! printf '%s' "$LIAN_WEB_DIR" | grep -Eq '^/[A-Za-z0-9._/-]+$'; then
+            echo "LIAN_WEB_DIR must be an absolute path with only A-Z a-z 0-9 . _ - / characters"
+            exit 1
+          fi
+          if printf '%s' "$LIAN_WEB_DIR" | grep -Eq '(^|/)\.\.?(/|$)|//'; then
+            echo "LIAN_WEB_DIR must not contain dot segments or repeated slashes"
+            exit 1
+          fi
+          if [ "$LIAN_WEB_DIR" = "/" ] || printf '%s' "$LIAN_WEB_DIR" | grep -Eq '/$'; then
+            echo "LIAN_WEB_DIR must not be root or end with a slash"
+            exit 1
+          fi
           ssh -i ~/.ssh/lian_web_deploy_key \
             -o IdentitiesOnly=yes \
             -o StrictHostKeyChecking=yes \
             "${{ secrets.LIAN_WEB_SSH_USER }}@${{ secrets.LIAN_WEB_SSH_HOST }}" \
-            "LIAN_WEB_DIR='${LIAN_WEB_DIR}' bash -s" <<'REMOTE'
+            "LIAN_WEB_DIR='${LIAN_WEB_DIR}' EXPECTED_COMMIT='${EXPECTED_COMMIT}' bash -s" <<'REMOTE'
           set -Eeuo pipefail
           cd "$LIAN_WEB_DIR"
           test -f dist/build-commit.txt
+          grep -qx "commit=$EXPECTED_COMMIT" dist/build-commit.txt
           cat dist/build-commit.txt
           REMOTE

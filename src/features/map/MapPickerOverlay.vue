@@ -2,14 +2,14 @@
 /**
  * MapPickerOverlay — picker-mode UX for the map view (mw#943).
  *
- * Sits as a floating bottom bar on top of the Leaflet canvas while the user
+ * Sits as a floating bottom bar on top of the Konva canvas while the user
  * is choosing a location for the publish form. Renders only in picker mode;
  * the regular browse UX is untouched.
  *
  * The overlay is intentionally a presentational component: confirm/cancel
- * are emitted up to MapLeafletView, which holds the picker-mode composable
+ * are emitted up to MapView, which holds the picker-mode composable
  * and owns the side effects (handoff write + history.back). This keeps the
- * picker logic testable without mounting Leaflet.
+ * picker logic testable without mounting Konva.
  */
 
 import { computed } from "vue";

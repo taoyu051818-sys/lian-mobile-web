@@ -7,8 +7,8 @@ const BASE_URL = process.env.APP_BASE_URL ?? "https://lian.nat100.top";
 /**
  * Map view E2E tests
  *
- * Tests the `/#/map` route which renders MapLeafletView containing:
- * - MapCanvas (Leaflet-based map with campus overlay)
+ * Tests the `/#/map` route which renders MapView containing:
+ * - MapCanvas (Konva-based map with campus scene)
  * - MapStatus (loading/error states)
  * - MapPlaceSheet (place detail bottom sheet)
  */
@@ -128,7 +128,7 @@ test.describe("Map view", () => {
     await context.close();
   });
 
-  test("map renders Leaflet container with zoom controls", async ({ browser }) => {
+  test("map renders Konva canvas with zoom controls", async ({ browser }) => {
     const context = await browser.newContext();
     const page = await context.newPage();
 
@@ -145,17 +145,15 @@ test.describe("Map view", () => {
       await expect(loadingIndicator).toBeHidden({ timeout: 30000 });
     }
 
-    // Leaflet creates a container with class "leaflet-container"
-    const leafletContainer = page.locator(".leaflet-container");
-    await expect(leafletContainer).toBeVisible({ timeout: 10000 });
+    const konvaStage = page.locator('[data-testid="konva-map-stage"]');
+    await expect(konvaStage).toBeVisible({ timeout: 10000 });
 
-    // Zoom controls should be present (added by attachZoomControl in MapCanvas)
-    const zoomControl = page.locator(".leaflet-control-zoom");
+    const zoomControl = page.locator('[data-testid="konva-map-zoom-controls"]');
     await expect(zoomControl).toBeVisible();
 
     // Zoom in and zoom out buttons
-    const zoomIn = page.locator(".leaflet-control-zoom-in");
-    const zoomOut = page.locator(".leaflet-control-zoom-out");
+    const zoomIn = page.locator('[data-testid="konva-map-zoom-in"]');
+    const zoomOut = page.locator('[data-testid="konva-map-zoom-out"]');
     await expect(zoomIn).toBeVisible();
     await expect(zoomOut).toBeVisible();
 

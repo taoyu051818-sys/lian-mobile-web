@@ -6,23 +6,23 @@ function readRepoFile(rel: string) {
 }
 
 describe("map discovery wiring", () => {
-  const view = readRepoFile("../../src/features/map/MapLeafletView.vue");
+  const view = readRepoFile("../../src/features/map/MapView.vue");
   const canvas = readRepoFile("../../src/features/map/MapCanvas.vue");
 
-  it("reloads Map V2 data from Leaflet viewport changes", () => {
+  it("reloads Map V2 data from Konva viewport changes", () => {
     expect(canvas).toMatch(
       /import type \{[\s\S]*?MapViewportQuery[\s\S]*?\} from "\.\.\/\.\.\/types\/map"/,
     );
-    expect(canvas).toMatch(/moveend zoomend/);
+    expect(canvas).toMatch(/emitViewportChange/);
+    expect(canvas).toMatch(/handleWheel/);
     expect(view).toMatch(/@viewport-change="handleViewportChange"/);
     expect(view).toMatch(/loadMap\(mapQuery\.value/);
   });
 
-  it("keeps resize and zoom from directly rebuilding every map layer", () => {
-    expect(canvas).toMatch(/let scheduledRenderFrame: number \| null = null/);
-    expect(canvas).toMatch(/function scheduleRenderMap\(\)/);
-    expect(canvas).toMatch(/newMap\.on\("zoomend resize", scheduleRenderMap\)/);
-    expect(canvas).not.toMatch(/newMap\.on\("zoomend resize", renderMap\)/);
+  it("builds a reactive JSON scene instead of imperative layer groups", () => {
+    expect(canvas).toMatch(/buildMapScene/);
+    expect(canvas).toMatch(/const scene = computed/);
+    expect(canvas).not.toMatch(/layerGroup|clearLayers|renderMap\(/);
   });
 
   it("sends active type filters to Map V2 while still using filters as visible layer chrome", () => {

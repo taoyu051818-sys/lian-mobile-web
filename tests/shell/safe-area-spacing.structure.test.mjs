@@ -108,7 +108,7 @@ test("ChannelThread bottom padding accounts for safe-area-inset-bottom", () => {
 
 // --- Map view: full-bleed stage safe-area clearance ---
 
-test("MapLeafletView full-bleed stage uses safe-area-inset-bottom for clearance", () => {
-  const src = read("src/features/map/MapLeafletView.vue");
+test("MapView full-bleed stage uses safe-area-inset-bottom for clearance", () => {
+  const src = read("src/features/map/MapView.vue");
   assert.match(src, /env\(safe-area-inset-bottom\)/);
 });

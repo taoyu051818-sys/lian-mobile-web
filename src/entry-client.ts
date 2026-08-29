@@ -54,7 +54,7 @@ const updateSW = registerSW({
 // must never reach the SSR entry, which is why it lives here rather than in
 // `./app`.
 function prefetchMapChunk(): void {
-  import("./features/map/MapLeafletView.vue").catch(() => {});
+  import("./features/map/MapView.vue").catch(() => {});
 }
 
 if (typeof requestIdleCallback === "function") {
