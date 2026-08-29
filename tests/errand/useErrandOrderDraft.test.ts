@@ -27,9 +27,18 @@ vi.mock("../../src/api/profile", () => ({
   fetchProfileWallet: vi.fn(),
 }));
 
+vi.mock("../../src/api/map", () => ({
+  fetchMapV2Items: vi.fn(),
+}));
+
 import * as errandsApi from "../../src/api/errands";
+import * as mapApi from "../../src/api/map";
 import * as profileApi from "../../src/api/profile";
-import { useErrandOrderDraft } from "../../src/features/errand/useErrandOrderDraft";
+import {
+  errandDropoffPlaceId,
+  useErrandDropoffPlaces,
+  useErrandOrderDraft,
+} from "../../src/features/errand/useErrandOrderDraft";
 import {
   ERRAND_ORDER_GATE_INSUFFICIENT_BALANCE,
   ERRAND_ORDER_GATE_MERCHANT_PAUSED,
@@ -44,6 +53,7 @@ const mockEligibility = vi.mocked(errandsApi.fetchErrandOrderEligibility);
 const mockCreate = vi.mocked(errandsApi.createErrandOrder);
 const mockAuthMe = vi.mocked(profileApi.fetchAuthMe);
 const mockWallet = vi.mocked(profileApi.fetchProfileWallet);
+const mockMapItems = vi.mocked(mapApi.fetchMapV2Items);
 
 function loggedInUser({ campusVerified = true }: { campusVerified?: boolean } = {}) {
   return {
@@ -66,6 +76,7 @@ beforeEach(() => {
   mockCreate.mockReset();
   mockAuthMe.mockReset();
   mockWallet.mockReset();
+  mockMapItems.mockReset();
 });
 
 describe("useErrandOrderDraft — pickup hint seeding (#609 PR2)", () => {
@@ -129,6 +140,25 @@ describe("useErrandOrderDraft — stable dropoff place", () => {
       lat: null,
       lng: null,
     });
+  });
+
+  it("does not promote a map marker id to a stable dropoff place id", async () => {
+    mockMapItems.mockResolvedValue({
+      locations: [
+        {
+          id: "marker-only-location",
+          name: "明德楼大厅",
+          lat: 18.401,
+          lng: 110.022,
+        },
+      ],
+    });
+
+    const places = useErrandDropoffPlaces();
+    await places.loadPlaces();
+
+    expect(errandDropoffPlaceId(places.locations.value[0])).toBe("");
+    expect(places.selectableLocations.value).toEqual([]);
   });
 });
 
