@@ -128,3 +128,24 @@ export interface CommerceCartResult {
   cart: CommerceCart;
   meta: CommerceResponseMeta;
 }
+
+export interface CommerceCheckoutQuoteLine {
+  skuId: string;
+  quantity: number;
+  unitAmountMinor: number;
+  lineAmountMinor: number;
+}
+
+export interface CommerceCheckoutQuote {
+  currency: "CNY";
+  lines: CommerceCheckoutQuoteLine[];
+  merchandiseAmountMinor: number;
+  expiresAt: number;
+  token: string;
+  stockReserved: false;
+}
+
+export interface CommerceCheckoutQuoteResult {
+  quote: CommerceCheckoutQuote;
+  meta: CommerceResponseMeta;
+}

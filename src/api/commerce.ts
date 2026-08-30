@@ -4,6 +4,8 @@ import type {
   CommerceCartItem,
   CommerceCartReferenceUnitPrice,
   CommerceCartResult,
+  CommerceCheckoutQuoteLine,
+  CommerceCheckoutQuoteResult,
   CommerceProduct,
   CommerceProductDetailResult,
   CommerceProductListResult,
@@ -31,6 +33,7 @@ export type CommerceApiErrorKind =
   | "item-unavailable"
   | "cart-limit-exceeded"
   | "idempotency-conflict"
+  | "quote-cart-invalid"
   | "unavailable"
   | "malformed";
 
@@ -648,7 +651,7 @@ export async function fetchCommerceProductDetail(
   return decodeCommerceProductDetail(value, requestId, productId);
 }
 
-type CommerceStrictSurface = "actor" | "cart";
+type CommerceStrictSurface = "actor" | "cart" | "quote";
 
 interface CommerceEnabledErrorContract {
   status: number;
@@ -723,6 +726,27 @@ const CART_ENABLED_ERRORS: readonly CommerceEnabledErrorContract[] = [
   { status: 504, code: "COMMERCE_CART_TIMEOUT", error: "Commerce cart request timed out" },
 ];
 
+const QUOTE_ENABLED_ERRORS: readonly CommerceEnabledErrorContract[] = [
+  { status: 400, code: "COMMERCE_CART_REQUEST_INVALID", error: "Commerce cart request is invalid" },
+  { status: 401, code: "COMMERCE_LOGIN_REQUIRED", error: "Commerce login is required" },
+  { status: 403, code: "COMMERCE_ACCOUNT_INACTIVE", error: "Commerce account is inactive" },
+  { status: 403, code: "COMMERCE_CSRF_REJECTED", error: "Commerce request was rejected" },
+  {
+    status: 409,
+    code: "COMMERCE_CHECKOUT_QUOTE_CART_INVALID",
+    error: "Commerce checkout requires a non-empty available cart",
+  },
+  {
+    status: 429,
+    code: "COMMERCE_CART_RATE_LIMITED",
+    error: "Commerce cart request rate is limited",
+  },
+  { status: 499, code: "REQUEST_ABORTED", error: "request aborted" },
+  { status: 502, code: "COMMERCE_UPSTREAM_ERROR", error: "Commerce cart request failed" },
+  { status: 503, code: "COMMERCE_CART_UNAVAILABLE", error: "Commerce cart is unavailable" },
+  { status: 504, code: "COMMERCE_CART_TIMEOUT", error: "Commerce cart request timed out" },
+];
+
 function apiErrorForStrictCode(status: number, code: string): CommerceApiError {
   if (code === "COMMERCE_LOGIN_REQUIRED") {
     return new CommerceApiError("login-required", "Commerce login is required", status);
@@ -742,6 +766,9 @@ function apiErrorForStrictCode(status: number, code: string): CommerceApiError {
   }
   if (code === "COMMERCE_IDEMPOTENCY_CONFLICT") {
     return new CommerceApiError("idempotency-conflict", "Commerce write conflicted", status);
+  }
+  if (code === "COMMERCE_CHECKOUT_QUOTE_CART_INVALID") {
+    return new CommerceApiError("quote-cart-invalid", "Commerce checkout cart is invalid", status);
   }
   if (status === 429) {
     return new CommerceApiError("rate-limited", "Commerce request was rate limited", status);
@@ -797,13 +824,15 @@ async function decodeStrictErrorResponse(
   const contracts =
     surface === "actor"
       ? ACTOR_ENABLED_ERRORS
-      : method === "GET"
-        ? CART_ENABLED_ERRORS.filter(
-            (contract) =>
-              contract.status !== 409 &&
-              (contract.status !== 400 || contract.code === "COMMERCE_CART_REQUEST_INVALID"),
-          )
-        : CART_ENABLED_ERRORS;
+      : surface === "quote"
+        ? QUOTE_ENABLED_ERRORS
+        : method === "GET"
+          ? CART_ENABLED_ERRORS.filter(
+              (contract) =>
+                contract.status !== 409 &&
+                (contract.status !== 400 || contract.code === "COMMERCE_CART_REQUEST_INVALID"),
+            )
+          : CART_ENABLED_ERRORS;
   const accepted = contracts.some(
     (contract) =>
       contract.status === response.status &&
@@ -834,9 +863,10 @@ function createCommerceIdempotencyKey(): string {
 }
 
 interface StrictRequestOptions {
-  method: "GET" | "PUT" | "DELETE";
+  method: "GET" | "POST" | "PUT" | "DELETE";
   body?: string;
   surface: CommerceStrictSurface;
+  idempotency?: boolean;
 }
 
 async function requestStrictCommerceJson(
@@ -847,8 +877,10 @@ async function requestStrictCommerceJson(
   const headers: Record<string, string> = { Accept: "application/json" };
   if (options.method !== "GET") {
     headers["Content-Type"] = "application/json";
-    headers["Idempotency-Key"] = createCommerceIdempotencyKey();
     headers["X-LIAN-CSRF"] = "1";
+    if (options.idempotency !== false) {
+      headers["Idempotency-Key"] = createCommerceIdempotencyKey();
+    }
   }
   let response: Response;
   try {
@@ -936,4 +968,86 @@ export async function deleteCommerceCartItem(
     malformed("cart delete response still contains the requested SKU");
   }
   return result;
+}
+
+export function decodeCommerceCheckoutQuoteResult(
+  value: unknown,
+  responseRequestId: string,
+): CommerceCheckoutQuoteResult {
+  assertExactKeys(value, ["data", "meta"], "response");
+  assertExactKeys(value.data, ["quote"], "data");
+  assertExactKeys(
+    value.data.quote,
+    ["currency", "lines", "merchandiseAmountMinor", "expiresAt", "token", "stockReserved"],
+    "quote",
+  );
+  if (value.data.quote.currency !== "CNY" || value.data.quote.stockReserved !== false) {
+    malformed("quote currency or reservation marker is invalid");
+  }
+  assertDenseArray(value.data.quote.lines, "quote.lines", 50);
+  if (value.data.quote.lines.length === 0) malformed("quote lines must not be empty");
+  const lines: CommerceCheckoutQuoteLine[] = [];
+  let previousSkuId: string | null = null;
+  let total = 0;
+  for (const candidate of value.data.quote.lines) {
+    assertExactKeys(
+      candidate,
+      ["skuId", "quantity", "unitAmountMinor", "lineAmountMinor"],
+      "quote line",
+    );
+    if (!isCanonicalCommerceProductId(candidate.skuId)) malformed("quote line skuId is invalid");
+    if (previousSkuId !== null && compareCanonicalIds(previousSkuId, candidate.skuId) >= 0) {
+      malformed("quote line skuIds must be unique numeric ascending");
+    }
+    if (
+      !Number.isInteger(candidate.quantity) ||
+      (candidate.quantity as number) < 1 ||
+      (candidate.quantity as number) > 99
+    ) {
+      malformed("quote line quantity is invalid");
+    }
+    const unitAmountMinor = decodeMinorAmount(candidate.unitAmountMinor, "quote unit amount");
+    const lineAmountMinor = decodeMinorAmount(candidate.lineAmountMinor, "quote line amount");
+    const quantity = candidate.quantity as number;
+    if (unitAmountMinor * quantity !== lineAmountMinor)
+      malformed("quote line arithmetic is invalid");
+    previousSkuId = candidate.skuId;
+    total += lineAmountMinor;
+    if (total > MAX_MINOR_AMOUNT) malformed("quote total exceeds its amount contract");
+    lines.push({ skuId: candidate.skuId, quantity, unitAmountMinor, lineAmountMinor });
+  }
+  const merchandiseAmountMinor = decodeMinorAmount(
+    value.data.quote.merchandiseAmountMinor,
+    "quote merchandise amount",
+  );
+  if (merchandiseAmountMinor !== total) malformed("quote total does not equal its lines");
+  if (
+    !Number.isSafeInteger(value.data.quote.expiresAt) ||
+    (value.data.quote.expiresAt as number) < 1
+  ) {
+    malformed("quote expiry is invalid");
+  }
+  assertContractString(value.data.quote.token, "quote token", 32, 8192);
+  return {
+    quote: {
+      currency: "CNY",
+      lines,
+      merchandiseAmountMinor,
+      expiresAt: value.data.quote.expiresAt as number,
+      token: value.data.quote.token,
+      stockReserved: false,
+    },
+    meta: decodeMeta(value.meta, responseRequestId),
+  };
+}
+
+export async function fetchCommerceCheckoutQuote(
+  signal: AbortSignal,
+): Promise<CommerceCheckoutQuoteResult> {
+  const { value, requestId } = await requestStrictCommerceJson(
+    "/api/commerce/checkout/quote",
+    signal,
+    { method: "POST", body: "{}", surface: "quote", idempotency: false },
+  );
+  return decodeCommerceCheckoutQuoteResult(value, requestId);
 }

@@ -1,13 +1,17 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 import { buildCommerceCatalogHash } from "../../../app/commerce-route";
 import * as brand from "../../../config/brand";
 import type { CommerceCartItem } from "../../../types/commerce";
 import { EmptyState, InlineError } from "../../../ui";
 import { useCommerceCart } from "../useCommerceCart";
+import { isCommerceCheckoutQuoteVisible } from "../useCommerceCheckoutQuote";
 import { formatCommercePrice } from "../product/formatCommercePrice";
+import CommerceCheckoutQuotePanel from "./CommerceCheckoutQuotePanel.vue";
 
 const cart = useCommerceCart();
+const quoteVisible = isCommerceCheckoutQuoteVisible();
+const quoteGeneration = ref(0);
 const catalogHref = buildCommerceCatalogHash();
 const quantityPending = computed(
   () => cart.status.value === "loading" && cart.activeTarget.value?.name !== "read",
@@ -38,6 +42,15 @@ function price(item: CommerceCartItem) {
   return item.referenceUnitPrice
     ? formatCommercePrice(item.referenceUnitPrice.amountMinor)
     : brand.COMMERCE_CART_UNAVAILABLE;
+}
+
+function clearQuote() {
+  quoteGeneration.value += 1;
+}
+
+function retryCart() {
+  clearQuote();
+  void cart.retry();
 }
 
 onMounted(() => void cart.read());
@@ -83,7 +96,7 @@ onBeforeUnmount(cart.dispose);
       v-if="cart.status.value === 'error' || cart.status.value === 'item-unavailable'"
       :action-label="brand.COMMERCE_CART_RETRY"
       data-testid="commerce-cart-error"
-      @action="cart.retry"
+      @action="retryCart"
     >
       <strong>{{ errorTitle }}</strong>
       <span>{{ errorHint }}</span>
@@ -116,7 +129,10 @@ onBeforeUnmount(cart.dispose);
             type="button"
             :disabled="quantityPending"
             data-testid="commerce-cart-normalize-quantity"
-            @click="cart.setQuantity(item.skuId, 99)"
+            @click="
+              clearQuote();
+              cart.setQuantity(item.skuId, 99);
+            "
           >
             {{ brand.COMMERCE_CART_NORMALIZE_QUANTITY }}
           </button>
@@ -124,7 +140,10 @@ onBeforeUnmount(cart.dispose);
             type="button"
             :aria-label="brand.COMMERCE_CART_DECREASE"
             :disabled="quantityPending || item.availability === 'unavailable' || item.quantity <= 1"
-            @click="cart.setQuantity(item.skuId, item.quantity - 1)"
+            @click="
+              clearQuote();
+              cart.setQuantity(item.skuId, item.quantity - 1);
+            "
           >
             −
           </button>
@@ -134,16 +153,33 @@ onBeforeUnmount(cart.dispose);
             :disabled="
               quantityPending || item.availability === 'unavailable' || item.quantity >= 99
             "
-            @click="cart.setQuantity(item.skuId, item.quantity + 1)"
+            @click="
+              clearQuote();
+              cart.setQuantity(item.skuId, item.quantity + 1);
+            "
           >
             +
           </button>
-          <button type="button" :disabled="quantityPending" @click="cart.deleteItem(item.skuId)">
+          <button
+            type="button"
+            :disabled="quantityPending"
+            @click="
+              clearQuote();
+              cart.deleteItem(item.skuId);
+            "
+          >
             {{ brand.COMMERCE_CART_REMOVE }}
           </button>
         </span>
       </li>
     </ul>
+
+    <CommerceCheckoutQuotePanel
+      v-if="quoteVisible && cart.items.value.length > 0"
+      :key="quoteGeneration"
+      :items="cart.items.value"
+      :cart-ready="cart.status.value === 'ready'"
+    />
   </div>
 </template>
 

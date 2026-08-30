@@ -101,6 +101,19 @@ test("cart visibility is a third default-off gate and cannot open without discov
   assert.match(owner, /VITE_COMMERCE_CART_VISIBLE === "true"/);
 });
 
+test("checkout quote is a fourth default-off merchandise-only gate", () => {
+  const owner = read("src/features/commerce/useCommerceCheckoutQuote.ts");
+  const panel = read("src/features/commerce/cart/CommerceCheckoutQuotePanel.vue");
+  const env = read(".env.example");
+  const envTypes = read("src/vite-env.d.ts");
+  assert.match(env, /^VITE_COMMERCE_CHECKOUT_QUOTE_VISIBLE=false$/m);
+  assert.match(envTypes, /readonly VITE_COMMERCE_CHECKOUT_QUOTE_VISIBLE\?: string/);
+  assert.match(owner, /isCommerceCartVisible()/);
+  assert.match(owner, /VITE_COMMERCE_CHECKOUT_QUOTE_VISIBLE === "true"/);
+  assert.match(panel, /COMMERCE_QUOTE_NOTICE/);
+  assert.doesNotMatch(panel, /\.quote\.token/);
+});
+
 test("cart writes are dedicated literal same-origin requests with browser-owned provenance headers", () => {
   const api = read("src/api/commerce.ts");
   assert.match(api, /"\/api\/commerce\/actors\/me"/);
