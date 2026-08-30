@@ -2,6 +2,11 @@ name: Frontend Release Build
 
 on:
   workflow_dispatch:
+    inputs:
+      backend_commit:
+        description: Exact reviewed lian-platform-server commit currently intended for this release
+        required: true
+        type: string
 
 concurrency:
   group: frontend-auto-build-${{ github.ref }}
@@ -30,15 +35,29 @@ jobs:
       - name: Verify frontend (static guards + build + smoke)
         run: npm run verify
 
-      - name: Stamp build commit
+      - name: Stamp unified release manifest
+        env:
+          LIAN_BACKEND_COMMIT: ${{ inputs.backend_commit }}
+          LIAN_FRONTEND_COMMIT: ${{ github.sha }}
+          LIAN_RELEASE_ENVIRONMENT: production
         run: |
+          set -Eeuo pipefail
           mkdir -p dist
+          LIAN_RELEASE_BUILT_AT="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          export LIAN_RELEASE_BUILT_AT
           {
             echo "commit=${GITHUB_SHA}"
             echo "ref=${GITHUB_REF_NAME}"
             echo "run_id=${GITHUB_RUN_ID}"
-            echo "built_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            echo "built_at=${LIAN_RELEASE_BUILT_AT}"
           } > dist/build-commit.txt
+          npm run release:manifest
+          node -e '
+            const fs = require("node:fs");
+            const value = JSON.parse(fs.readFileSync("dist/release-manifest.json", "utf8"));
+            if (value.components.frontend.commit !== process.env.LIAN_FRONTEND_COMMIT
+                || value.components.backend.commit !== process.env.LIAN_BACKEND_COMMIT) process.exit(1);
+          '
 
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
@@ -78,15 +97,48 @@ jobs:
 
       - name: Verify reviewed artifact marker
         env:
+          EXPECTED_BACKEND_COMMIT: ${{ inputs.backend_commit }}
           EXPECTED_COMMIT: ${{ github.sha }}
         run: |
           set -Eeuo pipefail
+          case "$EXPECTED_BACKEND_COMMIT" in
+            (????????????????????????????????????????|????????????????????????????????????????????????????????????????) ;;
+            (*) echo "backend_commit must be an exact Git object id"; exit 1 ;;
+          esac
+          case "$EXPECTED_BACKEND_COMMIT" in (*[!0-9a-f]*) exit 1 ;; esac
           test -f release-dist/build-commit.txt
+          test -f release-dist/release-manifest.json
           grep -qx "commit=$EXPECTED_COMMIT" release-dist/build-commit.txt
+          node -e '
+            const fs = require("node:fs");
+            const value = JSON.parse(fs.readFileSync("release-dist/release-manifest.json", "utf8"));
+            if (value.schemaVersion !== 1
+                || value.components.frontend.commit !== process.env.EXPECTED_COMMIT
+                || value.components.backend.commit !== process.env.EXPECTED_BACKEND_COMMIT) process.exit(1);
+          '
           cat release-dist/build-commit.txt
+
+      - name: Verify running backend revision
+        env:
+          EXPECTED_BACKEND_COMMIT: ${{ inputs.backend_commit }}
+          LIAN_BACKEND_HEALTH_URL: ${{ vars.LIAN_BACKEND_HEALTH_URL || 'https://lian.nat100.top/api/system/health' }}
+        run: |
+          set -Eeuo pipefail
+          case "$LIAN_BACKEND_HEALTH_URL" in (https://*) ;; (*) exit 1 ;; esac
+          curl --fail --silent --show-error --max-time 15 \
+            "$LIAN_BACKEND_HEALTH_URL" > backend-health.json
+          node -e '
+            const fs = require("node:fs");
+            const value = JSON.parse(fs.readFileSync("backend-health.json", "utf8"));
+            if (value.revision !== process.env.EXPECTED_BACKEND_COMMIT) {
+              console.error("Running backend revision does not match the reviewed release manifest");
+              process.exit(1);
+            }
+          '
 
       - name: Upload reviewed frontend artifact
         env:
+          EXPECTED_BACKEND_COMMIT: ${{ inputs.backend_commit }}
           LIAN_WEB_DIR: ${{ vars.LIAN_WEB_DIR || '/opt/lian-mobile-web' }}
           EXPECTED_COMMIT: ${{ github.sha }}
         run: |
@@ -114,7 +166,7 @@ jobs:
             -o IdentitiesOnly=yes \
             -o StrictHostKeyChecking=yes \
             "${{ secrets.LIAN_WEB_SSH_USER }}@${{ secrets.LIAN_WEB_SSH_HOST }}" \
-            "LIAN_WEB_DIR='${LIAN_WEB_DIR}' EXPECTED_COMMIT='${EXPECTED_COMMIT}' bash -s" <<'REMOTE'
+            "LIAN_WEB_DIR='${LIAN_WEB_DIR}' EXPECTED_COMMIT='${EXPECTED_COMMIT}' EXPECTED_BACKEND_COMMIT='${EXPECTED_BACKEND_COMMIT}' bash -s" <<'REMOTE'
           set -Eeuo pipefail
 
           archive="/tmp/lian-frontend-${EXPECTED_COMMIT}.tgz"
@@ -136,7 +188,10 @@ jobs:
 
           tar -xzf "$archive" -C "$release_dir"
           test -f "$release_dir/build-commit.txt"
+          test -f "$release_dir/release-manifest.json"
           grep -qx "commit=$EXPECTED_COMMIT" "$release_dir/build-commit.txt"
+          grep -Fq "\"commit\": \"$EXPECTED_COMMIT\"" "$release_dir/release-manifest.json"
+          grep -Fq "\"commit\": \"$EXPECTED_BACKEND_COMMIT\"" "$release_dir/release-manifest.json"
 
           previous_dir=""
           if [ -d dist ]; then
@@ -157,6 +212,7 @@ jobs:
 
       - name: Verify remote build marker
         env:
+          EXPECTED_BACKEND_COMMIT: ${{ inputs.backend_commit }}
           LIAN_WEB_DIR: ${{ vars.LIAN_WEB_DIR || '/opt/lian-mobile-web' }}
           EXPECTED_COMMIT: ${{ github.sha }}
         run: |
@@ -177,10 +233,36 @@ jobs:
             -o IdentitiesOnly=yes \
             -o StrictHostKeyChecking=yes \
             "${{ secrets.LIAN_WEB_SSH_USER }}@${{ secrets.LIAN_WEB_SSH_HOST }}" \
-            "LIAN_WEB_DIR='${LIAN_WEB_DIR}' EXPECTED_COMMIT='${EXPECTED_COMMIT}' bash -s" <<'REMOTE'
+            "LIAN_WEB_DIR='${LIAN_WEB_DIR}' EXPECTED_COMMIT='${EXPECTED_COMMIT}' EXPECTED_BACKEND_COMMIT='${EXPECTED_BACKEND_COMMIT}' bash -s" <<'REMOTE'
           set -Eeuo pipefail
           cd "$LIAN_WEB_DIR"
           test -f dist/build-commit.txt
+          test -f dist/release-manifest.json
           grep -qx "commit=$EXPECTED_COMMIT" dist/build-commit.txt
+          grep -Fq "\"commit\": \"$EXPECTED_COMMIT\"" dist/release-manifest.json
+          grep -Fq "\"commit\": \"$EXPECTED_BACKEND_COMMIT\"" dist/release-manifest.json
           cat dist/build-commit.txt
           REMOTE
+
+      - name: Verify public unified release identity
+        env:
+          EXPECTED_BACKEND_COMMIT: ${{ inputs.backend_commit }}
+          EXPECTED_COMMIT: ${{ github.sha }}
+          LIAN_BACKEND_HEALTH_URL: ${{ vars.LIAN_BACKEND_HEALTH_URL || 'https://lian.nat100.top/api/system/health' }}
+          LIAN_WEB_PUBLIC_URL: ${{ vars.LIAN_WEB_PUBLIC_URL || 'https://lian.nat100.top' }}
+        run: |
+          set -Eeuo pipefail
+          case "$LIAN_WEB_PUBLIC_URL" in (https://*) ;; (*) exit 1 ;; esac
+          curl --fail --silent --show-error --max-time 15 \
+            "${LIAN_WEB_PUBLIC_URL%/}/release-manifest.json" > public-release-manifest.json
+          curl --fail --silent --show-error --max-time 15 \
+            "$LIAN_BACKEND_HEALTH_URL" > public-backend-health.json
+          node -e '
+            const fs = require("node:fs");
+            const manifest = JSON.parse(fs.readFileSync("public-release-manifest.json", "utf8"));
+            const health = JSON.parse(fs.readFileSync("public-backend-health.json", "utf8"));
+            if (manifest.schemaVersion !== 1
+                || manifest.components.frontend.commit !== process.env.EXPECTED_COMMIT
+                || manifest.components.backend.commit !== process.env.EXPECTED_BACKEND_COMMIT
+                || health.revision !== process.env.EXPECTED_BACKEND_COMMIT) process.exit(1);
+          '

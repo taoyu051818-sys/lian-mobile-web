@@ -2,6 +2,11 @@
 
 Frontend/mobile web workspace for LIAN.
 
+Repository ownership and lifecycle status are defined only in
+[`docs/REPOSITORY_RELATIONSHIP.md`](docs/REPOSITORY_RELATIONSHIP.md). This repository is the
+canonical frontend; `lian-platform-server` is the canonical backend. Frozen, archived and removed
+repositories are not release sources.
+
 This repository owns the Vue 3 + Vite frontend, design tokens, frontend assets,
 task-board UI, and frontend documentation. The legacy static runtime has been
 migrated to `taoyu051818-sys/-lian-mobile-web-legacy`. Use GitHub issues and PRs

@@ -48,29 +48,25 @@ the artifact; it must not run dependency installation, source checkout repair, o
 
 ## 2. Release manifest
 
-A release manifest records the provenance of a deployed build. Generate it during CI and store it alongside the artifact.
+`scripts/generate-release-manifest.mjs` generates the unified manifest during the manual release
+workflow. Its contract is
+[`docs/release/release-manifest-v1.schema.json`](../release/release-manifest-v1.schema.json), and the
+reviewed artifact serves it as `/release-manifest.json`.
 
-**Required fields:**
+The manifest records both canonical runtime commits:
 
-```json
-{
-  "releaseId": "<git sha>",
-  "buildTime": "<ISO 8601>",
-  "nodeVersion": "22.x",
-  "npmVersion": "<locked>",
-  "packageLockHash": "<sha256 of package-lock.json>",
-  "gitRef": "<branch/tag>",
-  "assetList": ["index.html", "assets/...", "manifest.webmanifest", "..."]
-}
-```
+- `components.frontend.commit` is the exact `lian-mobile-web` workflow SHA;
+- `components.backend.commit` is the exact backend SHA selected at dispatch;
+- `/api/system/health` must report that same backend SHA in `revision` before frontend promotion;
+- the public manifest and backend health endpoint are checked again after promotion.
 
-**How to use it:**
+The legacy `/build-commit.txt` marker remains for compatibility, but it answers only the frontend
+half of a release. The unified manifest is the source for “which frontend and backend commits are
+online?”. If the manifest is absent, malformed, or disagrees with backend health, release state is
+`unknown`/`HOLD`; never substitute repository `main`.
 
-- Inject `releaseId` into runtime config so post-deploy smoke and diagnostics can identify the deployed build.
-- Record the previous `releaseId` before each deployment so rollback has a known target.
-- Store manifests in a release log (file, database, or GitHub release) for audit trail.
-
-**Current state:** automated manifest generation is still tracked under #134.
+Record the previous `releaseId` before deployment so rollback has a known paired target. A release
+operator dispatching the workflow must enter the reviewed full backend commit in `backend_commit`.
 
 ---
 
