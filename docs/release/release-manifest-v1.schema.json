@@ -1,0 +1,73 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/taoyu051818-sys/lian-mobile-web/blob/main/docs/release/release-manifest-v1.schema.json",
+  "title": "LIAN unified frontend/backend release manifest v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "releaseId", "environment", "builtAt", "components", "build"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "releaseId": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}(?:[0-9a-f]{24})?\\.[0-9a-f]{40}(?:[0-9a-f]{24})?$"
+    },
+    "environment": { "type": "string", "minLength": 1, "maxLength": 160 },
+    "builtAt": { "type": "string", "format": "date-time" },
+    "components": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["frontend", "backend"],
+      "properties": {
+        "frontend": { "$ref": "#/$defs/frontend" },
+        "backend": { "$ref": "#/$defs/backend" }
+      }
+    },
+    "build": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "gitRef",
+        "workflowRunId",
+        "nodeVersion",
+        "npmVersion",
+        "packageLockSha256",
+        "assets"
+      ],
+      "properties": {
+        "gitRef": { "type": "string", "minLength": 1 },
+        "workflowRunId": { "type": "string", "pattern": "^[0-9]+$" },
+        "nodeVersion": { "type": "string", "minLength": 1 },
+        "npmVersion": { "type": "string", "minLength": 1 },
+        "packageLockSha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "assets": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "uniqueItems": true
+        }
+      }
+    }
+  },
+  "$defs": {
+    "gitObjectId": { "type": "string", "pattern": "^(?:[0-9a-f]{40}|[0-9a-f]{64})$" },
+    "frontend": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["repository", "commit", "artifact"],
+      "properties": {
+        "repository": { "const": "taoyu051818-sys/lian-mobile-web" },
+        "commit": { "$ref": "#/$defs/gitObjectId" },
+        "artifact": { "type": "string", "minLength": 1 }
+      }
+    },
+    "backend": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["repository", "commit", "runtimeEvidence"],
+      "properties": {
+        "repository": { "const": "taoyu051818-sys/lian-platform-server" },
+        "commit": { "$ref": "#/$defs/gitObjectId" },
+        "runtimeEvidence": { "const": "/api/system/health#revision" }
+      }
+    }
+  }
+}

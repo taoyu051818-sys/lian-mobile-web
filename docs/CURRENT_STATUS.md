@@ -1,6 +1,14 @@
 # Current Status
 
-Last verified: 2026-08-27
+Last verified: 2026-08-30
+
+Active control issue: none; Actor/Cart cross-repository verification is closed.
+
+Open release blockers: the next frontend promotion must pair an exact backend SHA and publish the
+unified release manifest; no production rollout is authorized by this document.
+
+Current production release: frontend `6de102c0c3e95c3b205883858eba6e54de71db34` with backend
+`0fb3a504948bd877a0e3579413898fcb8f2117c6` as observed on 2026-08-30.
 
 The active map implementation now uses a JSON-first Konva scene rendered through `vue-konva`.
 The Leaflet runtime, Leaflet composables and unauthenticated public map editing/georeference tools
@@ -21,27 +29,19 @@ through an approved non-secret inventory that both running backend LA flags are 
 observable frontend/backend release identities. The backend LA route remains unchanged and
 default-off as the bounded R1 rollback control.
 
-Active control issue: the frontend Actor/Cart implementation in
-[#1097](https://github.com/taoyu051818-sys/lian-mobile-web/issues/1097) is independently accepted
-by the change that publishes this status. Backend [#943](https://github.com/taoyu051818-sys/lian-platform-server/issues/943)
-and GDPlatform [#3](https://github.com/taoyu051818-sys/gdplatform-dev/issues/3) remain in the local
-cross-repository integration queue.
+Actor/Cart control issues [frontend #1097](https://github.com/taoyu051818-sys/lian-mobile-web/issues/1097),
+[backend #943](https://github.com/taoyu051818-sys/lian-platform-server/issues/943) and
+[GDPlatform #3](https://github.com/taoyu051818-sys/gdplatform-dev/issues/3) are closed. The governed
+local cross-repository smoke passed login, catalog, strict Actor initialization, cart read/set/read/
+delete/read, cleanup and logout. Commerce exposure flags remain default-off; this verification does
+not authorize a production rollout.
 
-Open release blockers: No release has been requested. The default-off Actor/Cart vertical slice
-must pass its isolated provider migration and cross-repository local verification before any
-release proposal.
+These production commits are deployment facts, not repository `main`. The next frontend release
+must publish the unified `/release-manifest.json` and prove that its backend commit matches
+`/api/system/health`.
 
-Current production release: None recorded. The project is not launched and all commerce exposure
-flags remain default-off.
-
-**Active execution queue:**
-
-- LIAN backend `#943`: make the local backend/test baseline self-contained without changing public
-  contracts or authentication behavior.
-- GDPlatform `#3`: provide a production-closed local Actor/Cart policy seam and formal migration
-  status/apply path while retaining signed assertions, exact scopes and idempotency.
-- Cross-repository local smoke: login, catalog, strict Actor initialization, cart read/set/delete,
-  cleanup and logout after the backend/provider changes are accepted.
+Repository lifecycle and ownership are defined only in
+[`docs/REPOSITORY_RELATIONSHIP.md`](REPOSITORY_RELATIONSHIP.md).
 
 ## Accepted baseline
 
@@ -62,6 +62,8 @@ flags remain default-off.
   host, credential, feature flag or external service was changed by the active work.
 
 ## Coordination rule
+
+**No active execution queue.**
 
 Before starting new work, query [open frontend issues](https://github.com/taoyu051818-sys/lian-mobile-web/issues?q=is%3Aissue%20state%3Aopen),
 [open backend issues](https://github.com/taoyu051818-sys/lian-platform-server/issues?q=is%3Aissue%20state%3Aopen),
