@@ -18,6 +18,7 @@ const expectedJourneys = [
       VITE_COMMERCE_CATALOG_VISIBLE: "true",
       VITE_COMMERCE_PRODUCT_VISIBLE: "false",
       VITE_COMMERCE_CART_VISIBLE: "false",
+      VITE_COMMERCE_CHECKOUT_QUOTE_VISIBLE: "false",
     },
   },
   {
@@ -27,6 +28,7 @@ const expectedJourneys = [
       VITE_COMMERCE_CATALOG_VISIBLE: "true",
       VITE_COMMERCE_PRODUCT_VISIBLE: "true",
       VITE_COMMERCE_CART_VISIBLE: "false",
+      VITE_COMMERCE_CHECKOUT_QUOTE_VISIBLE: "false",
     },
   },
   {
@@ -36,6 +38,7 @@ const expectedJourneys = [
       VITE_COMMERCE_CATALOG_VISIBLE: "true",
       VITE_COMMERCE_PRODUCT_VISIBLE: "true",
       VITE_COMMERCE_CART_VISIBLE: "true",
+      VITE_COMMERCE_CHECKOUT_QUOTE_VISIBLE: "false",
     },
   },
 ];

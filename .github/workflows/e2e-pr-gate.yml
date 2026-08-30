@@ -42,6 +42,7 @@ jobs:
           VITE_COMMERCE_CATALOG_VISIBLE: "true"
           VITE_COMMERCE_PRODUCT_VISIBLE: "false"
           VITE_COMMERCE_CART_VISIBLE: "false"
+          VITE_COMMERCE_CHECKOUT_QUOTE_VISIBLE: "false"
         run: >-
           npm run test:e2e:local --
           tests/e2e/local/commerce-store-read-journeys.spec.ts
@@ -51,6 +52,7 @@ jobs:
           VITE_COMMERCE_CATALOG_VISIBLE: "true"
           VITE_COMMERCE_PRODUCT_VISIBLE: "true"
           VITE_COMMERCE_CART_VISIBLE: "false"
+          VITE_COMMERCE_CHECKOUT_QUOTE_VISIBLE: "false"
         run: >-
           npm run test:e2e:local --
           tests/e2e/local/commerce-product-read-journeys.spec.ts
@@ -60,6 +62,7 @@ jobs:
           VITE_COMMERCE_CATALOG_VISIBLE: "true"
           VITE_COMMERCE_PRODUCT_VISIBLE: "true"
           VITE_COMMERCE_CART_VISIBLE: "true"
+          VITE_COMMERCE_CHECKOUT_QUOTE_VISIBLE: "false"
         run: >-
           npm run test:e2e:local --
           tests/e2e/local/commerce-cart-journeys.spec.ts

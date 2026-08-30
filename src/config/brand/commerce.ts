@@ -91,6 +91,12 @@ export const COMMERCE_CART_REFERENCE_PRICE = "参考单价";
 export const COMMERCE_CART_UNAVAILABLE = "暂不可售，可以移除";
 export const COMMERCE_CART_NAME_FALLBACK = "商品信息暂不可用";
 export const COMMERCE_CART_SKU_FALLBACK = "规格信息暂不可用";
+export const COMMERCE_QUOTE_ACTION = "确认商品金额";
+export const COMMERCE_QUOTE_LOADING = "正在确认…";
+export const COMMERCE_QUOTE_HEADING = "商品金额";
+export const COMMERCE_QUOTE_NOTICE = "该金额短期有效，不含配送和优惠，也不会预留库存。";
+export const COMMERCE_QUOTE_CART_INVALID = "购物车商品有变化，请调整后重新确认。";
+export const COMMERCE_QUOTE_ERROR = "暂时无法确认商品金额，请稍后重试。";
 
 export const COMMERCE_PRODUCT_ADD_TO_CART = "加入购物车（数量 1）";
 export const COMMERCE_PRODUCT_ADDING_TO_CART = "正在加入…";
